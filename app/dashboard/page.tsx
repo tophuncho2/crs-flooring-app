@@ -6,9 +6,6 @@ import LogoutButton from "./logout-button"
 export default async function Dashboard() {
   const session = await getServerSession(authOptions)
 
-  if (!session) {
-    redirect("/login")
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white space-y-4">
@@ -17,7 +14,7 @@ export default async function Dashboard() {
       </h1>
 
       <p className="text-blue-400">
-        Logged in as: {session.user?.email}
+        Logged in as: {session!.user?.email}
       </p>
 
       <LogoutButton />
