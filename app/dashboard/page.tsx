@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "../api/auth/[...nextauth]/route"
 import UserMenu from "./user-menu"
 import { redirect } from "next/navigation"
+import ToolsMenu from "./tools-menu"
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions)
@@ -13,12 +14,18 @@ if (!session) {
   return (
     <div className="min-h-screen bg-black text-white relative">
 
-      {/* Top Right User Menu */}
-      <div className="absolute top-6 right-6">
-<UserMenu 
-  email={session?.user?.email ?? ""} 
-  role={(session?.user as any)?.role ?? ""}
-/>      </div>
+      {/* Top Right Controls */}
+<div className="absolute top-6 right-6 flex items-center gap-4">
+  {(session.user.role === "BUILDER" ||
+    session.user.role === "ADMIN") && (
+    <ToolsMenu role={session.user.role} />
+  )}
+
+  <UserMenu
+    email={session.user.email}
+    role={session.user.role}
+  />
+</div>
 
       {/* Page Content */}
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -30,6 +37,4 @@ if (!session) {
     </div>
   )
 }
-const session = await getServerSession(authOptions)
 
-console.log("ROLE:", session?.user?.role)

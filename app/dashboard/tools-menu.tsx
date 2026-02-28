@@ -1,0 +1,66 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Wrench } from "lucide-react"
+
+export default function ToolsMenu({ role }: { role: string }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  if (role !== "BUILDER" && role !== "ADMIN") return null
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="
+          w-10 h-10 rounded-full
+          bg-gray-900
+          border border-blue-600/40
+          flex items-center justify-center
+          hover:bg-gray-800
+          transition
+          shadow-[0_0_6px_rgba(59,130,246,0.25)]
+        "
+      >
+        <Wrench size={18} className="text-blue-500" />
+      </button>
+
+      {open && (
+        <div
+          className="
+            absolute right-0 mt-2 w-44
+            bg-gray-900
+            border border-blue-600/40
+            rounded-lg
+            shadow-[0_0_12px_rgba(59,130,246,0.15)]
+            overflow-hidden
+            text-sm
+          "
+        >
+          <button
+            onClick={() => {
+              router.push("/dashboard/products")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-gray-800 transition"
+          >
+            Products
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
