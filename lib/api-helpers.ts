@@ -47,6 +47,19 @@ export function parseDecimal(value: unknown, field: string, scale: number): Pris
   return new Prisma.Decimal(asString)
 }
 
+export function parseDecimalOrDefault(
+  value: unknown,
+  field: string,
+  scale: number,
+  defaultValue: string,
+): Prisma.Decimal {
+  if (value === null || value === undefined || value === "") {
+    return new Prisma.Decimal(defaultValue)
+  }
+
+  return parseDecimal(value, field, scale)
+}
+
 export function normalizePrismaError(error: unknown): { status: number; message: string } {
   if (
     error &&

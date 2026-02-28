@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import {
   normalizePrismaError,
   parseBoolean,
-  parseDecimal,
+  parseDecimalOrDefault,
   parseOptionalString,
   parseRequiredString,
 } from "@/lib/api-helpers"
@@ -81,17 +81,23 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
+    const internalCostProvided =
+      body.internalCost !== undefined && body.internalCost !== null && String(body.internalCost).trim() !== ""
+    const customerCostProvided =
+      body.customerCost !== undefined && body.customerCost !== null && String(body.customerCost).trim() !== ""
+    const requestedActive = body.isActive === undefined ? true : parseBoolean(body.isActive, "isActive")
+    const isActive = !internalCostProvided && !customerCostProvided ? false : requestedActive
 
     const product = await prisma.product.create({
       data: {
         name: parseRequiredString(body.name, "name"),
         description: parseOptionalString(body.description),
         categoryId: parseRequiredString(body.categoryId, "categoryId"),
-        internalCost: parseDecimal(body.internalCost, "internalCost", 2),
-        customerCost: parseDecimal(body.customerCost, "customerCost", 2),
-        laborRate: parseDecimal(body.laborRate, "laborRate", 2),
-        coveragePerUnit: parseDecimal(body.coveragePerUnit, "coveragePerUnit", 4),
-        isActive: body.isActive === undefined ? true : parseBoolean(body.isActive, "isActive"),
+        internalCost: parseDecimalOrDefault(body.internalCost, "internalCost", 2, "0.00"),
+        customerCost: parseDecimalOrDefault(body.customerCost, "customerCost", 2, "0.00"),
+        laborRate: parseDecimalOrDefault(body.laborRate, "laborRate", 2, "0.00"),
+        coveragePerUnit: parseDecimalOrDefault(body.coveragePerUnit, "coveragePerUnit", 4, "0.0000"),
+        isActive,
       },
       include: {
         category: {

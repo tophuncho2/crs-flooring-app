@@ -85,10 +85,29 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params
     const body = (await request.json()) as ProductBody
+    const data = buildProductUpdate(body)
+
+    if ("isActive" in body && data.isActive === true) {
+      const existingProduct = await prisma.product.findUnique({
+        where: { id },
+        select: { internalCost: true, customerCost: true },
+      })
+
+      if (!existingProduct) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+
+      const nextInternalCost = data.internalCost ?? existingProduct.internalCost
+      const nextCustomerCost = data.customerCost ?? existingProduct.customerCost
+
+      if (nextInternalCost.equals(0) && nextCustomerCost.equals(0)) {
+        data.isActive = false
+      }
+    }
 
     const product = await prisma.product.update({
       where: { id },
-      data: buildProductUpdate(body),
+      data,
       include: {
         category: {
           select: {

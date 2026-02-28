@@ -72,17 +72,23 @@ function displayMoney(value: string): string {
   return formatToScale(value, 2)
 }
 
+function hasInputValue(value: string): boolean {
+  return value.trim() !== ""
+}
+
 function withFallbackUnit(unit: string | null | undefined): string {
   return unit && unit.trim() ? unit : "unit"
 }
 
 function UnitInput({
+  prefix,
   value,
   unit,
   onChange,
   onBlur,
   className,
 }: {
+  prefix?: string
   value: string
   unit: string
   onChange: (value: string) => void
@@ -91,6 +97,11 @@ function UnitInput({
 }) {
   return (
     <div className={`flex items-center rounded border border-[var(--panel-border)] ${className ?? ""}`}>
+      {prefix && (
+        <span className="border-r border-[var(--panel-border)] px-2 py-1 text-xs text-[var(--foreground)]/70">
+          {prefix}
+        </span>
+      )}
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -264,13 +275,19 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
   async function toggleProductActive(product: ProductDto) {
     clearNotices()
     const previous = product.isActive
+    const next = !previous
 
-    setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, isActive: !previous } : p)))
+    if (next && Number(product.internalCost) === 0 && Number(product.customerCost) === 0) {
+      setError("Product cannot be active when both internal and customer cost are empty/zero.")
+      return
+    }
+
+    setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, isActive: next } : p)))
 
     try {
       const payload = await apiJson<{ product: ProductDto }>(`/api/products/${product.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ isActive: !previous }),
+        body: JSON.stringify({ isActive: next }),
       })
 
       setProducts((prev) => prev.map((p) => (p.id === product.id ? payload.product : p)))
@@ -323,10 +340,25 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
   function validateProductForm(form: ProductForm): string | null {
     if (!form.name.trim()) return "name is required"
     if (!form.categoryId) return "category is required"
-    if (!isValidDecimalInput(form.internalCost.trim(), 2)) return "internalCost must be numeric with up to 2 decimals"
-    if (!isValidDecimalInput(form.customerCost.trim(), 2)) return "customerCost must be numeric with up to 2 decimals"
-    if (!isValidDecimalInput(form.laborRate.trim(), 2)) return "laborRate must be numeric with up to 2 decimals"
-    if (!isValidDecimalInput(form.coveragePerUnit.trim(), 4)) return "coveragePerUnit must be numeric with up to 4 decimals"
+
+    if (hasInputValue(form.internalCost) && !isValidDecimalInput(form.internalCost.trim(), 2)) {
+      return "internalCost must be numeric with up to 2 decimals"
+    }
+    if (hasInputValue(form.customerCost) && !isValidDecimalInput(form.customerCost.trim(), 2)) {
+      return "customerCost must be numeric with up to 2 decimals"
+    }
+    if (hasInputValue(form.laborRate) && !isValidDecimalInput(form.laborRate.trim(), 2)) {
+      return "laborRate must be numeric with up to 2 decimals"
+    }
+    if (hasInputValue(form.coveragePerUnit) && !isValidDecimalInput(form.coveragePerUnit.trim(), 4)) {
+      return "coveragePerUnit must be numeric with up to 4 decimals"
+    }
+
+    const hasInternalCost = hasInputValue(form.internalCost)
+    const hasCustomerCost = hasInputValue(form.customerCost)
+    if (!hasInternalCost && !hasCustomerCost && form.isActive) {
+      return "Active cannot be true unless internal or customer cost is filled."
+    }
 
     return null
   }
@@ -342,14 +374,20 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
     setIsSavingProduct(true)
 
     try {
+      const hasInternalCost = hasInputValue(productForm.internalCost)
+      const hasCustomerCost = hasInputValue(productForm.customerCost)
+      const isActive = !hasInternalCost && !hasCustomerCost ? false : productForm.isActive
       const requestBody = {
         ...productForm,
         name: productForm.name.trim(),
         description: productForm.description.trim(),
-        internalCost: formatToScale(productForm.internalCost.trim(), 2),
-        customerCost: formatToScale(productForm.customerCost.trim(), 2),
-        laborRate: formatToScale(productForm.laborRate.trim(), 2),
-        coveragePerUnit: formatToScale(productForm.coveragePerUnit.trim(), 4),
+        internalCost: hasInternalCost ? formatToScale(productForm.internalCost.trim(), 2) : "0.00",
+        customerCost: hasCustomerCost ? formatToScale(productForm.customerCost.trim(), 2) : "0.00",
+        laborRate: hasInputValue(productForm.laborRate) ? formatToScale(productForm.laborRate.trim(), 2) : "0.00",
+        coveragePerUnit: hasInputValue(productForm.coveragePerUnit)
+          ? formatToScale(productForm.coveragePerUnit.trim(), 4)
+          : "0.0000",
+        isActive,
       }
 
       if (mode === "create") {
@@ -629,6 +667,7 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
                     <td className="px-3 py-2">{product.category.name}</td>
                     <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                       <UnitInput
+                        prefix="$"
                         value={getInlineValue(product, "internalCost")}
                         unit={withFallbackUnit(product.category.purchaseUnit)}
                         onChange={(value) => handleInlineDraftChange(product.id, "internalCost", value)}
@@ -638,6 +677,7 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
                     </td>
                     <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                       <UnitInput
+                        prefix="$"
                         value={getInlineValue(product, "customerCost")}
                         unit={withFallbackUnit(product.category.purchaseUnit)}
                         onChange={(value) => handleInlineDraftChange(product.id, "customerCost", value)}
@@ -645,7 +685,7 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
                         className="w-36"
                       />
                     </td>
-                    <td className="px-3 py-2">{displayMoney(product.laborRate)} / {withFallbackUnit(product.category.rateUnit)}</td>
+                    <td className="px-3 py-2">${displayMoney(product.laborRate)} / {withFallbackUnit(product.category.rateUnit)}</td>
                     <td className="px-3 py-2">{product.coveragePerUnit} / {withFallbackUnit(product.category.coverageUnit)}</td>
                     <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                       <button
@@ -921,6 +961,9 @@ function ProductFormFields({
   const purchaseUnit = withFallbackUnit(selectedCategory?.purchaseUnit)
   const coverageUnit = withFallbackUnit(selectedCategory?.coverageUnit)
   const rateUnit = withFallbackUnit(selectedCategory?.rateUnit)
+  const hasInternalCost = hasInputValue(form.internalCost)
+  const hasCustomerCost = hasInputValue(form.customerCost)
+  const canSetActiveTrue = hasInternalCost || hasCustomerCost
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -963,6 +1006,7 @@ function ProductFormFields({
 
       <FormField label="Internal Cost">
         <UnitInput
+          prefix="$"
           value={form.internalCost}
           unit={purchaseUnit}
           onChange={(value) => setForm((prev) => ({ ...prev, internalCost: value }))}
@@ -972,6 +1016,7 @@ function ProductFormFields({
       </FormField>
       <FormField label="Customer Cost">
         <UnitInput
+          prefix="$"
           value={form.customerCost}
           unit={purchaseUnit}
           onChange={(value) => setForm((prev) => ({ ...prev, customerCost: value }))}
@@ -981,6 +1026,7 @@ function ProductFormFields({
       </FormField>
       <FormField label="Labor Rate">
         <UnitInput
+          prefix="$"
           value={form.laborRate}
           unit={rateUnit}
           onChange={(value) => setForm((prev) => ({ ...prev, laborRate: value }))}
@@ -999,13 +1045,25 @@ function ProductFormFields({
       </FormField>
       <FormField label="Active">
         <select
-          value={form.isActive ? "true" : "false"}
-          onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.value === "true" }))}
+          value={canSetActiveTrue && form.isActive ? "true" : "false"}
+          onChange={(event) =>
+            setForm((prev) => ({
+              ...prev,
+              isActive: canSetActiveTrue && event.target.value === "true",
+            }))
+          }
           className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2"
         >
-          <option value="true">True</option>
+          <option value="true" disabled={!canSetActiveTrue}>
+            True
+          </option>
           <option value="false">False</option>
         </select>
+        {!canSetActiveTrue && (
+          <span className="text-xs text-[var(--foreground)]/70">
+            Fill internal or customer cost before setting Active to true.
+          </span>
+        )}
       </FormField>
     </div>
   )
