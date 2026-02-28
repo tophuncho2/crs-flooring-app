@@ -1,0 +1,3978 @@
+[
+  {
+    "id": "tblwqWMIn8umTUqQ8",
+    "name": "Analytics",
+    "primaryFieldId": "fldMQ6mrasuLSnB20",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldMQ6mrasuLSnB20",
+        "name": "Name"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldCsI0vzmi5NoWOX",
+          "fieldIdInLinkedTable": "fld3nlugSUBS3Az7B",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "percent",
+            "options": {
+              "precision": 2
+            }
+          }
+        },
+        "id": "fldZPeJaO2khE8Qkf",
+        "name": "Average Profit Margin"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldCsI0vzmi5NoWOX",
+          "fieldIdInLinkedTable": "fldekLCXL1rDXpV4O",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldYowm1YycBLalNS",
+        "name": "Locked Profit"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldCsI0vzmi5NoWOX",
+          "fieldIdInLinkedTable": "fldxWTN1gP3JJ8HfN",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldYOYXB6uAmMwdow",
+        "name": "Expenses"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldCsI0vzmi5NoWOX",
+          "fieldIdInLinkedTable": "fld1uUpETpIcVQ2lo",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldNRZl7iWG8K0L2x",
+        "name": "Revenue"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldPxGGAcfPacA4xJ"
+        },
+        "id": "fldCsI0vzmi5NoWOX",
+        "name": "Jobs"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwpjjuQsS7kugWR1",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblZzOlBpEYmSTz9r",
+    "name": "Checklist",
+    "primaryFieldId": "fldbjlLVaktwI6VWg",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldbjlLVaktwI6VWg",
+        "name": "Checklist Item"
+      },
+      {
+        "type": "checkbox",
+        "options": {
+          "icon": "check",
+          "color": "greenBright"
+        },
+        "id": "fldYTqqiVBlGalzWL",
+        "name": "Status"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldPZHdAQY61o8OQO",
+        "name": "Notes"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": true
+        },
+        "id": "fldT7WXnxhhDycPzb",
+        "name": "Attachments"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldeg021QP8m26UMA"
+        },
+        "id": "fldARnXqSif3tOrcG",
+        "name": "Job"
+      },
+      {
+        "type": "createdTime",
+        "options": {
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "America/New_York"
+            }
+          }
+        },
+        "id": "fldrwj5xLA2rdiUU9",
+        "name": "Created Time"
+      },
+      {
+        "type": "singleCollaborator",
+        "id": "fldrnQ0OXNExiTh8x",
+        "name": "Assigned To"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwWsOeEtZrheWQjU",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblM0inrrVwU0CFLk",
+    "name": "Jobs",
+    "primaryFieldId": "fldCVZUzlOfWRnSt8",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "TRIM(\n  IF(\n    LEN({fldmSLHy71Xc2MBwg} & \"\") > 0,\n    {fldmSLHy71Xc2MBwg},\n    \"\"\n  )\n  &\n  IF(\n    AND(\n      LEN({fldmSLHy71Xc2MBwg} & \"\") > 0,\n      LEN({fldat4YUJs6WwfTMI} & \"\") > 0\n    ),\n    \" - \",\n    \"\"\n  )\n  &\n  IF(\n    LEN({fldat4YUJs6WwfTMI} & \"\") > 0,\n    {fldat4YUJs6WwfTMI},\n    \"\"\n  )\n  &\n  IF(\n    LEN({fldf4DgIkgKMp8aCi} & \"\") > 0,\n    \" - \" & RIGHT(\"0000\" & {fldf4DgIkgKMp8aCi}, 4),\n    \"\"\n  )\n)",
+          "referencedFieldIds": [
+            "fldmSLHy71Xc2MBwg",
+            "fldat4YUJs6WwfTMI",
+            "fldf4DgIkgKMp8aCi"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldCVZUzlOfWRnSt8",
+        "name": "Job Name"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fld1uUpETpIcVQ2lo} + {fldI3FmV1bcdD5bTe}",
+          "referencedFieldIds": [
+            "fld1uUpETpIcVQ2lo",
+            "fldI3FmV1bcdD5bTe"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldz7ZAeNJpTlYXeH",
+        "name": "Running Budget"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selMRUW66RXp0ptyn",
+              "name": "Flagged",
+              "color": "grayLight1"
+            },
+            {
+              "id": "selpp9wfkhBbgabJA",
+              "name": "Pending Job",
+              "color": "greenLight2"
+            },
+            {
+              "id": "selYRwPz9f3DggxR7",
+              "name": "Active Contracts",
+              "color": "tealBright"
+            },
+            {
+              "id": "selSF5ErflJcex9Uy",
+              "name": "Awaiting Payment",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selts8nlRZLSIrbA7",
+              "name": "Pending Invoiced",
+              "color": "redBright"
+            },
+            {
+              "id": "sel6qZ4bCdkP8YMsU",
+              "name": "2026 Overhead",
+              "color": "blueDark1"
+            },
+            {
+              "id": "selvvtZfyH5CnHTL7",
+              "name": "Completed",
+              "color": "purpleBright"
+            }
+          ]
+        },
+        "id": "fldcjjZ2qdjL3Bjup",
+        "name": "Job Status"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldz7ZAeNJpTlYXeH} - {fldwSKjZCJLiK0k0B}",
+          "referencedFieldIds": [
+            "fldz7ZAeNJpTlYXeH",
+            "fldwSKjZCJLiK0k0B"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldcTG8vbHJz2lp8V",
+        "name": "Bill Remaining"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldRbKyrHDNnmICul",
+          "fieldIdInLinkedTable": "fldccbxGTgBQhBKcF",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldwSKjZCJLiK0k0B",
+        "name": "Revenue"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblOizItsf1jbMA8o",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldnfCZrmflwgIZxz"
+        },
+        "id": "fldmSLHy71Xc2MBwg",
+        "name": "Property Name"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldat4YUJs6WwfTMI",
+        "name": "Job Tag"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldMX90yRAambbiHB",
+        "name": "Property Info"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbltoMLmhXBb6HbdC",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldQzMd0GOvCdgKUg"
+        },
+        "id": "fldzNvu8yrSb7QOWT",
+        "name": "Unit / Level"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldnrixuc2ADJ8eHz",
+          "fieldIdInLinkedTable": "fldPjggV1HeJiEGRf",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fld5XtNFMedr1Hq5Q",
+        "name": "Pending Expenses"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fld5XtNFMedr1Hq5Q} + {fldxWTN1gP3JJ8HfN}",
+          "referencedFieldIds": [
+            "fld5XtNFMedr1Hq5Q",
+            "fldxWTN1gP3JJ8HfN"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldc8RLZ1QXmL6j2x",
+        "name": "Anticipated Expenditure"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldz7ZAeNJpTlYXeH} - {fldc8RLZ1QXmL6j2x}",
+          "referencedFieldIds": [
+            "fldz7ZAeNJpTlYXeH",
+            "fldc8RLZ1QXmL6j2x"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldQrcpRhDkjcskWk",
+        "name": "Anticipated Profit"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF(\n  {fldrYlwhSrQaO36iq} = \"Overhead Cost\",\n  0,\n  IF(\n    {fldz7ZAeNJpTlYXeH},\n    ({fldz7ZAeNJpTlYXeH} - {fldc8RLZ1QXmL6j2x}) / {fldz7ZAeNJpTlYXeH},\n    0\n  )\n)\n",
+          "referencedFieldIds": [
+            "fldrYlwhSrQaO36iq",
+            "fldz7ZAeNJpTlYXeH",
+            "fldc8RLZ1QXmL6j2x"
+          ],
+          "result": {
+            "type": "percent",
+            "options": {
+              "precision": 2
+            }
+          }
+        },
+        "id": "fld2XneHi4DVcwlMs",
+        "name": "Anticipated Margin"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF(\n  {fldrYlwhSrQaO36iq} = \"Overhead Cost\",\n  0,\n  IF(\n    {fldz7ZAeNJpTlYXeH},\n    ({fldz7ZAeNJpTlYXeH} - {fldxWTN1gP3JJ8HfN}) / {fldz7ZAeNJpTlYXeH},\n    0\n  )\n)\n",
+          "referencedFieldIds": [
+            "fldrYlwhSrQaO36iq",
+            "fldz7ZAeNJpTlYXeH",
+            "fldxWTN1gP3JJ8HfN"
+          ],
+          "result": {
+            "type": "percent",
+            "options": {
+              "precision": 2
+            }
+          }
+        },
+        "id": "fldaABXKXLGsFvHdt",
+        "name": "Current Margin"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldz7ZAeNJpTlYXeH} - {fldxWTN1gP3JJ8HfN}",
+          "referencedFieldIds": [
+            "fldz7ZAeNJpTlYXeH",
+            "fldxWTN1gP3JJ8HfN"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldRtcA5a1Pnuoz4Y",
+        "name": "Current Profit"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbl8qutwydRec9DGf",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldFLprcjPdx3sY8x"
+        },
+        "id": "fldnrixuc2ADJ8eHz",
+        "name": "Pending Payments"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fld1uUpETpIcVQ2lo",
+        "name": "Starting Budget"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fld6d8gU2W0mY76OJ",
+          "fieldIdInLinkedTable": "fld4jI6qRSRj7uEKu",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldxWTN1gP3JJ8HfN",
+        "name": "Expense Total"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "({fldz7ZAeNJpTlYXeH} * 0.3)",
+          "referencedFieldIds": [
+            "fldz7ZAeNJpTlYXeH"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldntUAsNzpwkAo3h",
+        "name": "30% of Budget"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhPPymZoAquKCHg",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldPdjrdbViKu5Flh"
+        },
+        "id": "fldQNGy150i5oNvEH",
+        "name": "General Contractor"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldHbLCczh8suTprZ",
+        "name": "On Site Contact"
+      },
+      {
+        "type": "phoneNumber",
+        "id": "fldn4TD8XxLhAGhVZ",
+        "name": "On Site Phone"
+      },
+      {
+        "type": "singleCollaborator",
+        "id": "flduWqV6xcZPnnaKO",
+        "name": "Billing Assignee"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldRR5lLbG9HToiy7",
+        "name": "Billing Info"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldaWOmjDeEDFiWix",
+        "name": "Change Order Files"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fld7BoizmxwA5bWwt",
+        "name": "Header File"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldguBosHJ7Jpjzhr",
+        "name": "Job Files"
+      },
+      {
+        "type": "url",
+        "id": "fldZEiTRHh6Q8WI59",
+        "name": "Docusketch"
+      },
+      {
+        "type": "url",
+        "id": "fldKVLEuzigKCwDaD",
+        "name": "Full Job File"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selmXAtxJgZcfgiZa",
+              "name": "Construction",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selcSdXGZ9uvvpPEt",
+              "name": "Overhead Cost",
+              "color": "grayDark1"
+            }
+          ]
+        },
+        "id": "fldrYlwhSrQaO36iq",
+        "name": "Job Type"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblwqWMIn8umTUqQ8",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldCsI0vzmi5NoWOX"
+        },
+        "id": "fldPxGGAcfPacA4xJ",
+        "name": "Analytics"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF(\n  {fldcjjZ2qdjL3Bjup} = \"Completed\",\n  IF(\n    {fldrYlwhSrQaO36iq} = \"Overhead Cost\",\n    0,\n    {fldz7ZAeNJpTlYXeH} - {fldxWTN1gP3JJ8HfN}\n  ),\n  0\n)\n",
+          "referencedFieldIds": [
+            "fldcjjZ2qdjL3Bjup",
+            "fldrYlwhSrQaO36iq",
+            "fldz7ZAeNJpTlYXeH",
+            "fldxWTN1gP3JJ8HfN"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldekLCXL1rDXpV4O",
+        "name": "Final Profit"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF(\n  {fldcjjZ2qdjL3Bjup} = \"Completed\",\n  {fldaABXKXLGsFvHdt},\n  0\n)",
+          "referencedFieldIds": [
+            "fldcjjZ2qdjL3Bjup",
+            "fldaABXKXLGsFvHdt"
+          ],
+          "result": {
+            "type": "percent",
+            "options": {
+              "precision": 2
+            }
+          }
+        },
+        "id": "fld3nlugSUBS3Az7B",
+        "name": "Final Margin",
+        "description": "Shows Current Margin if Job Status is Completed, otherwise returns 0."
+      },
+      {
+        "type": "autoNumber",
+        "id": "fldf4DgIkgKMp8aCi",
+        "name": "Job Count"
+      },
+      {
+        "type": "createdTime",
+        "options": {
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "client"
+            }
+          }
+        },
+        "id": "fldHgv3jd0K533pb3",
+        "name": "Created Time"
+      },
+      {
+        "type": "multipleCollaborators",
+        "id": "fld5h5Ew7FBRJELNp",
+        "name": "CRS Job Tagger"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblIqKGnh4y1E0QkW",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldfLFE32GUkvjbMe"
+        },
+        "id": "fldXryKlVThqbZrlg",
+        "name": "Form Request"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld56Y72cGYnh3T3D"
+        },
+        "id": "fldLgtRGh3blSuIpi",
+        "name": "CRS Manager"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldLgtRGh3blSuIpi",
+          "fieldIdInLinkedTable": "fldY4iWWaj28LkdX6",
+          "result": {
+            "type": "email"
+          }
+        },
+        "id": "fldhUYxyAAHcNmSgc",
+        "name": "CRS Manager Email"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblxE6ZeJffn0us6R",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldNT0KOiWfeOsSpK"
+        },
+        "id": "fldRbKyrHDNnmICul",
+        "name": "Payments Received"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldmSLHy71Xc2MBwg}",
+          "referencedFieldIds": [
+            "fldmSLHy71Xc2MBwg"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldYFojaNCGIc4nst",
+        "name": "Property"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblpLYrCw939zyyBd",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld8elipWum64Ba7Y"
+        },
+        "id": "fldyTNyyo1empAwXZ",
+        "name": "Budget Increase"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldyTNyyo1empAwXZ",
+          "fieldIdInLinkedTable": "fldPizRQdz9pQVVEm",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldI3FmV1bcdD5bTe",
+        "name": "Budget Increase Total"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldz7ZAeNJpTlYXeH} - {fldc8RLZ1QXmL6j2x}",
+          "referencedFieldIds": [
+            "fldz7ZAeNJpTlYXeH",
+            "fldc8RLZ1QXmL6j2x"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fld82BSPgsbWPBnJ0",
+        "name": "Budget Remaining"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblZzOlBpEYmSTz9r",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldARnXqSif3tOrcG"
+        },
+        "id": "fldeg021QP8m26UMA",
+        "name": "Checklist"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldpbpVpEw0fWYC0X",
+          "fieldIdInLinkedTable": "fldjeJK30ScwSttcx",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "percent",
+            "options": {
+              "precision": 0
+            }
+          }
+        },
+        "id": "fldKa1Mejl7WcJ0sz",
+        "name": "Progress Bar"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldCnYP5FWjTpTPFw"
+        },
+        "id": "fldGBYmwSORNHTuQg",
+        "name": "Vendors"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhbObjLN3dU5nhy",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldxoqnyN4GXOpqdw"
+        },
+        "id": "fld6d8gU2W0mY76OJ",
+        "name": "Expense Tracking"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldmSLHy71Xc2MBwg",
+          "fieldIdInLinkedTable": "fldFRdjKHvM2SccuU",
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldGCyxLmIIkNOwxt",
+        "name": "Address"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbljXgR5Xu9e4vukw",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldw173qVngd7dqNK"
+        },
+        "id": "fldqOqLsIDqlCYjBY",
+        "name": "Receipt Inbox"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldwlcSckhkSfORoE",
+        "name": "Forms"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": false,
+          "recordLinkFieldId": "fldwlcSckhkSfORoE",
+          "fieldIdInLinkedTable": null,
+          "result": null
+        },
+        "id": "fldyPUGvI9WjHpemf",
+        "name": "Form Type"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": false,
+          "formula": "(\n  LEN(\",\" & ARRAYJOIN({fldyPUGvI9WjHpemf}, \",\") & \",\") -\n  LEN(\n    SUBSTITUTE(\n      \",\" & ARRAYJOIN({fldyPUGvI9WjHpemf}, \",\") & \",\",\n      \",Form Response,\",\n      \",\"\n    )\n  )\n) / LEN(\",Form Response,\")\n",
+          "referencedFieldIds": [],
+          "result": null
+        },
+        "id": "fldFWgvMTxUKsSj8N",
+        "name": "Responses"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "\", \" & ARRAYJOIN({fldGBYmwSORNHTuQg}, \", \") & \", \"\n",
+          "referencedFieldIds": [
+            "fldGBYmwSORNHTuQg"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldWuv0RCABKNRi7F",
+        "name": "Vendors Formula"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldHvwP7LjD9gimrV"
+        },
+        "id": "fldpbpVpEw0fWYC0X",
+        "name": "Job Scopes"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblgedzIIiPTMGG6V",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldHoN3iSksbdxJ9V"
+        },
+        "id": "fldUM5DJFtsTDgBm1",
+        "name": "Sub-Contractor Agreements"
+      },
+      {
+        "type": "rollup",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldpbpVpEw0fWYC0X",
+          "fieldIdInLinkedTable": "flddnTrQk7FfBMEZG",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "number",
+            "options": {
+              "precision": 0
+            }
+          }
+        },
+        "id": "fldZ4VA1jIHEidlLv",
+        "name": "Status Rollup (from Job Scopes)"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwy0miArvAzf2ZO8",
+        "name": "Grid view",
+        "type": "grid"
+      },
+      {
+        "id": "viw6l1zUQsDR78EP3",
+        "name": "Form sort",
+        "type": "grid"
+      },
+      {
+        "id": "viwp2IMHM2OfTC1Ct",
+        "name": "Import",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblaaBRr0HhQpZ1ZD",
+    "name": "Job Scopes",
+    "primaryFieldId": "fldDADaGhAkc7wAc2",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldgDUfqWD1g6SdIS} & \" - \" & {fld8V37aziZoPxbqn}",
+          "referencedFieldIds": [
+            "fldgDUfqWD1g6SdIS",
+            "fld8V37aziZoPxbqn"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldDADaGhAkc7wAc2",
+        "name": "Scope"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblbrLZTGgQx1iWU8",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldFHVmTA2sSLu9xt"
+        },
+        "id": "fldgDUfqWD1g6SdIS",
+        "name": "Service"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbltoMLmhXBb6HbdC",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldWToL0V0TGDsLz7"
+        },
+        "id": "fldPzHJrANSZ0xwEh",
+        "name": "Unit / Level"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblowlUSeNCITIDwd",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldstH9cTvsIxjzWT"
+        },
+        "id": "fldpdwP1fq34OzdR6",
+        "name": "Room"
+      },
+      {
+        "type": "multipleSelects",
+        "options": {
+          "choices": [
+            {
+              "id": "sel4uVyouZSMBDPb3",
+              "name": "Material",
+              "color": "orangeLight2"
+            },
+            {
+              "id": "sellx4E2LqNHU7FOw",
+              "name": "Labor",
+              "color": "yellowLight2"
+            },
+            {
+              "id": "selxJIkmBZ90oENjQ",
+              "name": "Deposit",
+              "color": "pinkBright"
+            },
+            {
+              "id": "selGCn9Q1WgosElNl",
+              "name": "Rental",
+              "color": "orangeLight1"
+            },
+            {
+              "id": "sel2PFxlf8qvqlv7T",
+              "name": "Planning",
+              "color": "grayBright"
+            },
+            {
+              "id": "selSIjnTKS4t2dmDe",
+              "name": "Final Deposit",
+              "color": "blueLight1"
+            }
+          ]
+        },
+        "id": "fldKPvj509G6jOQeC",
+        "name": "Type"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "sellJ1lkYG3XV18w0",
+              "name": "Occupied",
+              "color": "yellowLight1"
+            },
+            {
+              "id": "selHMNgv4WRVVKOM2",
+              "name": "Vacant",
+              "color": "greenLight1"
+            }
+          ]
+        },
+        "id": "fld8XE6moMjQViywl",
+        "name": "Vancancy"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldRZhiJnGRh9Xcks"
+        },
+        "id": "fld8V37aziZoPxbqn",
+        "name": "Vendor"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldRuyain06r11zys",
+        "name": "Notes"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF({flddnTrQk7FfBMEZG}, 1, 0)\n",
+          "referencedFieldIds": [
+            "flddnTrQk7FfBMEZG"
+          ],
+          "result": {
+            "type": "number",
+            "options": {
+              "precision": 0
+            }
+          }
+        },
+        "id": "fldjeJK30ScwSttcx",
+        "name": "Task Progress"
+      },
+      {
+        "type": "checkbox",
+        "options": {
+          "icon": "check",
+          "color": "greenBright"
+        },
+        "id": "flddnTrQk7FfBMEZG",
+        "name": "Status"
+      },
+      {
+        "type": "date",
+        "options": {
+          "dateFormat": {
+            "name": "friendly",
+            "format": "LL"
+          }
+        },
+        "id": "fldDUcNvFFZJAkhaX",
+        "name": "Start date"
+      },
+      {
+        "type": "date",
+        "options": {
+          "dateFormat": {
+            "name": "friendly",
+            "format": "LL"
+          }
+        },
+        "id": "fldYUn7xsXR05rc8s",
+        "name": "End date"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldR3nEQtbElvu4aD",
+        "name": "Price"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 2
+        },
+        "id": "fldJYmq3K0UyUtPLq",
+        "name": "Unit"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldR3nEQtbElvu4aD} * ({fldJYmq3K0UyUtPLq})",
+          "referencedFieldIds": [
+            "fldR3nEQtbElvu4aD",
+            "fldJYmq3K0UyUtPLq"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fld5APlwV9oV0w5bb",
+        "name": "Estimated Rehab Budget"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldEpucJnniCaGIau",
+        "name": "Contracted Cost"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblDLvo9D75IXH8hJ",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldMhucklBiieC6MW"
+        },
+        "id": "fldhC4R2XPMuNRcuY",
+        "name": "Bids"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldl73hZr3bhKItVT",
+        "name": "Job Scope Files"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldpbpVpEw0fWYC0X"
+        },
+        "id": "fldHvwP7LjD9gimrV",
+        "name": "Job"
+      },
+      {
+        "type": "lastModifiedTime",
+        "options": {
+          "isValid": true,
+          "referencedFieldIds": [],
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "client"
+            }
+          }
+        },
+        "id": "fld9aLu0CoV00HUvl",
+        "name": "Last Modified"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 0
+        },
+        "id": "fldPOJyQ1P7tw6eMp",
+        "name": "Estimated Duration"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldaNGGh2UXhYrM3g",
+          "viewIdForRecordSelection": "viwHTagkwD94dDR8p"
+        },
+        "id": "fldHH6OefKG3UBwYa",
+        "name": "Dependencies"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldHH6OefKG3UBwYa"
+        },
+        "id": "fldaNGGh2UXhYrM3g",
+        "name": "From field: Dependencies"
+      },
+      {
+        "type": "createdBy",
+        "id": "fldAMjMyJhMXa8FDM",
+        "name": "Created By"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblgedzIIiPTMGG6V",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldeyDrtPEehMIOni"
+        },
+        "id": "fldK5FL7CY4XmIyJM",
+        "name": "Sub-Contractor Agreements"
+      }
+    ],
+    "views": [
+      {
+        "id": "viw8ySEkum0S9eXzf",
+        "name": "Grid view",
+        "type": "grid"
+      },
+      {
+        "id": "viwu2mCVhRY0LzZEh",
+        "name": "Import",
+        "type": "grid"
+      },
+      {
+        "id": "viwI6oJSYw3onXE8Q",
+        "name": "Chart",
+        "type": "timeline"
+      },
+      {
+        "id": "viwHTagkwD94dDR8p",
+        "name": "Gantt",
+        "type": "block"
+      }
+    ]
+  },
+  {
+    "id": "tblIqKGnh4y1E0QkW",
+    "name": "Request Labor Pay",
+    "primaryFieldId": "fldbQMZCyXBnmxpxl",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldLD2gMBuWqQNtkZ}",
+          "referencedFieldIds": [
+            "fldLD2gMBuWqQNtkZ"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldbQMZCyXBnmxpxl",
+        "name": "Label"
+      },
+      {
+        "type": "autoNumber",
+        "id": "flduU4DfJpoJz04a3",
+        "name": "#"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selj7eq8zDj8KneRT",
+              "name": "Pending",
+              "color": "cyanBright"
+            },
+            {
+              "id": "selhTSIVaYi8zvmlj",
+              "name": "Prepare",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selgQKxoQJv9d0eZl",
+              "name": "Filed",
+              "color": "grayDark1"
+            },
+            {
+              "id": "selkCKdpRtRazSYrc",
+              "name": "Paid",
+              "color": "greenLight1"
+            }
+          ]
+        },
+        "id": "fld0n50oCGmdA5r0X",
+        "name": "File Stage"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selNsU9FgcxZMUvun",
+              "name": "Request Labor Payment",
+              "color": "blueBright"
+            }
+          ]
+        },
+        "id": "fldLD2gMBuWqQNtkZ",
+        "name": "Status"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fld3rsTB4XJVAum0f",
+        "name": "Invoice"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldLuk8n7kNIbzVXU",
+        "name": "Company Name"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldwHg8QaH6YymogU",
+        "name": "Job Name"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldpKHZeEnnCg2oTL",
+        "name": "Notes"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldpjwtMKyVwKvTvW",
+        "name": "Price"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldXryKlVThqbZrlg"
+        },
+        "id": "fldfLFE32GUkvjbMe",
+        "name": "Job"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldpfq7FE38soY1FL"
+        },
+        "id": "fldGbcW6QFgz4y0LG",
+        "name": "Vendor"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldGbcW6QFgz4y0LG",
+          "fieldIdInLinkedTable": "fldu0i2Edu7Z5iLY3",
+          "result": {
+            "type": "phoneNumber"
+          }
+        },
+        "id": "fldbkPGiNiqbjVrFW",
+        "name": "Phone"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldGbcW6QFgz4y0LG",
+          "fieldIdInLinkedTable": "fldY4iWWaj28LkdX6",
+          "result": {
+            "type": "email"
+          }
+        },
+        "id": "fldGF8MLuG3BDCfzF",
+        "name": "Email"
+      },
+      {
+        "type": "date",
+        "options": {
+          "dateFormat": {
+            "name": "local",
+            "format": "l"
+          }
+        },
+        "id": "fldQwtosrAuLnWtjd",
+        "name": "Date"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldfLFE32GUkvjbMe}",
+          "referencedFieldIds": [
+            "fldfLFE32GUkvjbMe"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldht4DNGP5gUIDIr",
+        "name": "Job Tag"
+      },
+      {
+        "type": "lastModifiedTime",
+        "options": {
+          "isValid": true,
+          "referencedFieldIds": [],
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "client"
+            }
+          }
+        },
+        "id": "fldXVYeevKLMnKp6D",
+        "name": "Last Modified"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldfLFE32GUkvjbMe",
+          "fieldIdInLinkedTable": "fldhUYxyAAHcNmSgc",
+          "result": {
+            "type": "email"
+          }
+        },
+        "id": "fldsgR9L8O0RmLHXJ",
+        "name": "CRS Manager Email"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selNsU9FgcxZMUvun",
+              "name": "First Deposit",
+              "color": "greenLight2"
+            },
+            {
+              "id": "selMDi7IxEjRYEyuw",
+              "name": "2nd Deposit",
+              "color": "greenLight1"
+            },
+            {
+              "id": "seluc4u3ixhM8fmAG",
+              "name": "3rd Deposit",
+              "color": "greenBright"
+            },
+            {
+              "id": "selQw4Tf67y9htrgL",
+              "name": "Final Pay",
+              "color": "greenDark1"
+            }
+          ]
+        },
+        "id": "fldgMbnS6VQKPnrkt",
+        "name": "Deposit Type"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblgedzIIiPTMGG6V",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld1NGRxwvEPletox"
+        },
+        "id": "fldYsjx5GA8oqN4Ly",
+        "name": "Sub-Contractor Agreements"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldGbcW6QFgz4y0LG}",
+          "referencedFieldIds": [
+            "fldGbcW6QFgz4y0LG"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldQevXQnm4aMC39X",
+        "name": "Contractor"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwGO1tgLJh3ofMUy",
+        "name": "Grid view",
+        "type": "grid"
+      },
+      {
+        "id": "viwgmxyOfTkzCYtt9",
+        "name": "Chart",
+        "type": "timeline"
+      },
+      {
+        "id": "viwf9j5gN0qfsEGtI",
+        "name": "Gantt",
+        "type": "block"
+      }
+    ]
+  },
+  {
+    "id": "tbl8qutwydRec9DGf",
+    "name": "Pending Paymets",
+    "primaryFieldId": "fldBQwMLP6UAUGcTE",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "\"$\" & {fldPjggV1HeJiEGRf}",
+          "referencedFieldIds": [
+            "fldPjggV1HeJiEGRf"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldBQwMLP6UAUGcTE",
+        "name": "Pending Pay"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "\"$\" & {fldPjggV1HeJiEGRf} & \" - \" & {fld6bWJf7OzMCHN7Z}",
+          "referencedFieldIds": [
+            "fldPjggV1HeJiEGRf",
+            "fld6bWJf7OzMCHN7Z"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fld5I6hn4VayAfaCi",
+        "name": "Pending Pay Tag"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldPjggV1HeJiEGRf",
+        "name": "Price"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selNsU9FgcxZMUvun",
+              "name": "Pending Payment",
+              "color": "pinkBright"
+            },
+            {
+              "id": "selMDi7IxEjRYEyuw",
+              "name": "Complete",
+              "color": "greenDark1"
+            }
+          ]
+        },
+        "id": "fldbDM3VSDfDoWgGi",
+        "name": "Status"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selNsU9FgcxZMUvun",
+              "name": "First Deposit",
+              "color": "greenLight2"
+            },
+            {
+              "id": "selMDi7IxEjRYEyuw",
+              "name": "2nd Deposit",
+              "color": "greenLight1"
+            },
+            {
+              "id": "seluc4u3ixhM8fmAG",
+              "name": "3rd Deposit",
+              "color": "greenBright"
+            },
+            {
+              "id": "selQw4Tf67y9htrgL",
+              "name": "Final Pay",
+              "color": "greenDark1"
+            }
+          ]
+        },
+        "id": "fldGMVa1n49XnweGM",
+        "name": "Deposit Type"
+      },
+      {
+        "type": "percent",
+        "options": {
+          "precision": 0
+        },
+        "id": "fldmRPLGO0PZ6maOt",
+        "name": "Completion % Required"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldPfaUOVcrFW7O14"
+        },
+        "id": "fld6bWJf7OzMCHN7Z",
+        "name": "Vendor"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldPKrMnVwGPObbf4",
+        "name": "Notes"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldjnWT4ZzLFxS5Cv",
+        "name": "Files"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldnrixuc2ADJ8eHz"
+        },
+        "id": "fldFLprcjPdx3sY8x",
+        "name": "Job"
+      },
+      {
+        "type": "lastModifiedTime",
+        "options": {
+          "isValid": true,
+          "referencedFieldIds": [],
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "client"
+            }
+          }
+        },
+        "id": "fld7qE65aUvoNRwcX",
+        "name": "Last Modified"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldbu4Vwot6VJIIjd",
+        "name": "Your Name"
+      },
+      {
+        "type": "createdBy",
+        "id": "fldi0QGK6oUvkS6fd",
+        "name": "Created By"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF(\n  {fldbDM3VSDfDoWgGi} = \"Pending\",\n  0,\n  SWITCH(\n    {fldbDM3VSDfDoWgGi},\n    \"In Progress\", 0.25,\n    \"Pending Payment\", 0.5,\n    \"Complete\", 1,\n    0\n  )\n)\n\n\n",
+          "referencedFieldIds": [
+            "fldbDM3VSDfDoWgGi"
+          ],
+          "result": {
+            "type": "number",
+            "options": {
+              "precision": 2
+            }
+          }
+        },
+        "id": "fldhuCm8yoMUFD5T9",
+        "name": "Task Progress"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblgedzIIiPTMGG6V",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldrNqEGNEX2TngKQ"
+        },
+        "id": "fldos3keXJrBYWR7R",
+        "name": "Sub-Contractor Agreements"
+      }
+    ],
+    "views": [
+      {
+        "id": "viw6OLgp2SAgWozgR",
+        "name": "Grid view",
+        "type": "grid"
+      },
+      {
+        "id": "viwGmhlXw2DMa7gPs",
+        "name": "Chart",
+        "type": "timeline"
+      },
+      {
+        "id": "viwF93Sp49Js0NtP1",
+        "name": "Gantt",
+        "type": "block"
+      }
+    ]
+  },
+  {
+    "id": "tbljXgR5Xu9e4vukw",
+    "name": "Receipt Inbox",
+    "primaryFieldId": "fldBWPQoI82OUfJE1",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "\"$\" & {fld04cIW0K6OsIXSi} & \" - \" & {fldONHaXXkDEPO5mt}",
+          "referencedFieldIds": [
+            "fld04cIW0K6OsIXSi",
+            "fldONHaXXkDEPO5mt"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldBWPQoI82OUfJE1",
+        "name": "Receipt",
+        "description": "Not all expenses enter the system through the receipt inbox."
+      },
+      {
+        "type": "checkbox",
+        "options": {
+          "icon": "thumbsUp",
+          "color": "blueBright"
+        },
+        "id": "fld2KX0f1jHp3QTti",
+        "name": "Confirmed"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selfwUjxdAKVvHsiO",
+              "name": "Approved",
+              "color": "tealBright"
+            },
+            {
+              "id": "selFA65lUAfM0UlNO",
+              "name": "Denied",
+              "color": "redBright"
+            },
+            {
+              "id": "selzOtuOco8exP8AR",
+              "name": "Pending",
+              "color": "greenBright"
+            },
+            {
+              "id": "selatNBCQ76RyXxWy",
+              "name": "Confirm Price",
+              "color": "purpleLight1"
+            },
+            {
+              "id": "sel1ksBFbvwyZGguZ",
+              "name": "Flag",
+              "color": "cyanBright"
+            }
+          ]
+        },
+        "id": "fldiXqOJVnim1zByd",
+        "name": "Approval"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fld04cIW0K6OsIXSi",
+        "name": "Total Cost"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldFGiJzyaAC7H2l9",
+        "name": "PO / Job Name"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldqOqLsIDqlCYjBY"
+        },
+        "id": "fldw173qVngd7dqNK",
+        "name": "Job Name"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selgGlpot4CdP0ZYy",
+              "name": "Home Depot",
+              "color": "orangeBright"
+            },
+            {
+              "id": "sel7QXawSBAlztW02",
+              "name": "Sherwin-Williams",
+              "color": "cyanBright"
+            }
+          ]
+        },
+        "id": "fldONHaXXkDEPO5mt",
+        "name": "Store"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldYFlfaPKIsP4sEg",
+        "name": "Notes"
+      },
+      {
+        "type": "button",
+        "id": "fldEBGjRBzmAhVMIQ",
+        "name": "Receipt PDF"
+      },
+      {
+        "type": "button",
+        "id": "fldO8v1yjUGTHXVJs",
+        "name": "Receipt Download"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldfRIXTnGlqWtNYX",
+        "name": "Store #"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fld97y3EGVZOf0QDG",
+        "name": "Payment Method"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldbHiWuRZn3Nzy0t",
+        "name": "Images"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldyPquqeTVdP02sm",
+        "name": "Receipt #"
+      },
+      {
+        "type": "date",
+        "options": {
+          "dateFormat": {
+            "name": "local",
+            "format": "l"
+          }
+        },
+        "id": "fldfFPxWGxUeMSsCr",
+        "name": "Purchase Date"
+      },
+      {
+        "type": "lastModifiedTime",
+        "options": {
+          "isValid": true,
+          "referencedFieldIds": [],
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "client"
+            }
+          }
+        },
+        "id": "fldOQ8R1E2ZNNbZyz",
+        "name": "Last Modified"
+      },
+      {
+        "type": "createdTime",
+        "options": {
+          "result": {
+            "type": "dateTime",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              },
+              "timeFormat": {
+                "name": "12hour",
+                "format": "h:mma"
+              },
+              "timeZone": "client"
+            }
+          }
+        },
+        "id": "fldeX5Dbd3n8JkT7R",
+        "name": "Created Time"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "RECORD_ID()",
+          "referencedFieldIds": [],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fld329935SuVOcc9H",
+        "name": "Record ID"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhbObjLN3dU5nhy",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldx1fA1ZmolyAjpd"
+        },
+        "id": "fld94bxYwGTmNXVUa",
+        "name": "Expenses"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldMMUJVxhMKTuQNI",
+        "name": "Store Address"
+      },
+      {
+        "type": "singleCollaborator",
+        "id": "fldo3eiKhMMT0xsIv",
+        "name": "Tagger"
+      },
+      {
+        "type": "url",
+        "id": "fldKENEpe95CuAkUw",
+        "name": "View Receipt PDF"
+      },
+      {
+        "type": "url",
+        "id": "fld9hK6YIbzKGnHEi",
+        "name": "Receipt PDF Download"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwDGhIViHJjJaBTn",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblhbObjLN3dU5nhy",
+    "name": "Expenses",
+    "primaryFieldId": "fldKuLYzjNAwtA5SM",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "\"$\" & {fld4jI6qRSRj7uEKu} & \" - \" & {fldr2CAWaGiXpNuDd}",
+          "referencedFieldIds": [
+            "fld4jI6qRSRj7uEKu",
+            "fldr2CAWaGiXpNuDd"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldKuLYzjNAwtA5SM",
+        "name": "Expense"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fld4jI6qRSRj7uEKu",
+        "name": "Payment"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "sellBnZhsUGMGQZXI",
+              "name": "Flag",
+              "color": "grayLight1"
+            },
+            {
+              "id": "selxfoE9CCY83YX5z",
+              "name": "Material",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selZ0y2jKKLx7ld0z",
+              "name": "Labor",
+              "color": "blueBright"
+            },
+            {
+              "id": "selM8o9i616LD0wnN",
+              "name": "Return",
+              "color": "greenBright"
+            },
+            {
+              "id": "sel2EfNwY6uY2TLBH",
+              "name": "Overhead",
+              "color": "yellowDark1"
+            },
+            {
+              "id": "selGRlrb6Kz9yQ8ZE",
+              "name": "Storage",
+              "color": "grayLight1"
+            },
+            {
+              "id": "seldiDQd1U3zDy6jA",
+              "name": "Rental",
+              "color": "purpleLight1"
+            }
+          ]
+        },
+        "id": "fldGT15R0ZnYwxEbE",
+        "name": "Expense Type"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldPoeI59hU2bYlB3"
+        },
+        "id": "fldr2CAWaGiXpNuDd",
+        "name": "Vendor"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldBf7gzLKUaRAfiv",
+        "name": "Notes"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldhcLEFayc87Thnc",
+        "name": "Receipt Number"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "sel0HAHFiUUvClwwb",
+              "name": "Partial Payment",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selgrd17U7R1FNhNN",
+              "name": "Full Payment",
+              "color": "tealBright"
+            },
+            {
+              "id": "selTJwSeEeyk2Im2p",
+              "name": "Final Payment",
+              "color": "blueLight2"
+            },
+            {
+              "id": "selrSUrNbwRmGkbmz",
+              "name": "Initial Payment",
+              "color": "greenBright"
+            }
+          ]
+        },
+        "id": "fld1k203WTlT0oiij",
+        "name": "Payment Type"
+      },
+      {
+        "type": "date",
+        "options": {
+          "dateFormat": {
+            "name": "iso",
+            "format": "YYYY-MM-DD"
+          }
+        },
+        "id": "fldIZsS5hL1NZmeth",
+        "name": "Payment Date"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldCBjElCUsPNG9Sn",
+        "name": "Files"
+      },
+      {
+        "type": "url",
+        "id": "fldccgJK2FxYnhlmn",
+        "name": "Receipt URL"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fld6d8gU2W0mY76OJ"
+        },
+        "id": "fldxoqnyN4GXOpqdw",
+        "name": "Jobs"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbljXgR5Xu9e4vukw",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld94bxYwGTmNXVUa"
+        },
+        "id": "fldx1fA1ZmolyAjpd",
+        "name": "Receipt Inbox"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fld3VVDDbTm43XVKq",
+        "name": "Store Address"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldUvRd6bTS7dq5bX",
+        "name": "Payment Method"
+      },
+      {
+        "type": "createdTime",
+        "options": {
+          "result": {
+            "type": "date",
+            "options": {
+              "dateFormat": {
+                "name": "local",
+                "format": "l"
+              }
+            }
+          }
+        },
+        "id": "fldDJoN8yOZYe6bpI",
+        "name": "Created Time"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": false,
+          "recordLinkFieldId": "fldxoqnyN4GXOpqdw",
+          "fieldIdInLinkedTable": null,
+          "result": null
+        },
+        "id": "fldM72yKaJKX8JVmD",
+        "name": "Dud Job Name"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldxoqnyN4GXOpqdw",
+          "fieldIdInLinkedTable": "fldcjjZ2qdjL3Bjup",
+          "result": {
+            "type": "singleSelect",
+            "options": {
+              "choices": [
+                {
+                  "id": "selMRUW66RXp0ptyn",
+                  "name": "Flagged",
+                  "color": "grayLight1"
+                },
+                {
+                  "id": "selpp9wfkhBbgabJA",
+                  "name": "Pending Job",
+                  "color": "greenLight2"
+                },
+                {
+                  "id": "selYRwPz9f3DggxR7",
+                  "name": "Active Contracts",
+                  "color": "tealBright"
+                },
+                {
+                  "id": "selSF5ErflJcex9Uy",
+                  "name": "Awaiting Payment",
+                  "color": "yellowBright"
+                },
+                {
+                  "id": "selts8nlRZLSIrbA7",
+                  "name": "Pending Invoiced",
+                  "color": "redBright"
+                },
+                {
+                  "id": "sel6qZ4bCdkP8YMsU",
+                  "name": "2026 Overhead",
+                  "color": "blueDark1"
+                },
+                {
+                  "id": "selvvtZfyH5CnHTL7",
+                  "name": "Completed",
+                  "color": "purpleBright"
+                }
+              ]
+            }
+          }
+        },
+        "id": "fldv95oupjZLo2mP3",
+        "name": "Lookup Status"
+      }
+    ],
+    "views": [
+      {
+        "id": "viws7hGkE6f9JVL9k",
+        "name": "Grid view",
+        "type": "grid"
+      },
+      {
+        "id": "viw06IiydMq7loOYQ",
+        "name": "Import",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblDLvo9D75IXH8hJ",
+    "name": "Bids",
+    "primaryFieldId": "fldc1V3VRV7UuAbsw",
+    "fields": [
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldc1V3VRV7UuAbsw",
+        "name": "Bid"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldc1V3VRV7UuAbsw} & \" \" & {fld8FHIxmUf9ZoBmF}",
+          "referencedFieldIds": [
+            "fldc1V3VRV7UuAbsw",
+            "fld8FHIxmUf9ZoBmF"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldG7Zvy7Q59HzgDR",
+        "name": "Bid Label"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld3I7BTE34fSkDmK"
+        },
+        "id": "fld8FHIxmUf9ZoBmF",
+        "name": "Vendor"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldKxnOpT7SG1MIty",
+        "name": "Job Scopes"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldTrh971mCVxslaD",
+        "name": "Job Scopes copy"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldL2JbBq8IVjBado",
+        "name": "Job Scopes copy"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldhC4R2XPMuNRcuY"
+        },
+        "id": "fldMhucklBiieC6MW",
+        "name": "Job Scopes copy"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwC5AuMVf30sAO1r",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tbloqDJBnVlBPfQe5",
+    "name": "Vendors",
+    "primaryFieldId": "fldY0fXnH64HH8bFb",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldY0fXnH64HH8bFb",
+        "name": "Company Name"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "sel4OGRvTpW4XLXZ8",
+              "name": "CRS",
+              "color": "tealBright"
+            },
+            {
+              "id": "selsYV605kcOIidAZ",
+              "name": "Labor Vendor",
+              "color": "blueBright"
+            },
+            {
+              "id": "selfjEg3X5WU2ZTHe",
+              "name": "Material Vendor",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selkIOOX5K8tdpPd4",
+              "name": "Job Vendor",
+              "color": "greenBright"
+            },
+            {
+              "id": "seletMZcCnQIs7jz2",
+              "name": "Rental Vendor",
+              "color": "pinkLight1"
+            },
+            {
+              "id": "selKs0uIp3sNvgLWJ",
+              "name": "Platform",
+              "color": "redBright"
+            }
+          ]
+        },
+        "id": "fldoVjiPe1pdPl2re",
+        "name": "Type"
+      },
+      {
+        "type": "phoneNumber",
+        "id": "fldu0i2Edu7Z5iLY3",
+        "name": "Main Phone Number"
+      },
+      {
+        "type": "email",
+        "id": "fldY4iWWaj28LkdX6",
+        "name": "Main Email"
+      },
+      {
+        "type": "url",
+        "id": "fldzCow8sxrq2AeP0",
+        "name": "Website"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldVKAX2hjbQUS2yr",
+        "name": "Sub Contractor Master Agreement"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblh1V9iNu51AU9Kk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldKzXK98BJdTJlcb"
+        },
+        "id": "fldPK14CqZNIOFXuI",
+        "name": "Accounts"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhPPymZoAquKCHg",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld8uwxpNiDMwicSt"
+        },
+        "id": "fldyAy6gcOJJZKvB3",
+        "name": "Contacts"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblOizItsf1jbMA8o",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldUaHBA2dlmgkNCa"
+        },
+        "id": "fld40UHBEmUnJflrH",
+        "name": "Properties"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldMTDy0rX9wZlBVM",
+        "name": "Sub-Agreement"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldY94fw3rbUsNrI9",
+        "name": "Form Responses"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldY0fXnH64HH8bFb}",
+          "referencedFieldIds": [
+            "fldY0fXnH64HH8bFb"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldXBcnTCsh3N4QER",
+        "name": "Vendor Formula"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "IF(\n  LEN({fldXBcnTCsh3N4QER} & \"\") > 0,\n  \"https://airtable.com/appvxIhoteTl9cyCT/pagcVCvwr6JRnnyiL/form\" &\n  \"?prefill_Vendor%20Name=\" & ENCODE_URL_COMPONENT({fldXBcnTCsh3N4QER}),\n  \"\"\n)\n",
+          "referencedFieldIds": [
+            "fldXBcnTCsh3N4QER"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fld9QSnxJlz1Azuc3",
+        "name": "Form URL"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbl8qutwydRec9DGf",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld6bWJf7OzMCHN7Z"
+        },
+        "id": "fldPfaUOVcrFW7O14",
+        "name": "Job Scopes"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhbObjLN3dU5nhy",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldr2CAWaGiXpNuDd"
+        },
+        "id": "fldPoeI59hU2bYlB3",
+        "name": "Expenses"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblDLvo9D75IXH8hJ",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld8FHIxmUf9ZoBmF"
+        },
+        "id": "fld3I7BTE34fSkDmK",
+        "name": "Bids"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblMHHwpkPxMBLsMB",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "flduvWXVP2uNrlx6T"
+        },
+        "id": "fldIVz9ZICh4E0ryz",
+        "name": "Products"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldQKwh0sdhUeWgLU",
+        "name": "Job Scopes copy"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldGBYmwSORNHTuQg"
+        },
+        "id": "fldCnYP5FWjTpTPFw",
+        "name": "Jobs"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld8V37aziZoPxbqn"
+        },
+        "id": "fldRZhiJnGRh9Xcks",
+        "name": "Job Scopes copy"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblgedzIIiPTMGG6V",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fld4454pWMWVVTORY"
+        },
+        "id": "fldmwRd1aVbcW1ygT",
+        "name": "Sub-Contractor Agreements"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblIqKGnh4y1E0QkW",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldGbcW6QFgz4y0LG"
+        },
+        "id": "fldpfq7FE38soY1FL",
+        "name": "Pending Paymets copy"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldLgtRGh3blSuIpi"
+        },
+        "id": "fld56Y72cGYnh3T3D",
+        "name": "Jobs 2"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwsDCc4F9WD8X3D6",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tbl98SKCdynIzsy5G",
+    "name": "Title",
+    "primaryFieldId": "fldiVubXjYVG6Vt4V",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldiVubXjYVG6Vt4V",
+        "name": "Name"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhPPymZoAquKCHg",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldnKyBfxLkGIxyTf"
+        },
+        "id": "fldfbLOCZf5XZp1pp",
+        "name": "Vendor Contacts"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwkcJabnbnkke4w0",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblhPPymZoAquKCHg",
+    "name": "Contacts",
+    "primaryFieldId": "fldVfnjrQAqOiSQJD",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldVfnjrQAqOiSQJD",
+        "name": "Name"
+      },
+      {
+        "type": "phoneNumber",
+        "id": "fldacBURgRXtOEekr",
+        "name": "Phone"
+      },
+      {
+        "type": "email",
+        "id": "fldlJZS6qaWzSvpyh",
+        "name": "Email"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbl98SKCdynIzsy5G",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldfbLOCZf5XZp1pp"
+        },
+        "id": "fldnKyBfxLkGIxyTf",
+        "name": "Title"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldyAy6gcOJJZKvB3"
+        },
+        "id": "fld8uwxpNiDMwicSt",
+        "name": "Vendor"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldL0YGdVFZYqdTx3",
+        "name": "COI"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldASlswozRg775zI",
+        "name": "W9"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldQNGy150i5oNvEH"
+        },
+        "id": "fldPdjrdbViKu5Flh",
+        "name": "Jobs"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbl732gvNaQDlf6M2",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldMLtaBXLGiIGPJz"
+        },
+        "id": "fldFH5oIh8le6IXIv",
+        "name": "Time Sheet"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fld3a9aKk96LyrPmc",
+        "name": "Jobs 2"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwlZL1j32zFiajWK",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblh1V9iNu51AU9Kk",
+    "name": "Accounts",
+    "primaryFieldId": "fldQevd0i1GzAfnpz",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldKzXK98BJdTJlcb}",
+          "referencedFieldIds": [
+            "fldKzXK98BJdTJlcb"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldQevd0i1GzAfnpz",
+        "name": "Name"
+      },
+      {
+        "type": "email",
+        "id": "fld9Oi8UaZBnDuSX6",
+        "name": "Email"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldjiZke3ZDFFIi4u",
+        "name": "Password"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldPK14CqZNIOFXuI"
+        },
+        "id": "fldKzXK98BJdTJlcb",
+        "name": "Vendors"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwjqxPrFMrzC8RTP",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblOizItsf1jbMA8o",
+    "name": "Properties",
+    "primaryFieldId": "fldtuMRpWGsBNnyDd",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldtuMRpWGsBNnyDd",
+        "name": "Name"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "TRIM(\n  {fldrhdneHbKiPV1PQ} &\n  IF({fld7VLGr4MVye3xoQ}, \", \" & {fld7VLGr4MVye3xoQ}, \"\") &\n  IF({fldQ4Y0tWkeKyVNRm}, \", \" & {fldQ4Y0tWkeKyVNRm}, \"\") &\n  IF({fld4WkIZabad0tEZ1}, \" \" & {fld4WkIZabad0tEZ1}, \"\")\n)\n",
+          "referencedFieldIds": [
+            "fldrhdneHbKiPV1PQ",
+            "fld7VLGr4MVye3xoQ",
+            "fldQ4Y0tWkeKyVNRm",
+            "fld4WkIZabad0tEZ1"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldFRdjKHvM2SccuU",
+        "name": "Address"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldmSLHy71Xc2MBwg"
+        },
+        "id": "fldnfCZrmflwgIZxz",
+        "name": "Jobs"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fld40UHBEmUnJflrH"
+        },
+        "id": "fldUaHBA2dlmgkNCa",
+        "name": "Vendor"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldrhdneHbKiPV1PQ",
+        "name": "Street Address"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fld7VLGr4MVye3xoQ",
+        "name": "City"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fld4WkIZabad0tEZ1",
+        "name": "Zip Code"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldQ4Y0tWkeKyVNRm",
+        "name": "State"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwGF5N9wsr2e3uwo",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tbltoMLmhXBb6HbdC",
+    "name": "Unit / Level",
+    "primaryFieldId": "fldBKjvlCGROWike1",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldBKjvlCGROWike1",
+        "name": "Name"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldzNvu8yrSb7QOWT"
+        },
+        "id": "fldQzMd0GOvCdgKUg",
+        "name": "Jobs"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldU9hn5twt4qCngJ",
+        "name": "Job Scopes"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldPzHJrANSZ0xwEh"
+        },
+        "id": "fldWToL0V0TGDsLz7",
+        "name": "Job Scopes copy"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldyPrYRsA1j69m6W",
+        "name": "Cabinet Survey"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldl4M0Nb3PRqwadP",
+        "name": "Cabinet Requirements / Order Planner"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldqaY56aXOt8FhYj",
+        "name": "Cabinet Survey copy"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwRRm6gm9z4GcrFV",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblowlUSeNCITIDwd",
+    "name": "Room",
+    "primaryFieldId": "fldr7edykQ0tfrbtm",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldr7edykQ0tfrbtm",
+        "name": "Room"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldpdwP1fq34OzdR6"
+        },
+        "id": "fldstH9cTvsIxjzWT",
+        "name": "Job Scopes copy"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwX0NCJ6IkBIVR6N",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblbrLZTGgQx1iWU8",
+    "name": "Service Type",
+    "primaryFieldId": "fld7ipc9Zr8wbidrs",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fld7ipc9Zr8wbidrs",
+        "name": "Labor Service Type"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbl732gvNaQDlf6M2",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldp9Lj4Bxwu3dwEV"
+        },
+        "id": "fldutcg4b7Py4rvql",
+        "name": "Time Sheet"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldgDUfqWD1g6SdIS"
+        },
+        "id": "fldFHVmTA2sSLu9xt",
+        "name": "Job Scopes copy"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwLDaQo4CAlhAmBd",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tbl732gvNaQDlf6M2",
+    "name": "Time Sheet",
+    "primaryFieldId": "fld0CYUZESXX9RkCF",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldMLtaBXLGiIGPJz}",
+          "referencedFieldIds": [
+            "fldMLtaBXLGiIGPJz"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fld0CYUZESXX9RkCF",
+        "name": "Laborer Name"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblhPPymZoAquKCHg",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldFH5oIh8le6IXIv"
+        },
+        "id": "fldMLtaBXLGiIGPJz",
+        "name": "Laborer"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblbrLZTGgQx1iWU8",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldutcg4b7Py4rvql"
+        },
+        "id": "fldp9Lj4Bxwu3dwEV",
+        "name": "Laborer Type"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": false,
+          "recordLinkFieldId": "fldMLtaBXLGiIGPJz",
+          "fieldIdInLinkedTable": null,
+          "result": null
+        },
+        "id": "fldT0j3Kodq0SonMX",
+        "name": "Vendor"
+      },
+      {
+        "type": "dateTime",
+        "options": {
+          "dateFormat": {
+            "name": "local",
+            "format": "l"
+          },
+          "timeFormat": {
+            "name": "24hour",
+            "format": "HH:mm"
+          },
+          "timeZone": "client"
+        },
+        "id": "fldeOCVWvrfoiWFZz",
+        "name": "Start Date / Time"
+      },
+      {
+        "type": "dateTime",
+        "options": {
+          "dateFormat": {
+            "name": "local",
+            "format": "l"
+          },
+          "timeFormat": {
+            "name": "24hour",
+            "format": "HH:mm"
+          },
+          "timeZone": "client"
+        },
+        "id": "fldZ5GszvDx9Z8h2o",
+        "name": "End Time"
+      },
+      {
+        "type": "duration",
+        "options": {
+          "durationFormat": "h:mm"
+        },
+        "id": "fldRzMzSl5lOpo7QP",
+        "name": "Lunch Duration"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldtz9ODYyKA2xoGD",
+        "name": "Contractor Rate"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldXHC6cvgwbhUHwB",
+        "name": "CRS Billing Rate"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "DATETIME_DIFF({fldZ5GszvDx9Z8h2o}, {fldeOCVWvrfoiWFZz}, 'seconds') - {fldRzMzSl5lOpo7QP}\n",
+          "referencedFieldIds": [
+            "fldZ5GszvDx9Z8h2o",
+            "fldeOCVWvrfoiWFZz",
+            "fldRzMzSl5lOpo7QP"
+          ],
+          "result": {
+            "type": "duration",
+            "options": {
+              "durationFormat": "h:mm"
+            }
+          }
+        },
+        "id": "fldk3qPjlawG4hhIH",
+        "name": "Total Hour (minus lunch)"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "({fldk3qPjlawG4hhIH} / 3600) * {fldtz9ODYyKA2xoGD}",
+          "referencedFieldIds": [
+            "fldk3qPjlawG4hhIH",
+            "fldtz9ODYyKA2xoGD"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldyvHnehIGetHYtk",
+        "name": "Contractor Total"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "({fldk3qPjlawG4hhIH} / 3600) * {fldXHC6cvgwbhUHwB}",
+          "referencedFieldIds": [
+            "fldk3qPjlawG4hhIH",
+            "fldXHC6cvgwbhUHwB"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldmj3LDftOYmtSZT",
+        "name": "Billing Total"
+      },
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fldmj3LDftOYmtSZT} - {fldyvHnehIGetHYtk}",
+          "referencedFieldIds": [
+            "fldmj3LDftOYmtSZT",
+            "fldyvHnehIGetHYtk"
+          ],
+          "result": {
+            "type": "currency",
+            "options": {
+              "precision": 2,
+              "symbol": "$"
+            }
+          }
+        },
+        "id": "fldCmBjqK1wM9Jok4",
+        "name": "Profit"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwuP7yeoKKyBBEr5",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblMHHwpkPxMBLsMB",
+    "name": "Products",
+    "primaryFieldId": "fldryofhEKZNQjjzT",
+    "fields": [
+      {
+        "type": "multilineText",
+        "id": "fldryofhEKZNQjjzT",
+        "name": "Name"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selGEJMK40mJCFKoJ",
+              "name": "Gray",
+              "color": "blueLight2"
+            }
+          ]
+        },
+        "id": "fldUokqlUVBDNL4iE",
+        "name": "Base Color"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldDHWL3mpjonHQYp",
+        "name": "Photo"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblFH6jgsDs8z5FIT",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldBapEnkLP45wVfi"
+        },
+        "id": "fldW1JqvqPx3WPwX2",
+        "name": "Category"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldIVz9ZICh4E0ryz"
+        },
+        "id": "flduvWXVP2uNrlx6T",
+        "name": "Vendor"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldM6urC1ebTnwx6v",
+        "name": "Styles"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldgFaeVqBSpLhqVi",
+        "name": "Color"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 1
+        },
+        "id": "fldt7LzQ4IChEfHJ8",
+        "name": "Coverage Per Unit"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selxfw1nXYjMxMge3",
+              "name": "Sqft",
+              "color": "blueLight2"
+            },
+            {
+              "id": "selikB38JeHg4VMSs",
+              "name": "Linear Feet",
+              "color": "cyanLight2"
+            },
+            {
+              "id": "selhiZHEfjZ4tRCAx",
+              "name": "Sqyd",
+              "color": "tealLight2"
+            }
+          ]
+        },
+        "id": "fldM0opL5aGiXkUgF",
+        "name": "Coverage Unit"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 1
+        },
+        "id": "fldUunSOChamXrPCK",
+        "name": "Width"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 1
+        },
+        "id": "fldfV0tNSi0ffI2q9",
+        "name": "Length"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 3
+        },
+        "id": "fld1br9SkxZd0ALhN",
+        "name": "Thickness"
+      },
+      {
+        "type": "number",
+        "options": {
+          "precision": 1
+        },
+        "id": "fldEyjjFR188JQ1zV",
+        "name": "Weight"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldRpHkLepquhdsdl",
+        "name": "Stock Unit"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldcTEbYsbsLh6s1Z",
+        "name": "Send Unit"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldZrwMJqGwpkQFp0",
+        "name": "Available Unit"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldkkdEIiLgjv610z",
+        "name": "Job Scopes copy"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwud84jqkZfH4e6R",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblFH6jgsDs8z5FIT",
+    "name": "Categories",
+    "primaryFieldId": "fldatHaiP9Ei48SQ0",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldatHaiP9Ei48SQ0",
+        "name": "Name"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblMHHwpkPxMBLsMB",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldW1JqvqPx3WPwX2"
+        },
+        "id": "fldBapEnkLP45wVfi",
+        "name": "Products"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwVWuDMA8imK6eyK",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblgedzIIiPTMGG6V",
+    "name": "Sub-Contractor Agreements",
+    "primaryFieldId": "fldCqbb0MzjvPmolf",
+    "fields": [
+      {
+        "type": "formula",
+        "options": {
+          "isValid": true,
+          "formula": "{fld4454pWMWVVTORY} & \" - \" & {fldHoN3iSksbdxJ9V} & \" - \" & {fldm4kKeB5Dqc3E5I} & \" - \" & \"Agreement #\" & {fldAcReSjA3gRSp7Y}",
+          "referencedFieldIds": [
+            "fld4454pWMWVVTORY",
+            "fldHoN3iSksbdxJ9V",
+            "fldm4kKeB5Dqc3E5I",
+            "fldAcReSjA3gRSp7Y"
+          ],
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldCqbb0MzjvPmolf",
+        "name": "Name"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selfFeuAZh7Ga1oo6",
+              "name": "Pending Build",
+              "color": "cyanLight2"
+            },
+            {
+              "id": "selkajrnbFOFlqjGb",
+              "name": "Ready for Send",
+              "color": "yellowBright"
+            },
+            {
+              "id": "selQGG0GGxKzijpz8",
+              "name": "Sent",
+              "color": "blueBright"
+            }
+          ]
+        },
+        "id": "fldbB5TjntDcSU3ta",
+        "name": "Status"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldUM5DJFtsTDgBm1"
+        },
+        "id": "fldHoN3iSksbdxJ9V",
+        "name": "Job"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbloqDJBnVlBPfQe5",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldmwRd1aVbcW1ygT"
+        },
+        "id": "fld4454pWMWVVTORY",
+        "name": "Sub-Contractor"
+      },
+      {
+        "type": "date",
+        "options": {
+          "dateFormat": {
+            "name": "local",
+            "format": "l"
+          }
+        },
+        "id": "fldGIK1n94euAQfBD",
+        "name": "Date"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldHoN3iSksbdxJ9V",
+          "fieldIdInLinkedTable": "fldat4YUJs6WwfTMI",
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldTZJn8PuoakbwgH",
+        "name": "Property Name"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fldHoN3iSksbdxJ9V",
+          "fieldIdInLinkedTable": "fldGCyxLmIIkNOwxt",
+          "result": {
+            "type": "singleLineText"
+          }
+        },
+        "id": "fldmqLxDNXxuDPKrh",
+        "name": "Property Address"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fld4454pWMWVVTORY",
+          "fieldIdInLinkedTable": "fldu0i2Edu7Z5iLY3",
+          "result": {
+            "type": "phoneNumber"
+          }
+        },
+        "id": "fldvZmydcdPvEqcyC",
+        "name": "Sub Phone"
+      },
+      {
+        "type": "multipleLookupValues",
+        "options": {
+          "isValid": true,
+          "recordLinkFieldId": "fld4454pWMWVVTORY",
+          "fieldIdInLinkedTable": "fldu0i2Edu7Z5iLY3",
+          "result": {
+            "type": "phoneNumber"
+          }
+        },
+        "id": "fldptsUBs6v0nQp8U",
+        "name": "Sub Email"
+      },
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldm4kKeB5Dqc3E5I",
+        "name": "Full Budget"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fld8oNp1d26BrOvQK",
+        "name": "Print Signature"
+      },
+      {
+        "type": "autoNumber",
+        "id": "fldAcReSjA3gRSp7Y",
+        "name": "Autonumber"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblaaBRr0HhQpZ1ZD",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldK5FL7CY4XmIyJM"
+        },
+        "id": "fldeyDrtPEehMIOni",
+        "name": "Scopes in Writing"
+      },
+      {
+        "type": "url",
+        "id": "fldNFaGLSQBWfS2wH",
+        "name": "Agreement URL"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tbl8qutwydRec9DGf",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldos3keXJrBYWR7R"
+        },
+        "id": "fldrNqEGNEX2TngKQ",
+        "name": "Payments"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblIqKGnh4y1E0QkW",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldYsjx5GA8oqN4Ly"
+        },
+        "id": "fld1NGRxwvEPletox",
+        "name": "Pending Paymets copy"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwUWKPPYoukn5OR7",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tbliV4V6v5MeUtGT7",
+    "name": "Form URL",
+    "primaryFieldId": "fld4dPFpyatcepik2",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fld4dPFpyatcepik2",
+        "name": "Name"
+      },
+      {
+        "type": "url",
+        "id": "fldziOM6RISJMxTEv",
+        "name": "URL"
+      },
+      {
+        "type": "button",
+        "id": "fldTl01K0J6tKRNap",
+        "name": "Open URL"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwGIlY2jB2N34LtZ",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblxE6ZeJffn0us6R",
+    "name": "Accounts Receivable",
+    "primaryFieldId": "fldccbxGTgBQhBKcF",
+    "fields": [
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldccbxGTgBQhBKcF",
+        "name": "Draw"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldoPVZq84DzNEV7l",
+        "name": "Attachments"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": false,
+          "inverseLinkFieldId": "fldRbKyrHDNnmICul"
+        },
+        "id": "fldNT0KOiWfeOsSpK",
+        "name": "Jobs"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwCAYVYzi5nvQAh4",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblevDF8uEycZqOwj",
+    "name": "Site Photos",
+    "primaryFieldId": "fld26ZZkqcvD5vyAb",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fld26ZZkqcvD5vyAb",
+        "name": "Your Name"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldkCHMkdcBw3Lmpg",
+        "name": "Job Name"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldRTquEVcc16S0CF",
+        "name": "Notes"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selQ7LeLYyvHZGCVR",
+              "name": "Progress Photos",
+              "color": "yellowBright"
+            }
+          ]
+        },
+        "id": "fldsvt05Py3hzcXkt",
+        "name": "Status"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldfclx7V34oQZnRl",
+        "name": "Attachments"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwQZC3IaV4k2Vgjs",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblQDafs8utWYf0QC",
+    "name": "Assets",
+    "primaryFieldId": "fldwjYz535DR9HNJy",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldwjYz535DR9HNJy",
+        "name": "Assets"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selzoz2dRp1AfjROy",
+              "name": "Todo",
+              "color": "redLight2"
+            },
+            {
+              "id": "sel8bjVPeTYyU1XXS",
+              "name": "In progress",
+              "color": "yellowLight2"
+            },
+            {
+              "id": "selEaizgyBsw0up32",
+              "name": "Done",
+              "color": "greenLight2"
+            }
+          ]
+        },
+        "id": "fldyuT7M8nEI1JQ0t",
+        "name": "Status"
+      },
+      {
+        "type": "url",
+        "id": "fldezU7SuWx3gOqsh",
+        "name": "URL"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldfBrxNh5GnLdNzg",
+        "name": "Attachments"
+      },
+      {
+        "type": "button",
+        "id": "fldKTEJULSWbadRhB",
+        "name": "Open"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwYfw87v7gxRH3o5",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblmAbFkJeK5WrCyB",
+    "name": "Table 26",
+    "primaryFieldId": "fldtNAgWhJDCszfLb",
+    "fields": [
+      {
+        "type": "singleLineText",
+        "id": "fldtNAgWhJDCszfLb",
+        "name": "Name"
+      },
+      {
+        "type": "multilineText",
+        "id": "fldrjgrGckyugAwLk",
+        "name": "Notes"
+      },
+      {
+        "type": "singleCollaborator",
+        "id": "fldJErJURtkpg2K5F",
+        "name": "Assignee"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "selTckhwlrx8AVuIW",
+              "name": "Todo",
+              "color": "redLight2"
+            },
+            {
+              "id": "selrlhSBIL6IK6pa7",
+              "name": "In progress",
+              "color": "yellowLight2"
+            },
+            {
+              "id": "selAvGjd211Wjwjll",
+              "name": "Done",
+              "color": "greenLight2"
+            }
+          ]
+        },
+        "id": "fldlly1aQPvciExXO",
+        "name": "Status"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldJsenJTZGFuBn4q",
+        "name": "Attachments"
+      },
+      {
+        "type": "aiText",
+        "options": {
+          "referencedFieldIds": [
+            "fldJsenJTZGFuBn4q"
+          ],
+          "prompt": [
+            "You are a professional document analyst specializing in summarizing content from various file types. Your task is to extract key points and provide a concise summary of the content found in the attached files. Ensure that the summary captures the main ideas and any important details without including unnecessary information.\n\nAnalyze the content of the attached files to identify the main themes and significant details. Summarize these points clearly and concisely, ensuring that the summary is informative and relevant to the document's purpose.\n\nFormat your response as plain text, keeping it concise and to the point. If you cannot summarize the content, output \"Unable to summarize the content.\" Example: \"The document discusses the impact of climate change on polar bears, highlighting the loss of habitat and food sources.\" (Real examples should be longer and more detailed.)\n\nFiles:\n",
+            {
+              "field": {
+                "fieldId": "fldJsenJTZGFuBn4q"
+              }
+            }
+          ]
+        },
+        "id": "fldWyTiTf9Tfxi8YO",
+        "name": "Attachment Summary",
+        "description": "An AI generated summary of the Attachments field. Upload files to Attachments to generate a summary."
+      }
+    ],
+    "views": [
+      {
+        "id": "viwHw3h4MsAOxObnq",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  },
+  {
+    "id": "tblpLYrCw939zyyBd",
+    "name": "Budget Increase",
+    "primaryFieldId": "fldPizRQdz9pQVVEm",
+    "fields": [
+      {
+        "type": "currency",
+        "options": {
+          "precision": 2,
+          "symbol": "$"
+        },
+        "id": "fldPizRQdz9pQVVEm",
+        "name": "Increase"
+      },
+      {
+        "type": "singleLineText",
+        "id": "fldEEJV5TAn3KiZyr",
+        "name": "Notes"
+      },
+      {
+        "type": "multipleRecordLinks",
+        "options": {
+          "linkedTableId": "tblM0inrrVwU0CFLk",
+          "isReversed": false,
+          "prefersSingleRecordLink": true,
+          "inverseLinkFieldId": "fldyTNyyo1empAwXZ"
+        },
+        "id": "fld8elipWum64Ba7Y",
+        "name": "Jobs"
+      },
+      {
+        "type": "singleSelect",
+        "options": {
+          "choices": [
+            {
+              "id": "sellgtcn8Rp5ixNVX",
+              "name": "Awaiting Payment",
+              "color": "yellowBright"
+            },
+            {
+              "id": "seltxaWPMiFZvAOs9",
+              "name": "Payment Received",
+              "color": "greenBright"
+            }
+          ]
+        },
+        "id": "fldVuEaB1tWpVIdl1",
+        "name": "Status"
+      },
+      {
+        "type": "multipleAttachments",
+        "options": {
+          "isReversed": false
+        },
+        "id": "fldoTXy6ML4hBlEk4",
+        "name": "Files"
+      },
+      {
+        "type": "singleLineText",
+        "id": "flddO36yxtw2FEYzy",
+        "name": "Job Number"
+      }
+    ],
+    "views": [
+      {
+        "id": "viwcmqSfyUJlgCGIl",
+        "name": "Grid view",
+        "type": "grid"
+      }
+    ]
+  }
+]
