@@ -7,8 +7,9 @@ import EstimatorClient from "./estimator-client"
 type ProductOption = {
   id: string
   name: string
-  altUnit: string | null
-  purchaseUnit: string
+  measureUnit: string | null
+  unitOfMeasure: string
+  customerPrice: string
 }
 
 export default async function EstimatorPage() {
@@ -27,6 +28,7 @@ export default async function EstimatorPage() {
     select: {
       id: true,
       name: true,
+      customerCost: true,
       category: {
         select: {
           altUnit: true,
@@ -40,8 +42,9 @@ export default async function EstimatorPage() {
   const productOptions: ProductOption[] = products.map((product) => ({
     id: product.id,
     name: product.name,
-    altUnit: product.category.altUnit,
-    purchaseUnit: product.category.purchaseUnit,
+    measureUnit: product.category.altUnit,
+    unitOfMeasure: product.category.purchaseUnit,
+    customerPrice: product.customerCost.toString(),
   }))
 
   return <EstimatorClient products={productOptions} />

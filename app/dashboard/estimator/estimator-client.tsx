@@ -2,13 +2,14 @@
 
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, X } from "lucide-react"
 
 type ProductOption = {
   id: string
   name: string
-  altUnit: string | null
-  purchaseUnit: string
+  measureUnit: string | null
+  unitOfMeasure: string
+  customerPrice: string
 }
 
 type JobInfo = {
@@ -25,7 +26,7 @@ type EstimatorRow = {
   productId: string
   quantity: number
   unitOfMeasure: string
-  altUnitOfMeasure?: string
+  measureUnit?: string
 }
 
 const defaultJobInfo: JobInfo = {
@@ -42,11 +43,15 @@ const defaultRow: EstimatorRow = {
   productId: "",
   quantity: 1,
   unitOfMeasure: "",
-  altUnitOfMeasure: "",
+  measureUnit: "",
 }
 
 function normalizeRoom(room: string): string {
   return room.trim() === "" ? "Unassigned" : room.trim()
+}
+
+function formatCurrency(value: number): string {
+  return `$${value.toFixed(2)}`
 }
 
 export default function EstimatorClient({ products }: { products: ProductOption[] }) {
@@ -54,6 +59,8 @@ export default function EstimatorClient({ products }: { products: ProductOption[
   // Do not include in PDF output (future step)
   const [markupPercentage, setMarkupPercentage] = useState<string>("")
   const [rows, setRows] = useState<EstimatorRow[]>([defaultRow])
+  const [showAddRoomForm, setShowAddRoomForm] = useState(false)
+  const [newRoomName, setNewRoomName] = useState("")
 
   const productsById = useMemo(() => {
     const map = new Map<string, ProductOption>()
@@ -87,8 +94,8 @@ export default function EstimatorClient({ products }: { products: ProductOption[
     const product = productsById.get(productId)
     updateRow(index, {
       productId,
-      unitOfMeasure: product?.purchaseUnit ?? "",
-      altUnitOfMeasure: product?.altUnit ?? "",
+      unitOfMeasure: product?.unitOfMeasure ?? "",
+      measureUnit: product?.measureUnit ?? "",
     })
   }
 
@@ -111,14 +118,29 @@ export default function EstimatorClient({ products }: { products: ProductOption[
     ])
   }
 
-  function addRoom() {
-    const nextRoom = window.prompt("New room name")?.trim()
-    if (!nextRoom) return
-    addRow(nextRoom)
+  function submitAddRoomForm(event: React.FormEvent) {
+    event.preventDefault()
+    const roomName = newRoomName.trim()
+    if (!roomName) return
+
+    addRow(roomName)
+    setNewRoomName("")
+    setShowAddRoomForm(false)
   }
 
   function removeRow(index: number) {
     setRows((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function getCustomerPrice(row: EstimatorRow): number {
+    const product = productsById.get(row.productId)
+    if (!product) return 0
+    const parsed = Number(product.customerPrice)
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+
+  function getLineTotal(row: EstimatorRow): number {
+    return row.quantity * getCustomerPrice(row)
   }
 
   return (
@@ -187,23 +209,45 @@ export default function EstimatorClient({ products }: { products: ProductOption[
         <section className="space-y-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">Estimator Rows</h2>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => addRow()}
-                className="inline-flex items-center gap-1 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
-              >
-                <Plus size={14} /> Add Row
-              </button>
-              <button
-                type="button"
-                onClick={addRoom}
-                className="inline-flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black transition hover:bg-blue-400"
-              >
-                <Plus size={14} /> Add Room
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowAddRoomForm(true)}
+              className="inline-flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black transition hover:bg-blue-400"
+            >
+              <Plus size={14} /> Add Room
+            </button>
           </div>
+
+          {showAddRoomForm && (
+            <form onSubmit={submitAddRoomForm} className="rounded-lg border border-[var(--panel-border)] p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  value={newRoomName}
+                  onChange={(event) => setNewRoomName(event.target.value)}
+                  placeholder="Room name"
+                  className="w-full rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2 text-base"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black transition hover:bg-blue-400"
+                  >
+                    <Plus size={14} /> Save Room
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddRoomForm(false)
+                      setNewRoomName("")
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
+                  >
+                    <X size={14} /> Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
 
           <div className="hidden md:block">
             {groupedRows.map(([roomName, roomRows]) => (
@@ -216,7 +260,9 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                       <th className="px-3 py-2">Product</th>
                       <th className="px-3 py-2">Qty</th>
                       <th className="px-3 py-2">Unit</th>
-                      <th className="px-3 py-2">Alt Unit</th>
+                      <th className="px-3 py-2">Measure Unit</th>
+                      <th className="px-3 py-2">Customer Price</th>
+                      <th className="px-3 py-2">Line Total</th>
                       <th className="px-3 py-2">Remove</th>
                     </tr>
                   </thead>
@@ -254,7 +300,9 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                           />
                         </td>
                         <td className="px-3 py-2">{row.unitOfMeasure || "-"}</td>
-                        <td className="px-3 py-2">{row.altUnitOfMeasure || "-"}</td>
+                        <td className="px-3 py-2">{row.measureUnit || "-"}</td>
+                        <td className="px-3 py-2">{formatCurrency(getCustomerPrice(row))}</td>
+                        <td className="px-3 py-2">{formatCurrency(getLineTotal(row))}</td>
                         <td className="px-3 py-2">
                           <button
                             type="button"
@@ -268,6 +316,15 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                     ))}
                   </tbody>
                 </table>
+                <div className="flex justify-start border-t border-[var(--panel-border)] p-2">
+                  <button
+                    type="button"
+                    onClick={() => addRow(roomName)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
+                  >
+                    <Plus size={14} /> Add Row
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -315,9 +372,23 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                         className="w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-hover)]/40 px-3 py-3 text-base"
                       />
                     </Field>
-                    <Field label="Alt Unit of Measure">
+                    <Field label="Measure Unit">
                       <input
-                        value={row.altUnitOfMeasure ?? ""}
+                        value={row.measureUnit ?? ""}
+                        readOnly
+                        className="w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-hover)]/40 px-3 py-3 text-base"
+                      />
+                    </Field>
+                    <Field label="Customer Price">
+                      <input
+                        value={formatCurrency(getCustomerPrice(row))}
+                        readOnly
+                        className="w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-hover)]/40 px-3 py-3 text-base"
+                      />
+                    </Field>
+                    <Field label="Line Total">
+                      <input
+                        value={formatCurrency(getLineTotal(row))}
                         readOnly
                         className="w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-hover)]/40 px-3 py-3 text-base"
                       />
@@ -331,6 +402,15 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                     </button>
                   </div>
                 ))}
+                <div className="flex justify-start">
+                  <button
+                    type="button"
+                    onClick={() => addRow(roomName)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
+                  >
+                    <Plus size={14} /> Add Row
+                  </button>
+                </div>
               </div>
             ))}
           </div>
