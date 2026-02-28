@@ -16,6 +16,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(CONTRACTOR)
+  isVerified Boolean @default(true)
   createdAt DateTime @default(now())
 }
 
@@ -77,4 +78,13 @@ model EstimateItem {
 
   @@index([estimateId])
   @@index([productId])
+}
+
+model Hotkey {
+  id          String   @id @default(uuid())
+  key         String
+  combination String
+  action      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -15,11 +15,20 @@ type ProductOption = {
 export default async function EstimatorPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session) {
+  if (!session?.user?.email) {
     redirect("/login")
   }
 
-  if (session.user.role !== "BUILDER" && session.user.role !== "ADMIN") {
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { role: true },
+  })
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  if (user.role !== "BUILDER" && user.role !== "ADMIN") {
     redirect("/dashboard")
   }
 

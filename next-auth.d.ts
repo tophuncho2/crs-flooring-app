@@ -5,16 +5,19 @@ declare module "next-auth" {
     user: DefaultSession["user"] & {
       id?: string
       role: "CONTRACTOR" | "ADMIN" | "BUILDER"
+      isVerified: boolean
     }
   }
 
   interface User {
     role: "CONTRACTOR" | "ADMIN" | "BUILDER"
+    isVerified: boolean
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     role?: "CONTRACTOR" | "ADMIN" | "BUILDER"
+    isVerified?: boolean
   }
 }

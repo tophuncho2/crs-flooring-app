@@ -1,29 +1,33 @@
 import { getServerSession } from "next-auth"
-import { authOptions } from "../../api/auth/[...nextauth]/route"
 import { redirect } from "next/navigation"
+import { authOptions } from "../../api/auth/[...nextauth]/route"
+import { prisma } from "@/lib/prisma"
+import { canBypassVerification } from "@/lib/access-control"
+import BuilderUsersPanel from "./users-panel"
 
 export default async function BuilderPage() {
   const session = await getServerSession(authOptions)
 
-  // Not logged in
-  if (!session) {
+  if (!session?.user?.email) {
     redirect("/login")
   }
 
-  // Logged in but not builder
-  if (session.user.role !== "BUILDER") {
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { role: true, email: true, isVerified: true },
+  })
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  if (user.role !== "BUILDER") {
     redirect("/dashboard")
   }
 
-  return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] p-8">
-      <h1 className="text-2xl font-bold text-blue-400">
-        Builder Control Panel
-      </h1>
+  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+    redirect("/login?restricted=1")
+  }
 
-      <p className="mt-4">
-        Welcome, {session.user.email}
-      </p>
-    </div>
-  )
+  return <BuilderUsersPanel />
 }

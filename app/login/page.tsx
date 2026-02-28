@@ -2,10 +2,13 @@
 
 import { signIn } from "next-auth/react"
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const searchParams = useSearchParams()
+  const restricted = searchParams.get("restricted") === "1"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,6 +33,12 @@ export default function LoginPage() {
         <h2 className="text-2xl font-bold mb-6 text-center text-white">
           Contractor Login
         </h2>
+
+        {restricted && (
+          <p className="mb-4 rounded-md border border-rose-400/40 bg-rose-500/20 px-3 py-2 text-sm text-rose-100">
+            Your account is restricted. Contact a builder to verify access.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
 

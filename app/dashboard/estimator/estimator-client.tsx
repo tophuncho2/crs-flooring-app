@@ -82,6 +82,8 @@ export default function EstimatorClient({ products }: { products: ProductOption[
     return Array.from(groups.entries())
   }, [rows])
 
+  const totalCost = rows.reduce((sum, row) => sum + getLineTotal(row), 0)
+
   function updateJobInfo(field: keyof JobInfo, value: string) {
     setJobInfo((prev) => ({ ...prev, [field]: value }))
   }
@@ -413,6 +415,17 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold">Total Cost</span>
+              <input
+                readOnly
+                value={formatCurrency(totalCost)}
+                className="w-44 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-right font-semibold"
+              />
+            </div>
           </div>
         </section>
       </div>

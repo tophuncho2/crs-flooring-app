@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import type { NextAuthOptions } from "next-auth"
 import { prisma } from "@/lib/prisma"
+import { canBypassVerification } from "@/lib/access-control"
 
 // 👇 Export this so dashboard can access it
 export const authOptions: NextAuthOptions = {
@@ -31,10 +32,15 @@ export const authOptions: NextAuthOptions = {
 
         if (!valid) return null
 
+        if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+          return null
+        }
+
         return {
           id: user.id,
           email: user.email,
-          role: user.role
+          role: user.role,
+          isVerified: user.isVerified
         }
       }
     })
@@ -46,12 +52,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.isVerified = user.isVerified
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.role = token.role as "CONTRACTOR" | "ADMIN" | "BUILDER"
+        session.user.isVerified = Boolean(token.isVerified)
       }
       return session
     }
