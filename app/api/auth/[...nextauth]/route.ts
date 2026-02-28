@@ -2,11 +2,12 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcrypt"
+import type { NextAuthOptions } from "next-auth"
 
 const prisma = new PrismaClient()
 
 // 👇 Export this so dashboard can access it
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
