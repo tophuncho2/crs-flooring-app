@@ -43,6 +43,38 @@ model Product {
   coveragePerUnit Decimal  @db.Decimal(10, 4)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
+  estimateItems   EstimateItem[]
 
   @@index([categoryId])
+}
+
+model Estimate {
+  id               String         @id @default(uuid())
+  propertyAddress  String
+  propertyContact  String
+  unitNumber       String
+  jobName          String
+  jobAddress       String
+  markupPercentage Decimal        @db.Decimal(8, 2)
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  items            EstimateItem[]
+}
+
+model EstimateItem {
+  id               String   @id @default(uuid())
+  estimateId       String
+  estimate         Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  room             String
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity         Decimal  @db.Decimal(10, 2)
+  unitOfMeasure    String
+  altUnitOfMeasure String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([estimateId])
+  @@index([productId])
 }
