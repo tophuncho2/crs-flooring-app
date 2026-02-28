@@ -10,7 +10,7 @@ export default async function Dashboard() {
 
       {/* Top Right User Menu */}
       <div className="absolute top-6 right-6">
-        <UserMenu email={session!.user?.email || ""} />
+        <UserMenu email={session?.user?.email ?? ""} />
       </div>
 
       {/* Page Content */}
