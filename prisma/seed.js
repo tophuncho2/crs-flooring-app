@@ -1,21 +1,28 @@
-const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcrypt')
-
-const prisma = new PrismaClient()
-
 async function main() {
-  const hashedPassword = await bcrypt.hash("password123", 10)
+  const [{ PrismaClient }, bcrypt] = await Promise.all([
+    import("@prisma/client"),
+    import("bcrypt"),
+  ])
 
-  await prisma.user.create({
-    data: {
-      email: "admin@test.com",
-      password: hashedPassword
-    }
-  })
+  const prisma = new PrismaClient()
 
-  console.log("User created.")
+  try {
+    const hashedPassword = await bcrypt.default.hash("password123", 10)
+
+    await prisma.user.create({
+      data: {
+        email: "admin@test.com",
+        password: hashedPassword,
+      },
+    })
+
+    console.log("User created.")
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
-main()
-  .catch(e => console.error(e))
-  .finally(() => prisma.$disconnect())
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})

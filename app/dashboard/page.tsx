@@ -12,7 +12,7 @@ if (!session) {
 }
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] relative">
 
       {/* Top Right Controls */}
 <div className="absolute top-6 right-6 flex items-center gap-4">
@@ -22,7 +22,7 @@ if (!session) {
   )}
 
   <UserMenu
-    email={session.user.email}
+    email={session.user.email ?? ""}
     role={session.user.role}
   />
 </div>
@@ -37,4 +37,3 @@ if (!session) {
     </div>
   )
 }
-

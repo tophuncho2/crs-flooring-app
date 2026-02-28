@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
+type Theme = "light" | "dark"
+
 export default function UserMenu({ email, role }: { email: string, role: string }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -24,6 +26,16 @@ export default function UserMenu({ email, role }: { email: string, role: string 
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
+
+  function toggleTheme() {
+    const activeTheme = document.documentElement.dataset.theme
+    const fallbackTheme: Theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    const currentTheme: Theme = activeTheme === "dark" || activeTheme === "light" ? activeTheme : fallbackTheme
+    const nextTheme: Theme = currentTheme === "dark" ? "light" : "dark"
+    document.documentElement.dataset.theme = nextTheme
+    localStorage.setItem("theme", nextTheme)
+    setOpen(false)
+  }
 
   return (
     <div ref={menuRef} className="relative">
@@ -48,8 +60,8 @@ export default function UserMenu({ email, role }: { email: string, role: string 
         <div
           className="
             absolute right-0 mt-2 w-44 
-            bg-gray-900 
-            border border-blue-600/40 
+            bg-[var(--panel-background)]
+            border border-[var(--panel-border)] 
             rounded-lg 
             shadow-[0_0_12px_rgba(59,130,246,0.15)]
             overflow-hidden
@@ -57,7 +69,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
           "
         >
           {/* Email Header */}
-          <div className="px-4 py-2 border-b border-gray-800 text-blue-400 truncate">
+          <div className="px-4 py-2 border-b border-[var(--panel-border)] text-blue-500 truncate">
             {email}
           </div>
 
@@ -68,16 +80,24 @@ export default function UserMenu({ email, role }: { email: string, role: string 
                 router.push("/dashboard/builder")
                 setOpen(false)
               }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-800 transition"
+              className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
             >
               Builder Panel
             </button>
           )}
 
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Toggle Theme
+          </button>
+
           {/* Logout */}
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="w-full text-left px-4 py-2 hover:bg-gray-800 transition"
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
           >
             Logout
           </button>

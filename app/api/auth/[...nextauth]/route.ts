@@ -1,10 +1,8 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcrypt"
 import type { NextAuthOptions } from "next-auth"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // 👇 Export this so dashboard can access it
 export const authOptions: NextAuthOptions = {
@@ -47,13 +45,13 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role
+        session.user.role = token.role as "CONTRACTOR" | "ADMIN" | "BUILDER"
       }
       return session
     }

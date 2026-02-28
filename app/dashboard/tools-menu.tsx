@@ -27,10 +27,10 @@ export default function ToolsMenu({ role }: { role: string }) {
         onClick={() => setOpen(!open)}
         className="
           w-10 h-10 rounded-full
-          bg-gray-900
-          border border-blue-600/40
+          bg-[var(--panel-background)]
+          border border-[var(--panel-border)]
           flex items-center justify-center
-          hover:bg-gray-800
+          hover:bg-[var(--panel-hover)]
           transition
           shadow-[0_0_6px_rgba(59,130,246,0.25)]
         "
@@ -42,8 +42,8 @@ export default function ToolsMenu({ role }: { role: string }) {
         <div
           className="
             absolute right-0 mt-2 w-44
-            bg-gray-900
-            border border-blue-600/40
+            bg-[var(--panel-background)]
+            border border-[var(--panel-border)]
             rounded-lg
             shadow-[0_0_12px_rgba(59,130,246,0.15)]
             overflow-hidden
@@ -55,7 +55,7 @@ export default function ToolsMenu({ role }: { role: string }) {
               router.push("/dashboard/products")
               setOpen(false)
             }}
-            className="w-full text-left px-4 py-2 hover:bg-gray-800 transition"
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
           >
             Products
           </button>
