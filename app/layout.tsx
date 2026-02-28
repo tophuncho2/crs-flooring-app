@@ -32,10 +32,17 @@ export default function RootLayout({
                 const savedTheme = localStorage.getItem("theme");
                 if (savedTheme === "light" || savedTheme === "dark") {
                   document.documentElement.dataset.theme = savedTheme;
-                  return;
+                } else {
+                  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                  document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
                 }
-                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
+
+                const savedColorTheme = localStorage.getItem("colorTheme");
+                if (savedColorTheme && /^[1-9]$/.test(savedColorTheme)) {
+                  document.documentElement.dataset.colorTheme = savedColorTheme;
+                } else {
+                  document.documentElement.dataset.colorTheme = "1";
+                }
               })();
             `,
           }}
