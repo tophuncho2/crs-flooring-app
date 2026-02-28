@@ -116,14 +116,16 @@ enum FlooringStoreCode {
 }
 
 enum FlooringImportStatus {
-  PENDING_DELIVERY
+  PENDING
+  SHIPPED
+  RECEIVED
   FINAL
 }
 
 enum FlooringTransportType {
+  TRANSFER_WAREHOUSE
+  WAREHOUSE_RETURN
   PURCHASE_ORDER
-  RETURN
-  WAREHOUSE_TRANSFER
 }
 
 enum ConstructionJobStatus {
@@ -311,6 +313,7 @@ model FlooringWarehouse {
   createdAt  DateTime               @default(now())
   updatedAt  DateTime               @updatedAt
   imports    FlooringImportBatch[]
+  sections   FlooringSection[]
   locations  FlooringLocation[]
   workOrders FlooringWorkOrder[]
   inventory  FlooringInventoryLot[]
@@ -318,17 +321,32 @@ model FlooringWarehouse {
   @@map("flooring_warehouse")
 }
 
+model FlooringSection {
+  id          String             @id @default(uuid())
+  warehouseId String
+  warehouse   FlooringWarehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  name        String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  locations   FlooringLocation[]
+
+  @@unique([warehouseId, name])
+  @@map("flooring_section")
+}
+
 model FlooringLocation {
   id           String                 @id @default(uuid())
   warehouseId  String
   warehouse    FlooringWarehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  section      String?
+  sectionId    String?
+  section      FlooringSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   locationCode String
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   inventory    FlooringInventoryLot[]
 
   @@unique([warehouseId, locationCode])
+  @@index([sectionId])
   @@map("flooring_location")
 }
 
@@ -340,6 +358,7 @@ model FlooringImportBatch {
   importTag     String?
   transportType FlooringTransportType?
   status        FlooringImportStatus?
+  totalCost     Decimal?               @db.Decimal(14, 2)
   notes         String?
   createdAt     DateTime               @default(now())
   inventory     FlooringInventoryLot[]

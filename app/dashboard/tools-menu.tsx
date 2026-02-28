@@ -68,6 +68,33 @@ export default function ToolsMenu({ role }: { role: string }) {
           >
             Estimator
           </button>
+          <button
+            onClick={() => {
+              router.push("/dashboard/inventory")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Inventory
+          </button>
+          <button
+            onClick={() => {
+              router.push("/dashboard/warehouse")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Warehouse
+          </button>
+          <button
+            onClick={() => {
+              router.push("/dashboard/imports")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Imports
+          </button>
         </div>
       )}
     </div>

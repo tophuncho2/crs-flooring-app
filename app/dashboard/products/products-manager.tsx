@@ -192,6 +192,7 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
 
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
   const [isCategoriesOverlayOpen, setIsCategoriesOverlayOpen] = useState(false)
+  const [isManufacturerOverlayOpen, setIsManufacturerOverlayOpen] = useState(false)
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false)
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<CategoryDto | null>(null)
@@ -423,6 +424,11 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
     setIsCategoriesOverlayOpen(true)
   }
 
+  function openManufacturerOverlay() {
+    setIsCategoryMenuOpen(false)
+    setIsManufacturerOverlayOpen(true)
+  }
+
   function getCategoryInline(category: CategoryDto): CategoryForm {
     return categoryInline[category.id] ?? toCategoryForm(category)
   }
@@ -602,20 +608,29 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
           <div className="flex items-center gap-2">
             <div className="relative">
               <button
-                onClick={() => setIsCategoryMenuOpen((prev) => !prev)}
+                onClick={() => {
+                  setIsCategoryMenuOpen((prev) => !prev)
+                }}
                 type="button"
                 className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 transition hover:bg-[var(--panel-hover)]"
               >
                 <ClipboardList size={18} />
               </button>
               {isCategoryMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] p-1 shadow-lg">
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] p-1 shadow-lg">
                   <button
                     onClick={openCategoriesOverlay}
                     type="button"
                     className="w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-[var(--panel-hover)]"
                   >
                     Categories
+                  </button>
+                  <button
+                    onClick={openManufacturerOverlay}
+                    type="button"
+                    className="w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-[var(--panel-hover)]"
+                  >
+                    Manufacturer
                   </button>
                 </div>
               )}
@@ -890,6 +905,27 @@ export default function ProductsManager({ initialProducts, initialCategories }: 
                     </td>
                   </tr>
                 )}
+              </tbody>
+            </table>
+          </div>
+        </ModalShell>
+      )}
+
+      {isManufacturerOverlayOpen && (
+        <ModalShell title="Manufacturer" onClose={() => setIsManufacturerOverlayOpen(false)}>
+          <div className="max-h-[55vh] overflow-auto rounded-lg border border-[var(--panel-border)]">
+            <table className="min-w-full text-sm">
+              <thead className="bg-[var(--panel-hover)] text-left">
+                <tr>
+                  <th className="px-2 py-2">Manufacturer</th>
+                  <th className="px-2 py-2">Product Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-[var(--panel-border)]">
+                  <td className="px-2 py-2">Unassigned</td>
+                  <td className="px-2 py-2">{products.length}</td>
+                </tr>
               </tbody>
             </table>
           </div>
