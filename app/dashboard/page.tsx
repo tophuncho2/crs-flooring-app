@@ -15,8 +15,10 @@ if (!session) {
 
       {/* Top Right User Menu */}
       <div className="absolute top-6 right-6">
-        <UserMenu email={session?.user?.email ?? ""} />
-      </div>
+<UserMenu 
+  email={session?.user?.email ?? ""} 
+  role={(session?.user as any)?.role ?? ""}
+/>      </div>
 
       {/* Page Content */}
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -28,3 +30,6 @@ if (!session) {
     </div>
   )
 }
+const session = await getServerSession(authOptions)
+
+console.log("ROLE:", session?.user?.role)

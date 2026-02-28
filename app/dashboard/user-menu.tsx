@@ -2,14 +2,16 @@
 
 import { useState, useRef, useEffect } from "react"
 import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
-export default function UserMenu({ email }: { email: string }) {
+export default function UserMenu({ email, role }: { email: string, role: string }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   const firstLetter = email.charAt(0).toUpperCase()
 
-  // 🔒 Click Outside to Close
+  // Click outside to close
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -36,13 +38,12 @@ export default function UserMenu({ email }: { email: string }) {
           font-bold text-black 
           transition-all duration-200
           hover:bg-blue-500
-          shadow-[0_0_6px_rgba(59,130,246,0.4)]
+          shadow-[0_0_6px_rgba(59,130,246,0.35)]
         "
       >
         {firstLetter}
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div
           className="
@@ -55,10 +56,23 @@ export default function UserMenu({ email }: { email: string }) {
             text-sm
           "
         >
-          {/* Email Section */}
+          {/* Email Header */}
           <div className="px-4 py-2 border-b border-gray-800 text-blue-400 truncate">
             {email}
           </div>
+
+          {/* Builder Panel Button (only visible to BUILDER) */}
+          {role === "BUILDER" && (
+            <button
+              onClick={() => {
+                router.push("/dashboard/builder")
+                setOpen(false)
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-gray-800 transition"
+            >
+              Builder Panel
+            </button>
+          )}
 
           {/* Logout */}
           <button

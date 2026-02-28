@@ -35,13 +35,29 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: user.id,
-          email: user.email
+          email: user.email,
+          role: user.role
         }
       }
     })
   ],
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
+
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).role = token.role
+      }
+      return session
+    }
+  }
 }
 
 // 👇 This stays for NextAuth to work
