@@ -5,7 +5,8 @@ import bcrypt from "bcrypt"
 
 const prisma = new PrismaClient()
 
-const handler = NextAuth({
+// 👇 Export this so dashboard can access it
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -40,6 +41,9 @@ const handler = NextAuth({
   ],
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET
-})
+}
+
+// 👇 This stays for NextAuth to work
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }
