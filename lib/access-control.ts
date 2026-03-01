@@ -5,7 +5,7 @@ export const MASTER_EMAIL_LIST = [
   "j.ottohull@gmail.com",
 ] as const
 
-const MASTER_EMAILS = new Set(MASTER_EMAIL_LIST)
+const MASTER_EMAILS: ReadonlySet<string> = new Set<string>(MASTER_EMAIL_LIST)
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()

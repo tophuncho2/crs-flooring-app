@@ -27,8 +27,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   const fileName = estimate.customerFileName ?? `estimate-${id}-customer-estimate.pdf`
   const mimeType = estimate.customerFileMime ?? "application/pdf"
+  const sourceBytes = Uint8Array.from(estimate.customerFileData)
+  const fileArrayBuffer = new ArrayBuffer(sourceBytes.byteLength)
+  new Uint8Array(fileArrayBuffer).set(sourceBytes)
+  const fileBlob = new Blob([fileArrayBuffer], { type: mimeType })
 
-  return new NextResponse(estimate.customerFileData, {
+  return new NextResponse(fileBlob, {
     status: 200,
     headers: {
       "Content-Type": mimeType,
