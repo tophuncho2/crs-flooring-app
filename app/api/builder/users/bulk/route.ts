@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { MASTER_EMAIL } from "@/lib/access-control"
-import { ensureBuilderOnly } from "@/lib/route-auth"
+import { MASTER_EMAIL_LIST } from "@/lib/access-control"
+import { ensureMasterOnly } from "@/lib/route-auth"
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOnly()
+  const authError = await ensureMasterOnly()
   if (authError) return authError
 
   const body = (await request.json()) as { action?: "restrictAll" | "verifyAll" }
@@ -16,8 +16,7 @@ export async function POST(request: Request) {
   if (body.action === "restrictAll") {
     const result = await prisma.user.updateMany({
       where: {
-        role: { not: "BUILDER" },
-        email: { not: MASTER_EMAIL },
+        email: { notIn: [...MASTER_EMAIL_LIST] },
       },
       data: { isVerified: false },
     })
@@ -27,7 +26,7 @@ export async function POST(request: Request) {
 
   const result = await prisma.user.updateMany({
     where: {
-      role: { not: "BUILDER" },
+      email: { notIn: [...MASTER_EMAIL_LIST] },
     },
     data: { isVerified: true },
   })

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { canBypassVerification } from "@/lib/access-control"
+import { canAccessBuilderPanel, canBypassVerification } from "@/lib/access-control"
 import BuilderUsersPanel from "./users-panel"
 
 export default async function BuilderPage() {
@@ -21,7 +21,7 @@ export default async function BuilderPage() {
     redirect("/login")
   }
 
-  if (user.role !== "BUILDER") {
+  if (!canAccessBuilderPanel(user.email, user.role)) {
     redirect("/dashboard")
   }
 

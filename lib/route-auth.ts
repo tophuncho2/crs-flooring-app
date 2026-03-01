@@ -2,7 +2,11 @@ import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { canBypassVerification } from "@/lib/access-control"
+import {
+  canAccessBuilderPanel,
+  canBypassVerification,
+  canEditBuilderTab,
+} from "@/lib/access-control"
 
 async function getCurrentUserRecord() {
   const session = await getServerSession(authOptions)
@@ -56,6 +60,36 @@ export async function ensureBuilderOnly() {
   }
 
   if (user.role !== "BUILDER") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  return null
+}
+
+export async function ensureBuilderPanelAccess() {
+  const { session, user } = await getCurrentUserRecord()
+  if (!session || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (!canAccessBuilderPanel(user.email, user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
+  }
+
+  return null
+}
+
+export async function ensureMasterOnly() {
+  const { session, user } = await getCurrentUserRecord()
+  if (!session || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (!canEditBuilderTab(user.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

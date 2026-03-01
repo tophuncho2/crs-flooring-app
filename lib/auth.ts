@@ -30,6 +30,13 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        await prisma.userLoginActivity.create({
+          data: {
+            userId: user.id,
+            userEmail: user.email,
+          },
+        })
+
         return {
           id: user.id,
           email: user.email,

@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { canEditRole, canRestrictUser, isMasterEmail } from "@/lib/access-control"
-import { ensureBuilderOnly } from "@/lib/route-auth"
+import { ensureMasterOnly } from "@/lib/route-auth"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOnly()
+  const authError = await ensureMasterOnly()
   if (authError) return authError
 
   const body = (await request.json()) as {
@@ -41,7 +41,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     typeof body.isVerified === "boolean" ? body.isVerified : existingUser.isVerified
 
   const nextIsVerified =
-    nextRole === "BUILDER" || isMasterEmail(existingUser.email)
+    isMasterEmail(existingUser.email)
       ? true
       : nextIsVerifiedInput
 
@@ -69,4 +69,28 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       canEditRole: canEditRole(updated.email, updated.role),
     },
   })
+}
+
+export async function DELETE(_request: Request, { params }: RouteContext) {
+  const authError = await ensureMasterOnly()
+  if (authError) return authError
+
+  const { id } = await params
+
+  const existingUser = await prisma.user.findUnique({
+    where: { id },
+    select: { email: true },
+  })
+
+  if (!existingUser) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  }
+
+  if (isMasterEmail(existingUser.email)) {
+    return NextResponse.json({ error: "Master accounts cannot be deleted" }, { status: 400 })
+  }
+
+  await prisma.user.delete({ where: { id } })
+
+  return NextResponse.json({ success: true })
 }

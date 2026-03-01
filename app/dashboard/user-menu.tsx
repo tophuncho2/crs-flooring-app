@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useCallback } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { isMasterEmail } from "@/lib/access-control"
 
 type Theme = "light" | "dark"
 
@@ -56,7 +57,9 @@ export default function UserMenu({ email, role }: { email: string, role: string 
   const router = useRouter()
 
   const firstLetter = email.charAt(0).toUpperCase()
+  const isMaster = isMasterEmail(email)
   const isBuilder = role === "BUILDER"
+  const hasBuilderPanelAccess = isBuilder || isMaster
   const canUseTools = role === "BUILDER" || role === "ADMIN"
 
   useEffect(() => {
@@ -229,7 +232,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
       }
 
       if (key === "b") {
-        if (isBuilder) {
+        if (hasBuilderPanelAccess) {
           event.preventDefault()
           router.push("/dashboard/builder")
         }
@@ -244,7 +247,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canUseTools, isBuilder, isMobile, openHotkeysModal, router])
+  }, [canUseTools, hasBuilderPanelAccess, isMobile, openHotkeysModal, router])
 
   return (
     <>
@@ -281,7 +284,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
               {email}
             </div>
 
-            {role === "BUILDER" && (
+            {hasBuilderPanelAccess && (
               <button
                 onClick={() => {
                   router.push("/dashboard/builder")

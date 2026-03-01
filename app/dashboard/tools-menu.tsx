@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Wrench } from "lucide-react"
 
-export default function ToolsMenu({ role }: { role: string }) {
+export default function ToolsMenu({ canUseTools }: { canUseTools: boolean }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -19,7 +19,7 @@ export default function ToolsMenu({ role }: { role: string }) {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  if (role !== "BUILDER" && role !== "ADMIN") return null
+  if (!canUseTools) return null
 
   return (
     <div ref={menuRef} className="relative">

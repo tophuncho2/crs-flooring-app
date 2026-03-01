@@ -14,12 +14,24 @@ enum Role {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  email      String   @unique
+  id         String              @id @default(uuid())
+  email      String              @unique
   password   String
-  role       Role     @default(CONTRACTOR)
-  isVerified Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  role       Role                @default(CONTRACTOR)
+  isVerified Boolean             @default(true)
+  createdAt  DateTime            @default(now())
+  activities UserLoginActivity[]
+}
+
+model UserLoginActivity {
+  id         String   @id @default(uuid())
+  userId     String?
+  userEmail  String
+  loggedInAt DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([loggedInAt])
+  @@index([userEmail])
 }
 
 model Category {
