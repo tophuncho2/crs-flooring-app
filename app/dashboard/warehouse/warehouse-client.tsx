@@ -1,7 +1,6 @@
 "use client"
 
 import { type ReactNode, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Plus, X } from "lucide-react"
 
 type WarehouseDraft = {
@@ -27,10 +26,8 @@ export type WarehouseRow = {
   name: string
   address: string | null
   phone: string | null
-  importsCount: number
   sectionsCount: number
   locationsCount: number
-  inventoryCount: number
   workOrdersCount: number
   createdAt: string
   updatedAt: string
@@ -57,7 +54,6 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
 }
 
 export default function WarehouseClient({ initialRows }: { initialRows: WarehouseRow[] }) {
-  const router = useRouter()
   const [rows, setRows] = useState(initialRows)
   const [drafts, setDrafts] = useState<Record<string, WarehouseDraft>>({})
   const [activeRow, setActiveRow] = useState<WarehouseRow | null>(null)
@@ -285,10 +281,8 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                   <th className="px-3 py-2">Warehouse</th>
                   <th className="px-3 py-2">Address</th>
                   <th className="px-3 py-2">Store Phone</th>
-                  <th className="px-3 py-2">Imports</th>
                   <th className="px-3 py-2">Sections</th>
                   <th className="px-3 py-2">Locations</th>
-                  <th className="px-3 py-2">Inventory</th>
                   <th className="px-3 py-2">Work Orders</th>
                 </tr>
               </thead>
@@ -306,10 +300,8 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                       <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                         <input value={draft.phone} onChange={(event) => updateDraft(row.id, "phone", event.target.value)} onBlur={() => saveRow(row)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                       </td>
-                      <td className="px-3 py-2">{row.importsCount}</td>
                       <td className="px-3 py-2">{row.sectionsCount}</td>
                       <td className="px-3 py-2">{row.locationsCount}</td>
-                      <td className="px-3 py-2">{row.inventoryCount}</td>
                       <td className="px-3 py-2">{row.workOrdersCount}</td>
                     </tr>
                   )
@@ -317,12 +309,6 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button onClick={() => router.push("/dashboard/imports")} type="button" className="rounded-lg border border-[var(--panel-border)] px-4 py-2 text-sm transition hover:bg-[var(--panel-hover)]">
-            Open Imports
-          </button>
         </div>
       </div>
 

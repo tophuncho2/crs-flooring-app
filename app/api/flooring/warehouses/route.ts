@@ -12,9 +12,7 @@ export async function GET() {
       include: {
         _count: {
           select: {
-            imports: true,
             locations: true,
-            inventory: true,
             workOrders: true,
           },
         },
@@ -45,9 +43,7 @@ export async function POST(request: Request) {
       include: {
         _count: {
           select: {
-            imports: true,
             locations: true,
-            inventory: true,
             workOrders: true,
           },
         },

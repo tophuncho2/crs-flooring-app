@@ -52,15 +52,6 @@ export default function ToolsMenu({ role }: { role: string }) {
         >
           <button
             onClick={() => {
-              router.push("/dashboard/products")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Products
-          </button>
-          <button
-            onClick={() => {
               router.push("/dashboard/estimator")
               setOpen(false)
             }}
@@ -70,12 +61,12 @@ export default function ToolsMenu({ role }: { role: string }) {
           </button>
           <button
             onClick={() => {
-              router.push("/dashboard/inventory")
+              router.push("/dashboard/products")
               setOpen(false)
             }}
             className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
           >
-            Inventory
+            Products
           </button>
           <button
             onClick={() => {
@@ -85,15 +76,6 @@ export default function ToolsMenu({ role }: { role: string }) {
             className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
           >
             Warehouse
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/imports")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Imports
           </button>
         </div>
       )}

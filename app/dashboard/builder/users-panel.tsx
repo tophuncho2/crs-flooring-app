@@ -161,7 +161,7 @@ export default function BuilderUsersPanel() {
                 ) : (
                   users.map((user) => {
                     const isSaving = savingIds.has(user.id)
-                    const statusLabel = user.isVerified ? "Verified" : "Restricted"
+                    const statusLabel = user.isVerified ? "Verified" : "Pending Approval"
 
                     return (
                       <tr key={user.id} className="border-t border-[var(--panel-border)]">
@@ -174,20 +174,25 @@ export default function BuilderUsersPanel() {
                           </div>
                         </td>
                         <td className="px-3 py-2">
-                          <select
-                            value={user.role}
-                            disabled={!user.canEditRole || isSaving}
-                            onChange={(event) =>
-                              void updateUser(user.id, {
-                                role: event.target.value as UserRow["role"],
-                              })
-                            }
-                            className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1 disabled:opacity-60"
-                          >
-                            <option value="CONTRACTOR">CONTRACTOR</option>
-                            <option value="ADMIN">ADMIN</option>
-                            <option value="BUILDER">BUILDER</option>
-                          </select>
+                          <div className="flex flex-col gap-1">
+                            <select
+                              value={user.role}
+                              disabled={!user.canEditRole || isSaving}
+                              onChange={(event) =>
+                                void updateUser(user.id, {
+                                  role: event.target.value as UserRow["role"],
+                                })
+                              }
+                              className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1 disabled:opacity-60"
+                            >
+                              <option value="CONTRACTOR">CONTRACTOR</option>
+                              <option value="ADMIN">ADMIN</option>
+                              <option value="BUILDER">BUILDER</option>
+                            </select>
+                            {!user.isVerified && (
+                              <span className="text-xs text-amber-400">PENDING APPROVAL</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2">
                           <select
@@ -201,7 +206,7 @@ export default function BuilderUsersPanel() {
                             className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1 disabled:opacity-60"
                           >
                             <option value="verified">Verified</option>
-                            <option value="restricted">Restricted</option>
+                            <option value="restricted">Pending Approval</option>
                           </select>
                           {!user.canRestrict && (
                             <div className="mt-1 text-xs text-[var(--foreground)]/70">Always verified</div>

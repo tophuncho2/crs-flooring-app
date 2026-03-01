@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useCallback } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
@@ -99,7 +100,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
     await signOut({ callbackUrl: "/login" })
   }
 
-  async function fetchHotkeys() {
+  const fetchHotkeys = useCallback(async () => {
     setHotkeysLoading(true)
     setHotkeysError("")
 
@@ -118,15 +119,15 @@ export default function UserMenu({ email, role }: { email: string, role: string 
     } finally {
       setHotkeysLoading(false)
     }
-  }
+  }, [])
 
-  async function openHotkeysModal() {
+  const openHotkeysModal = useCallback(async () => {
     setOpen(false)
     setHotkeysMessage("")
     setHotkeysError("")
     setHotkeysOpen(true)
     await fetchHotkeys()
-  }
+  }, [fetchHotkeys])
 
   function getDraft(hotkey: HotkeyRow) {
     return hotkeyDrafts[hotkey.id] ?? {
@@ -197,27 +198,21 @@ export default function UserMenu({ email, role }: { email: string, role: string 
 
       const key = event.key.toLowerCase()
 
-      if (event.shiftKey && (event.key === "~" || event.code === "Backquote")) {
-        if (isBuilder) {
-          event.preventDefault()
-          router.push("/dashboard/builder")
-        }
-        return
-      }
-
-      if (event.shiftKey && event.metaKey && (key === "/" || key === "?")) {
-        event.preventDefault()
-        toggleTheme(false)
-        return
-      }
-
-      if (event.key === "Escape") {
+      if (key === "escape") {
         event.preventDefault()
         await handleLogout()
         return
       }
 
-      if (key === "z") {
+      if (key === "e") {
+        if (canUseTools) {
+          event.preventDefault()
+          router.push("/dashboard/estimator")
+        }
+        return
+      }
+
+      if (key === "p") {
         if (canUseTools) {
           event.preventDefault()
           router.push("/dashboard/products")
@@ -225,17 +220,31 @@ export default function UserMenu({ email, role }: { email: string, role: string 
         return
       }
 
-      if (event.key === "Enter") {
+      if (key === "w") {
         if (canUseTools) {
           event.preventDefault()
-          router.push("/dashboard/estimator")
+          router.push("/dashboard/warehouse")
         }
+        return
+      }
+
+      if (key === "b") {
+        if (isBuilder) {
+          event.preventDefault()
+          router.push("/dashboard/builder")
+        }
+        return
+      }
+
+      if (key === "h") {
+        event.preventDefault()
+        void openHotkeysModal()
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canUseTools, isBuilder, isMobile, router])
+  }, [canUseTools, isBuilder, isMobile, openHotkeysModal, router])
 
   return (
     <>

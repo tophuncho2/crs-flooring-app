@@ -29,6 +29,27 @@ type EstimatorRow = {
   measureUnit?: string
 }
 
+type SavedEstimateItem = {
+  room: string
+  productId: string
+  quantity: string
+  unitOfMeasure: string
+  altUnitOfMeasure: string | null
+}
+
+type SavedEstimate = {
+  id: string
+  propertyAddress: string
+  propertyContact: string
+  unitNumber: string
+  jobName: string
+  jobAddress: string
+  notes: string | null
+  markupPercentage: string
+  createdAt: string
+  items: SavedEstimateItem[]
+}
+
 const defaultJobInfo: JobInfo = {
   propertyAddress: "",
   propertyContact: "",
@@ -54,11 +75,44 @@ function formatCurrency(value: number): string {
   return `$${value.toFixed(2)}`
 }
 
+function ModalShell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string
+  onClose: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-6xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+            type="button"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export default function EstimatorClient({ products }: { products: ProductOption[] }) {
   const [jobInfo, setJobInfo] = useState<JobInfo>(defaultJobInfo)
-  // Do not include in PDF output (future step)
   const [markupPercentage, setMarkupPercentage] = useState<string>("")
   const [rows, setRows] = useState<EstimatorRow[]>([defaultRow])
+  const [activeEstimateId, setActiveEstimateId] = useState<string | null>(null)
+  const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>([])
+  const [isSavedModalOpen, setIsSavedModalOpen] = useState(false)
+  const [message, setMessage] = useState("")
+  const [error, setError] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
   const [showAddRoomForm, setShowAddRoomForm] = useState(false)
   const [newRoomName, setNewRoomName] = useState("")
 
@@ -82,7 +136,10 @@ export default function EstimatorClient({ products }: { products: ProductOption[
     return Array.from(groups.entries())
   }, [rows])
 
-  const totalCost = rows.reduce((sum, row) => sum + getLineTotal(row), 0)
+  const baseTotal = rows.reduce((sum, row) => sum + getLineTotal(row), 0)
+  const markupValue = Number(markupPercentage)
+  const normalizedMarkup = Number.isFinite(markupValue) ? markupValue : 0
+  const totalCost = baseTotal + baseTotal * (normalizedMarkup / 100)
 
   function updateJobInfo(field: keyof JobInfo, value: string) {
     setJobInfo((prev) => ({ ...prev, [field]: value }))
@@ -145,12 +202,155 @@ export default function EstimatorClient({ products }: { products: ProductOption[
     return row.quantity * getCustomerPrice(row)
   }
 
+  async function loadSavedEstimates() {
+    setError("")
+    try {
+      const response = await fetch("/api/estimates", { cache: "no-store" })
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        estimates?: Array<{
+          id: string
+          propertyAddress: string
+          propertyContact: string
+          unitNumber: string
+          jobName: string
+          jobAddress: string
+          notes: string | null
+          markupPercentage: string | number
+          createdAt: string
+          items: Array<{
+            room: string
+            productId: string
+            quantity: string | number
+            unitOfMeasure: string
+            altUnitOfMeasure: string | null
+          }>
+        }>
+      }
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to load saved estimates")
+      }
+
+      const mapped: SavedEstimate[] = (payload.estimates ?? []).map((estimate) => ({
+        id: estimate.id,
+        propertyAddress: estimate.propertyAddress,
+        propertyContact: estimate.propertyContact,
+        unitNumber: estimate.unitNumber,
+        jobName: estimate.jobName,
+        jobAddress: estimate.jobAddress,
+        notes: estimate.notes,
+        markupPercentage: String(estimate.markupPercentage ?? "0"),
+        createdAt: estimate.createdAt,
+        items: estimate.items.map((item) => ({
+          room: item.room,
+          productId: item.productId,
+          quantity: String(item.quantity),
+          unitOfMeasure: item.unitOfMeasure,
+          altUnitOfMeasure: item.altUnitOfMeasure,
+        })),
+      }))
+
+      setSavedEstimates(mapped)
+      setIsSavedModalOpen(true)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load saved estimates")
+    }
+  }
+
+  function openSavedEstimate(estimate: SavedEstimate) {
+    setJobInfo({
+      propertyAddress: estimate.propertyAddress,
+      propertyContact: estimate.propertyContact,
+      unitNumber: estimate.unitNumber,
+      jobName: estimate.jobName,
+      jobAddress: estimate.jobAddress,
+      notes: estimate.notes ?? "",
+    })
+    setMarkupPercentage(estimate.markupPercentage)
+    setRows(
+      estimate.items.length > 0
+        ? estimate.items.map((item) => ({
+            room: item.room,
+            productId: item.productId,
+            quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0,
+            unitOfMeasure: item.unitOfMeasure,
+            measureUnit: item.altUnitOfMeasure ?? "",
+          }))
+        : [defaultRow],
+    )
+    setActiveEstimateId(estimate.id)
+    setIsSavedModalOpen(false)
+    setMessage("Saved estimate loaded")
+    setError("")
+  }
+
+  async function saveEstimate() {
+    setIsSaving(true)
+    setError("")
+    setMessage("")
+
+    try {
+      const body = {
+        ...jobInfo,
+        markupPercentage: markupPercentage.trim() === "" ? "0" : markupPercentage,
+        rows,
+      }
+      const endpoint = activeEstimateId ? `/api/estimates/${activeEstimateId}` : "/api/estimates"
+      const method = activeEstimateId ? "PATCH" : "POST"
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        estimate?: { id: string }
+      }
+
+      if (!response.ok || !payload.estimate) {
+        throw new Error(payload.error ?? "Failed to save estimate")
+      }
+
+      setActiveEstimateId(payload.estimate.id)
+      setMessage(activeEstimateId ? "Estimate updated" : "Estimate saved")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save estimate")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-4 pb-28 pt-20 text-[var(--foreground)] sm:px-6 sm:pt-24 lg:px-8">
       <div className="mx-auto w-full max-w-7xl space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-          <h1 className="text-2xl font-bold text-blue-500">Estimator</h1>
-          <p className="mt-1 text-sm text-[var(--foreground)]/70">Create estimates quickly on mobile or desktop.</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-bold text-blue-500">Estimator</h1>
+              <p className="mt-1 text-sm text-[var(--foreground)]/70">Create estimates quickly on mobile or desktop.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadSavedEstimates()}
+              className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
+            >
+              Saved Estimates
+            </button>
+          </div>
+
+          {message && (
+            <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">
+              {error}
+            </p>
+          )}
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <Field label="Property Address">
@@ -185,16 +385,6 @@ export default function EstimatorClient({ products }: { products: ProductOption[
               <input
                 value={jobInfo.jobAddress}
                 onChange={(event) => updateJobInfo("jobAddress", event.target.value)}
-                className="w-full rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-3 text-base"
-              />
-            </Field>
-            <Field label="Markup Percentage">
-              <input
-                type="number"
-                step="0.01"
-                inputMode="decimal"
-                value={markupPercentage}
-                onChange={(event) => setMarkupPercentage(event.target.value)}
                 className="w-full rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-3 text-base"
               />
             </Field>
@@ -418,29 +608,78 @@ export default function EstimatorClient({ products }: { products: ProductOption[
           </div>
 
           <div className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold">Total Cost</span>
-              <input
-                readOnly
-                value={formatCurrency(totalCost)}
-                className="w-44 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-right font-semibold"
-              />
+            <div className="flex flex-wrap items-end justify-end gap-3">
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-[var(--foreground)]/80">Markup %</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={markupPercentage}
+                  onChange={(event) => setMarkupPercentage(event.target.value)}
+                  className="w-32 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-right"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-[var(--foreground)]/80">Total Cost</span>
+                <input
+                  readOnly
+                  value={formatCurrency(totalCost)}
+                  className="w-44 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-right font-semibold"
+                />
+              </label>
             </div>
           </div>
         </section>
       </div>
+
+      {isSavedModalOpen && (
+        <ModalShell title="Saved Estimates" onClose={() => setIsSavedModalOpen(false)}>
+          <div className="max-h-[65vh] overflow-auto rounded-lg border border-[var(--panel-border)]">
+            <table className="min-w-full text-sm">
+              <thead className="bg-[var(--panel-hover)] text-left">
+                <tr>
+                  <th className="px-3 py-2">Job</th>
+                  <th className="px-3 py-2">Property</th>
+                  <th className="px-3 py-2">Rows</th>
+                  <th className="px-3 py-2">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {savedEstimates.map((estimate) => (
+                  <tr
+                    key={estimate.id}
+                    onClick={() => openSavedEstimate(estimate)}
+                    className="cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]"
+                  >
+                    <td className="px-3 py-2">{estimate.jobName || "Untitled Job"}</td>
+                    <td className="px-3 py-2">{estimate.propertyAddress || "-"}</td>
+                    <td className="px-3 py-2">{estimate.items.length}</td>
+                    <td className="px-3 py-2">{new Date(estimate.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+                {savedEstimates.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                      No saved estimates.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </ModalShell>
+      )}
 
       <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--panel-border)] bg-[var(--panel-background)] p-3">
         <div className="mx-auto max-w-7xl">
           <button
             type="button"
             className="w-full rounded-lg bg-blue-500 px-4 py-3 text-base font-semibold text-black transition hover:bg-blue-400"
-            onClick={() => {
-              console.log({ jobInfo, markupPercentage, rows })
-              alert("Estimate confirmed in UI state. Backend save is not implemented yet.")
-            }}
+            onClick={() => void saveEstimate()}
+            disabled={isSaving}
           >
-            Confirm Estimate
+            {isSaving ? "Saving..." : activeEstimateId ? "Update Estimate" : "Save Estimate"}
           </button>
         </div>
       </div>
