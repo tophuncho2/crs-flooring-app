@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { generateAndStoreCustomerEstimateFile } from "@/lib/estimate-customer-file"
 import { normalizePrismaError, parseDecimalOrDefault, parseOptionalString } from "@/lib/api-helpers"
 
 type RouteContext = {
@@ -48,7 +49,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as EstimateBody
     const items = sanitizeRows(body.rows)
 
-    const estimate = await prisma.estimate.update({
+    await prisma.estimate.update({
       where: { id },
       data: {
         propertyAddress: parseOptionalString(body.propertyAddress) ?? "",
@@ -63,12 +64,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           create: items,
         },
       },
-      include: { items: true },
+      select: { id: true },
     })
 
-    return NextResponse.json({ estimate })
+    const estimateWithFile = await generateAndStoreCustomerEstimateFile(id)
+
+    return NextResponse.json({ estimate: estimateWithFile })
   } catch (error) {
     const normalized = normalizePrismaError(error)
+    if (normalized.status === 500 && error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })
   }
 }

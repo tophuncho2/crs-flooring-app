@@ -47,6 +47,8 @@ type SavedEstimate = {
   notes: string | null
   markupPercentage: string
   createdAt: string
+  customerFileName: string | null
+  customerFileAt: string | null
   items: SavedEstimateItem[]
 }
 
@@ -113,8 +115,10 @@ export default function EstimatorClient({ products }: { products: ProductOption[
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const [isDownloadingFile, setIsDownloadingFile] = useState(false)
   const [showAddRoomForm, setShowAddRoomForm] = useState(false)
   const [newRoomName, setNewRoomName] = useState("")
+  const [activeEstimateFileName, setActiveEstimateFileName] = useState<string | null>(null)
 
   const productsById = useMemo(() => {
     const map = new Map<string, ProductOption>()
@@ -218,6 +222,8 @@ export default function EstimatorClient({ products }: { products: ProductOption[
           notes: string | null
           markupPercentage: string | number
           createdAt: string
+          customerFileName: string | null
+          customerFileAt: string | null
           items: Array<{
             room: string
             productId: string
@@ -242,6 +248,8 @@ export default function EstimatorClient({ products }: { products: ProductOption[
         notes: estimate.notes,
         markupPercentage: String(estimate.markupPercentage ?? "0"),
         createdAt: estimate.createdAt,
+        customerFileName: estimate.customerFileName,
+        customerFileAt: estimate.customerFileAt,
         items: estimate.items.map((item) => ({
           room: item.room,
           productId: item.productId,
@@ -280,9 +288,40 @@ export default function EstimatorClient({ products }: { products: ProductOption[
         : [defaultRow],
     )
     setActiveEstimateId(estimate.id)
+    setActiveEstimateFileName(estimate.customerFileName)
     setIsSavedModalOpen(false)
     setMessage("Saved estimate loaded")
     setError("")
+  }
+
+  async function downloadCustomerFile(estimateId: string, fileName?: string | null) {
+    setIsDownloadingFile(true)
+    setError("")
+
+    try {
+      const response = await fetch(`/api/estimates/${estimateId}/customer-file`, {
+        method: "GET",
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(payload.error ?? "Failed to download customer estimate file")
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = fileName ?? `estimate-${estimateId}-customer-estimate.pdf`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Failed to download customer estimate file")
+    } finally {
+      setIsDownloadingFile(false)
+    }
   }
 
   async function saveEstimate() {
@@ -307,7 +346,7 @@ export default function EstimatorClient({ products }: { products: ProductOption[
 
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string
-        estimate?: { id: string }
+        estimate?: { id: string; customerFileName?: string | null }
       }
 
       if (!response.ok || !payload.estimate) {
@@ -315,7 +354,9 @@ export default function EstimatorClient({ products }: { products: ProductOption[
       }
 
       setActiveEstimateId(payload.estimate.id)
+      setActiveEstimateFileName(payload.estimate.customerFileName ?? null)
       setMessage(activeEstimateId ? "Estimate updated" : "Estimate saved")
+      await downloadCustomerFile(payload.estimate.id, payload.estimate.customerFileName)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save estimate")
     } finally {
@@ -332,13 +373,25 @@ export default function EstimatorClient({ products }: { products: ProductOption[
               <h1 className="text-2xl font-bold text-blue-500">Estimator</h1>
               <p className="mt-1 text-sm text-[var(--foreground)]/70">Create estimates quickly on mobile or desktop.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => void loadSavedEstimates()}
-              className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
-            >
-              Saved Estimates
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {activeEstimateId && activeEstimateFileName && (
+                <button
+                  type="button"
+                  onClick={() => void downloadCustomerFile(activeEstimateId, activeEstimateFileName)}
+                  className="rounded-lg border border-blue-500/40 px-3 py-2 text-sm text-blue-500 transition hover:bg-blue-500/10 disabled:opacity-60"
+                  disabled={isDownloadingFile}
+                >
+                  {isDownloadingFile ? "Downloading..." : "Download Customer File"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => void loadSavedEstimates()}
+                className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
+              >
+                Saved Estimates
+              </button>
+            </div>
           </div>
 
           {message && (
@@ -642,6 +695,7 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                   <th className="px-3 py-2">Job</th>
                   <th className="px-3 py-2">Property</th>
                   <th className="px-3 py-2">Rows</th>
+                  <th className="px-3 py-2">File</th>
                   <th className="px-3 py-2">Created</th>
                 </tr>
               </thead>
@@ -655,12 +709,28 @@ export default function EstimatorClient({ products }: { products: ProductOption[
                     <td className="px-3 py-2">{estimate.jobName || "Untitled Job"}</td>
                     <td className="px-3 py-2">{estimate.propertyAddress || "-"}</td>
                     <td className="px-3 py-2">{estimate.items.length}</td>
+                    <td className="px-3 py-2">
+                      {estimate.customerFileName ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void downloadCustomerFile(estimate.id, estimate.customerFileName)
+                          }}
+                          className="rounded-md border border-blue-500/40 px-2 py-1 text-xs text-blue-500 hover:bg-blue-500/10"
+                        >
+                          Download
+                        </button>
+                      ) : (
+                        <span className="text-[var(--foreground)]/60">No file</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2">{new Date(estimate.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}
                 {savedEstimates.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                    <td colSpan={5} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                       No saved estimates.
                     </td>
                   </tr>

@@ -72,6 +72,10 @@ model Estimate {
   jobAddress       String
   markupPercentage Decimal        @db.Decimal(8, 2)
   notes            String?
+  customerFileName String?
+  customerFileMime String?
+  customerFileData Bytes?
+  customerFileAt   DateTime?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   items            EstimateItem[]

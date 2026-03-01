@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { generateAndStoreCustomerEstimateFile } from "@/lib/estimate-customer-file"
 import { normalizePrismaError, parseDecimalOrDefault, parseOptionalString } from "@/lib/api-helpers"
 
 type EstimateRowInput = {
@@ -41,16 +42,40 @@ export async function GET() {
 
   try {
     const estimates = await prisma.estimate.findMany({
-      include: {
-        items: true,
-      },
       orderBy: {
         createdAt: "desc",
       },
+      select: {
+        id: true,
+        propertyAddress: true,
+        propertyContact: true,
+        unitNumber: true,
+        jobName: true,
+        jobAddress: true,
+        notes: true,
+        markupPercentage: true,
+        createdAt: true,
+        updatedAt: true,
+        customerFileName: true,
+        customerFileAt: true,
+        items: {
+          select: {
+            room: true,
+            productId: true,
+            quantity: true,
+            unitOfMeasure: true,
+            altUnitOfMeasure: true,
+          },
+        },
+      },
     })
+
     return NextResponse.json({ estimates })
   } catch (error) {
     const normalized = normalizePrismaError(error)
+    if (normalized.status === 500 && error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })
   }
 }
@@ -76,12 +101,17 @@ export async function POST(request: Request) {
           create: items,
         },
       },
-      include: { items: true },
+      select: { id: true },
     })
 
-    return NextResponse.json({ estimate }, { status: 201 })
+    const estimateWithFile = await generateAndStoreCustomerEstimateFile(estimate.id)
+
+    return NextResponse.json({ estimate: estimateWithFile }, { status: 201 })
   } catch (error) {
     const normalized = normalizePrismaError(error)
+    if (normalized.status === 500 && error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })
   }
 }
