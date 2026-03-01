@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       include: {
         product: { include: { category: { select: { name: true, stockUnit: true } } } },
         warehouse: { select: { id: true, name: true } },
-        location: { select: { id: true, locationCode: true, section: { select: { name: true } } } },
+        location: { select: { id: true, locationCode: true } },
         importBatch: { select: { id: true, status: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       include: {
         product: { include: { category: { select: { name: true } } } },
         warehouse: { select: { id: true, name: true } },
-        location: { select: { id: true, locationCode: true, section: { select: { name: true } } } },
+        location: { select: { id: true, locationCode: true } },
         importBatch: { select: { id: true, status: true } },
       },
     })

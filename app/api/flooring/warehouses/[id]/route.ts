@@ -25,7 +25,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         _count: {
           select: {
             imports: true,
-            sections: true,
             locations: true,
             inventory: true,
             workOrders: true,

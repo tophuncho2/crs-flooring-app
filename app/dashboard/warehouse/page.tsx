@@ -13,7 +13,6 @@ type WarehouseQueryRow = {
   updatedAt: Date
   _count: {
     imports: number
-    sections: number
     locations: number
     inventory: number
     workOrders: number
@@ -40,7 +39,6 @@ export default async function WarehousePage() {
         _count: {
           select: {
             imports: true,
-            sections: true,
             locations: true,
             inventory: true,
             workOrders: true,
@@ -60,7 +58,7 @@ export default async function WarehousePage() {
     address: w.address,
     phone: w.phone,
     importsCount: w._count.imports,
-    sectionsCount: w._count.sections,
+    sectionsCount: 0,
     locationsCount: w._count.locations,
     inventoryCount: w._count.inventory,
     workOrdersCount: w._count.workOrders,

@@ -17,7 +17,6 @@ type ImportBatchQueryRow = {
   transportType: string | null
   status: string | null
   warehouseId: string | null
-  totalCost: { toString(): string } | null
   createdAt: Date
   warehouse: { id: string; name: string } | null
   _count: { inventory: number }
@@ -36,7 +35,6 @@ type LocationQueryRow = {
   warehouseId: string
   locationCode: string
   warehouse: { id: string; name: string }
-  section: { name: string } | null
 }
 
 type InventoryLineQueryRow = {
@@ -47,7 +45,7 @@ type InventoryLineQueryRow = {
   product: { manufacturer: string | null; category: { name: string } | null } | null
   warehouseId: string | null
   locationId: string | null
-  location: { locationCode: string; section: { name: string } | null } | null
+  location: { locationCode: string } | null
   itemNumber: string | null
   dyeLot: string | null
   stockCount: { toString(): string }
@@ -70,55 +68,50 @@ export default async function ImportsPage() {
   if (!user) redirect("/login")
   if (user.role !== "BUILDER" && user.role !== "ADMIN") redirect("/dashboard")
 
-  let imports: ImportBatchQueryRow[] = []
-  let warehouses: WarehouseQueryRow[] = []
-  let products: ProductQueryRow[] = []
-  let locations: LocationQueryRow[] = []
-  let lines: InventoryLineQueryRow[] = []
+  const [importsResult, warehousesResult, productsResult, locationsResult, linesResult] = await Promise.allSettled([
+    prisma.flooringImportBatch.findMany({
+      select: {
+        id: true,
+        importNumber: true,
+        importTag: true,
+        transportType: true,
+        status: true,
+        warehouseId: true,
+        createdAt: true,
+        warehouse: { select: { id: true, name: true } },
+        _count: { select: { inventory: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.flooringWarehouse.findMany({ orderBy: { name: "asc" } }),
+    prisma.flooringProduct.findMany({
+      include: { category: { select: { name: true, stockUnit: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.flooringLocation.findMany({
+      include: {
+        warehouse: { select: { id: true, name: true } },
+      },
+      orderBy: { locationCode: "asc" },
+    }),
+    prisma.flooringInventoryLot.findMany({
+      where: { importBatchId: { not: null } },
+      include: {
+        importBatch: { select: { id: true, status: true, warehouseId: true } },
+        product: { include: { category: { select: { name: true } } } },
+        location: { select: { locationCode: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    }),
+  ])
 
-  try {
-    const [fetchedImports, fetchedWarehouses, fetchedProducts, fetchedLocations, fetchedLines] = await Promise.all([
-      prisma.flooringImportBatch.findMany({
-        include: {
-          warehouse: { select: { id: true, name: true } },
-          _count: { select: { inventory: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.flooringWarehouse.findMany({ orderBy: { name: "asc" } }),
-      prisma.flooringProduct.findMany({
-        include: { category: { select: { name: true, stockUnit: true } } },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.flooringLocation.findMany({
-        include: {
-          section: { select: { name: true } },
-          warehouse: { select: { id: true, name: true } },
-        },
-        orderBy: { locationCode: "asc" },
-      }),
-      prisma.flooringInventoryLot.findMany({
-        where: { importBatchId: { not: null } },
-        include: {
-          importBatch: { select: { id: true, status: true, warehouseId: true } },
-          product: { include: { category: { select: { name: true } } } },
-          location: { include: { section: { select: { name: true } } } },
-        },
-        orderBy: { updatedAt: "desc" },
-      }),
-    ])
-    imports = fetchedImports as ImportBatchQueryRow[]
-    warehouses = fetchedWarehouses as WarehouseQueryRow[]
-    products = fetchedProducts as ProductQueryRow[]
-    locations = fetchedLocations as LocationQueryRow[]
-    lines = fetchedLines as InventoryLineQueryRow[]
-  } catch {
-    imports = []
-    warehouses = []
-    products = []
-    locations = []
-    lines = []
-  }
+  const imports: ImportBatchQueryRow[] = importsResult.status === "fulfilled" ? (importsResult.value as ImportBatchQueryRow[]) : []
+  const warehouses: WarehouseQueryRow[] =
+    warehousesResult.status === "fulfilled" ? (warehousesResult.value as WarehouseQueryRow[]) : []
+  const products: ProductQueryRow[] = productsResult.status === "fulfilled" ? (productsResult.value as ProductQueryRow[]) : []
+  const locations: LocationQueryRow[] =
+    locationsResult.status === "fulfilled" ? (locationsResult.value as LocationQueryRow[]) : []
+  const lines: InventoryLineQueryRow[] = linesResult.status === "fulfilled" ? (linesResult.value as InventoryLineQueryRow[]) : []
 
   const importHeaders: ImportHeader[] = imports.map((row) => ({
     id: row.id,
@@ -128,7 +121,7 @@ export default async function ImportsPage() {
     status: row.status,
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse?.name ?? null,
-    totalCost: row.totalCost?.toString() ?? "0.00",
+    totalCost: "0.00",
     lineCount: row._count.inventory,
     createdAt: row.createdAt.toISOString(),
   }))
@@ -151,7 +144,7 @@ export default async function ImportsPage() {
     label: row.locationCode,
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse.name,
-    sectionName: row.section?.name ?? null,
+    sectionName: null,
   }))
 
   const lineRows: ImportLine[] = lines.map((row) => ({
@@ -162,7 +155,7 @@ export default async function ImportsPage() {
     categoryName: row.product?.category?.name ?? null,
     manufacturer: row.product?.manufacturer ?? null,
     warehouseId: row.warehouseId,
-    sectionName: row.location?.section?.name ?? null,
+    sectionName: null,
     locationId: row.locationId,
     locationCode: row.location?.locationCode ?? null,
     itemNumber: row.itemNumber,

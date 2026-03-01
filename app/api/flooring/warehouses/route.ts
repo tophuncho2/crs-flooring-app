@@ -13,7 +13,6 @@ export async function GET() {
         _count: {
           select: {
             imports: true,
-            sections: true,
             locations: true,
             inventory: true,
             workOrders: true,
@@ -47,7 +46,6 @@ export async function POST(request: Request) {
         _count: {
           select: {
             imports: true,
-            sections: true,
             locations: true,
             inventory: true,
             workOrders: true,

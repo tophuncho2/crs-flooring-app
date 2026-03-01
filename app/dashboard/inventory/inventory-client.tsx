@@ -2,7 +2,7 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ClipboardList, X } from "lucide-react"
+import { X } from "lucide-react"
 
 export type InventoryRow = {
   id: string
@@ -129,7 +129,6 @@ export default function InventoryClient({ initialRows }: { initialRows: Inventor
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [activeRow, setActiveRow] = useState<InventoryRow | null>(null)
-  const [isClipboardMenuOpen, setIsClipboardMenuOpen] = useState(false)
 
   const selectedGroups = useMemo(
     () => [groupBy.group1, groupBy.group2, groupBy.group3].filter((value): value is GroupByKey => Boolean(value)),
@@ -303,53 +302,6 @@ export default function InventoryClient({ initialRows }: { initialRows: Inventor
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsClipboardMenuOpen((prev) => !prev)
-                }}
-                type="button"
-                className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 transition hover:bg-[var(--panel-hover)]"
-              >
-                <ClipboardList size={18} />
-              </button>
-              {isClipboardMenuOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] p-1 shadow-lg">
-                  <button
-                    onClick={() => {
-                      setIsClipboardMenuOpen(false)
-                      router.push("/dashboard/products")
-                    }}
-                    type="button"
-                    className="w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-[var(--panel-hover)]"
-                  >
-                    Products
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsClipboardMenuOpen(false)
-                      router.push("/dashboard/imports")
-                    }}
-                    type="button"
-                    className="w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-[var(--panel-hover)]"
-                  >
-                    Imports
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsClipboardMenuOpen(false)
-                      router.push("/dashboard/warehouse")
-                    }}
-                    type="button"
-                    className="w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-[var(--panel-hover)]"
-                  >
-                    Warehouse
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">

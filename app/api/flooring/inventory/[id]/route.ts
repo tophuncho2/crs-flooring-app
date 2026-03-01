@@ -60,7 +60,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           },
         },
         warehouse: { select: { id: true, name: true } },
-        location: { select: { id: true, section: { select: { name: true } }, locationCode: true } },
+        location: { select: { id: true, locationCode: true } },
         importBatch: { select: { status: true } },
       },
     })
@@ -73,7 +73,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         manufacturer: lot.product?.manufacturer ?? null,
         warehouseId: lot.warehouseId,
         warehouseName: lot.warehouse?.name ?? null,
-        section: lot.location?.section?.name ?? null,
+        section: null,
         locationId: lot.locationId,
         locationCode: lot.location?.locationCode ?? null,
         itemNumber: lot.itemNumber,

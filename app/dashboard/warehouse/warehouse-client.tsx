@@ -19,7 +19,6 @@ type SectionRow = {
 type LocationRow = {
   id: string
   locationCode: string
-  sectionId: string | null
   sectionName: string | null
 }
 
@@ -37,18 +36,10 @@ export type WarehouseRow = {
   updatedAt: string
 }
 
-function ModalShell({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: ReactNode
-}) {
+function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-5xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 shadow-xl">
+      <div className="w-full max-w-7xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button
@@ -78,9 +69,9 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
   const [sections, setSections] = useState<SectionRow[]>([])
   const [locations, setLocations] = useState<LocationRow[]>([])
   const [sectionDrafts, setSectionDrafts] = useState<Record<string, string>>({})
-  const [locationDrafts, setLocationDrafts] = useState<Record<string, { locationCode: string; sectionId: string }>>({})
+  const [locationDrafts, setLocationDrafts] = useState<Record<string, { locationCode: string; sectionName: string }>>({})
   const [newSection, setNewSection] = useState("")
-  const [newLocation, setNewLocation] = useState({ locationCode: "", sectionId: "" })
+  const [newLocation, setNewLocation] = useState({ locationCode: "", sectionName: "" })
 
   useEffect(() => {
     if (!activeRow) return
@@ -94,27 +85,14 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
         ])
 
         const sectionsPayload = (await sectionsRes.json().catch(() => ({}))) as {
-          sections?: Array<{ id: string; name: string; _count?: { locations: number } }>
+          sections?: Array<{ id: string; name: string; locationsCount?: number }>
         }
         const locationsPayload = (await locationsRes.json().catch(() => ({}))) as {
-          locations?: Array<{ id: string; locationCode: string; sectionId: string | null; section?: { name: string } | null }>
+          locations?: Array<{ id: string; locationCode: string; sectionName: string | null }>
         }
 
-        setSections(
-          (sectionsPayload.sections ?? []).map((row) => ({
-            id: row.id,
-            name: row.name,
-            locationsCount: row._count?.locations ?? 0,
-          })),
-        )
-        setLocations(
-          (locationsPayload.locations ?? []).map((row) => ({
-            id: row.id,
-            locationCode: row.locationCode,
-            sectionId: row.sectionId,
-            sectionName: row.section?.name ?? null,
-          })),
-        )
+        setSections(sectionsPayload.sections ?? [])
+        setLocations(locationsPayload.locations ?? [])
       } catch {
         setSections([])
         setLocations([])
@@ -125,98 +103,54 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
   }, [activeRow])
 
   function getDraft(row: WarehouseRow): WarehouseDraft {
-    return (
-      drafts[row.id] ?? {
-        name: row.name,
-        address: row.address ?? "",
-        phone: row.phone ?? "",
-      }
-    )
+    return drafts[row.id] ?? { name: row.name, address: row.address ?? "", phone: row.phone ?? "" }
   }
 
   function updateDraft(id: string, field: keyof WarehouseDraft, value: string) {
     const found = rows.find((r) => r.id === id)
     if (!found) return
-
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: {
-        ...getDraft(found),
-        [field]: value,
-      },
-    }))
+    setDrafts((prev) => ({ ...prev, [id]: { ...getDraft(found), [field]: value } }))
   }
 
   async function saveRow(row: WarehouseRow) {
     const draft = getDraft(row)
-    if (!draft.name.trim()) {
-      setError("Warehouse name is required")
+    if (!draft.name.trim()) return
+
+    const response = await fetch(`/api/flooring/warehouses/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(draft),
+    })
+
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; warehouse?: WarehouseRow }
+    if (!response.ok || !payload.warehouse) {
+      setError(payload.error ?? "Failed to update warehouse")
       return
     }
 
-    setError("")
-    setMessage("")
-
-    try {
-      const response = await fetch(`/api/flooring/warehouses/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        warehouse?: WarehouseRow
-      }
-
-      if (!response.ok || !payload.warehouse) {
-        throw new Error(payload.error ?? "Failed to update warehouse")
-      }
-
-      setRows((prev) => prev.map((item) => (item.id === row.id ? { ...item, ...payload.warehouse } : item)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Warehouse updated")
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "Failed to update warehouse")
-    }
+    setRows((prev) => prev.map((item) => (item.id === row.id ? { ...item, ...payload.warehouse } : item)))
+    setMessage("Warehouse updated")
   }
 
   async function createWarehouse() {
-    if (!createDraft.name.trim()) {
-      setError("Warehouse name is required")
+    if (!createDraft.name.trim()) return
+
+    const response = await fetch("/api/flooring/warehouses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(createDraft),
+    })
+
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; warehouse?: WarehouseRow }
+    if (!response.ok || !payload.warehouse) {
+      setError(payload.error ?? "Failed to create warehouse")
       return
     }
 
-    setError("")
-    setMessage("")
-
-    try {
-      const response = await fetch("/api/flooring/warehouses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createDraft),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        warehouse?: WarehouseRow
-      }
-
-      if (!response.ok || !payload.warehouse) {
-        throw new Error(payload.error ?? "Failed to create warehouse")
-      }
-
-      setRows((prev) => [payload.warehouse as WarehouseRow, ...prev])
-      setCreateDraft({ name: "", address: "", phone: "" })
-      setIsCreating(false)
-      setMessage("Warehouse created")
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create warehouse")
-    }
+    setRows((prev) => [payload.warehouse as WarehouseRow, ...prev])
+    setCreateDraft({ name: "", address: "", phone: "" })
+    setIsCreating(false)
+    setMessage("Warehouse created")
   }
 
   async function addSection() {
@@ -230,7 +164,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
 
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string
-      section?: { id: string; name: string; _count?: { locations: number } }
+      section?: { id: string; name: string; locationsCount?: number }
     }
 
     if (!response.ok || !payload.section) {
@@ -238,19 +172,19 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
       return
     }
 
-    setSections((prev) => [...prev, { id: payload.section!.id, name: payload.section!.name, locationsCount: payload.section!._count?.locations ?? 0 }])
+    setSections((prev) => [...prev, payload.section as SectionRow].sort((a, b) => a.name.localeCompare(b.name)))
     setRows((prev) => prev.map((row) => (row.id === activeRow.id ? { ...row, sectionsCount: row.sectionsCount + 1 } : row)))
     setNewSection("")
   }
 
-  async function saveSection(id: string) {
-    const name = (sectionDrafts[id] ?? sections.find((row) => row.id === id)?.name ?? "").trim()
-    if (!name) return
+  async function saveSection(section: SectionRow) {
+    const name = (sectionDrafts[section.id] ?? section.name).trim()
+    if (!name || !activeRow) return
 
-    const response = await fetch(`/api/flooring/sections/${id}`, {
+    const response = await fetch(`/api/flooring/sections/${section.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, warehouseId: activeRow.id }),
     })
 
     const payload = (await response.json().catch(() => ({}))) as { error?: string; section?: { id: string; name: string } }
@@ -259,10 +193,10 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
       return
     }
 
-    setSections((prev) => prev.map((row) => (row.id === id ? { ...row, name: payload.section!.name } : row)))
+    setSections((prev) => prev.map((row) => (row.id === section.id ? { ...row, name: payload.section!.name } : row)))
     setSectionDrafts((prev) => {
       const next = { ...prev }
-      delete next[id]
+      delete next[section.id]
       return next
     })
   }
@@ -273,16 +207,12 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
     const response = await fetch("/api/flooring/locations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        warehouseId: activeRow.id,
-        sectionId: newLocation.sectionId || null,
-        locationCode: newLocation.locationCode,
-      }),
+      body: JSON.stringify({ warehouseId: activeRow.id, locationCode: newLocation.locationCode, sectionName: newLocation.sectionName || null }),
     })
 
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string
-      location?: { id: string; locationCode: string; sectionId: string | null; section?: { name: string } | null }
+      location?: { id: string; locationCode: string; sectionName: string | null }
     }
 
     if (!response.ok || !payload.location) {
@@ -290,42 +220,29 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
       return
     }
 
-    setLocations((prev) => [
-      ...prev,
-      {
-        id: payload.location!.id,
-        locationCode: payload.location!.locationCode,
-        sectionId: payload.location!.sectionId,
-        sectionName: payload.location!.section?.name ?? null,
-      },
-    ])
+    setLocations((prev) => [...prev, payload.location as LocationRow].sort((a, b) => a.locationCode.localeCompare(b.locationCode)))
     setRows((prev) => prev.map((row) => (row.id === activeRow.id ? { ...row, locationsCount: row.locationsCount + 1 } : row)))
-    setNewLocation({ locationCode: "", sectionId: "" })
+    setNewLocation({ locationCode: "", sectionName: "" })
   }
 
-  async function saveLocation(id: string) {
-    const found = locations.find((row) => row.id === id)
-    if (!found) return
-
-    const draft = locationDrafts[id] ?? {
-      locationCode: found.locationCode,
-      sectionId: found.sectionId ?? "",
-    }
+  async function saveLocation(location: LocationRow) {
+    const draft =
+      locationDrafts[location.id] ?? {
+        locationCode: location.locationCode,
+        sectionName: location.sectionName ?? "",
+      }
 
     if (!draft.locationCode.trim()) return
 
-    const response = await fetch(`/api/flooring/locations/${id}`, {
+    const response = await fetch(`/api/flooring/locations/${location.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        locationCode: draft.locationCode,
-        sectionId: draft.sectionId || null,
-      }),
+      body: JSON.stringify({ locationCode: draft.locationCode, sectionName: draft.sectionName || null }),
     })
 
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string
-      location?: { id: string; locationCode: string; sectionId: string | null; section?: { name: string } | null }
+      location?: { id: string; locationCode: string; sectionName: string | null }
     }
 
     if (!response.ok || !payload.location) {
@@ -334,20 +251,11 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
     }
 
     setLocations((prev) =>
-      prev.map((row) =>
-        row.id === id
-          ? {
-              ...row,
-              locationCode: payload.location!.locationCode,
-              sectionId: payload.location!.sectionId,
-              sectionName: payload.location!.section?.name ?? null,
-            }
-          : row,
-      ),
+      prev.map((row) => (row.id === location.id ? { ...row, locationCode: payload.location!.locationCode, sectionName: payload.location!.sectionName } : row)),
     )
     setLocationDrafts((prev) => {
       const next = { ...prev }
-      delete next[id]
+      delete next[location.id]
       return next
     })
   }
@@ -360,11 +268,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
             <h1 className="text-2xl font-bold text-blue-500">Warehouse</h1>
             <p className="text-sm text-[var(--foreground)]/70">Manage warehouse records and linked operational tables.</p>
           </div>
-          <button
-            onClick={() => setIsCreating(true)}
-            type="button"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400"
-          >
+          <button onClick={() => setIsCreating(true)} type="button" className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400">
             <Plus size={16} />
             Add Warehouse
           </button>
@@ -391,36 +295,16 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
               <tbody>
                 {rows.map((row) => {
                   const draft = getDraft(row)
-
                   return (
-                    <tr
-                      key={row.id}
-                      className="cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]"
-                      onClick={() => setActiveRow(row)}
-                    >
+                    <tr key={row.id} className="cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]" onClick={() => setActiveRow(row)}>
                       <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        <input
-                          value={draft.name}
-                          onChange={(event) => updateDraft(row.id, "name", event.target.value)}
-                          onBlur={() => saveRow(row)}
-                          className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                        />
+                        <input value={draft.name} onChange={(event) => updateDraft(row.id, "name", event.target.value)} onBlur={() => saveRow(row)} className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                       </td>
                       <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        <input
-                          value={draft.address}
-                          onChange={(event) => updateDraft(row.id, "address", event.target.value)}
-                          onBlur={() => saveRow(row)}
-                          className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                        />
+                        <input value={draft.address} onChange={(event) => updateDraft(row.id, "address", event.target.value)} onBlur={() => saveRow(row)} className="w-[34rem] rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                       </td>
                       <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        <input
-                          value={draft.phone}
-                          onChange={(event) => updateDraft(row.id, "phone", event.target.value)}
-                          onBlur={() => saveRow(row)}
-                          className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                        />
+                        <input value={draft.phone} onChange={(event) => updateDraft(row.id, "phone", event.target.value)} onBlur={() => saveRow(row)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                       </td>
                       <td className="px-3 py-2">{row.importsCount}</td>
                       <td className="px-3 py-2">{row.sectionsCount}</td>
@@ -430,24 +314,13 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                     </tr>
                   )
                 })}
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-[var(--foreground)]/70">
-                      No warehouses yet.
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => router.push("/dashboard/imports")}
-            type="button"
-            className="rounded-lg border border-[var(--panel-border)] px-4 py-2 text-sm transition hover:bg-[var(--panel-hover)]"
-          >
+        <div className="flex justify-end">
+          <button onClick={() => router.push("/dashboard/imports")} type="button" className="rounded-lg border border-[var(--panel-border)] px-4 py-2 text-sm transition hover:bg-[var(--panel-hover)]">
             Open Imports
           </button>
         </div>
@@ -456,67 +329,27 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
       {isCreating && (
         <ModalShell title="Add Warehouse" onClose={() => setIsCreating(false)}>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm">
-              <span>Warehouse</span>
-              <input
-                value={createDraft.name}
-                onChange={(event) => setCreateDraft((prev) => ({ ...prev, name: event.target.value }))}
-                className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span>Store Phone</span>
-              <input
-                value={createDraft.phone}
-                onChange={(event) => setCreateDraft((prev) => ({ ...prev, phone: event.target.value }))}
-                className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm md:col-span-2">
-              <span>Address</span>
-              <textarea
-                value={createDraft.address}
-                onChange={(event) => setCreateDraft((prev) => ({ ...prev, address: event.target.value }))}
-                className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </label>
+            <input value={createDraft.name} onChange={(event) => setCreateDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="Warehouse" className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            <input value={createDraft.phone} onChange={(event) => setCreateDraft((prev) => ({ ...prev, phone: event.target.value }))} placeholder="Store Phone" className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            <textarea value={createDraft.address} onChange={(event) => setCreateDraft((prev) => ({ ...prev, address: event.target.value }))} placeholder="Address" className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <button
-              onClick={() => setIsCreating(false)}
-              type="button"
-              className="rounded-lg border border-[var(--panel-border)] px-4 py-2 transition hover:bg-[var(--panel-hover)]"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={createWarehouse}
-              type="button"
-              className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400"
-            >
-              Create Warehouse
-            </button>
+            <button onClick={() => setIsCreating(false)} type="button" className="rounded-lg border border-[var(--panel-border)] px-4 py-2 transition hover:bg-[var(--panel-hover)]">Cancel</button>
+            <button onClick={createWarehouse} type="button" className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400">Create Warehouse</button>
           </div>
         </ModalShell>
       )}
 
       {activeRow && (
         <ModalShell title={`Warehouse - ${activeRow.name}`} onClose={() => setActiveRow(null)}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--foreground)]/70">Sections</h3>
               <div className="mb-2 flex gap-2">
-                <input
-                  value={newSection}
-                  onChange={(event) => setNewSection(event.target.value)}
-                  placeholder="Section name"
-                  className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                />
-                <button onClick={addSection} type="button" className="rounded border border-[var(--panel-border)] px-3 py-1">
-                  Add
-                </button>
+                <input value={newSection} onChange={(event) => setNewSection(event.target.value)} placeholder="Section name" className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                <button onClick={addSection} type="button" className="rounded border border-[var(--panel-border)] px-3 py-1">Add</button>
               </div>
-              <div className="max-h-64 overflow-auto rounded border border-[var(--panel-border)]">
+              <div className="max-h-72 overflow-auto rounded border border-[var(--panel-border)]">
                 <table className="min-w-full text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
                     <tr>
@@ -531,18 +364,13 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                           <input
                             value={sectionDrafts[section.id] ?? section.name}
                             onChange={(event) => setSectionDrafts((prev) => ({ ...prev, [section.id]: event.target.value }))}
-                            onBlur={() => saveSection(section.id)}
+                            onBlur={() => saveSection(section)}
                             className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                           />
                         </td>
                         <td className="px-2 py-2">{section.locationsCount ?? 0}</td>
                       </tr>
                     ))}
-                    {sections.length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="px-2 py-6 text-center text-[var(--foreground)]/70">No sections.</td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -551,29 +379,17 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
             <div>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--foreground)]/70">Locations</h3>
               <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-3">
-                <input
-                  value={newLocation.locationCode}
-                  onChange={(event) => setNewLocation((prev) => ({ ...prev, locationCode: event.target.value }))}
-                  placeholder="Location code"
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1 md:col-span-2"
-                />
-                <select
-                  value={newLocation.sectionId}
-                  onChange={(event) => setNewLocation((prev) => ({ ...prev, sectionId: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                >
+                <input value={newLocation.locationCode} onChange={(event) => setNewLocation((prev) => ({ ...prev, locationCode: event.target.value }))} placeholder="Location code" className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1 md:col-span-2" />
+                <select value={newLocation.sectionName} onChange={(event) => setNewLocation((prev) => ({ ...prev, sectionName: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
                   <option value="">No Section</option>
                   {sections.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.name}
-                    </option>
+                    <option key={section.id} value={section.name}>{section.name}</option>
                   ))}
                 </select>
-                <button onClick={addLocation} type="button" className="rounded border border-[var(--panel-border)] px-3 py-1 md:col-span-3">
-                  Add Location
-                </button>
+                <button onClick={addLocation} type="button" className="rounded border border-[var(--panel-border)] px-3 py-1 md:col-span-3">Add Location</button>
               </div>
-              <div className="max-h-64 overflow-auto rounded border border-[var(--panel-border)]">
+
+              <div className="max-h-72 overflow-auto rounded border border-[var(--panel-border)]">
                 <table className="min-w-full text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
                     <tr>
@@ -583,53 +399,33 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                   </thead>
                   <tbody>
                     {locations.map((location) => {
-                      const draft = locationDrafts[location.id] ?? {
-                        locationCode: location.locationCode,
-                        sectionId: location.sectionId ?? "",
-                      }
+                      const draft = locationDrafts[location.id] ?? { locationCode: location.locationCode, sectionName: location.sectionName ?? "" }
                       return (
                         <tr key={location.id} className="border-t border-[var(--panel-border)]">
                           <td className="px-2 py-2">
                             <input
                               value={draft.locationCode}
-                              onChange={(event) =>
-                                setLocationDrafts((prev) => ({
-                                  ...prev,
-                                  [location.id]: { ...draft, locationCode: event.target.value },
-                                }))
-                              }
-                              onBlur={() => saveLocation(location.id)}
+                              onChange={(event) => setLocationDrafts((prev) => ({ ...prev, [location.id]: { ...draft, locationCode: event.target.value } }))}
+                              onBlur={() => saveLocation(location)}
                               className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                             />
                           </td>
                           <td className="px-2 py-2">
                             <select
-                              value={draft.sectionId}
-                              onChange={(event) =>
-                                setLocationDrafts((prev) => ({
-                                  ...prev,
-                                  [location.id]: { ...draft, sectionId: event.target.value },
-                                }))
-                              }
-                              onBlur={() => saveLocation(location.id)}
+                              value={draft.sectionName}
+                              onChange={(event) => setLocationDrafts((prev) => ({ ...prev, [location.id]: { ...draft, sectionName: event.target.value } }))}
+                              onBlur={() => saveLocation(location)}
                               className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                             >
                               <option value="">No Section</option>
                               {sections.map((section) => (
-                                <option key={section.id} value={section.id}>
-                                  {section.name}
-                                </option>
+                                <option key={section.id} value={section.name}>{section.name}</option>
                               ))}
                             </select>
                           </td>
                         </tr>
                       )
                     })}
-                    {locations.length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="px-2 py-6 text-center text-[var(--foreground)]/70">No locations.</td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
