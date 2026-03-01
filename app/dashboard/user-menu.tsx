@@ -207,6 +207,12 @@ export default function UserMenu({ email, role }: { email: string, role: string 
         return
       }
 
+      if (event.code === "Space") {
+        event.preventDefault()
+        router.push("/dashboard")
+        return
+      }
+
       if (key === "e") {
         if (canUseTools) {
           event.preventDefault()
