@@ -19,6 +19,18 @@ const modules = [
     href: "/dashboard/invoices",
     cta: "Open Invoices",
   },
+  {
+    name: "Jobs",
+    description: "Track job name, address, property contact details, and budget.",
+    href: "/dashboard/jobs",
+    cta: "Open Jobs",
+  },
+  {
+    name: "Daily Scope",
+    description: "Create room-grouped daily scope line items and generate invoice PDFs.",
+    href: "/dashboard/daily-scope",
+    cta: "Open Daily Scope",
+  },
 ]
 
 export default async function Dashboard() {

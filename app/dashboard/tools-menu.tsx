@@ -79,6 +79,24 @@ export default function ToolsMenu({ canUseTools }: { canUseTools: boolean }) {
           </button>
           <button
             onClick={() => {
+              router.push("/dashboard/jobs")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Jobs
+          </button>
+          <button
+            onClick={() => {
+              router.push("/dashboard/daily-scope")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Daily Scope
+          </button>
+          <button
+            onClick={() => {
               router.push("/dashboard/warehouse")
               setOpen(false)
             }}
