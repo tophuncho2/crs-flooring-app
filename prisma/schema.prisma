@@ -98,6 +98,36 @@ model EstimateItem {
   @@index([productId])
 }
 
+model Invoice {
+  id               String        @id @default(uuid())
+  propertyAddress  String
+  propertyContact  String
+  unitNumber       String
+  jobName          String
+  jobAddress       String
+  notes            String?
+  totalCost        Decimal       @db.Decimal(10, 2)
+  customerFileName String?
+  customerFileMime String?
+  customerFileData Bytes?
+  customerFileAt   DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  items            InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([invoiceId])
+}
+
 model Hotkey {
   id          String   @id @default(uuid())
   key         String

@@ -229,6 +229,14 @@ export default function UserMenu({ email, role }: { email: string, role: string 
         return
       }
 
+      if (key === "i") {
+        if (canUseTools) {
+          event.preventDefault()
+          router.push("/dashboard/invoices")
+        }
+        return
+      }
+
       if (key === "w") {
         if (canUseTools) {
           event.preventDefault()

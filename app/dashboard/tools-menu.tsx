@@ -70,6 +70,15 @@ export default function ToolsMenu({ canUseTools }: { canUseTools: boolean }) {
           </button>
           <button
             onClick={() => {
+              router.push("/dashboard/invoices")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Invoices
+          </button>
+          <button
+            onClick={() => {
               router.push("/dashboard/warehouse")
               setOpen(false)
             }}
