@@ -14,6 +14,17 @@ type JobBody = {
   contactName?: string
   contactNumber?: string
   budget?: string | number
+  assignedUserIds?: unknown
+}
+
+function parseOptionalStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+
+  const normalized = value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item) => item.length > 0)
+
+  return Array.from(new Set(normalized))
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -23,6 +34,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params
     const body = (await request.json()) as JobBody
+    const assignedUserIds = parseOptionalStringArray(body.assignedUserIds)
+
+    if (assignedUserIds.length > 0) {
+      const userCount = await prisma.user.count({
+        where: { id: { in: assignedUserIds } },
+      })
+      if (userCount !== assignedUserIds.length) {
+        return NextResponse.json({ error: "One or more assigned users were not found" }, { status: 400 })
+      }
+    }
 
     const job = await prisma.job.update({
       where: { id },
@@ -33,6 +54,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         contactName: parseOptionalString(body.contactName) ?? "",
         contactNumber: parseOptionalString(body.contactNumber) ?? "",
         budget: parseDecimalOrDefault(body.budget, "budget", 2, "0.00"),
+        assignees: {
+          deleteMany: {},
+          create: assignedUserIds.map((userId) => ({ userId })),
+        },
       },
       select: {
         id: true,
@@ -44,6 +69,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         budget: true,
         createdAt: true,
         updatedAt: true,
+        assignees: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     })
 

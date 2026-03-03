@@ -26,6 +26,12 @@ const modules = [
     cta: "Open Jobs",
   },
   {
+    name: "Vendors",
+    description: "Manage vendor contact details used for labor payments and expenses.",
+    href: "/dashboard/vendors",
+    cta: "Open Vendors",
+  },
+  {
     name: "Daily Scope",
     description: "Create room-grouped daily scope line items and generate invoice PDFs.",
     href: "/dashboard/daily-scope",

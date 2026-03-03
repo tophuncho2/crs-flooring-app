@@ -12,7 +12,14 @@ type JobDto = {
   contactName: string
   contactNumber: string
   budget: string
+  assignedUserIds: string[]
+  pendingExpenses: string
   createdAt: string
+}
+
+type UserOption = {
+  id: string
+  email: string
 }
 
 export default async function JobsPage() {
@@ -35,19 +42,36 @@ export default async function JobsPage() {
     redirect("/dashboard")
   }
 
-  const jobs = await prisma.job.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      address: true,
-      propertyName: true,
-      contactName: true,
-      contactNumber: true,
-      budget: true,
-      createdAt: true,
-    },
-  })
+  const [jobs, users] = await Promise.all([
+    prisma.job.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        propertyName: true,
+        contactName: true,
+        contactNumber: true,
+        budget: true,
+        createdAt: true,
+        assignees: {
+          select: {
+            userId: true,
+          },
+        },
+        pendingLaborPayments: {
+          where: { status: "PENDING" },
+          select: {
+            price: true,
+          },
+        },
+      },
+    }),
+    prisma.user.findMany({
+      orderBy: { email: "asc" },
+      select: { id: true, email: true },
+    }),
+  ])
 
   const initialJobs: JobDto[] = jobs.map((job) => ({
     id: job.id,
@@ -57,8 +81,15 @@ export default async function JobsPage() {
     contactName: job.contactName,
     contactNumber: job.contactNumber,
     budget: job.budget.toString(),
+    assignedUserIds: job.assignees.map((assignee) => assignee.userId),
+    pendingExpenses: job.pendingLaborPayments.reduce((sum, payment) => sum + Number(payment.price), 0).toFixed(2),
     createdAt: job.createdAt.toISOString(),
   }))
 
-  return <JobsClient initialJobs={initialJobs} />
+  const userOptions: UserOption[] = users.map((candidate) => ({
+    id: candidate.id,
+    email: candidate.email,
+  }))
+
+  return <JobsClient initialJobs={initialJobs} users={userOptions} />
 }

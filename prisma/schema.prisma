@@ -21,6 +21,7 @@ model User {
   isVerified Boolean             @default(true)
   createdAt  DateTime            @default(now())
   activities UserLoginActivity[]
+  jobs       JobAssignee[]
 }
 
 model UserLoginActivity {
@@ -129,16 +130,75 @@ model InvoiceItem {
 }
 
 model Job {
-  id            String       @id @default(uuid())
-  name          String
-  address       String
-  propertyName  String
-  contactName   String
-  contactNumber String
-  budget        Decimal      @db.Decimal(12, 2)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  dailyScopes   DailyScope[]
+  id                   String                  @id @default(uuid())
+  name                 String
+  address              String
+  propertyName         String
+  contactName          String
+  contactNumber        String
+  budget               Decimal                 @db.Decimal(12, 2)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  dailyScopes          DailyScope[]
+  assignees            JobAssignee[]
+  pendingLaborPayments JobPendingLaborPayment[]
+  expenses             JobExpense[]
+}
+
+model JobAssignee {
+  jobId      String
+  userId     String
+  createdAt  DateTime @default(now())
+  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, userId])
+  @@index([userId])
+}
+
+model Vendor {
+  id                   String                  @id @default(uuid())
+  companyName          String
+  phone                String?
+  email                String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  pendingLaborPayments JobPendingLaborPayment[]
+  expenses             JobExpense[]
+
+  @@index([companyName])
+}
+
+model JobPendingLaborPayment {
+  id        String                    @id @default(uuid())
+  jobId     String
+  vendorId  String
+  price     Decimal                   @db.Decimal(12, 2)
+  notes     String?
+  status    PendingLaborPaymentStatus @default(PENDING)
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+  job       Job                       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  vendor    Vendor                    @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  @@index([jobId, status])
+  @@index([vendorId])
+}
+
+model JobExpense {
+  id          String      @id @default(uuid())
+  jobId       String
+  vendorId    String?
+  price       Decimal     @db.Decimal(12, 2)
+  notes       String?
+  expenseType JobExpenseType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  vendor      Vendor?     @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([jobId])
+  @@index([vendorId])
 }
 
 model DailyScope {
@@ -204,6 +264,16 @@ enum FlooringChangeOrderStatus {
 enum FlooringStoreCode {
   DARBY
   COLUMBIA
+}
+
+enum PendingLaborPaymentStatus {
+  PENDING
+  PAID
+}
+
+enum JobExpenseType {
+  LABOR
+  MATERIAL
 }
 
 enum ConstructionJobStatus {

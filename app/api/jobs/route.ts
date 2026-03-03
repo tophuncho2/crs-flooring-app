@@ -10,6 +10,17 @@ type JobBody = {
   contactName?: string
   contactNumber?: string
   budget?: string | number
+  assignedUserIds?: unknown
+}
+
+function parseOptionalStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+
+  const normalized = value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item) => item.length > 0)
+
+  return Array.from(new Set(normalized))
 }
 
 export async function GET() {
@@ -29,6 +40,16 @@ export async function GET() {
         budget: true,
         createdAt: true,
         updatedAt: true,
+        assignees: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     })
 
@@ -48,6 +69,16 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as JobBody
+    const assignedUserIds = parseOptionalStringArray(body.assignedUserIds)
+
+    if (assignedUserIds.length > 0) {
+      const userCount = await prisma.user.count({
+        where: { id: { in: assignedUserIds } },
+      })
+      if (userCount !== assignedUserIds.length) {
+        return NextResponse.json({ error: "One or more assigned users were not found" }, { status: 400 })
+      }
+    }
 
     const job = await prisma.job.create({
       data: {
@@ -57,6 +88,12 @@ export async function POST(request: Request) {
         contactName: parseOptionalString(body.contactName) ?? "",
         contactNumber: parseOptionalString(body.contactNumber) ?? "",
         budget: parseDecimalOrDefault(body.budget, "budget", 2, "0.00"),
+        assignees:
+          assignedUserIds.length > 0
+            ? {
+                create: assignedUserIds.map((userId) => ({ userId })),
+              }
+            : undefined,
       },
       select: {
         id: true,
@@ -68,6 +105,16 @@ export async function POST(request: Request) {
         budget: true,
         createdAt: true,
         updatedAt: true,
+        assignees: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     })
 
