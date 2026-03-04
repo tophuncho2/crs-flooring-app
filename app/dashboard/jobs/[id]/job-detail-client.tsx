@@ -82,6 +82,11 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleString()
 }
 
+function parseMoney(value: string): number {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export default function JobDetailClient({
   job,
   users,
@@ -100,12 +105,14 @@ export default function JobDetailClient({
   const [newPendingDraft, setNewPendingDraft] = useState<PendingPaymentDraft>(defaultPendingDraft)
   const [savingPendingId, setSavingPendingId] = useState<string | null>(null)
   const [isSavingPendingNew, setIsSavingPendingNew] = useState(false)
+  const [showNewPendingRow, setShowNewPendingRow] = useState(false)
 
   const [expenses, setExpenses] = useState<ExpenseRow[]>(initialExpenses)
   const [expenseDrafts, setExpenseDrafts] = useState<Record<string, ExpenseDraft>>({})
   const [newExpenseDraft, setNewExpenseDraft] = useState<ExpenseDraft>(defaultExpenseDraft)
   const [savingExpenseId, setSavingExpenseId] = useState<string | null>(null)
   const [isSavingExpenseNew, setIsSavingExpenseNew] = useState(false)
+  const [showNewExpenseRow, setShowNewExpenseRow] = useState(false)
 
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
@@ -119,6 +126,9 @@ export default function JobDetailClient({
     () => pendingPayments.filter((payment) => payment.status === "PENDING").reduce((sum, row) => sum + Number(row.price), 0),
     [pendingPayments],
   )
+  const totalExpenses = useMemo(() => expenses.reduce((sum, row) => sum + parseMoney(row.price), 0), [expenses])
+  const budgetValue = useMemo(() => parseMoney(job.budget), [job.budget])
+  const profit = useMemo(() => budgetValue - totalExpenses, [budgetValue, totalExpenses])
 
   function getPendingDraft(payment: PendingPaymentRow): PendingPaymentDraft {
     return pendingDrafts[payment.id] ?? {
@@ -189,6 +199,7 @@ export default function JobDetailClient({
       ])
 
       setNewPendingDraft(defaultPendingDraft)
+      setShowNewPendingRow(false)
       setMessage("Pending labor payment created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create pending labor payment")
@@ -337,6 +348,7 @@ export default function JobDetailClient({
       ])
 
       setNewExpenseDraft(defaultExpenseDraft)
+      setShowNewExpenseRow(false)
       setMessage("Expense created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create expense")
@@ -433,6 +445,8 @@ export default function JobDetailClient({
             <p><span className="font-semibold">Contact:</span> {job.contactName || "-"}</p>
             <p><span className="font-semibold">Phone:</span> {job.contactNumber || "-"}</p>
             <p><span className="font-semibold">Budget:</span> ${job.budget}</p>
+            <p><span className="font-semibold">Total Expenses:</span> ${totalExpenses.toFixed(2)}</p>
+            <p><span className="font-semibold">Profit:</span> ${profit.toFixed(2)}</p>
             <p><span className="font-semibold">Total Pending Expenses:</span> ${totalPendingExpenses.toFixed(2)}</p>
           </div>
           <p className="mt-2 text-sm text-[var(--foreground)]/75">
@@ -458,10 +472,12 @@ export default function JobDetailClient({
 
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <h2 className="text-xl font-semibold text-blue-500">Pending Labor Payments</h2>
-          <div className="mt-4 overflow-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="min-w-full text-sm">
+          <div className="mt-4 rounded-lg border border-[var(--panel-border)]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
+                  <th className="px-3 py-2">$</th>
                   <th className="px-3 py-2">Price</th>
                   <th className="px-3 py-2">Vendor</th>
                   <th className="px-3 py-2">Job</th>
@@ -472,7 +488,9 @@ export default function JobDetailClient({
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                {showNewPendingRow && (
+                  <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                    <td className="px-3 py-2 font-semibold text-[var(--foreground)]/70">$</td>
                   <td className="px-3 py-2">
                     <input
                       type="number"
@@ -525,7 +543,8 @@ export default function JobDetailClient({
                     </button>
                   </td>
                   <td className="px-3 py-2 text-[var(--foreground)]/60">-</td>
-                </tr>
+                  </tr>
+                )}
 
                 {pendingPayments.map((payment) => {
                   const draft = getPendingDraft(payment)
@@ -533,6 +552,7 @@ export default function JobDetailClient({
 
                   return (
                     <tr key={payment.id} className="border-t border-[var(--panel-border)]">
+                      <td className="px-3 py-2 font-semibold text-[var(--foreground)]/70">$</td>
                       <td className="px-3 py-2">
                         <input
                           type="number"
@@ -598,22 +618,35 @@ export default function JobDetailClient({
 
                 {pendingPayments.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                    <td colSpan={8} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                       No pending labor payments yet.
                     </td>
                   </tr>
                 )}
               </tbody>
-            </table>
+              </table>
+            </div>
+            <div className="flex justify-end border-t border-[var(--panel-border)] px-3 py-2">
+              <button
+                type="button"
+                onClick={() => setShowNewPendingRow(true)}
+                disabled={showNewPendingRow}
+                className="inline-flex items-center gap-1 rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              >
+                <Plus size={13} /> Add Row
+              </button>
+            </div>
           </div>
         </section>
 
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <h2 className="text-xl font-semibold text-blue-500">Expenses</h2>
-          <div className="mt-4 overflow-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="min-w-full text-sm">
+          <div className="mt-4 rounded-lg border border-[var(--panel-border)]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1080px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
+                  <th className="px-3 py-2">$</th>
                   <th className="px-3 py-2">Price</th>
                   <th className="px-3 py-2">Vendor</th>
                   <th className="px-3 py-2">Job</th>
@@ -625,7 +658,9 @@ export default function JobDetailClient({
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                {showNewExpenseRow && (
+                  <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                    <td className="px-3 py-2 font-semibold text-[var(--foreground)]/70">$</td>
                   <td className="px-3 py-2">
                     <input
                       type="number"
@@ -679,7 +714,8 @@ export default function JobDetailClient({
                     </button>
                   </td>
                   <td className="px-3 py-2 text-[var(--foreground)]/60">-</td>
-                </tr>
+                  </tr>
+                )}
 
                 {expenses.map((expense) => {
                   const draft = getExpenseDraft(expense)
@@ -687,6 +723,7 @@ export default function JobDetailClient({
 
                   return (
                     <tr key={expense.id} className="border-t border-[var(--panel-border)]">
+                      <td className="px-3 py-2 font-semibold text-[var(--foreground)]/70">$</td>
                       <td className="px-3 py-2">
                         <input
                           type="number"
@@ -755,13 +792,24 @@ export default function JobDetailClient({
 
                 {expenses.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                    <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                       No expenses yet.
                     </td>
                   </tr>
                 )}
               </tbody>
-            </table>
+              </table>
+            </div>
+            <div className="flex justify-end border-t border-[var(--panel-border)] px-3 py-2">
+              <button
+                type="button"
+                onClick={() => setShowNewExpenseRow(true)}
+                disabled={showNewExpenseRow}
+                className="inline-flex items-center gap-1 rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              >
+                <Plus size={13} /> Add Row
+              </button>
+            </div>
           </div>
         </section>
       </div>
