@@ -37,6 +37,12 @@ const modules = [
     href: "/dashboard/daily-scope",
     cta: "Open Daily Scope",
   },
+  {
+    name: "Sub-Contractor Agreements",
+    description: "Build subcontractor contracts from a template with installments and signatures.",
+    href: "/dashboard/subcontractor-agreements",
+    cta: "Open Agreements",
+  },
 ]
 
 export default async function Dashboard() {

@@ -106,6 +106,15 @@ export default function ToolsMenu({ canUseTools }: { canUseTools: boolean }) {
           </button>
           <button
             onClick={() => {
+              router.push("/dashboard/subcontractor-agreements")
+              setOpen(false)
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+          >
+            Agreements
+          </button>
+          <button
+            onClick={() => {
               router.push("/dashboard/warehouse")
               setOpen(false)
             }}
