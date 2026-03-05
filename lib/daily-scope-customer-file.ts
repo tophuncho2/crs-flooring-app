@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { uploadFileToBucket } from "@/services/s3"
 
 type DailyScopeItemForFile = {
   room: string
@@ -213,13 +214,14 @@ export async function generateAndStoreDailyScopeFile(dailyScopeId: string) {
   const html = buildDailyScopeHtml(scope)
   const pdfBuffer = await generatePdfBuffer(html)
   const fileName = buildFileName(scope.jobName, scope.id)
+  await uploadFileToBucket(pdfBuffer, fileName, "application/pdf")
 
   return prisma.dailyScope.update({
     where: { id: scope.id },
     data: {
       customerFileName: fileName,
       customerFileMime: "application/pdf",
-      customerFileData: pdfBuffer,
+      customerFileData: null,
       customerFileAt: new Date(),
     },
     select: {

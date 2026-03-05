@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { getFileFromBucket } from "@/services/s3"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -15,27 +16,23 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const estimate = await prisma.estimate.findUnique({
     where: { id },
     select: {
-      customerFileData: true,
       customerFileName: true,
       customerFileMime: true,
     },
   })
 
-  if (!estimate || !estimate.customerFileData) {
+  if (!estimate?.customerFileName) {
     return NextResponse.json({ error: "Customer estimate file not found" }, { status: 404 })
   }
 
-  const fileName = estimate.customerFileName ?? `estimate-${id}-customer-estimate.pdf`
+  const fileName = estimate.customerFileName
   const mimeType = estimate.customerFileMime ?? "application/pdf"
-  const sourceBytes = Uint8Array.from(estimate.customerFileData)
-  const fileArrayBuffer = new ArrayBuffer(sourceBytes.byteLength)
-  new Uint8Array(fileArrayBuffer).set(sourceBytes)
-  const fileBlob = new Blob([fileArrayBuffer], { type: mimeType })
+  const file = await getFileFromBucket(fileName)
 
-  return new NextResponse(fileBlob, {
+  return new NextResponse(file.data, {
     status: 200,
     headers: {
-      "Content-Type": mimeType,
+      "Content-Type": file.contentType || mimeType,
       "Content-Disposition": `attachment; filename=\"${fileName}\"`,
       "Cache-Control": "no-store",
     },

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { uploadFileToBucket } from "@/services/s3"
 
 type EstimateItemForFile = {
   room: string
@@ -265,13 +266,14 @@ export async function generateAndStoreCustomerEstimateFile(estimateId: string) {
   const { html } = buildCustomerEstimateHtml(estimate)
   const pdfBuffer = await generatePdfBuffer(html)
   const fileName = buildFileName(estimate.jobName, estimate.id)
+  await uploadFileToBucket(pdfBuffer, fileName, "application/pdf")
 
   return prisma.estimate.update({
     where: { id: estimate.id },
     data: {
       customerFileName: fileName,
       customerFileMime: "application/pdf",
-      customerFileData: pdfBuffer,
+      customerFileData: null,
       customerFileAt: new Date(),
     },
     select: {

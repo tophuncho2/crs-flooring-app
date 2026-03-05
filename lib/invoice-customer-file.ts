@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { uploadFileToBucket } from "@/services/s3"
 
 type InvoiceItemForFile = {
   description: string
@@ -206,13 +207,14 @@ export async function generateAndStoreCustomerInvoiceFile(invoiceId: string) {
   const html = buildCustomerInvoiceHtml(invoice)
   const pdfBuffer = await generatePdfBuffer(html)
   const fileName = buildFileName(invoice.jobName, invoice.id)
+  await uploadFileToBucket(pdfBuffer, fileName, "application/pdf")
 
   return prisma.invoice.update({
     where: { id: invoice.id },
     data: {
       customerFileName: fileName,
       customerFileMime: "application/pdf",
-      customerFileData: pdfBuffer,
+      customerFileData: null,
       customerFileAt: new Date(),
     },
     select: {
