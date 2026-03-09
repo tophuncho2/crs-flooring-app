@@ -79,6 +79,7 @@ export default function BuilderUsersPanel() {
   const [savingUserIds, setSavingUserIds] = useState<Set<string>>(new Set())
   const [savingToolIds, setSavingToolIds] = useState<Set<string>>(new Set())
   const [isBulkUpdating, setIsBulkUpdating] = useState(false)
+  const [isRefreshingTools, setIsRefreshingTools] = useState(false)
 
   const [viewerIsMaster, setViewerIsMaster] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
@@ -211,6 +212,32 @@ export default function BuilderUsersPanel() {
         nextSet.delete(toolId)
         return nextSet
       })
+    }
+  }
+
+  async function refreshToolsFromCatalog() {
+    if (!viewerIsMaster) return
+
+    setMessage("")
+    setError("")
+    setIsRefreshingTools(true)
+
+    try {
+      const payload = await apiJson<{ tools?: ToolRow[]; error?: string }>("/api/builder/tools", {
+        method: "POST",
+      })
+
+      if (payload.tools) {
+        setTools(payload.tools)
+        setMessage("Tool catalog refreshed for dashboard.")
+      } else {
+        await loadTools()
+      }
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh tool catalog cache")
+      await loadTools()
+    } finally {
+      setIsRefreshingTools(false)
     }
   }
 
@@ -480,6 +507,18 @@ export default function BuilderUsersPanel() {
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="border-t border-[var(--panel-border)] px-2 py-2">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={!viewerIsMaster || isRefreshingTools || savingToolIds.size > 0}
+                    onClick={() => void refreshToolsFromCatalog()}
+                    className="rounded-lg border border-blue-500/40 px-3 py-2 text-xs text-blue-500 transition hover:bg-blue-500/10 disabled:opacity-60"
+                  >
+                    {isRefreshingTools ? "Refreshing..." : "Refresh Tool Cache"}
+                  </button>
+                </div>
               </div>
             </>
           ) : null}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronDown, ExternalLink, Plus, Trash2 } from "lucide-react"
 
@@ -43,6 +44,13 @@ type DraftJob = {
   contactNumber: string
   budget: string
   assignedUserIds: string[]
+}
+
+type ModuleButton = {
+  slug: string
+  name: string
+  path: string
+  isUnlocked: boolean
 }
 
 const defaultDraft: DraftJob = {
@@ -119,7 +127,17 @@ function mapApiJob(apiJob: ApiJob, fallback: JobRow | null): JobRow {
   }
 }
 
-export default function JobsClient({ initialJobs, users }: { initialJobs: JobRow[]; users: UserOption[] }) {
+export default function JobsClient({
+  initialJobs,
+  users,
+  canUseTools,
+  moduleButtons,
+}: {
+  initialJobs: JobRow[]
+  users: UserOption[]
+  canUseTools: boolean
+  moduleButtons: ModuleButton[]
+}) {
   const router = useRouter()
   const [jobs, setJobs] = useState<JobRow[]>(initialJobs)
   const [drafts, setDrafts] = useState<Record<string, DraftJob>>({})
@@ -281,6 +299,21 @@ export default function JobsClient({ initialJobs, users }: { initialJobs: JobRow
       <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <h1 className="text-2xl font-bold text-blue-500">Jobs</h1>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {moduleButtons.map((module) => {
+              const canOpen = canUseTools && module.isUnlocked
+              const href = canOpen ? module.path : "/dashboard/billing"
+              return (
+                <Link
+                  key={module.slug}
+                  href={href}
+                  className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-1 text-xs font-semibold text-blue-600 transition hover:bg-[var(--panel-border)]"
+                >
+                  {module.name}
+                </Link>
+              )
+            })}
+          </div>
           <p className="mt-1 text-sm text-[var(--foreground)]/70">
             Manage jobs, assign users, and use the open button to view full job details.
           </p>

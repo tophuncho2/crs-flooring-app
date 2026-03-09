@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { isMasterEmail } from "@/lib/access-control"
 import { prisma } from "@/lib/prisma"
 import { ensureBuilderPanelAccess } from "@/lib/route-auth"
-import { TOOL_CATALOG } from "@/lib/tool-subscriptions"
+import { isKnownToolSlug, invalidateToolCatalogCache, refreshActiveToolsCatalog, TOOL_CATALOG } from "@/lib/tool-subscriptions"
 
 type ToolApiRow = {
   id: string
@@ -21,6 +21,8 @@ type ParsedToolBody = {
   id: string
   isActive: boolean
 }
+
+type ToolSelector = { id: string } | { slug: string }
 
 function isMissingToolTableError(error: unknown): error is Prisma.PrismaClientKnownRequestError {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021"
@@ -40,6 +42,21 @@ function normalizeToolPayload(body: unknown): ParsedToolBody | null {
     id: rawId,
     isActive: rawIsActive,
   }
+}
+
+function getToolWhereClause(rawId: string): ToolSelector {
+  if (rawId.endsWith("-fallback")) {
+    const slug = rawId.replace(/-fallback$/, "")
+    if (isKnownToolSlug(slug)) {
+      return { slug }
+    }
+  }
+
+  if (isKnownToolSlug(rawId)) {
+    return { slug: rawId }
+  }
+
+  return { id: rawId }
 }
 
 function fallbackTools(): ToolApiRow[] {
@@ -98,7 +115,7 @@ export async function PATCH(request: Request) {
 
   try {
     const updated = await prisma.tool.update({
-      where: { id: parsedBody.id },
+      where: getToolWhereClause(parsedBody.id),
       data: { isActive: parsedBody.isActive },
       select: {
         id: true,
@@ -110,6 +127,7 @@ export async function PATCH(request: Request) {
         isActive: true,
       },
     })
+    invalidateToolCatalogCache()
 
     return NextResponse.json({ tool: updated })
   } catch (error) {
@@ -124,6 +142,42 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Tool not found" }, { status: 404 })
     }
 
+    throw error
+  }
+}
+
+export async function POST() {
+  const authError = await ensureBuilderPanelAccess()
+  if (authError) return authError
+
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email || !isMasterEmail(session.user.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  try {
+    const tools = await refreshActiveToolsCatalog()
+    const refreshedTools = await prisma.tool.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        path: true,
+        monthlyPriceCents: true,
+        isActive: true,
+      },
+    })
+
+    return NextResponse.json({ tools: refreshedTools.length > 0 ? refreshedTools : tools })
+  } catch (error) {
+    if (isMissingToolTableError(error)) {
+      return NextResponse.json(
+        { error: "Billing catalog is not initialized. Please run the database migrations." },
+        { status: 503 },
+      )
+    }
     throw error
   }
 }

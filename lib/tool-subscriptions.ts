@@ -125,6 +125,7 @@ const defaultMap = new Map<string, number>(
 )
 
 const knownToolSlugs = new Set<string>(TOOL_CATALOG.map((tool) => tool.slug))
+let cachedActiveTools: ToolMetaRow[] | null = null
 
 export function isKnownToolSlug(slug: string): slug is ToolSlug {
   return knownToolSlugs.has(slug)
@@ -181,6 +182,10 @@ function isMissingToolTableError(error: unknown): error is Prisma.PrismaClientKn
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021"
 }
 
+export function invalidateToolCatalogCache() {
+  cachedActiveTools = null
+}
+
 async function syncToolCatalog() {
   try {
     await Promise.all(
@@ -214,7 +219,7 @@ async function syncToolCatalog() {
   return true
 }
 
-async function getActiveToolsFromCatalog() {
+async function loadActiveToolsFromDb(): Promise<ToolMetaRow[]> {
   const hasToolTable = await syncToolCatalog()
   if (!hasToolTable) {
     return FALLBACK_TOOL_ROWS
@@ -240,6 +245,21 @@ async function getActiveToolsFromCatalog() {
     }
     throw error
   }
+}
+
+async function getActiveToolsFromCatalog(forceRefresh = false) {
+  if (!forceRefresh && cachedActiveTools) {
+    return cachedActiveTools
+  }
+
+  const rows = await loadActiveToolsFromDb()
+  cachedActiveTools = rows
+  return rows
+}
+
+export async function refreshActiveToolsCatalog() {
+  const rows = await getActiveToolsFromCatalog(true)
+  return rows
 }
 
 async function getUserCreatedAt(userId: string): Promise<Date | null> {
@@ -362,5 +382,5 @@ export async function isToolUnlocked({
 }
 
 export function getToolCatalog(): ToolCatalogItem[] {
-  return TOOL_CATALOG
+  return [...TOOL_CATALOG]
 }

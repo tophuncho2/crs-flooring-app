@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import JobsClient from "./jobs-client"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
+import { getUserToolContext, isToolUnlocked } from "@/lib/tool-subscriptions"
 
 type JobDto = {
   id: string
@@ -23,6 +23,13 @@ type UserOption = {
   email: string
 }
 
+type ModuleButton = {
+  slug: string
+  name: string
+  path: string
+  isUnlocked: boolean
+}
+
 export default async function JobsPage() {
   const session = await getServerSession(authOptions)
 
@@ -38,6 +45,11 @@ export default async function JobsPage() {
   if (!user) {
     redirect("/login")
   }
+
+  const toolContext = await getUserToolContext({
+    userId: user.id,
+    role: user.role,
+  })
 
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "jobs" }))) {
     redirect("/dashboard")
@@ -92,5 +104,19 @@ export default async function JobsPage() {
     email: candidate.email,
   }))
 
-  return <JobsClient initialJobs={initialJobs} users={userOptions} />
+  const moduleButtons: ModuleButton[] = toolContext.tools.map((tool) => ({
+    slug: tool.slug,
+    name: tool.name,
+    path: tool.path,
+    isUnlocked: tool.isUnlocked,
+  }))
+
+  return (
+    <JobsClient
+      initialJobs={initialJobs}
+      users={userOptions}
+      canUseTools={toolContext.canUseTools}
+      moduleButtons={moduleButtons}
+    />
+  )
 }
