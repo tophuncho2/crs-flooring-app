@@ -22,7 +22,7 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
     })
 
     if (result?.ok) {
-      window.location.href = "/dashboard/jobs"
+      window.location.href = "/dashboard"
     } else {
       setError("Invalid credentials or account not approved")
     }

@@ -12,12 +12,8 @@ type ToolLink = {
 }
 
 const TOOL_LINKS: ToolLink[] = [
-  { slug: "estimator", name: "Estimator", href: "/dashboard/estimator" },
   { slug: "products", name: "Products", href: "/dashboard/products" },
-  { slug: "invoices", name: "Invoices", href: "/dashboard/invoices" },
-  { slug: "jobs", name: "Jobs", href: "/dashboard/jobs" },
   { slug: "vendors", name: "Vendors", href: "/dashboard/vendors" },
-  { slug: "daily-scope", name: "Daily Scope", href: "/dashboard/daily-scope" },
 ]
 
 type ToolsMenuProps = {

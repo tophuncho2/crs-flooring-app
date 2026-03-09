@@ -20,7 +20,7 @@ type FloorModuleCard = {
   requiredTool?: ToolSlug
 }
 
-const CORE_MODULE_ORDER: ToolSlug[] = ["estimator", "invoices", "jobs", "vendors", "daily-scope"]
+const CORE_MODULE_ORDER: ToolSlug[] = ["vendors"]
 
 function canOpenModule(hasGlobalAccess: boolean, item: { isUnlocked: boolean }) {
   return hasGlobalAccess || item.isUnlocked

@@ -23,7 +23,6 @@ model User {
   createdAt  DateTime            @default(now())
   toolAccesses UserToolAccess[]
   activities UserLoginActivity[]
-  jobs       JobAssignee[]
 }
 
 model Tool {
@@ -93,178 +92,8 @@ model Product {
   coveragePerUnit Decimal        @db.Decimal(10, 4)
   isActive        Boolean        @default(true)
   createdAt       DateTime       @default(now())
-  estimateItems   EstimateItem[]
 
   @@index([categoryId])
-}
-
-model Estimate {
-  id               String         @id @default(uuid())
-  propertyAddress  String
-  propertyContact  String
-  unitNumber       String
-  jobName          String
-  jobAddress       String
-  markupPercentage Decimal        @db.Decimal(8, 2)
-  notes            String?
-  customerFileName String?
-  customerFileMime String?
-  customerFileData Bytes?
-  customerFileAt   DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  items            EstimateItem[]
-}
-
-model EstimateItem {
-  id               String   @id @default(uuid())
-  estimateId       String
-  estimate         Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
-  room             String
-  productId        String
-  product          Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  quantity         Decimal  @db.Decimal(10, 2)
-  unitOfMeasure    String
-  altUnitOfMeasure String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([estimateId])
-  @@index([productId])
-}
-
-model Invoice {
-  id               String        @id @default(uuid())
-  propertyAddress  String
-  propertyContact  String
-  unitNumber       String
-  jobName          String
-  jobAddress       String
-  notes            String?
-  totalCost        Decimal       @db.Decimal(10, 2)
-  customerFileName String?
-  customerFileMime String?
-  customerFileData Bytes?
-  customerFileAt   DateTime?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  items            InvoiceItem[]
-}
-
-model InvoiceItem {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  description String
-  price       Decimal  @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([invoiceId])
-}
-
-model Job {
-  id                   String                  @id @default(uuid())
-  name                 String
-  address              String
-  propertyName         String
-  contactName          String
-  contactNumber        String
-  budget               Decimal                 @db.Decimal(12, 2)
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  dailyScopes          DailyScope[]
-  assignees            JobAssignee[]
-  pendingLaborPayments JobPendingLaborPayment[]
-  expenses             JobExpense[]
-}
-
-model JobAssignee {
-  jobId      String
-  userId     String
-  createdAt  DateTime @default(now())
-  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([jobId, userId])
-  @@index([userId])
-}
-
-model Vendor {
-  id                   String                  @id @default(uuid())
-  companyName          String
-  phone                String?
-  email                String?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  pendingLaborPayments JobPendingLaborPayment[]
-  expenses             JobExpense[]
-
-  @@index([companyName])
-}
-
-model JobPendingLaborPayment {
-  id        String                    @id @default(uuid())
-  jobId     String
-  vendorId  String
-  price     Decimal                   @db.Decimal(12, 2)
-  notes     String?
-  status    PendingLaborPaymentStatus @default(PENDING)
-  createdAt DateTime                  @default(now())
-  updatedAt DateTime                  @updatedAt
-  job       Job                       @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  vendor    Vendor                    @relation(fields: [vendorId], references: [id], onDelete: Restrict)
-
-  @@index([jobId, status])
-  @@index([vendorId])
-}
-
-model JobExpense {
-  id          String      @id @default(uuid())
-  jobId       String
-  vendorId    String?
-  price       Decimal     @db.Decimal(12, 2)
-  notes       String?
-  expenseType JobExpenseType
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  vendor      Vendor?     @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-
-  @@index([jobId])
-  @@index([vendorId])
-}
-
-model DailyScope {
-  id               String           @id @default(uuid())
-  jobId            String
-  job              Job              @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  jobName          String
-  address          String
-  propertyName     String
-  contactName      String
-  contactNumber    String
-  customerFileName String?
-  customerFileMime String?
-  customerFileData Bytes?
-  customerFileAt   DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  items            DailyScopeItem[]
-
-  @@index([jobId])
-}
-
-model DailyScopeItem {
-  id           String     @id @default(uuid())
-  dailyScopeId String
-  dailyScope   DailyScope @relation(fields: [dailyScopeId], references: [id], onDelete: Cascade)
-  room         String
-  description  String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@index([dailyScopeId])
 }
 
 model Hotkey {
@@ -300,16 +129,6 @@ enum FlooringChangeOrderStatus {
 enum FlooringStoreCode {
   DARBY
   COLUMBIA
-}
-
-enum PendingLaborPaymentStatus {
-  PENDING
-  PAID
-}
-
-enum JobExpenseType {
-  LABOR
-  MATERIAL
 }
 
 enum ConstructionJobStatus {

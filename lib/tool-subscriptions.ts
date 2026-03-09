@@ -3,13 +3,6 @@ import { prisma } from "@/lib/prisma"
 
 export const TOOL_CATALOG = [
   {
-    slug: "estimator",
-    name: "Estimator",
-    description: "Build customer estimates with room-level items and exports.",
-    path: "/dashboard/estimator",
-    defaultMonthlyPriceCents: 2500,
-  },
-  {
     slug: "products",
     name: "Products",
     description: "Manage product categories and pricing.",
@@ -17,32 +10,11 @@ export const TOOL_CATALOG = [
     defaultMonthlyPriceCents: 1800,
   },
   {
-    slug: "invoices",
-    name: "Invoices",
-    description: "Create invoices and track totals.",
-    path: "/dashboard/invoices",
-    defaultMonthlyPriceCents: 2000,
-  },
-  {
-    slug: "jobs",
-    name: "Jobs",
-    description: "Manage jobs, expenses, and labor payments.",
-    path: "/dashboard/jobs",
-    defaultMonthlyPriceCents: 2200,
-  },
-  {
     slug: "vendors",
     name: "Vendors",
     description: "Manage vendor details and contact information.",
     path: "/dashboard/vendors",
     defaultMonthlyPriceCents: 1500,
-  },
-  {
-    slug: "daily-scope",
-    name: "Daily Scope",
-    description: "Create and export daily work scopes.",
-    path: "/dashboard/daily-scope",
-    defaultMonthlyPriceCents: 1600,
   },
   {
     slug: "warehouse",

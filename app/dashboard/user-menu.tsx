@@ -223,26 +223,10 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
         return
       }
 
-      if (key === "e") {
-        if (canOpenTool("estimator")) {
-          event.preventDefault()
-          router.push("/dashboard/estimator")
-        }
-        return
-      }
-
       if (key === "p") {
         if (canOpenTool("products")) {
           event.preventDefault()
           router.push("/dashboard/products")
-        }
-        return
-      }
-
-      if (key === "i") {
-        if (canOpenTool("invoices")) {
-          event.preventDefault()
-          router.push("/dashboard/invoices")
         }
         return
       }
