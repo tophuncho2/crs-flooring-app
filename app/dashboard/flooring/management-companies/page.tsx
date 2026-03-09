@@ -18,11 +18,6 @@ type ManagementCompanyRow = {
   properties: { id: string; name: string; fullAddress: string }[]
 }
 
-type PropertyOption = {
-  id: string
-  name: string
-}
-
 function normalizeAddress(value: {
   streetAddress: string | null
   city: string | null
@@ -52,39 +47,33 @@ export default async function ManagementCompaniesPage() {
     redirect("/dashboard")
   }
 
-  const [companies, properties] = await Promise.all([
-    prisma.flooringManagementCompany.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        streetAddress: true,
-        city: true,
-        state: true,
-        postalCode: true,
-        phone: true,
-        email: true,
-        properties: {
-          select: {
-            property: {
-              select: {
-                id: true,
-                name: true,
-                streetAddress: true,
-                city: true,
-                state: true,
-                postalCode: true,
-              },
+  const companies = await prisma.flooringManagementCompany.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      streetAddress: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      phone: true,
+      email: true,
+      properties: {
+        select: {
+          property: {
+            select: {
+              id: true,
+              name: true,
+              streetAddress: true,
+              city: true,
+              state: true,
+              postalCode: true,
             },
           },
         },
       },
-    }),
-    prisma.propertyHub.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-  ])
+    },
+  })
 
   const initialCompanies: ManagementCompanyRow[] = companies.map((company) => ({
     id: company.id,
@@ -113,10 +102,5 @@ export default async function ManagementCompaniesPage() {
     })),
   }))
 
-  const propertyOptions: PropertyOption[] = properties.map((property) => ({
-    id: property.id,
-    name: property.name,
-  }))
-
-  return <ManagementCompaniesClient initialCompanies={initialCompanies} propertyOptions={propertyOptions} />
+  return <ManagementCompaniesClient initialCompanies={initialCompanies} />
 }

@@ -12,12 +12,6 @@ function normalizeAddress(value: {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
 }
 
-type PropertyManagementCompany = {
-  id: string
-  name: string
-  address: string
-}
-
 type PropertyListItem = {
   id: string
   name: string
@@ -28,8 +22,23 @@ type PropertyListItem = {
   zip: string | null
   phone: string | null
   email: string | null
-  managementCompanies: PropertyManagementCompany[]
+  managementCompany: {
+    id: string
+    name: string
+  } | null
   fullAddress: string
+}
+
+function parseOptionalNullableString(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (typeof value !== "string") {
+    throw { message: `${field} must be a string`, field }
+  }
+
+  const trimmed = value.trim()
+  return trimmed === "" ? null : trimmed
 }
 
 export async function GET() {
@@ -76,11 +85,12 @@ export async function GET() {
       zip: property.postalCode,
       phone: property.phone,
       email: property.email,
-      managementCompanies: property.flooringLinks.map((link) => ({
-        id: link.managementCompany.id,
-        name: link.managementCompany.name,
-        address: normalizeAddress(link.managementCompany),
-      })),
+      managementCompany: property.flooringLinks[0]
+        ? {
+            id: property.flooringLinks[0].managementCompany.id,
+            name: property.flooringLinks[0].managementCompany.name,
+          }
+        : null,
       fullAddress: normalizeAddress(property),
     }))
 
@@ -97,6 +107,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
+    const managementCompanyId = parseOptionalNullableString(body.managementCompanyId, "managementCompanyId")
 
     const property = await prisma.propertyHub.create({
       data: {
@@ -107,6 +118,30 @@ export async function POST(request: Request) {
         postalCode: parseOptionalString(body.postalCode),
         phone: parseOptionalString(body.phone),
         email: parseOptionalString(body.email),
+        ...(managementCompanyId
+          ? {
+              flooringLinks: {
+                create: [
+                  {
+                    managementCompany: {
+                      connect: {
+                        id: managementCompanyId,
+                      },
+                    },
+                  },
+                ],
+              },
+            }
+          : {}),
+      },
+      include: {
+        flooringLinks: {
+          include: {
+            managementCompany: {
+              select: { id: true, name: true },
+            },
+          },
+        },
       },
     })
 
@@ -122,7 +157,12 @@ export async function POST(request: Request) {
           zip: property.postalCode,
           phone: property.phone,
           email: property.email,
-          managementCompanies: [],
+          managementCompany: property.flooringLinks[0]
+            ? {
+                id: property.flooringLinks[0].managementCompany.id,
+                name: property.flooringLinks[0].managementCompany.name,
+              }
+            : null,
           fullAddress: normalizeAddress(property),
         } satisfies PropertyListItem,
       },

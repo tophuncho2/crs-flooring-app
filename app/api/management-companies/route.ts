@@ -116,6 +116,22 @@ export async function POST(request: Request) {
         phone: parseOptionalString(body.phone),
         email: parseOptionalString(body.email),
       },
+      include: {
+        properties: {
+          include: {
+            property: {
+              select: {
+                id: true,
+                name: true,
+                streetAddress: true,
+                city: true,
+                state: true,
+                postalCode: true,
+              },
+            },
+          },
+        },
+      },
     })
 
     return NextResponse.json(

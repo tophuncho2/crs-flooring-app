@@ -228,6 +228,7 @@ model FlooringPropertyManagement {
   managementCompany   FlooringManagementCompany @relation(fields: [managementCompanyId], references: [id], onDelete: Cascade)
 
   @@id([propertyId, managementCompanyId])
+  @@unique([propertyId])
   @@map("flooring_property_management")
 }
 

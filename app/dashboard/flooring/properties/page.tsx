@@ -20,7 +20,7 @@ type PropertyRow = {
   phone: string
   email: string
   fullAddress: string
-  managementCompanies: ManagementLink[]
+  managementCompany: ManagementLink | null
 }
 
 type ManagementCompanyOption = {
@@ -92,7 +92,7 @@ export default async function FlooringPropertiesPage() {
     phone: property.phone ?? "",
     email: property.email ?? "",
     fullAddress: normalizeAddress(property),
-    managementCompanies: property.flooringLinks.map((link) => link.managementCompany),
+    managementCompany: property.flooringLinks[0]?.managementCompany ?? null,
   }))
 
   const managementOptions: ManagementCompanyOption[] = managementCompanies.map((company) => ({

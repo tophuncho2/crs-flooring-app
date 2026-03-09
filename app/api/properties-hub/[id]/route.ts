@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
+import { normalizePrismaError, parseOptionalString } from "@/lib/api-helpers"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 
 type RouteContext = {
@@ -21,7 +21,7 @@ type PropertyPayload = {
   zip: string | null
   phone: string | null
   email: string | null
-  managementCompanies: PropertyManagementCompany[]
+  managementCompany: PropertyManagementCompany | null
   fullAddress: string
 }
 
@@ -34,16 +34,19 @@ function normalizeAddress(value: {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
 }
 
-function parseOptionalStringArray(value: unknown, field: string): string[] {
+function parseOptionalNullableString(value: unknown, field: string): string | null | undefined {
   if (value === undefined) {
-    return []
+    return undefined
   }
-  if (!Array.isArray(value)) {
-    throw { message: `${field} must be an array`, field }
+  if (value === null) {
+    return null
+  }
+  if (typeof value !== "string") {
+    throw { message: `${field} must be a string`, field }
   }
 
-  const parsed = value.map((item) => parseRequiredString(item, `${field} item`))
-  return Array.from(new Set(parsed))
+  const trimmed = value.trim()
+  return trimmed === "" ? null : trimmed
 }
 
 function normalizeResponse(property: {
@@ -66,7 +69,12 @@ function normalizeResponse(property: {
     zip: property.postalCode,
     phone: property.phone,
     email: property.email,
-    managementCompanies: property.flooringLinks.map((link) => ({ id: link.managementCompany.id, name: link.managementCompany.name })),
+    managementCompany: property.flooringLinks[0]
+      ? {
+          id: property.flooringLinks[0].managementCompany.id,
+          name: property.flooringLinks[0].managementCompany.name,
+        }
+      : null,
     fullAddress: normalizeAddress({
       streetAddress: property.streetAddress,
       city: property.city,
@@ -94,7 +102,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       email: parseOptionalString(body.email),
     }
 
-    if (Object.values(updatePayload).every((value) => value === null) && !("managementCompanyIds" in body)) {
+    const managementCompanyId = parseOptionalNullableString(body.managementCompanyId, "managementCompanyId")
+
+    if (Object.values(updatePayload).every((value) => value === null) && !("managementCompanyId" in body)) {
       return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 })
     }
 
@@ -106,7 +116,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       postalCode?: string | null
       phone?: string | null
       email?: string | null
-      flooringLinks?: { deleteMany: { propertyId: string }; create: { managementCompanyId: string }[] }
+      flooringLinks?: {
+        deleteMany: { propertyId: string }
+        create?: { managementCompany: { connect: { id: string } } }[]
+      }
     } = {}
 
     if (updatePayload.name !== null) data.name = updatePayload.name
@@ -116,11 +129,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (updatePayload.postalCode !== null) data.postalCode = updatePayload.postalCode
     if (updatePayload.phone !== null) data.phone = updatePayload.phone
     if (updatePayload.email !== null) data.email = updatePayload.email
-    if ("managementCompanyIds" in body) {
-      const ids = parseOptionalStringArray(body.managementCompanyIds, "managementCompanyIds").map((managementCompanyId) => ({ managementCompanyId }))
+    if ("managementCompanyId" in body) {
       data.flooringLinks = {
         deleteMany: { propertyId: id },
-        create: ids,
+        ...(managementCompanyId
+          ? {
+              create: [{ managementCompany: { connect: { id: managementCompanyId } } }],
+            }
+          : {}),
       }
     }
 

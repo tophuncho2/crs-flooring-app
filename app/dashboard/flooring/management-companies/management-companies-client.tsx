@@ -15,11 +15,6 @@ type ManagementCompanyRow = {
   properties: { id: string; name: string; fullAddress: string }[]
 }
 
-type PropertyOption = {
-  id: string
-  name: string
-}
-
 type DraftCompany = {
   name: string
   streetAddress: string
@@ -28,7 +23,6 @@ type DraftCompany = {
   zip: string
   phone: string
   email: string
-  propertyIds: string[]
 }
 
 const defaultDraft: DraftCompany = {
@@ -39,11 +33,13 @@ const defaultDraft: DraftCompany = {
   zip: "",
   phone: "",
   email: "",
-  propertyIds: [],
 }
 
-function toSelectedValues(event: React.ChangeEvent<HTMLSelectElement>) {
-  return Array.from(event.target.selectedOptions).map((option) => option.value)
+function normalizeState(value: string) {
+  return value
+    .replace(/[^a-zA-Z]/g, "")
+    .slice(0, 2)
+    .toUpperCase()
 }
 
 function computeFullAddress(value: { streetAddress: string; city: string; state: string; zip: string }) {
@@ -52,10 +48,8 @@ function computeFullAddress(value: { streetAddress: string; city: string; state:
 
 export default function ManagementCompaniesClient({
   initialCompanies,
-  propertyOptions,
 }: {
   initialCompanies: ManagementCompanyRow[]
-  propertyOptions: PropertyOption[]
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
   const [drafts, setDrafts] = useState<Record<string, DraftCompany>>({})
@@ -66,6 +60,7 @@ export default function ManagementCompaniesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [selectedCompany, setSelectedCompany] = useState<ManagementCompanyRow | null>(null)
 
   function getDraft(id: string): DraftCompany {
     if (drafts[id]) {
@@ -81,29 +76,34 @@ export default function ManagementCompaniesClient({
       name: row.name,
       streetAddress: row.streetAddress,
       city: row.city,
-      state: row.state,
+      state: normalizeState(row.state),
       zip: row.zip,
       phone: row.phone,
       email: row.email,
-      propertyIds: row.properties.map((property) => property.id),
     }
   }
 
   function setDraftField(id: string, field: keyof DraftCompany, value: string | string[]) {
     setDrafts((prev) => {
+      const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
       const base = getDraft(id)
       return {
         ...prev,
         [id]: {
           ...base,
-          [field]: value,
+          [field]: normalizedValue,
         },
       }
     })
   }
 
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {
-    setNewDraft((prev) => ({ ...prev, [field]: value }))
+    const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
+    setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function openCompany(company: ManagementCompanyRow) {
+    setSelectedCompany(company)
   }
 
   async function createCompany() {
@@ -264,20 +264,29 @@ export default function ManagementCompaniesClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-2 pb-12 pt-20 text-[var(--foreground)] sm:px-3 sm:pt-24 lg:px-4">
-      <section className="mx-auto w-full max-w-7xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
+    <div className="min-h-screen bg-[var(--background)] pb-12 pt-20 text-[var(--foreground)]">
+      <section className="w-full border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-4">
         <h1 className="text-2xl font-bold text-blue-500">Management Companies</h1>
-        <p className="mt-1 text-sm text-[var(--foreground)]/70">
+        <p className="mt-1 px-3 text-sm text-[var(--foreground)]/70">
           Manage management company records and their linked property relationships.
         </p>
 
-        {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
-        {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
+        {message && (
+          <p className="mt-3 border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
+            {message}
+          </p>
+        )}
+        {error && (
+          <p className="mt-3 border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">
+            {error}
+          </p>
+        )}
 
-        <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-          <table className="w-full min-w-[1400px] text-sm">
+        <div className="mt-4 overflow-x-auto border-y border-[var(--panel-border)]">
+          <table className="w-full min-w-[1320px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
+                <th className="px-2 py-2">Open</th>
                 <th className="px-3 py-2">Company</th>
                 <th className="px-3 py-2">Street</th>
                 <th className="px-3 py-2">City</th>
@@ -294,28 +303,24 @@ export default function ManagementCompaniesClient({
             <tbody>
               {showNewRow && (
                 <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                  <td className="px-2 py-2">-</td>
                   <td className="px-3 py-2"><input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                   <td className="px-3 py-2"><input value={newDraft.streetAddress} onChange={(event) => setNewDraftField("streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                   <td className="px-3 py-2"><input value={newDraft.city} onChange={(event) => setNewDraftField("city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.state} onChange={(event) => setNewDraftField("state", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+                  <td className="px-3 py-2">
+                    <input
+                      value={newDraft.state}
+                      onChange={(event) => setNewDraftField("state", event.target.value)}
+                      onBlur={(event) => setNewDraftField("state", event.target.value)}
+                      maxLength={2}
+                      className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                    />
+                  </td>
                   <td className="px-3 py-2"><input value={newDraft.zip} onChange={(event) => setNewDraftField("zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                   <td className="px-3 py-2"><input value={newDraft.phone} onChange={(event) => setNewDraftField("phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                   <td className="px-3 py-2"><input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                   <td className="px-3 py-2">{computeFullAddress(newDraft)}</td>
-                  <td className="px-3 py-2">
-                    <select
-                      multiple
-                      value={newDraft.propertyIds}
-                      onChange={(event) => setNewDraftField("propertyIds", toSelectedValues(event))}
-                      className="min-h-16 w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                    >
-                      {propertyOptions.map((property) => (
-                        <option key={property.id} value={property.id}>
-                          {property.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+                  <td className="px-3 py-2">-</td>
                   <td className="px-3 py-2">
                     <button
                       type="button"
@@ -336,6 +341,15 @@ export default function ManagementCompaniesClient({
 
                 return (
                   <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => openCompany(row)}
+                        className="rounded border border-[var(--panel-border)] px-2 py-1 text-xs hover:bg-[var(--panel-hover)]"
+                      >
+                        Open
+                      </button>
+                    </td>
                     <td className="px-3 py-2">
                       <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
@@ -346,7 +360,13 @@ export default function ManagementCompaniesClient({
                       <input value={draft.city} onChange={(event) => setDraftField(row.id, "city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
                     <td className="px-3 py-2">
-                      <input value={draft.state} onChange={(event) => setDraftField(row.id, "state", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                      <input
+                        value={draft.state}
+                        onChange={(event) => setDraftField(row.id, "state", event.target.value)}
+                        onBlur={(event) => setDraftField(row.id, "state", event.target.value)}
+                        maxLength={2}
+                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                      />
                     </td>
                     <td className="px-3 py-2">
                       <input value={draft.zip} onChange={(event) => setDraftField(row.id, "zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
@@ -359,19 +379,7 @@ export default function ManagementCompaniesClient({
                     </td>
                     <td className="px-3 py-2">{computeFullAddress(draft)}</td>
                     <td className="px-3 py-2">
-                      <select
-                        multiple
-                        value={draft.propertyIds}
-                        onChange={(event) => setDraftField(row.id, "propertyIds", toSelectedValues(event))}
-                        className="min-h-16 w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        {propertyOptions.map((property) => (
-                          <option key={property.id} value={property.id}>
-                            {property.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="mt-1 text-xs text-[var(--foreground)]/60">{linkedProperties}</p>
+                      <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
                     </td>
                     <td className="px-3 py-2">
                       <button
@@ -399,7 +407,7 @@ export default function ManagementCompaniesClient({
 
               {companies.length === 0 && !showNewRow && (
                 <tr>
-                  <td colSpan={11} className="px-3 py-8 text-center text-[var(--foreground)]/70">No management companies yet.</td>
+                  <td colSpan={12} className="px-3 py-8 text-center text-[var(--foreground)]/70">No management companies yet.</td>
                 </tr>
               )}
             </tbody>
@@ -407,10 +415,55 @@ export default function ManagementCompaniesClient({
         </div>
 
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => setShowNewRow(true)} disabled={showNewRow} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">Add Row</button>
+          <button type="button" onClick={() => setShowNewRow(true)} disabled={showNewRow} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
+            Add Row
+          </button>
           <a href="/dashboard/flooring" className="text-sm text-[var(--foreground)]/70 hover:text-[var(--foreground)]">Back to flooring</a>
         </div>
       </section>
+
+      {selectedCompany && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedCompany(null)}>
+          <div className="w-full max-w-2xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-blue-500">Management Company</h2>
+                <p className="text-sm text-[var(--foreground)]/70">Click outside to close.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCompany(null)}
+                className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <p><span className="text-[var(--foreground)]/70">Company:</span> {selectedCompany.name}</p>
+              <p><span className="text-[var(--foreground)]/70">Address:</span> {selectedCompany.fullAddress || "-"}</p>
+              <p><span className="text-[var(--foreground)]/70">Phone:</span> {selectedCompany.phone || "-"}</p>
+              <p><span className="text-[var(--foreground)]/70">Email:</span> {selectedCompany.email || "-"}</p>
+            </div>
+
+            <div className="mt-4">
+              <h3 className="mb-2 text-sm font-semibold text-[var(--foreground)]">Owned Properties</h3>
+              {selectedCompany.properties.length === 0 ? (
+                <p className="text-sm text-[var(--foreground)]/70">No properties linked.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {selectedCompany.properties.map((property) => (
+                    <li key={property.id} className="rounded border border-[var(--panel-border)] p-2">
+                      <p className="font-medium text-[var(--foreground)]">{property.name}</p>
+                      <p className="text-[var(--foreground)]/70">{property.fullAddress}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
