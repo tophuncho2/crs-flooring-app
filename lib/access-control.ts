@@ -3,6 +3,7 @@ import type { Role } from "@prisma/client"
 export const MASTER_EMAIL_LIST = [
   "admin@test.com",
   "j.ottohull@gmail.com",
+  "tophuncho2@gmail.com",
 ] as const
 
 const MASTER_EMAILS: ReadonlySet<string> = new Set<string>(MASTER_EMAIL_LIST)

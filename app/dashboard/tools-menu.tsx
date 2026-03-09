@@ -3,11 +3,39 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Wrench } from "lucide-react"
+import type { UserToolRow } from "@/lib/tool-subscriptions"
 
-export default function ToolsMenu({ canUseTools }: { canUseTools: boolean }) {
+type ToolLink = {
+  slug: UserToolRow["slug"]
+  name: string
+  href: string
+}
+
+const TOOL_LINKS: ToolLink[] = [
+  { slug: "estimator", name: "Estimator", href: "/dashboard/estimator" },
+  { slug: "products", name: "Products", href: "/dashboard/products" },
+  { slug: "invoices", name: "Invoices", href: "/dashboard/invoices" },
+  { slug: "jobs", name: "Jobs", href: "/dashboard/jobs" },
+  { slug: "vendors", name: "Vendors", href: "/dashboard/vendors" },
+  { slug: "daily-scope", name: "Daily Scope", href: "/dashboard/daily-scope" },
+  {
+    slug: "subcontractor-agreements",
+    name: "Subcontractor Agreements",
+    href: "/dashboard/subcontractor-agreements",
+  },
+  { slug: "warehouse", name: "Warehouse", href: "/dashboard/warehouse" },
+]
+
+type ToolsMenuProps = {
+  canUseTools: boolean
+  tools: UserToolRow[]
+}
+
+export default function ToolsMenu({ canUseTools, tools }: ToolsMenuProps) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const unlockedToolSet = new Set(tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,76 +80,33 @@ export default function ToolsMenu({ canUseTools }: { canUseTools: boolean }) {
         >
           <button
             onClick={() => {
-              router.push("/dashboard/estimator")
+              router.push("/dashboard/billing")
               setOpen(false)
             }}
             className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
           >
-            Estimator
+            Billing
           </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/products")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Products
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/invoices")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Invoices
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/jobs")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Jobs
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/vendors")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Vendors
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/daily-scope")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Daily Scope
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/subcontractor-agreements")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Agreements
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/warehouse")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Warehouse
-          </button>
+          {TOOL_LINKS.map((tool) => (
+            <button
+              key={tool.slug}
+              onClick={() => {
+                if (canUseTools || unlockedToolSet.has(tool.slug)) {
+                  router.push(tool.href)
+                  setOpen(false)
+                }
+              }}
+              disabled={!(canUseTools || unlockedToolSet.has(tool.slug))}
+              className={[
+                "w-full text-left px-4 py-2 transition",
+                canUseTools || unlockedToolSet.has(tool.slug)
+                  ? "hover:bg-[var(--panel-hover)]"
+                  : "cursor-not-allowed text-[var(--foreground)]/45",
+              ].join(" ")}
+            >
+              {tool.name}
+            </button>
+          ))}
         </div>
       )}
     </div>

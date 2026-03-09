@@ -28,7 +28,7 @@ function sanitizeRows(rows: DailyScopeRowInput[] | undefined) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "daily-scope" })
   if (authError) return authError
 
   try {

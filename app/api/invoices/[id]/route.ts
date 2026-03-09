@@ -45,7 +45,7 @@ function calculateTotal(rows: Array<{ price: unknown }>, requestedTotal: unknown
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "invoices" })
   if (authError) return authError
 
   try {

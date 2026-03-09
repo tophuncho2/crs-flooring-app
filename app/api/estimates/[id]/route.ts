@@ -41,7 +41,7 @@ function sanitizeRows(rows: EstimateRowInput[] | undefined) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "estimator" })
   if (authError) return authError
 
   try {

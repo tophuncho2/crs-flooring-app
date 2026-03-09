@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { notFound, redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { isToolUnlocked } from "@/lib/tool-subscriptions"
 import JobDetailClient from "./job-detail-client"
 
 type RouteContext = {
@@ -63,14 +64,14 @@ export default async function JobDetailPage({ params }: RouteContext) {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { role: true },
+    select: { id: true, role: true },
   })
 
   if (!user) {
     redirect("/login")
   }
 
-  if (user.role !== "BUILDER" && user.role !== "ADMIN") {
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "jobs" }))) {
     redirect("/dashboard")
   }
 

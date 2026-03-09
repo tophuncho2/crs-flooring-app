@@ -7,6 +7,8 @@ import {
   canBypassVerification,
   canEditBuilderTab,
 } from "@/lib/access-control"
+import { isToolUnlocked } from "@/lib/tool-subscriptions"
+import type { ToolSlug } from "@/lib/tool-subscriptions"
 
 async function getCurrentUserRecord() {
   const session = await getServerSession(authOptions)
@@ -23,18 +25,42 @@ async function getCurrentUserRecord() {
   return { session, user }
 }
 
-export async function ensureBuilderOrAdmin() {
+type EnsureBuilderOrAdminOptions = {
+  toolSlug?: ToolSlug
+}
+
+export async function ensureBuilderOrAdmin(options: EnsureBuilderOrAdminOptions = {}) {
   const { session, user } = await getCurrentUserRecord()
   if (!session || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  if (user.role !== "BUILDER" && user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
-
   if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
     return NextResponse.json({ error: "Account restricted" }, { status: 403 })
+  }
+
+  if (!options.toolSlug) {
+    if (user.role !== "BUILDER" && user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    return null
+  }
+
+  if (user.role === "BUILDER" || user.role === "ADMIN") {
+    return null
+  }
+
+  if (options.toolSlug) {
+    const canUseTool = await isToolUnlocked({
+      userId: user.id,
+      role: user.role,
+      slug: options.toolSlug,
+    })
+
+    if (!canUseTool) {
+      return NextResponse.json({ error: "Tool access required" }, { status: 403 })
+    }
   }
 
   return null

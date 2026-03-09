@@ -4,7 +4,7 @@ import { normalizePrismaError, parseOptionalString, parseRequiredString } from "
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 
 export async function GET() {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {
@@ -28,7 +28,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {

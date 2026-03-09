@@ -36,14 +36,17 @@ export async function POST(request: Request) {
       data: {
         email,
         password: hashed,
-        role: "CONTRACTOR",
-        isVerified: false,
+        role: "CUSTOMER",
+        isVerified: true,
       },
       select: { id: true },
     })
 
     return NextResponse.json(
-      { success: true, message: "Account created. Pending builder approval." },
+      {
+        success: true,
+        message: "Account created. You now have a 7-day free trial. Sign in to get started.",
+      },
       { status: 201 },
     )
   } catch {

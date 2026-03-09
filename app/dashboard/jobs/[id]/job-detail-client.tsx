@@ -429,8 +429,8 @@ export default function JobDetailClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 pb-12 pt-20 text-[var(--foreground)] sm:px-6 sm:pt-24 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
+    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+      <div className="w-full space-y-6">
         <div>
           <Link href="/dashboard/jobs" className="text-sm text-blue-500 hover:underline">
             Back to Jobs

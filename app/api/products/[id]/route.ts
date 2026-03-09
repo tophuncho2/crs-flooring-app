@@ -79,7 +79,7 @@ function buildProductUpdate(body: ProductBody) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
   if (authError) return authError
 
   try {
@@ -131,7 +131,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
   if (authError) return authError
 
   try {

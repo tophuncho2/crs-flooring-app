@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import WarehouseClient, { type WarehouseRow } from "./warehouse-client"
+import { isToolUnlocked } from "@/lib/tool-subscriptions"
 
 type WarehouseQueryRow = {
   id: string
@@ -24,11 +25,11 @@ export default async function WarehousePage() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { role: true },
+    select: { id: true, role: true },
   })
 
   if (!user) redirect("/login")
-  if (user.role !== "BUILDER" && user.role !== "ADMIN") redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard")
 
   let warehouses: WarehouseQueryRow[] = []
   try {

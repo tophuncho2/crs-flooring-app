@@ -21,7 +21,7 @@ function parseStatus(value: unknown): PendingLaborPaymentStatus {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "jobs" })
   if (authError) return authError
 
   try {
@@ -84,7 +84,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "jobs" })
   if (authError) return authError
 
   try {

@@ -12,7 +12,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (authError) return authError
 
   const body = (await request.json()) as {
-    role?: "CONTRACTOR" | "ADMIN" | "BUILDER"
+    role?: "CONTRACTOR" | "CUSTOMER" | "ADMIN" | "BUILDER"
     isVerified?: boolean
   }
 

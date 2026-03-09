@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
+import { type Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { canBypassVerification } from "@/lib/access-control"
 
@@ -59,7 +60,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as "CONTRACTOR" | "ADMIN" | "BUILDER"
+        session.user.role = token.role as Role
         session.user.isVerified = Boolean(token.isVerified)
       }
       return session

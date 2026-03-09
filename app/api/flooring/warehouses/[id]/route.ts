@@ -6,7 +6,7 @@ import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 type RouteContext = { params: Promise<{ id: string }> }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {

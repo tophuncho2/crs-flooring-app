@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import ProductsManager from "./products-manager"
+import { isToolUnlocked } from "@/lib/tool-subscriptions"
 import type { CategoryDto, ProductDto } from "./types"
 
 function toProductDto(product: {
@@ -72,14 +73,14 @@ export default async function ProductsPage() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { role: true },
+    select: { id: true, role: true },
   })
 
   if (!user) {
     redirect("/login")
   }
 
-  if (user.role !== "BUILDER" && user.role !== "ADMIN") {
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) {
     redirect("/dashboard")
   }
 

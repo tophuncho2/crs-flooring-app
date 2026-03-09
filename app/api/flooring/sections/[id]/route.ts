@@ -18,7 +18,7 @@ async function ensureRegistryTable() {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {

@@ -8,7 +8,7 @@ type RouteContext = {
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "estimator" })
   if (authError) return authError
 
   const { id } = await params

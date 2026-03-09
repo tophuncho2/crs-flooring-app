@@ -6,13 +6,13 @@ function removedResponse() {
 }
 
 export async function GET() {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
   return removedResponse()
 }
 
 export async function POST() {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
   return removedResponse()
 }

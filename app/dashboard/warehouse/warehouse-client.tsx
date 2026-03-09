@@ -257,8 +257,8 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] p-8 text-[var(--foreground)]">
-      <div className="mx-auto max-w-7xl space-y-5">
+    <div className="min-h-screen bg-[var(--background)] px-1 pb-8 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+      <div className="w-full space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Warehouse</h1>

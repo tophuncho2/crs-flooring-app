@@ -10,7 +10,7 @@ type VendorBody = {
 }
 
 export async function GET() {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "vendors" })
   if (authError) return authError
 
   try {
@@ -37,7 +37,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "vendors" })
   if (authError) return authError
 
   try {

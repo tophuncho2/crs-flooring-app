@@ -280,8 +280,8 @@ export default function SubcontractorAgreementsClient({ templateHtml }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="mx-auto w-full max-w-7xl px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:px-8">
+    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+      <div className="w-full">
         <h1 className="text-3xl font-bold">Sub-Contractor Agreements</h1>
         <p className="mt-2 text-sm text-[var(--foreground)]/70">
           Fill the contract details, define payment installments, then generate and sign in sequence.

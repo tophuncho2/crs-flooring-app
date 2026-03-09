@@ -277,8 +277,8 @@ export default function JobsClient({ initialJobs, users }: { initialJobs: JobRow
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 pb-12 pt-20 text-[var(--foreground)] sm:px-6 sm:pt-24 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
+    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+      <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <h1 className="text-2xl font-bold text-blue-500">Jobs</h1>
           <p className="mt-1 text-sm text-[var(--foreground)]/70">

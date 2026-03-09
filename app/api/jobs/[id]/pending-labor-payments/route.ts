@@ -21,7 +21,7 @@ function parseStatus(value: unknown): PendingLaborPaymentStatus {
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "jobs" })
   if (authError) return authError
 
   try {
@@ -59,7 +59,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "jobs" })
   if (authError) return authError
 
   try {

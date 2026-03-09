@@ -27,7 +27,7 @@ async function ensureRegistryTable() {
 }
 
 export async function GET(request: Request) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {

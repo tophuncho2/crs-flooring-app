@@ -365,8 +365,8 @@ export default function EstimatorClient({ products }: { products: ProductOption[
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 pb-28 pt-20 text-[var(--foreground)] sm:px-6 sm:pt-24 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
+    <div className="min-h-screen bg-[var(--background)] px-1 pb-28 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+      <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -742,7 +742,7 @@ export default function EstimatorClient({ products }: { products: ProductOption[
       )}
 
       <div className="fixed bottom-0 left-0 right-0 border-t border-[var(--panel-border)] bg-[var(--panel-background)] p-3">
-        <div className="mx-auto max-w-7xl">
+        <div className="w-full px-1 sm:px-2 lg:px-3">
           <button
             type="button"
             className="w-full rounded-lg bg-blue-500 px-4 py-3 text-base font-semibold text-black transition hover:bg-blue-400"

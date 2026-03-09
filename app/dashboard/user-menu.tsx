@@ -5,6 +5,7 @@ import { useCallback } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { isMasterEmail } from "@/lib/access-control"
+import type { ToolSlug } from "@/lib/tool-subscriptions"
 
 type Theme = "light" | "dark"
 
@@ -43,7 +44,14 @@ function KeyVisualization({ combination }: { combination: string }) {
   )
 }
 
-export default function UserMenu({ email, role }: { email: string, role: string }) {
+type UserMenuProps = {
+  email: string
+  role: string
+  canUseTools?: boolean
+  unlockedToolSlugs?: ToolSlug[]
+}
+
+export default function UserMenu({ email, role, canUseTools: canUseToolsProp, unlockedToolSlugs = [] }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const [hotkeysOpen, setHotkeysOpen] = useState(false)
   const [hotkeys, setHotkeys] = useState<HotkeyRow[]>([])
@@ -60,7 +68,9 @@ export default function UserMenu({ email, role }: { email: string, role: string 
   const isMaster = isMasterEmail(email)
   const isBuilder = role === "BUILDER"
   const hasBuilderPanelAccess = isBuilder || isMaster
-  const canUseTools = role === "BUILDER" || role === "ADMIN"
+  const canUseTools = canUseToolsProp ?? (role === "BUILDER" || role === "ADMIN")
+  const unlockedToolSet = new Set(unlockedToolSlugs)
+  const canOpenTool = (slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -214,7 +224,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
       }
 
       if (key === "e") {
-        if (canUseTools) {
+        if (canOpenTool("estimator")) {
           event.preventDefault()
           router.push("/dashboard/estimator")
         }
@@ -222,7 +232,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
       }
 
       if (key === "p") {
-        if (canUseTools) {
+        if (canOpenTool("products")) {
           event.preventDefault()
           router.push("/dashboard/products")
         }
@@ -230,7 +240,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
       }
 
       if (key === "i") {
-        if (canUseTools) {
+        if (canOpenTool("invoices")) {
           event.preventDefault()
           router.push("/dashboard/invoices")
         }
@@ -238,7 +248,7 @@ export default function UserMenu({ email, role }: { email: string, role: string 
       }
 
       if (key === "w") {
-        if (canUseTools) {
+        if (canOpenTool("warehouse")) {
           event.preventDefault()
           router.push("/dashboard/warehouse")
         }
