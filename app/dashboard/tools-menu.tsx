@@ -18,12 +18,6 @@ const TOOL_LINKS: ToolLink[] = [
   { slug: "jobs", name: "Jobs", href: "/dashboard/jobs" },
   { slug: "vendors", name: "Vendors", href: "/dashboard/vendors" },
   { slug: "daily-scope", name: "Daily Scope", href: "/dashboard/daily-scope" },
-  {
-    slug: "subcontractor-agreements",
-    name: "Subcontractor Agreements",
-    href: "/dashboard/subcontractor-agreements",
-  },
-  { slug: "warehouse", name: "Warehouse", href: "/dashboard/warehouse" },
 ]
 
 type ToolsMenuProps = {
@@ -86,15 +80,6 @@ export default function ToolsMenu({ canUseTools, tools }: ToolsMenuProps) {
             className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
           >
             Dashboard
-          </button>
-          <button
-            onClick={() => {
-              router.push("/dashboard/billing")
-              setOpen(false)
-            }}
-            className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-          >
-            Billing
           </button>
           {TOOL_LINKS.map((tool) => (
             <button

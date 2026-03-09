@@ -45,13 +45,6 @@ export const TOOL_CATALOG = [
     defaultMonthlyPriceCents: 1600,
   },
   {
-    slug: "subcontractor-agreements",
-    name: "Subcontractor Agreements",
-    description: "Generate and manage subcontractor agreements.",
-    path: "/dashboard/subcontractor-agreements",
-    defaultMonthlyPriceCents: 1200,
-  },
-  {
     slug: "warehouse",
     name: "Warehouse",
     description: "Manage flooring warehouses, sections, and locations.",

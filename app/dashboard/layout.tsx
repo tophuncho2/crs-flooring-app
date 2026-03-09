@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import ToolsMenu from "./tools-menu"
+import FlooringToolsMenu from "./flooring-tools-menu"
 import UserMenu from "./user-menu"
 import { prisma } from "@/lib/prisma"
 import { canBypassVerification } from "@/lib/access-control"
@@ -53,6 +54,7 @@ export default async function DashboardLayout({
         </div>
       ) : null}
       <div className="fixed right-3 top-3 z-50 flex items-center gap-2 sm:right-6 sm:top-6 sm:gap-4">
+        <FlooringToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
         <ToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
         <UserMenu
           email={user.email}

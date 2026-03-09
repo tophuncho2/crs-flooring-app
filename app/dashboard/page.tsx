@@ -4,15 +4,49 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { canBypassVerification } from "@/lib/access-control"
 import { prisma } from "@/lib/prisma"
-import { getUserToolContext, toolCentsToDisplay } from "@/lib/tool-subscriptions"
+import { getUserToolContext, type ToolSlug } from "@/lib/tool-subscriptions"
 
 type ModuleCard = {
   slug: string
   name: string
-  description: string
   path: string
   isUnlocked: boolean
-  defaultMonthlyPriceCents: number
+}
+
+type FloorModuleCard = {
+  slug: string
+  name: string
+  path: string
+  requiredTool?: ToolSlug
+}
+
+const CORE_MODULE_ORDER: ToolSlug[] = ["estimator", "invoices", "jobs", "vendors", "daily-scope"]
+
+function canOpenModule(hasGlobalAccess: boolean, item: { isUnlocked: boolean }) {
+  return hasGlobalAccess || item.isUnlocked
+}
+
+function canOpenFloorModule(hasGlobalAccess: boolean, unlockedToolSet: Set<ToolSlug>, requiredTool?: ToolSlug) {
+  return hasGlobalAccess || (requiredTool ? unlockedToolSet.has(requiredTool) : false)
+}
+
+function ModuleCardAction({ href, enabled }: { href: string; enabled: boolean }) {
+  if (enabled) {
+    return (
+      <Link
+        href={href}
+        className="inline-flex w-fit rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black transition hover:bg-blue-400"
+      >
+        Open module
+      </Link>
+    )
+  }
+
+  return (
+    <button type="button" disabled className="rounded-lg bg-blue-500/45 px-3 py-2 text-sm font-semibold text-black">
+      Locked
+    </button>
+  )
 }
 
 export default async function Dashboard() {
@@ -36,66 +70,122 @@ export default async function Dashboard() {
   }
 
   const context = await getUserToolContext({ userId: user.id, role: user.role })
-  const modules: ModuleCard[] = context.tools.map((tool) => {
-    return {
-      slug: tool.slug,
-      name: tool.name,
-      description: tool.description,
-      path: tool.path,
-      isUnlocked: tool.isUnlocked,
-      defaultMonthlyPriceCents: tool.monthlyPriceCents,
-    }
-  })
-  const monthlyCost = toolCentsToDisplay(context.monthlyCostCents)
   const hasAnyAccess = context.canUseTools
+  const unlockedToolSet = new Set(context.tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
+
+  const availableModules: ModuleCard[] = context.tools.map((tool) => ({
+    slug: tool.slug,
+    name: tool.name,
+    path: tool.path,
+    isUnlocked: tool.isUnlocked,
+  }))
+
+  const coreModules: ModuleCard[] = CORE_MODULE_ORDER.map((slug) => availableModules.find((module) => module.slug === slug)).filter(
+    (module): module is ModuleCard => Boolean(module),
+  )
+
+  const movedModules: ModuleCard[] = [
+    ...availableModules.filter((module) => module.slug === "products"),
+    ...availableModules.filter((module) => module.slug === "warehouse"),
+  ]
+
+  const flooringModules: FloorModuleCard[] = [
+    {
+      slug: "work-orders",
+      name: "Work Orders",
+      path: "/dashboard/flooring/work-orders",
+      requiredTool: "warehouse",
+    },
+    {
+      slug: "properties",
+      name: "Properties",
+      path: "/dashboard/flooring/properties",
+      requiredTool: "warehouse",
+    },
+    {
+      slug: "management-companies",
+      name: "Management Companies",
+      path: "/dashboard/flooring/management-companies",
+      requiredTool: "warehouse",
+    },
+    {
+      slug: "templates",
+      name: "Templates",
+      path: "/dashboard/flooring/templates",
+      requiredTool: "warehouse",
+    },
+    {
+      slug: "manufacturers",
+      name: "Manufacturers",
+      path: "/dashboard/flooring/manufacturers",
+      requiredTool: "warehouse",
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:px-8">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="mt-2 text-sm text-[var(--foreground)]/70">Choose a module to continue.</p>
-          </div>
-          <div className="text-sm text-[var(--foreground)]/80">
-            <p className="font-semibold">Current monthly cost</p>
-            <p>{monthlyCost}</p>
-          </div>
+        <div className="mb-4">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="mt-2 text-sm text-[var(--foreground)]/70">Choose a module to continue.</p>
         </div>
 
-        <div className="mt-2 mb-6">
-          <Link href="/dashboard/billing" className="text-sm font-semibold text-blue-500 hover:underline">
-            Manage tool access and billing
-          </Link>
-        </div>
-
-        <div className="mt-2 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module) => {
-            const canOpen = hasAnyAccess && module.isUnlocked
-            const buttonLabel = canOpen ? "Open module" : "Unlock in Billing"
-            const buttonHref = canOpen ? module.path : "/dashboard/billing"
-            const price = toolCentsToDisplay(module.defaultMonthlyPriceCents)
-
+        <section className="mt-2 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {coreModules.map((module) => {
+            const accessible = canOpenModule(hasAnyAccess, module)
             return (
               <article
                 key={module.slug}
-                className={`flex flex-col rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 ${
-                  canOpen ? "" : "opacity-75"
+                className={`flex min-h-[120px] flex-col rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 ${
+                  accessible ? "" : "opacity-75"
                 }`}
               >
                 <h2 className="text-xl font-semibold text-blue-500">{module.name}</h2>
-                <p className="mt-2 flex-1 text-sm text-[var(--foreground)]/75">{module.description}</p>
-                <p className="mt-3 text-sm text-[var(--foreground)]/80">Monthly add-on: {price}</p>
-                <Link
-                  href={buttonHref}
-                  className="mt-4 inline-flex w-fit rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black transition hover:bg-blue-400"
-                >
-                  {buttonLabel}
-                </Link>
+                <div className="mt-4">
+                  <ModuleCardAction href={module.path} enabled={accessible} />
+                </div>
               </article>
             )
           })}
-        </div>
+        </section>
+
+        <div className="mt-8 border-t border-[var(--panel-border)]" />
+
+        <section className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {movedModules.map((module) => {
+            const accessible = canOpenModule(hasAnyAccess, module)
+            return (
+              <article
+                key={module.slug}
+                className={`flex min-h-[120px] flex-col rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 ${
+                  accessible ? "" : "opacity-75"
+                }`}
+              >
+                <h2 className="text-xl font-semibold text-blue-500">{module.name}</h2>
+                <div className="mt-4">
+                  <ModuleCardAction href={module.path} enabled={accessible} />
+                </div>
+              </article>
+            )
+          })}
+
+          {flooringModules.map((module) => {
+            const accessible = canOpenFloorModule(hasAnyAccess, unlockedToolSet, module.requiredTool)
+            return (
+              <article
+                key={module.slug}
+                className={`flex min-h-[120px] flex-col rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 ${
+                  accessible ? "" : "opacity-75"
+                }`}
+              >
+                <h2 className="text-xl font-semibold text-blue-500">{module.name}</h2>
+                <div className="mt-4">
+                  <ModuleCardAction href={module.path} enabled={accessible} />
+                </div>
+              </article>
+            )
+          })}
+        </section>
       </div>
     </div>
   )
