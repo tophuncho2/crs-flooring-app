@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { FlooringVacancyStatus, FlooringWorkOrderStatus, Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
@@ -92,6 +93,14 @@ function normalizeAddress(value: {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
 }
 
+function buildProductName(product: {
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
 function toClient(workOrder: {
   id: string
   property: { id: string; name: string; streetAddress: string | null; city: string | null; state: string | null; postalCode: string | null }
@@ -113,7 +122,12 @@ function toClient(workOrder: {
     productId: string
     quantity: { toString: () => string }
     notes: string | null
-    product: { id: string; name: string }
+    product: {
+      id: string
+      manufacturerName: string | null
+      style: string | null
+      color: string | null
+    }
   }>
   createdAt: Date
   updatedAt: Date
@@ -141,7 +155,7 @@ function toClient(workOrder: {
       productId: item.productId,
       quantity: item.quantity.toString(),
       notes: item.notes ?? "",
-      productName: item.product.name,
+      productName: buildProductName(item.product),
     })),
     createdAt: workOrder.createdAt.toISOString(),
     updatedAt: workOrder.updatedAt.toISOString(),
@@ -171,7 +185,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
         items: {
           orderBy: { createdAt: "desc" },
           include: {
-            product: { select: { id: true, name: true } },
+            product: {
+              select: {
+                id: true,
+                manufacturerName: true,
+                style: true,
+                color: true,
+              },
+            },
           },
         },
       },
@@ -196,31 +217,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
 
-    const data: {
-      propertyId?: string
-      templateId?: string | null
-      warehouseId?: string | null
-      status?: string
-      vacancy?: "VACANT" | "OCCUPIED" | null
-      scheduledFor?: Date | null
-      unitLabel?: string | null
-      unitNumber?: number | null
-      unitType?: string | null
-      customAddress?: string | null
-      instructions?: string | null
-      notes?: string | null
-      googleDriveSlip?: string | null
-      googleDocUrl?: string | null
-    } = {}
+    const data: Prisma.FlooringWorkOrderUncheckedUpdateInput = {}
 
     if ("propertyId" in body) data.propertyId = parseRequiredString(body.propertyId, "propertyId")
     if ("templateId" in body) data.templateId = parseOptionalString(body.templateId)
     if ("warehouseId" in body) data.warehouseId = parseOptionalString(body.warehouseId)
-    if ("status" in body) data.status = parseWorkOrderStatus(body.status, "status")
-    if ("vacancy" in body) data.vacancy = parseOptionalEnumValue(body.vacancy, "vacancy", vacancyStatuses) as
-      | "VACANT"
-      | "OCCUPIED"
-      | null
+    if ("status" in body) data.status = parseWorkOrderStatus(body.status, "status") as FlooringWorkOrderStatus
+    if ("vacancy" in body) data.vacancy = parseOptionalEnumValue(body.vacancy, "vacancy", vacancyStatuses) as FlooringVacancyStatus | null
     if ("date" in body) data.scheduledFor = parseOptionalDate(body.date, "date")
     if ("unitText" in body) data.unitLabel = parseOptionalString(body.unitText)
     if ("unitNumber" in body) data.unitNumber = parseOptionalInt(body.unitNumber, "unitNumber")
@@ -233,10 +236,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     const workOrder = await prisma.flooringWorkOrder.update({
       where: { id },
-      data: {
-        ...data,
-        templateId: data.templateId,
-      },
+      data,
       include: {
         property: {
           select: {

@@ -12,6 +12,14 @@ function parseOptionalDecimal(value: unknown, field: string): string | null {
   return parseDecimal(value, field, 2).toString()
 }
 
+function buildProductName(product: {
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
 export async function PATCH(request: Request, { params }: RouteContext) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
@@ -37,14 +45,23 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         quantity: data.quantity === undefined ? undefined : data.quantity,
         notes: data.notes,
       },
-      include: { product: { select: { id: true, name: true } } },
+      include: {
+        product: {
+          select: {
+            id: true,
+            manufacturerName: true,
+            style: true,
+            color: true,
+          },
+        },
+      },
     })
 
     return NextResponse.json({
       item: {
         id: updated.id,
         productId: updated.productId,
-        productName: updated.product.name,
+        productName: buildProductName(updated.product),
         quantity: updated.quantity.toString(),
         notes: updated.notes ?? "",
       },

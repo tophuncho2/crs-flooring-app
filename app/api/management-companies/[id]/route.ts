@@ -29,18 +29,6 @@ function normalizeAddress(value: {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
 }
 
-function parseOptionalStringArray(value: unknown, field: string): string[] {
-  if (value === undefined) {
-    return []
-  }
-  if (!Array.isArray(value)) {
-    throw { message: `${field} must be an array`, field }
-  }
-
-  const parsed = value.map((item) => parseRequiredString(item, `${field} item`))
-  return Array.from(new Set(parsed))
-}
-
 function normalizeResponse(company: {
   id: string
   name: string
@@ -98,19 +86,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       email: parseOptionalString(body.email),
     }
 
-    if (Object.values(updatePayload).every((value) => value === null) && !("propertyIds" in body)) {
+    if (Object.values(updatePayload).every((value) => value === null)) {
       return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 })
     }
 
     const data: {
-      name?: string | null
-      streetAddress?: string | null
-      city?: string | null
-      state?: string | null
-      postalCode?: string | null
-      phone?: string | null
-      email?: string | null
-      properties?: { deleteMany: { managementCompanyId: string }; create: { propertyId: string }[] }
+      name?: string
+      streetAddress?: string
+      city?: string
+      state?: string
+      postalCode?: string
+      phone?: string
+      email?: string
     } = {}
 
     if (updatePayload.name !== null) data.name = updatePayload.name
@@ -120,14 +107,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (updatePayload.postalCode !== null) data.postalCode = updatePayload.postalCode
     if (updatePayload.phone !== null) data.phone = updatePayload.phone
     if (updatePayload.email !== null) data.email = updatePayload.email
-
-    if ("propertyIds" in body) {
-      const ids = parseOptionalStringArray(body.propertyIds, "propertyIds").map((propertyId) => ({ propertyId }))
-      data.properties = {
-        deleteMany: { managementCompanyId: id },
-        create: ids,
-      }
-    }
 
     const company = await prisma.flooringManagementCompany.update({
       where: { id },

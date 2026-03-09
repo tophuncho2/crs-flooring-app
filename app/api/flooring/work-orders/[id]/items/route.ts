@@ -8,6 +8,14 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
+function buildProductName(product: {
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
 export async function GET(_request: Request, { params }: RouteContext) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
@@ -17,7 +25,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
     const items = await prisma.flooringWorkOrderItem.findMany({
       where: { workOrderId: id },
       include: {
-        product: { select: { id: true, name: true } },
+        product: {
+          select: {
+            id: true,
+            manufacturerName: true,
+            style: true,
+            color: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     })
@@ -26,7 +41,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       items: items.map((item) => ({
         id: item.id,
         productId: item.productId,
-        productName: item.product.name,
+        productName: buildProductName(item.product),
         quantity: item.quantity.toString(),
         notes: item.notes ?? "",
       })),
@@ -59,7 +74,14 @@ export async function POST(request: Request, { params }: RouteContext) {
         notes,
       },
       include: {
-        product: { select: { id: true, name: true } },
+        product: {
+          select: {
+            id: true,
+            manufacturerName: true,
+            style: true,
+            color: true,
+          },
+        },
       },
     })
 
@@ -68,7 +90,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         item: {
           id: created.id,
           productId: created.productId,
-          productName: created.product.name,
+          productName: buildProductName(created.product),
           quantity: created.quantity.toString(),
           notes: created.notes ?? "",
         },

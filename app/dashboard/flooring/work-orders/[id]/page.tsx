@@ -40,6 +40,14 @@ type ProductOption = {
   name: string
 }
 
+function buildProductName(product: {
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
 function normalizeAddress(value: {
   streetAddress: string | null
   city: string | null
@@ -91,7 +99,12 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
         orderBy: { createdAt: "desc" },
         include: {
           product: {
-            select: { id: true, name: true },
+            select: {
+              id: true,
+              manufacturerName: true,
+              style: true,
+              color: true,
+            },
           },
         },
       },
@@ -99,8 +112,13 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
   })
 
   const productRows = await prisma.flooringProduct.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
+    orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+    select: {
+      id: true,
+      manufacturerName: true,
+      style: true,
+      color: true,
+    },
   })
 
   const propertyOptions = await prisma.propertyHub.findMany({
@@ -155,7 +173,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
     items: workOrder.items.map((item) => ({
       id: item.id,
       productId: item.productId,
-      productName: item.product.name,
+      productName: buildProductName(item.product),
       quantity: item.quantity.toString(),
       notes: item.notes ?? "",
     })),
@@ -164,7 +182,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
   return (
     <WorkOrderDetailClient
       workOrder={detail}
-      productOptions={productRows.map((product): ProductOption => ({ id: product.id, name: product.name }))}
+      productOptions={productRows.map((product): ProductOption => ({ id: product.id, name: buildProductName(product) }))}
       propertyOptions={propertyOptions.map((property) => ({
         id: property.id,
         name: property.name,

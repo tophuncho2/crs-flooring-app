@@ -259,6 +259,7 @@ model FlooringManufacturer {
 
 model FlooringProduct {
   id               String                  @id @default(uuid())
+  name             String                  @default("")
   categoryId       String?
   category         FlooringCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   manufacturerName String?                @map("manufacturer")
@@ -284,6 +285,7 @@ model FlooringProduct {
   inventories      FlooringInventory[]
 
   @@index([manufacturerId])
+  @@index([name])
   @@map("flooring_product")
 }
 
@@ -330,6 +332,8 @@ model FlooringTemplate {
   property      PropertyHub            @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateTag   String
   store         FlooringStoreCode?
+  warehouseId   String?
+  warehouse     FlooringWarehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   instructions  String?
   templateNotes String?
   padProductId  String?
@@ -340,6 +344,7 @@ model FlooringTemplate {
   workOrders    FlooringWorkOrder[]
 
   @@index([propertyId])
+  @@index([warehouseId])
   @@index([templateTag])
   @@map("flooring_template")
 }
@@ -370,6 +375,7 @@ model FlooringWarehouse {
   sections   FlooringSection[]
   locations  FlooringLocation[]
   workOrders FlooringWorkOrder[]
+  templates  FlooringTemplate[]
 
   @@map("flooring_warehouse")
 }
