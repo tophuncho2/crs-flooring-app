@@ -12,13 +12,7 @@ function normalizeAddress(value: {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
 }
 
-type PropertyManagementCompany = {
-  id: string
-  name: string
-  address: string
-}
-
-type PropertyListItem = {
+type ManagementCompanyListItem = {
   id: string
   name: string
   streetAddress: string | null
@@ -28,8 +22,12 @@ type PropertyListItem = {
   zip: string | null
   phone: string | null
   email: string | null
-  managementCompanies: PropertyManagementCompany[]
   fullAddress: string
+  properties: Array<{
+    id: string
+    name: string
+    fullAddress: string
+  }>
 }
 
 export async function GET() {
@@ -37,9 +35,8 @@ export async function GET() {
   if (authError) return authError
 
   try {
-    const properties = await prisma.propertyHub.findMany({
+    const companies = await prisma.flooringManagementCompany.findMany({
       orderBy: { createdAt: "desc" },
-      take: 250,
       select: {
         id: true,
         name: true,
@@ -49,9 +46,9 @@ export async function GET() {
         postalCode: true,
         phone: true,
         email: true,
-        flooringLinks: {
+        properties: {
           select: {
-            managementCompany: {
+            property: {
               select: {
                 id: true,
                 name: true,
@@ -64,27 +61,38 @@ export async function GET() {
           },
         },
       },
+      take: 250,
     })
 
-    const payload: PropertyListItem[] = properties.map((property) => ({
-      id: property.id,
-      name: property.name,
-      streetAddress: property.streetAddress,
-      city: property.city,
-      state: property.state,
-      postalCode: property.postalCode,
-      zip: property.postalCode,
-      phone: property.phone,
-      email: property.email,
-      managementCompanies: property.flooringLinks.map((link) => ({
-        id: link.managementCompany.id,
-        name: link.managementCompany.name,
-        address: normalizeAddress(link.managementCompany),
+    const payload = companies.map((company) => ({
+      id: company.id,
+      name: company.name,
+      streetAddress: company.streetAddress,
+      city: company.city,
+      state: company.state,
+      postalCode: company.postalCode,
+      zip: company.postalCode,
+      phone: company.phone,
+      email: company.email,
+      fullAddress: normalizeAddress({
+        streetAddress: company.streetAddress,
+        city: company.city,
+        state: company.state,
+        postalCode: company.postalCode,
+      }),
+      properties: company.properties.map((link) => ({
+        id: link.property.id,
+        name: link.property.name,
+        fullAddress: normalizeAddress({
+          streetAddress: link.property.streetAddress,
+          city: link.property.city,
+          state: link.property.state,
+          postalCode: link.property.postalCode,
+        }),
       })),
-      fullAddress: normalizeAddress(property),
-    }))
+    })) as ManagementCompanyListItem[]
 
-    return NextResponse.json({ properties: payload })
+    return NextResponse.json({ managementCompanies: payload })
   } catch (error) {
     const normalized = normalizePrismaError(error)
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })
@@ -98,7 +106,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>
 
-    const property = await prisma.propertyHub.create({
+    const company = await prisma.flooringManagementCompany.create({
       data: {
         name: parseRequiredString(body.name, "name"),
         streetAddress: parseOptionalString(body.streetAddress),
@@ -112,19 +120,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        property: {
-          id: property.id,
-          name: property.name,
-          streetAddress: property.streetAddress,
-          city: property.city,
-          state: property.state,
-          postalCode: property.postalCode,
-          zip: property.postalCode,
-          phone: property.phone,
-          email: property.email,
-          managementCompanies: [],
-          fullAddress: normalizeAddress(property),
-        } satisfies PropertyListItem,
+        managementCompany: {
+          id: company.id,
+          name: company.name,
+          streetAddress: company.streetAddress,
+          city: company.city,
+          state: company.state,
+          postalCode: company.postalCode,
+          zip: company.postalCode,
+          phone: company.phone,
+          email: company.email,
+          fullAddress: normalizeAddress(company),
+          properties: [],
+        } satisfies ManagementCompanyListItem,
       },
       { status: 201 },
     )

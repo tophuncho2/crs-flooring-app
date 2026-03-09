@@ -278,11 +278,13 @@ model Hotkey {
 
 enum FlooringWorkOrderStatus {
   BUILDING_ORDER
-  PENDING
+  PENDING_EXPORT
   CARPET_CLEANING
+  SENT_OUT
+  COMPLETE
+  PENDING
   PULL_TEMPLATE
   MODIFY
-  SENT_OUT
 }
 
 enum FlooringVacancyStatus {
@@ -593,9 +595,11 @@ model FlooringWorkOrder {
   vacancy         FlooringVacancyStatus?
   scheduledFor    DateTime?               @db.Date
   unitLabel       String?
+  unitNumber      Int?
+  unitType        String?
   customAddress   String?
   instructions    String?
-  templateNotes   String?
+  notes           String?
   googleDriveSlip String?
   googleDocUrl    String?
   createdAt       DateTime                @default(now())
