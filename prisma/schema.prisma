@@ -260,8 +260,8 @@ model FlooringManufacturer {
 model FlooringProduct {
   id               String                  @id @default(uuid())
   name             String                  @default("")
-  categoryId       String?
-  category         FlooringCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId       String
+  category         FlooringCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   manufacturerName String?                @map("manufacturer")
   manufacturerId   String?
   manufacturer     FlooringManufacturer?   @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
@@ -273,6 +273,7 @@ model FlooringProduct {
   unitWeight       String?
   baseColor        String?
   coveragePerUnit  Decimal?                @db.Decimal(12, 4)
+  photoUrls        String[]                @default([])
   cost             Decimal?                @db.Decimal(10, 2)
   isPublic         Boolean                 @default(false)
   notes            String?

@@ -14,7 +14,7 @@ type FloorToolLink = {
 
 const FLOORS_TOOL_LINKS: FloorToolLink[] = [
   { slug: "warehouse", name: "Warehouse", href: "/dashboard/warehouse", requiredTool: "warehouse" },
-  { slug: "products", name: "Products", href: "/dashboard/products", requiredTool: "products" },
+  { slug: "products", name: "Products", href: "/dashboard/flooring/products", requiredTool: "products" },
   { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/flooring/work-orders", requiredTool: "warehouse" },
   { slug: "flooring-properties", name: "Properties", href: "/dashboard/flooring/properties", requiredTool: "warehouse" },
   { slug: "flooring-management-companies", name: "Management Companies", href: "/dashboard/flooring/management-companies", requiredTool: "warehouse" },

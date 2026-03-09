@@ -6,7 +6,7 @@ export const TOOL_CATALOG = [
     slug: "products",
     name: "Products",
     description: "Manage product categories and pricing.",
-    path: "/dashboard/products",
+    path: "/dashboard/flooring/products",
     defaultMonthlyPriceCents: 1800,
   },
   {
