@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { ArrowDown, ArrowUp, Boxes } from "lucide-react"
 import type { UserToolRow } from "@/lib/tool-subscriptions"
 import type { FlooringNavItem } from "./flooring-navigation"
+import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean
@@ -28,6 +29,9 @@ export default function FlooringToolsMenu({
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const unlockedToolSet = new Set(tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
+  const hotkeyByPath = new Map(
+    FLOORING_HOTKEYS.filter((hotkey) => hotkey.path).map((hotkey) => [hotkey.path!, hotkey.combination]),
+  )
   const lastSavedValueRef = useRef(
     JSON.stringify({
       nextVisibleSlugs: visibleSlugs,
@@ -118,7 +122,7 @@ export default function FlooringToolsMenu({
       {open && (
         <div
           className="
-            absolute right-0 mt-2 w-56
+            absolute right-0 mt-2 w-[28rem]
             bg-[var(--panel-background)]
             border border-[var(--panel-border)]
             rounded-lg
@@ -131,9 +135,10 @@ export default function FlooringToolsMenu({
           {orderedItems.map((tool) => {
             const canOpen = canUseTools || (tool.requiredTool ? unlockedToolSet.has(tool.requiredTool) : false)
             const isVisible = visibleSlugs.includes(tool.slug)
+            const hotkeyLabel = hotkeyByPath.get(tool.href)
 
             return (
-              <div key={tool.slug} className="flex items-center gap-2 border-b border-[var(--panel-border)]/50 px-2 py-1 last:border-b-0">
+              <div key={tool.slug} className="flex items-center gap-3 border-b border-[var(--panel-border)]/50 px-3 py-2 last:border-b-0">
                 <button
                   onClick={() => {
                     if (canOpen) {
@@ -149,7 +154,7 @@ export default function FlooringToolsMenu({
                   }}
                   disabled={!canOpen}
                   className={[
-                    "min-w-0 flex-1 rounded px-2 py-2 text-left transition",
+                    "min-w-0 flex-1 rounded px-3 py-2 text-left transition",
                     canOpen ? "hover:bg-[var(--panel-hover)]" : "cursor-not-allowed text-[var(--foreground)]/45",
                   ].join(" ")}
                 >
@@ -164,7 +169,7 @@ export default function FlooringToolsMenu({
                       : [...visibleSlugs, tool.slug]
                     onVisibleSlugsChange(nextVisibleSlugs)
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded hover:bg-[var(--panel-hover)]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded hover:bg-[var(--panel-hover)]"
                   aria-label={`${isVisible ? "Hide" : "Show"} ${tool.name} in header`}
                 >
                   <input
@@ -174,7 +179,7 @@ export default function FlooringToolsMenu({
                     className="h-4 w-4 accent-blue-500"
                   />
                 </button>
-                <div className="flex flex-col gap-1">
+                <div className="flex shrink-0 flex-col gap-1">
                   <button
                     type="button"
                     onClick={(event) => {
@@ -208,6 +213,11 @@ export default function FlooringToolsMenu({
                     <ArrowDown size={10} />
                   </button>
                 </div>
+                {hotkeyLabel ? (
+                  <span className="min-w-[88px] shrink-0 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/50 px-2 py-1 text-center text-[10px] font-semibold tracking-wide text-[var(--foreground)]/70">
+                    {hotkeyLabel}
+                  </span>
+                ) : null}
               </div>
             )
           })}
