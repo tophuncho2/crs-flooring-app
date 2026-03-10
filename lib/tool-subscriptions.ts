@@ -13,7 +13,7 @@ export const TOOL_CATALOG = [
     slug: "warehouse",
     name: "Warehouse",
     description: "Manage flooring warehouses, sections, and locations.",
-    path: "/dashboard/warehouse",
+    path: "/dashboard/flooring/warehouse",
     defaultMonthlyPriceCents: 1400,
   },
 ] as const

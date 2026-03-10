@@ -12,7 +12,7 @@ type ToolLink = {
 }
 
 const TOOL_LINKS: ToolLink[] = [
-  { slug: "products", name: "Products", href: "/dashboard/products" },
+  { slug: "products", name: "Products", href: "/dashboard/flooring/products" },
 ]
 
 type ToolsMenuProps = {

@@ -226,7 +226,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
       if (key === "p") {
         if (canOpenTool("products")) {
           event.preventDefault()
-          router.push("/dashboard/products")
+          router.push("/dashboard/flooring/products")
         }
         return
       }
@@ -234,7 +234,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
       if (key === "w") {
         if (canOpenTool("warehouse")) {
           event.preventDefault()
-          router.push("/dashboard/warehouse")
+          router.push("/dashboard/flooring/warehouse")
         }
         return
       }
@@ -291,6 +291,16 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
             <div className="px-4 py-2 border-b border-[var(--panel-border)] text-blue-500 truncate">
               {email}
             </div>
+
+            <button
+              onClick={() => {
+                router.push("/dashboard")
+                setOpen(false)
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+            >
+              Dashboard
+            </button>
 
             {hasBuilderPanelAccess && (
               <button

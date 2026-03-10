@@ -1,0 +1,2 @@
+ALTER TABLE "User"
+ADD COLUMN "hiddenFlooringNavSlugs" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];

@@ -2,13 +2,11 @@ import type { ReactNode } from "react"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
-import ToolsMenu from "./tools-menu"
-import FlooringToolsMenu from "./flooring-tools-menu"
-import FlooringHeaderNav from "./flooring-header-nav"
-import UserMenu from "./user-menu"
+import HeaderControls from "./header-controls"
 import { prisma } from "@/lib/prisma"
 import { canBypassVerification } from "@/lib/access-control"
 import { getUserToolContext } from "@/lib/tool-subscriptions"
+import { FLOORING_NAV_SLUGS } from "./flooring-navigation"
 
 export default async function DashboardLayout({
   children,
@@ -24,7 +22,7 @@ export default async function DashboardLayout({
   const user = session.user.email
     ? await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true, email: true, role: true, isVerified: true },
+        select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true },
       })
     : null
 
@@ -40,6 +38,7 @@ export default async function DashboardLayout({
     userId: user.id,
     role: user.role,
   })
+  const initialVisibleFlooringSlugs = FLOORING_NAV_SLUGS.filter((slug) => !user.hiddenFlooringNavSlugs.includes(slug))
 
   return (
     <div className="relative min-h-screen">
@@ -55,17 +54,13 @@ export default async function DashboardLayout({
         </div>
       ) : null}
       <div className="fixed inset-x-0 top-3 z-50 px-3 sm:top-6 sm:px-6">
-        <div className="ml-auto flex w-fit max-w-full items-center gap-2 sm:gap-4">
-          <FlooringHeaderNav canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
-          <FlooringToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
-          <ToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
-          <UserMenu
-            email={user.email}
-            role={user.role}
-            canUseTools={toolContext.canUseTools}
-            unlockedToolSlugs={toolContext.tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug)}
-          />
-        </div>
+        <HeaderControls
+          email={user.email}
+          role={user.role}
+          canUseTools={toolContext.canUseTools}
+          tools={toolContext.tools}
+          initialVisibleFlooringSlugs={initialVisibleFlooringSlugs}
+        />
       </div>
 
       {children}

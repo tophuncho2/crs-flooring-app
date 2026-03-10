@@ -15,14 +15,15 @@ enum Role {
 }
 
 model User {
-  id         String              @id @default(uuid())
-  email      String              @unique
-  password   String
-  role       Role                @default(CUSTOMER)
-  isVerified Boolean             @default(true)
-  createdAt  DateTime            @default(now())
-  toolAccesses UserToolAccess[]
-  activities UserLoginActivity[]
+  id                     String              @id @default(uuid())
+  email                  String              @unique
+  password               String
+  role                   Role                @default(CUSTOMER)
+  isVerified             Boolean             @default(true)
+  hiddenFlooringNavSlugs String[]            @default([])
+  createdAt              DateTime            @default(now())
+  toolAccesses           UserToolAccess[]
+  activities             UserLoginActivity[]
 }
 
 model Tool {
@@ -66,34 +67,6 @@ model UserLoginActivity {
 
   @@index([loggedInAt])
   @@index([userEmail])
-}
-
-model Category {
-  id           String    @id @default(uuid())
-  name         String    @unique
-  stockUnit    String
-  purchaseUnit String
-  coverageUnit String
-  rateUnit     String
-  altUnit      String?
-  createdAt    DateTime  @default(now())
-  products     Product[]
-}
-
-model Product {
-  id              String         @id @default(uuid())
-  name            String
-  description     String?
-  categoryId      String
-  category        Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  internalCost    Decimal        @db.Decimal(10, 2)
-  customerCost    Decimal        @db.Decimal(10, 2)
-  laborRate       Decimal        @db.Decimal(10, 2)
-  coveragePerUnit Decimal        @db.Decimal(10, 4)
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-
-  @@index([categoryId])
 }
 
 model Hotkey {
