@@ -1,31 +1,43 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ensureAuthenticated } from "@/lib/route-auth"
+import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
 
-const DASHBOARD_HOTKEY_ID = "46dfb2cd-3010-49fc-8a2c-59e436020007"
+async function syncHotkeys() {
+  const allowedIds = new Set(FLOORING_HOTKEYS.map((hotkey) => hotkey.id))
 
-async function ensureDashboardHotkey() {
-  await prisma.hotkey.upsert({
-    where: { id: DASHBOARD_HOTKEY_ID },
-    update: {
-      key: "Dashboard",
-      combination: "SHIFT + SPACE",
-      action: "Open Dashboard",
-    },
-    create: {
-      id: DASHBOARD_HOTKEY_ID,
-      key: "Dashboard",
-      combination: "SHIFT + SPACE",
-      action: "Open Dashboard",
-    },
-  })
+  await prisma.$transaction([
+    prisma.hotkey.deleteMany({
+      where: {
+        id: {
+          notIn: Array.from(allowedIds),
+        },
+      },
+    }),
+    ...FLOORING_HOTKEYS.map((hotkey) =>
+      prisma.hotkey.upsert({
+        where: { id: hotkey.id },
+        update: {
+          key: hotkey.key,
+          combination: hotkey.combination,
+          action: hotkey.action,
+        },
+        create: {
+          id: hotkey.id,
+          key: hotkey.key,
+          combination: hotkey.combination,
+          action: hotkey.action,
+        },
+      }),
+    ),
+  ])
 }
 
 export async function GET() {
   const authError = await ensureAuthenticated()
   if (authError) return authError
 
-  await ensureDashboardHotkey()
+  await syncHotkeys()
 
   const hotkeys = await prisma.hotkey.findMany({
     orderBy: { createdAt: "asc" },

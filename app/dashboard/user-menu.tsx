@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { isMasterEmail } from "@/lib/access-control"
 import type { ToolSlug } from "@/lib/tool-subscriptions"
+import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
 
 type Theme = "light" | "dark"
 
@@ -209,53 +210,27 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
       if (isEditableTarget(event.target)) return
       if (!event.shiftKey) return
 
-      const key = event.key.toLowerCase()
+      const matchedHotkey = FLOORING_HOTKEYS.find((hotkey) => hotkey.code === event.code)
+      if (!matchedHotkey) return
 
-      if (key === "escape") {
-        event.preventDefault()
-        await handleLogout()
+      event.preventDefault()
+
+      if (matchedHotkey.toggleTheme) {
+        toggleTheme(false)
         return
       }
 
-      if (event.code === "Space") {
-        event.preventDefault()
-        router.push("/dashboard")
-        return
-      }
+      if (!matchedHotkey.path) return
 
-      if (key === "p") {
-        if (canOpenTool("products")) {
-          event.preventDefault()
-          router.push("/dashboard/flooring/products")
-        }
-        return
-      }
-
-      if (key === "w") {
-        if (canOpenTool("warehouse")) {
-          event.preventDefault()
-          router.push("/dashboard/flooring/warehouse")
-        }
-        return
-      }
-
-      if (key === "b") {
-        if (hasBuilderPanelAccess) {
-          event.preventDefault()
-          router.push("/dashboard/builder")
-        }
-        return
-      }
-
-      if (key === "h") {
-        event.preventDefault()
-        void openHotkeysModal()
+      const requiredTool: ToolSlug = matchedHotkey.code === "KeyP" ? "products" : "warehouse"
+      if (canOpenTool(requiredTool)) {
+        router.push(matchedHotkey.path)
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canUseTools, hasBuilderPanelAccess, isMobile, openHotkeysModal, router])
+  }, [canUseTools, isMobile, router, unlockedToolSlugs])
 
   return (
     <>
