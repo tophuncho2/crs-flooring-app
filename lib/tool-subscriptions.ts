@@ -10,13 +10,6 @@ export const TOOL_CATALOG = [
     defaultMonthlyPriceCents: 1800,
   },
   {
-    slug: "vendors",
-    name: "Vendors",
-    description: "Manage vendor details and contact information.",
-    path: "/dashboard/vendors",
-    defaultMonthlyPriceCents: 1500,
-  },
-  {
     slug: "warehouse",
     name: "Warehouse",
     description: "Manage flooring warehouses, sections, and locations.",

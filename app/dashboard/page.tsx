@@ -20,7 +20,7 @@ type FloorModuleCard = {
   requiredTool?: ToolSlug
 }
 
-const CORE_MODULE_ORDER: ToolSlug[] = ["vendors"]
+const CORE_MODULE_ORDER: ToolSlug[] = ["products", "warehouse"]
 
 function canOpenModule(hasGlobalAccess: boolean, item: { isUnlocked: boolean }) {
   return hasGlobalAccess || item.isUnlocked
@@ -84,10 +84,7 @@ export default async function Dashboard() {
     (module): module is ModuleCard => Boolean(module),
   )
 
-  const movedModules: ModuleCard[] = [
-    ...availableModules.filter((module) => module.slug === "products"),
-    ...availableModules.filter((module) => module.slug === "warehouse"),
-  ]
+  const movedModules: ModuleCard[] = []
 
   const flooringModules: FloorModuleCard[] = [
     {

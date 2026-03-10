@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { normalizePrismaError, parseOptionalString } from "@/lib/api-helpers"
@@ -92,43 +93,36 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
 
-    const updatePayload = {
-      name: parseOptionalString(body.name),
-      streetAddress: parseOptionalString(body.streetAddress),
-      city: parseOptionalString(body.city),
-      state: parseOptionalString(body.state),
-      postalCode: parseOptionalString(body.zip),
-      phone: parseOptionalString(body.phone),
-      email: parseOptionalString(body.email),
-    }
-
     const managementCompanyId = parseOptionalNullableString(body.managementCompanyId, "managementCompanyId")
 
-    if (Object.values(updatePayload).every((value) => value === null) && !("managementCompanyId" in body)) {
+    const hasBaseField =
+      "name" in body ||
+      "streetAddress" in body ||
+      "city" in body ||
+      "state" in body ||
+      "zip" in body ||
+      "phone" in body ||
+      "email" in body
+
+    if (!hasBaseField && !("managementCompanyId" in body)) {
       return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 })
     }
 
-    const data: {
-      name?: string | null
-      streetAddress?: string | null
-      city?: string | null
-      state?: string | null
-      postalCode?: string | null
-      phone?: string | null
-      email?: string | null
-      flooringLinks?: {
-        deleteMany: { propertyId: string }
-        create?: { managementCompany: { connect: { id: string } } }[]
-      }
-    } = {}
+    const data: Prisma.PropertyHubUpdateInput = {}
 
-    if (updatePayload.name !== null) data.name = updatePayload.name
-    if (updatePayload.streetAddress !== null) data.streetAddress = updatePayload.streetAddress
-    if (updatePayload.city !== null) data.city = updatePayload.city
-    if (updatePayload.state !== null) data.state = updatePayload.state
-    if (updatePayload.postalCode !== null) data.postalCode = updatePayload.postalCode
-    if (updatePayload.phone !== null) data.phone = updatePayload.phone
-    if (updatePayload.email !== null) data.email = updatePayload.email
+    if ("name" in body) {
+      const name = parseOptionalString(body.name)
+      if (!name) {
+        return NextResponse.json({ error: "name is required" }, { status: 400 })
+      }
+      data.name = name
+    }
+    if ("streetAddress" in body) data.streetAddress = parseOptionalString(body.streetAddress)
+    if ("city" in body) data.city = parseOptionalString(body.city)
+    if ("state" in body) data.state = parseOptionalString(body.state)
+    if ("zip" in body) data.postalCode = parseOptionalString(body.zip)
+    if ("phone" in body) data.phone = parseOptionalString(body.phone)
+    if ("email" in body) data.email = parseOptionalString(body.email)
     if ("managementCompanyId" in body) {
       data.flooringLinks = {
         deleteMany: { propertyId: id },

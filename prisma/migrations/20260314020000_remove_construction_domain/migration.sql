@@ -1,0 +1,22 @@
+DROP TABLE IF EXISTS "construction_accounts_receivable" CASCADE;
+DROP TABLE IF EXISTS "construction_budget_increase" CASCADE;
+DROP TABLE IF EXISTS "construction_checklist_item" CASCADE;
+DROP TABLE IF EXISTS "construction_expense" CASCADE;
+DROP TABLE IF EXISTS "construction_job_vendor" CASCADE;
+DROP TABLE IF EXISTS "construction_pending_payment" CASCADE;
+DROP TABLE IF EXISTS "construction_labor_payment_request" CASCADE;
+DROP TABLE IF EXISTS "construction_receipt" CASCADE;
+DROP TABLE IF EXISTS "construction_scope_dependency" CASCADE;
+DROP TABLE IF EXISTS "construction_subcontract_agreement" CASCADE;
+DROP TABLE IF EXISTS "construction_job_scope" CASCADE;
+DROP TABLE IF EXISTS "construction_job" CASCADE;
+DROP TABLE IF EXISTS "construction_vendor_property" CASCADE;
+DROP TABLE IF EXISTS "construction_vendor" CASCADE;
+
+DROP TYPE IF EXISTS "ConstructionJobStatus";
+DROP TYPE IF EXISTS "ConstructionJobType";
+DROP TYPE IF EXISTS "ConstructionScopeType";
+DROP TYPE IF EXISTS "ConstructionPendingPaymentStatus";
+DROP TYPE IF EXISTS "ConstructionDepositType";
+DROP TYPE IF EXISTS "ConstructionReceiptApprovalStatus";
+DROP TYPE IF EXISTS "ConstructionVendorType";

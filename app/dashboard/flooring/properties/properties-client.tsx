@@ -154,7 +154,8 @@ export default function PropertiesClient({
         throw new Error(payload.error ?? "Failed to create property")
       }
 
-      setProperties((prev) => [payload.property, ...prev])
+      const createdProperty = payload.property
+      setProperties((prev) => [createdProperty, ...prev])
       setShowNewRow(false)
       setNewDraft(defaultDraft)
       setMessage("Property created")
@@ -189,7 +190,7 @@ export default function PropertiesClient({
           streetAddress: string | null
           city: string | null
           state: string | null
-          postalCode: string | null
+          zip: string | null
           phone: string | null
           email: string | null
           managementCompany: { id: string; name: string } | null
@@ -207,7 +208,7 @@ export default function PropertiesClient({
         streetAddress: payload.property.streetAddress ?? "",
         city: payload.property.city ?? "",
         state: payload.property.state ?? "",
-        zip: payload.property.postalCode ?? "",
+        zip: payload.property.zip ?? "",
         phone: payload.property.phone ?? "",
         email: payload.property.email ?? "",
         fullAddress: payload.property.fullAddress,

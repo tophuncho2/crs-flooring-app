@@ -3,24 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Boxes } from "lucide-react"
-import type { ToolSlug, UserToolRow } from "@/lib/tool-subscriptions"
-
-type FloorToolLink = {
-  slug: string
-  name: string
-  href: string
-  requiredTool?: ToolSlug
-}
-
-const FLOORS_TOOL_LINKS: FloorToolLink[] = [
-  { slug: "warehouse", name: "Warehouse", href: "/dashboard/warehouse", requiredTool: "warehouse" },
-  { slug: "products", name: "Products", href: "/dashboard/flooring/products", requiredTool: "products" },
-  { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/flooring/work-orders", requiredTool: "warehouse" },
-  { slug: "flooring-properties", name: "Properties", href: "/dashboard/flooring/properties", requiredTool: "warehouse" },
-  { slug: "flooring-management-companies", name: "Management Companies", href: "/dashboard/flooring/management-companies", requiredTool: "warehouse" },
-  { slug: "flooring-templates", name: "Templates", href: "/dashboard/flooring/templates", requiredTool: "warehouse" },
-  { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/flooring/manufacturers", requiredTool: "warehouse" },
-]
+import type { UserToolRow } from "@/lib/tool-subscriptions"
+import { FLOORING_NAV_ITEMS } from "./flooring-navigation"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean
@@ -74,7 +58,7 @@ export default function FlooringToolsMenu({ canUseTools, tools }: FlooringToolsM
             text-sm
           "
         >
-          {FLOORS_TOOL_LINKS.map((tool) => {
+          {FLOORING_NAV_ITEMS.map((tool) => {
             const canOpen = canUseTools || (tool.requiredTool ? unlockedToolSet.has(tool.requiredTool) : false)
 
             return (

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import ToolsMenu from "./tools-menu"
 import FlooringToolsMenu from "./flooring-tools-menu"
+import FlooringHeaderNav from "./flooring-header-nav"
 import UserMenu from "./user-menu"
 import { prisma } from "@/lib/prisma"
 import { canBypassVerification } from "@/lib/access-control"
@@ -53,15 +54,18 @@ export default async function DashboardLayout({
           </div>
         </div>
       ) : null}
-      <div className="fixed right-3 top-3 z-50 flex items-center gap-2 sm:right-6 sm:top-6 sm:gap-4">
-        <FlooringToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
-        <ToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
-        <UserMenu
-          email={user.email}
-          role={user.role}
-          canUseTools={toolContext.canUseTools}
-          unlockedToolSlugs={toolContext.tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug)}
-        />
+      <div className="fixed inset-x-0 top-3 z-50 px-3 sm:top-6 sm:px-6">
+        <div className="ml-auto flex w-fit max-w-full items-center gap-2 sm:gap-4">
+          <FlooringHeaderNav canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
+          <FlooringToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
+          <ToolsMenu canUseTools={toolContext.canUseTools} tools={toolContext.tools} />
+          <UserMenu
+            email={user.email}
+            role={user.role}
+            canUseTools={toolContext.canUseTools}
+            unlockedToolSlugs={toolContext.tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug)}
+          />
+        </div>
       </div>
 
       {children}

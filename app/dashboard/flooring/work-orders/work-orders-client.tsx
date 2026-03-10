@@ -186,7 +186,8 @@ export default function WorkOrdersClient({
         throw new Error(payload.error ?? "Failed to save work order")
       }
 
-      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? payload.workOrder! : item)))
+      const savedWorkOrder = payload.workOrder
+      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? savedWorkOrder : item)))
       setDrafts((prev) => {
         const next = { ...prev }
         delete next[row.id]
@@ -225,14 +226,15 @@ export default function WorkOrdersClient({
         throw new Error(payload.error ?? "Failed to create work order")
       }
 
-      const property = propertyLookup.get(payload.workOrder.propertyId)
+      const createdWorkOrder = payload.workOrder
+      const property = propertyLookup.get(createdWorkOrder.propertyId)
 
       setWorkOrders((prev) => [
         {
-          ...payload.workOrder,
-          propertyName: property?.name ?? payload.workOrder.propertyName,
-          propertyAddress: buildWorkOrderAddress(property, payload.workOrder.customAddress),
-          warehouseName: warehouseOptions.find((item) => item.id === payload.workOrder.warehouseId)?.name ?? "",
+          ...createdWorkOrder,
+          propertyName: property?.name ?? createdWorkOrder.propertyName,
+          propertyAddress: buildWorkOrderAddress(property, createdWorkOrder.customAddress),
+          warehouseName: warehouseOptions.find((item) => item.id === createdWorkOrder.warehouseId)?.name ?? "",
         },
         ...prev,
       ])

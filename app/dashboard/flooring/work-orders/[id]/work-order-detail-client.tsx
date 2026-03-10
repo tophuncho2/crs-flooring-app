@@ -185,33 +185,34 @@ export default function WorkOrderDetailClient({
         throw new Error(payload.error ?? "Failed to save work order")
       }
 
-      const selectedProperty = propertyOptions.find((property) => property.id === payload.workOrder.propertyId)
-      const selectedWarehouse = warehouseOptions.find((warehouse) => warehouse.id === payload.workOrder.warehouseId)
+      const updatedWorkOrder = payload.workOrder
+      const selectedProperty = propertyOptions.find((property) => property.id === updatedWorkOrder.propertyId)
+      const selectedWarehouse = warehouseOptions.find((warehouse) => warehouse.id === updatedWorkOrder.warehouseId)
 
       setWorkOrder((prev) => ({
         ...prev,
         property: {
           ...prev.property,
-          id: payload.workOrder.propertyId,
-          name: payload.workOrder.propertyName,
+          id: updatedWorkOrder.propertyId,
+          name: updatedWorkOrder.propertyName,
           address: selectedProperty?.address ?? prev.property.address,
         },
-        warehouse: payload.workOrder.warehouseId
+        warehouse: updatedWorkOrder.warehouseId
           ? {
-              id: payload.workOrder.warehouseId,
+              id: updatedWorkOrder.warehouseId,
               name: selectedWarehouse?.name ?? prev.warehouse?.name ?? "",
             }
           : null,
-        status: payload.workOrder.status,
-        vacancy: payload.workOrder.vacancy,
-        date: payload.workOrder.date,
-        unitText: payload.workOrder.unitText,
-        unitNumber: payload.workOrder.unitNumber,
-        unitType: payload.workOrder.unitType,
-        customAddress: payload.workOrder.customAddress,
-        instructions: payload.workOrder.instructions,
-        notes: payload.workOrder.notes,
-        workOrderImageUrl: payload.workOrder.workOrderImageUrl,
+        status: updatedWorkOrder.status,
+        vacancy: updatedWorkOrder.vacancy,
+        date: updatedWorkOrder.date,
+        unitText: updatedWorkOrder.unitText,
+        unitNumber: updatedWorkOrder.unitNumber,
+        unitType: updatedWorkOrder.unitType,
+        customAddress: updatedWorkOrder.customAddress,
+        instructions: updatedWorkOrder.instructions,
+        notes: updatedWorkOrder.notes,
+        workOrderImageUrl: updatedWorkOrder.workOrderImageUrl,
       }))
 
       setMessage("Work order saved")
@@ -250,7 +251,8 @@ export default function WorkOrderDetailClient({
         throw new Error(payload.error ?? "Failed to add item")
       }
 
-      setItems((prev) => [payload.item as WorkOrderItem, ...prev])
+      const createdItem = payload.item
+      setItems((prev) => [createdItem, ...prev])
       setItemDraft({ productId: "", quantity: "", notes: "" })
       setMessage("Item added")
     } catch (addError) {
