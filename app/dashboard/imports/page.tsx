@@ -17,5 +17,5 @@ export default async function ImportsPage() {
   if (!user) redirect("/login")
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard")
 
-  redirect("/dashboard/flooring/warehouse")
+  redirect("/dashboard/flooring/imports")
 }

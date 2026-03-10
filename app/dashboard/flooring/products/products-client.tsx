@@ -3,15 +3,13 @@
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
 
-type CategoryRow = {
+type CategoryOption = {
   id: string
   name: string
   sendUnit: string
   stockUnit: string
   coverageAvailableUnit: string
   itemCoverageUnit: string
-  productCount: number
-  createdAt: string
 }
 
 type ProductRow = {
@@ -42,14 +40,6 @@ type ProductRow = {
   }
 }
 
-type CategoryForm = {
-  name: string
-  sendUnit: string
-  stockUnit: string
-  coverageAvailableUnit: string
-  itemCoverageUnit: string
-}
-
 type ProductForm = {
   categoryId: string
   manufacturerName: string
@@ -77,14 +67,6 @@ const DEFAULT_BASE_COLOR_OPTIONS = [
   "Tan",
   "White",
 ]
-
-const emptyCategoryForm: CategoryForm = {
-  name: "",
-  sendUnit: "",
-  stockUnit: "",
-  coverageAvailableUnit: "",
-  itemCoverageUnit: "",
-}
 
 const emptyProductForm: ProductForm = {
   categoryId: "",
@@ -141,16 +123,6 @@ async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise
   return payload as T
 }
 
-function toCategoryForm(category: CategoryRow): CategoryForm {
-  return {
-    name: category.name,
-    sendUnit: category.sendUnit,
-    stockUnit: category.stockUnit,
-    coverageAvailableUnit: category.coverageAvailableUnit,
-    itemCoverageUnit: category.itemCoverageUnit,
-  }
-}
-
 function toProductForm(product: ProductRow): ProductForm {
   return {
     categoryId: product.categoryId,
@@ -173,21 +145,16 @@ function isValidDecimal(value: string) {
 }
 
 export default function FlooringProductsClient({
-  initialCategories,
+  categoryOptions,
   initialProducts,
 }: {
-  initialCategories: CategoryRow[]
+  categoryOptions: CategoryOption[]
   initialProducts: ProductRow[]
 }) {
-  const [categories, setCategories] = useState(initialCategories)
+  const categories = categoryOptions
   const [products, setProducts] = useState(initialProducts)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null)
-  const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm)
-  const [isSavingCategory, setIsSavingCategory] = useState(false)
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null)
@@ -212,20 +179,6 @@ export default function FlooringProductsClient({
     setError("")
   }
 
-  function openCreateCategory() {
-    clearNotices()
-    setEditingCategory(null)
-    setCategoryForm(emptyCategoryForm)
-    setIsCategoryModalOpen(true)
-  }
-
-  function openEditCategory(category: CategoryRow) {
-    clearNotices()
-    setEditingCategory(category)
-    setCategoryForm(toCategoryForm(category))
-    setIsCategoryModalOpen(true)
-  }
-
   function openCreateProduct() {
     clearNotices()
     setEditingProduct(null)
@@ -242,73 +195,6 @@ export default function FlooringProductsClient({
     setNewPhotoUrl("")
     setNewBaseColor("")
     setIsProductModalOpen(true)
-  }
-
-  async function saveCategory() {
-    clearNotices()
-    if (!categoryForm.name.trim()) {
-      setError("Category name is required")
-      return
-    }
-
-    setIsSavingCategory(true)
-    try {
-      const payload = editingCategory
-        ? await apiJson<{ category: CategoryRow }>(`/api/flooring/categories/${editingCategory.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(categoryForm),
-          })
-        : await apiJson<{ category: CategoryRow }>("/api/flooring/categories", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(categoryForm),
-          })
-
-      setCategories((prev) => {
-        const next = editingCategory
-          ? prev.map((category) => (category.id === payload.category.id ? payload.category : category))
-          : [...prev, payload.category]
-        return next.sort((a, b) => a.name.localeCompare(b.name))
-      })
-      setProducts((prev) =>
-        prev.map((product) =>
-          product.categoryId === payload.category.id
-            ? {
-                ...product,
-                category: {
-                  id: payload.category.id,
-                  name: payload.category.name,
-                  sendUnit: payload.category.sendUnit,
-                  stockUnit: payload.category.stockUnit,
-                  coverageAvailableUnit: payload.category.coverageAvailableUnit,
-                  itemCoverageUnit: payload.category.itemCoverageUnit,
-                },
-                coverageUnit: payload.category.itemCoverageUnit,
-              }
-            : product,
-        ),
-      )
-      setIsCategoryModalOpen(false)
-      setMessage(editingCategory ? "Category updated" : "Category created")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save category")
-    } finally {
-      setIsSavingCategory(false)
-    }
-  }
-
-  async function deleteCategory(category: CategoryRow) {
-    if (!window.confirm(`Delete ${category.name}?`)) return
-    clearNotices()
-
-    try {
-      await apiJson<{ success: boolean }>(`/api/flooring/categories/${category.id}`, { method: "DELETE" })
-      setCategories((prev) => prev.filter((item) => item.id !== category.id))
-      setMessage("Category deleted")
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete category")
-    }
   }
 
   async function saveProduct() {
@@ -347,26 +233,6 @@ export default function FlooringProductsClient({
           : [payload.product, ...prev]
         return next.sort((a, b) => a.name.localeCompare(b.name))
       })
-      setCategories((prev) =>
-        prev.map((category) => {
-          let productCount = category.productCount
-
-          if (!editingProduct && category.id === payload.product.categoryId) {
-            productCount += 1
-          }
-
-          if (editingProduct && editingProduct.categoryId !== payload.product.categoryId) {
-            if (category.id === editingProduct.categoryId) {
-              productCount = Math.max(0, productCount - 1)
-            }
-            if (category.id === payload.product.categoryId) {
-              productCount += 1
-            }
-          }
-
-          return { ...category, productCount }
-        }),
-      )
       setIsProductModalOpen(false)
       setMessage(editingProduct ? "Product updated" : "Product created")
     } catch (saveError) {
@@ -383,11 +249,6 @@ export default function FlooringProductsClient({
     try {
       await apiJson<{ success: boolean }>(`/api/flooring/products/${product.id}`, { method: "DELETE" })
       setProducts((prev) => prev.filter((item) => item.id !== product.id))
-      setCategories((prev) =>
-        prev.map((category) =>
-          category.id === product.categoryId ? { ...category, productCount: Math.max(0, category.productCount - 1) } : category,
-        ),
-      )
       setMessage("Product deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete product")
@@ -459,18 +320,10 @@ export default function FlooringProductsClient({
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Flooring Products</h1>
             <p className="text-sm text-[var(--foreground)]/70">
-              Manage flooring categories, product attributes, bucket photo previews, and category-linked coverage units.
+              Manage flooring product attributes, bucket photo previews, and category-linked coverage units.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={openCreateCategory}
-              className="inline-flex items-center gap-2 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm hover:bg-[var(--panel-hover)]"
-            >
-              <Plus size={16} />
-              Category
-            </button>
             <button
               type="button"
               onClick={openCreateProduct}
@@ -486,57 +339,6 @@ export default function FlooringProductsClient({
         {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
 
         <section className="mt-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Categories</h2>
-            <span className="text-xs text-[var(--foreground)]/60">{categories.length} total</span>
-          </div>
-          <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="w-full min-w-[980px] text-sm">
-              <thead className="bg-[var(--panel-hover)] text-left">
-                <tr>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2">Send Unit</th>
-                  <th className="px-3 py-2">Stock Unit</th>
-                  <th className="px-3 py-2">Coverage Available Unit</th>
-                  <th className="px-3 py-2">Item Coverage Unit</th>
-                  <th className="px-3 py-2">Products</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.id} className="border-t border-[var(--panel-border)]">
-                    <td className="px-3 py-2 font-medium">{category.name}</td>
-                    <td className="px-3 py-2">{category.sendUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.stockUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.coverageAvailableUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.itemCoverageUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.productCount}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => openEditCategory(category)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
-                          <Pencil size={16} />
-                        </button>
-                        <button type="button" onClick={() => deleteCategory(category)} className="rounded-md p-2 text-rose-500 hover:bg-rose-500/10">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {categories.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/60">
-                      No flooring categories yet.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Products</h2>
             <span className="text-xs text-[var(--foreground)]/60">{products.length} total</span>
@@ -601,62 +403,6 @@ export default function FlooringProductsClient({
           </div>
         </section>
       </div>
-
-      {isCategoryModalOpen ? (
-        <ModalShell title={editingCategory ? "Edit Category" : "Add Category"} onClose={() => setIsCategoryModalOpen(false)}>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <FormField label="Category Name">
-              <input
-                value={categoryForm.name}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </FormField>
-            <FormField label="Send Unit">
-              <input
-                value={categoryForm.sendUnit}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, sendUnit: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </FormField>
-            <FormField label="Stock Unit">
-              <input
-                value={categoryForm.stockUnit}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, stockUnit: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </FormField>
-            <FormField label="Coverage Available Unit">
-              <input
-                value={categoryForm.coverageAvailableUnit}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, coverageAvailableUnit: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </FormField>
-            <FormField label="Item Coverage Unit">
-              <input
-                value={categoryForm.itemCoverageUnit}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnit: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-            </FormField>
-          </div>
-          <div className="mt-5 flex justify-end gap-2">
-            <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={saveCategory}
-              disabled={isSavingCategory}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
-            >
-              <Save size={16} />
-              {isSavingCategory ? "Saving..." : "Save Category"}
-            </button>
-          </div>
-        </ModalShell>
-      ) : null}
 
       {isProductModalOpen ? (
         <ModalShell title={editingProduct ? "Edit Product" : "Add Product"} onClose={() => setIsProductModalOpen(false)}>

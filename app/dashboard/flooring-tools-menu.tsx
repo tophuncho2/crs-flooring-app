@@ -2,32 +2,41 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Boxes } from "lucide-react"
+import { ArrowDown, ArrowUp, Boxes } from "lucide-react"
 import type { UserToolRow } from "@/lib/tool-subscriptions"
-import { FLOORING_NAV_ITEMS } from "./flooring-navigation"
+import type { FlooringNavItem } from "./flooring-navigation"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean
   tools: UserToolRow[]
   visibleSlugs: string[]
+  orderedItems: FlooringNavItem[]
   onVisibleSlugsChange: (slugs: string[]) => void
+  onOrderedSlugsChange: (slugs: string[]) => void
 }
 
 export default function FlooringToolsMenu({
   canUseTools,
   tools,
   visibleSlugs,
+  orderedItems,
   onVisibleSlugsChange,
+  onOrderedSlugsChange,
 }: FlooringToolsMenuProps) {
   const [open, setOpen] = useState(false)
   const [saveError, setSaveError] = useState("")
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const unlockedToolSet = new Set(tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
-  const lastSavedValueRef = useRef(JSON.stringify(visibleSlugs))
+  const lastSavedValueRef = useRef(
+    JSON.stringify({
+      nextVisibleSlugs: visibleSlugs,
+      nextOrderedSlugs: orderedItems.map((item) => item.slug),
+    }),
+  )
 
-  async function persistVisibleSlugs(nextVisibleSlugs: string[]) {
-    const serialized = JSON.stringify(nextVisibleSlugs)
+  async function persistPreferences(nextVisibleSlugs: string[], nextOrderedSlugs: string[]) {
+    const serialized = JSON.stringify({ nextVisibleSlugs, nextOrderedSlugs })
     if (serialized === lastSavedValueRef.current) {
       return
     }
@@ -37,24 +46,35 @@ export default function FlooringToolsMenu({
     const response = await fetch("/api/account/flooring-nav", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visibleSlugs: nextVisibleSlugs }),
+      body: JSON.stringify({ visibleSlugs: nextVisibleSlugs, orderedSlugs: nextOrderedSlugs }),
       keepalive: true,
     })
 
-    const payload = (await response.json().catch(() => ({}))) as { error?: string; visibleSlugs?: string[] }
-    if (!response.ok || !payload.visibleSlugs) {
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string
+      visibleSlugs?: string[]
+      orderedSlugs?: string[]
+    }
+    if (!response.ok || !payload.visibleSlugs || !payload.orderedSlugs) {
       throw new Error(payload.error ?? "Failed to save header tabs")
     }
 
-    lastSavedValueRef.current = JSON.stringify(payload.visibleSlugs)
+    lastSavedValueRef.current = JSON.stringify({
+      nextVisibleSlugs: payload.visibleSlugs,
+      nextOrderedSlugs: payload.orderedSlugs,
+    })
     onVisibleSlugsChange(payload.visibleSlugs)
+    onOrderedSlugsChange(payload.orderedSlugs)
   }
 
   async function closeAndSave() {
     setOpen(false)
 
     try {
-      await persistVisibleSlugs(visibleSlugs)
+      await persistPreferences(
+        visibleSlugs,
+        orderedItems.map((item) => item.slug),
+      )
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Failed to save header tabs")
     }
@@ -108,7 +128,7 @@ export default function FlooringToolsMenu({
           "
         >
           {saveError ? <p className="border-b border-[var(--panel-border)] px-4 py-2 text-xs text-rose-500">{saveError}</p> : null}
-          {FLOORING_NAV_ITEMS.map((tool) => {
+          {orderedItems.map((tool) => {
             const canOpen = canUseTools || (tool.requiredTool ? unlockedToolSet.has(tool.requiredTool) : false)
             const isVisible = visibleSlugs.includes(tool.slug)
 
@@ -117,7 +137,10 @@ export default function FlooringToolsMenu({
                 <button
                   onClick={() => {
                     if (canOpen) {
-                      void persistVisibleSlugs(visibleSlugs).catch((error) => {
+                      void persistPreferences(
+                        visibleSlugs,
+                        orderedItems.map((item) => item.slug),
+                      ).catch((error) => {
                         setSaveError(error instanceof Error ? error.message : "Failed to save header tabs")
                       })
                       setOpen(false)
@@ -151,6 +174,40 @@ export default function FlooringToolsMenu({
                     className="h-4 w-4 accent-blue-500"
                   />
                 </button>
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      const index = orderedItems.findIndex((item) => item.slug === tool.slug)
+                      if (index <= 0) return
+                      const next = [...orderedItems]
+                      ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
+                      onOrderedSlugsChange(next.map((item) => item.slug))
+                    }}
+                    className="flex h-4 w-4 items-center justify-center rounded text-[var(--foreground)]/65 hover:bg-[var(--panel-hover)] disabled:opacity-30"
+                    disabled={orderedItems[0]?.slug === tool.slug}
+                    aria-label={`Move ${tool.name} up`}
+                  >
+                    <ArrowUp size={10} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      const index = orderedItems.findIndex((item) => item.slug === tool.slug)
+                      if (index === -1 || index >= orderedItems.length - 1) return
+                      const next = [...orderedItems]
+                      ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
+                      onOrderedSlugsChange(next.map((item) => item.slug))
+                    }}
+                    className="flex h-4 w-4 items-center justify-center rounded text-[var(--foreground)]/65 hover:bg-[var(--panel-hover)] disabled:opacity-30"
+                    disabled={orderedItems[orderedItems.length - 1]?.slug === tool.slug}
+                    aria-label={`Move ${tool.name} down`}
+                  >
+                    <ArrowDown size={10} />
+                  </button>
+                </div>
               </div>
             )
           })}

@@ -21,6 +21,7 @@ model User {
   role                   Role                @default(CUSTOMER)
   isVerified             Boolean             @default(true)
   hiddenFlooringNavSlugs String[]            @default([])
+  flooringNavOrderSlugs  String[]            @default([])
   createdAt              DateTime            @default(now())
   toolAccesses           UserToolAccess[]
   activities             UserLoginActivity[]
@@ -225,6 +226,20 @@ model FlooringInventory {
   @@index([productId])
   @@index([locationId])
   @@map("flooring_inventory")
+}
+
+model FlooringImportEntry {
+  id          String   @id @default(uuid())
+  importName  String
+  importType  String
+  status      String
+  source      String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@map("flooring_import_entry")
 }
 
 model FlooringCutLog {

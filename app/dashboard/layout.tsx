@@ -22,7 +22,7 @@ export default async function DashboardLayout({
   const user = session.user.email
     ? await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true },
+        select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
       })
     : null
 
@@ -39,6 +39,7 @@ export default async function DashboardLayout({
     role: user.role,
   })
   const initialVisibleFlooringSlugs = FLOORING_NAV_SLUGS.filter((slug) => !user.hiddenFlooringNavSlugs.includes(slug))
+  const initialOrderedFlooringSlugs = user.flooringNavOrderSlugs.length > 0 ? user.flooringNavOrderSlugs : FLOORING_NAV_SLUGS
 
   return (
     <div className="relative min-h-screen">
@@ -60,6 +61,7 @@ export default async function DashboardLayout({
           canUseTools={toolContext.canUseTools}
           tools={toolContext.tools}
           initialVisibleFlooringSlugs={initialVisibleFlooringSlugs}
+          initialOrderedFlooringSlugs={initialOrderedFlooringSlugs}
         />
       </div>
 

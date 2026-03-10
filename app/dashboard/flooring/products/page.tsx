@@ -1,32 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { Prisma } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isToolUnlocked } from "@/lib/tool-subscriptions"
 import FlooringProductsClient from "./products-client"
-
-function normalizeCategory(category: {
-  id: string
-  name: string
-  sendUnit: string | null
-  stockUnit: string | null
-  coverageAvailableUnit: string | null
-  itemCoverageUnit: string | null
-  createdAt: Date
-  _count: { products: number }
-}) {
-  return {
-    id: category.id,
-    name: category.name,
-    sendUnit: category.sendUnit ?? "",
-    stockUnit: category.stockUnit ?? "",
-    coverageAvailableUnit: category.coverageAvailableUnit ?? "",
-    itemCoverageUnit: category.itemCoverageUnit ?? "",
-    productCount: category._count.products,
-    createdAt: category.createdAt.toISOString(),
-  }
-}
+import { Prisma } from "@prisma/client"
 
 function normalizeProduct(product: {
   id: string
@@ -98,12 +76,15 @@ export default async function FlooringProductsPage() {
 
   const [categories, products] = await Promise.all([
     prisma.flooringCategory.findMany({
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
       orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        sendUnit: true,
+        stockUnit: true,
+        coverageAvailableUnit: true,
+        itemCoverageUnit: true,
+      },
     }),
     prisma.flooringProduct.findMany({
       include: {
@@ -124,7 +105,14 @@ export default async function FlooringProductsPage() {
 
   return (
     <FlooringProductsClient
-      initialCategories={categories.map(normalizeCategory)}
+      categoryOptions={categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        sendUnit: category.sendUnit ?? "",
+        stockUnit: category.stockUnit ?? "",
+        coverageAvailableUnit: category.coverageAvailableUnit ?? "",
+        itemCoverageUnit: category.itemCoverageUnit ?? "",
+      }))}
       initialProducts={products.map(normalizeProduct)}
     />
   )
