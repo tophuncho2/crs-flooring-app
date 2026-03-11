@@ -8,6 +8,27 @@ type ManagementCompanyOption = {
   name: string
 }
 
+type PropertyOption = {
+  id: string
+  name: string
+}
+
+type WarehouseOption = {
+  id: string
+  name: string
+}
+
+type PadProductOption = {
+  id: string
+  label: string
+}
+
+type ProductOption = {
+  id: string
+  label: string
+  sendUnit: string
+}
+
 type PropertyManagementCompany = {
   id: string
   name: string
@@ -43,6 +64,48 @@ type DraftProperty = {
   managementCompanyId: string
 }
 
+type TemplateRow = {
+  id: string
+  templateTag: string
+  propertyId: string
+  propertyName: string
+  warehouseId: string
+  warehouseName: string
+  instructions: string
+  templateNotes: string
+  padProductId: string
+  padTypeLabel: string
+  createdAt: string
+  updatedAt: string
+}
+
+type DraftTemplate = {
+  templateTag: string
+  propertyId: string
+  warehouseId: string
+  instructions: string
+  templateNotes: string
+  padProductId: string
+}
+
+type TemplateItem = {
+  id: string
+  productId: string
+  productName: string
+  sendUnit: string
+  quantity: string
+  notes: string
+  storedDyeLot: string
+  createdAt: string
+}
+
+type TemplateItemDraft = {
+  productId: string
+  quantity: string
+  notes: string
+  storedDyeLot: string
+}
+
 const defaultDraft: DraftProperty = {
   name: "",
   streetAddress: "",
@@ -54,6 +117,22 @@ const defaultDraft: DraftProperty = {
   managementCompanyId: "",
 }
 
+const defaultTemplateDraft: DraftTemplate = {
+  templateTag: "",
+  propertyId: "",
+  warehouseId: "",
+  instructions: "",
+  templateNotes: "",
+  padProductId: "",
+}
+
+const emptyItemDraft: TemplateItemDraft = {
+  productId: "",
+  quantity: "",
+  notes: "",
+  storedDyeLot: "",
+}
+
 function normalizeState(value: string | null | undefined) {
   return String(value ?? "")
     .replace(/[^a-zA-Z]/g, "")
@@ -61,9 +140,19 @@ function normalizeState(value: string | null | undefined) {
     .toUpperCase()
 }
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+function ModalShell({
+  title,
+  onClose,
+  children,
+  zIndexClass = "z-40",
+}: {
+  title: string
+  onClose: () => void
+  children: ReactNode
+  zIndexClass?: string
+}) {
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
+    <div className={`fixed inset-0 ${zIndexClass} overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28`}>
       <div className="flex min-h-full items-start justify-center">
         <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
           <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
@@ -103,9 +192,17 @@ function getManagementCompanyId(row: PropertyRow): string {
 export default function PropertiesClient({
   initialProperties,
   managementOptions,
+  propertyOptions,
+  warehouseOptions,
+  padProductOptions,
+  productOptions,
 }: {
   initialProperties: PropertyRow[]
   managementOptions: ManagementCompanyOption[]
+  propertyOptions: PropertyOption[]
+  warehouseOptions: WarehouseOption[]
+  padProductOptions: PadProductOption[]
+  productOptions: ProductOption[]
 }) {
   const [properties, setProperties] = useState<PropertyRow[]>(initialProperties)
   const [drafts, setDrafts] = useState<Record<string, DraftProperty>>({})
@@ -117,6 +214,16 @@ export default function PropertiesClient({
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
+  const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
+  const [activeTemplateDraft, setActiveTemplateDraft] = useState<DraftTemplate>(defaultTemplateDraft)
+  const [templateItems, setTemplateItems] = useState<TemplateItem[]>([])
+  const [itemDraft, setItemDraft] = useState<TemplateItemDraft>(emptyItemDraft)
+  const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [loadingItems, setLoadingItems] = useState(false)
+  const [isSavingTemplateModal, setIsSavingTemplateModal] = useState(false)
+  const [isSavingItem, setIsSavingItem] = useState(false)
+  const [savingItemId, setSavingItemId] = useState<string | null>(null)
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
 
   function getDraft(id: string): DraftProperty {
     if (drafts[id]) {
@@ -157,6 +264,262 @@ export default function PropertiesClient({
   function setNewDraftField(field: keyof DraftProperty, value: string | string[]) {
     const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function updatePropertyTemplateSummary(propertyId: string, templateId: string, updater: (template: PropertyRow["templates"][number]) => PropertyRow["templates"][number] | null) {
+    let nextSelectedProperty: PropertyRow | null = null
+
+    setProperties((prev) =>
+      prev.map((property) => {
+        if (property.id !== propertyId) return property
+
+        const nextTemplates = property.templates
+          .map((template) => (template.id === templateId ? updater(template) : template))
+          .filter((template): template is NonNullable<typeof template> => template !== null)
+
+        const nextProperty = { ...property, templates: nextTemplates }
+        if (selectedProperty?.id === propertyId) nextSelectedProperty = nextProperty
+        return nextProperty
+      }),
+    )
+
+    if (nextSelectedProperty) {
+      setSelectedProperty(nextSelectedProperty)
+    }
+  }
+
+  function appendPropertyTemplateSummary(propertyId: string, template: TemplateRow, itemsCount: number) {
+    let nextSelectedProperty: PropertyRow | null = null
+
+    setProperties((prev) =>
+      prev.map((property) => {
+        if (property.id !== propertyId) return property
+        const existing = property.templates.find((item) => item.id === template.id)
+        const nextTemplate = {
+          id: template.id,
+          templateTag: template.templateTag,
+          warehouseName: template.warehouseName,
+          itemsCount,
+        }
+        const nextTemplates = existing
+          ? property.templates.map((item) => (item.id === template.id ? nextTemplate : item))
+          : [nextTemplate, ...property.templates]
+        const nextProperty = { ...property, templates: nextTemplates }
+        if (selectedProperty?.id === propertyId) nextSelectedProperty = nextProperty
+        return nextProperty
+      }),
+    )
+
+    if (nextSelectedProperty) {
+      setSelectedProperty(nextSelectedProperty)
+    }
+  }
+
+  async function loadTemplateItems(templateId: string) {
+    setLoadingItems(true)
+
+    try {
+      const response = await fetch(`/api/flooring/templates/${templateId}/items`)
+      const payload = (await response.json().catch(() => ({}))) as { items?: TemplateItem[]; error?: string }
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to load template items")
+      }
+
+      setTemplateItems(payload.items ?? [])
+      return payload.items ?? []
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load template items")
+      setTemplateItems([])
+      return []
+    } finally {
+      setLoadingItems(false)
+    }
+  }
+
+  async function openTemplate(templateId: string) {
+    setError("")
+    setMessage("")
+    setLoadingTemplate(true)
+
+    try {
+      const response = await fetch(`/api/flooring/templates/${templateId}`)
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
+
+      if (!response.ok || !payload.template) {
+        throw new Error(payload.error ?? "Failed to load template")
+      }
+
+      setActiveTemplate(payload.template)
+      setActiveTemplateDraft({
+        templateTag: payload.template.templateTag,
+        propertyId: payload.template.propertyId,
+        warehouseId: payload.template.warehouseId,
+        instructions: payload.template.instructions,
+        templateNotes: payload.template.templateNotes,
+        padProductId: payload.template.padProductId,
+      })
+      setItemDraft(emptyItemDraft)
+      await loadTemplateItems(payload.template.id)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load template")
+      setActiveTemplate(null)
+    } finally {
+      setLoadingTemplate(false)
+    }
+  }
+
+  function closeTemplate() {
+    if (isSavingTemplateModal || isSavingItem || savingItemId || deletingItemId) return
+    setActiveTemplate(null)
+    setActiveTemplateDraft(defaultTemplateDraft)
+    setTemplateItems([])
+    setItemDraft(emptyItemDraft)
+  }
+
+  async function saveActiveTemplate() {
+    if (!activeTemplate) return
+
+    setError("")
+    setMessage("")
+    setIsSavingTemplateModal(true)
+
+    try {
+      const response = await fetch(`/api/flooring/templates/${activeTemplate.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...activeTemplateDraft,
+          warehouseId: activeTemplateDraft.warehouseId || null,
+          padProductId: activeTemplateDraft.padProductId || null,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
+      if (!response.ok || !payload.template) {
+        throw new Error(payload.error ?? "Failed to save template")
+      }
+
+      const itemsCount = templateItems.length
+      const previousPropertyId = activeTemplate.propertyId
+      const nextTemplate = payload.template
+
+      setActiveTemplate(nextTemplate)
+      setActiveTemplateDraft({
+        templateTag: nextTemplate.templateTag,
+        propertyId: nextTemplate.propertyId,
+        warehouseId: nextTemplate.warehouseId,
+        instructions: nextTemplate.instructions,
+        templateNotes: nextTemplate.templateNotes,
+        padProductId: nextTemplate.padProductId,
+      })
+
+      updatePropertyTemplateSummary(previousPropertyId, nextTemplate.id, () => null)
+      appendPropertyTemplateSummary(nextTemplate.propertyId, nextTemplate, itemsCount)
+      setMessage("Template saved")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save template")
+    } finally {
+      setIsSavingTemplateModal(false)
+    }
+  }
+
+  async function addTemplateItem() {
+    if (!activeTemplate) return
+
+    setError("")
+    setMessage("")
+    setIsSavingItem(true)
+
+    try {
+      if (!itemDraft.productId) throw new Error("Product is required")
+      if (!itemDraft.quantity.trim()) throw new Error("Quantity is required")
+
+      const response = await fetch(`/api/flooring/templates/${activeTemplate.id}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(itemDraft),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string }
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to add template item")
+      }
+
+      setItemDraft(emptyItemDraft)
+      const items = await loadTemplateItems(activeTemplate.id)
+      updatePropertyTemplateSummary(activeTemplate.propertyId, activeTemplate.id, (template) => ({ ...template, itemsCount: items.length }))
+      setMessage("Template item added")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to add template item")
+    } finally {
+      setIsSavingItem(false)
+    }
+  }
+
+  function setTemplateItemField(itemId: string, field: keyof Omit<TemplateItem, "id" | "createdAt">, value: string) {
+    setTemplateItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+  }
+
+  async function saveTemplateItem(item: TemplateItem) {
+    if (!activeTemplate) return
+
+    setError("")
+    setMessage("")
+    setSavingItemId(item.id)
+
+    try {
+      const response = await fetch(`/api/flooring/templates/${activeTemplate.id}/items/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: item.productId,
+          quantity: item.quantity,
+          notes: item.notes,
+          storedDyeLot: item.storedDyeLot,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string }
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to save template item")
+      }
+
+      await loadTemplateItems(activeTemplate.id)
+      setMessage("Template item saved")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save template item")
+    } finally {
+      setSavingItemId(null)
+    }
+  }
+
+  async function deleteTemplateItem(itemId: string) {
+    if (!activeTemplate) return
+
+    setError("")
+    setMessage("")
+    setDeletingItemId(itemId)
+
+    try {
+      const response = await fetch(`/api/flooring/templates/${activeTemplate.id}/items/${itemId}`, {
+        method: "DELETE",
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string }
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to delete template item")
+      }
+
+      const nextItems = templateItems.filter((item) => item.id !== itemId)
+      setTemplateItems(nextItems)
+      updatePropertyTemplateSummary(activeTemplate.propertyId, activeTemplate.id, (template) => ({ ...template, itemsCount: nextItems.length }))
+      setMessage("Template item deleted")
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template item")
+    } finally {
+      setDeletingItemId(null)
+    }
   }
 
   async function createProperty() {
@@ -501,7 +864,13 @@ export default function PropertiesClient({
       ) : null}
 
       {selectedProperty ? (
-        <ModalShell title={selectedProperty.name} onClose={() => setSelectedProperty(null)}>
+        <ModalShell
+          title={selectedProperty.name}
+          onClose={() => {
+            closeTemplate()
+            setSelectedProperty(null)
+          }}
+        >
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
@@ -531,6 +900,7 @@ export default function PropertiesClient({
                 <table className="w-full min-w-[640px] text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
                     <tr>
+                      <th className="h-10 px-3 py-2">Open</th>
                       <th className="h-10 px-3 py-2">Template Tag</th>
                       <th className="h-10 px-3 py-2">Warehouse</th>
                       <th className="h-10 px-3 py-2">Items</th>
@@ -539,11 +909,21 @@ export default function PropertiesClient({
                   <tbody>
                     {selectedProperty.templates.length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="px-3 py-8 text-center text-[var(--foreground)]/70">No templates linked to this property.</td>
+                        <td colSpan={4} className="px-3 py-8 text-center text-[var(--foreground)]/70">No templates linked to this property.</td>
                       </tr>
                     ) : (
                       selectedProperty.templates.map((template) => (
                         <tr key={template.id} className="border-t border-[var(--panel-border)]">
+                          <td className="px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() => void openTemplate(template.id)}
+                              disabled={loadingTemplate}
+                              className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                            >
+                              {loadingTemplate && activeTemplate?.id !== template.id ? "Loading..." : "Open"}
+                            </button>
+                          </td>
                           <td className="px-3 py-2">{template.templateTag}</td>
                           <td className="px-3 py-2">{template.warehouseName || "-"}</td>
                           <td className="px-3 py-2">{template.itemsCount}</td>
@@ -553,6 +933,146 @@ export default function PropertiesClient({
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {activeTemplate ? (
+        <ModalShell title={`Template ${activeTemplate.templateTag}`} onClose={closeTemplate} zIndexClass="z-50">
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <FormField label="Template Tag">
+                <input value={activeTemplateDraft.templateTag} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, templateTag: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Property">
+                <select value={activeTemplateDraft.propertyId} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, propertyId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">Select property</option>
+                  {propertyOptions.map((property) => (
+                    <option key={property.id} value={property.id}>{property.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Warehouse">
+                <select value={activeTemplateDraft.warehouseId} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">No warehouse</option>
+                  {warehouseOptions.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Pad Type">
+                <select value={activeTemplateDraft.padProductId} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, padProductId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">No pad type</option>
+                  {padProductOptions.map((product) => (
+                    <option key={product.id} value={product.id}>{product.label}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Instructions">
+                <textarea value={activeTemplateDraft.instructions} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, instructions: event.target.value }))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+              </FormField>
+              <FormField label="Template Notes">
+                <textarea value={activeTemplateDraft.templateNotes} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, templateNotes: event.target.value }))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+              </FormField>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold">Template Items</h3>
+                <p className="text-sm text-[var(--foreground)]/70">Add the products and quantities this template should carry.</p>
+              </div>
+
+              <div className="grid gap-3 rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] md:grid-cols-[minmax(0,1.5fr),120px,160px,minmax(0,1fr),auto] md:items-end">
+                <FormField label="Product">
+                  <select value={itemDraft.productId} onChange={(event) => setItemDraft((prev) => ({ ...prev, productId: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2">
+                    <option value="">Select product</option>
+                    {productOptions.map((product) => (
+                      <option key={product.id} value={product.id}>{product.label}</option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Qty">
+                  <input value={itemDraft.quantity} onChange={(event) => setItemDraft((prev) => ({ ...prev, quantity: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
+                </FormField>
+                <FormField label="Stored Dye Lot">
+                  <input value={itemDraft.storedDyeLot} onChange={(event) => setItemDraft((prev) => ({ ...prev, storedDyeLot: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
+                </FormField>
+                <FormField label="Notes">
+                  <input value={itemDraft.notes} onChange={(event) => setItemDraft((prev) => ({ ...prev, notes: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
+                </FormField>
+                <button type="button" onClick={() => void addTemplateItem()} disabled={isSavingItem} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                  {isSavingItem ? "Adding..." : "Add Item"}
+                </button>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                <table className="w-full min-w-[900px] text-sm">
+                  <thead className="bg-[var(--subpanel-header-background)] text-left">
+                    <tr>
+                      <th className="h-10 px-3 py-2">Product</th>
+                      <th className="h-10 px-3 py-2">Qty</th>
+                      <th className="h-10 px-3 py-2">Unit</th>
+                      <th className="h-10 px-3 py-2">Stored Dye Lot</th>
+                      <th className="h-10 px-3 py-2">Notes</th>
+                      <th className="h-10 px-3 py-2">Save</th>
+                      <th className="h-10 px-3 py-2">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loadingItems ? (
+                      <tr>
+                        <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>
+                      </tr>
+                    ) : templateItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/70">No template items yet.</td>
+                      </tr>
+                    ) : (
+                      templateItems.map((item) => (
+                        <tr key={item.id} className="border-t border-[var(--panel-border)]">
+                          <td className="px-3 py-2">
+                            <select value={item.productId} onChange={(event) => setTemplateItemField(item.id, "productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                              {productOptions.map((product) => (
+                                <option key={product.id} value={product.id}>{product.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-3 py-2">
+                            <input value={item.quantity} onChange={(event) => setTemplateItemField(item.id, "quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                          </td>
+                          <td className="px-3 py-2">{productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "-"}</td>
+                          <td className="px-3 py-2">
+                            <input value={item.storedDyeLot} onChange={(event) => setTemplateItemField(item.id, "storedDyeLot", event.target.value)} className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input value={item.notes} onChange={(event) => setTemplateItemField(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                          </td>
+                          <td className="px-3 py-2">
+                            <button type="button" onClick={() => void saveTemplateItem(item)} disabled={savingItemId === item.id} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                              {savingItemId === item.id ? "Saving..." : "Save"}
+                            </button>
+                          </td>
+                          <td className="px-3 py-2">
+                            <button type="button" onClick={() => void deleteTemplateItem(item.id)} disabled={deletingItemId === item.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">
+                              {deletingItemId === item.id ? "Deleting..." : "Delete"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={closeTemplate} disabled={isSavingTemplateModal} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
+                Close
+              </button>
+              <button type="button" onClick={() => void saveActiveTemplate()} disabled={isSavingTemplateModal} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+                {isSavingTemplateModal ? "Saving..." : "Save Template"}
+              </button>
             </div>
           </div>
         </ModalShell>

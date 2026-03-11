@@ -65,6 +65,39 @@ function normalizeTemplateRow(template: {
   }
 }
 
+export async function GET(_request: Request, { params }: RouteContext) {
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
+  if (authError) return authError
+
+  try {
+    const { id } = await params
+    const template = await prisma.flooringTemplate.findUniqueOrThrow({
+      where: { id },
+      include: {
+        property: {
+          select: { id: true, name: true },
+        },
+        warehouse: {
+          select: { id: true, name: true },
+        },
+        padProduct: {
+          select: {
+            id: true,
+            manufacturerName: true,
+            style: true,
+            color: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({ template: normalizeTemplateRow(template) })
+  } catch (error) {
+    const normalized = normalizePrismaError(error)
+    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+  }
+}
+
 export async function PATCH(request: Request, { params }: RouteContext) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
