@@ -168,14 +168,17 @@ export default function ImportsClient({
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
+  const [pageError, setPageError] = useState("")
+  const [createModalError, setCreateModalError] = useState("")
+  const [activeImportError, setActiveImportError] = useState("")
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
   const activeImport = useMemo(() => imports.find((row) => row.id === activeImportId) ?? null, [imports, activeImportId])
 
   function openCreateModal() {
     setMessage("")
-    setError("")
+    setPageError("")
+    setCreateModalError("")
     setDraft(createEmptyDraft())
     setIsModalOpen(true)
   }
@@ -188,6 +191,9 @@ export default function ImportsClient({
   function openImport(rowId: string) {
     const row = imports.find((item) => item.id === rowId)
     if (!row) return
+    setMessage("")
+    setPageError("")
+    setActiveImportError("")
     setActiveImportDraft({
       orderNumber: row.orderNumber,
       tag: row.tag,
@@ -217,7 +223,8 @@ export default function ImportsClient({
   async function saveActiveImport() {
     if (!activeImport) return
     setMessage("")
-    setError("")
+    setPageError("")
+    setActiveImportError("")
     setIsSaving(true)
 
     try {
@@ -254,7 +261,7 @@ export default function ImportsClient({
       })
       setMessage("Import saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save import")
+      setActiveImportError(saveError instanceof Error ? saveError.message : "Failed to save import")
     } finally {
       setIsSaving(false)
     }
@@ -302,7 +309,8 @@ export default function ImportsClient({
 
   async function createImport() {
     setMessage("")
-    setError("")
+    setPageError("")
+    setCreateModalError("")
     setIsSaving(true)
 
     try {
@@ -326,7 +334,7 @@ export default function ImportsClient({
       setIsModalOpen(false)
       setMessage("Import created")
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create import")
+      setCreateModalError(createError instanceof Error ? createError.message : "Failed to create import")
     } finally {
       setIsSaving(false)
     }
@@ -334,7 +342,7 @@ export default function ImportsClient({
 
   async function deleteImport(id: string) {
     setMessage("")
-    setError("")
+    setPageError("")
     setDeletingId(id)
 
     try {
@@ -348,7 +356,7 @@ export default function ImportsClient({
       setImports((prev) => prev.filter((row) => row.id !== id))
       setMessage("Import deleted")
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete import")
+      setPageError(deleteError instanceof Error ? deleteError.message : "Failed to delete import")
     } finally {
       setDeletingId(null)
     }
@@ -373,7 +381,7 @@ export default function ImportsClient({
         </div>
 
         {message ? <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-        {error ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+        {pageError ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{pageError}</p> : null}
 
         <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
           <table className="w-full min-w-[980px] text-sm">
@@ -436,6 +444,7 @@ export default function ImportsClient({
       {isModalOpen ? (
         <ModalShell title="New Import" onClose={closeCreateModal}>
           <div className="space-y-6">
+            {createModalError ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{createModalError}</p> : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <FormField label="Import Number">
                 <input value="Assigned on save" readOnly className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75" />
@@ -669,7 +678,7 @@ export default function ImportsClient({
                 Import saved
               </p>
             ) : null}
-            {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+            {activeImportError ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{activeImportError}</p> : null}
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <FormField label="Import Number">
