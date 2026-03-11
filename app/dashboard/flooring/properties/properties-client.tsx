@@ -301,10 +301,10 @@ export default function PropertiesClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] pb-12 pt-20 text-[var(--foreground)]">
-      <section className="w-full border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-4">
+    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <h1 className="text-2xl font-bold text-blue-500">Properties</h1>
-        <p className="mt-1 px-3 text-sm text-[var(--foreground)]/70">
+        <p className="mt-1 text-sm text-[var(--foreground)]/70">
           Manage property records for flooring work orders, including full address formulas and management links.
         </p>
 
