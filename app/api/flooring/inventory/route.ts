@@ -46,7 +46,18 @@ function normalizeInventoryRow(row: {
     transportType: string
     warehouse: { id: string; name: string } | null
   } | null
+  cutLogs?: Array<{
+    id: string
+    inventoryId: string
+    quantityTaken: { toString(): string }
+    notes: string | null
+    createdAt: Date
+  }>
 }) {
+  const cutLogs = row.cutLogs ?? []
+  const cutTotal = cutLogs.reduce((total, log) => total + Number(log.quantityTaken), 0)
+  const runningBalance = Number(row.stockCount) - cutTotal
+
   return {
     id: row.id,
     importEntryId: row.importEntryId ?? "",
@@ -65,20 +76,35 @@ function normalizeInventoryRow(row: {
     warehouseName: row.location.warehouse.name,
     sectionName: "",
     stockCount: row.stockCount.toString(),
+    cutTotal: cutTotal.toFixed(2),
+    runningBalance: runningBalance.toFixed(2),
     cost: row.cost?.toString() ?? "",
     freight: row.freight?.toString() ?? "",
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    cutLogs: cutLogs.map((log) => ({
+      id: log.id,
+      inventoryId: log.inventoryId,
+      inventoryLabel: `${row.location.warehouse.name} / ${row.location.locationCode} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
+      itemNumber: row.itemNumber,
+      quantityTaken: log.quantityTaken.toString(),
+      notes: log.notes ?? "",
+      createdAt: log.createdAt.toISOString(),
+    })),
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {
+    const { searchParams } = new URL(request.url)
+    const productId = searchParams.get("productId")?.trim() ?? ""
+
     const inventory = await prisma.flooringInventory.findMany({
+      where: productId ? { productId } : undefined,
       include: {
         product: {
           select: {
@@ -95,6 +121,16 @@ export async function GET() {
             id: true,
             locationCode: true,
             warehouse: { select: { id: true, name: true } },
+          },
+        },
+        cutLogs: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            inventoryId: true,
+            quantityTaken: true,
+            notes: true,
+            createdAt: true,
           },
         },
         importEntry: {

@@ -1,7 +1,7 @@
 "use client"
 
 import { type ChangeEvent, type ReactNode, useState } from "react"
-import { Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
+import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
 
 type CategoryOption = {
   id: string
@@ -64,6 +64,49 @@ type ManufacturerOption = {
   email: string
 }
 
+type CutLogRow = {
+  id: string
+  inventoryId: string
+  inventoryLabel: string
+  itemNumber: string
+  quantityTaken: string
+  notes: string
+  createdAt: string
+}
+
+type InventoryRow = {
+  id: string
+  importEntryId: string
+  importNumber: string
+  importTag: string
+  importStatus: string
+  importTransportType: string
+  importWarehouseName: string
+  productId: string
+  productName: string
+  stockUnit: string
+  itemNumber: string
+  dyeLot: string
+  locationId: string
+  locationCode: string
+  warehouseName: string
+  sectionName: string
+  stockCount: string
+  cutTotal: string
+  runningBalance: string
+  cost: string
+  freight: string
+  notes: string
+  createdAt: string
+  updatedAt: string
+  cutLogs: CutLogRow[]
+}
+
+type CutLogDraft = {
+  quantityTaken: string
+  notes: string
+}
+
 const DEFAULT_BASE_COLOR_OPTIONS = [
   "Beige",
   "Black",
@@ -89,6 +132,11 @@ const emptyProductForm: ProductForm = {
   unitWeight: "",
   coveragePerUnit: "",
   photoUrls: [],
+  notes: "",
+}
+
+const emptyCutLogDraft: CutLogDraft = {
+  quantityTaken: "",
   notes: "",
 }
 
@@ -157,6 +205,18 @@ function isValidDecimal(value: string) {
   return /^\d+(\.\d{0,4})?$/.test(value.trim())
 }
 
+function parseDecimal(value: string) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
+function formatSignedValue(value: string) {
+  const numeric = parseDecimal(value)
+  if (numeric > 0) return `-${numeric.toFixed(2)}`
+  if (numeric < 0) return `+${Math.abs(numeric).toFixed(2)}`
+  return "0.00"
+}
+
 export default function FlooringProductsClient({
   categoryOptions,
   manufacturerOptions,
@@ -179,8 +239,20 @@ export default function FlooringProductsClient({
   const [newPhotoUrl, setNewPhotoUrl] = useState("")
   const [newBaseColor, setNewBaseColor] = useState("")
   const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
+  const [activeProduct, setActiveProduct] = useState<ProductRow | null>(null)
+  const [inventoryRows, setInventoryRows] = useState<InventoryRow[]>([])
+  const [expandedWarehouses, setExpandedWarehouses] = useState<string[]>([])
+  const [loadingInventory, setLoadingInventory] = useState(false)
+  const [activeInventoryRowId, setActiveInventoryRowId] = useState<string | null>(null)
+  const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(emptyCutLogDraft)
+  const [isSavingCutLog, setIsSavingCutLog] = useState(false)
 
   const selectedCategory = categories.find((category) => category.id === productForm.categoryId) ?? null
+  const activeInventoryRow = inventoryRows.find((row) => row.id === activeInventoryRowId) ?? null
+  const activeRunningBalance = activeInventoryRow ? parseDecimal(activeInventoryRow.runningBalance) : 0
+  const canAddPositiveCut = activeRunningBalance > 0
+  const draftQuantity = parseDecimal(cutLogDraft.quantityTaken)
+  const canSubmitAdjustment = canAddPositiveCut || draftQuantity < 0
   const baseColorOptions = Array.from(
     new Set(
       [...DEFAULT_BASE_COLOR_OPTIONS, ...customBaseColors, ...products.map((product) => product.baseColor)]
@@ -203,6 +275,26 @@ export default function FlooringProductsClient({
     setIsProductModalOpen(true)
   }
 
+  async function openProductInventory(product: ProductRow) {
+    clearNotices()
+    setActiveProduct(product)
+    setActiveInventoryRowId(null)
+    setCutLogDraft(emptyCutLogDraft)
+    setLoadingInventory(true)
+
+    try {
+      const payload = await apiJson<{ inventory: InventoryRow[] }>(`/api/flooring/inventory?productId=${product.id}`)
+      setInventoryRows(payload.inventory)
+      setExpandedWarehouses(Array.from(new Set(payload.inventory.map((row) => row.warehouseName))))
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load inventory")
+      setInventoryRows([])
+      setExpandedWarehouses([])
+    } finally {
+      setLoadingInventory(false)
+    }
+  }
+
   function openEditProduct(product: ProductRow) {
     clearNotices()
     setEditingProduct(product)
@@ -210,6 +302,87 @@ export default function FlooringProductsClient({
     setNewPhotoUrl("")
     setNewBaseColor("")
     setIsProductModalOpen(true)
+  }
+
+  function closeProductInventory() {
+    if (isSavingCutLog) return
+    setActiveProduct(null)
+    setInventoryRows([])
+    setExpandedWarehouses([])
+    setActiveInventoryRowId(null)
+    setCutLogDraft(emptyCutLogDraft)
+  }
+
+  function toggleWarehouse(warehouseName: string) {
+    setExpandedWarehouses((prev) => (prev.includes(warehouseName) ? prev.filter((name) => name !== warehouseName) : [...prev, warehouseName]))
+  }
+
+  function openInventoryRow(rowId: string) {
+    clearNotices()
+    setCutLogDraft(emptyCutLogDraft)
+    setActiveInventoryRowId(rowId)
+  }
+
+  function closeInventoryRow() {
+    if (isSavingCutLog) return
+    setActiveInventoryRowId(null)
+    setCutLogDraft(emptyCutLogDraft)
+  }
+
+  async function addCutLog() {
+    if (!activeInventoryRow) return
+
+    clearNotices()
+    setIsSavingCutLog(true)
+
+    try {
+      if (!cutLogDraft.quantityTaken.trim()) {
+        throw new Error("Enter a cut quantity before saving")
+      }
+
+      const quantityTaken = parseDecimal(cutLogDraft.quantityTaken)
+      if (quantityTaken === 0) {
+        throw new Error("Adjustment quantity must be more than 0 or less than 0")
+      }
+
+      if (quantityTaken > 0 && activeRunningBalance <= 0) {
+        throw new Error("This inventory row has no running balance left")
+      }
+
+      if (quantityTaken > activeRunningBalance) {
+        throw new Error("Cut quantity cannot exceed the current running balance")
+      }
+
+      const payload = await apiJson<{ cutLog: CutLogRow }>("/api/flooring/cut-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inventoryId: activeInventoryRow.id,
+          quantityTaken: cutLogDraft.quantityTaken,
+          notes: cutLogDraft.notes,
+        }),
+      })
+
+      setInventoryRows((prev) =>
+        prev.map((row) => {
+          if (row.id !== activeInventoryRow.id) return row
+          const nextCutTotal = parseDecimal(row.cutTotal) + parseDecimal(payload.cutLog.quantityTaken)
+          const nextRunningBalance = parseDecimal(row.stockCount) - nextCutTotal
+          return {
+            ...row,
+            cutLogs: [payload.cutLog, ...row.cutLogs],
+            cutTotal: nextCutTotal.toFixed(2),
+            runningBalance: nextRunningBalance.toFixed(2),
+          }
+        }),
+      )
+      setCutLogDraft(emptyCutLogDraft)
+      setMessage("Cut log saved")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to add cut log")
+    } finally {
+      setIsSavingCutLog(false)
+    }
   }
 
   async function saveProduct() {
@@ -362,6 +535,7 @@ export default function FlooringProductsClient({
             <table className="w-full min-w-[1400px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
+                  <th className="h-10 px-3 py-2">Open</th>
                   <th className="h-10 px-3 py-2">Product</th>
                   <th className="h-10 px-3 py-2">Category</th>
                   <th className="h-10 px-3 py-2">Manufacturer</th>
@@ -380,6 +554,15 @@ export default function FlooringProductsClient({
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-t border-[var(--panel-border)]">
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => void openProductInventory(product)}
+                        className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
+                      >
+                        Open
+                      </button>
+                    </td>
                     <td className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>
                     <td className="px-3 py-2">{product.category.name}</td>
                     <td className="px-3 py-2">{product.manufacturerName || "-"}</td>
@@ -408,7 +591,7 @@ export default function FlooringProductsClient({
                 ))}
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="px-3 py-8 text-center text-[var(--foreground)]/60">
+                    <td colSpan={14} className="px-3 py-8 text-center text-[var(--foreground)]/60">
                       No flooring products yet.
                     </td>
                   </tr>
@@ -608,6 +791,258 @@ export default function FlooringProductsClient({
               <Save size={16} />
               {isSavingProduct ? "Saving..." : "Save Product"}
             </button>
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {activeProduct ? (
+        <ModalShell title={activeProduct.name || "Product"} onClose={closeProductInventory}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Category</p>
+                <p className="mt-1 font-medium">{activeProduct.category.name}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Manufacturer</p>
+                <p className="mt-1 font-medium">{activeProduct.manufacturerName || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Style</p>
+                <p className="mt-1 font-medium">{activeProduct.style || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Color</p>
+                <p className="mt-1 font-medium">{activeProduct.color || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Base Color</p>
+                <p className="mt-1 font-medium">{activeProduct.baseColor || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Coverage</p>
+                <p className="mt-1 font-medium">{activeProduct.coveragePerUnit ? `${activeProduct.coveragePerUnit} / ${activeProduct.coverageUnit || "unit"}` : "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Width</p>
+                <p className="mt-1 font-medium">{activeProduct.width || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Sheet Size</p>
+                <p className="mt-1 font-medium">{activeProduct.sheetSize || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Thickness</p>
+                <p className="mt-1 font-medium">{activeProduct.thickness || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Unit Weight</p>
+                <p className="mt-1 font-medium">{activeProduct.unitWeight || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3 md:col-span-2 xl:col-span-4">
+                <p className="text-xs text-[var(--foreground)]/60">Notes</p>
+                <p className="mt-1 font-medium">{activeProduct.notes || "-"}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold">Inventory by Warehouse</h3>
+                <p className="text-sm text-[var(--foreground)]/70">Open an inventory row to manage cuts and review running balance.</p>
+              </div>
+
+              {loadingInventory ? (
+                <div className="rounded-lg border border-[var(--panel-border)] px-4 py-8 text-center text-sm text-[var(--foreground)]/70">
+                  Loading inventory...
+                </div>
+              ) : inventoryRows.length === 0 ? (
+                <div className="rounded-lg border border-[var(--panel-border)] px-4 py-8 text-center text-sm text-[var(--foreground)]/70">
+                  No inventory rows found for this product.
+                </div>
+              ) : (
+                Array.from(new Set(inventoryRows.map((row) => row.warehouseName))).map((warehouseName) => {
+                  const warehouseRows = inventoryRows.filter((row) => row.warehouseName === warehouseName)
+                  const isExpanded = expandedWarehouses.includes(warehouseName)
+
+                  return (
+                    <div key={warehouseName} className="overflow-hidden rounded-lg border border-[var(--panel-border)]">
+                      <button
+                        type="button"
+                        onClick={() => toggleWarehouse(warehouseName)}
+                        className="flex w-full items-center justify-between bg-[var(--panel-hover)] px-4 py-3 text-left"
+                      >
+                        <span className="flex items-center gap-2 text-sm font-semibold">
+                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          {warehouseName}
+                        </span>
+                        <span className="text-xs text-[var(--foreground)]/60">{warehouseRows.length} rows</span>
+                      </button>
+
+                      {isExpanded ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[980px] text-sm">
+                            <thead className="bg-[var(--panel-hover)]/60 text-left">
+                              <tr>
+                                <th className="h-10 px-3 py-2">Open</th>
+                                <th className="h-10 px-3 py-2">Item #</th>
+                                <th className="h-10 px-3 py-2">Dye Lot</th>
+                                <th className="h-10 px-3 py-2">Location</th>
+                                <th className="h-10 px-3 py-2">Starting Stock</th>
+                                <th className="h-10 px-3 py-2">Cuts Total</th>
+                                <th className="h-10 px-3 py-2">Running Balance</th>
+                                <th className="h-10 px-3 py-2">Import #</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {warehouseRows.map((row) => (
+                                <tr key={row.id} className="border-t border-[var(--panel-border)]">
+                                  <td className="px-3 py-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => openInventoryRow(row.id)}
+                                      className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
+                                    >
+                                      Open
+                                    </button>
+                                  </td>
+                                  <td className="px-3 py-2">{row.itemNumber}</td>
+                                  <td className="px-3 py-2">{row.dyeLot || "-"}</td>
+                                  <td className="px-3 py-2">
+                                    {row.warehouseName}
+                                    {row.sectionName ? ` / ${row.sectionName}` : ""}
+                                    {row.locationCode ? ` / ${row.locationCode}` : ""}
+                                  </td>
+                                  <td className="px-3 py-2">{row.stockCount} {row.stockUnit}</td>
+                                  <td className="px-3 py-2">{row.cutTotal}</td>
+                                  <td className="px-3 py-2 font-semibold">{row.runningBalance} {row.stockUnit}</td>
+                                  <td className="px-3 py-2">{row.importNumber ? `IMP-${row.importNumber.padStart(4, "0")}` : "-"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {activeInventoryRow ? (
+        <ModalShell title={`Inventory Row ${activeInventoryRow.itemNumber}`} onClose={closeInventoryRow}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Item #</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.itemNumber}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Dye Lot</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.dyeLot || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Location</p>
+                <p className="mt-1 font-medium">
+                  {activeInventoryRow.warehouseName}
+                  {activeInventoryRow.sectionName ? ` / ${activeInventoryRow.sectionName}` : ""}
+                  {activeInventoryRow.locationCode ? ` / ${activeInventoryRow.locationCode}` : ""}
+                </p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Product</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.productName}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Starting Stock</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.stockCount} {activeInventoryRow.stockUnit}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Cuts Total</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.cutTotal}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Running Balance</p>
+                <p className="mt-1 font-medium text-blue-500">{activeInventoryRow.runningBalance} {activeInventoryRow.stockUnit}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold">Cut Logs</h3>
+                <p className="text-sm text-[var(--foreground)]/70">Enter the cut quantity to reduce stock. It cannot exceed the remaining running balance.</p>
+              </div>
+
+              <div className="rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                <div className="grid gap-4 md:grid-cols-[220px,minmax(0,1fr),auto] md:items-end">
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-[var(--foreground)]/80">Cut Quantity</span>
+                    <input
+                      value={cutLogDraft.quantityTaken}
+                      onChange={(event) => setCutLogDraft((prev) => ({ ...prev, quantityTaken: event.target.value }))}
+                      placeholder="Enter cut amount"
+                      className="rounded-lg border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-[var(--foreground)]/80">Notes</span>
+                    <input
+                      value={cutLogDraft.notes}
+                      onChange={(event) => setCutLogDraft((prev) => ({ ...prev, notes: event.target.value }))}
+                      className="rounded-lg border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
+                    />
+                  </label>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => void addCutLog()}
+                      disabled={isSavingCutLog || !canSubmitAdjustment}
+                      className="w-full rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60 md:w-auto"
+                    >
+                      {isSavingCutLog ? "Saving..." : canSubmitAdjustment ? "Add Cut" : "Balance at 0"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {!canAddPositiveCut ? (
+                <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+                  Running balance is 0. No additional cuts can be added for this inventory row.
+                </p>
+              ) : null}
+
+              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-[var(--subpanel-header-background)] text-left">
+                    <tr>
+                      <th className="h-10 px-3 py-2">Created</th>
+                      <th className="h-10 px-3 py-2">Adjustment</th>
+                      <th className="h-10 px-3 py-2">Effect on Stock</th>
+                      <th className="h-10 px-3 py-2">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeInventoryRow.cutLogs.map((log) => (
+                      <tr key={log.id} className="border-t border-[var(--panel-border)]">
+                        <td className="px-3 py-2">{new Date(log.createdAt).toLocaleString()}</td>
+                        <td className="px-3 py-2">{log.quantityTaken}</td>
+                        <td className="px-3 py-2">{formatSignedValue(log.quantityTaken)}</td>
+                        <td className="px-3 py-2">{log.notes || "-"}</td>
+                      </tr>
+                    ))}
+                    {activeInventoryRow.cutLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                          No cut logs yet for this inventory row.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </ModalShell>
       ) : null}
