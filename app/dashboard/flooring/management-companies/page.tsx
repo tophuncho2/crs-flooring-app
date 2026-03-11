@@ -18,6 +18,22 @@ type ManagementCompanyRow = {
   properties: { id: string; name: string; fullAddress: string }[]
 }
 
+type PropertyOption = {
+  id: string
+  name: string
+}
+
+type WarehouseOption = {
+  id: string
+  name: string
+}
+
+type ProductOption = {
+  id: string
+  label: string
+  sendUnit: string
+}
+
 function normalizeAddress(value: {
   streetAddress: string | null
   city: string | null
@@ -25,6 +41,14 @@ function normalizeAddress(value: {
   postalCode: string | null
 }) {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
+}
+
+function buildPadLabel(product: {
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Pad Product"
 }
 
 export default async function ManagementCompaniesPage() {
@@ -47,33 +71,69 @@ export default async function ManagementCompaniesPage() {
     redirect("/dashboard")
   }
 
-  const companies = await prisma.flooringManagementCompany.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      phone: true,
-      email: true,
-      properties: {
-        select: {
-          property: {
-            select: {
-              id: true,
-              name: true,
-              streetAddress: true,
-              city: true,
-              state: true,
-              postalCode: true,
+  const [companies, properties, warehouses, padProducts, products] = await Promise.all([
+    prisma.flooringManagementCompany.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        streetAddress: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        phone: true,
+        email: true,
+        properties: {
+          select: {
+            property: {
+              select: {
+                id: true,
+                name: true,
+                streetAddress: true,
+                city: true,
+                state: true,
+                postalCode: true,
+              },
             },
           },
         },
       },
-    },
-  })
+    }),
+    prisma.propertyHub.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.flooringWarehouse.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.flooringProduct.findMany({
+      where: {
+        category: {
+          name: "Pad",
+        },
+      },
+      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        manufacturerName: true,
+        style: true,
+        color: true,
+      },
+    }),
+    prisma.flooringProduct.findMany({
+      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        manufacturerName: true,
+        style: true,
+        color: true,
+        category: {
+          select: { sendUnit: true },
+        },
+      },
+    }),
+  ])
 
   const initialCompanies: ManagementCompanyRow[] = companies.map((company) => ({
     id: company.id,
@@ -102,5 +162,23 @@ export default async function ManagementCompaniesPage() {
     })),
   }))
 
-  return <ManagementCompaniesClient initialCompanies={initialCompanies} />
+  return (
+    <ManagementCompaniesClient
+      initialCompanies={initialCompanies}
+      propertyOptions={properties.map((property): PropertyOption => ({
+        id: property.id,
+        name: property.name,
+      }))}
+      warehouseOptions={warehouses as WarehouseOption[]}
+      padProductOptions={padProducts.map((product) => ({
+        id: product.id,
+        label: buildPadLabel(product),
+      }))}
+      productOptions={products.map((product): ProductOption => ({
+        id: product.id,
+        label: [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product",
+        sendUnit: product.category.sendUnit ?? "",
+      }))}
+    />
+  )
 }

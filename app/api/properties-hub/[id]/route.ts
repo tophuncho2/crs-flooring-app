@@ -24,6 +24,12 @@ type PropertyPayload = {
   email: string | null
   managementCompany: PropertyManagementCompany | null
   fullAddress: string
+  templates: Array<{
+    id: string
+    templateTag: string
+    warehouseName: string
+    itemsCount: number
+  }>
 }
 
 function normalizeAddress(value: {
@@ -60,6 +66,12 @@ function normalizeResponse(property: {
   phone: string | null
   email: string | null
   flooringLinks: Array<{ managementCompany: { id: string; name: string } }>
+  flooringTpls: Array<{
+    id: string
+    templateTag: string
+    warehouse: { name: string } | null
+    _count: { items: number }
+  }>
 }): PropertyPayload {
   return {
     id: property.id,
@@ -82,6 +94,12 @@ function normalizeResponse(property: {
       state: property.state,
       postalCode: property.postalCode,
     }),
+    templates: property.flooringTpls.map((template) => ({
+      id: template.id,
+      templateTag: template.templateTag,
+      warehouseName: template.warehouse?.name ?? "",
+      itemsCount: template._count.items,
+    })),
   }
 }
 
@@ -145,6 +163,15 @@ export async function PATCH(request: Request, { params }: RouteContext) {
             },
           },
         },
+        flooringTpls: {
+          select: {
+            id: true,
+            templateTag: true,
+            warehouse: { select: { name: true } },
+            _count: { select: { items: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
     })
 
@@ -182,6 +209,15 @@ export async function GET(_request: Request, { params }: RouteContext) {
           include: {
             managementCompany: { select: { id: true, name: true } },
           },
+        },
+        flooringTpls: {
+          select: {
+            id: true,
+            templateTag: true,
+            warehouse: { select: { name: true } },
+            _count: { select: { items: true } },
+          },
+          orderBy: { createdAt: "desc" },
         },
       },
     })
