@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isToolUnlocked } from "@/lib/tool-subscriptions"
+import { findFlooringManufacturers } from "@/lib/flooring-db-compat"
 import FlooringProductsClient from "./products-client"
 import { Prisma } from "@prisma/client"
 
@@ -10,6 +11,7 @@ function normalizeProduct(product: {
   id: string
   name: string
   categoryId: string
+  manufacturerId: string | null
   manufacturerName: string | null
   style: string | null
   color: string | null
@@ -31,12 +33,18 @@ function normalizeProduct(product: {
     coverageAvailableUnit: string | null
     itemCoverageUnit: string | null
   }
+  manufacturer: {
+    id: string
+    name: string
+    website: string | null
+  } | null
 }) {
   return {
     id: product.id,
     name: product.name,
     categoryId: product.categoryId,
-    manufacturerName: product.manufacturerName ?? "",
+    manufacturerId: product.manufacturerId ?? "",
+    manufacturerName: product.manufacturer?.name ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
@@ -74,7 +82,7 @@ export default async function FlooringProductsPage() {
   if (!user) redirect("/login")
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard")
 
-  const [categories, products] = await Promise.all([
+  const [categories, manufacturers, products] = await Promise.all([
     prisma.flooringCategory.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -86,6 +94,7 @@ export default async function FlooringProductsPage() {
         itemCoverageUnit: true,
       },
     }),
+    findFlooringManufacturers(),
     prisma.flooringProduct.findMany({
       include: {
         category: {
@@ -96,6 +105,13 @@ export default async function FlooringProductsPage() {
             stockUnit: true,
             coverageAvailableUnit: true,
             itemCoverageUnit: true,
+          },
+        },
+        manufacturer: {
+          select: {
+            id: true,
+            name: true,
+            website: true,
           },
         },
       },
@@ -112,6 +128,13 @@ export default async function FlooringProductsPage() {
         stockUnit: category.stockUnit ?? "",
         coverageAvailableUnit: category.coverageAvailableUnit ?? "",
         itemCoverageUnit: category.itemCoverageUnit ?? "",
+      }))}
+      manufacturerOptions={manufacturers.map((manufacturer) => ({
+        id: manufacturer.id,
+        name: manufacturer.name,
+        website: manufacturer.website ?? "",
+        phone: manufacturer.phone ?? "",
+        email: manufacturer.email ?? "",
       }))}
       initialProducts={products.map(normalizeProduct)}
     />

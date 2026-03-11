@@ -12,6 +12,7 @@ function normalizeCatalogProduct(product: {
   id: string
   name: string
   categoryId: string
+  manufacturerId: string | null
   manufacturerName: string | null
   style: string | null
   color: string | null
@@ -33,12 +34,18 @@ function normalizeCatalogProduct(product: {
     coverageAvailableUnit: string | null
     itemCoverageUnit: string | null
   }
+  manufacturer: {
+    id: string
+    name: string
+    website: string | null
+  } | null
 }) {
   return {
     id: product.id,
     name: product.name,
     categoryId: product.categoryId,
-    manufacturerName: product.manufacturerName ?? "",
+    manufacturerId: product.manufacturerId ?? "",
+    manufacturerName: product.manufacturer?.name ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
@@ -72,6 +79,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const data: {
       categoryId?: string
+      manufacturerId?: string | null
       manufacturerName?: string | null
       style?: string | null
       color?: string | null
@@ -86,7 +94,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     } = {}
 
     if ("categoryId" in body) data.categoryId = parseRequiredString(body.categoryId, "categoryId")
-    if ("manufacturerName" in body) data.manufacturerName = parseOptionalString(body.manufacturerName)
+    if ("manufacturerId" in body) {
+      data.manufacturerId = parseOptionalString(body.manufacturerId)
+      data.manufacturerName = null
+    }
     if ("style" in body) data.style = parseOptionalString(body.style)
     if ("color" in body) data.color = parseOptionalString(body.color)
     if ("width" in body) data.width = parseOptionalString(body.width)
@@ -119,6 +130,13 @@ export async function PATCH(request: Request, context: RouteContext) {
             stockUnit: true,
             coverageAvailableUnit: true,
             itemCoverageUnit: true,
+          },
+        },
+        manufacturer: {
+          select: {
+            id: true,
+            name: true,
+            website: true,
           },
         },
       },

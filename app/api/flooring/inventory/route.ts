@@ -3,30 +3,70 @@ import { prisma } from "@/lib/prisma"
 import { normalizePrismaError, parseDecimal, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 
+function buildProductName(product: {
+  name: string
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return product.name || [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
 function normalizeInventoryRow(row: {
   id: string
-  productId: string
-  itemNumber: number
-  dyeLot: number
-  locationId: string
+  importEntryId: string | null
+  itemNumber: string
+  dyeLot: string
   stockCount: { toString(): string }
+  cost: { toString(): string } | null
+  freight: { toString(): string } | null
   notes: string | null
   createdAt: Date
   updatedAt: Date
-  product: { id: string; name: string; manufacturerName: string | null; style: string | null; color: string | null }
-  location: { id: string; locationCode: string; warehouse: { id: string; name: string }; section: { id: string; name: string } | null }
+  productId: string
+  product: {
+    id: string
+    name: string
+    manufacturerName: string | null
+    style: string | null
+    color: string | null
+    category: { stockUnit: string | null }
+  }
+  locationId: string
+  location: {
+    id: string
+    locationCode: string
+    warehouse: { id: string; name: string }
+  }
+  importEntry: {
+    id: string
+    importNumber: number
+    tag: string | null
+    status: string
+    transportType: string
+    warehouse: { id: string; name: string } | null
+  } | null
 }) {
   return {
     id: row.id,
+    importEntryId: row.importEntryId ?? "",
+    importNumber: row.importEntry?.importNumber ? String(row.importEntry.importNumber) : "",
+    importTag: row.importEntry?.tag ?? "",
+    importStatus: row.importEntry?.status ?? "FINAL",
+    importTransportType: row.importEntry?.transportType ?? "",
+    importWarehouseName: row.importEntry?.warehouse?.name ?? row.location.warehouse.name,
     productId: row.productId,
-    productName: row.product.name || [row.product.manufacturerName, row.product.style, row.product.color].filter(Boolean).join(" - ") || "Flooring Product",
-    itemNumber: String(row.itemNumber),
-    dyeLot: String(row.dyeLot),
+    productName: buildProductName(row.product),
+    stockUnit: row.product.category.stockUnit ?? "",
+    itemNumber: row.itemNumber,
+    dyeLot: row.dyeLot,
     locationId: row.locationId,
     locationCode: row.location.locationCode,
     warehouseName: row.location.warehouse.name,
-    sectionName: row.location.section?.name ?? "",
+    sectionName: "",
     stockCount: row.stockCount.toString(),
+    cost: row.cost?.toString() ?? "",
+    freight: row.freight?.toString() ?? "",
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -47,6 +87,7 @@ export async function GET() {
             manufacturerName: true,
             style: true,
             color: true,
+            category: { select: { stockUnit: true } },
           },
         },
         location: {
@@ -54,7 +95,16 @@ export async function GET() {
             id: true,
             locationCode: true,
             warehouse: { select: { id: true, name: true } },
-            section: { select: { id: true, name: true } },
+          },
+        },
+        importEntry: {
+          select: {
+            id: true,
+            importNumber: true,
+            tag: true,
+            status: true,
+            transportType: true,
+            warehouse: { select: { id: true, name: true } },
           },
         },
       },
@@ -76,11 +126,14 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>
     const inventory = await prisma.flooringInventory.create({
       data: {
+        importEntryId: parseOptionalString(body.importEntryId),
         productId: parseRequiredString(body.productId, "productId"),
         locationId: parseRequiredString(body.locationId, "locationId"),
-        itemNumber: Number(parseRequiredString(body.itemNumber, "itemNumber")),
-        dyeLot: Number(parseRequiredString(body.dyeLot, "dyeLot")),
+        itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
+        dyeLot: parseRequiredString(body.dyeLot, "dyeLot"),
         stockCount: parseDecimal(body.stockCount, "stockCount", 2),
+        cost: body.cost === "" || body.cost === null || body.cost === undefined ? null : parseDecimal(body.cost, "cost", 2),
+        freight: body.freight === "" || body.freight === null || body.freight === undefined ? null : parseDecimal(body.freight, "freight", 2),
         notes: parseOptionalString(body.notes),
       },
       include: {
@@ -91,6 +144,7 @@ export async function POST(request: Request) {
             manufacturerName: true,
             style: true,
             color: true,
+            category: { select: { stockUnit: true } },
           },
         },
         location: {
@@ -98,7 +152,16 @@ export async function POST(request: Request) {
             id: true,
             locationCode: true,
             warehouse: { select: { id: true, name: true } },
-            section: { select: { id: true, name: true } },
+          },
+        },
+        importEntry: {
+          select: {
+            id: true,
+            importNumber: true,
+            tag: true,
+            status: true,
+            transportType: true,
+            warehouse: { select: { id: true, name: true } },
           },
         },
       },

@@ -88,6 +88,12 @@ export default async function Dashboard() {
 
   const flooringModules: FloorModuleCard[] = [
     {
+      slug: "calendar",
+      name: "Calendar",
+      path: "/dashboard/flooring/calendar",
+      requiredTool: "warehouse",
+    },
+    {
       slug: "work-orders",
       name: "Work Orders",
       path: "/dashboard/flooring/work-orders",
@@ -115,7 +121,7 @@ export default async function Dashboard() {
       slug: "manufacturers",
       name: "Manufacturers",
       path: "/dashboard/flooring/manufacturers",
-      requiredTool: "warehouse",
+      requiredTool: "products",
     },
   ]
 

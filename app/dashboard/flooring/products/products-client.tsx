@@ -16,6 +16,7 @@ type ProductRow = {
   id: string
   name: string
   categoryId: string
+  manufacturerId: string
   manufacturerName: string
   style: string
   color: string
@@ -42,7 +43,7 @@ type ProductRow = {
 
 type ProductForm = {
   categoryId: string
-  manufacturerName: string
+  manufacturerId: string
   style: string
   color: string
   baseColor: string
@@ -53,6 +54,14 @@ type ProductForm = {
   coveragePerUnit: string
   photoUrls: string[]
   notes: string
+}
+
+type ManufacturerOption = {
+  id: string
+  name: string
+  website: string
+  phone: string
+  email: string
 }
 
 const DEFAULT_BASE_COLOR_OPTIONS = [
@@ -70,7 +79,7 @@ const DEFAULT_BASE_COLOR_OPTIONS = [
 
 const emptyProductForm: ProductForm = {
   categoryId: "",
-  manufacturerName: "",
+  manufacturerId: "",
   style: "",
   color: "",
   baseColor: "",
@@ -130,7 +139,7 @@ async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise
 function toProductForm(product: ProductRow): ProductForm {
   return {
     categoryId: product.categoryId,
-    manufacturerName: product.manufacturerName,
+    manufacturerId: product.manufacturerId,
     style: product.style,
     color: product.color,
     baseColor: product.baseColor,
@@ -150,9 +159,11 @@ function isValidDecimal(value: string) {
 
 export default function FlooringProductsClient({
   categoryOptions,
+  manufacturerOptions,
   initialProducts,
 }: {
   categoryOptions: CategoryOption[]
+  manufacturerOptions: ManufacturerOption[]
   initialProducts: ProductRow[]
 }) {
   const categories = categoryOptions
@@ -411,7 +422,7 @@ export default function FlooringProductsClient({
       {isProductModalOpen ? (
         <ModalShell title={editingProduct ? "Edit Product" : "Add Product"} onClose={() => setIsProductModalOpen(false)}>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <FormField label="Category">
+            <FormField label="Category Link">
               <select
                 value={productForm.categoryId}
                 onChange={(event) => setProductForm((prev) => ({ ...prev, categoryId: event.target.value }))}
@@ -440,12 +451,19 @@ export default function FlooringProductsClient({
                 className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
               />
             </FormField>
-            <FormField label="Manufacturer">
-              <input
-                value={productForm.manufacturerName}
-                onChange={(event) => setProductForm((prev) => ({ ...prev, manufacturerName: event.target.value }))}
+            <FormField label="Manufacturer Link">
+              <select
+                value={productForm.manufacturerId}
+                onChange={(event) => setProductForm((prev) => ({ ...prev, manufacturerId: event.target.value }))}
                 className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
+              >
+                <option value="">Select a manufacturer</option>
+                {manufacturerOptions.map((manufacturer) => (
+                  <option key={manufacturer.id} value={manufacturer.id}>
+                    {manufacturer.name}
+                  </option>
+                ))}
+              </select>
             </FormField>
             <FormField label="Style">
               <input

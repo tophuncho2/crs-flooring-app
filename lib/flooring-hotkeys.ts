@@ -34,6 +34,14 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     path: "/dashboard/flooring/inventory",
   },
   {
+    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00012",
+    key: "Calendar",
+    combination: "SHIFT + C",
+    action: "Open Calendar",
+    code: "KeyC",
+    path: "/dashboard/flooring/calendar",
+  },
+  {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00004",
     key: "Management Companies",
     combination: "SHIFT + M",

@@ -16,6 +16,7 @@ function normalizeCatalogProduct(product: {
   id: string
   name: string
   categoryId: string
+  manufacturerId: string | null
   manufacturerName: string | null
   style: string | null
   color: string | null
@@ -37,12 +38,18 @@ function normalizeCatalogProduct(product: {
     coverageAvailableUnit: string | null
     itemCoverageUnit: string | null
   }
+  manufacturer: {
+    id: string
+    name: string
+    website: string | null
+  } | null
 }) {
   return {
     id: product.id,
     name: product.name,
     categoryId: product.categoryId,
-    manufacturerName: product.manufacturerName ?? "",
+    manufacturerId: product.manufacturerId ?? "",
+    manufacturerName: product.manufacturer?.name ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
@@ -85,6 +92,13 @@ export async function GET(request: Request) {
               stockUnit: true,
               coverageAvailableUnit: true,
               itemCoverageUnit: true,
+            },
+          },
+          manufacturer: {
+            select: {
+              id: true,
+              name: true,
+              website: true,
             },
           },
         },
@@ -130,7 +144,8 @@ export async function POST(request: Request) {
     const product = await prisma.flooringProduct.create({
       data: {
         categoryId,
-        manufacturerName: parseOptionalString(body.manufacturerName),
+        manufacturerId: parseOptionalString(body.manufacturerId),
+        manufacturerName: null,
         style: parseOptionalString(body.style),
         color: parseOptionalString(body.color),
         width: parseOptionalString(body.width),
@@ -154,6 +169,13 @@ export async function POST(request: Request) {
             stockUnit: true,
             coverageAvailableUnit: true,
             itemCoverageUnit: true,
+          },
+        },
+        manufacturer: {
+          select: {
+            id: true,
+            name: true,
+            website: true,
           },
         },
       },

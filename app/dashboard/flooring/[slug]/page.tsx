@@ -11,6 +11,7 @@ type RouteContext = {
 
 const FLOORING_MODULE_LABELS: Record<string, string> = {
   warehouse: "Warehouse",
+  calendar: "Calendar",
   "cut-logs": "Cut Logs",
   inventory: "Inventory",
   imports: "Imports",

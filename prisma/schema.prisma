@@ -168,7 +168,10 @@ model FlooringCategory {
 model FlooringManufacturer {
   id         String            @id @default(uuid())
   name       String            @unique
+  companyName String?
   website    String?
+  phone      String?
+  email      String?
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
   products   FlooringProduct[]
@@ -181,7 +184,7 @@ model FlooringProduct {
   name             String                  @default("")
   categoryId       String
   category         FlooringCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  manufacturerName String?                @map("manufacturer")
+  manufacturerName String?                 @map("manufacturer")
   manufacturerId   String?
   manufacturer     FlooringManufacturer?   @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
   style            String?
@@ -210,35 +213,46 @@ model FlooringProduct {
 }
 
 model FlooringInventory {
-  id          String         @id @default(uuid())
-  productId   String
-  product     FlooringProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
-  itemNumber  Int
-  dyeLot      Int
-  locationId  String
-  location    FlooringLocation @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  stockCount  Decimal        @db.Decimal(12, 2)
-  notes       String?
-  cutLogs     FlooringCutLog[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id            String              @id @default(uuid())
+  importEntryId String?
+  importEntry   FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: SetNull)
+  productId     String
+  product       FlooringProduct     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber    String
+  dyeLot        String
+  locationId    String
+  location      FlooringLocation    @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  stockCount    Decimal             @db.Decimal(12, 2)
+  cost          Decimal?            @db.Decimal(10, 2)
+  freight       Decimal?            @db.Decimal(10, 2)
+  notes         String?
+  cutLogs       FlooringCutLog[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
+  @@index([importEntryId])
   @@index([productId])
   @@index([locationId])
+  @@unique([locationId, itemNumber])
   @@map("flooring_inventory")
 }
 
 model FlooringImportEntry {
-  id          String   @id @default(uuid())
-  importName  String
-  importType  String
-  status      String
-  source      String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String              @id @default(uuid())
+  importNumber  Int                 @unique @default(autoincrement())
+  orderNumber   String?
+  tag           String?
+  transportType String
+  status        String
+  warehouseId   String?
+  warehouse     FlooringWarehouse?  @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  inventories   FlooringInventory[]
 
   @@index([createdAt])
+  @@index([warehouseId])
   @@map("flooring_import_entry")
 }
 
@@ -306,6 +320,7 @@ model FlooringWarehouse {
   phone      String?
   createdAt  DateTime               @default(now())
   updatedAt  DateTime               @updatedAt
+  imports    FlooringImportEntry[]
   sections   FlooringSection[]
   locations  FlooringLocation[]
   workOrders FlooringWorkOrder[]

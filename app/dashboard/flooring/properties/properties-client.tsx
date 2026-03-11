@@ -430,7 +430,6 @@ export default function PropertiesClient({
 
         <div className="mt-3 flex items-center justify-between">
           <button type="button" onClick={() => setShowNewRow(true)} disabled={showNewRow} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">Add Row</button>
-          <a href="/dashboard/flooring" className="text-sm text-[var(--foreground)]/70 hover:text-[var(--foreground)]">Back to flooring</a>
         </div>
 
         {selectedProperty && (

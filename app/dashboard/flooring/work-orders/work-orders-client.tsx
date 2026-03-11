@@ -76,6 +76,21 @@ function statusLabel(value: string) {
   return statusLabelByValue[value] ?? value
 }
 
+function statusFieldClass(value: string) {
+  if (value === "BUILDING_ORDER") return "border-amber-500/40 bg-amber-500/10 text-amber-700"
+  if (value === "PENDING_EXPORT") return "border-sky-500/40 bg-sky-500/10 text-sky-700"
+  if (value === "CARPET_CLEANING") return "border-violet-500/40 bg-violet-500/10 text-violet-700"
+  if (value === "SENT_OUT") return "border-orange-500/40 bg-orange-500/10 text-orange-700"
+  if (value === "COMPLETE") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+  return "border-[var(--panel-border)] bg-transparent text-[var(--foreground)]"
+}
+
+function vacancyFieldClass(value: string) {
+  if (value === "OCCUPIED") return "border-yellow-500/40 bg-yellow-500/10 text-yellow-700"
+  if (value === "VACANT") return "border-lime-400/40 bg-lime-400/10 text-lime-700"
+  return "border-[var(--panel-border)] bg-transparent text-[var(--foreground)]"
+}
+
 function dateInputValue(value: string | null) {
   if (!value) return ""
   return value.split("T")[0]
@@ -383,7 +398,7 @@ export default function WorkOrdersClient({
                         <select
                           value={draft.status}
                           onChange={(event) => setDraftField(row.id, "status", event.target.value)}
-                          className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}
                         >
                           {statusOptions.map((value) => (
                             <option key={value} value={value}>
@@ -462,7 +477,7 @@ export default function WorkOrdersClient({
                         <select
                           value={draft.vacancy}
                           onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)}
-                          className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          className={`w-28 rounded border px-2 py-1 ${vacancyFieldClass(draft.vacancy)}`}
                         >
                           <option value="">Select</option>
                           {vacancyOptions.map((value) => (
@@ -529,11 +544,6 @@ export default function WorkOrdersClient({
             </table>
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
-            <Link href="/dashboard/flooring" className="text-sm text-[var(--foreground)]/70 hover:text-[var(--foreground)]">
-              Back to flooring
-            </Link>
-          </div>
         </section>
       </div>
 
@@ -575,7 +585,7 @@ export default function WorkOrdersClient({
                 <select
                   value={newDraft.status}
                   onChange={(event) => setNewDraftField("status", event.target.value)}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={`rounded border px-3 py-2 ${statusFieldClass(newDraft.status)}`}
                 >
                   {statusOptions.map((value) => (
                     <option key={value} value={value}>
@@ -589,7 +599,7 @@ export default function WorkOrdersClient({
                 <select
                   value={newDraft.vacancy}
                   onChange={(event) => setNewDraftField("vacancy", event.target.value)}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={`rounded border px-3 py-2 ${vacancyFieldClass(newDraft.vacancy)}`}
                 >
                   <option value="">Select</option>
                   {vacancyOptions.map((value) => (

@@ -10,6 +10,7 @@ export type FlooringNavItem = {
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "warehouse", name: "Warehouse", href: "/dashboard/flooring/warehouse", requiredTool: "warehouse" },
   { slug: "products", name: "Products", href: "/dashboard/flooring/products", requiredTool: "products" },
+  { slug: "calendar", name: "Calendar", href: "/dashboard/flooring/calendar", requiredTool: "warehouse" },
   { slug: "flooring-cut-logs", name: "Cut Logs", href: "/dashboard/flooring/cut-logs", requiredTool: "warehouse" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/flooring/inventory", requiredTool: "warehouse" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/flooring/imports", requiredTool: "warehouse" },
@@ -22,7 +23,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     requiredTool: "warehouse",
   },
   { slug: "flooring-templates", name: "Templates", href: "/dashboard/flooring/templates", requiredTool: "warehouse" },
-  { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/flooring/manufacturers", requiredTool: "warehouse" },
+  { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/flooring/manufacturers", requiredTool: "products" },
 ]
 
 export const FLOORING_NAV_SLUGS = FLOORING_NAV_ITEMS.map((item) => item.slug)
