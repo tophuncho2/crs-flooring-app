@@ -41,6 +41,7 @@ function normalizeCatalogProduct(product: {
   manufacturer: {
     id: string
     name: string
+    companyName: string | null
     website: string | null
   } | null
 }) {
@@ -49,7 +50,7 @@ function normalizeCatalogProduct(product: {
     name: product.name,
     categoryId: product.categoryId,
     manufacturerId: product.manufacturerId ?? "",
-    manufacturerName: product.manufacturer?.name ?? product.manufacturerName ?? "",
+    manufacturerName: product.manufacturer?.companyName ?? product.manufacturer?.name ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
@@ -98,6 +99,7 @@ export async function GET(request: Request) {
             select: {
               id: true,
               name: true,
+              companyName: true,
               website: true,
             },
           },
@@ -137,17 +139,28 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>
     const categoryId = parseRequiredString(body.categoryId, "categoryId")
+    const manufacturerId = parseOptionalString(body.manufacturerId)
     const photoUrls = Array.isArray(body.photoUrls)
       ? body.photoUrls.filter((value): value is string => typeof value === "string" && value.trim().length > 0).map((value) => value.trim())
       : []
+    const manufacturer = manufacturerId
+      ? await prisma.flooringManufacturer.findUnique({
+          where: { id: manufacturerId },
+          select: { companyName: true, name: true },
+        })
+      : null
+    const manufacturerName = manufacturer?.companyName ?? manufacturer?.name ?? null
+    const style = parseOptionalString(body.style)
+    const color = parseOptionalString(body.color)
 
     const product = await prisma.flooringProduct.create({
       data: {
+        name: buildProductName({ manufacturerName, style, color }),
         categoryId,
-        manufacturerId: parseOptionalString(body.manufacturerId),
-        manufacturerName: null,
-        style: parseOptionalString(body.style),
-        color: parseOptionalString(body.color),
+        manufacturerId,
+        manufacturerName,
+        style,
+        color,
         width: parseOptionalString(body.width),
         sheetSize: parseOptionalString(body.sheetSize),
         thickness: parseOptionalString(body.thickness),
@@ -175,6 +188,7 @@ export async function POST(request: Request) {
           select: {
             id: true,
             name: true,
+            companyName: true,
             website: true,
           },
         },

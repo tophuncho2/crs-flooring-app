@@ -286,6 +286,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
               <table className="min-w-full text-sm">
                 <thead className="bg-[var(--panel-hover)] text-left">
                   <tr>
+                    <th className="h-10 px-3 py-2">Open</th>
                     <th className="h-10 px-3 py-2">Warehouse</th>
                     <th className="h-10 px-3 py-2">Address</th>
                     <th className="h-10 px-3 py-2">Store Phone</th>
@@ -298,7 +299,16 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                   {rows.map((row) => {
                     const draft = getDraft(row)
                     return (
-                      <tr key={row.id} className="cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]" onClick={() => setActiveRow(row)}>
+                      <tr key={row.id} className="border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]">
+                        <td className="px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveRow(row)}
+                            className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
+                          >
+                            Open
+                          </button>
+                        </td>
                         <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                           <input value={draft.name} onChange={(event) => updateDraft(row.id, "name", event.target.value)} onBlur={() => saveRow(row)} className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                         </td>
@@ -337,7 +347,27 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
 
       {activeRow && (
         <ModalShell title={`Warehouse - ${activeRow.name}`} onClose={() => setActiveRow(null)}>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Warehouse</p>
+                <p className="mt-1 font-medium">{activeRow.name}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Address</p>
+                <p className="mt-1 font-medium">{activeRow.address || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Store Phone</p>
+                <p className="mt-1 font-medium">{activeRow.phone || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Counts</p>
+                <p className="mt-1 font-medium">{activeRow.sectionsCount} sections / {activeRow.locationsCount} locations / {activeRow.workOrdersCount} work orders</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--foreground)]/70">Sections</h3>
               <div className="mb-2 flex gap-2">
@@ -424,6 +454,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                   </tbody>
                 </table>
               </div>
+            </div>
             </div>
           </div>
         </ModalShell>

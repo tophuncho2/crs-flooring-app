@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
 import { prisma } from "@/lib/prisma"
-import { updateFlooringManufacturer } from "@/lib/flooring-db-compat"
+import { buildManufacturerStorageName, getVisibleManufacturerAgentName, updateFlooringManufacturer } from "@/lib/flooring-db-compat"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 
 type RouteContext = {
@@ -21,7 +21,7 @@ function normalizeManufacturer(manufacturer: {
 }) {
   return {
     id: manufacturer.id,
-    name: manufacturer.name,
+    name: getVisibleManufacturerAgentName(manufacturer.name, manufacturer.companyName),
     companyName: manufacturer.companyName ?? "",
     website: manufacturer.website ?? "",
     phone: manufacturer.phone ?? "",
@@ -39,9 +39,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
+    const companyName = parseRequiredString(body.companyName, "companyName")
+    const agentName = parseOptionalString(body.name)
     const manufacturer = await updateFlooringManufacturer(id, {
-      name: parseRequiredString(body.name, "name"),
-      companyName: parseOptionalString(body.companyName),
+      name: buildManufacturerStorageName(agentName, companyName),
+      companyName,
       website: parseOptionalString(body.website),
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),

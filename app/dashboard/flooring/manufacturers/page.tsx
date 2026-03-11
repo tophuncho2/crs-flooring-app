@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import { findFlooringManufacturers } from "@/lib/flooring-db-compat"
+import { findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/lib/flooring-db-compat"
 import ManufacturersClient from "./manufacturers-client"
 
 export default async function ManufacturersPage() {
@@ -24,7 +24,7 @@ export default async function ManufacturersPage() {
     <ManufacturersClient
       initialManufacturers={manufacturers.map((manufacturer) => ({
         id: manufacturer.id,
-        name: manufacturer.name,
+        name: getVisibleManufacturerAgentName(manufacturer.name, manufacturer.companyName),
         companyName: manufacturer.companyName ?? "",
         website: manufacturer.website ?? "",
         phone: manufacturer.phone ?? "",

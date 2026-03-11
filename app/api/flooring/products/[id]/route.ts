@@ -8,6 +8,14 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
+function buildProductName(product: {
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
 function normalizeCatalogProduct(product: {
   id: string
   name: string
@@ -37,6 +45,7 @@ function normalizeCatalogProduct(product: {
   manufacturer: {
     id: string
     name: string
+    companyName: string | null
     website: string | null
   } | null
 }) {
@@ -45,7 +54,7 @@ function normalizeCatalogProduct(product: {
     name: product.name,
     categoryId: product.categoryId,
     manufacturerId: product.manufacturerId ?? "",
-    manufacturerName: product.manufacturer?.name ?? product.manufacturerName ?? "",
+    manufacturerName: product.manufacturer?.companyName ?? product.manufacturer?.name ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
@@ -77,7 +86,16 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
+    const existing = await prisma.flooringProduct.findUniqueOrThrow({
+      where: { id },
+      select: {
+        manufacturerName: true,
+        style: true,
+        color: true,
+      },
+    })
     const data: {
+      name?: string
       categoryId?: string
       manufacturerId?: string | null
       manufacturerName?: string | null
@@ -96,7 +114,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     if ("categoryId" in body) data.categoryId = parseRequiredString(body.categoryId, "categoryId")
     if ("manufacturerId" in body) {
       data.manufacturerId = parseOptionalString(body.manufacturerId)
-      data.manufacturerName = null
+      if (data.manufacturerId) {
+        const manufacturer = await prisma.flooringManufacturer.findUnique({
+          where: { id: data.manufacturerId },
+          select: { companyName: true, name: true },
+        })
+        data.manufacturerName = manufacturer?.companyName ?? manufacturer?.name ?? null
+      } else {
+        data.manufacturerName = null
+      }
     }
     if ("style" in body) data.style = parseOptionalString(body.style)
     if ("color" in body) data.color = parseOptionalString(body.color)
@@ -118,6 +144,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
     if ("notes" in body) data.notes = parseOptionalString(body.notes)
 
+    data.name = buildProductName({
+      manufacturerName: data.manufacturerName ?? existing.manufacturerName,
+      style: data.style ?? existing.style,
+      color: data.color ?? existing.color,
+    })
+
     const product = await prisma.flooringProduct.update({
       where: { id },
       data,
@@ -136,6 +168,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           select: {
             id: true,
             name: true,
+            companyName: true,
             website: true,
           },
         },
@@ -155,7 +188,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    await prisma.flooringProduct.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.flooringTemplateItem.deleteMany({ where: { productId: id } })
+      await tx.flooringWorkOrderItem.deleteMany({ where: { productId: id } })
+      await tx.flooringInventory.deleteMany({ where: { productId: id } })
+      await tx.flooringProduct.delete({ where: { id } })
+    })
     return NextResponse.json({ success: true })
   } catch (error) {
     const normalized = normalizePrismaError(error)

@@ -36,6 +36,7 @@ function normalizeProduct(product: {
   manufacturer: {
     id: string
     name: string
+    companyName: string | null
     website: string | null
   } | null
 }) {
@@ -44,7 +45,7 @@ function normalizeProduct(product: {
     name: product.name,
     categoryId: product.categoryId,
     manufacturerId: product.manufacturerId ?? "",
-    manufacturerName: product.manufacturer?.name ?? product.manufacturerName ?? "",
+    manufacturerName: product.manufacturer?.companyName ?? product.manufacturer?.name ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
@@ -111,6 +112,7 @@ export default async function FlooringProductsPage() {
           select: {
             id: true,
             name: true,
+            companyName: true,
             website: true,
           },
         },
@@ -131,7 +133,7 @@ export default async function FlooringProductsPage() {
       }))}
       manufacturerOptions={manufacturers.map((manufacturer) => ({
         id: manufacturer.id,
-        name: manufacturer.name,
+        name: manufacturer.companyName ?? manufacturer.name,
         website: manufacturer.website ?? "",
         phone: manufacturer.phone ?? "",
         email: manufacturer.email ?? "",

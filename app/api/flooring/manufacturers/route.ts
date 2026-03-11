@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
-import { createFlooringManufacturer, findFlooringManufacturers } from "@/lib/flooring-db-compat"
+import { buildManufacturerStorageName, createFlooringManufacturer, findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/lib/flooring-db-compat"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 
 function normalizeManufacturer(manufacturer: {
@@ -16,7 +16,7 @@ function normalizeManufacturer(manufacturer: {
 }) {
   return {
     id: manufacturer.id,
-    name: manufacturer.name,
+    name: getVisibleManufacturerAgentName(manufacturer.name, manufacturer.companyName),
     companyName: manufacturer.companyName ?? "",
     website: manufacturer.website ?? "",
     phone: manufacturer.phone ?? "",
@@ -47,9 +47,11 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
+    const companyName = parseRequiredString(body.companyName, "companyName")
+    const agentName = parseOptionalString(body.name)
     const manufacturer = await createFlooringManufacturer({
-      name: parseRequiredString(body.name, "name"),
-      companyName: parseOptionalString(body.companyName),
+      name: buildManufacturerStorageName(agentName, companyName),
+      companyName,
       website: parseOptionalString(body.website),
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),

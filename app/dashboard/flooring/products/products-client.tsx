@@ -246,6 +246,8 @@ export default function FlooringProductsClient({
   const [activeInventoryRowId, setActiveInventoryRowId] = useState<string | null>(null)
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(emptyCutLogDraft)
   const [isSavingCutLog, setIsSavingCutLog] = useState(false)
+  const [cutLogError, setCutLogError] = useState("")
+  const [cutLogMessage, setCutLogMessage] = useState("")
 
   const selectedCategory = categories.find((category) => category.id === productForm.categoryId) ?? null
   const activeInventoryRow = inventoryRows.find((row) => row.id === activeInventoryRowId) ?? null
@@ -277,6 +279,8 @@ export default function FlooringProductsClient({
 
   async function openProductInventory(product: ProductRow) {
     clearNotices()
+    setCutLogError("")
+    setCutLogMessage("")
     setActiveProduct(product)
     setActiveInventoryRowId(null)
     setCutLogDraft(emptyCutLogDraft)
@@ -310,6 +314,8 @@ export default function FlooringProductsClient({
     setInventoryRows([])
     setExpandedWarehouses([])
     setActiveInventoryRowId(null)
+    setCutLogError("")
+    setCutLogMessage("")
     setCutLogDraft(emptyCutLogDraft)
   }
 
@@ -319,6 +325,8 @@ export default function FlooringProductsClient({
 
   function openInventoryRow(rowId: string) {
     clearNotices()
+    setCutLogError("")
+    setCutLogMessage("")
     setCutLogDraft(emptyCutLogDraft)
     setActiveInventoryRowId(rowId)
   }
@@ -326,6 +334,8 @@ export default function FlooringProductsClient({
   function closeInventoryRow() {
     if (isSavingCutLog) return
     setActiveInventoryRowId(null)
+    setCutLogError("")
+    setCutLogMessage("")
     setCutLogDraft(emptyCutLogDraft)
   }
 
@@ -333,6 +343,8 @@ export default function FlooringProductsClient({
     if (!activeInventoryRow) return
 
     clearNotices()
+    setCutLogError("")
+    setCutLogMessage("")
     setIsSavingCutLog(true)
 
     try {
@@ -377,9 +389,11 @@ export default function FlooringProductsClient({
         }),
       )
       setCutLogDraft(emptyCutLogDraft)
+      setCutLogError("")
+      setCutLogMessage("Cut Saved")
       setMessage("Cut log saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to add cut log")
+      setCutLogError(saveError instanceof Error ? saveError.message : "Failed to add cut log")
     } finally {
       setIsSavingCutLog(false)
     }
@@ -994,7 +1008,9 @@ export default function FlooringProductsClient({
                       className="rounded-lg border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
                     />
                   </label>
-                  <div className="flex items-end">
+                  <div className="flex items-center justify-end gap-3">
+                    {cutLogError ? <p className="text-right text-sm text-rose-600">{cutLogError}</p> : null}
+                    {!cutLogError && cutLogMessage ? <p className="text-right text-sm text-emerald-600">{cutLogMessage}</p> : null}
                     <button
                       type="button"
                       onClick={() => void addCutLog()}

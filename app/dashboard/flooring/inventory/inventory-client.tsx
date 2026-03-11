@@ -100,6 +100,8 @@ export default function InventoryClient({ initialInventory }: { initialInventory
   const [activeRowId, setActiveRowId] = useState<string | null>(null)
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(emptyCutLogDraft)
   const [isSavingCutLog, setIsSavingCutLog] = useState(false)
+  const [cutLogError, setCutLogError] = useState("")
+  const [cutLogMessage, setCutLogMessage] = useState("")
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
@@ -112,6 +114,8 @@ export default function InventoryClient({ initialInventory }: { initialInventory
   function openRow(rowId: string) {
     setMessage("")
     setError("")
+    setCutLogError("")
+    setCutLogMessage("")
     setCutLogDraft(emptyCutLogDraft)
     setActiveRowId(rowId)
   }
@@ -119,6 +123,8 @@ export default function InventoryClient({ initialInventory }: { initialInventory
   function closeRow() {
     if (isSavingCutLog) return
     setActiveRowId(null)
+    setCutLogError("")
+    setCutLogMessage("")
     setCutLogDraft(emptyCutLogDraft)
   }
 
@@ -126,7 +132,8 @@ export default function InventoryClient({ initialInventory }: { initialInventory
     if (!activeRow) return
 
     setMessage("")
-    setError("")
+    setCutLogError("")
+    setCutLogMessage("")
     setIsSavingCutLog(true)
 
     try {
@@ -180,9 +187,11 @@ export default function InventoryClient({ initialInventory }: { initialInventory
         }),
       )
       setCutLogDraft(emptyCutLogDraft)
+      setCutLogError("")
+      setCutLogMessage("Cut Saved")
       setMessage("Cut log saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to add cut log")
+      setCutLogError(saveError instanceof Error ? saveError.message : "Failed to add cut log")
     } finally {
       setIsSavingCutLog(false)
     }
@@ -341,7 +350,9 @@ export default function InventoryClient({ initialInventory }: { initialInventory
                     className="rounded-lg border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
                   />
                 </label>
-                <div className="flex items-end">
+                <div className="flex items-center justify-end gap-3">
+                  {cutLogError ? <p className="text-right text-sm text-rose-600">{cutLogError}</p> : null}
+                  {!cutLogError && cutLogMessage ? <p className="text-right text-sm text-emerald-600">{cutLogMessage}</p> : null}
                   <button
                     type="button"
                     onClick={() => void addCutLog()}

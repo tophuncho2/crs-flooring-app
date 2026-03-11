@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto"
 import { prisma } from "@/lib/prisma"
 
+const HIDDEN_AGENT_PREFIX = "__no_agent__:"
+
 type ManufacturerWithCount = {
   id: string
   name: string
@@ -60,6 +62,24 @@ export async function findFlooringManufacturers() {
       _count: { products: row.productsCount },
     }))
   }
+}
+
+export function buildManufacturerStorageName(agentName: string | null, companyName: string | null) {
+  const trimmedAgentName = agentName?.trim() ?? ""
+  if (trimmedAgentName) return trimmedAgentName
+
+  const trimmedCompanyName = companyName?.trim() ?? ""
+  if (!trimmedCompanyName) {
+    throw new Error("companyName is required")
+  }
+
+  return `${HIDDEN_AGENT_PREFIX}${trimmedCompanyName}:${randomUUID()}`
+}
+
+export function getVisibleManufacturerAgentName(name: string, companyName: string | null) {
+  if (name.startsWith(HIDDEN_AGENT_PREFIX)) return ""
+  if (companyName && name === companyName) return ""
+  return name
 }
 
 export async function createFlooringManufacturer(data: {

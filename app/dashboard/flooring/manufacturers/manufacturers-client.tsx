@@ -124,7 +124,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
         const next = editingManufacturer
           ? prev.map((manufacturer) => (manufacturer.id === payload.manufacturer!.id ? payload.manufacturer! : manufacturer))
           : [payload.manufacturer!, ...prev]
-        return next.sort((a, b) => a.name.localeCompare(b.name))
+        return next.sort((a, b) => a.companyName.localeCompare(b.companyName))
       })
       setIsModalOpen(false)
       setMessage(editingManufacturer ? "Manufacturer updated" : "Manufacturer created")
@@ -136,7 +136,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
   }
 
   async function deleteManufacturer(manufacturer: ManufacturerRow) {
-    if (!window.confirm(`Delete ${manufacturer.name}?`)) return
+    if (!window.confirm(`Delete ${manufacturer.companyName || manufacturer.name || "this manufacturer"}?`)) return
 
     clearNotices()
     setDeletingId(manufacturer.id)
