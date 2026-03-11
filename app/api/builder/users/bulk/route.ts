@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { MASTER_EMAIL_LIST } from "@/lib/access-control"
-import { ensureMasterOnly } from "@/lib/route-auth"
+import { ensureBuilderPanelAccess } from "@/lib/route-auth"
 
 export async function POST(request: Request) {
-  const authError = await ensureMasterOnly()
+  const authError = await ensureBuilderPanelAccess()
   if (authError) return authError
 
   const body = (await request.json()) as { action?: "restrictAll" | "verifyAll" }

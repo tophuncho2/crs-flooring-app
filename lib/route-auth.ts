@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma"
 import {
   canAccessBuilderPanel,
   canBypassVerification,
-  canEditBuilderTab,
 } from "@/lib/access-control"
 import { isToolUnlocked } from "@/lib/tool-subscriptions"
 import type { ToolSlug } from "@/lib/tool-subscriptions"
@@ -104,19 +103,6 @@ export async function ensureBuilderPanelAccess() {
 
   if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
     return NextResponse.json({ error: "Account restricted" }, { status: 403 })
-  }
-
-  return null
-}
-
-export async function ensureMasterOnly() {
-  const { session, user } = await getCurrentUserRecord()
-  if (!session || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  if (!canEditBuilderTab(user.email)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   return null

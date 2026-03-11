@@ -43,17 +43,6 @@ export default async function DashboardLayout({
 
   return (
     <div className="relative min-h-screen">
-      {(toolContext.role === "BUILDER" || toolContext.role === "ADMIN") ? null : toolContext.trialEndsAt ? (
-        <div className="fixed inset-x-0 top-0 z-40 border-b border-blue-500/35 bg-blue-500/15 px-4 py-2 text-sm text-blue-200">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-            <p>
-              {toolContext.isTrialActive
-                ? `Free trial active: ${toolContext.trialDaysRemaining} days left (ends ${new Date(toolContext.trialEndsAt).toLocaleDateString()}).`
-                : `Your free trial ended. Enable tools on Billing to continue using paid modules.`}
-            </p>
-          </div>
-        </div>
-      ) : null}
       <div className="fixed inset-x-0 top-3 z-50 px-3 sm:top-6 sm:px-6">
         <HeaderControls
           email={user.email}

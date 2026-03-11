@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { canEditRole, canRestrictUser, isMasterEmail } from "@/lib/access-control"
-import { ensureMasterOnly } from "@/lib/route-auth"
+import { ensureBuilderPanelAccess } from "@/lib/route-auth"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureMasterOnly()
+  const authError = await ensureBuilderPanelAccess()
   if (authError) return authError
 
   const body = (await request.json()) as {
@@ -72,7 +72,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureMasterOnly()
+  const authError = await ensureBuilderPanelAccess()
   if (authError) return authError
 
   const { id } = await params

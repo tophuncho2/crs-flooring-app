@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import { useCallback } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { isMasterEmail } from "@/lib/access-control"
 import type { ToolSlug } from "@/lib/tool-subscriptions"
 import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
 
@@ -66,9 +65,8 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   const router = useRouter()
 
   const firstLetter = email.charAt(0).toUpperCase()
-  const isMaster = isMasterEmail(email)
   const isBuilder = role === "BUILDER"
-  const hasBuilderPanelAccess = isBuilder || isMaster
+  const hasBuilderPanelAccess = isBuilder
   const canUseTools = canUseToolsProp ?? (role === "BUILDER" || role === "ADMIN")
   const unlockedToolSet = new Set(unlockedToolSlugs)
   const canOpenTool = (slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug)

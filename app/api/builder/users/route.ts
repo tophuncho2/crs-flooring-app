@@ -9,7 +9,7 @@ export async function GET() {
   const authError = await ensureBuilderPanelAccess()
   if (authError) return authError
   const session = await getServerSession(authOptions)
-  const viewerIsMaster = Boolean(session?.user?.email && isMasterEmail(session.user.email))
+  const viewerCanManageUsers = Boolean(session?.user?.email)
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -23,7 +23,7 @@ export async function GET() {
   })
 
   return NextResponse.json({
-    viewerIsMaster,
+    viewerCanManageUsers,
     users: users.map((user) => ({
       ...user,
       createdAt: user.createdAt.toISOString(),

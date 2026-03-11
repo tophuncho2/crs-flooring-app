@@ -17,11 +17,8 @@ export function isMasterEmail(email: string): boolean {
 }
 
 export function canAccessBuilderPanel(email: string, role: Role): boolean {
-  return role === "BUILDER" || isMasterEmail(email)
-}
-
-export function canEditBuilderTab(email: string): boolean {
-  return isMasterEmail(email)
+  void email
+  return role === "BUILDER"
 }
 
 export function canBypassVerification(email: string, role: Role): boolean {

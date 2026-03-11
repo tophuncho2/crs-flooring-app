@@ -13,16 +13,6 @@ type UserRow = {
   canEditRole: boolean
 }
 
-type ToolRow = {
-  id: string
-  slug: string
-  name: string
-  description: string
-  path: string
-  monthlyPriceCents: number
-  isActive: boolean
-}
-
 type ActivityRow = {
   id: string
   userEmail: string
@@ -31,7 +21,6 @@ type ActivityRow = {
 
 type SectionState = {
   users: boolean
-  tools: boolean
   activity: boolean
 }
 
@@ -56,38 +45,29 @@ async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise
   return payload as T
 }
 
-function formatMoney(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`
-}
-
 function formatDate(value: string) {
   return new Date(value).toLocaleString()
 }
 
 export default function BuilderUsersPanel() {
   const [users, setUsers] = useState<UserRow[]>([])
-  const [tools, setTools] = useState<ToolRow[]>([])
   const [activityRows, setActivityRows] = useState<ActivityRow[]>([])
 
   const [loadingUsers, setLoadingUsers] = useState(true)
-  const [loadingTools, setLoadingTools] = useState(true)
   const [activityLoading, setActivityLoading] = useState(false)
 
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
   const [savingUserIds, setSavingUserIds] = useState<Set<string>>(new Set())
-  const [savingToolIds, setSavingToolIds] = useState<Set<string>>(new Set())
   const [isBulkUpdating, setIsBulkUpdating] = useState(false)
-  const [isRefreshingTools, setIsRefreshingTools] = useState(false)
 
-  const [viewerIsMaster, setViewerIsMaster] = useState(false)
+  const [viewerCanManageUsers, setViewerCanManageUsers] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
   const [activityError, setActivityError] = useState("")
 
   const [sectionsOpen, setSectionsOpen] = useState<SectionState>({
     users: true,
-    tools: true,
     activity: false,
   })
 
@@ -102,27 +82,13 @@ export default function BuilderUsersPanel() {
     setError("")
 
     try {
-      const payload = await apiJson<{ users: UserRow[]; viewerIsMaster: boolean }>("/api/builder/users")
+      const payload = await apiJson<{ users: UserRow[]; viewerCanManageUsers: boolean }>("/api/builder/users")
       setUsers(payload.users)
-      setViewerIsMaster(payload.viewerIsMaster)
+      setViewerCanManageUsers(payload.viewerCanManageUsers)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load users")
     } finally {
       setLoadingUsers(false)
-    }
-  }
-
-  async function loadTools() {
-    setLoadingTools(true)
-    setError("")
-
-    try {
-      const payload = await apiJson<{ tools: ToolRow[] }>("/api/builder/tools")
-      setTools(payload.tools)
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load tools")
-    } finally {
-      setLoadingTools(false)
     }
   }
 
@@ -143,7 +109,6 @@ export default function BuilderUsersPanel() {
 
   useEffect(() => {
     void loadUsers()
-    void loadTools()
   }, [])
 
   useEffect(() => {
@@ -163,7 +128,7 @@ export default function BuilderUsersPanel() {
   }, [sectionsOpen.activity, activityLoaded])
 
   async function updateUser(userId: string, next: Partial<Pick<UserRow, "role" | "isVerified">>) {
-    if (!viewerIsMaster) return
+    if (!viewerCanManageUsers) return
 
     setMessage("")
     setError("")
@@ -188,61 +153,8 @@ export default function BuilderUsersPanel() {
     }
   }
 
-  async function updateTool(toolId: string, isActive: boolean) {
-    if (!viewerIsMaster) return
-
-    setMessage("")
-    setError("")
-    setSavingToolIds((prev) => new Set(prev).add(toolId))
-
-    try {
-      const payload = await apiJson<{ tool: ToolRow }>("/api/builder/tools", {
-        method: "PATCH",
-        body: JSON.stringify({ id: toolId, isActive }),
-      })
-
-      setTools((prev) => prev.map((tool) => (tool.id === toolId ? payload.tool : tool)))
-      setMessage(`${payload.tool.name} ${payload.tool.isActive ? "enabled" : "disabled"}`)
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "Failed to update tool")
-      await loadTools()
-    } finally {
-      setSavingToolIds((prev) => {
-        const nextSet = new Set(prev)
-        nextSet.delete(toolId)
-        return nextSet
-      })
-    }
-  }
-
-  async function refreshToolsFromCatalog() {
-    if (!viewerIsMaster) return
-
-    setMessage("")
-    setError("")
-    setIsRefreshingTools(true)
-
-    try {
-      const payload = await apiJson<{ tools?: ToolRow[]; error?: string }>("/api/builder/tools", {
-        method: "POST",
-      })
-
-      if (payload.tools) {
-        setTools(payload.tools)
-        setMessage("Tool catalog refreshed for dashboard.")
-      } else {
-        await loadTools()
-      }
-    } catch (refreshError) {
-      setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh tool catalog cache")
-      await loadTools()
-    } finally {
-      setIsRefreshingTools(false)
-    }
-  }
-
   async function deleteUser(userId: string) {
-    if (!viewerIsMaster) return
+    if (!viewerCanManageUsers) return
 
     setMessage("")
     setError("")
@@ -268,7 +180,7 @@ export default function BuilderUsersPanel() {
   }
 
   async function runBulkAction(action: "restrictAll" | "verifyAll") {
-    if (!viewerIsMaster) return
+    if (!viewerCanManageUsers) return
 
     setMessage("")
     setError("")
@@ -310,11 +222,8 @@ export default function BuilderUsersPanel() {
         <div className="space-y-1 px-1">
           <h1 className="text-2xl font-bold text-blue-500">Builder Control Panel</h1>
           <p className="text-sm text-[var(--foreground)]/70">
-            Manage users, tool availability, and recent account activity.
+            Manage users and recent account activity.
           </p>
-          {!viewerIsMaster && (
-            <p className="text-xs text-amber-400">Read-only for Builder users. Master accounts can edit.</p>
-          )}
         </div>
 
         {message && (
@@ -369,7 +278,7 @@ export default function BuilderUsersPanel() {
                             <div className="flex flex-col gap-1">
                               <select
                                 value={user.role}
-                                disabled={!viewerIsMaster || !user.canEditRole || isSaving}
+                                disabled={!viewerCanManageUsers || !user.canEditRole || isSaving}
                                 onClick={(event) => event.stopPropagation()}
                                 onChange={(event) =>
                                   void updateUser(user.id, {
@@ -391,7 +300,7 @@ export default function BuilderUsersPanel() {
                           <td className="px-2 py-2">
                             <select
                               value={user.isVerified ? "verified" : "restricted"}
-                              disabled={!viewerIsMaster || !user.canRestrict || isSaving}
+                              disabled={!viewerCanManageUsers || !user.canRestrict || isSaving}
                               onClick={(event) => event.stopPropagation()}
                               onChange={(event) =>
                                 void updateUser(user.id, {
@@ -424,7 +333,7 @@ export default function BuilderUsersPanel() {
             <div className="flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                disabled={isBulkUpdating || !viewerIsMaster}
+                disabled={isBulkUpdating || !viewerCanManageUsers}
                 onClick={() => runBulkAction("restrictAll")}
                 className="rounded-lg border border-rose-500/40 px-3 py-2 text-xs text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
               >
@@ -432,7 +341,7 @@ export default function BuilderUsersPanel() {
               </button>
               <button
                 type="button"
-                disabled={isBulkUpdating || !viewerIsMaster}
+                disabled={isBulkUpdating || !viewerCanManageUsers}
                 onClick={() => runBulkAction("verifyAll")}
                 className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs text-emerald-700 transition hover:bg-emerald-500/10 disabled:opacity-60"
               >
@@ -440,88 +349,6 @@ export default function BuilderUsersPanel() {
               </button>
             </div>
           </div>
-        </section>
-
-        <section className="border border-[var(--panel-border)] bg-[var(--panel-background)]">
-          {renderTableSectionHeader("Tools", "tools")}
-          {sectionsOpen.tools ? (
-            <>
-              <div className="px-3 py-2 text-xs text-[var(--foreground)]/75 border-t border-[var(--panel-border)]">
-                Toggle availability to control what tools appear in the dashboard menu and billable catalog.
-              </div>
-              <div className="overflow-x-auto border-t border-[var(--panel-border)]">
-                <table className="w-full text-sm">
-                  <thead className="bg-[var(--panel-hover)] text-left">
-                    <tr>
-                      <th className="px-2 py-2">Tool</th>
-                      <th className="px-2 py-2">Description</th>
-                      <th className="px-2 py-2">Price</th>
-                      <th className="px-2 py-2">Path</th>
-                      <th className="px-2 py-2">Active</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadingTools ? (
-                      <tr>
-                        <td colSpan={5} className="px-2 py-6 text-center text-[var(--foreground)]/70">
-                          Loading tools...
-                        </td>
-                      </tr>
-                    ) : tools.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-2 py-6 text-center text-[var(--foreground)]/70">
-                          No tools found.
-                        </td>
-                      </tr>
-                    ) : (
-                      tools.map((tool) => {
-                        const isSaving = savingToolIds.has(tool.id)
-
-                        return (
-                          <tr key={tool.id} className="border-t border-[var(--panel-border)]">
-                            <td className="px-2 py-2">
-                              <div className="font-medium">{tool.name}</div>
-                              <div className="text-xs text-[var(--foreground)]/70">{tool.slug}</div>
-                            </td>
-                            <td className="px-2 py-2 text-[var(--foreground)]/85">{tool.description}</td>
-                            <td className="px-2 py-2 text-[var(--foreground)]/85">{formatMoney(tool.monthlyPriceCents)}</td>
-                            <td className="px-2 py-2 text-[var(--foreground)]/80">{tool.path}</td>
-                            <td className="px-2 py-2">
-                              <label className="inline-flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  aria-label={`Toggle ${tool.name} availability`}
-                                  checked={tool.isActive}
-                                  disabled={!viewerIsMaster || isSaving}
-                                  onChange={(event) => void updateTool(tool.id, event.target.checked)}
-                                  className="size-4"
-                                />
-                                <span className={`text-xs ${tool.isActive ? "text-emerald-500" : "text-rose-500"}`}>
-                                  {tool.isActive ? "Active" : "Inactive"}
-                                </span>
-                              </label>
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="border-t border-[var(--panel-border)] px-2 py-2">
-                <div className="flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={!viewerIsMaster || isRefreshingTools || savingToolIds.size > 0}
-                    onClick={() => void refreshToolsFromCatalog()}
-                    className="rounded-lg border border-blue-500/40 px-3 py-2 text-xs text-blue-500 transition hover:bg-blue-500/10 disabled:opacity-60"
-                  >
-                    {isRefreshingTools ? "Refreshing..." : "Refresh Tool Cache"}
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : null}
         </section>
 
         <section className="border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -618,7 +445,7 @@ export default function BuilderUsersPanel() {
               </p>
             </div>
 
-            {viewerIsMaster && !selectedUser.isMaster && (
+            {viewerCanManageUsers && !selectedUser.isMaster && (
               <div className="mt-4 flex items-center justify-end">
                 <button
                   type="button"

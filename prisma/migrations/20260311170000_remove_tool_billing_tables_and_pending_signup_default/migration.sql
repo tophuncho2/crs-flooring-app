@@ -1,0 +1,4 @@
+ALTER TABLE "User" ALTER COLUMN "isVerified" SET DEFAULT false;
+
+DROP TABLE IF EXISTS "UserToolAccess";
+DROP TABLE IF EXISTS "Tool";
