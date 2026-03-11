@@ -35,14 +35,25 @@ type WarehouseOption = {
 type ProductOption = {
   id: string
   name: string
+  sendUnit: string
+}
+
+type InventoryOption = {
+  id: string
+  name: string
+  productId: string
 }
 
 type WorkOrderItem = {
   id: string
   productId: string
   productName: string
+  sendUnit: string
   quantity: string
   notes: string
+  linkedInventoryId: string
+  linkedInventoryLabel: string
+  changeOrderStatus: "SUFFICIENT" | "SHORTAGE"
 }
 
 type WorkOrderDetail = {
@@ -102,11 +113,13 @@ function displayAddress(address: string, custom: string) {
 export default function WorkOrderDetailClient({
   workOrder: initial,
   productOptions,
+  inventoryOptions,
   propertyOptions,
   warehouseOptions,
 }: {
   workOrder: WorkOrderDetail
   productOptions: ProductOption[]
+  inventoryOptions: InventoryOption[]
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
 }) {
@@ -133,6 +146,8 @@ export default function WorkOrderDetailClient({
   const [isSaving, setIsSaving] = useState(false)
   const [isAddingItem, setIsAddingItem] = useState(false)
   const [isDeletingItemId, setIsDeletingItemId] = useState<string | null>(null)
+
+  void inventoryOptions
 
   function setDraftField(field: keyof WorkOrderDraft, value: string) {
     setDraft((prev) => ({ ...prev, [field]: value }))
