@@ -30,9 +30,10 @@ type WarehouseOption = {
   name: string
 }
 
-type PadProductOption = {
+type ProductOption = {
   id: string
   label: string
+  sendUnit: string
 }
 
 function buildPadLabel(product: {
@@ -63,7 +64,7 @@ export default async function TemplatesPage() {
     redirect("/dashboard")
   }
 
-  const [templates, properties, warehouses, padProducts] = await Promise.all([
+  const [templates, properties, warehouses, padProducts, products] = await Promise.all([
     prisma.flooringTemplate.findMany({
       include: {
         property: {
@@ -106,6 +107,18 @@ export default async function TemplatesPage() {
         color: true,
       },
     }),
+    prisma.flooringProduct.findMany({
+      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        manufacturerName: true,
+        style: true,
+        color: true,
+        category: {
+          select: { sendUnit: true },
+        },
+      },
+    }),
   ])
 
   const initialTemplates: TemplateRow[] = templates.map((template) => ({
@@ -131,6 +144,11 @@ export default async function TemplatesPage() {
       padProductOptions={padProducts.map((product) => ({
         id: product.id,
         label: buildPadLabel(product),
+      }))}
+      productOptions={products.map((product): ProductOption => ({
+        id: product.id,
+        label: [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product",
+        sendUnit: product.category.sendUnit ?? "",
       }))}
     />
   )

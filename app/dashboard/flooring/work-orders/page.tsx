@@ -16,6 +16,12 @@ type WarehouseOption = {
   name: string
 }
 
+type ProductOption = {
+  id: string
+  name: string
+  sendUnit: string
+}
+
 type WorkOrderRow = {
   id: string
   propertyId: string
@@ -70,7 +76,7 @@ export default async function WorkOrdersPage() {
     redirect("/dashboard")
   }
 
-  const [workOrders, properties, warehouses] = await Promise.all([
+  const [workOrders, properties, warehouses, products] = await Promise.all([
     prisma.flooringWorkOrder.findMany({
       include: {
         property: {
@@ -112,6 +118,16 @@ export default async function WorkOrdersPage() {
     prisma.flooringWarehouse.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
+    }),
+    prisma.flooringProduct.findMany({
+      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        manufacturerName: true,
+        style: true,
+        color: true,
+        category: { select: { sendUnit: true } },
+      },
     }),
   ])
 
@@ -159,6 +175,11 @@ export default async function WorkOrdersPage() {
       initialWorkOrders={initialWorkOrders}
       propertyOptions={propertyOptions}
       warehouseOptions={warehouses as WarehouseOption[]}
+      productOptions={products.map((product): ProductOption => ({
+        id: product.id,
+        name: [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product",
+        sendUnit: product.category.sendUnit ?? "",
+      }))}
     />
   )
 }
