@@ -282,7 +282,7 @@ export default function ManagementCompaniesClient({
           </p>
         )}
 
-        <div className="mt-4 overflow-x-auto border-y border-[var(--panel-border)]">
+        <div className="mt-6 overflow-x-auto border-y border-[var(--panel-border)]">
           <table className="w-full min-w-[1320px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>

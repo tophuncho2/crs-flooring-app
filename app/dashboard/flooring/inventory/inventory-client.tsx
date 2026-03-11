@@ -194,7 +194,7 @@ export default function InventoryClient({
         <p className="mt-1 text-sm text-[var(--foreground)]/70">Manage flooring stock by product, lot, and location.</p>
         {message ? <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
         {error ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
-        <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+        <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
           <table className="min-w-full text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>

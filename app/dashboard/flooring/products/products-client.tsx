@@ -85,19 +85,23 @@ const emptyProductForm: ProductForm = {
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-6xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-          >
-            <X size={18} />
-          </button>
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4">
+      <div className="flex min-h-full items-start justify-center py-4 sm:items-center">
+        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">
+          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="overflow-y-auto px-5 py-4">
+            {children}
+          </div>
         </div>
-        {children}
       </div>
     </div>
   )
@@ -316,7 +320,7 @@ export default function FlooringProductsClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Flooring Products</h1>
             <p className="text-sm text-[var(--foreground)]/70">
@@ -339,7 +343,7 @@ export default function FlooringProductsClient({
         {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
 
         <section className="mt-6">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Products</h2>
             <span className="text-xs text-[var(--foreground)]/60">{products.length} total</span>
           </div>

@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { X } from "lucide-react"
 
 type WorkOrderRow = {
   id: string
@@ -100,6 +101,35 @@ const defaultDraft: DraftWorkOrder = {
   workOrderImageUrl: "",
 }
 
+function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-5 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function FormField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-[var(--foreground)]/80">{label}</span>
+      {children}
+    </label>
+  )
+}
+
 export default function WorkOrdersClient({
   initialWorkOrders,
   propertyOptions,
@@ -113,7 +143,7 @@ export default function WorkOrdersClient({
   const [workOrders, setWorkOrders] = useState<WorkOrderRow[]>(initialWorkOrders)
   const [drafts, setDrafts] = useState<Record<string, DraftWorkOrder>>({})
   const [newDraft, setNewDraft] = useState<DraftWorkOrder>(defaultDraft)
-  const [showNewRow, setShowNewRow] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSaving, setIsSaving] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -154,6 +184,18 @@ export default function WorkOrdersClient({
 
   function setNewDraftField(field: keyof DraftWorkOrder, value: string) {
     setNewDraft((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function openCreateModal() {
+    setMessage("")
+    setError("")
+    setNewDraft(defaultDraft)
+    setIsCreateModalOpen(true)
+  }
+
+  function closeCreateModal() {
+    if (isSavingNew) return
+    setIsCreateModalOpen(false)
   }
 
   function formatRow(row: WorkOrderRow, index: number) {
@@ -238,7 +280,7 @@ export default function WorkOrdersClient({
         },
         ...prev,
       ])
-      setShowNewRow(false)
+      setIsCreateModalOpen(false)
       setNewDraft(defaultDraft)
       setMessage("Work order created")
     } catch (createError) {
@@ -287,7 +329,17 @@ export default function WorkOrdersClient({
           {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
           {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
 
-          <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+          <div className="mt-4 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+            >
+              Add Work Order
+            </button>
+          </div>
+
+          <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
             <table className="w-full min-w-[1280px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
@@ -311,145 +363,9 @@ export default function WorkOrdersClient({
                 </tr>
               </thead>
               <tbody>
-                {showNewRow && (
-                  <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                    <td className="px-3 py-2 text-xs text-[var(--foreground)]/50">(new)</td>
-                    <td className="px-3 py-2 text-xs text-[var(--foreground)]/50">-</td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={newDraft.status}
-                        onChange={(event) => setNewDraftField("status", event.target.value)}
-                        className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        {statusOptions.map((value) => (
-                          <option key={value} value={value}>
-                            {statusLabel(value)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={newDraft.warehouseId}
-                        onChange={(event) => setNewDraftField("warehouseId", event.target.value)}
-                        className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        <option value="">Select Warehouse</option>
-                        {warehouseOptions.map((warehouse) => (
-                          <option key={warehouse.id} value={warehouse.id}>
-                            {warehouse.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={newDraft.propertyId}
-                        onChange={(event) => setNewDraftField("propertyId", event.target.value)}
-                        className="w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        <option value="">Select Property</option>
-                        {propertyOptions.map((property) => (
-                          <option key={property.id} value={property.id}>
-                            {property.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">{buildWorkOrderAddress(propertyLookup.get(newDraft.propertyId), newDraft.customAddress)}</td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={newDraft.customAddress}
-                        onChange={(event) => setNewDraftField("customAddress", event.target.value)}
-                        placeholder="Custom address"
-                        className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="date"
-                        value={newDraft.date}
-                        onChange={(event) => setNewDraftField("date", event.target.value)}
-                        className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-1">
-                        <input
-                          value={newDraft.unitText}
-                          onChange={(event) => setNewDraftField("unitText", event.target.value)}
-                          placeholder="Unit"
-                          className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                        />
-                        <input
-                          value={newDraft.unitNumber}
-                          onChange={(event) => setNewDraftField("unitNumber", event.target.value)}
-                          placeholder="#"
-                          className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                        />
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={newDraft.unitType}
-                        onChange={(event) => setNewDraftField("unitType", event.target.value)}
-                        className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={newDraft.vacancy}
-                        onChange={(event) => setNewDraftField("vacancy", event.target.value)}
-                        className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        <option value="">Select</option>
-                        {vacancyOptions.map((value) => (
-                          <option key={value} value={value}>
-                            {value}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <textarea
-                        value={newDraft.instructions}
-                        onChange={(event) => setNewDraftField("instructions", event.target.value)}
-                        className="h-16 w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <textarea
-                        value={newDraft.notes}
-                        onChange={(event) => setNewDraftField("notes", event.target.value)}
-                        className="h-16 w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={newDraft.workOrderImageUrl}
-                        onChange={(event) => setNewDraftField("workOrderImageUrl", event.target.value)}
-                        className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">0</td>
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => void createWorkOrder()}
-                        disabled={isSavingNew}
-                        className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                      >
-                        {isSavingNew ? "Adding..." : "Add"}
-                      </button>
-                    </td>
-                    <td className="px-3 py-2">-</td>
-                  </tr>
-                )}
-
                 {workOrders.map((row, index) => {
                   const line = formatRow(row, index)
                   const draft = getDraft(row.id)
-                  const selectedProperty = propertyLookup.get(draft.propertyId)
 
                   return (
                     <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
@@ -602,7 +518,7 @@ export default function WorkOrdersClient({
                   )
                 })}
 
-                {workOrders.length === 0 && !showNewRow && (
+                {workOrders.length === 0 && (
                   <tr>
                     <td colSpan={17} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                       No work orders yet.
@@ -614,21 +530,201 @@ export default function WorkOrdersClient({
           </div>
 
           <div className="mt-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setShowNewRow(true)}
-              disabled={showNewRow}
-              className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
-            >
-              Add Row
-            </button>
-
             <Link href="/dashboard/flooring" className="text-sm text-[var(--foreground)]/70 hover:text-[var(--foreground)]">
               Back to flooring
             </Link>
           </div>
         </section>
       </div>
+
+      {isCreateModalOpen && (
+        <ModalShell title="New Work Order" onClose={closeCreateModal}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <FormField label="Property">
+                <select
+                  value={newDraft.propertyId}
+                  onChange={(event) => setNewDraftField("propertyId", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                >
+                  <option value="">Select Property</option>
+                  {propertyOptions.map((property) => (
+                    <option key={property.id} value={property.id}>
+                      {property.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Warehouse">
+                <select
+                  value={newDraft.warehouseId}
+                  onChange={(event) => setNewDraftField("warehouseId", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                >
+                  <option value="">Select Warehouse</option>
+                  {warehouseOptions.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Status">
+                <select
+                  value={newDraft.status}
+                  onChange={(event) => setNewDraftField("status", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                >
+                  {statusOptions.map((value) => (
+                    <option key={value} value={value}>
+                      {statusLabel(value)}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Vacancy">
+                <select
+                  value={newDraft.vacancy}
+                  onChange={(event) => setNewDraftField("vacancy", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                >
+                  <option value="">Select</option>
+                  {vacancyOptions.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Address">
+                <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
+                  {buildWorkOrderAddress(propertyLookup.get(newDraft.propertyId), newDraft.customAddress) || "Select a property or enter a custom address"}
+                </div>
+              </FormField>
+
+              <FormField label="Custom Address">
+                <input
+                  value={newDraft.customAddress}
+                  onChange={(event) => setNewDraftField("customAddress", event.target.value)}
+                  placeholder="Custom address"
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+
+              <FormField label="Date">
+                <input
+                  type="date"
+                  value={newDraft.date}
+                  onChange={(event) => setNewDraftField("date", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+
+              <FormField label="Unit Type">
+                <input
+                  value={newDraft.unitType}
+                  onChange={(event) => setNewDraftField("unitType", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+
+              <FormField label="Unit Label">
+                <input
+                  value={newDraft.unitText}
+                  onChange={(event) => setNewDraftField("unitText", event.target.value)}
+                  placeholder="Unit"
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+
+              <FormField label="Unit Number">
+                <input
+                  value={newDraft.unitNumber}
+                  onChange={(event) => setNewDraftField("unitNumber", event.target.value)}
+                  placeholder="#"
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+
+              <FormField label="Image URL">
+                <input
+                  value={newDraft.workOrderImageUrl}
+                  onChange={(event) => setNewDraftField("workOrderImageUrl", event.target.value)}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <FormField label="Instructions">
+                <textarea
+                  value={newDraft.instructions}
+                  onChange={(event) => setNewDraftField("instructions", event.target.value)}
+                  className="h-28 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+
+              <FormField label="Notes">
+                <textarea
+                  value={newDraft.notes}
+                  onChange={(event) => setNewDraftField("notes", event.target.value)}
+                  className="h-28 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold">Work Order Items</h3>
+                <p className="text-sm text-[var(--foreground)]/70">Pending setup</p>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-[var(--panel-border)]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[var(--panel-hover)] text-left">
+                    <tr>
+                      <th className="px-3 py-2">Product</th>
+                      <th className="px-3 py-2">Description</th>
+                      <th className="px-3 py-2">Qty</th>
+                      <th className="px-3 py-2">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-[var(--panel-border)]">
+                      <td colSpan={4} className="px-3 py-6 text-center text-[var(--foreground)]/70">
+                        Work order items are pending setup.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeCreateModal}
+                disabled={isSavingNew}
+                className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void createWorkOrder()}
+                disabled={isSavingNew}
+                className="rounded border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm text-blue-600 hover:bg-blue-500/20 disabled:opacity-60"
+              >
+                {isSavingNew ? "Creating..." : "Create Work Order"}
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
     </div>
   )
 }

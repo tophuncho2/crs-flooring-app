@@ -221,7 +221,7 @@ export default function TemplatesClient({
         {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
         {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
 
-        <div className="mt-4 overflow-x-auto border-y border-[var(--panel-border)]">
+        <div className="mt-6 overflow-x-auto border-y border-[var(--panel-border)]">
           <table className="w-full min-w-[1180px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>

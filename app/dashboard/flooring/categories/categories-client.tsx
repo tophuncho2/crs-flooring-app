@@ -153,7 +153,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Categories</h1>
             <p className="text-sm text-[var(--foreground)]/70">Manage flooring product categories and units.</p>
@@ -168,7 +168,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
         {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
 
         <section className="mt-6">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Categories</h2>
             <span className="text-xs text-[var(--foreground)]/60">{categories.length} total</span>
           </div>
