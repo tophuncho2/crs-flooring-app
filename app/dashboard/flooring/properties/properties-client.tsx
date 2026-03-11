@@ -1,7 +1,9 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
-import { Plus, Search, X } from "lucide-react"
+import { type ReactNode, useState } from "react"
+import { Plus, X } from "lucide-react"
+import TableControlsBar from "../shared/table-controls-bar"
+import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyOption = {
   id: string
@@ -224,47 +226,25 @@ export default function PropertiesClient({
   const [isSavingItem, setIsSavingItem] = useState(false)
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isGroupedByManagementCompany, setIsGroupedByManagementCompany] = useState(false)
-  const [isAscendingSort, setIsAscendingSort] = useState(true)
-
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
-  const filteredProperties = useMemo(
-    () =>
-      properties.filter((property) => {
-        if (!normalizedSearchQuery) return true
-        const managementCompanyName = property.managementCompany?.name ?? "No management company"
-        return (
-          property.name.toLowerCase().includes(normalizedSearchQuery) ||
-          managementCompanyName.toLowerCase().includes(normalizedSearchQuery)
-        )
-      }),
-    [properties, normalizedSearchQuery],
-  )
-  const groupedProperties = useMemo(() => {
-    const sortedProperties = [...filteredProperties].sort((a, b) => {
-      const nameCompare = a.name.localeCompare(b.name)
-      return isAscendingSort ? nameCompare : -nameCompare
-    })
-
-    const groups = new Map<string, PropertyRow[]>()
-    for (const property of sortedProperties) {
-      const key = property.managementCompany?.name ?? "No management company"
-      const existing = groups.get(key) ?? []
-      existing.push(property)
-      groups.set(key, existing)
-    }
-
-    return Array.from(groups.entries()).sort((a, b) => (isAscendingSort ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])))
-  }, [filteredProperties, isAscendingSort])
-  const sortedProperties = useMemo(
-    () =>
-      [...filteredProperties].sort((a, b) => {
-        const nameCompare = a.name.localeCompare(b.name)
-        return isAscendingSort ? nameCompare : -nameCompare
-      }),
-    [filteredProperties, isAscendingSort],
-  )
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    filteredRows: filteredProperties,
+    sortedRows: sortedProperties,
+    groupedRows: groupedProperties,
+  } = useTableControls({
+    rows: properties,
+    searchFields: [
+      { key: "name", getValue: (row) => row.name },
+      { key: "managementCompany", getValue: (row) => row.managementCompany?.name ?? "No management company" },
+    ],
+    sortField: (row) => row.name,
+    groupFields: [{ key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompany?.name ?? "No management company" }],
+  })
 
   function getDraft(id: string): DraftProperty {
     if (drafts[id]) {
@@ -714,40 +694,15 @@ export default function PropertiesClient({
               Manage property records for flooring work orders, including full address formulas and management links.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="flex items-center gap-2 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 text-sm">
-              <Search size={16} className="text-[var(--foreground)]/65" />
-              <input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search property or company"
-                className="w-48 bg-transparent outline-none placeholder:text-[var(--foreground)]/45"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsGroupedByManagementCompany((prev) => !prev)}
-              className={[
-                "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
-                isGroupedByManagementCompany
-                  ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
-                  : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
-              ].join(" ")}
-            >
-              G
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsAscendingSort((prev) => !prev)}
-              className={[
-                "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
-                isAscendingSort
-                  ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
-                  : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
-              ].join(" ")}
-            >
-              {isAscendingSort ? "A-Z" : "Z-A"}
-            </button>
+          <TableControlsBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search property or company"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+            isGroupingEnabled={isGroupingEnabled}
+            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+          >
             <button
               type="button"
               onClick={() => {
@@ -761,7 +716,7 @@ export default function PropertiesClient({
               <Plus size={16} />
               Property
             </button>
-          </div>
+          </TableControlsBar>
         </div>
 
         {!isCreateModalOpen && !selectedProperty && !activeTemplate && message ? (
@@ -794,7 +749,7 @@ export default function PropertiesClient({
               </tr>
             </thead>
             <tbody>
-              {(isGroupedByManagementCompany
+              {(isGroupingEnabled
                 ? groupedProperties.flatMap(([groupName, groupRows]) => [
                     { type: "group" as const, groupName },
                     ...groupRows.map((row) => ({ type: "row" as const, row })),

@@ -1,7 +1,9 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
-import { Plus, Search, X } from "lucide-react"
+import { type ReactNode, useState } from "react"
+import { Plus, X } from "lucide-react"
+import TableControlsBar from "../shared/table-controls-bar"
+import { useTableControls } from "../shared/use-table-controls"
 
 type TemplateRow = {
   id: string
@@ -144,46 +146,25 @@ export default function TemplatesClient({
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [propertySearch, setPropertySearch] = useState("")
-  const [isGroupedByProperty, setIsGroupedByProperty] = useState(true)
-  const [isAscendingSort, setIsAscendingSort] = useState(true)
 
   const activeTemplate = templates.find((template) => template.id === activeTemplateId) ?? null
-  const normalizedPropertySearch = propertySearch.trim().toLowerCase()
-  const filteredTemplates = useMemo(
-    () =>
-      templates.filter((template) =>
-        normalizedPropertySearch ? template.propertyName.toLowerCase().includes(normalizedPropertySearch) : true,
-      ),
-    [templates, normalizedPropertySearch],
-  )
-  const groupedTemplates = useMemo(() => {
-    const sortedTemplates = [...filteredTemplates].sort((a, b) => {
-      const propertyCompare = a.propertyName.localeCompare(b.propertyName)
-      if (propertyCompare !== 0) return isAscendingSort ? propertyCompare : -propertyCompare
-      const tagCompare = a.templateTag.localeCompare(b.templateTag)
-      return isAscendingSort ? tagCompare : -tagCompare
-    })
-
-    const groups = new Map<string, TemplateRow[]>()
-    for (const template of sortedTemplates) {
-      const existing = groups.get(template.propertyName) ?? []
-      existing.push(template)
-      groups.set(template.propertyName, existing)
-    }
-
-    return Array.from(groups.entries()).sort((a, b) => (isAscendingSort ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])))
-  }, [filteredTemplates, isAscendingSort])
-  const sortedTemplates = useMemo(
-    () =>
-      [...filteredTemplates].sort((a, b) => {
-        const propertyCompare = a.propertyName.localeCompare(b.propertyName)
-        if (propertyCompare !== 0) return isAscendingSort ? propertyCompare : -propertyCompare
-        const tagCompare = a.templateTag.localeCompare(b.templateTag)
-        return isAscendingSort ? tagCompare : -tagCompare
-      }),
-    [filteredTemplates, isAscendingSort],
-  )
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    filteredRows: filteredTemplates,
+    sortedRows: sortedTemplates,
+    groupedRows: groupedTemplates,
+  } = useTableControls({
+    rows: templates,
+    searchFields: [{ key: "propertyName", getValue: (row) => row.propertyName }],
+    sortField: (row) => `${row.propertyName} ${row.templateTag}`,
+    groupFields: [{ key: "propertyName", label: "Property", getValue: (row) => row.propertyName }],
+    defaultGrouped: true,
+  })
 
   function getDraft(id: string): DraftTemplate {
     if (drafts[id]) return drafts[id]
@@ -539,40 +520,15 @@ export default function TemplatesClient({
               Manage flooring templates by property, warehouse, instructions, pad type, and notes.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="flex items-center gap-2 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 text-sm">
-              <Search size={16} className="text-[var(--foreground)]/65" />
-              <input
-                value={propertySearch}
-                onChange={(event) => setPropertySearch(event.target.value)}
-                placeholder="Search property"
-                className="w-40 bg-transparent outline-none placeholder:text-[var(--foreground)]/45"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsGroupedByProperty((prev) => !prev)}
-              className={[
-                "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
-                isGroupedByProperty
-                  ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
-                  : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
-              ].join(" ")}
-            >
-              G
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsAscendingSort((prev) => !prev)}
-              className={[
-                "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
-                isAscendingSort
-                  ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
-                  : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
-              ].join(" ")}
-            >
-              {isAscendingSort ? "A-Z" : "Z-A"}
-            </button>
+          <TableControlsBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search property"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+            isGroupingEnabled={isGroupingEnabled}
+            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+          >
             <button
               type="button"
               onClick={openCreateTemplate}
@@ -581,7 +537,7 @@ export default function TemplatesClient({
               <Plus size={16} />
               Template
             </button>
-          </div>
+          </TableControlsBar>
         </div>
 
         {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
@@ -607,7 +563,7 @@ export default function TemplatesClient({
               </tr>
             </thead>
             <tbody>
-              {(isGroupedByProperty
+              {(isGroupingEnabled
                 ? groupedTemplates.flatMap(([propertyName, groupRows]) => [
                     { type: "group" as const, propertyName },
                     ...groupRows.map((row) => ({ type: "row" as const, row })),

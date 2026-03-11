@@ -2,9 +2,12 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
+import TableControlsBar from "../shared/table-controls-bar"
+import { useTableControls } from "../shared/use-table-controls"
 
 type WorkOrderRow = {
   id: string
+  workOrderNumber: number
   propertyId: string
   propertyName: string
   propertyAddress: string
@@ -123,6 +126,10 @@ function buildWorkOrderAddress(property: PropertyOption | undefined, customAddre
   return property?.address ?? ""
 }
 
+function workOrderDisplayNumber(workOrderNumber: number) {
+  return `WO-${String(workOrderNumber).padStart(4, "0")}`
+}
+
 const defaultDraft: DraftWorkOrder = {
   propertyId: "",
   warehouseId: "",
@@ -207,6 +214,31 @@ export default function WorkOrdersClient({
 
   const propertyLookup = useMemo(() => new Map(propertyOptions.map((property) => [property.id, property])), [propertyOptions])
   const activeWorkOrder = workOrders.find((row) => row.id === activeWorkOrderId) ?? null
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKey,
+    setGroupByKey,
+    groupFields,
+    filteredRows: filteredWorkOrders,
+    sortedRows: sortedWorkOrders,
+    groupedRows: groupedWorkOrders,
+  } = useTableControls({
+    rows: workOrders,
+    searchFields: [{ key: "property", getValue: (row) => row.propertyName }],
+    sortField: (row) => String(row.workOrderNumber),
+    groupFields: [
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
+      { key: "property", label: "Property", getValue: (row) => row.propertyName },
+      { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date") },
+      { key: "status", label: "Status", getValue: (row) => row.statusLabel },
+    ],
+    defaultGroupKey: "warehouse",
+  })
 
   function getDraft(id: string): DraftWorkOrder {
     const row = workOrders.find((order) => order.id === id)
@@ -239,9 +271,9 @@ export default function WorkOrdersClient({
     setNewDraft((prev) => ({ ...prev, [field]: value }))
   }
 
-  function formatRow(row: WorkOrderRow, index: number) {
+  function formatRow(row: WorkOrderRow) {
     return {
-      displayOrder: `WO-${String(index + 1).padStart(4, "0")}`,
+      displayOrder: workOrderDisplayNumber(row.workOrderNumber),
       displayAddress: buildWorkOrderAddress(propertyLookup.get(row.propertyId), row.customAddress),
     }
   }
@@ -325,7 +357,7 @@ export default function WorkOrdersClient({
 
     try {
       const savedWorkOrder = await persistWorkOrder(row.id, getDraft(row.id))
-      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? savedWorkOrder : item)))
+      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? { ...savedWorkOrder, workOrderNumber: item.workOrderNumber } : item)))
       setDrafts((prev) => {
         const next = { ...prev }
         delete next[row.id]
@@ -348,7 +380,9 @@ export default function WorkOrdersClient({
 
     try {
       const savedWorkOrder = await persistWorkOrder(activeWorkOrder.id, activeWorkOrderDraft)
-      setWorkOrders((prev) => prev.map((item) => (item.id === activeWorkOrder.id ? savedWorkOrder : item)))
+      setWorkOrders((prev) =>
+        prev.map((item) => (item.id === activeWorkOrder.id ? { ...savedWorkOrder, workOrderNumber: item.workOrderNumber } : item)),
+      )
       setActiveWorkOrderDraft({
         propertyId: savedWorkOrder.propertyId,
         warehouseId: savedWorkOrder.warehouseId,
@@ -399,15 +433,19 @@ export default function WorkOrdersClient({
       const createdWorkOrder = payload.workOrder
       const property = propertyLookup.get(createdWorkOrder.propertyId)
 
-      setWorkOrders((prev) => [
-        {
-          ...createdWorkOrder,
-          propertyName: property?.name ?? createdWorkOrder.propertyName,
-          propertyAddress: buildWorkOrderAddress(property, createdWorkOrder.customAddress),
-          warehouseName: warehouseOptions.find((item) => item.id === createdWorkOrder.warehouseId)?.name ?? "",
-        },
-        ...prev,
-      ])
+      setWorkOrders((prev) => {
+        const nextWorkOrderNumber = prev.reduce((maxValue, item) => Math.max(maxValue, item.workOrderNumber), 0) + 1
+        return [
+          {
+            ...createdWorkOrder,
+            workOrderNumber: nextWorkOrderNumber,
+            propertyName: property?.name ?? createdWorkOrder.propertyName,
+            propertyAddress: buildWorkOrderAddress(property, createdWorkOrder.customAddress),
+            warehouseName: warehouseOptions.find((item) => item.id === createdWorkOrder.warehouseId)?.name ?? "",
+          },
+          ...prev,
+        ]
+      })
       setIsCreateModalOpen(false)
       setNewDraft(defaultDraft)
       setMessage("Work order created")
@@ -449,6 +487,91 @@ export default function WorkOrdersClient({
     } finally {
       setDeletingId(null)
     }
+  }
+
+  function renderWorkOrderRow(row: WorkOrderRow) {
+    const line = formatRow(row)
+    const draft = getDraft(row.id)
+
+    return (
+      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+        <td className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>
+        <td className="px-3 py-2">
+          <button
+            type="button"
+            onClick={() => void openWorkOrder(row)}
+            className="rounded border border-[var(--panel-border)] px-2 py-1 text-xs hover:bg-[var(--panel-hover)]"
+          >
+            Open
+          </button>
+        </td>
+        <td className="px-3 py-2">
+          <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
+            {statusOptions.map((value) => (
+              <option key={value} value={value}>{statusLabel(value)}</option>
+            ))}
+          </select>
+        </td>
+        <td className="px-3 py-2">
+          <select value={draft.warehouseId} onChange={(event) => setDraftField(row.id, "warehouseId", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+            <option value="">No warehouse</option>
+            {warehouseOptions.map((warehouse) => (
+              <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+            ))}
+          </select>
+        </td>
+        <td className="px-3 py-2">
+          <select value={draft.propertyId} onChange={(event) => setDraftField(row.id, "propertyId", event.target.value)} className="w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+            <option value="">Select Property</option>
+            {propertyOptions.map((property) => (
+              <option key={property.id} value={property.id}>{property.name}</option>
+            ))}
+          </select>
+        </td>
+        <td className="px-3 py-2">{line.displayAddress}</td>
+        <td className="px-3 py-2"><input value={draft.customAddress} onChange={(event) => setDraftField(row.id, "customAddress", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+        <td className="px-3 py-2"><input type="date" value={draft.date} onChange={(event) => setDraftField(row.id, "date", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+        <td className="px-3 py-2">
+          <div className="flex gap-1">
+            <input value={draft.unitText} onChange={(event) => setDraftField(row.id, "unitText", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            <input value={draft.unitNumber} onChange={(event) => setDraftField(row.id, "unitNumber", event.target.value)} className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+          </div>
+        </td>
+        <td className="px-3 py-2"><input value={draft.unitType} onChange={(event) => setDraftField(row.id, "unitType", event.target.value)} className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+        <td className="px-3 py-2">
+          <select value={draft.vacancy} onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)} className={`w-28 rounded border px-2 py-1 ${vacancyFieldClass(draft.vacancy)}`}>
+            <option value="">Select</option>
+            {vacancyOptions.map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
+          </select>
+        </td>
+        <td className="px-3 py-2"><textarea value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+        <td className="px-3 py-2"><textarea value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+        <td className="px-3 py-2"><input value={draft.workOrderImageUrl} onChange={(event) => setDraftField(row.id, "workOrderImageUrl", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+        <td className="px-3 py-2">{row.itemsCount}</td>
+        <td className="px-3 py-2">
+          <button
+            type="button"
+            onClick={() => void saveWorkOrder(row)}
+            disabled={isSaving === row.id}
+            className="rounded border border-blue-500/50 px-3 py-1 text-xs text-blue-500 transition hover:bg-blue-500/10 disabled:opacity-60"
+          >
+            {isSaving === row.id ? "Saving..." : "Save"}
+          </button>
+        </td>
+        <td className="px-3 py-2">
+          <button
+            type="button"
+            onClick={() => void deleteWorkOrder(row.id)}
+            disabled={deletingId === row.id}
+            className="rounded border border-rose-500/40 px-3 py-1 text-xs text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
+          >
+            {deletingId === row.id ? "Deleting..." : "Delete"}
+          </button>
+        </td>
+      </tr>
+    )
   }
 
   async function addItem() {
@@ -556,26 +679,41 @@ export default function WorkOrdersClient({
               <h1 className="text-2xl font-bold text-blue-500">Work Orders</h1>
               <p className="mt-1 text-sm text-[var(--foreground)]/70">Create and manage work orders for flooring operations.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setMessage("")
-                setError("")
-                setNewDraft(defaultDraft)
-                setIsCreateModalOpen(true)
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search property"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              ascendingSortLabel="1-9"
+              descendingSortLabel="9-1"
+              isGroupingEnabled={isGroupingEnabled}
+              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              groupByKey={groupByKey}
+              onGroupByKeyChange={setGroupByKey}
             >
-              <Plus size={16} />
-              Work Order
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("")
+                  setError("")
+                  setNewDraft(defaultDraft)
+                  setIsCreateModalOpen(true)
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+              >
+                <Plus size={16} />
+                Work Order
+              </button>
+            </TableControlsBar>
           </div>
 
           {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
           {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
 
           <div className="mt-6 mb-4 flex items-center justify-between">
-            <span className="text-xs text-[var(--foreground)]/60">{workOrders.length} total</span>
+            <span className="text-xs text-[var(--foreground)]/60">{filteredWorkOrders.length} total</span>
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
@@ -602,82 +740,18 @@ export default function WorkOrdersClient({
                 </tr>
               </thead>
               <tbody>
-                {workOrders.map((row, index) => {
-                  const line = formatRow(row, index)
-                  const draft = getDraft(row.id)
+                {isGroupingEnabled
+                  ? groupedWorkOrders.flatMap(([groupName, rows]) => [
+                      <tr key={`group-${groupName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                        <td colSpan={17} className="px-3 py-2 text-sm font-semibold text-blue-500">
+                          {groupName}
+                        </td>
+                      </tr>,
+                      ...rows.map((row) => renderWorkOrderRow(row)),
+                    ])
+                  : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
 
-                  return (
-                    <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-                      <td className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>
-                      <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => void openWorkOrder(row)}
-                          className="rounded border border-[var(--panel-border)] px-2 py-1 text-xs hover:bg-[var(--panel-hover)]"
-                        >
-                          Open
-                        </button>
-                      </td>
-                      <td className="px-3 py-2">
-                        <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
-                          {statusOptions.map((value) => (
-                            <option key={value} value={value}>{statusLabel(value)}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <select value={draft.warehouseId} onChange={(event) => setDraftField(row.id, "warehouseId", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                          <option value="">No warehouse</option>
-                          {warehouseOptions.map((warehouse) => (
-                            <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <select value={draft.propertyId} onChange={(event) => setDraftField(row.id, "propertyId", event.target.value)} className="w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                          <option value="">Select Property</option>
-                          {propertyOptions.map((property) => (
-                            <option key={property.id} value={property.id}>{property.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">{line.displayAddress}</td>
-                      <td className="px-3 py-2"><input value={draft.customAddress} onChange={(event) => setDraftField(row.id, "customAddress", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                      <td className="px-3 py-2"><input type="date" value={draft.date} onChange={(event) => setDraftField(row.id, "date", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                      <td className="px-3 py-2">
-                        <div className="flex gap-1">
-                          <input value={draft.unitText} onChange={(event) => setDraftField(row.id, "unitText", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                          <input value={draft.unitNumber} onChange={(event) => setDraftField(row.id, "unitNumber", event.target.value)} className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                        </div>
-                      </td>
-                      <td className="px-3 py-2"><input value={draft.unitType} onChange={(event) => setDraftField(row.id, "unitType", event.target.value)} className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                      <td className="px-3 py-2">
-                        <select value={draft.vacancy} onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)} className={`w-28 rounded border px-2 py-1 ${vacancyFieldClass(draft.vacancy)}`}>
-                          <option value="">Select</option>
-                          {vacancyOptions.map((value) => (
-                            <option key={value} value={value}>{value}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2"><textarea value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="h-16 w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                      <td className="px-3 py-2"><textarea value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="h-16 w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                      <td className="px-3 py-2"><input value={draft.workOrderImageUrl} onChange={(event) => setDraftField(row.id, "workOrderImageUrl", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                      <td className="px-3 py-2">{row.itemsCount}</td>
-                      <td className="px-3 py-2">
-                        <button type="button" onClick={() => void saveWorkOrder(row)} disabled={isSaving === row.id} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
-                          {isSaving === row.id ? "Saving..." : "Save"}
-                        </button>
-                      </td>
-                      <td className="px-3 py-2">
-                        <button type="button" onClick={() => void deleteWorkOrder(row.id)} disabled={deletingId === row.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">
-                          {deletingId === row.id ? "Deleting..." : "Delete"}
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-
-                {workOrders.length === 0 && (
+                {filteredWorkOrders.length === 0 && (
                   <tr>
                     <td colSpan={17} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                       No work orders yet.

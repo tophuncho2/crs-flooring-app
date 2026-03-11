@@ -2,6 +2,8 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
+import TableControlsBar from "../shared/table-controls-bar"
+import { useTableControls } from "../shared/use-table-controls"
 
 type ImportRow = {
   id: string
@@ -174,6 +176,28 @@ export default function ImportsClient({
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
   const activeImport = useMemo(() => imports.find((row) => row.id === activeImportId) ?? null, [imports, activeImportId])
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupFields,
+    filteredRows: filteredImports,
+    sortedRows: sortedImports,
+    groupedRows: groupedImports,
+  } = useTableControls({
+    rows: imports,
+    searchFields: [
+      { key: "importNumber", getValue: (row) => `IMP-${String(row.importNumber).padStart(4, "0")}` },
+      { key: "tag", getValue: (row) => row.tag },
+    ],
+    sortField: (row) => String(row.importNumber),
+    groupFields: [{ key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName }],
+    defaultGrouped: true,
+    defaultGroupKey: "warehouse",
+  })
 
   function openCreateModal() {
     setMessage("")
@@ -362,6 +386,39 @@ export default function ImportsClient({
     }
   }
 
+  function renderImportRow(row: ImportRow) {
+    return (
+      <tr key={row.id} className="border-t border-[var(--panel-border)]">
+        <td className="px-3 py-2">
+          <button
+            type="button"
+            onClick={() => openImport(row.id)}
+            className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
+          >
+            Open
+          </button>
+        </td>
+        <td className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>
+        <td className="px-3 py-2">{row.tag || "-"}</td>
+        <td className="px-3 py-2">{formatTransportType(row.transportType)}</td>
+        <td className="px-3 py-2">{formatImportStatus(row.status)}</td>
+        <td className="px-3 py-2">{row.warehouseName || "-"}</td>
+        <td className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>
+        <td className="px-3 py-2">{row.itemsCount}</td>
+        <td className="px-3 py-2">
+          <button
+            type="button"
+            onClick={() => void deleteImport(row.id)}
+            disabled={deletingId === row.id}
+            className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
+          >
+            {deletingId === row.id ? "Deleting..." : "Delete"}
+          </button>
+        </td>
+      </tr>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
@@ -370,20 +427,37 @@ export default function ImportsClient({
             <h1 className="text-2xl font-bold text-blue-500">Imports</h1>
             <p className="mt-1 text-sm text-[var(--foreground)]/70">Create import headers and inventory rows before material arrives.</p>
           </div>
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableControlsBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search import # or tag"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+            ascendingSortLabel="1-9"
+            descendingSortLabel="9-1"
+            isGroupingEnabled={isGroupingEnabled}
+            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+            groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
           >
-            <Plus size={16} />
-            Import
-          </button>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+            >
+              <Plus size={16} />
+              Import
+            </button>
+          </TableControlsBar>
         </div>
 
         {message ? <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
         {pageError ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{pageError}</p> : null}
 
-        <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+        <div className="mt-6 mb-4 flex items-center justify-between">
+          <span className="text-xs text-[var(--foreground)]/60">{filteredImports.length} total</span>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
           <table className="w-full min-w-[980px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
@@ -399,37 +473,17 @@ export default function ImportsClient({
               </tr>
             </thead>
             <tbody>
-              {imports.map((row) => (
-                <tr key={row.id} className="border-t border-[var(--panel-border)]">
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => openImport(row.id)}
-                      className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
-                    >
-                      Open
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>
-                  <td className="px-3 py-2">{row.tag || "-"}</td>
-                  <td className="px-3 py-2">{formatTransportType(row.transportType)}</td>
-                  <td className="px-3 py-2">{formatImportStatus(row.status)}</td>
-                  <td className="px-3 py-2">{row.warehouseName || "-"}</td>
-                  <td className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>
-                  <td className="px-3 py-2">{row.itemsCount}</td>
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => void deleteImport(row.id)}
-                      disabled={deletingId === row.id}
-                      className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
-                    >
-                      {deletingId === row.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {imports.length === 0 ? (
+              {isGroupingEnabled
+                ? groupedImports.flatMap(([groupName, rows]) => [
+                    <tr key={`group-${groupName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                      <td colSpan={9} className="px-3 py-2 text-sm font-semibold text-blue-500">
+                        {groupName}
+                      </td>
+                    </tr>,
+                    ...rows.map((row) => renderImportRow(row)),
+                  ])
+                : sortedImports.map((row) => renderImportRow(row))}
+              {filteredImports.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                     No imports logged yet.

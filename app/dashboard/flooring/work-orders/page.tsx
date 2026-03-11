@@ -24,6 +24,7 @@ type ProductOption = {
 
 type WorkOrderRow = {
   id: string
+  workOrderNumber: number
   propertyId: string
   propertyName: string
   propertyAddress: string
@@ -131,8 +132,9 @@ export default async function WorkOrdersPage() {
     }),
   ])
 
-  const initialWorkOrders: WorkOrderRow[] = workOrders.map((row) => ({
+  const initialWorkOrders: WorkOrderRow[] = workOrders.map((row, index) => ({
     id: row.id,
+    workOrderNumber: workOrders.length - index,
     propertyId: row.propertyId,
     propertyName: row.property.name,
     propertyAddress: normalizeAddress({

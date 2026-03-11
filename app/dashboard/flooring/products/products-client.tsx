@@ -2,6 +2,8 @@
 
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
+import TableControlsBar from "../shared/table-controls-bar"
+import { useTableControls } from "../shared/use-table-controls"
 
 type CategoryOption = {
   id: string
@@ -264,10 +266,72 @@ export default function FlooringProductsClient({
         .filter(Boolean),
     ),
   ).sort((a, b) => a.localeCompare(b))
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKey,
+    setGroupByKey,
+    groupFields,
+    filteredRows: filteredProducts,
+    sortedRows: sortedProducts,
+    groupedRows: groupedProducts,
+  } = useTableControls({
+    rows: products,
+    searchFields: [{ key: "productName", getValue: (row) => row.name }],
+    sortField: (row) => row.name,
+    groupFields: [
+      { key: "category", label: "Category", getValue: (row) => row.category.name },
+      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName },
+    ],
+  })
 
   function clearNotices() {
     setMessage("")
     setError("")
+  }
+
+  function renderProductRow(product: ProductRow) {
+    return (
+      <tr key={product.id} className="border-t border-[var(--panel-border)]">
+        <td className="px-3 py-2">
+          <button
+            type="button"
+            onClick={() => void openProductInventory(product)}
+            className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
+          >
+            Open
+          </button>
+        </td>
+        <td className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>
+        <td className="px-3 py-2">{product.category.name}</td>
+        <td className="px-3 py-2">{product.manufacturerName || "-"}</td>
+        <td className="px-3 py-2">{product.style || "-"}</td>
+        <td className="px-3 py-2">{product.color || "-"}</td>
+        <td className="px-3 py-2">{product.baseColor || "-"}</td>
+        <td className="px-3 py-2">
+          {product.coveragePerUnit ? `${product.coveragePerUnit} / ${product.coverageUnit || "unit"}` : "-"}
+        </td>
+        <td className="px-3 py-2">{product.width || "-"}</td>
+        <td className="px-3 py-2">{product.sheetSize || "-"}</td>
+        <td className="px-3 py-2">{product.thickness || "-"}</td>
+        <td className="px-3 py-2">{product.unitWeight || "-"}</td>
+        <td className="px-3 py-2">{product.photoUrls.length}</td>
+        <td className="px-3 py-2">
+          <div className="flex gap-2">
+            <button type="button" onClick={() => openEditProduct(product)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
+              <Pencil size={16} />
+            </button>
+            <button type="button" onClick={() => deleteProduct(product)} className="rounded-md p-2 text-rose-500 hover:bg-rose-500/10">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </td>
+      </tr>
+    )
   }
 
   function openCreateProduct() {
@@ -527,7 +591,18 @@ export default function FlooringProductsClient({
               Manage flooring product attributes, bucket photo previews, and category-linked coverage units.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <TableControlsBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search product name"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+            isGroupingEnabled={isGroupingEnabled}
+            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+            groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+            groupByKey={groupByKey}
+            onGroupByKeyChange={setGroupByKey}
+          >
             <button
               type="button"
               onClick={openCreateProduct}
@@ -536,7 +611,7 @@ export default function FlooringProductsClient({
               <Plus size={16} />
               Product
             </button>
-          </div>
+          </TableControlsBar>
         </div>
 
         {message ? <p className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
@@ -545,7 +620,7 @@ export default function FlooringProductsClient({
         <section className="mt-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Products</h2>
-            <span className="text-xs text-[var(--foreground)]/60">{products.length} total</span>
+            <span className="text-xs text-[var(--foreground)]/60">{filteredProducts.length} total</span>
           </div>
           <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
             <table className="w-full min-w-[1400px] text-sm">
@@ -568,44 +643,17 @@ export default function FlooringProductsClient({
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-t border-[var(--panel-border)]">
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => void openProductInventory(product)}
-                        className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
-                      >
-                        Open
-                      </button>
-                    </td>
-                    <td className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>
-                    <td className="px-3 py-2">{product.category.name}</td>
-                    <td className="px-3 py-2">{product.manufacturerName || "-"}</td>
-                    <td className="px-3 py-2">{product.style || "-"}</td>
-                    <td className="px-3 py-2">{product.color || "-"}</td>
-                    <td className="px-3 py-2">{product.baseColor || "-"}</td>
-                    <td className="px-3 py-2">
-                      {product.coveragePerUnit ? `${product.coveragePerUnit} / ${product.coverageUnit || "unit"}` : "-"}
-                    </td>
-                    <td className="px-3 py-2">{product.width || "-"}</td>
-                    <td className="px-3 py-2">{product.sheetSize || "-"}</td>
-                    <td className="px-3 py-2">{product.thickness || "-"}</td>
-                    <td className="px-3 py-2">{product.unitWeight || "-"}</td>
-                    <td className="px-3 py-2">{product.photoUrls.length}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => openEditProduct(product)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
-                          <Pencil size={16} />
-                        </button>
-                        <button type="button" onClick={() => deleteProduct(product)} className="rounded-md p-2 text-rose-500 hover:bg-rose-500/10">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {products.length === 0 ? (
+                {isGroupingEnabled
+                  ? groupedProducts.flatMap(([groupName, rows]) => [
+                      <tr key={`group-${groupName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
+                        <td colSpan={14} className="px-3 py-2 text-sm font-semibold text-blue-500">
+                          {groupName}
+                        </td>
+                      </tr>,
+                      ...rows.map((product) => renderProductRow(product)),
+                    ])
+                  : sortedProducts.map((product) => renderProductRow(product))}
+                {filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan={14} className="px-3 py-8 text-center text-[var(--foreground)]/60">
                       No flooring products yet.

@@ -2,6 +2,8 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus, X } from "lucide-react"
+import TableControlsBar from "../shared/table-controls-bar"
+import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyRow = {
   id: string
@@ -254,6 +256,21 @@ export default function ManagementCompaniesClient({
   const [isSavingTemplateModal, setIsSavingTemplateModal] = useState(false)
   const [isSavingItem, setIsSavingItem] = useState(false)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    filteredRows: filteredCompanies,
+    sortedRows: sortedCompanies,
+  } = useTableControls({
+    rows: companies,
+    searchFields: [
+      { key: "name", getValue: (row) => row.name },
+      { key: "properties", getValue: (row) => row.properties.map((property) => property.name).join(" ") },
+    ],
+    sortField: (row) => row.name,
+  })
 
   function getDraft(id: string): DraftCompany {
     if (drafts[id]) {
@@ -853,19 +870,30 @@ export default function ManagementCompaniesClient({
               Manage management company records and their linked property relationships.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setMessage("")
-              setError("")
-              setNewDraft(defaultDraft)
-              setIsCreateModalOpen(true)
-            }}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableControlsBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            searchPlaceholder="Search company or property"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+            isGroupingEnabled={false}
+            onToggleGrouping={() => {}}
+            showGrouping={false}
           >
-            <Plus size={16} />
-            Company
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage("")
+                setError("")
+                setNewDraft(defaultDraft)
+                setIsCreateModalOpen(true)
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+            >
+              <Plus size={16} />
+              Company
+            </button>
+          </TableControlsBar>
         </div>
 
         {message && (
@@ -880,7 +908,7 @@ export default function ManagementCompaniesClient({
         )}
 
         <div className="mt-6 mb-4 flex items-center justify-between">
-          <span className="text-xs text-[var(--foreground)]/60">{companies.length} total</span>
+          <span className="text-xs text-[var(--foreground)]/60">{filteredCompanies.length} total</span>
         </div>
 
         <div className="overflow-x-auto border-y border-[var(--panel-border)]">
@@ -902,7 +930,7 @@ export default function ManagementCompaniesClient({
               </tr>
             </thead>
             <tbody>
-              {companies.map((row) => {
+              {sortedCompanies.map((row) => {
                 const draft = getDraft(row.id)
                 const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
 
@@ -972,9 +1000,9 @@ export default function ManagementCompaniesClient({
                 )
               })}
 
-              {companies.length === 0 && (
+              {filteredCompanies.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-3 py-8 text-center text-[var(--foreground)]/70">No management companies yet.</td>
+                  <td colSpan={12} className="px-3 py-8 text-center text-[var(--foreground)]/70">No management companies found.</td>
                 </tr>
               )}
             </tbody>
