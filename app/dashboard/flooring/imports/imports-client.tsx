@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, useMemo, useState } from "react"
-import { Plus, Trash2, X } from "lucide-react"
+import { Plus, X } from "lucide-react"
 
 type ImportRow = {
   id: string
@@ -53,6 +53,7 @@ type LocationOption = {
 }
 
 type ImportItemDraft = {
+  clientId: string
   productId: string
   itemNumber: string
   stockCount: string
@@ -83,25 +84,30 @@ const statusOptions = [
   { value: "FINAL", label: "Final" },
 ]
 
-const emptyItem: ImportItemDraft = {
-  productId: "",
-  itemNumber: "",
-  stockCount: "",
-  locationId: "",
-  dyeLot: "",
-  cost: "",
-  freight: "",
-  notes: "",
+function createEmptyItem(): ImportItemDraft {
+  return {
+    clientId: crypto.randomUUID(),
+    productId: "",
+    itemNumber: "",
+    stockCount: "",
+    locationId: "",
+    dyeLot: "",
+    cost: "",
+    freight: "",
+    notes: "",
+  }
 }
 
-const emptyDraft: ImportDraft = {
-  orderNumber: "",
-  tag: "",
-  transportType: "PURCHASE_ORDER",
-  status: "PENDING",
-  notes: "",
-  warehouseId: "",
-  items: [{ ...emptyItem }],
+function createEmptyDraft(): ImportDraft {
+  return {
+    orderNumber: "",
+    tag: "",
+    transportType: "PURCHASE_ORDER",
+    status: "PENDING",
+    notes: "",
+    warehouseId: "",
+    items: [createEmptyItem()],
+  }
 }
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -155,10 +161,10 @@ export default function ImportsClient({
   locationOptions: LocationOption[]
 }) {
   const [imports, setImports] = useState(initialImports)
-  const [draft, setDraft] = useState<ImportDraft>(emptyDraft)
+  const [draft, setDraft] = useState<ImportDraft>(() => createEmptyDraft())
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeImportId, setActiveImportId] = useState<string | null>(null)
-  const [activeImportDraft, setActiveImportDraft] = useState<ImportDraft>(emptyDraft)
+  const [activeImportDraft, setActiveImportDraft] = useState<ImportDraft>(() => createEmptyDraft())
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
@@ -170,7 +176,7 @@ export default function ImportsClient({
   function openCreateModal() {
     setMessage("")
     setError("")
-    setDraft(emptyDraft)
+    setDraft(createEmptyDraft())
     setIsModalOpen(true)
   }
 
@@ -190,6 +196,7 @@ export default function ImportsClient({
       notes: row.notes,
       warehouseId: row.warehouseId,
       items: row.inventories.map((item) => ({
+        clientId: crypto.randomUUID(),
         productId: item.productId,
         itemNumber: item.itemNumber,
         stockCount: item.stockCount,
@@ -225,9 +232,26 @@ export default function ImportsClient({
         throw new Error(payload.error ?? "Failed to save import")
       }
 
-      setImports((prev) =>
-        prev.map((row) => (row.id === activeImport.id ? { ...row, ...payload.import!, inventories: row.inventories } : row)),
-      )
+      setImports((prev) => prev.map((row) => (row.id === activeImport.id ? payload.import! : row)))
+      setActiveImportDraft({
+        orderNumber: payload.import.orderNumber,
+        tag: payload.import.tag,
+        transportType: payload.import.transportType,
+        status: payload.import.status,
+        notes: payload.import.notes,
+        warehouseId: payload.import.warehouseId,
+        items: payload.import.inventories.map((item) => ({
+          clientId: crypto.randomUUID(),
+          productId: item.productId,
+          itemNumber: item.itemNumber,
+          stockCount: item.stockCount,
+          locationId: item.locationId,
+          dyeLot: item.dyeLot,
+          cost: item.cost,
+          freight: item.freight,
+          notes: item.notes,
+        })),
+      })
       setMessage("Import saved")
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save import")
@@ -248,13 +272,31 @@ export default function ImportsClient({
   }
 
   function addItemRow() {
-    setDraft((prev) => ({ ...prev, items: [...prev.items, { ...emptyItem }] }))
+    setDraft((prev) => ({ ...prev, items: [createEmptyItem(), ...prev.items] }))
   }
 
   function removeItemRow(index: number) {
     setDraft((prev) => ({
       ...prev,
-      items: prev.items.length === 1 ? [{ ...emptyItem }] : prev.items.filter((_, itemIndex) => itemIndex !== index),
+      items: prev.items.length === 1 ? [createEmptyItem()] : prev.items.filter((_, itemIndex) => itemIndex !== index),
+    }))
+  }
+
+  function setActiveImportItemField(index: number, field: keyof ImportItemDraft, value: string) {
+    setActiveImportDraft((prev) => ({
+      ...prev,
+      items: prev.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
+    }))
+  }
+
+  function addActiveImportItemRow() {
+    setActiveImportDraft((prev) => ({ ...prev, items: [createEmptyItem(), ...prev.items] }))
+  }
+
+  function removeActiveImportItemRow(index: number) {
+    setActiveImportDraft((prev) => ({
+      ...prev,
+      items: prev.items.length === 1 ? [createEmptyItem()] : prev.items.filter((_, itemIndex) => itemIndex !== index),
     }))
   }
 
@@ -280,7 +322,7 @@ export default function ImportsClient({
       }
 
       setImports((prev) => [payload.import!, ...prev])
-      setDraft(emptyDraft)
+      setDraft(createEmptyDraft())
       setIsModalOpen(false)
       setMessage("Import created")
     } catch (createError) {
@@ -504,7 +546,7 @@ export default function ImportsClient({
                       const selectedProduct = productLookup.get(item.productId)
 
                       return (
-                        <tr key={`${index}-${item.productId}-${item.itemNumber}`} className="border-t border-[var(--panel-border)]">
+                        <tr key={item.clientId} className="border-t border-[var(--panel-border)]">
                           <td className="px-3 py-2">
                             <select
                               value={item.productId}
@@ -700,9 +742,18 @@ export default function ImportsClient({
               </FormField>
             </div>
 
-            <div>
-              <h3 className="text-base font-semibold">Import Inventory Rows</h3>
-              <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold">Import Inventory Rows</h3>
+                <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
+              </div>
+              <button
+                type="button"
+                onClick={addActiveImportItemRow}
+                className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+              >
+                Add Item
+              </button>
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
@@ -718,27 +769,107 @@ export default function ImportsClient({
                     <th className="px-3 py-2">Freight $</th>
                     <th className="px-3 py-2">Warehouse</th>
                     <th className="px-3 py-2">Notes</th>
+                    <th className="px-3 py-2">Remove</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {activeImport.inventories.map((item) => (
-                    <tr key={item.id} className="border-t border-[var(--panel-border)]">
-                      <td className="px-3 py-2">{item.productName}</td>
-                      <td className="px-3 py-2">{item.itemNumber}</td>
-                      <td className="px-3 py-2">
-                        {item.stockCount} {item.stockUnit || ""}
-                      </td>
-                      <td className="px-3 py-2">{item.locationCode}</td>
-                      <td className="px-3 py-2">{item.dyeLot || "-"}</td>
-                      <td className="px-3 py-2">{item.cost || "-"}</td>
-                      <td className="px-3 py-2">{item.freight || "-"}</td>
-                      <td className="px-3 py-2">{item.warehouseName || "-"}</td>
-                      <td className="px-3 py-2">{item.notes || "-"}</td>
-                    </tr>
-                  ))}
-                  {activeImport.inventories.length === 0 ? (
+                  {activeImportDraft.items.map((item, index) => {
+                    const filteredLocations = activeImportDraft.warehouseId
+                      ? locationOptions.filter((location) => location.warehouseId === activeImportDraft.warehouseId)
+                      : locationOptions
+                    const selectedProduct = productLookup.get(item.productId)
+
+                    return (
+                      <tr key={item.clientId} className="border-t border-[var(--panel-border)]">
+                        <td className="px-3 py-2">
+                          <select
+                            value={item.productId}
+                            onChange={(event) => setActiveImportItemField(index, "productId", event.target.value)}
+                            className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          >
+                            <option value="">Select product</option>
+                            {productOptions.map((product) => (
+                              <option key={product.id} value={product.id}>
+                                {product.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            value={item.itemNumber}
+                            onChange={(event) => setActiveImportItemField(index, "itemNumber", event.target.value)}
+                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={item.stockCount}
+                              onChange={(event) => setActiveImportItemField(index, "stockCount", event.target.value)}
+                              className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                            />
+                            <span className="text-xs text-[var(--foreground)]/60">{selectedProduct?.stockUnit || "unit"}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <select
+                            value={item.locationId}
+                            onChange={(event) => setActiveImportItemField(index, "locationId", event.target.value)}
+                            className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          >
+                            <option value="">Select location</option>
+                            {filteredLocations.map((location) => (
+                              <option key={location.id} value={location.id}>
+                                {location.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            value={item.dyeLot}
+                            onChange={(event) => setActiveImportItemField(index, "dyeLot", event.target.value)}
+                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            value={item.cost}
+                            onChange={(event) => setActiveImportItemField(index, "cost", event.target.value)}
+                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            value={item.freight}
+                            onChange={(event) => setActiveImportItemField(index, "freight", event.target.value)}
+                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === activeImportDraft.warehouseId)?.name || "-"}</td>
+                        <td className="px-3 py-2">
+                          <input
+                            value={item.notes}
+                            onChange={(event) => setActiveImportItemField(index, "notes", event.target.value)}
+                            className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => removeActiveImportItemRow(index)}
+                            className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {activeImportDraft.items.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                      <td colSpan={10} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                         No inventory rows were attached to this import.
                       </td>
                     </tr>

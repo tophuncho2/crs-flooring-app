@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { normalizePrismaError, parseOptionalString } from "@/lib/api-helpers"
+import { normalizePrismaError, parseDecimal, parseOptionalString } from "@/lib/api-helpers"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 
 type RouteContext = {
@@ -36,6 +37,63 @@ function parseTransportType(value: unknown) {
   return normalized
 }
 
+function parseOptionalDecimal(value: unknown, field: string, scale: number) {
+  if (value === undefined || value === null || String(value).trim() === "") return null
+  return parseDecimal(value, field, scale)
+}
+
+function buildProductName(product: {
+  name: string
+  manufacturerName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return product.name || [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+}
+
+function normalizeImportInventory(row: {
+  id: string
+  productId: string
+  itemNumber: string
+  dyeLot: string
+  stockCount: Prisma.Decimal
+  cost: Prisma.Decimal | null
+  freight: Prisma.Decimal | null
+  notes: string | null
+  locationId: string
+  product: {
+    id: string
+    name: string
+    manufacturerName: string | null
+    style: string | null
+    color: string | null
+    category: { stockUnit: string | null }
+  }
+  location: {
+    id: string
+    locationCode: string
+    warehouse: { id: string; name: string }
+  }
+}) {
+  return {
+    id: row.id,
+    productId: row.productId,
+    productName: buildProductName(row.product),
+    stockUnit: row.product.category.stockUnit ?? "",
+    itemNumber: row.itemNumber,
+    dyeLot: row.dyeLot,
+    stockCount: row.stockCount.toString(),
+    cost: row.cost?.toString() ?? "",
+    freight: row.freight?.toString() ?? "",
+    notes: row.notes ?? "",
+    locationId: row.locationId,
+    locationCode: row.location.locationCode,
+    warehouseId: row.location.warehouse.id,
+    warehouseName: row.location.warehouse.name,
+    sectionName: "",
+  }
+}
+
 function normalizeImportEntry(entry: {
   id: string
   importNumber: number
@@ -48,6 +106,30 @@ function normalizeImportEntry(entry: {
   warehouse: { id: string; name: string } | null
   createdAt: Date
   updatedAt: Date
+  inventories: Array<{
+    id: string
+    productId: string
+    itemNumber: string
+    dyeLot: string
+    stockCount: Prisma.Decimal
+    cost: Prisma.Decimal | null
+    freight: Prisma.Decimal | null
+    notes: string | null
+    locationId: string
+    product: {
+      id: string
+      name: string
+      manufacturerName: string | null
+      style: string | null
+      color: string | null
+      category: { stockUnit: string | null }
+    }
+    location: {
+      id: string
+      locationCode: string
+      warehouse: { id: string; name: string }
+    }
+  }>
   _count: { inventories: number }
 }) {
   return {
@@ -63,6 +145,7 @@ function normalizeImportEntry(entry: {
     itemsCount: entry._count.inventories,
     createdAt: entry.createdAt.toISOString(),
     updatedAt: entry.updatedAt.toISOString(),
+    inventories: entry.inventories.map(normalizeImportInventory),
   }
 }
 
@@ -73,20 +156,70 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const entry = await prisma.flooringImportEntry.update({
-      where: { id },
-      data: {
-        orderNumber: parseOptionalString(body.orderNumber),
-        tag: parseOptionalString(body.tag),
-        transportType: parseTransportType(body.transportType),
-        status: parseImportStatus(body.status),
-        notes: parseOptionalString(body.notes),
-        warehouseId: parseOptionalString(body.warehouseId),
-      },
-      include: {
-        warehouse: { select: { id: true, name: true } },
-        _count: { select: { inventories: true } },
-      },
+    const itemPayload = Array.isArray(body.items) ? body.items : []
+
+    const entry = await prisma.$transaction(async (tx) => {
+      await tx.flooringImportEntry.update({
+        where: { id },
+        data: {
+          orderNumber: parseOptionalString(body.orderNumber),
+          tag: parseOptionalString(body.tag),
+          transportType: parseTransportType(body.transportType),
+          status: parseImportStatus(body.status),
+          notes: parseOptionalString(body.notes),
+          warehouseId: parseOptionalString(body.warehouseId),
+        },
+      })
+
+      await tx.flooringInventory.deleteMany({ where: { importEntryId: id } })
+
+      for (const item of itemPayload) {
+        if (!item || typeof item !== "object") continue
+        const row = item as Record<string, unknown>
+        await tx.flooringInventory.create({
+          data: {
+            importEntryId: id,
+            productId: String(row.productId ?? "").trim(),
+            itemNumber: String(row.itemNumber ?? "").trim(),
+            dyeLot: String(row.dyeLot ?? "").trim(),
+            stockCount: parseDecimal(row.stockCount, "stockCount", 2),
+            cost: parseOptionalDecimal(row.cost, "cost", 2),
+            freight: parseOptionalDecimal(row.freight, "freight", 2),
+            notes: parseOptionalString(row.notes),
+            locationId: String(row.locationId ?? "").trim(),
+          },
+        })
+      }
+
+      return tx.flooringImportEntry.findUniqueOrThrow({
+        where: { id },
+        include: {
+          warehouse: { select: { id: true, name: true } },
+          _count: { select: { inventories: true } },
+          inventories: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  manufacturerName: true,
+                  style: true,
+                  color: true,
+                  category: { select: { stockUnit: true } },
+                },
+              },
+              location: {
+                select: {
+                  id: true,
+                  locationCode: true,
+                  warehouse: { select: { id: true, name: true } },
+                },
+              },
+            },
+            orderBy: [{ createdAt: "asc" }],
+          },
+        },
+      })
     })
 
     return NextResponse.json({ import: normalizeImportEntry(entry) })
