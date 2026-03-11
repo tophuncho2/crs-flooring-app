@@ -299,6 +299,7 @@ export default function ManagementCompaniesClient({
     hiddenColumnKeys: hiddenCompanyColumnKeys,
     toggleColumnVisibility: toggleCompanyColumnVisibility,
     moveColumn: moveCompanyColumn,
+    setColumnOrder: setCompanyColumnOrder,
   } = useTableColumns({
     tableKey: "management-companies-main",
     columns: companyColumns,
@@ -918,6 +919,7 @@ export default function ManagementCompaniesClient({
                 hiddenColumnKeys={hiddenCompanyColumnKeys}
                 onToggleColumn={toggleCompanyColumnVisibility}
                 onMoveColumn={moveCompanyColumn}
+                onSetColumnOrder={setCompanyColumnOrder}
               />
               <button
                 type="button"

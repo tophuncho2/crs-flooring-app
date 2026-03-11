@@ -273,6 +273,7 @@ export default function PropertiesClient({
     hiddenColumnKeys: hiddenPropertyColumnKeys,
     toggleColumnVisibility: togglePropertyColumnVisibility,
     moveColumn: movePropertyColumn,
+    setColumnOrder: setPropertyColumnOrder,
   } = useTableColumns({
     tableKey: "properties-main",
     columns: propertyColumns,
@@ -741,6 +742,7 @@ export default function PropertiesClient({
                 hiddenColumnKeys={hiddenPropertyColumnKeys}
                 onToggleColumn={togglePropertyColumnVisibility}
                 onMoveColumn={movePropertyColumn}
+                onSetColumnOrder={setPropertyColumnOrder}
               />
               <button
                 type="button"

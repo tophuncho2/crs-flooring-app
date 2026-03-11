@@ -223,6 +223,7 @@ export default function ImportsClient({
     hiddenColumnKeys: hiddenImportColumnKeys,
     toggleColumnVisibility: toggleImportColumnVisibility,
     moveColumn: moveImportColumn,
+    setColumnOrder: setImportColumnOrder,
   } = useTableColumns({
     tableKey: "imports-main",
     columns: importColumns,
@@ -471,6 +472,7 @@ export default function ImportsClient({
                 hiddenColumnKeys={hiddenImportColumnKeys}
                 onToggleColumn={toggleImportColumnVisibility}
                 onMoveColumn={moveImportColumn}
+                onSetColumnOrder={setImportColumnOrder}
               />
               <button
                 type="button"

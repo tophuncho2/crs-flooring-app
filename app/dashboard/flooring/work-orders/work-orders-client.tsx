@@ -272,6 +272,7 @@ export default function WorkOrdersClient({
     hiddenColumnKeys: hiddenWorkOrderColumnKeys,
     toggleColumnVisibility: toggleWorkOrderColumnVisibility,
     moveColumn: moveWorkOrderColumn,
+    setColumnOrder: setWorkOrderColumnOrder,
   } = useTableColumns({
     tableKey: "work-orders-main",
     columns: workOrderColumns,
@@ -739,6 +740,7 @@ export default function WorkOrdersClient({
                   hiddenColumnKeys={hiddenWorkOrderColumnKeys}
                   onToggleColumn={toggleWorkOrderColumnVisibility}
                   onMoveColumn={moveWorkOrderColumn}
+                  onSetColumnOrder={setWorkOrderColumnOrder}
                 />
                 <button
                   type="button"

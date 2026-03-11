@@ -190,6 +190,7 @@ export default function TemplatesClient({
     hiddenColumnKeys: hiddenTemplateColumnKeys,
     toggleColumnVisibility: toggleTemplateColumnVisibility,
     moveColumn: moveTemplateColumn,
+    setColumnOrder: setTemplateColumnOrder,
   } = useTableColumns({
     tableKey: "templates-main",
     columns: templateColumns,
@@ -564,6 +565,7 @@ export default function TemplatesClient({
                 hiddenColumnKeys={hiddenTemplateColumnKeys}
                 onToggleColumn={toggleTemplateColumnVisibility}
                 onMoveColumn={moveTemplateColumn}
+                onSetColumnOrder={setTemplateColumnOrder}
               />
               <button
                 type="button"

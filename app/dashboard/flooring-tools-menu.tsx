@@ -1,8 +1,25 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
-import { ArrowDown, ArrowUp, Boxes } from "lucide-react"
+import { Boxes, GripVertical } from "lucide-react"
 import type { UserToolRow } from "@/lib/tool-subscriptions"
 import type { FlooringNavItem } from "./flooring-navigation"
 import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
@@ -14,6 +31,90 @@ type FlooringToolsMenuProps = {
   orderedItems: FlooringNavItem[]
   onVisibleSlugsChange: (slugs: string[]) => void
   onOrderedSlugsChange: (slugs: string[]) => void
+}
+
+function SortableFlooringNavRow({
+  tool,
+  canOpen,
+  isVisible,
+  hotkeyLabel,
+  visibleSlugs,
+  orderedItems,
+  onVisibleSlugsChange,
+  onOrderedSlugsChange,
+  onNavigate,
+}: {
+  tool: FlooringNavItem
+  canOpen: boolean
+  isVisible: boolean
+  hotkeyLabel?: string
+  visibleSlugs: string[]
+  orderedItems: FlooringNavItem[]
+  onVisibleSlugsChange: (slugs: string[]) => void
+  onOrderedSlugsChange: (slugs: string[]) => void
+  onNavigate: (href: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tool.slug })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 border-b border-[var(--panel-border)]/50 px-3 py-2 last:border-b-0 ${isDragging ? "bg-[var(--panel-hover)] shadow-md" : ""}`}
+    >
+      <button
+        type="button"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-[var(--panel-border)] text-[var(--foreground)]/65 hover:bg-[var(--panel-hover)]"
+        aria-label={`Drag ${tool.name}`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={14} />
+      </button>
+      <button
+        onClick={() => {
+          if (canOpen) {
+            onNavigate(tool.href)
+          }
+        }}
+        disabled={!canOpen}
+        className={[
+          "min-w-0 flex-1 rounded px-3 py-2 text-left transition",
+          canOpen ? "hover:bg-[var(--panel-hover)]" : "cursor-not-allowed text-[var(--foreground)]/45",
+        ].join(" ")}
+      >
+        {tool.name}
+      </button>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          const nextVisibleSlugs = isVisible
+            ? visibleSlugs.filter((slug) => slug !== tool.slug)
+            : [...visibleSlugs, tool.slug]
+          onVisibleSlugsChange(nextVisibleSlugs)
+        }}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded hover:bg-[var(--panel-hover)]"
+        aria-label={`${isVisible ? "Hide" : "Show"} ${tool.name} in header`}
+      >
+        <input
+          type="checkbox"
+          checked={isVisible}
+          readOnly
+          className="h-4 w-4 accent-blue-500"
+        />
+      </button>
+      {hotkeyLabel ? (
+        <span className="min-w-[88px] shrink-0 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/50 px-2 py-1 text-center text-[10px] font-semibold tracking-wide text-[var(--foreground)]/70">
+          {hotkeyLabel}
+        </span>
+      ) : null}
+    </div>
+  )
 }
 
 export default function FlooringToolsMenu({
@@ -31,6 +132,14 @@ export default function FlooringToolsMenu({
   const unlockedToolSet = new Set(tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
   const hotkeyByPath = new Map(
     FLOORING_HOTKEYS.filter((hotkey) => hotkey.path).map((hotkey) => [hotkey.path!, hotkey.combination]),
+  )
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   )
   const lastSavedValueRef = useRef(
     JSON.stringify({
@@ -94,6 +203,29 @@ export default function FlooringToolsMenu({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [visibleSlugs])
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = orderedItems.findIndex((item) => item.slug === active.id)
+    const newIndex = orderedItems.findIndex((item) => item.slug === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const nextItems = arrayMove(orderedItems, oldIndex, newIndex)
+    onOrderedSlugsChange(nextItems.map((item) => item.slug))
+  }
+
+  function navigateToTool(href: string) {
+    void persistPreferences(
+      visibleSlugs,
+      orderedItems.map((item) => item.slug),
+    ).catch((error) => {
+      setSaveError(error instanceof Error ? error.message : "Failed to save header tabs")
+    })
+    setOpen(false)
+    router.push(href)
+  }
+
   if (!canUseTools) return null
 
   return (
@@ -132,95 +264,30 @@ export default function FlooringToolsMenu({
           "
         >
           {saveError ? <p className="border-b border-[var(--panel-border)] px-4 py-2 text-xs text-rose-500">{saveError}</p> : null}
-          {orderedItems.map((tool) => {
-            const canOpen = canUseTools || (tool.requiredTool ? unlockedToolSet.has(tool.requiredTool) : false)
-            const isVisible = visibleSlugs.includes(tool.slug)
-            const hotkeyLabel = hotkeyByPath.get(tool.href)
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={orderedItems.map((item) => item.slug)} strategy={verticalListSortingStrategy}>
+              {orderedItems.map((tool) => {
+                const canOpen = canUseTools || (tool.requiredTool ? unlockedToolSet.has(tool.requiredTool) : false)
+                const isVisible = visibleSlugs.includes(tool.slug)
+                const hotkeyLabel = hotkeyByPath.get(tool.href)
 
-            return (
-              <div key={tool.slug} className="flex items-center gap-3 border-b border-[var(--panel-border)]/50 px-3 py-2 last:border-b-0">
-                <button
-                  onClick={() => {
-                    if (canOpen) {
-                      void persistPreferences(
-                        visibleSlugs,
-                        orderedItems.map((item) => item.slug),
-                      ).catch((error) => {
-                        setSaveError(error instanceof Error ? error.message : "Failed to save header tabs")
-                      })
-                      setOpen(false)
-                      router.push(tool.href)
-                    }
-                  }}
-                  disabled={!canOpen}
-                  className={[
-                    "min-w-0 flex-1 rounded px-3 py-2 text-left transition",
-                    canOpen ? "hover:bg-[var(--panel-hover)]" : "cursor-not-allowed text-[var(--foreground)]/45",
-                  ].join(" ")}
-                >
-                  {tool.name}
-                </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    const nextVisibleSlugs = isVisible
-                      ? visibleSlugs.filter((slug) => slug !== tool.slug)
-                      : [...visibleSlugs, tool.slug]
-                    onVisibleSlugsChange(nextVisibleSlugs)
-                  }}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded hover:bg-[var(--panel-hover)]"
-                  aria-label={`${isVisible ? "Hide" : "Show"} ${tool.name} in header`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isVisible}
-                    readOnly
-                    className="h-4 w-4 accent-blue-500"
+                return (
+                  <SortableFlooringNavRow
+                    key={tool.slug}
+                    tool={tool}
+                    canOpen={canOpen}
+                    isVisible={isVisible}
+                    hotkeyLabel={hotkeyLabel}
+                    visibleSlugs={visibleSlugs}
+                    orderedItems={orderedItems}
+                    onVisibleSlugsChange={onVisibleSlugsChange}
+                    onOrderedSlugsChange={onOrderedSlugsChange}
+                    onNavigate={navigateToTool}
                   />
-                </button>
-                <div className="flex shrink-0 flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      const index = orderedItems.findIndex((item) => item.slug === tool.slug)
-                      if (index <= 0) return
-                      const next = [...orderedItems]
-                      ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
-                      onOrderedSlugsChange(next.map((item) => item.slug))
-                    }}
-                    className="flex h-4 w-4 items-center justify-center rounded text-[var(--foreground)]/65 hover:bg-[var(--panel-hover)] disabled:opacity-30"
-                    disabled={orderedItems[0]?.slug === tool.slug}
-                    aria-label={`Move ${tool.name} up`}
-                  >
-                    <ArrowUp size={10} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      const index = orderedItems.findIndex((item) => item.slug === tool.slug)
-                      if (index === -1 || index >= orderedItems.length - 1) return
-                      const next = [...orderedItems]
-                      ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
-                      onOrderedSlugsChange(next.map((item) => item.slug))
-                    }}
-                    className="flex h-4 w-4 items-center justify-center rounded text-[var(--foreground)]/65 hover:bg-[var(--panel-hover)] disabled:opacity-30"
-                    disabled={orderedItems[orderedItems.length - 1]?.slug === tool.slug}
-                    aria-label={`Move ${tool.name} down`}
-                  >
-                    <ArrowDown size={10} />
-                  </button>
-                </div>
-                {hotkeyLabel ? (
-                  <span className="min-w-[88px] shrink-0 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/50 px-2 py-1 text-center text-[10px] font-semibold tracking-wide text-[var(--foreground)]/70">
-                    {hotkeyLabel}
-                  </span>
-                ) : null}
-              </div>
-            )
-          })}
+                )
+              })}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
     </div>

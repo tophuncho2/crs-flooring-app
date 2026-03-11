@@ -130,6 +130,18 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     void persistPreferences(hiddenColumnKeys, nextOrderKeys)
   }
 
+  function setColumnOrder(nextOrderKeys: string[]) {
+    const normalizedOrder = Array.from(new Set(nextOrderKeys.filter((key) => columnKeys.includes(key))))
+    for (const key of columnKeys) {
+      if (!normalizedOrder.includes(key)) {
+        normalizedOrder.push(key)
+      }
+    }
+
+    setColumnOrderKeys(normalizedOrder)
+    void persistPreferences(hiddenColumnKeys, normalizedOrder)
+  }
+
   const orderedColumns = useMemo(() => {
     const columnMap = new Map(columns.map((column) => [column.key, column]))
     return columnOrderKeys.map((key) => columnMap.get(key)).filter((column): column is TColumn => Boolean(column))
@@ -149,5 +161,6 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     hasLoadedPreferences: hasLoadedRef.current,
     toggleColumnVisibility,
     moveColumn,
+    setColumnOrder,
   }
 }

@@ -318,6 +318,7 @@ export default function FlooringProductsClient({
     hiddenColumnKeys: hiddenProductColumnKeys,
     toggleColumnVisibility: toggleProductColumnVisibility,
     moveColumn: moveProductColumn,
+    setColumnOrder: setProductColumnOrder,
   } = useTableColumns({
     tableKey: "products-main",
     columns: productColumns,
@@ -647,6 +648,7 @@ export default function FlooringProductsClient({
                 hiddenColumnKeys={hiddenProductColumnKeys}
                 onToggleColumn={toggleProductColumnVisibility}
                 onMoveColumn={moveProductColumn}
+                onSetColumnOrder={setProductColumnOrder}
               />
               <button
                 type="button"
