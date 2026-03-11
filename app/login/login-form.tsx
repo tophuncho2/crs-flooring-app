@@ -51,7 +51,7 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
     <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="w-full max-w-md p-8 rounded-2xl bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 border border-blue-400">
         <h2 className="text-2xl font-bold mb-6 text-center text-white">
-          Contractor Login
+          CRS System
         </h2>
 
         {restricted && (
