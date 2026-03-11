@@ -260,8 +260,8 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-8 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
-      <div className="w-full space-y-5">
-        <div className="flex items-center justify-between">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Warehouse</h1>
             <p className="text-sm text-[var(--foreground)]/70">Manage warehouse records and linked operational tables.</p>
@@ -272,46 +272,53 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
           </button>
         </div>
 
-        {message && <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
-        {error && <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
+        {message && <p className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
+        {error && <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
 
-        <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-[var(--panel-hover)] text-left">
-                <tr>
-                  <th className="px-3 py-2">Warehouse</th>
-                  <th className="px-3 py-2">Address</th>
-                  <th className="px-3 py-2">Store Phone</th>
-                  <th className="px-3 py-2">Sections</th>
-                  <th className="px-3 py-2">Locations</th>
-                  <th className="px-3 py-2">Work Orders</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const draft = getDraft(row)
-                  return (
-                    <tr key={row.id} className="cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]" onClick={() => setActiveRow(row)}>
-                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        <input value={draft.name} onChange={(event) => updateDraft(row.id, "name", event.target.value)} onBlur={() => saveRow(row)} className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                      </td>
-                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        <input value={draft.address} onChange={(event) => updateDraft(row.id, "address", event.target.value)} onBlur={() => saveRow(row)} className="w-[34rem] rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                      </td>
-                      <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
-                        <input value={draft.phone} onChange={(event) => updateDraft(row.id, "phone", event.target.value)} onBlur={() => saveRow(row)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                      </td>
-                      <td className="px-3 py-2">{row.sectionsCount}</td>
-                      <td className="px-3 py-2">{row.locationsCount}</td>
-                      <td className="px-3 py-2">{row.workOrdersCount}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        <section className="mt-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Warehouse</h2>
+            <span className="text-xs text-[var(--foreground)]/60">{rows.length} total</span>
           </div>
-        </div>
+
+          <div className="overflow-hidden rounded-xl border border-[var(--panel-border)]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-[var(--panel-hover)] text-left">
+                  <tr>
+                    <th className="px-3 py-2">Warehouse</th>
+                    <th className="px-3 py-2">Address</th>
+                    <th className="px-3 py-2">Store Phone</th>
+                    <th className="px-3 py-2">Sections</th>
+                    <th className="px-3 py-2">Locations</th>
+                    <th className="px-3 py-2">Work Orders</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const draft = getDraft(row)
+                    return (
+                      <tr key={row.id} className="cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]" onClick={() => setActiveRow(row)}>
+                        <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                          <input value={draft.name} onChange={(event) => updateDraft(row.id, "name", event.target.value)} onBlur={() => saveRow(row)} className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                        </td>
+                        <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                          <input value={draft.address} onChange={(event) => updateDraft(row.id, "address", event.target.value)} onBlur={() => saveRow(row)} className="w-[34rem] rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                        </td>
+                        <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
+                          <input value={draft.phone} onChange={(event) => updateDraft(row.id, "phone", event.target.value)} onBlur={() => saveRow(row)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                        </td>
+                        <td className="px-3 py-2">{row.sectionsCount}</td>
+                        <td className="px-3 py-2">{row.locationsCount}</td>
+                        <td className="px-3 py-2">{row.workOrdersCount}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </div>
 
       {isCreating && (

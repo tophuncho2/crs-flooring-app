@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, useMemo, useState } from "react"
-import { X } from "lucide-react"
+import { Plus, X } from "lucide-react"
 
 type WorkOrderRow = {
   id: string
@@ -551,13 +551,11 @@ export default function WorkOrdersClient({
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-          <h1 className="text-2xl font-bold text-blue-500">Work Orders</h1>
-          <p className="mt-1 text-sm text-[var(--foreground)]/70">Create and manage work orders for flooring operations.</p>
-
-          {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
-          {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
-
-          <div className="mt-4 flex items-center justify-end">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-blue-500">Work Orders</h1>
+              <p className="mt-1 text-sm text-[var(--foreground)]/70">Create and manage work orders for flooring operations.</p>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -566,13 +564,21 @@ export default function WorkOrdersClient({
                 setNewDraft(defaultDraft)
                 setIsCreateModalOpen(true)
               }}
-              className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
             >
-              Add Work Order
+              <Plus size={16} />
+              Work Order
             </button>
           </div>
 
-          <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+          {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
+          {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
+
+          <div className="mt-6 mb-4 flex items-center justify-between">
+            <span className="text-xs text-[var(--foreground)]/60">{workOrders.length} total</span>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
             <table className="w-full min-w-[1280px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>

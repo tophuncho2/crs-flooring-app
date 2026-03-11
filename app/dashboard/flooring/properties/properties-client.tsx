@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, useState } from "react"
-import { X } from "lucide-react"
+import { Plus, X } from "lucide-react"
 
 type ManagementCompanyOption = {
   id: string
@@ -303,15 +303,36 @@ export default function PropertiesClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <h1 className="text-2xl font-bold text-blue-500">Properties</h1>
-        <p className="mt-1 text-sm text-[var(--foreground)]/70">
-          Manage property records for flooring work orders, including full address formulas and management links.
-        </p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-blue-500">Properties</h1>
+            <p className="mt-1 text-sm text-[var(--foreground)]/70">
+              Manage property records for flooring work orders, including full address formulas and management links.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setMessage("")
+              setError("")
+              setNewDraft(defaultDraft)
+              setIsCreateModalOpen(true)
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          >
+            <Plus size={16} />
+            Property
+          </button>
+        </div>
 
         {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
         {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
 
-        <div className="mt-6 overflow-x-auto border-y border-[var(--panel-border)]">
+        <div className="mt-6 mb-4 flex items-center justify-between">
+          <span className="text-xs text-[var(--foreground)]/60">{properties.length} total</span>
+        </div>
+
+        <div className="overflow-x-auto border-y border-[var(--panel-border)]">
           <table className="w-full min-w-[1320px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
@@ -423,15 +444,6 @@ export default function PropertiesClient({
               )}
             </tbody>
           </table>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => {
-            setMessage("")
-            setError("")
-            setNewDraft(defaultDraft)
-            setIsCreateModalOpen(true)
-          }} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]">Add Property</button>
         </div>
 
       </section>
