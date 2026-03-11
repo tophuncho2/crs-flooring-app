@@ -4,8 +4,10 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton } from "../shared/row-action-buttons"
+import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { useTableColumns } from "../shared/use-table-columns"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ImportRow = {
@@ -201,6 +203,30 @@ export default function ImportsClient({
     defaultGrouped: true,
     defaultGroupKey: "warehouse",
   })
+  const importColumns = useMemo(
+    () => [
+      { key: "open", label: "Open" },
+      { key: "importNumber", label: "Import #" },
+      { key: "tag", label: "Tag" },
+      { key: "transport", label: "Transport" },
+      { key: "status", label: "Status" },
+      { key: "warehouse", label: "Warehouse" },
+      { key: "created", label: "Created" },
+      { key: "items", label: "Items" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+  const {
+    allColumns: orderedImportColumns,
+    visibleColumns: visibleImportColumns,
+    hiddenColumnKeys: hiddenImportColumnKeys,
+    toggleColumnVisibility: toggleImportColumnVisibility,
+    moveColumn: moveImportColumn,
+  } = useTableColumns({
+    tableKey: "imports-main",
+    columns: importColumns,
+  })
 
   function openCreateModal() {
     setMessage("")
@@ -390,23 +416,31 @@ export default function ImportsClient({
   }
 
   function renderImportRow(row: ImportRow) {
-    return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)]">
-        <td className="px-3 py-2">
+    const cells: Record<string, ReactNode> = {
+      open: (
+        <td key="open" className="px-3 py-2">
           <OpenRowButton onClick={() => openImport(row.id)} />
         </td>
-        <td className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>
-        <td className="px-3 py-2">{row.tag || "-"}</td>
-        <td className="px-3 py-2">{formatTransportType(row.transportType)}</td>
-        <td className="px-3 py-2">{formatImportStatus(row.status)}</td>
-        <td className="px-3 py-2">{row.warehouseName || "-"}</td>
-        <td className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>
-        <td className="px-3 py-2">{row.itemsCount}</td>
-        <td className="px-3 py-2">
+      ),
+      importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>,
+      tag: <td key="tag" className="px-3 py-2">{row.tag || "-"}</td>,
+      transport: <td key="transport" className="px-3 py-2">{formatTransportType(row.transportType)}</td>,
+      status: <td key="status" className="px-3 py-2">{formatImportStatus(row.status)}</td>,
+      warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
+      created: <td key="created" className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>,
+      items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
+      delete: (
+        <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteImport(row.id)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
         </td>
+      ),
+    }
+
+    return (
+      <tr key={row.id} className="border-t border-[var(--panel-border)]">
+        {visibleImportColumns.map((column) => cells[column.key])}
       </tr>
     )
   }
@@ -432,6 +466,12 @@ export default function ImportsClient({
               onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
               groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
             >
+              <TableColumnSettings
+                columns={orderedImportColumns}
+                hiddenColumnKeys={hiddenImportColumnKeys}
+                onToggleColumn={toggleImportColumnVisibility}
+                onMoveColumn={moveImportColumn}
+              />
               <button
                 type="button"
                 onClick={openCreateModal}
@@ -450,25 +490,19 @@ export default function ImportsClient({
         <TableShell minWidthClass="min-w-[980px]">
           <TableHead>
               <tr>
-                <TableHeaderCell>Open</TableHeaderCell>
-                <TableHeaderCell>Import #</TableHeaderCell>
-                <TableHeaderCell>Tag</TableHeaderCell>
-                <TableHeaderCell>Transport</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Warehouse</TableHeaderCell>
-                <TableHeaderCell>Created</TableHeaderCell>
-                <TableHeaderCell>Items</TableHeaderCell>
-                <TableHeaderCell>Delete</TableHeaderCell>
+                {visibleImportColumns.map((column) => (
+                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                ))}
               </tr>
           </TableHead>
             <tbody>
               {isGroupingEnabled
                 ? groupedImports.flatMap(([groupName, rows]) => [
-                    <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={9} />,
+                    <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={visibleImportColumns.length} />,
                     ...rows.map((row) => renderImportRow(row)),
                   ])
                 : sortedImports.map((row) => renderImportRow(row))}
-              {filteredImports.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={9} /> : null}
+              {filteredImports.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleImportColumns.length} /> : null}
             </tbody>
         </TableShell>
       </section>

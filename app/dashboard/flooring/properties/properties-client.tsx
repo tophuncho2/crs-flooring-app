@@ -1,11 +1,13 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
+import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { useTableColumns } from "../shared/use-table-columns"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyOption = {
@@ -247,6 +249,33 @@ export default function PropertiesClient({
     ],
     sortField: (row) => row.name,
     groupFields: [{ key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompany?.name ?? "No management company" }],
+  })
+  const propertyColumns = useMemo(
+    () => [
+      { key: "open", label: "Open" },
+      { key: "property", label: "Property" },
+      { key: "street", label: "Street" },
+      { key: "city", label: "City" },
+      { key: "state", label: "State" },
+      { key: "zip", label: "Zip" },
+      { key: "phone", label: "Phone" },
+      { key: "email", label: "Email" },
+      { key: "fullAddress", label: "Full Address" },
+      { key: "managementCompany", label: "Management Company" },
+      { key: "save", label: "Save" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+  const {
+    allColumns: orderedPropertyColumns,
+    visibleColumns: visiblePropertyColumns,
+    hiddenColumnKeys: hiddenPropertyColumnKeys,
+    toggleColumnVisibility: togglePropertyColumnVisibility,
+    moveColumn: movePropertyColumn,
+  } = useTableColumns({
+    tableKey: "properties-main",
+    columns: propertyColumns,
   })
 
   function getDraft(id: string): DraftProperty {
@@ -707,6 +736,12 @@ export default function PropertiesClient({
               isGroupingEnabled={isGroupingEnabled}
               onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
             >
+              <TableColumnSettings
+                columns={orderedPropertyColumns}
+                hiddenColumnKeys={hiddenPropertyColumnKeys}
+                onToggleColumn={togglePropertyColumnVisibility}
+                onMoveColumn={movePropertyColumn}
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -730,18 +765,9 @@ export default function PropertiesClient({
         <TableShell minWidthClass="min-w-[1320px]">
             <TableHead>
               <tr>
-                <TableHeaderCell>Open</TableHeaderCell>
-                <TableHeaderCell>Property</TableHeaderCell>
-                <TableHeaderCell>Street</TableHeaderCell>
-                <TableHeaderCell>City</TableHeaderCell>
-                <TableHeaderCell>State</TableHeaderCell>
-                <TableHeaderCell>Zip</TableHeaderCell>
-                <TableHeaderCell>Phone</TableHeaderCell>
-                <TableHeaderCell>Email</TableHeaderCell>
-                <TableHeaderCell>Full Address</TableHeaderCell>
-                <TableHeaderCell>Management Company</TableHeaderCell>
-                <TableHeaderCell>Save</TableHeaderCell>
-                <TableHeaderCell>Delete</TableHeaderCell>
+                {visiblePropertyColumns.map((column) => (
+                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                ))}
               </tr>
             </TableHead>
             <tbody>
@@ -753,27 +779,34 @@ export default function PropertiesClient({
                 : sortedProperties.map((row) => ({ type: "row" as const, row }))
               ).map((entry) => {
                 if (entry.type === "group") {
-                  return <TableGroupRow key={`group-${entry.groupName}`} label={entry.groupName} colSpan={12} />
+                  return <TableGroupRow key={`group-${entry.groupName}`} label={entry.groupName} colSpan={visiblePropertyColumns.length} />
                 }
 
                 const row = entry.row
                 const draft = getDraft(row.id)
-
-                return (
-                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-                    <td className="px-2 py-2">
+                const cells: Record<string, ReactNode> = {
+                  open: (
+                    <td key="open" className="px-2 py-2">
                       <OpenRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  property: (
+                    <td key="property" className="px-3 py-2">
                       <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  street: (
+                    <td key="street" className="px-3 py-2">
                       <input value={draft.streetAddress} onChange={(event) => setDraftField(row.id, "streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  city: (
+                    <td key="city" className="px-3 py-2">
                       <input value={draft.city} onChange={(event) => setDraftField(row.id, "city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  state: (
+                    <td key="state" className="px-3 py-2">
                       <input
                         value={draft.state}
                         onChange={(event) => setDraftField(row.id, "state", event.target.value)}
@@ -782,23 +815,34 @@ export default function PropertiesClient({
                         className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                       />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  zip: (
+                    <td key="zip" className="px-3 py-2">
                       <input value={draft.zip} onChange={(event) => setDraftField(row.id, "zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  phone: (
+                    <td key="phone" className="px-3 py-2">
                       <input value={draft.phone} onChange={(event) => setDraftField(row.id, "phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  email: (
+                    <td key="email" className="px-3 py-2">
                       <input value={draft.email} onChange={(event) => setDraftField(row.id, "email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">{computeFullAddress({
-                      streetAddress: draft.streetAddress,
-                      city: draft.city,
-                      state: draft.state,
-                      zip: draft.zip,
-                    })}
+                  ),
+                  fullAddress: (
+                    <td key="fullAddress" className="px-3 py-2">
+                      {computeFullAddress({
+                        streetAddress: draft.streetAddress,
+                        city: draft.city,
+                        state: draft.state,
+                        zip: draft.zip,
+                      })}
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  managementCompany: (
+                    <td key="managementCompany" className="px-3 py-2">
                       <select
                         value={draft.managementCompanyId}
                         onChange={(event) => setDraftField(row.id, "managementCompanyId", event.target.value)}
@@ -812,21 +856,31 @@ export default function PropertiesClient({
                         ))}
                       </select>
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  save: (
+                    <td key="save" className="px-3 py-2">
                       <SaveRowButton onClick={() => void saveProperty(row)} disabled={isSavingId === row.id}>
                         {isSavingId === row.id ? "Saving..." : "Save"}
                       </SaveRowButton>
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  delete: (
+                    <td key="delete" className="px-3 py-2">
                       <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
                         {deletingId === row.id ? "Deleting..." : "Delete"}
                       </DeleteRowButton>
                     </td>
+                  ),
+                }
+
+                return (
+                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+                    {visiblePropertyColumns.map((column) => cells[column.key])}
                   </tr>
                 )
               })}
 
-              {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={12} /> : null}
+              {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visiblePropertyColumns.length} /> : null}
             </tbody>
         </TableShell>
 

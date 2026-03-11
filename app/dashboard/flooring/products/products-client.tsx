@@ -1,11 +1,13 @@
 "use client"
 
-import { type ChangeEvent, type ReactNode, useState } from "react"
+import { type ChangeEvent, type ReactNode, useMemo, useState } from "react"
 import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { OpenRowButton } from "../shared/row-action-buttons"
+import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { useTableColumns } from "../shared/use-table-columns"
 import { useTableControls } from "../shared/use-table-controls"
 
 type CategoryOption = {
@@ -291,6 +293,35 @@ export default function FlooringProductsClient({
       { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName },
     ],
   })
+  const productColumns = useMemo(
+    () => [
+      { key: "open", label: "Open" },
+      { key: "product", label: "Product" },
+      { key: "category", label: "Category" },
+      { key: "manufacturer", label: "Manufacturer" },
+      { key: "style", label: "Style" },
+      { key: "color", label: "Color" },
+      { key: "baseColor", label: "Base Color" },
+      { key: "coverage", label: "Coverage" },
+      { key: "width", label: "Width" },
+      { key: "sheetSize", label: "Sheet Size" },
+      { key: "thickness", label: "Thickness" },
+      { key: "unitWeight", label: "Unit Weight" },
+      { key: "photos", label: "Photos" },
+      { key: "actions", label: "Actions" },
+    ],
+    [],
+  )
+  const {
+    allColumns: orderedProductColumns,
+    visibleColumns: visibleProductColumns,
+    hiddenColumnKeys: hiddenProductColumnKeys,
+    toggleColumnVisibility: toggleProductColumnVisibility,
+    moveColumn: moveProductColumn,
+  } = useTableColumns({
+    tableKey: "products-main",
+    columns: productColumns,
+  })
 
   function clearNotices() {
     setMessage("")
@@ -298,26 +329,30 @@ export default function FlooringProductsClient({
   }
 
   function renderProductRow(product: ProductRow) {
-    return (
-      <tr key={product.id} className="border-t border-[var(--panel-border)]">
-        <td className="px-3 py-2">
+    const cells: Record<string, ReactNode> = {
+      open: (
+        <td key="open" className="px-3 py-2">
           <OpenRowButton onClick={() => void openProductInventory(product)} />
         </td>
-        <td className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>
-        <td className="px-3 py-2">{product.category.name}</td>
-        <td className="px-3 py-2">{product.manufacturerName || "-"}</td>
-        <td className="px-3 py-2">{product.style || "-"}</td>
-        <td className="px-3 py-2">{product.color || "-"}</td>
-        <td className="px-3 py-2">{product.baseColor || "-"}</td>
-        <td className="px-3 py-2">
+      ),
+      product: <td key="product" className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>,
+      category: <td key="category" className="px-3 py-2">{product.category.name}</td>,
+      manufacturer: <td key="manufacturer" className="px-3 py-2">{product.manufacturerName || "-"}</td>,
+      style: <td key="style" className="px-3 py-2">{product.style || "-"}</td>,
+      color: <td key="color" className="px-3 py-2">{product.color || "-"}</td>,
+      baseColor: <td key="baseColor" className="px-3 py-2">{product.baseColor || "-"}</td>,
+      coverage: (
+        <td key="coverage" className="px-3 py-2">
           {product.coveragePerUnit ? `${product.coveragePerUnit} / ${product.coverageUnit || "unit"}` : "-"}
         </td>
-        <td className="px-3 py-2">{product.width || "-"}</td>
-        <td className="px-3 py-2">{product.sheetSize || "-"}</td>
-        <td className="px-3 py-2">{product.thickness || "-"}</td>
-        <td className="px-3 py-2">{product.unitWeight || "-"}</td>
-        <td className="px-3 py-2">{product.photoUrls.length}</td>
-        <td className="px-3 py-2">
+      ),
+      width: <td key="width" className="px-3 py-2">{product.width || "-"}</td>,
+      sheetSize: <td key="sheetSize" className="px-3 py-2">{product.sheetSize || "-"}</td>,
+      thickness: <td key="thickness" className="px-3 py-2">{product.thickness || "-"}</td>,
+      unitWeight: <td key="unitWeight" className="px-3 py-2">{product.unitWeight || "-"}</td>,
+      photos: <td key="photos" className="px-3 py-2">{product.photoUrls.length}</td>,
+      actions: (
+        <td key="actions" className="px-3 py-2">
           <div className="flex gap-2">
             <button type="button" onClick={() => openEditProduct(product)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
               <Pencil size={16} />
@@ -327,6 +362,12 @@ export default function FlooringProductsClient({
             </button>
           </div>
         </td>
+      ),
+    }
+
+    return (
+      <tr key={product.id} className="border-t border-[var(--panel-border)]">
+        {visibleProductColumns.map((column) => cells[column.key])}
       </tr>
     )
   }
@@ -601,6 +642,12 @@ export default function FlooringProductsClient({
               groupByKey={groupByKey}
               onGroupByKeyChange={setGroupByKey}
             >
+              <TableColumnSettings
+                columns={orderedProductColumns}
+                hiddenColumnKeys={hiddenProductColumnKeys}
+                onToggleColumn={toggleProductColumnVisibility}
+                onMoveColumn={moveProductColumn}
+              />
               <button
                 type="button"
                 onClick={openCreateProduct}
@@ -621,30 +668,19 @@ export default function FlooringProductsClient({
           <TableShell minWidthClass="min-w-[1400px]">
               <TableHead>
                 <tr>
-                  <TableHeaderCell>Open</TableHeaderCell>
-                  <TableHeaderCell>Product</TableHeaderCell>
-                  <TableHeaderCell>Category</TableHeaderCell>
-                  <TableHeaderCell>Manufacturer</TableHeaderCell>
-                  <TableHeaderCell>Style</TableHeaderCell>
-                  <TableHeaderCell>Color</TableHeaderCell>
-                  <TableHeaderCell>Base Color</TableHeaderCell>
-                  <TableHeaderCell>Coverage</TableHeaderCell>
-                  <TableHeaderCell>Width</TableHeaderCell>
-                  <TableHeaderCell>Sheet Size</TableHeaderCell>
-                  <TableHeaderCell>Thickness</TableHeaderCell>
-                  <TableHeaderCell>Unit Weight</TableHeaderCell>
-                  <TableHeaderCell>Photos</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
+                  {visibleProductColumns.map((column) => (
+                    <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                  ))}
                 </tr>
               </TableHead>
               <tbody>
                 {isGroupingEnabled
                   ? groupedProducts.flatMap(([groupName, rows]) => [
-                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={14} />,
+                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={visibleProductColumns.length} />,
                       ...rows.map((product) => renderProductRow(product)),
                     ])
                   : sortedProducts.map((product) => renderProductRow(product))}
-                {filteredProducts.length === 0 ? <TableEmptyRow message="No flooring products yet." colSpan={14} /> : null}
+                {filteredProducts.length === 0 ? <TableEmptyRow message="No flooring products yet." colSpan={visibleProductColumns.length} /> : null}
               </tbody>
           </TableShell>
         </section>

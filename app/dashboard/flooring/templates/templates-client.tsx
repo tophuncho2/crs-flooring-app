@@ -1,11 +1,13 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
+import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { useTableColumns } from "../shared/use-table-columns"
 import { useTableControls } from "../shared/use-table-controls"
 
 type TemplateRow = {
@@ -167,6 +169,30 @@ export default function TemplatesClient({
     sortField: (row) => `${row.propertyName} ${row.templateTag}`,
     groupFields: [{ key: "propertyName", label: "Property", getValue: (row) => row.propertyName }],
     defaultGrouped: true,
+  })
+  const templateColumns = useMemo(
+    () => [
+      { key: "open", label: "Open" },
+      { key: "templateTag", label: "Template Tag" },
+      { key: "property", label: "Property" },
+      { key: "warehouse", label: "Warehouse" },
+      { key: "instructions", label: "Instructions" },
+      { key: "padType", label: "Pad Type" },
+      { key: "templateNotes", label: "Template Notes" },
+      { key: "save", label: "Save" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+  const {
+    allColumns: orderedTemplateColumns,
+    visibleColumns: visibleTemplateColumns,
+    hiddenColumnKeys: hiddenTemplateColumnKeys,
+    toggleColumnVisibility: toggleTemplateColumnVisibility,
+    moveColumn: moveTemplateColumn,
+  } = useTableColumns({
+    tableKey: "templates-main",
+    columns: templateColumns,
   })
 
   function getDraft(id: string): DraftTemplate {
@@ -533,6 +559,12 @@ export default function TemplatesClient({
               isGroupingEnabled={isGroupingEnabled}
               onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
             >
+              <TableColumnSettings
+                columns={orderedTemplateColumns}
+                hiddenColumnKeys={hiddenTemplateColumnKeys}
+                onToggleColumn={toggleTemplateColumnVisibility}
+                onMoveColumn={moveTemplateColumn}
+              />
               <button
                 type="button"
                 onClick={openCreateTemplate}
@@ -551,15 +583,9 @@ export default function TemplatesClient({
         <TableShell minWidthClass="min-w-[1260px]">
             <TableHead>
               <tr>
-                <TableHeaderCell>Open</TableHeaderCell>
-                <TableHeaderCell>Template Tag</TableHeaderCell>
-                <TableHeaderCell>Property</TableHeaderCell>
-                <TableHeaderCell>Warehouse</TableHeaderCell>
-                <TableHeaderCell>Instructions</TableHeaderCell>
-                <TableHeaderCell>Pad Type</TableHeaderCell>
-                <TableHeaderCell>Template Notes</TableHeaderCell>
-                <TableHeaderCell>Save</TableHeaderCell>
-                <TableHeaderCell>Delete</TableHeaderCell>
+                {visibleTemplateColumns.map((column) => (
+                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                ))}
               </tr>
             </TableHead>
             <tbody>
@@ -571,19 +597,22 @@ export default function TemplatesClient({
                 : sortedTemplates.map((row) => ({ type: "row" as const, row }))
               ).map((entry) => {
                 if (entry.type === "group") {
-                  return <TableGroupRow key={`group-${entry.propertyName}`} label={entry.propertyName} colSpan={9} />
+                  return <TableGroupRow key={`group-${entry.propertyName}`} label={entry.propertyName} colSpan={visibleTemplateColumns.length} />
                 }
 
                 const row = entry.row
                 const draft = getDraft(row.id)
-
-                return (
-                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-                    <td className="px-3 py-2">
+                const cells: Record<string, ReactNode> = {
+                  open: (
+                    <td key="open" className="px-3 py-2">
                       <OpenRowButton onClick={() => void openTemplate(row)} />
                     </td>
-                    <td className="px-3 py-2"><input value={draft.templateTag} onChange={(event) => setDraftField(row.id, "templateTag", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                    <td className="px-3 py-2">
+                  ),
+                  templateTag: (
+                    <td key="templateTag" className="px-3 py-2"><input value={draft.templateTag} onChange={(event) => setDraftField(row.id, "templateTag", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+                  ),
+                  property: (
+                    <td key="property" className="px-3 py-2">
                       <select value={draft.propertyId} onChange={(event) => setDraftField(row.id, "propertyId", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
                         <option value="">Select property</option>
                         {propertyOptions.map((property) => (
@@ -591,7 +620,9 @@ export default function TemplatesClient({
                         ))}
                       </select>
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  warehouse: (
+                    <td key="warehouse" className="px-3 py-2">
                       <select value={draft.warehouseId} onChange={(event) => setDraftField(row.id, "warehouseId", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
                         <option value="">No warehouse</option>
                         {warehouseOptions.map((warehouse) => (
@@ -599,8 +630,12 @@ export default function TemplatesClient({
                         ))}
                       </select>
                     </td>
-                    <td className="px-3 py-2"><input value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                    <td className="px-3 py-2">
+                  ),
+                  instructions: (
+                    <td key="instructions" className="px-3 py-2"><input value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+                  ),
+                  padType: (
+                    <td key="padType" className="px-3 py-2">
                       <select value={draft.padProductId} onChange={(event) => setDraftField(row.id, "padProductId", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
                         <option value="">No pad type</option>
                         {padProductOptions.map((product) => (
@@ -609,22 +644,34 @@ export default function TemplatesClient({
                       </select>
                       <p className="mt-1 text-xs text-[var(--foreground)]/60">{row.padTypeLabel || "-"}</p>
                     </td>
-                    <td className="px-3 py-2"><input value={draft.templateNotes} onChange={(event) => setDraftField(row.id, "templateNotes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                    <td className="px-3 py-2">
+                  ),
+                  templateNotes: (
+                    <td key="templateNotes" className="px-3 py-2"><input value={draft.templateNotes} onChange={(event) => setDraftField(row.id, "templateNotes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
+                  ),
+                  save: (
+                    <td key="save" className="px-3 py-2">
                       <SaveRowButton onClick={() => void saveTemplate(row)} disabled={isSavingId === row.id}>
                         {isSavingId === row.id ? "Saving..." : "Save"}
                       </SaveRowButton>
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  delete: (
+                    <td key="delete" className="px-3 py-2">
                       <DeleteRowButton onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id}>
                         {deletingId === row.id ? "Deleting..." : "Delete"}
                       </DeleteRowButton>
                     </td>
+                  ),
+                }
+
+                return (
+                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+                    {visibleTemplateColumns.map((column) => cells[column.key])}
                   </tr>
                 )
               })}
 
-              {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={9} /> : null}
+              {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
             </tbody>
         </TableShell>
 

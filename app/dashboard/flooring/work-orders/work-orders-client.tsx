@@ -4,8 +4,10 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
+import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { useTableColumns } from "../shared/use-table-columns"
 import { useTableControls } from "../shared/use-table-controls"
 
 type WorkOrderRow = {
@@ -241,6 +243,38 @@ export default function WorkOrdersClient({
       { key: "status", label: "Status", getValue: (row) => row.statusLabel },
     ],
     defaultGroupKey: "warehouse",
+  })
+  const workOrderColumns = useMemo(
+    () => [
+      { key: "wo", label: "WO" },
+      { key: "open", label: "Open" },
+      { key: "status", label: "Status" },
+      { key: "warehouse", label: "Warehouse" },
+      { key: "property", label: "Property" },
+      { key: "address", label: "Address" },
+      { key: "customAddress", label: "Custom Address" },
+      { key: "date", label: "Date" },
+      { key: "unit", label: "Unit" },
+      { key: "unitType", label: "Unit Type" },
+      { key: "vacancy", label: "Vacancy" },
+      { key: "instructions", label: "Instructions" },
+      { key: "notes", label: "Notes" },
+      { key: "imageUrl", label: "Image URL" },
+      { key: "items", label: "Items" },
+      { key: "save", label: "Save" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+  const {
+    allColumns: orderedWorkOrderColumns,
+    visibleColumns: visibleWorkOrderColumns,
+    hiddenColumnKeys: hiddenWorkOrderColumnKeys,
+    toggleColumnVisibility: toggleWorkOrderColumnVisibility,
+    moveColumn: moveWorkOrderColumn,
+  } = useTableColumns({
+    tableKey: "work-orders-main",
+    columns: workOrderColumns,
   })
 
   function getDraft(id: string): DraftWorkOrder {
@@ -495,21 +529,24 @@ export default function WorkOrdersClient({
   function renderWorkOrderRow(row: WorkOrderRow) {
     const line = formatRow(row)
     const draft = getDraft(row.id)
-
-    return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-        <td className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>
-        <td className="px-3 py-2">
+    const cells: Record<string, ReactNode> = {
+      wo: <td key="wo" className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>,
+      open: (
+        <td key="open" className="px-3 py-2">
           <OpenRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1" />
         </td>
-        <td className="px-3 py-2">
+      ),
+      status: (
+        <td key="status" className="px-3 py-2">
           <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
             {statusOptions.map((value) => (
               <option key={value} value={value}>{statusLabel(value)}</option>
             ))}
           </select>
         </td>
-        <td className="px-3 py-2">
+      ),
+      warehouse: (
+        <td key="warehouse" className="px-3 py-2">
           <select value={draft.warehouseId} onChange={(event) => setDraftField(row.id, "warehouseId", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
             <option value="">No warehouse</option>
             {warehouseOptions.map((warehouse) => (
@@ -517,7 +554,9 @@ export default function WorkOrdersClient({
             ))}
           </select>
         </td>
-        <td className="px-3 py-2">
+      ),
+      property: (
+        <td key="property" className="px-3 py-2">
           <select value={draft.propertyId} onChange={(event) => setDraftField(row.id, "propertyId", event.target.value)} className="w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
             <option value="">Select Property</option>
             {propertyOptions.map((property) => (
@@ -525,17 +564,21 @@ export default function WorkOrdersClient({
             ))}
           </select>
         </td>
-        <td className="px-3 py-2">{line.displayAddress}</td>
-        <td className="px-3 py-2"><input value={draft.customAddress} onChange={(event) => setDraftField(row.id, "customAddress", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-        <td className="px-3 py-2"><input type="date" value={draft.date} onChange={(event) => setDraftField(row.id, "date", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-        <td className="px-3 py-2">
+      ),
+      address: <td key="address" className="px-3 py-2">{line.displayAddress}</td>,
+      customAddress: <td key="customAddress" className="px-3 py-2"><input value={draft.customAddress} onChange={(event) => setDraftField(row.id, "customAddress", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      date: <td key="date" className="px-3 py-2"><input type="date" value={draft.date} onChange={(event) => setDraftField(row.id, "date", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      unit: (
+        <td key="unit" className="px-3 py-2">
           <div className="flex gap-1">
             <input value={draft.unitText} onChange={(event) => setDraftField(row.id, "unitText", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
             <input value={draft.unitNumber} onChange={(event) => setDraftField(row.id, "unitNumber", event.target.value)} className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
           </div>
         </td>
-        <td className="px-3 py-2"><input value={draft.unitType} onChange={(event) => setDraftField(row.id, "unitType", event.target.value)} className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-        <td className="px-3 py-2">
+      ),
+      unitType: <td key="unitType" className="px-3 py-2"><input value={draft.unitType} onChange={(event) => setDraftField(row.id, "unitType", event.target.value)} className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      vacancy: (
+        <td key="vacancy" className="px-3 py-2">
           <select value={draft.vacancy} onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)} className={`w-28 rounded border px-2 py-1 ${vacancyFieldClass(draft.vacancy)}`}>
             <option value="">Select</option>
             {vacancyOptions.map((value) => (
@@ -543,20 +586,30 @@ export default function WorkOrdersClient({
             ))}
           </select>
         </td>
-        <td className="px-3 py-2"><textarea value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-        <td className="px-3 py-2"><textarea value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-        <td className="px-3 py-2"><input value={draft.workOrderImageUrl} onChange={(event) => setDraftField(row.id, "workOrderImageUrl", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-        <td className="px-3 py-2">{row.itemsCount}</td>
-        <td className="px-3 py-2">
+      ),
+      instructions: <td key="instructions" className="px-3 py-2"><textarea value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      notes: <td key="notes" className="px-3 py-2"><textarea value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      imageUrl: <td key="imageUrl" className="px-3 py-2"><input value={draft.workOrderImageUrl} onChange={(event) => setDraftField(row.id, "workOrderImageUrl", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
+      save: (
+        <td key="save" className="px-3 py-2">
           <SaveRowButton onClick={() => void saveWorkOrder(row)} disabled={isSaving === row.id} className="border-blue-500/50 text-blue-500 hover:bg-blue-500/10">
             {isSaving === row.id ? "Saving..." : "Save"}
           </SaveRowButton>
         </td>
-        <td className="px-3 py-2">
+      ),
+      delete: (
+        <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteWorkOrder(row.id)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
         </td>
+      ),
+    }
+
+    return (
+      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+        {visibleWorkOrderColumns.map((column) => cells[column.key])}
       </tr>
     )
   }
@@ -681,6 +734,12 @@ export default function WorkOrdersClient({
                 groupByKey={groupByKey}
                 onGroupByKeyChange={setGroupByKey}
               >
+                <TableColumnSettings
+                  columns={orderedWorkOrderColumns}
+                  hiddenColumnKeys={hiddenWorkOrderColumnKeys}
+                  onToggleColumn={toggleWorkOrderColumnVisibility}
+                  onMoveColumn={moveWorkOrderColumn}
+                />
                 <button
                   type="button"
                   onClick={() => {
@@ -704,34 +763,20 @@ export default function WorkOrdersClient({
           <TableShell minWidthClass="min-w-[1280px]">
               <TableHead>
                 <tr>
-                  <TableHeaderCell>WO</TableHeaderCell>
-                  <TableHeaderCell>Open</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Warehouse</TableHeaderCell>
-                  <TableHeaderCell>Property</TableHeaderCell>
-                  <TableHeaderCell>Address</TableHeaderCell>
-                  <TableHeaderCell>Custom Address</TableHeaderCell>
-                  <TableHeaderCell>Date</TableHeaderCell>
-                  <TableHeaderCell>Unit</TableHeaderCell>
-                  <TableHeaderCell>Unit Type</TableHeaderCell>
-                  <TableHeaderCell>Vacancy</TableHeaderCell>
-                  <TableHeaderCell>Instructions</TableHeaderCell>
-                  <TableHeaderCell>Notes</TableHeaderCell>
-                  <TableHeaderCell>Image URL</TableHeaderCell>
-                  <TableHeaderCell>Items</TableHeaderCell>
-                  <TableHeaderCell>Save</TableHeaderCell>
-                  <TableHeaderCell>Delete</TableHeaderCell>
+                  {visibleWorkOrderColumns.map((column) => (
+                    <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                  ))}
                 </tr>
               </TableHead>
               <tbody>
                 {isGroupingEnabled
                   ? groupedWorkOrders.flatMap(([groupName, rows]) => [
-                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={17} />,
+                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={visibleWorkOrderColumns.length} />,
                       ...rows.map((row) => renderWorkOrderRow(row)),
                     ])
                   : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
 
-                {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={17} /> : null}
+                {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={visibleWorkOrderColumns.length} /> : null}
               </tbody>
           </TableShell>
         </section>

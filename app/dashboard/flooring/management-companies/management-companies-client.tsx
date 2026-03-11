@@ -1,11 +1,13 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
+import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { useTableColumns } from "../shared/use-table-columns"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyRow = {
@@ -273,6 +275,33 @@ export default function ManagementCompaniesClient({
       { key: "properties", getValue: (row) => row.properties.map((property) => property.name).join(" ") },
     ],
     sortField: (row) => row.name,
+  })
+  const companyColumns = useMemo(
+    () => [
+      { key: "open", label: "Open" },
+      { key: "company", label: "Company" },
+      { key: "street", label: "Street" },
+      { key: "city", label: "City" },
+      { key: "state", label: "State" },
+      { key: "zip", label: "Zip" },
+      { key: "phone", label: "Phone" },
+      { key: "email", label: "Email" },
+      { key: "fullAddress", label: "Full Address" },
+      { key: "properties", label: "Properties" },
+      { key: "save", label: "Save" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+  const {
+    allColumns: orderedCompanyColumns,
+    visibleColumns: visibleCompanyColumns,
+    hiddenColumnKeys: hiddenCompanyColumnKeys,
+    toggleColumnVisibility: toggleCompanyColumnVisibility,
+    moveColumn: moveCompanyColumn,
+  } = useTableColumns({
+    tableKey: "management-companies-main",
+    columns: companyColumns,
   })
 
   function getDraft(id: string): DraftCompany {
@@ -884,6 +913,12 @@ export default function ManagementCompaniesClient({
               onToggleGrouping={() => {}}
               showGrouping={false}
             >
+              <TableColumnSettings
+                columns={orderedCompanyColumns}
+                hiddenColumnKeys={hiddenCompanyColumnKeys}
+                onToggleColumn={toggleCompanyColumnVisibility}
+                onMoveColumn={moveCompanyColumn}
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -907,40 +942,38 @@ export default function ManagementCompaniesClient({
         <TableShell minWidthClass="min-w-[1320px]">
             <TableHead>
               <tr>
-                <TableHeaderCell>Open</TableHeaderCell>
-                <TableHeaderCell>Company</TableHeaderCell>
-                <TableHeaderCell>Street</TableHeaderCell>
-                <TableHeaderCell>City</TableHeaderCell>
-                <TableHeaderCell>State</TableHeaderCell>
-                <TableHeaderCell>Zip</TableHeaderCell>
-                <TableHeaderCell>Phone</TableHeaderCell>
-                <TableHeaderCell>Email</TableHeaderCell>
-                <TableHeaderCell>Full Address</TableHeaderCell>
-                <TableHeaderCell>Properties</TableHeaderCell>
-                <TableHeaderCell>Save</TableHeaderCell>
-                <TableHeaderCell>Delete</TableHeaderCell>
+                {visibleCompanyColumns.map((column) => (
+                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                ))}
               </tr>
             </TableHead>
             <tbody>
               {sortedCompanies.map((row) => {
                 const draft = getDraft(row.id)
                 const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
-
-                return (
-                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-                    <td className="px-2 py-2">
+                const cells: Record<string, ReactNode> = {
+                  open: (
+                    <td key="open" className="px-2 py-2">
                       <OpenRowButton onClick={() => openCompany(row)} className="px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  company: (
+                    <td key="company" className="px-3 py-2">
                       <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  street: (
+                    <td key="street" className="px-3 py-2">
                       <input value={draft.streetAddress} onChange={(event) => setDraftField(row.id, "streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  city: (
+                    <td key="city" className="px-3 py-2">
                       <input value={draft.city} onChange={(event) => setDraftField(row.id, "city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  state: (
+                    <td key="state" className="px-3 py-2">
                       <input
                         value={draft.state}
                         onChange={(event) => setDraftField(row.id, "state", event.target.value)}
@@ -949,34 +982,52 @@ export default function ManagementCompaniesClient({
                         className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                       />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  zip: (
+                    <td key="zip" className="px-3 py-2">
                       <input value={draft.zip} onChange={(event) => setDraftField(row.id, "zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  phone: (
+                    <td key="phone" className="px-3 py-2">
                       <input value={draft.phone} onChange={(event) => setDraftField(row.id, "phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  email: (
+                    <td key="email" className="px-3 py-2">
                       <input value={draft.email} onChange={(event) => setDraftField(row.id, "email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                     </td>
-                    <td className="px-3 py-2">{computeFullAddress(draft)}</td>
-                    <td className="px-3 py-2">
+                  ),
+                  fullAddress: <td key="fullAddress" className="px-3 py-2">{computeFullAddress(draft)}</td>,
+                  properties: (
+                    <td key="properties" className="px-3 py-2">
                       <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  save: (
+                    <td key="save" className="px-3 py-2">
                       <SaveRowButton onClick={() => void saveCompany(row)} disabled={isSavingId === row.id}>
                         {isSavingId === row.id ? "Saving..." : "Save"}
                       </SaveRowButton>
                     </td>
-                    <td className="px-3 py-2">
+                  ),
+                  delete: (
+                    <td key="delete" className="px-3 py-2">
                       <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
                         {deletingId === row.id ? "Deleting..." : "Delete"}
                       </DeleteRowButton>
                     </td>
+                  ),
+                }
+
+                return (
+                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+                    {visibleCompanyColumns.map((column) => cells[column.key])}
                   </tr>
                 )
               })}
 
-              {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={12} /> : null}
+              {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
             </tbody>
         </TableShell>
 
