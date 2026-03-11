@@ -277,6 +277,18 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               Dashboard
             </button>
 
+            {canOpenTool("warehouse") && (
+              <button
+                onClick={() => {
+                  router.push("/dashboard/flooring/warehouse")
+                  setOpen(false)
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+              >
+                Warehouse
+              </button>
+            )}
+
             <button
               onClick={() => {
                 router.push("/dashboard/flooring/categories")

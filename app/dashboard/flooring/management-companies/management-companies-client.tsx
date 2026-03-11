@@ -113,6 +113,17 @@ type DraftCompany = {
   email: string
 }
 
+type DraftProperty = {
+  name: string
+  streetAddress: string
+  city: string
+  state: string
+  zip: string
+  phone: string
+  email: string
+  managementCompanyId: string
+}
+
 const defaultDraft: DraftCompany = {
   name: "",
   streetAddress: "",
@@ -121,6 +132,17 @@ const defaultDraft: DraftCompany = {
   zip: "",
   phone: "",
   email: "",
+}
+
+const defaultPropertyDraft: DraftProperty = {
+  name: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  zip: "",
+  phone: "",
+  email: "",
+  managementCompanyId: "",
 }
 
 const defaultTemplateDraft: DraftTemplate = {
@@ -205,6 +227,7 @@ export default function ManagementCompaniesClient({
   productOptions: ProductOption[]
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
+  const [propertySelectOptions, setPropertySelectOptions] = useState<PropertyOption[]>(propertyOptions)
   const [drafts, setDrafts] = useState<Record<string, DraftCompany>>({})
   const [newDraft, setNewDraft] = useState<DraftCompany>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -215,16 +238,21 @@ export default function ManagementCompaniesClient({
   const [error, setError] = useState("")
   const [selectedCompany, setSelectedCompany] = useState<ManagementCompanyRow | null>(null)
   const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
+  const [isPropertyCreateOpen, setIsPropertyCreateOpen] = useState(false)
+  const [propertyDraft, setPropertyDraft] = useState<DraftProperty>(defaultPropertyDraft)
+  const [isCreatingProperty, setIsCreatingProperty] = useState(false)
   const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null)
   const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
   const [activeTemplateDraft, setActiveTemplateDraft] = useState<DraftTemplate>(defaultTemplateDraft)
+  const [isTemplateCreateOpen, setIsTemplateCreateOpen] = useState(false)
+  const [newTemplateDraft, setNewTemplateDraft] = useState<DraftTemplate>(defaultTemplateDraft)
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)
   const [templateItems, setTemplateItems] = useState<TemplateItem[]>([])
   const [itemDraft, setItemDraft] = useState<TemplateItemDraft>(emptyItemDraft)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
   const [loadingItems, setLoadingItems] = useState(false)
   const [isSavingTemplateModal, setIsSavingTemplateModal] = useState(false)
   const [isSavingItem, setIsSavingItem] = useState(false)
-  const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
 
   function getDraft(id: string): DraftCompany {
@@ -267,7 +295,20 @@ export default function ManagementCompaniesClient({
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
+  function setPropertyDraftField(field: keyof DraftProperty, value: string) {
+    const normalizedValue = field === "state" ? normalizeState(value) : value
+    setPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function setNewTemplateDraftField(field: keyof DraftTemplate, value: string) {
+    setNewTemplateDraft((prev) => ({ ...prev, [field]: value }))
+  }
+
   function openCompany(company: ManagementCompanyRow) {
+    setError("")
+    setMessage("")
+    setIsPropertyCreateOpen(false)
+    setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: company.id })
     setSelectedCompany(company)
   }
 
@@ -349,9 +390,11 @@ export default function ManagementCompaniesClient({
   }
 
   function closeTemplate() {
-    if (isSavingTemplateModal || isSavingItem || savingItemId || deletingItemId) return
+    if (isSavingTemplateModal || isSavingItem || deletingItemId) return
     setActiveTemplate(null)
     setActiveTemplateDraft(defaultTemplateDraft)
+    setIsTemplateCreateOpen(false)
+    setNewTemplateDraft(defaultTemplateDraft)
     setTemplateItems([])
     setItemDraft(emptyItemDraft)
   }
@@ -378,6 +421,146 @@ export default function ManagementCompaniesClient({
         templates: found ? prev.templates.map((template) => (template.id === templateId ? nextTemplate : template)) : [nextTemplate, ...prev.templates],
       }
     })
+  }
+
+  async function createPropertyForCompany() {
+    if (!selectedCompany) return
+    setError("")
+    setMessage("")
+    setIsCreatingProperty(true)
+
+    try {
+      if (!propertyDraft.name.trim()) throw new Error("Property name is required")
+
+      const response = await fetch("/api/properties-hub", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: propertyDraft.name,
+          streetAddress: propertyDraft.streetAddress,
+          city: propertyDraft.city,
+          state: propertyDraft.state,
+          postalCode: propertyDraft.zip,
+          phone: propertyDraft.phone,
+          email: propertyDraft.email,
+          managementCompanyId: selectedCompany.id,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        property?: Omit<PropertyRow, "templates" | "zip"> & { zip?: string; templates?: PropertyRow["templates"] }
+      }
+
+      if (!response.ok || !payload.property) {
+        throw new Error(payload.error ?? "Failed to create property")
+      }
+
+      const createdProperty: PropertyRow = {
+        id: payload.property.id,
+        name: payload.property.name,
+        streetAddress: payload.property.streetAddress ?? "",
+        city: payload.property.city ?? "",
+        state: payload.property.state ?? "",
+        zip: payload.property.zip ?? "",
+        phone: payload.property.phone ?? "",
+        email: payload.property.email ?? "",
+        fullAddress: payload.property.fullAddress,
+        managementCompany: payload.property.managementCompany ?? { id: selectedCompany.id, name: selectedCompany.name },
+        templates: payload.property.templates ?? [],
+      }
+
+      setPropertySelectOptions((prev) => [{ id: createdProperty.id, name: createdProperty.name }, ...prev.filter((item) => item.id !== createdProperty.id)])
+      setCompanies((prev) =>
+        prev.map((company) =>
+          company.id === selectedCompany.id
+            ? {
+                ...company,
+                properties: [{ id: createdProperty.id, name: createdProperty.name, fullAddress: createdProperty.fullAddress }, ...company.properties],
+              }
+            : company,
+        ),
+      )
+      setSelectedCompany((prev) =>
+        prev
+          ? {
+              ...prev,
+              properties: [{ id: createdProperty.id, name: createdProperty.name, fullAddress: createdProperty.fullAddress }, ...prev.properties],
+            }
+          : prev,
+      )
+      setSelectedProperty(createdProperty)
+      setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: selectedCompany.id })
+      setIsPropertyCreateOpen(false)
+      setMessage("Property created")
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Failed to create property")
+    } finally {
+      setIsCreatingProperty(false)
+    }
+  }
+
+  async function createTemplateForProperty() {
+    if (!selectedProperty) return
+    setError("")
+    setMessage("")
+    setIsCreatingTemplate(true)
+
+    try {
+      if (!newTemplateDraft.templateTag.trim()) throw new Error("Template tag is required")
+
+      const response = await fetch("/api/flooring/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newTemplateDraft,
+          propertyId: selectedProperty.id,
+          warehouseId: newTemplateDraft.warehouseId || null,
+          padProductId: newTemplateDraft.padProductId || null,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
+      if (!response.ok || !payload.template) {
+        throw new Error(payload.error ?? "Failed to create template")
+      }
+
+      const createdTemplate = payload.template
+      setSelectedProperty((prev) =>
+        prev
+          ? {
+              ...prev,
+              templates: [
+                {
+                  id: createdTemplate.id,
+                  templateTag: createdTemplate.templateTag,
+                  warehouseName: createdTemplate.warehouseName,
+                  itemsCount: 0,
+                },
+                ...prev.templates,
+              ],
+            }
+          : prev,
+      )
+      setNewTemplateDraft({ ...defaultTemplateDraft, propertyId: selectedProperty.id })
+      setIsTemplateCreateOpen(false)
+      setActiveTemplate(createdTemplate)
+      setActiveTemplateDraft({
+        templateTag: createdTemplate.templateTag,
+        propertyId: createdTemplate.propertyId,
+        warehouseId: createdTemplate.warehouseId,
+        instructions: createdTemplate.instructions,
+        templateNotes: createdTemplate.templateNotes,
+        padProductId: createdTemplate.padProductId,
+      })
+      setTemplateItems([])
+      setItemDraft(emptyItemDraft)
+      setMessage("Template created")
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Failed to create template")
+    } finally {
+      setIsCreatingTemplate(false)
+    }
   }
 
   async function saveActiveTemplate() {
@@ -411,8 +594,30 @@ export default function ManagementCompaniesClient({
         padProductId: payload.template.padProductId,
       })
 
+      await Promise.all(
+        templateItems.map(async (item) => {
+          const itemResponse = await fetch(`/api/flooring/templates/${payload.template!.id}/items/${item.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              productId: item.productId,
+              quantity: item.quantity,
+              notes: item.notes,
+              storedDyeLot: item.storedDyeLot,
+            }),
+          })
+
+          const itemPayload = (await itemResponse.json().catch(() => ({}))) as { error?: string }
+          if (!itemResponse.ok) {
+            throw new Error(itemPayload.error ?? "Failed to save template item")
+          }
+        }),
+      )
+
+      const refreshedItems = await loadTemplateItems(payload.template.id)
+
       if (selectedProperty?.id === payload.template.propertyId) {
-        updateSelectedPropertyTemplateSummary(payload.template.id, templateItems.length, payload.template)
+        updateSelectedPropertyTemplateSummary(payload.template.id, refreshedItems.length, payload.template)
       }
       setMessage("Template saved")
     } catch (saveError) {
@@ -454,34 +659,6 @@ export default function ManagementCompaniesClient({
       setError(saveError instanceof Error ? saveError.message : "Failed to add template item")
     } finally {
       setIsSavingItem(false)
-    }
-  }
-
-  async function saveTemplateItem(item: TemplateItem) {
-    if (!activeTemplate) return
-    setError("")
-    setMessage("")
-    setSavingItemId(item.id)
-
-    try {
-      const response = await fetch(`/api/flooring/templates/${activeTemplate.id}/items/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: item.productId,
-          quantity: item.quantity,
-          notes: item.notes,
-          storedDyeLot: item.storedDyeLot,
-        }),
-      })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-      if (!response.ok) throw new Error(payload.error ?? "Failed to save template item")
-      await loadTemplateItems(activeTemplate.id)
-      setMessage("Template item saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save template item")
-    } finally {
-      setSavingItemId(null)
     }
   }
 
@@ -902,6 +1079,68 @@ export default function ManagementCompaniesClient({
                 </ul>
               )}
             </div>
+
+            <div className="space-y-3 rounded-lg border border-[var(--panel-border)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold">Add Property</h3>
+                  <p className="text-sm text-[var(--foreground)]/70">Create a new property linked to this management company.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError("")
+                    setMessage("")
+                    setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: selectedCompany.id })
+                    setIsPropertyCreateOpen((prev) => !prev)
+                  }}
+                  className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+                >
+                  {isPropertyCreateOpen ? "Hide" : "Add Property"}
+                </button>
+              </div>
+
+              {isPropertyCreateOpen ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <FormField label="Property Name">
+                    <input value={propertyDraft.name} onChange={(event) => setPropertyDraftField("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="Street Address">
+                    <input value={propertyDraft.streetAddress} onChange={(event) => setPropertyDraftField("streetAddress", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="City">
+                    <input value={propertyDraft.city} onChange={(event) => setPropertyDraftField("city", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="State">
+                    <input value={propertyDraft.state} onChange={(event) => setPropertyDraftField("state", event.target.value)} maxLength={2} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="Zip">
+                    <input value={propertyDraft.zip} onChange={(event) => setPropertyDraftField("zip", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="Phone">
+                    <input value={propertyDraft.phone} onChange={(event) => setPropertyDraftField("phone", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="Email">
+                    <input value={propertyDraft.email} onChange={(event) => setPropertyDraftField("email", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="Full Address">
+                    <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
+                      {computeFullAddress(propertyDraft) || "Property address preview"}
+                    </div>
+                  </FormField>
+                  <div className="flex items-end justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void createPropertyForCompany()}
+                      disabled={isCreatingProperty}
+                      className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60"
+                    >
+                      {isCreatingProperty ? "Creating..." : "Create Property"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </ModalShell>
       ) : null}
@@ -929,10 +1168,63 @@ export default function ManagementCompaniesClient({
             </div>
 
             <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-semibold">Linked Templates</h3>
-                <p className="text-sm text-[var(--foreground)]/70">Templates assigned to this property.</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold">Linked Templates</h3>
+                  <p className="text-sm text-[var(--foreground)]/70">Templates assigned to this property.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError("")
+                    setMessage("")
+                    setNewTemplateDraft({ ...defaultTemplateDraft, propertyId: selectedProperty.id })
+                    setIsTemplateCreateOpen((prev) => !prev)
+                  }}
+                  className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+                >
+                  {isTemplateCreateOpen ? "Hide" : "Add Template"}
+                </button>
               </div>
+              {isTemplateCreateOpen ? (
+                <div className="grid gap-4 rounded-lg border border-[var(--panel-border)] p-4 md:grid-cols-2 xl:grid-cols-3">
+                  <FormField label="Template Tag">
+                    <input value={newTemplateDraft.templateTag} onChange={(event) => setNewTemplateDraftField("templateTag", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </FormField>
+                  <FormField label="Warehouse">
+                    <select value={newTemplateDraft.warehouseId} onChange={(event) => setNewTemplateDraftField("warehouseId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                      <option value="">No warehouse</option>
+                      {warehouseOptions.map((warehouse) => (
+                        <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="Pad Type">
+                    <select value={newTemplateDraft.padProductId} onChange={(event) => setNewTemplateDraftField("padProductId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                      <option value="">No pad type</option>
+                      {padProductOptions.map((product) => (
+                        <option key={product.id} value={product.id}>{product.label}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="Instructions">
+                    <textarea value={newTemplateDraft.instructions} onChange={(event) => setNewTemplateDraftField("instructions", event.target.value)} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+                  </FormField>
+                  <FormField label="Template Notes">
+                    <textarea value={newTemplateDraft.templateNotes} onChange={(event) => setNewTemplateDraftField("templateNotes", event.target.value)} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+                  </FormField>
+                  <div className="flex items-end justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void createTemplateForProperty()}
+                      disabled={isCreatingTemplate}
+                      className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60"
+                    >
+                      {isCreatingTemplate ? "Creating..." : "Create Template"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
@@ -978,6 +1270,11 @@ export default function ManagementCompaniesClient({
       {activeTemplate ? (
         <ModalShell title={`Template ${activeTemplate.templateTag}`} onClose={closeTemplate} zIndexClass="z-[60]">
           <div className="space-y-6">
+            {message === "Template saved" ? (
+              <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
+                Template saved
+              </p>
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <FormField label="Template Tag">
                 <input value={activeTemplateDraft.templateTag} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, templateTag: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
@@ -985,7 +1282,7 @@ export default function ManagementCompaniesClient({
               <FormField label="Property">
                 <select value={activeTemplateDraft.propertyId} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, propertyId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
                   <option value="">Select property</option>
-                  {propertyOptions.map((property) => (
+                  {propertySelectOptions.map((property) => (
                     <option key={property.id} value={property.id}>{property.name}</option>
                   ))}
                 </select>
@@ -1052,18 +1349,17 @@ export default function ManagementCompaniesClient({
                       <th className="h-10 px-3 py-2">Unit</th>
                       <th className="h-10 px-3 py-2">Stored Dye Lot</th>
                       <th className="h-10 px-3 py-2">Notes</th>
-                      <th className="h-10 px-3 py-2">Save</th>
                       <th className="h-10 px-3 py-2">Delete</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingItems ? (
                       <tr>
-                        <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>
+                        <td colSpan={6} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>
                       </tr>
                     ) : templateItems.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/70">No template items yet.</td>
+                        <td colSpan={6} className="px-3 py-8 text-center text-[var(--foreground)]/70">No template items yet.</td>
                       </tr>
                     ) : (
                       templateItems.map((item) => (
@@ -1084,11 +1380,6 @@ export default function ManagementCompaniesClient({
                           </td>
                           <td className="px-3 py-2">
                             <input value={item.notes} onChange={(event) => setTemplateItemField(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                          </td>
-                          <td className="px-3 py-2">
-                            <button type="button" onClick={() => void saveTemplateItem(item)} disabled={savingItemId === item.id} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
-                              {savingItemId === item.id ? "Saving..." : "Save"}
-                            </button>
                           </td>
                           <td className="px-3 py-2">
                             <button type="button" onClick={() => void deleteTemplateItem(item.id)} disabled={deletingItemId === item.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">

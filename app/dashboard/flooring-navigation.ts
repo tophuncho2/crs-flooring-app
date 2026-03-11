@@ -8,7 +8,6 @@ export type FlooringNavItem = {
 }
 
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
-  { slug: "warehouse", name: "Warehouse", href: "/dashboard/flooring/warehouse", requiredTool: "warehouse" },
   { slug: "products", name: "Products", href: "/dashboard/flooring/products", requiredTool: "products" },
   { slug: "calendar", name: "Calendar", href: "/dashboard/flooring/calendar", requiredTool: "warehouse" },
   { slug: "flooring-cut-logs", name: "Cut Logs", href: "/dashboard/flooring/cut-logs", requiredTool: "warehouse" },
