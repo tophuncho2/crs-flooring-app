@@ -4,6 +4,7 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton } from "../shared/row-action-buttons"
+import { getSharedFormFieldClass } from "../shared/form-field-styles"
 import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
@@ -56,6 +57,7 @@ type WarehouseOption = {
 type LocationOption = {
   id: string
   warehouseId: string
+  locationCode: string
   label: string
 }
 
@@ -81,6 +83,11 @@ type ImportDraft = {
   items: ImportItemDraft[]
 }
 
+type CreateImportValidation = {
+  warehouseId: boolean
+  itemFields: Record<string, { productId: boolean; stockCount: boolean }>
+}
+
 const transportTypeOptions = [
   { value: "RETURN", label: "Return" },
   { value: "PURCHASE_ORDER", label: "Purchase Order" },
@@ -102,6 +109,35 @@ function createEmptyItem(): ImportItemDraft {
     cost: "",
     freight: "",
     notes: "",
+  }
+}
+
+function normalizeLocationCode(value: string) {
+  return value.trim().toUpperCase()
+}
+
+function findPendingLocationId(locationOptions: LocationOption[], warehouseId: string) {
+  if (!warehouseId) return ""
+
+  const pendingLocation = locationOptions.find(
+    (location) => location.warehouseId === warehouseId && normalizeLocationCode(location.locationCode) === "PENDING",
+  )
+
+  return pendingLocation?.id ?? ""
+}
+
+function applyDefaultLocationToItem(item: ImportItemDraft, warehouseId: string, locationOptions: LocationOption[]) {
+  const warehouseLocations = warehouseId ? locationOptions.filter((location) => location.warehouseId === warehouseId) : []
+  const currentLocation = warehouseLocations.find((location) => location.id === item.locationId)
+  const pendingLocationId = findPendingLocationId(locationOptions, warehouseId)
+
+  if (currentLocation) {
+    return item
+  }
+
+  return {
+    ...item,
+    locationId: pendingLocationId,
   }
 }
 
@@ -156,6 +192,28 @@ function formatTransportType(value: string) {
   return value === "RETURN" ? "Return" : "Purchase Order"
 }
 
+function validateCreateImportDraft(draft: ImportDraft): CreateImportValidation {
+  const itemFields: CreateImportValidation["itemFields"] = {}
+
+  for (const item of draft.items) {
+    itemFields[item.clientId] = {
+      productId: item.productId.trim() === "",
+      stockCount: item.stockCount.trim() === "",
+    }
+  }
+
+  return {
+    warehouseId: draft.warehouseId.trim() === "",
+    itemFields,
+  }
+}
+
+function hasCreateImportValidationErrors(validation: CreateImportValidation) {
+  if (validation.warehouseId) return true
+
+  return Object.values(validation.itemFields).some((fields) => fields.productId || fields.stockCount)
+}
+
 export default function ImportsClient({
   initialImports,
   productOptions,
@@ -177,6 +235,7 @@ export default function ImportsClient({
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
   const [createModalError, setCreateModalError] = useState("")
+  const [createValidation, setCreateValidation] = useState<CreateImportValidation>(() => validateCreateImportDraft(createEmptyDraft()))
   const [activeImportError, setActiveImportError] = useState("")
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
@@ -233,7 +292,9 @@ export default function ImportsClient({
     setMessage("")
     setPageError("")
     setCreateModalError("")
-    setDraft(createEmptyDraft())
+    const emptyDraft = createEmptyDraft()
+    setCreateValidation(validateCreateImportDraft(emptyDraft))
+    setDraft(emptyDraft)
     setIsModalOpen(true)
   }
 
@@ -322,25 +383,49 @@ export default function ImportsClient({
   }
 
   function setDraftField(field: keyof Omit<ImportDraft, "items">, value: string) {
-    setDraft((prev) => ({ ...prev, [field]: value }))
+    setDraft((prev) => {
+      const next =
+        field === "warehouseId"
+          ? {
+              ...prev,
+              warehouseId: value,
+              items: prev.items.map((item) => applyDefaultLocationToItem(item, value, locationOptions)),
+            }
+          : { ...prev, [field]: value }
+      setCreateValidation(validateCreateImportDraft(next))
+      return next
+    })
   }
 
   function setItemField(index: number, field: keyof ImportItemDraft, value: string) {
-    setDraft((prev) => ({
-      ...prev,
-      items: prev.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
-    }))
+    setDraft((prev) => {
+      const next = {
+        ...prev,
+        items: prev.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
+      }
+      setCreateValidation(validateCreateImportDraft(next))
+      return next
+    })
   }
 
   function addItemRow() {
-    setDraft((prev) => ({ ...prev, items: [createEmptyItem(), ...prev.items] }))
+    setDraft((prev) => {
+      const nextItem = applyDefaultLocationToItem(createEmptyItem(), prev.warehouseId, locationOptions)
+      const next = { ...prev, items: [nextItem, ...prev.items] }
+      setCreateValidation(validateCreateImportDraft(next))
+      return next
+    })
   }
 
   function removeItemRow(index: number) {
-    setDraft((prev) => ({
-      ...prev,
-      items: prev.items.length === 1 ? [createEmptyItem()] : prev.items.filter((_, itemIndex) => itemIndex !== index),
-    }))
+    setDraft((prev) => {
+      const next = {
+        ...prev,
+        items: prev.items.length === 1 ? [createEmptyItem()] : prev.items.filter((_, itemIndex) => itemIndex !== index),
+      }
+      setCreateValidation(validateCreateImportDraft(next))
+      return next
+    })
   }
 
   function setActiveImportItemField(index: number, field: keyof ImportItemDraft, value: string) {
@@ -351,7 +436,10 @@ export default function ImportsClient({
   }
 
   function addActiveImportItemRow() {
-    setActiveImportDraft((prev) => ({ ...prev, items: [createEmptyItem(), ...prev.items] }))
+    setActiveImportDraft((prev) => ({
+      ...prev,
+      items: [applyDefaultLocationToItem(createEmptyItem(), prev.warehouseId, locationOptions), ...prev.items],
+    }))
   }
 
   function removeActiveImportItemRow(index: number) {
@@ -365,6 +453,12 @@ export default function ImportsClient({
     setMessage("")
     setPageError("")
     setCreateModalError("")
+    const nextValidation = validateCreateImportDraft(draft)
+    setCreateValidation(nextValidation)
+    if (hasCreateImportValidationErrors(nextValidation)) {
+      setCreateModalError("Fill the highlighted required fields before creating the import")
+      return
+    }
     setIsSaving(true)
 
     try {
@@ -384,7 +478,9 @@ export default function ImportsClient({
       }
 
       setImports((prev) => [payload.import!, ...prev])
-      setDraft(createEmptyDraft())
+      const emptyDraft = createEmptyDraft()
+      setDraft(emptyDraft)
+      setCreateValidation(validateCreateImportDraft(emptyDraft))
       setIsModalOpen(false)
       setMessage("Import created")
     } catch (createError) {
@@ -416,7 +512,7 @@ export default function ImportsClient({
     }
   }
 
-  function renderImportRow(row: ImportRow) {
+      function renderImportRow(row: ImportRow) {
     const cells: Record<string, ReactNode> = {
       open: (
         <td key="open" className="px-3 py-2">
@@ -564,7 +660,10 @@ export default function ImportsClient({
                 <select
                   value={draft.warehouseId}
                   onChange={(event) => setDraftField("warehouseId", event.target.value)}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={`rounded-lg border px-3 py-2 ${getSharedFormFieldClass({
+                    isRequired: true,
+                    isEmpty: createValidation.warehouseId,
+                  })}`}
                 >
                   <option value="">Select Warehouse</option>
                   {warehouseOptions.map((warehouse) => (
@@ -621,6 +720,10 @@ export default function ImportsClient({
                         ? locationOptions.filter((location) => location.warehouseId === draft.warehouseId)
                         : locationOptions
                       const selectedProduct = productLookup.get(item.productId)
+                      const itemValidation = createValidation.itemFields[item.clientId] ?? {
+                        productId: false,
+                        stockCount: false,
+                      }
 
                       return (
                         <tr key={item.clientId} className="border-t border-[var(--panel-border)]">
@@ -628,7 +731,10 @@ export default function ImportsClient({
                             <select
                               value={item.productId}
                               onChange={(event) => setItemField(index, "productId", event.target.value)}
-                              className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                              className={`w-56 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                isRequired: true,
+                                isEmpty: itemValidation.productId,
+                              })}`}
                             >
                               <option value="">Select product</option>
                               {productOptions.map((product) => (
@@ -639,18 +745,24 @@ export default function ImportsClient({
                             </select>
                           </td>
                           <td className="px-3 py-2">
-                            <input
-                              value={item.itemNumber}
-                              onChange={(event) => setItemField(index, "itemNumber", event.target.value)}
-                              className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                            />
+                              <input
+                                value={item.itemNumber}
+                                onChange={(event) => setItemField(index, "itemNumber", event.target.value)}
+                                className={`w-24 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                  isRequired: false,
+                                  isEmpty: item.itemNumber.trim() === "",
+                                })}`}
+                              />
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex items-center gap-2">
                               <input
                                 value={item.stockCount}
                                 onChange={(event) => setItemField(index, "stockCount", event.target.value)}
-                                className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                                className={`w-24 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                  isRequired: true,
+                                  isEmpty: itemValidation.stockCount,
+                                })}`}
                               />
                               <span className="text-xs text-[var(--foreground)]/60">{selectedProduct?.stockUnit || "unit"}</span>
                             </div>
@@ -659,7 +771,10 @@ export default function ImportsClient({
                             <select
                               value={item.locationId}
                               onChange={(event) => setItemField(index, "locationId", event.target.value)}
-                              className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                              className={`w-64 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                isRequired: false,
+                                isEmpty: item.locationId.trim() === "",
+                              })}`}
                             >
                               <option value="">Select location</option>
                               {filteredLocations.map((location) => (
@@ -673,21 +788,30 @@ export default function ImportsClient({
                             <input
                               value={item.dyeLot}
                               onChange={(event) => setItemField(index, "dyeLot", event.target.value)}
-                              className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                              className={`w-24 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                isRequired: false,
+                                isEmpty: item.dyeLot.trim() === "",
+                              })}`}
                             />
                           </td>
                           <td className="px-3 py-2">
                             <input
                               value={item.cost}
                               onChange={(event) => setItemField(index, "cost", event.target.value)}
-                              className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                              className={`w-24 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                isRequired: false,
+                                isEmpty: item.cost.trim() === "",
+                              })}`}
                             />
                           </td>
                           <td className="px-3 py-2">
                             <input
                               value={item.freight}
                               onChange={(event) => setItemField(index, "freight", event.target.value)}
-                              className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                              className={`w-24 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                isRequired: false,
+                                isEmpty: item.freight.trim() === "",
+                              })}`}
                             />
                           </td>
                           <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === draft.warehouseId)?.name || "-"}</td>
@@ -696,7 +820,10 @@ export default function ImportsClient({
                             <input
                               value={item.notes}
                               onChange={(event) => setItemField(index, "notes", event.target.value)}
-                              className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                              className={`w-52 rounded border px-2 py-1 ${getSharedFormFieldClass({
+                                isRequired: false,
+                                isEmpty: item.notes.trim() === "",
+                              })}`}
                             />
                           </td>
                           <td className="px-3 py-2">
@@ -799,7 +926,13 @@ export default function ImportsClient({
               <FormField label="Import Warehouse">
                 <select
                   value={activeImportDraft.warehouseId}
-                  onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, warehouseId: event.target.value }))}
+                  onChange={(event) =>
+                    setActiveImportDraft((prev) => ({
+                      ...prev,
+                      warehouseId: event.target.value,
+                      items: prev.items.map((item) => applyDefaultLocationToItem(item, event.target.value, locationOptions)),
+                    }))
+                  }
                   className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
                 >
                   <option value="">Select Warehouse</option>

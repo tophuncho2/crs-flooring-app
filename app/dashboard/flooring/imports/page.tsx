@@ -112,6 +112,7 @@ export default async function FlooringImportsPage() {
       locationOptions={locations.map((location) => ({
         id: location.id,
         warehouseId: location.warehouseId,
+        locationCode: location.locationCode,
         label: `${location.warehouseName} - ${location.sectionName ? `${location.sectionName} - ` : ""}${location.locationCode}`,
       }))}
     />
