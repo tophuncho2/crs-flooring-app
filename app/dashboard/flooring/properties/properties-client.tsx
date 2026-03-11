@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyOption = {
@@ -697,37 +697,35 @@ export default function PropertiesClient({
               Manage property records for flooring work orders, including full address formulas and management links.
             </p>
           </div>
-          <TableControlsBar
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            searchPlaceholder="Search property or company"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-            isGroupingEnabled={isGroupingEnabled}
-            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setMessage("")
-                setError("")
-                setNewDraft(defaultDraft)
-                setIsCreateModalOpen(true)
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableActionsSummary count={filteredProperties.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search property or company"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              isGroupingEnabled={isGroupingEnabled}
+              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
             >
-              <Plus size={16} />
-              Property
-            </button>
-          </TableControlsBar>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("")
+                  setError("")
+                  setNewDraft(defaultDraft)
+                  setIsCreateModalOpen(true)
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+              >
+                <Plus size={16} />
+                Property
+              </button>
+            </TableControlsBar>
+          </TableActionsSummary>
         </div>
 
         {!isCreateModalOpen && !selectedProperty && !activeTemplate && message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
         {!isCreateModalOpen && !selectedProperty && !activeTemplate && error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
-
-        <TableSectionMeta>
-          <span className="text-xs text-[var(--foreground)]/60">{filteredProperties.length} total</span>
-        </TableSectionMeta>
 
         <TableShell minWidthClass="min-w-[1320px]">
             <TableHead>

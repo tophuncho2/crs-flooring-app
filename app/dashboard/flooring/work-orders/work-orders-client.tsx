@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type WorkOrderRow = {
@@ -666,42 +666,40 @@ export default function WorkOrdersClient({
               <h1 className="text-2xl font-bold text-blue-500">Work Orders</h1>
               <p className="mt-1 text-sm text-[var(--foreground)]/70">Create and manage work orders for flooring operations.</p>
             </div>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
-              searchPlaceholder="Search property"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-              ascendingSortLabel="1-9"
-              descendingSortLabel="9-1"
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-              groupByKey={groupByKey}
-              onGroupByKeyChange={setGroupByKey}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setMessage("")
-                  setError("")
-                  setNewDraft(defaultDraft)
-                  setIsCreateModalOpen(true)
-                }}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+            <TableActionsSummary count={filteredWorkOrders.length}>
+              <TableControlsBar
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
+                searchPlaceholder="Search property"
+                isAscendingSort={isAscendingSort}
+                onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+                ascendingSortLabel="1-9"
+                descendingSortLabel="9-1"
+                isGroupingEnabled={isGroupingEnabled}
+                onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+                groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+                groupByKey={groupByKey}
+                onGroupByKeyChange={setGroupByKey}
               >
-                <Plus size={16} />
-                Work Order
-              </button>
-            </TableControlsBar>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessage("")
+                    setError("")
+                    setNewDraft(defaultDraft)
+                    setIsCreateModalOpen(true)
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                >
+                  <Plus size={16} />
+                  Work Order
+                </button>
+              </TableControlsBar>
+            </TableActionsSummary>
           </div>
 
           {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
           {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
-
-          <TableSectionMeta>
-            <span className="text-xs text-[var(--foreground)]/60">{filteredWorkOrders.length} total</span>
-          </TableSectionMeta>
 
           <TableShell minWidthClass="min-w-[1280px]">
               <TableHead>

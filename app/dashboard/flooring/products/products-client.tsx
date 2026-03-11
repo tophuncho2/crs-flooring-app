@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { OpenRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type CategoryOption = {
@@ -588,37 +588,36 @@ export default function FlooringProductsClient({
               Manage flooring product attributes, bucket photo previews, and category-linked coverage units.
             </p>
           </div>
-          <TableControlsBar
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            searchPlaceholder="Search product name"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-            isGroupingEnabled={isGroupingEnabled}
-            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-            groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-            groupByKey={groupByKey}
-            onGroupByKeyChange={setGroupByKey}
-          >
-            <button
-              type="button"
-              onClick={openCreateProduct}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableActionsSummary count={filteredProducts.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search product name"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              isGroupingEnabled={isGroupingEnabled}
+              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              groupByKey={groupByKey}
+              onGroupByKeyChange={setGroupByKey}
             >
-              <Plus size={16} />
-              Product
-            </button>
-          </TableControlsBar>
+              <button
+                type="button"
+                onClick={openCreateProduct}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+              >
+                <Plus size={16} />
+                Product
+              </button>
+            </TableControlsBar>
+          </TableActionsSummary>
         </div>
 
         {message ? <SuccessNotice className="mt-4">{message}</SuccessNotice> : null}
         {error ? <ErrorNotice className="mt-4">{error}</ErrorNotice> : null}
 
         <section className="mt-6">
-          <TableSectionMeta className="mt-0">
-            <h2 className="text-lg font-semibold">Products</h2>
-            <span className="text-xs text-[var(--foreground)]/60">{filteredProducts.length} total</span>
-          </TableSectionMeta>
+          <h2 className="mb-4 text-lg font-semibold">Products</h2>
           <TableShell minWidthClass="min-w-[1400px]">
               <TableHead>
                 <tr>

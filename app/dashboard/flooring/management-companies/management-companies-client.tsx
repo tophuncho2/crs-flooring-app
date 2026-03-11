@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyRow = {
@@ -873,38 +873,36 @@ export default function ManagementCompaniesClient({
               Manage management company records and their linked property relationships.
             </p>
           </div>
-          <TableControlsBar
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            searchPlaceholder="Search company or property"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-            isGroupingEnabled={false}
-            onToggleGrouping={() => {}}
-            showGrouping={false}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setMessage("")
-                setError("")
-                setNewDraft(defaultDraft)
-                setIsCreateModalOpen(true)
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableActionsSummary count={filteredCompanies.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search company or property"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              isGroupingEnabled={false}
+              onToggleGrouping={() => {}}
+              showGrouping={false}
             >
-              <Plus size={16} />
-              Company
-            </button>
-          </TableControlsBar>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("")
+                  setError("")
+                  setNewDraft(defaultDraft)
+                  setIsCreateModalOpen(true)
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+              >
+                <Plus size={16} />
+                Company
+              </button>
+            </TableControlsBar>
+          </TableActionsSummary>
         </div>
 
         {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
         {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
-
-        <TableSectionMeta>
-          <span className="text-xs text-[var(--foreground)]/60">{filteredCompanies.length} total</span>
-        </TableSectionMeta>
 
         <TableShell minWidthClass="min-w-[1320px]">
             <TableHead>

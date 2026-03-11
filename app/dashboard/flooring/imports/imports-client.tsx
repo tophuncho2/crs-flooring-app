@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react"
 import { ErrorNotice, SuccessNotice } from "../shared/notices"
 import { DeleteRowButton, OpenRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
-import { TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ImportRow = {
@@ -419,35 +419,33 @@ export default function ImportsClient({
             <h1 className="text-2xl font-bold text-blue-500">Imports</h1>
             <p className="mt-1 text-sm text-[var(--foreground)]/70">Create import headers and inventory rows before material arrives.</p>
           </div>
-          <TableControlsBar
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            searchPlaceholder="Search import # or tag"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-            ascendingSortLabel="1-9"
-            descendingSortLabel="9-1"
-            isGroupingEnabled={isGroupingEnabled}
-            onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-            groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-          >
-            <button
-              type="button"
-              onClick={openCreateModal}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableActionsSummary count={filteredImports.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search import # or tag"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              ascendingSortLabel="1-9"
+              descendingSortLabel="9-1"
+              isGroupingEnabled={isGroupingEnabled}
+              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
             >
-              <Plus size={16} />
-              Import
-            </button>
-          </TableControlsBar>
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+              >
+                <Plus size={16} />
+                Import
+              </button>
+            </TableControlsBar>
+          </TableActionsSummary>
         </div>
 
         {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
         {pageError ? <ErrorNotice className="mt-3">{pageError}</ErrorNotice> : null}
-
-        <TableSectionMeta>
-          <span className="text-xs text-[var(--foreground)]/60">{filteredImports.length} total</span>
-        </TableSectionMeta>
 
         <TableShell minWidthClass="min-w-[980px]">
           <TableHead>

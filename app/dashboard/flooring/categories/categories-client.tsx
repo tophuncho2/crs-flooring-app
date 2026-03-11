@@ -2,6 +2,7 @@
 
 import { type ReactNode, useState } from "react"
 import { Pencil, Plus, Save, Trash2, X } from "lucide-react"
+import { TableActionsSummary } from "../shared/table-shell"
 
 type CategoryRow = {
   id: string
@@ -160,20 +161,18 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
             <h1 className="text-2xl font-bold text-blue-500">Categories</h1>
             <p className="text-sm text-[var(--foreground)]/70">Manage flooring product categories and units.</p>
           </div>
-          <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
-            <Plus size={16} />
-            Category
-          </button>
+          <TableActionsSummary count={categories.length}>
+            <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
+              <Plus size={16} />
+              Category
+            </button>
+          </TableActionsSummary>
         </div>
 
         {message ? <p className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
         {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
 
         <section className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Categories</h2>
-            <span className="text-xs text-[var(--foreground)]/60">{categories.length} total</span>
-          </div>
           <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
             <table className="w-full min-w-[980px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">

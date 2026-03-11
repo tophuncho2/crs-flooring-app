@@ -98,3 +98,20 @@ export function TableSectionMeta({
 }) {
   return <div className={joinClasses("mt-6 mb-4 flex items-center justify-between", className)}>{children}</div>
 }
+
+export function TableActionsSummary({
+  count,
+  children,
+  className,
+}: {
+  count: number
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={joinClasses("flex flex-col gap-2 md:items-end", className)}>
+      {children}
+      <span className="text-xs text-[var(--foreground)]/60">{count} total</span>
+    </div>
+  )
+}
