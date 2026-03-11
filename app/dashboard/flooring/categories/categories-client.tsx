@@ -221,6 +221,9 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
 
       {isCategoryModalOpen ? (
         <ModalShell title={editingCategory ? "Edit Category" : "Add Category"} onClose={() => setIsCategoryModalOpen(false)}>
+          <div className="space-y-5">
+          {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
+          {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Name">
               <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
@@ -244,6 +247,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
               <Save size={16} />
               {isSavingCategory ? "Saving..." : "Save Category"}
             </button>
+          </div>
           </div>
         </ModalShell>
       ) : null}

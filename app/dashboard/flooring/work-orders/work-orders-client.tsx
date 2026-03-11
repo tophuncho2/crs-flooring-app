@@ -778,6 +778,8 @@ export default function WorkOrdersClient({
       {activeWorkOrder ? (
         <ModalShell title={`Work Order ${activeWorkOrder.id.slice(0, 8)}`} onClose={closeWorkOrder}>
           <div className="space-y-6">
+            {message && <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
+            {error && <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <FormField label="Property">
                 <select value={activeWorkOrderDraft.propertyId} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, propertyId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">

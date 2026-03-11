@@ -872,6 +872,8 @@ export default function PropertiesClient({
           }}
         >
           <div className="space-y-6">
+            {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
+            {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Address</p>
@@ -941,6 +943,8 @@ export default function PropertiesClient({
       {activeTemplate ? (
         <ModalShell title={`Template ${activeTemplate.templateTag}`} onClose={closeTemplate} zIndexClass="z-50">
           <div className="space-y-6">
+            {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
+            {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <FormField label="Template Tag">
                 <input value={activeTemplateDraft.templateTag} onChange={(event) => setActiveTemplateDraft((prev) => ({ ...prev, templateTag: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />

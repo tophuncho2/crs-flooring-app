@@ -618,6 +618,9 @@ export default function FlooringProductsClient({
 
       {isProductModalOpen ? (
         <ModalShell title={editingProduct ? "Edit Product" : "Add Product"} onClose={() => setIsProductModalOpen(false)}>
+          <div className="space-y-5">
+          {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
+          {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Link">
               <select
@@ -806,12 +809,15 @@ export default function FlooringProductsClient({
               {isSavingProduct ? "Saving..." : "Save Product"}
             </button>
           </div>
+          </div>
         </ModalShell>
       ) : null}
 
       {activeProduct ? (
         <ModalShell title={activeProduct.name || "Product"} onClose={closeProductInventory}>
           <div className="space-y-6">
+            {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
+            {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Category</p>

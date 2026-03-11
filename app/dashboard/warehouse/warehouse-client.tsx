@@ -333,6 +333,9 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
 
       {isCreating && (
         <ModalShell title="Add Warehouse" onClose={() => setIsCreating(false)}>
+          <div className="space-y-4">
+          {message && <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
+          {error && <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <input value={createDraft.name} onChange={(event) => setCreateDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="Warehouse" className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             <input value={createDraft.phone} onChange={(event) => setCreateDraft((prev) => ({ ...prev, phone: event.target.value }))} placeholder="Store Phone" className="rounded-md border border-[var(--panel-border)] bg-transparent px-3 py-2" />
@@ -342,12 +345,15 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
             <button onClick={() => setIsCreating(false)} type="button" className="rounded-lg border border-[var(--panel-border)] px-4 py-2 transition hover:bg-[var(--panel-hover)]">Cancel</button>
             <button onClick={createWarehouse} type="button" className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400">Create Warehouse</button>
           </div>
+          </div>
         </ModalShell>
       )}
 
       {activeRow && (
         <ModalShell title={`Warehouse - ${activeRow.name}`} onClose={() => setActiveRow(null)}>
           <div className="space-y-6">
+            {message && <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
+            {error && <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Warehouse</p>
