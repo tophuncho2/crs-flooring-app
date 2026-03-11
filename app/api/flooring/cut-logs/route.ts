@@ -7,7 +7,9 @@ import { ensureBuilderOrAdmin } from "@/lib/route-auth"
 function normalizeCutLog(log: {
   id: string
   inventoryId: string
-  quantityTaken: { toString(): string }
+  before: { toString(): string }
+  cut: { toString(): string }
+  after: { toString(): string }
   notes: string | null
   createdAt: Date
   inventory: {
@@ -29,7 +31,9 @@ function normalizeCutLog(log: {
       [log.inventory.product.manufacturerName, log.inventory.product.style, log.inventory.product.color].filter(Boolean).join(" - ") ||
       "Flooring Product",
     itemNumber: log.inventory.itemNumber,
-    quantityTaken: log.quantityTaken.toString(),
+    before: log.before.toString(),
+    cut: log.cut.toString(),
+    after: log.after.toString(),
     notes: log.notes ?? "",
     createdAt: log.createdAt.toISOString(),
   }
@@ -79,7 +83,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>
     const inventoryId = parseRequiredString(body.inventoryId, "inventoryId")
-    const quantityTaken = parseDecimal(body.quantityTaken, "quantityTaken", 2)
+    const cut = parseDecimal(body.cut ?? body.quantityTaken, "cut", 2)
 
     const inventory = await prisma.flooringInventory.findUnique({
       where: { id: inventoryId },
@@ -87,7 +91,7 @@ export async function POST(request: Request) {
         stockCount: true,
         cutLogs: {
           select: {
-            quantityTaken: true,
+            cut: true,
           },
         },
       },
@@ -97,21 +101,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Inventory row not found" }, { status: 404 })
     }
 
-    const cutTotal = inventory.cutLogs.reduce((sum, log) => sum.plus(log.quantityTaken), new Prisma.Decimal(0))
+    const cutTotal = inventory.cutLogs.reduce((sum, log) => sum.plus(log.cut), new Prisma.Decimal(0))
     const runningBalance = inventory.stockCount.minus(cutTotal)
 
-    if (quantityTaken.gt(0) && runningBalance.lte(0)) {
+    if (cut.gt(0) && runningBalance.lte(0)) {
       return NextResponse.json({ error: "This inventory row has no running balance left" }, { status: 400 })
     }
 
-    if (quantityTaken.gt(runningBalance)) {
+    if (cut.gt(runningBalance)) {
       return NextResponse.json({ error: "Quantity taken cannot exceed the current running balance" }, { status: 400 })
     }
 
     const created = await prisma.flooringCutLog.create({
       data: {
         inventoryId,
-        quantityTaken,
+        before: runningBalance,
+        cut,
+        after: runningBalance.minus(cut),
         notes: parseOptionalString(body.notes),
       },
       include: {

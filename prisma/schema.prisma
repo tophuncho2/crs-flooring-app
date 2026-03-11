@@ -265,7 +265,9 @@ model FlooringCutLog {
   workOrder       FlooringWorkOrder?  @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   workOrderItemId String?
   workOrderItem   FlooringWorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
-  quantityTaken   Decimal            @db.Decimal(12, 2)
+  before          Decimal            @db.Decimal(12, 2)
+  cut             Decimal            @db.Decimal(12, 2)
+  after           Decimal            @db.Decimal(12, 2)
   notes           String?
   createdAt       DateTime           @default(now())
 

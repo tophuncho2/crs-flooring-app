@@ -66,7 +66,9 @@ export default async function FlooringInventoryPage() {
         select: {
           id: true,
           inventoryId: true,
-          quantityTaken: true,
+          before: true,
+          cut: true,
+          after: true,
           notes: true,
           createdAt: true,
         },
@@ -78,7 +80,7 @@ export default async function FlooringInventoryPage() {
   return (
     <InventoryClient
       initialInventory={inventory.map((row) => {
-        const cutTotal = row.cutLogs.reduce((total, log) => total + Number(log.quantityTaken), 0)
+        const cutTotal = row.cutLogs.reduce((total, log) => total + Number(log.cut), 0)
         const runningBalance = Number(row.stockCount) - cutTotal
 
         return {
@@ -111,7 +113,9 @@ export default async function FlooringInventoryPage() {
             inventoryId: log.inventoryId,
             inventoryLabel: buildProductName(row.product),
             itemNumber: row.itemNumber,
-            quantityTaken: toFixedString(log.quantityTaken),
+            before: toFixedString(log.before),
+            cut: toFixedString(log.cut),
+            after: toFixedString(log.after),
             notes: log.notes ?? "",
             createdAt: log.createdAt.toISOString(),
           })),

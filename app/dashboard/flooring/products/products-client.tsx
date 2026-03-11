@@ -69,7 +69,9 @@ type CutLogRow = {
   inventoryId: string
   inventoryLabel: string
   itemNumber: string
-  quantityTaken: string
+  before: string
+  cut: string
+  after: string
   notes: string
   createdAt: string
 }
@@ -378,7 +380,7 @@ export default function FlooringProductsClient({
       setInventoryRows((prev) =>
         prev.map((row) => {
           if (row.id !== activeInventoryRow.id) return row
-          const nextCutTotal = parseDecimal(row.cutTotal) + parseDecimal(payload.cutLog.quantityTaken)
+          const nextCutTotal = parseDecimal(row.cutTotal) + parseDecimal(payload.cutLog.cut)
           const nextRunningBalance = parseDecimal(row.stockCount) - nextCutTotal
           return {
             ...row,
@@ -1040,8 +1042,9 @@ export default function FlooringProductsClient({
                   <thead className="bg-[var(--subpanel-header-background)] text-left">
                     <tr>
                       <th className="h-10 px-3 py-2">Created</th>
-                      <th className="h-10 px-3 py-2">Adjustment</th>
-                      <th className="h-10 px-3 py-2">Effect on Stock</th>
+                      <th className="h-10 px-3 py-2">Before</th>
+                      <th className="h-10 px-3 py-2">Cut</th>
+                      <th className="h-10 px-3 py-2">After</th>
                       <th className="h-10 px-3 py-2">Notes</th>
                     </tr>
                   </thead>
@@ -1049,14 +1052,15 @@ export default function FlooringProductsClient({
                     {activeInventoryRow.cutLogs.map((log) => (
                       <tr key={log.id} className="border-t border-[var(--panel-border)]">
                         <td className="px-3 py-2">{new Date(log.createdAt).toLocaleString()}</td>
-                        <td className="px-3 py-2">{log.quantityTaken}</td>
-                        <td className="px-3 py-2">{formatSignedValue(log.quantityTaken)}</td>
+                        <td className="px-3 py-2">{log.before}</td>
+                        <td className="px-3 py-2">{log.cut}</td>
+                        <td className="px-3 py-2">{log.after}</td>
                         <td className="px-3 py-2">{log.notes || "-"}</td>
                       </tr>
                     ))}
                     {activeInventoryRow.cutLogs.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                        <td colSpan={5} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                           No cut logs yet for this inventory row.
                         </td>
                       </tr>

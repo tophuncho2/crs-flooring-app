@@ -49,13 +49,15 @@ function normalizeInventoryRow(row: {
   cutLogs?: Array<{
     id: string
     inventoryId: string
-    quantityTaken: { toString(): string }
+    before: { toString(): string }
+    cut: { toString(): string }
+    after: { toString(): string }
     notes: string | null
     createdAt: Date
   }>
 }) {
   const cutLogs = row.cutLogs ?? []
-  const cutTotal = cutLogs.reduce((total, log) => total + Number(log.quantityTaken), 0)
+  const cutTotal = cutLogs.reduce((total, log) => total + Number(log.cut), 0)
   const runningBalance = Number(row.stockCount) - cutTotal
 
   return {
@@ -88,7 +90,9 @@ function normalizeInventoryRow(row: {
       inventoryId: log.inventoryId,
       inventoryLabel: `${row.location.warehouse.name} / ${row.location.locationCode} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
       itemNumber: row.itemNumber,
-      quantityTaken: log.quantityTaken.toString(),
+      before: log.before.toString(),
+      cut: log.cut.toString(),
+      after: log.after.toString(),
       notes: log.notes ?? "",
       createdAt: log.createdAt.toISOString(),
     })),
@@ -128,7 +132,9 @@ export async function GET(request: Request) {
           select: {
             id: true,
             inventoryId: true,
-            quantityTaken: true,
+            before: true,
+            cut: true,
+            after: true,
             notes: true,
             createdAt: true,
           },
