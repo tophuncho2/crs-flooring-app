@@ -192,6 +192,23 @@ function formatTransportType(value: string) {
   return value === "RETURN" ? "Return" : "Purchase Order"
 }
 
+function autoResizeTextarea(element: HTMLTextAreaElement) {
+  element.style.height = "0px"
+  element.style.height = `${Math.max(element.scrollHeight, 42)}px`
+}
+
+function getImportStatusFieldClass(value: string) {
+  return value === "FINAL"
+    ? "border-emerald-300 bg-emerald-200 text-emerald-900"
+    : "border-sky-300 bg-sky-200 text-sky-900"
+}
+
+function getTransportTypeFieldClass(value: string) {
+  return value === "RETURN"
+    ? "border-stone-300 bg-stone-200 text-stone-900"
+    : "border-violet-300 bg-violet-200 text-violet-900"
+}
+
 function validateCreateImportDraft(draft: ImportDraft): CreateImportValidation {
   const itemFields: CreateImportValidation["itemFields"] = {}
 
@@ -613,49 +630,6 @@ export default function ImportsClient({
               <FormField label="Import Number">
                 <input value="Assigned on save" readOnly className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75" />
               </FormField>
-              <FormField label="Order Number">
-                <input
-                  value={draft.orderNumber}
-                  onChange={(event) => setDraftField("orderNumber", event.target.value)}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </FormField>
-              <FormField label="Tag">
-                <input
-                  value={draft.tag}
-                  onChange={(event) => setDraftField("tag", event.target.value)}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </FormField>
-              <FormField label="Transport Type">
-                <select
-                  value={draft.transportType}
-                  onChange={(event) => setDraftField("transportType", event.target.value)}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                >
-                  {transportTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Import Status">
-                <select
-                  value={draft.status}
-                  onChange={(event) => setDraftField("status", event.target.value)}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Created Time">
-                <input value="Created on save" readOnly className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75" />
-              </FormField>
               <FormField label="Import Warehouse">
                 <select
                   value={draft.warehouseId}
@@ -673,12 +647,57 @@ export default function ImportsClient({
                   ))}
                 </select>
               </FormField>
+              <FormField label="Order Number">
+                <input
+                  value={draft.orderNumber}
+                  onChange={(event) => setDraftField("orderNumber", event.target.value)}
+                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
+              <FormField label="Transport Type">
+                <select
+                  value={draft.transportType}
+                  onChange={(event) => setDraftField("transportType", event.target.value)}
+                  className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(draft.transportType)}`}
+                >
+                  {transportTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Created Time">
+                <input value="Created on save" readOnly className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75" />
+              </FormField>
+              <FormField label="Tag">
+                <input
+                  value={draft.tag}
+                  onChange={(event) => setDraftField("tag", event.target.value)}
+                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                />
+              </FormField>
               <FormField label="Notes">
                 <textarea
                   value={draft.notes}
                   onChange={(event) => setDraftField("notes", event.target.value)}
-                  className="h-28 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2 xl:col-span-2"
+                  onInput={(event) => autoResizeTextarea(event.currentTarget)}
+                  rows={1}
+                  className="min-h-[42px] rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 resize-y overflow-hidden"
                 />
+              </FormField>
+              <FormField label="Import Status">
+                <select
+                  value={draft.status}
+                  onChange={(event) => setDraftField("status", event.target.value)}
+                  className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(draft.status)}`}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </FormField>
             </div>
 
