@@ -30,14 +30,25 @@ type WorkOrderDetail = {
     id: string
     productId: string
     productName: string
+    sendUnit: string
     quantity: string
     notes: string
+    linkedInventoryId: string
+    linkedInventoryLabel: string
+    changeOrderStatus: "SUFFICIENT" | "SHORTAGE"
   }>
 }
 
 type ProductOption = {
   id: string
   name: string
+  sendUnit: string
+}
+
+type InventoryOption = {
+  id: string
+  name: string
+  productId: string
 }
 
 function buildProductName(product: {
@@ -104,6 +115,24 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
               manufacturerName: true,
               style: true,
               color: true,
+              category: {
+                select: {
+                  sendUnit: true,
+                },
+              },
+            },
+          },
+          linkedInventory: {
+            select: {
+              id: true,
+              itemNumber: true,
+              dyeLot: true,
+              location: {
+                select: {
+                  locationCode: true,
+                  warehouse: { select: { name: true } },
+                },
+              },
             },
           },
         },
@@ -118,7 +147,34 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       manufacturerName: true,
       style: true,
       color: true,
+      category: {
+        select: {
+          sendUnit: true,
+        },
+      },
     },
+  })
+
+  const inventoryRows = await prisma.flooringInventory.findMany({
+    where: {
+      OR: [{ linkedWorkOrderItem: null }, { linkedWorkOrderItem: { workOrderId: id } }],
+    },
+    include: {
+      product: {
+        select: {
+          manufacturerName: true,
+          style: true,
+          color: true,
+        },
+      },
+      location: {
+        select: {
+          locationCode: true,
+          warehouse: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: [{ updatedAt: "desc" }],
   })
 
   const propertyOptions = await prisma.propertyHub.findMany({
@@ -174,15 +230,30 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       id: item.id,
       productId: item.productId,
       productName: buildProductName(item.product),
+      sendUnit: item.product.category.sendUnit ?? "",
       quantity: item.quantity.toString(),
       notes: item.notes ?? "",
+      linkedInventoryId: item.linkedInventoryId ?? "",
+      linkedInventoryLabel: item.linkedInventory
+        ? `${item.linkedInventory.location.warehouse.name} / ${item.linkedInventory.location.locationCode} / Item ${item.linkedInventory.itemNumber}${item.linkedInventory.dyeLot ? ` / Dye ${item.linkedInventory.dyeLot}` : ""}`
+        : "",
+      changeOrderStatus: item.changeOrderStatus ?? "SUFFICIENT",
     })),
   }
 
   return (
     <WorkOrderDetailClient
       workOrder={detail}
-      productOptions={productRows.map((product): ProductOption => ({ id: product.id, name: buildProductName(product) }))}
+      productOptions={productRows.map((product): ProductOption => ({
+        id: product.id,
+        name: buildProductName(product),
+        sendUnit: product.category.sendUnit ?? "",
+      }))}
+      inventoryOptions={inventoryRows.map((row): InventoryOption => ({
+        id: row.id,
+        productId: row.productId,
+        name: `${buildProductName(row.product)} / ${row.location.warehouse.name} / ${row.location.locationCode} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
+      }))}
       propertyOptions={propertyOptions.map((property) => ({
         id: property.id,
         name: property.name,

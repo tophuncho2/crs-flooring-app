@@ -227,6 +227,7 @@ model FlooringInventory {
   freight       Decimal?            @db.Decimal(10, 2)
   notes         String?
   cutLogs       FlooringCutLog[]
+  linkedWorkOrderItem FlooringWorkOrderItem?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
@@ -393,13 +394,16 @@ model FlooringWorkOrderItem {
   workOrder         FlooringWorkOrder              @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   productId         String
   product           FlooringProduct                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  linkedInventoryId String?                        @unique
+  linkedInventory   FlooringInventory?             @relation(fields: [linkedInventoryId], references: [id], onDelete: SetNull)
   quantity          Decimal                        @db.Decimal(10, 2)
   notes             String?
-  changeOrderStatus FlooringChangeOrderStatus?
+  changeOrderStatus FlooringChangeOrderStatus?     @default(SUFFICIENT)
   createdAt         DateTime                       @default(now())
   cutLogs           FlooringCutLog[]
 
   @@index([workOrderId])
   @@index([productId])
+  @@index([linkedInventoryId])
   @@map("flooring_work_order_item")
 }
