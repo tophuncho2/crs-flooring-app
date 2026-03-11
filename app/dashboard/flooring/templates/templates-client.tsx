@@ -2,7 +2,10 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus, X } from "lucide-react"
+import { ErrorNotice, SuccessNotice } from "../shared/notices"
+import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type TemplateRow = {
@@ -540,28 +543,27 @@ export default function TemplatesClient({
           </TableControlsBar>
         </div>
 
-        {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
-        {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
+        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
-        <div className="mt-6 mb-4 flex items-center justify-between">
+        <TableSectionMeta>
           <span className="text-xs text-[var(--foreground)]/60">{filteredTemplates.length} total</span>
-        </div>
+        </TableSectionMeta>
 
-        <div className="overflow-x-auto border-y border-[var(--panel-border)]">
-          <table className="w-full min-w-[1260px] text-sm">
-            <thead className="bg-[var(--panel-hover)] text-left">
+        <TableShell minWidthClass="min-w-[1260px]">
+            <TableHead>
               <tr>
-                <th className="h-10 px-3 py-2">Open</th>
-                <th className="h-10 px-3 py-2">Template Tag</th>
-                <th className="h-10 px-3 py-2">Property</th>
-                <th className="h-10 px-3 py-2">Warehouse</th>
-                <th className="h-10 px-3 py-2">Instructions</th>
-                <th className="h-10 px-3 py-2">Pad Type</th>
-                <th className="h-10 px-3 py-2">Template Notes</th>
-                <th className="h-10 px-3 py-2">Save</th>
-                <th className="h-10 px-3 py-2">Delete</th>
+                <TableHeaderCell>Open</TableHeaderCell>
+                <TableHeaderCell>Template Tag</TableHeaderCell>
+                <TableHeaderCell>Property</TableHeaderCell>
+                <TableHeaderCell>Warehouse</TableHeaderCell>
+                <TableHeaderCell>Instructions</TableHeaderCell>
+                <TableHeaderCell>Pad Type</TableHeaderCell>
+                <TableHeaderCell>Template Notes</TableHeaderCell>
+                <TableHeaderCell>Save</TableHeaderCell>
+                <TableHeaderCell>Delete</TableHeaderCell>
               </tr>
-            </thead>
+            </TableHead>
             <tbody>
               {(isGroupingEnabled
                 ? groupedTemplates.flatMap(([propertyName, groupRows]) => [
@@ -571,13 +573,7 @@ export default function TemplatesClient({
                 : sortedTemplates.map((row) => ({ type: "row" as const, row }))
               ).map((entry) => {
                 if (entry.type === "group") {
-                  return (
-                    <tr key={`group-${entry.propertyName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                      <td colSpan={9} className="px-3 py-2 text-sm font-semibold text-blue-500">
-                        {entry.propertyName}
-                      </td>
-                    </tr>
-                  )
+                  return <TableGroupRow key={`group-${entry.propertyName}`} label={entry.propertyName} colSpan={9} />
                 }
 
                 const row = entry.row
@@ -586,13 +582,7 @@ export default function TemplatesClient({
                 return (
                   <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
                     <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => void openTemplate(row)}
-                        className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
-                      >
-                        Open
-                      </button>
+                      <OpenRowButton onClick={() => void openTemplate(row)} />
                     </td>
                     <td className="px-3 py-2"><input value={draft.templateTag} onChange={(event) => setDraftField(row.id, "templateTag", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                     <td className="px-3 py-2">
@@ -623,27 +613,22 @@ export default function TemplatesClient({
                     </td>
                     <td className="px-3 py-2"><input value={draft.templateNotes} onChange={(event) => setDraftField(row.id, "templateNotes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                     <td className="px-3 py-2">
-                      <button type="button" onClick={() => void saveTemplate(row)} disabled={isSavingId === row.id} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                      <SaveRowButton onClick={() => void saveTemplate(row)} disabled={isSavingId === row.id}>
                         {isSavingId === row.id ? "Saving..." : "Save"}
-                      </button>
+                      </SaveRowButton>
                     </td>
                     <td className="px-3 py-2">
-                      <button type="button" onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">
+                      <DeleteRowButton onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id}>
                         {deletingId === row.id ? "Deleting..." : "Delete"}
-                      </button>
+                      </DeleteRowButton>
                     </td>
                   </tr>
                 )
               })}
 
-              {filteredTemplates.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">No templates found.</td>
-                </tr>
-              )}
+              {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={9} /> : null}
             </tbody>
-          </table>
-        </div>
+        </TableShell>
 
       </section>
 
@@ -774,19 +759,18 @@ export default function TemplatesClient({
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-                <table className="w-full min-w-[900px] text-sm">
-                  <thead className="bg-[var(--subpanel-header-background)] text-left">
+              <ModalTableShell minWidthClass="min-w-[900px]">
+                <ModalTableHead>
                     <tr>
-                      <th className="h-10 px-3 py-2">Product</th>
-                      <th className="h-10 px-3 py-2">Qty</th>
-                      <th className="h-10 px-3 py-2">Unit</th>
-                      <th className="h-10 px-3 py-2">Stored Dye Lot</th>
-                      <th className="h-10 px-3 py-2">Notes</th>
-                      <th className="h-10 px-3 py-2">Save</th>
-                      <th className="h-10 px-3 py-2">Delete</th>
+                      <TableHeaderCell>Product</TableHeaderCell>
+                      <TableHeaderCell>Qty</TableHeaderCell>
+                      <TableHeaderCell>Unit</TableHeaderCell>
+                      <TableHeaderCell>Stored Dye Lot</TableHeaderCell>
+                      <TableHeaderCell>Notes</TableHeaderCell>
+                      <TableHeaderCell>Save</TableHeaderCell>
+                      <TableHeaderCell>Delete</TableHeaderCell>
                     </tr>
-                  </thead>
+                </ModalTableHead>
                   <tbody>
                     {loadingItems ? (
                       <tr>
@@ -817,21 +801,20 @@ export default function TemplatesClient({
                             <input value={item.notes} onChange={(event) => setTemplateItemField(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                           </td>
                           <td className="px-3 py-2">
-                            <button type="button" onClick={() => void saveTemplateItem(item)} disabled={savingItemId === item.id} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                            <SaveRowButton onClick={() => void saveTemplateItem(item)} disabled={savingItemId === item.id}>
                               {savingItemId === item.id ? "Saving..." : "Save"}
-                            </button>
+                            </SaveRowButton>
                           </td>
                           <td className="px-3 py-2">
-                            <button type="button" onClick={() => void deleteTemplateItem(item.id)} disabled={deletingItemId === item.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">
+                            <DeleteRowButton onClick={() => void deleteTemplateItem(item.id)} disabled={deletingItemId === item.id}>
                               {deletingItemId === item.id ? "Deleting..." : "Delete"}
-                            </button>
+                            </DeleteRowButton>
                           </td>
                         </tr>
                       ))
                     )}
                   </tbody>
-                </table>
-              </div>
+              </ModalTableShell>
             </div>
 
             <div className="flex justify-end gap-2">

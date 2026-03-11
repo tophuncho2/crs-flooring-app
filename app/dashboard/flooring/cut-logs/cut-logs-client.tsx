@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { ErrorNotice, SuccessNotice } from "../shared/notices"
+import { DeleteRowButton } from "../shared/row-action-buttons"
+import { TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 
 type CutLogRow = {
   id: string
@@ -53,24 +56,23 @@ export default function CutLogsClient({ initialLogs }: { initialLogs: CutLogRow[
       <h1 className="text-2xl font-bold text-blue-500">Cut Logs</h1>
       <p className="mt-2 text-sm text-[var(--foreground)]/70">Inventory adjustments. Positive values reduce stock and negative values add stock back.</p>
 
-      {message ? <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-      {error ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+      {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+      {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
-      <div className="mt-6 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-        <table className="w-full min-w-[1180px] text-sm">
-          <thead className="bg-[var(--panel-hover)] text-left">
+      <TableShell minWidthClass="min-w-[1180px]" className="mt-6">
+          <TableHead>
             <tr>
-              <th className="h-10 px-3 py-2">Created</th>
-              <th className="h-10 px-3 py-2">Product</th>
-              <th className="h-10 px-3 py-2">Item #</th>
-              <th className="h-10 px-3 py-2">Location</th>
-              <th className="h-10 px-3 py-2">Before</th>
-              <th className="h-10 px-3 py-2">Cut</th>
-              <th className="h-10 px-3 py-2">After</th>
-              <th className="h-10 px-3 py-2">Notes</th>
-              <th className="h-10 px-3 py-2">Delete</th>
+              <TableHeaderCell>Created</TableHeaderCell>
+              <TableHeaderCell>Product</TableHeaderCell>
+              <TableHeaderCell>Item #</TableHeaderCell>
+              <TableHeaderCell>Location</TableHeaderCell>
+              <TableHeaderCell>Before</TableHeaderCell>
+              <TableHeaderCell>Cut</TableHeaderCell>
+              <TableHeaderCell>After</TableHeaderCell>
+              <TableHeaderCell>Notes</TableHeaderCell>
+              <TableHeaderCell>Delete</TableHeaderCell>
             </tr>
-          </thead>
+          </TableHead>
           <tbody>
             {logs.map((log) => (
               <tr key={log.id} className="border-t border-[var(--panel-border)]">
@@ -83,27 +85,15 @@ export default function CutLogsClient({ initialLogs }: { initialLogs: CutLogRow[
                 <td className="px-3 py-2">{log.after}</td>
                 <td className="px-3 py-2">{log.notes || "-"}</td>
                 <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => void deleteLog(log.id)}
-                    disabled={deletingId === log.id}
-                    className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
-                  >
+                  <DeleteRowButton onClick={() => void deleteLog(log.id)} disabled={deletingId === log.id}>
                     {deletingId === log.id ? "Deleting..." : "Delete"}
-                  </button>
+                  </DeleteRowButton>
                 </td>
               </tr>
             ))}
-            {logs.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">
-                  No cut logs yet.
-                </td>
-              </tr>
-            ) : null}
+            {logs.length === 0 ? <TableEmptyRow message="No cut logs yet." colSpan={9} /> : null}
           </tbody>
-        </table>
-      </div>
+      </TableShell>
     </section>
   )
 }

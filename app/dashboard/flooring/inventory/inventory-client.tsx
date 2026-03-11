@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { type ReactNode, useMemo, useState } from "react"
 import { X } from "lucide-react"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "../shared/table-shell"
 
 type CutLogRow = {
   id: string
@@ -373,17 +374,16 @@ export default function InventoryClient({ initialInventory }: { initialInventory
               </p>
             ) : null}
 
-            <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead className="bg-[var(--subpanel-header-background)] text-left">
+            <ModalTableShell minWidthClass="min-w-[760px]">
+              <ModalTableHead>
                   <tr>
-                    <th className="h-10 px-3 py-2">Created</th>
-                    <th className="h-10 px-3 py-2">Before</th>
-                    <th className="h-10 px-3 py-2">Cut</th>
-                    <th className="h-10 px-3 py-2">After</th>
-                    <th className="h-10 px-3 py-2">Notes</th>
+                    <TableHeaderCell>Created</TableHeaderCell>
+                    <TableHeaderCell>Before</TableHeaderCell>
+                    <TableHeaderCell>Cut</TableHeaderCell>
+                    <TableHeaderCell>After</TableHeaderCell>
+                    <TableHeaderCell>Notes</TableHeaderCell>
                   </tr>
-                </thead>
+              </ModalTableHead>
                 <tbody>
                   {activeRow.cutLogs.map((log) => (
                     <tr key={log.id} className="border-t border-[var(--panel-border)]">
@@ -394,16 +394,9 @@ export default function InventoryClient({ initialInventory }: { initialInventory
                       <td className="px-3 py-2">{log.notes || "-"}</td>
                     </tr>
                   ))}
-                  {activeRow.cutLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-3 py-8 text-center text-[var(--foreground)]/70">
-                        No cut logs yet for this inventory row.
-                      </td>
-                    </tr>
-                  ) : null}
+                  {activeRow.cutLogs.length === 0 ? <TableEmptyRow message="No cut logs yet for this inventory row." colSpan={5} /> : null}
                 </tbody>
-              </table>
-            </div>
+            </ModalTableShell>
           </div>
         </ModalShell>
       ) : null}

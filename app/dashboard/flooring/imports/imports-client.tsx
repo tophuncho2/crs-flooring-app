@@ -2,7 +2,10 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
+import { ErrorNotice, SuccessNotice } from "../shared/notices"
+import { DeleteRowButton, OpenRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
+import { TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ImportRow = {
@@ -390,13 +393,7 @@ export default function ImportsClient({
     return (
       <tr key={row.id} className="border-t border-[var(--panel-border)]">
         <td className="px-3 py-2">
-          <button
-            type="button"
-            onClick={() => openImport(row.id)}
-            className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
-          >
-            Open
-          </button>
+          <OpenRowButton onClick={() => openImport(row.id)} />
         </td>
         <td className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>
         <td className="px-3 py-2">{row.tag || "-"}</td>
@@ -406,14 +403,9 @@ export default function ImportsClient({
         <td className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>
         <td className="px-3 py-2">{row.itemsCount}</td>
         <td className="px-3 py-2">
-          <button
-            type="button"
-            onClick={() => void deleteImport(row.id)}
-            disabled={deletingId === row.id}
-            className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
-          >
+          <DeleteRowButton onClick={() => void deleteImport(row.id)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
-          </button>
+          </DeleteRowButton>
         </td>
       </tr>
     )
@@ -450,55 +442,43 @@ export default function ImportsClient({
           </TableControlsBar>
         </div>
 
-        {message ? <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-        {pageError ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{pageError}</p> : null}
+        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {pageError ? <ErrorNotice className="mt-3">{pageError}</ErrorNotice> : null}
 
-        <div className="mt-6 mb-4 flex items-center justify-between">
+        <TableSectionMeta>
           <span className="text-xs text-[var(--foreground)]/60">{filteredImports.length} total</span>
-        </div>
+        </TableSectionMeta>
 
-        <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-          <table className="w-full min-w-[980px] text-sm">
-            <thead className="bg-[var(--panel-hover)] text-left">
+        <TableShell minWidthClass="min-w-[980px]">
+          <TableHead>
               <tr>
-                <th className="h-10 px-3 py-2">Open</th>
-                <th className="h-10 px-3 py-2">Import #</th>
-                <th className="h-10 px-3 py-2">Tag</th>
-                <th className="h-10 px-3 py-2">Transport</th>
-                <th className="h-10 px-3 py-2">Status</th>
-                <th className="h-10 px-3 py-2">Warehouse</th>
-                <th className="h-10 px-3 py-2">Created</th>
-                <th className="h-10 px-3 py-2">Items</th>
-                <th className="h-10 px-3 py-2">Delete</th>
+                <TableHeaderCell>Open</TableHeaderCell>
+                <TableHeaderCell>Import #</TableHeaderCell>
+                <TableHeaderCell>Tag</TableHeaderCell>
+                <TableHeaderCell>Transport</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>Warehouse</TableHeaderCell>
+                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell>Items</TableHeaderCell>
+                <TableHeaderCell>Delete</TableHeaderCell>
               </tr>
-            </thead>
+          </TableHead>
             <tbody>
               {isGroupingEnabled
                 ? groupedImports.flatMap(([groupName, rows]) => [
-                    <tr key={`group-${groupName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                      <td colSpan={9} className="px-3 py-2 text-sm font-semibold text-blue-500">
-                        {groupName}
-                      </td>
-                    </tr>,
+                    <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={9} />,
                     ...rows.map((row) => renderImportRow(row)),
                   ])
                 : sortedImports.map((row) => renderImportRow(row))}
-              {filteredImports.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">
-                    No imports logged yet.
-                  </td>
-                </tr>
-              ) : null}
+              {filteredImports.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={9} /> : null}
             </tbody>
-          </table>
-        </div>
+        </TableShell>
       </section>
 
       {isModalOpen ? (
         <ModalShell title="New Import" onClose={closeCreateModal}>
           <div className="space-y-6">
-            {createModalError ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{createModalError}</p> : null}
+            {createModalError ? <ErrorNotice>{createModalError}</ErrorNotice> : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <FormField label="Import Number">
                 <input value="Assigned on save" readOnly className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75" />

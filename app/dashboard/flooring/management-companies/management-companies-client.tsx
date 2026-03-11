@@ -2,7 +2,10 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus, X } from "lucide-react"
+import { ErrorNotice, SuccessNotice } from "../shared/notices"
+import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type ManagementCompanyRow = {
@@ -896,39 +899,30 @@ export default function ManagementCompaniesClient({
           </TableControlsBar>
         </div>
 
-        {message && (
-          <p className="mt-3 border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="mt-3 border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">
-            {error}
-          </p>
-        )}
+        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
-        <div className="mt-6 mb-4 flex items-center justify-between">
+        <TableSectionMeta>
           <span className="text-xs text-[var(--foreground)]/60">{filteredCompanies.length} total</span>
-        </div>
+        </TableSectionMeta>
 
-        <div className="overflow-x-auto border-y border-[var(--panel-border)]">
-          <table className="w-full min-w-[1320px] text-sm">
-            <thead className="bg-[var(--panel-hover)] text-left">
+        <TableShell minWidthClass="min-w-[1320px]">
+            <TableHead>
               <tr>
-                <th className="h-10 px-3 py-2">Open</th>
-                <th className="h-10 px-3 py-2">Company</th>
-                <th className="h-10 px-3 py-2">Street</th>
-                <th className="h-10 px-3 py-2">City</th>
-                <th className="h-10 px-3 py-2">State</th>
-                <th className="h-10 px-3 py-2">Zip</th>
-                <th className="h-10 px-3 py-2">Phone</th>
-                <th className="h-10 px-3 py-2">Email</th>
-                <th className="h-10 px-3 py-2">Full Address</th>
-                <th className="h-10 px-3 py-2">Properties</th>
-                <th className="h-10 px-3 py-2">Save</th>
-                <th className="h-10 px-3 py-2">Delete</th>
+                <TableHeaderCell>Open</TableHeaderCell>
+                <TableHeaderCell>Company</TableHeaderCell>
+                <TableHeaderCell>Street</TableHeaderCell>
+                <TableHeaderCell>City</TableHeaderCell>
+                <TableHeaderCell>State</TableHeaderCell>
+                <TableHeaderCell>Zip</TableHeaderCell>
+                <TableHeaderCell>Phone</TableHeaderCell>
+                <TableHeaderCell>Email</TableHeaderCell>
+                <TableHeaderCell>Full Address</TableHeaderCell>
+                <TableHeaderCell>Properties</TableHeaderCell>
+                <TableHeaderCell>Save</TableHeaderCell>
+                <TableHeaderCell>Delete</TableHeaderCell>
               </tr>
-            </thead>
+            </TableHead>
             <tbody>
               {sortedCompanies.map((row) => {
                 const draft = getDraft(row.id)
@@ -937,13 +931,7 @@ export default function ManagementCompaniesClient({
                 return (
                   <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
                     <td className="px-2 py-2">
-                      <button
-                        type="button"
-                        onClick={() => openCompany(row)}
-                        className="rounded border border-[var(--panel-border)] px-2 py-1 text-xs hover:bg-[var(--panel-hover)]"
-                      >
-                        Open
-                      </button>
+                      <OpenRowButton onClick={() => openCompany(row)} className="px-2 py-1" />
                     </td>
                     <td className="px-3 py-2">
                       <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
@@ -977,37 +965,22 @@ export default function ManagementCompaniesClient({
                       <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
                     </td>
                     <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => void saveCompany(row)}
-                        disabled={isSavingId === row.id}
-                        className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                      >
+                      <SaveRowButton onClick={() => void saveCompany(row)} disabled={isSavingId === row.id}>
                         {isSavingId === row.id ? "Saving..." : "Save"}
-                      </button>
+                      </SaveRowButton>
                     </td>
                     <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => void deleteCompany(row.id)}
-                        disabled={deletingId === row.id}
-                        className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
-                      >
+                      <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
                         {deletingId === row.id ? "Deleting..." : "Delete"}
-                      </button>
+                      </DeleteRowButton>
                     </td>
                   </tr>
                 )
               })}
 
-              {filteredCompanies.length === 0 && (
-                <tr>
-                  <td colSpan={12} className="px-3 py-8 text-center text-[var(--foreground)]/70">No management companies found.</td>
-                </tr>
-              )}
+              {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={12} /> : null}
             </tbody>
-          </table>
-        </div>
+        </TableShell>
 
       </section>
 
@@ -1377,18 +1350,17 @@ export default function ManagementCompaniesClient({
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-                <table className="w-full min-w-[900px] text-sm">
-                  <thead className="bg-[var(--subpanel-header-background)] text-left">
+              <ModalTableShell minWidthClass="min-w-[900px]">
+                <ModalTableHead>
                     <tr>
-                      <th className="h-10 px-3 py-2">Product</th>
-                      <th className="h-10 px-3 py-2">Qty</th>
-                      <th className="h-10 px-3 py-2">Unit</th>
-                      <th className="h-10 px-3 py-2">Stored Dye Lot</th>
-                      <th className="h-10 px-3 py-2">Notes</th>
-                      <th className="h-10 px-3 py-2">Delete</th>
+                      <TableHeaderCell>Product</TableHeaderCell>
+                      <TableHeaderCell>Qty</TableHeaderCell>
+                      <TableHeaderCell>Unit</TableHeaderCell>
+                      <TableHeaderCell>Stored Dye Lot</TableHeaderCell>
+                      <TableHeaderCell>Notes</TableHeaderCell>
+                      <TableHeaderCell>Delete</TableHeaderCell>
                     </tr>
-                  </thead>
+                </ModalTableHead>
                   <tbody>
                     {loadingItems ? (
                       <tr>
@@ -1419,16 +1391,15 @@ export default function ManagementCompaniesClient({
                             <input value={item.notes} onChange={(event) => setTemplateItemField(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                           </td>
                           <td className="px-3 py-2">
-                            <button type="button" onClick={() => void deleteTemplateItem(item.id)} disabled={deletingItemId === item.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">
+                            <DeleteRowButton onClick={() => void deleteTemplateItem(item.id)} disabled={deletingItemId === item.id}>
                               {deletingItemId === item.id ? "Deleting..." : "Delete"}
-                            </button>
+                            </DeleteRowButton>
                           </td>
                         </tr>
                       ))
                     )}
                   </tbody>
-                </table>
-              </div>
+              </ModalTableShell>
             </div>
 
             <div className="flex justify-end gap-2">

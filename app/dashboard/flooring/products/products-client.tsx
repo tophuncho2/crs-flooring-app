@@ -2,7 +2,10 @@
 
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
+import { ErrorNotice, SuccessNotice } from "../shared/notices"
+import { OpenRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type CategoryOption = {
@@ -298,13 +301,7 @@ export default function FlooringProductsClient({
     return (
       <tr key={product.id} className="border-t border-[var(--panel-border)]">
         <td className="px-3 py-2">
-          <button
-            type="button"
-            onClick={() => void openProductInventory(product)}
-            className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
-          >
-            Open
-          </button>
+          <OpenRowButton onClick={() => void openProductInventory(product)} />
         </td>
         <td className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>
         <td className="px-3 py-2">{product.category.name}</td>
@@ -614,55 +611,43 @@ export default function FlooringProductsClient({
           </TableControlsBar>
         </div>
 
-        {message ? <p className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-        {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+        {message ? <SuccessNotice className="mt-4">{message}</SuccessNotice> : null}
+        {error ? <ErrorNotice className="mt-4">{error}</ErrorNotice> : null}
 
         <section className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
+          <TableSectionMeta className="mt-0">
             <h2 className="text-lg font-semibold">Products</h2>
             <span className="text-xs text-[var(--foreground)]/60">{filteredProducts.length} total</span>
-          </div>
-          <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="w-full min-w-[1400px] text-sm">
-              <thead className="bg-[var(--panel-hover)] text-left">
+          </TableSectionMeta>
+          <TableShell minWidthClass="min-w-[1400px]">
+              <TableHead>
                 <tr>
-                  <th className="h-10 px-3 py-2">Open</th>
-                  <th className="h-10 px-3 py-2">Product</th>
-                  <th className="h-10 px-3 py-2">Category</th>
-                  <th className="h-10 px-3 py-2">Manufacturer</th>
-                  <th className="h-10 px-3 py-2">Style</th>
-                  <th className="h-10 px-3 py-2">Color</th>
-                  <th className="h-10 px-3 py-2">Base Color</th>
-                  <th className="h-10 px-3 py-2">Coverage</th>
-                  <th className="h-10 px-3 py-2">Width</th>
-                  <th className="h-10 px-3 py-2">Sheet Size</th>
-                  <th className="h-10 px-3 py-2">Thickness</th>
-                  <th className="h-10 px-3 py-2">Unit Weight</th>
-                  <th className="h-10 px-3 py-2">Photos</th>
-                  <th className="h-10 px-3 py-2">Actions</th>
+                  <TableHeaderCell>Open</TableHeaderCell>
+                  <TableHeaderCell>Product</TableHeaderCell>
+                  <TableHeaderCell>Category</TableHeaderCell>
+                  <TableHeaderCell>Manufacturer</TableHeaderCell>
+                  <TableHeaderCell>Style</TableHeaderCell>
+                  <TableHeaderCell>Color</TableHeaderCell>
+                  <TableHeaderCell>Base Color</TableHeaderCell>
+                  <TableHeaderCell>Coverage</TableHeaderCell>
+                  <TableHeaderCell>Width</TableHeaderCell>
+                  <TableHeaderCell>Sheet Size</TableHeaderCell>
+                  <TableHeaderCell>Thickness</TableHeaderCell>
+                  <TableHeaderCell>Unit Weight</TableHeaderCell>
+                  <TableHeaderCell>Photos</TableHeaderCell>
+                  <TableHeaderCell>Actions</TableHeaderCell>
                 </tr>
-              </thead>
+              </TableHead>
               <tbody>
                 {isGroupingEnabled
                   ? groupedProducts.flatMap(([groupName, rows]) => [
-                      <tr key={`group-${groupName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                        <td colSpan={14} className="px-3 py-2 text-sm font-semibold text-blue-500">
-                          {groupName}
-                        </td>
-                      </tr>,
+                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={14} />,
                       ...rows.map((product) => renderProductRow(product)),
                     ])
                   : sortedProducts.map((product) => renderProductRow(product))}
-                {filteredProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={14} className="px-3 py-8 text-center text-[var(--foreground)]/60">
-                      No flooring products yet.
-                    </td>
-                  </tr>
-                ) : null}
+                {filteredProducts.length === 0 ? <TableEmptyRow message="No flooring products yet." colSpan={14} /> : null}
               </tbody>
-            </table>
-          </div>
+          </TableShell>
         </section>
       </div>
 
@@ -1085,18 +1070,17 @@ export default function FlooringProductsClient({
                 </p>
               ) : null}
 
-              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-                <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-[var(--subpanel-header-background)] text-left">
-                    <tr>
-                      <th className="h-10 px-3 py-2">Created</th>
-                      <th className="h-10 px-3 py-2">Before</th>
-                      <th className="h-10 px-3 py-2">Cut</th>
-                      <th className="h-10 px-3 py-2">After</th>
-                      <th className="h-10 px-3 py-2">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+            <ModalTableShell minWidthClass="min-w-[760px]">
+              <ModalTableHead>
+                  <tr>
+                    <TableHeaderCell>Created</TableHeaderCell>
+                    <TableHeaderCell>Before</TableHeaderCell>
+                    <TableHeaderCell>Cut</TableHeaderCell>
+                    <TableHeaderCell>After</TableHeaderCell>
+                    <TableHeaderCell>Notes</TableHeaderCell>
+                  </tr>
+              </ModalTableHead>
+                <tbody>
                     {activeInventoryRow.cutLogs.map((log) => (
                       <tr key={log.id} className="border-t border-[var(--panel-border)]">
                         <td className="px-3 py-2">{new Date(log.createdAt).toLocaleString()}</td>
@@ -1114,8 +1098,7 @@ export default function FlooringProductsClient({
                       </tr>
                     ) : null}
                   </tbody>
-                </table>
-              </div>
+            </ModalTableShell>
             </div>
           </div>
         </ModalShell>

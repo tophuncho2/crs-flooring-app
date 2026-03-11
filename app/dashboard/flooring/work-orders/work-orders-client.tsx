@@ -2,7 +2,10 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
+import { ErrorNotice, SuccessNotice } from "../shared/notices"
+import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
 import TableControlsBar from "../shared/table-controls-bar"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableSectionMeta, TableShell } from "../shared/table-shell"
 import { useTableControls } from "../shared/use-table-controls"
 
 type WorkOrderRow = {
@@ -497,13 +500,7 @@ export default function WorkOrdersClient({
       <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
         <td className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>
         <td className="px-3 py-2">
-          <button
-            type="button"
-            onClick={() => void openWorkOrder(row)}
-            className="rounded border border-[var(--panel-border)] px-2 py-1 text-xs hover:bg-[var(--panel-hover)]"
-          >
-            Open
-          </button>
+          <OpenRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1" />
         </td>
         <td className="px-3 py-2">
           <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
@@ -551,24 +548,14 @@ export default function WorkOrdersClient({
         <td className="px-3 py-2"><input value={draft.workOrderImageUrl} onChange={(event) => setDraftField(row.id, "workOrderImageUrl", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
         <td className="px-3 py-2">{row.itemsCount}</td>
         <td className="px-3 py-2">
-          <button
-            type="button"
-            onClick={() => void saveWorkOrder(row)}
-            disabled={isSaving === row.id}
-            className="rounded border border-blue-500/50 px-3 py-1 text-xs text-blue-500 transition hover:bg-blue-500/10 disabled:opacity-60"
-          >
+          <SaveRowButton onClick={() => void saveWorkOrder(row)} disabled={isSaving === row.id} className="border-blue-500/50 text-blue-500 hover:bg-blue-500/10">
             {isSaving === row.id ? "Saving..." : "Save"}
-          </button>
+          </SaveRowButton>
         </td>
         <td className="px-3 py-2">
-          <button
-            type="button"
-            onClick={() => void deleteWorkOrder(row.id)}
-            disabled={deletingId === row.id}
-            className="rounded border border-rose-500/40 px-3 py-1 text-xs text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
-          >
+          <DeleteRowButton onClick={() => void deleteWorkOrder(row.id)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
-          </button>
+          </DeleteRowButton>
         </td>
       </tr>
     )
@@ -709,58 +696,46 @@ export default function WorkOrdersClient({
             </TableControlsBar>
           </div>
 
-          {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
-          {error && <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
+          {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+          {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
-          <div className="mt-6 mb-4 flex items-center justify-between">
+          <TableSectionMeta>
             <span className="text-xs text-[var(--foreground)]/60">{filteredWorkOrders.length} total</span>
-          </div>
+          </TableSectionMeta>
 
-          <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="w-full min-w-[1280px] text-sm">
-              <thead className="bg-[var(--panel-hover)] text-left">
+          <TableShell minWidthClass="min-w-[1280px]">
+              <TableHead>
                 <tr>
-                  <th className="h-10 px-3 py-2">WO</th>
-                  <th className="h-10 px-3 py-2">Open</th>
-                  <th className="h-10 px-3 py-2">Status</th>
-                  <th className="h-10 px-3 py-2">Warehouse</th>
-                  <th className="h-10 px-3 py-2">Property</th>
-                  <th className="h-10 px-3 py-2">Address</th>
-                  <th className="h-10 px-3 py-2">Custom Address</th>
-                  <th className="h-10 px-3 py-2">Date</th>
-                  <th className="h-10 px-3 py-2">Unit</th>
-                  <th className="h-10 px-3 py-2">Unit Type</th>
-                  <th className="h-10 px-3 py-2">Vacancy</th>
-                  <th className="h-10 px-3 py-2">Instructions</th>
-                  <th className="h-10 px-3 py-2">Notes</th>
-                  <th className="h-10 px-3 py-2">Image URL</th>
-                  <th className="h-10 px-3 py-2">Items</th>
-                  <th className="h-10 px-3 py-2">Save</th>
-                  <th className="h-10 px-3 py-2">Delete</th>
+                  <TableHeaderCell>WO</TableHeaderCell>
+                  <TableHeaderCell>Open</TableHeaderCell>
+                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell>Warehouse</TableHeaderCell>
+                  <TableHeaderCell>Property</TableHeaderCell>
+                  <TableHeaderCell>Address</TableHeaderCell>
+                  <TableHeaderCell>Custom Address</TableHeaderCell>
+                  <TableHeaderCell>Date</TableHeaderCell>
+                  <TableHeaderCell>Unit</TableHeaderCell>
+                  <TableHeaderCell>Unit Type</TableHeaderCell>
+                  <TableHeaderCell>Vacancy</TableHeaderCell>
+                  <TableHeaderCell>Instructions</TableHeaderCell>
+                  <TableHeaderCell>Notes</TableHeaderCell>
+                  <TableHeaderCell>Image URL</TableHeaderCell>
+                  <TableHeaderCell>Items</TableHeaderCell>
+                  <TableHeaderCell>Save</TableHeaderCell>
+                  <TableHeaderCell>Delete</TableHeaderCell>
                 </tr>
-              </thead>
+              </TableHead>
               <tbody>
                 {isGroupingEnabled
                   ? groupedWorkOrders.flatMap(([groupName, rows]) => [
-                      <tr key={`group-${groupName}`} className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                        <td colSpan={17} className="px-3 py-2 text-sm font-semibold text-blue-500">
-                          {groupName}
-                        </td>
-                      </tr>,
+                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={17} />,
                       ...rows.map((row) => renderWorkOrderRow(row)),
                     ])
                   : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
 
-                {filteredWorkOrders.length === 0 && (
-                  <tr>
-                    <td colSpan={17} className="px-3 py-8 text-center text-[var(--foreground)]/70">
-                      No work orders yet.
-                    </td>
-                  </tr>
-                )}
+                {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={17} /> : null}
               </tbody>
-            </table>
-          </div>
+          </TableShell>
         </section>
       </div>
 
@@ -942,18 +917,17 @@ export default function WorkOrdersClient({
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-                <table className="w-full min-w-[900px] text-sm">
-                  <thead className="bg-[var(--subpanel-header-background)] text-left">
+              <ModalTableShell minWidthClass="min-w-[900px]">
+                <ModalTableHead>
                     <tr>
-                      <th className="h-10 px-3 py-2">Product</th>
-                      <th className="h-10 px-3 py-2">Qty</th>
-                      <th className="h-10 px-3 py-2">Unit</th>
-                      <th className="h-10 px-3 py-2">Notes</th>
-                      <th className="h-10 px-3 py-2">Save</th>
-                      <th className="h-10 px-3 py-2">Delete</th>
+                      <TableHeaderCell>Product</TableHeaderCell>
+                      <TableHeaderCell>Qty</TableHeaderCell>
+                      <TableHeaderCell>Unit</TableHeaderCell>
+                      <TableHeaderCell>Notes</TableHeaderCell>
+                      <TableHeaderCell>Save</TableHeaderCell>
+                      <TableHeaderCell>Delete</TableHeaderCell>
                     </tr>
-                  </thead>
+                </ModalTableHead>
                   <tbody>
                     {loadingItems ? (
                       <tr>
@@ -981,21 +955,20 @@ export default function WorkOrdersClient({
                             <input value={item.notes} onChange={(event) => setActiveItemField(item.id, "notes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                           </td>
                           <td className="px-3 py-2">
-                            <button type="button" onClick={() => void saveItem(item)} disabled={savingItemId === item.id} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                            <SaveRowButton onClick={() => void saveItem(item)} disabled={savingItemId === item.id}>
                               {savingItemId === item.id ? "Saving..." : "Save"}
-                            </button>
+                            </SaveRowButton>
                           </td>
                           <td className="px-3 py-2">
-                            <button type="button" onClick={() => void deleteItem(item.id)} disabled={deletingItemId === item.id} className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60">
+                            <DeleteRowButton onClick={() => void deleteItem(item.id)} disabled={deletingItemId === item.id}>
                               {deletingItemId === item.id ? "Deleting..." : "Delete"}
-                            </button>
+                            </DeleteRowButton>
                           </td>
                         </tr>
                       ))
                     )}
                   </tbody>
-                </table>
-              </div>
+              </ModalTableShell>
             </div>
 
             <div className="flex justify-end gap-2">
