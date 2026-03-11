@@ -379,15 +379,15 @@ export default function ImportsClient({
           <table className="w-full min-w-[980px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
-                <th className="px-3 py-2">Open</th>
-                <th className="px-3 py-2">Import #</th>
-                <th className="px-3 py-2">Tag</th>
-                <th className="px-3 py-2">Transport</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Warehouse</th>
-                <th className="px-3 py-2">Created</th>
-                <th className="px-3 py-2">Items</th>
-                <th className="px-3 py-2">Delete</th>
+                <th className="h-10 px-3 py-2">Open</th>
+                <th className="h-10 px-3 py-2">Import #</th>
+                <th className="h-10 px-3 py-2">Tag</th>
+                <th className="h-10 px-3 py-2">Transport</th>
+                <th className="h-10 px-3 py-2">Status</th>
+                <th className="h-10 px-3 py-2">Warehouse</th>
+                <th className="h-10 px-3 py-2">Created</th>
+                <th className="h-10 px-3 py-2">Items</th>
+                <th className="h-10 px-3 py-2">Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -525,17 +525,17 @@ export default function ImportsClient({
                 <table className="w-full min-w-[1380px] text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
                     <tr>
-                      <th className="px-3 py-2">Product</th>
-                      <th className="px-3 py-2">Item #</th>
-                      <th className="px-3 py-2">Starting Stock</th>
-                      <th className="px-3 py-2">Location</th>
-                      <th className="px-3 py-2">Dye Lot</th>
-                      <th className="px-3 py-2">Cost $</th>
-                      <th className="px-3 py-2">Freight $</th>
-                      <th className="px-3 py-2">Import Warehouse</th>
-                      <th className="px-3 py-2">Import Status</th>
-                      <th className="px-3 py-2">Notes</th>
-                      <th className="px-3 py-2">Remove</th>
+                      <th className="h-10 px-3 py-2">Product</th>
+                      <th className="h-10 px-3 py-2">Item #</th>
+                      <th className="h-10 px-3 py-2">Starting Stock</th>
+                      <th className="h-10 px-3 py-2">Location</th>
+                      <th className="h-10 px-3 py-2">Dye Lot</th>
+                      <th className="h-10 px-3 py-2">Cost $</th>
+                      <th className="h-10 px-3 py-2">Freight $</th>
+                      <th className="h-10 px-3 py-2">Import Warehouse</th>
+                      <th className="h-10 px-3 py-2">Import Status</th>
+                      <th className="h-10 px-3 py-2">Notes</th>
+                      <th className="h-10 px-3 py-2">Remove</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -760,16 +760,16 @@ export default function ImportsClient({
               <table className="w-full min-w-[1320px] text-sm">
                 <thead className="bg-[var(--panel-hover)] text-left">
                   <tr>
-                    <th className="px-3 py-2">Product</th>
-                    <th className="px-3 py-2">Item #</th>
-                    <th className="px-3 py-2">Stock</th>
-                    <th className="px-3 py-2">Location</th>
-                    <th className="px-3 py-2">Dye Lot</th>
-                    <th className="px-3 py-2">Cost $</th>
-                    <th className="px-3 py-2">Freight $</th>
-                    <th className="px-3 py-2">Warehouse</th>
-                    <th className="px-3 py-2">Notes</th>
-                    <th className="px-3 py-2">Remove</th>
+                    <th className="h-10 px-3 py-2">Product</th>
+                    <th className="h-10 px-3 py-2">Item #</th>
+                    <th className="h-10 px-3 py-2">Stock</th>
+                    <th className="h-10 px-3 py-2">Location</th>
+                    <th className="h-10 px-3 py-2">Dye Lot</th>
+                    <th className="h-10 px-3 py-2">Cost $</th>
+                    <th className="h-10 px-3 py-2">Freight $</th>
+                    <th className="h-10 px-3 py-2">Warehouse</th>
+                    <th className="h-10 px-3 py-2">Notes</th>
+                    <th className="h-10 px-3 py-2">Remove</th>
                   </tr>
                 </thead>
                 <tbody>

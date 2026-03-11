@@ -178,13 +178,13 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
             <table className="w-full min-w-[980px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2">Send Unit</th>
-                  <th className="px-3 py-2">Stock Unit</th>
-                  <th className="px-3 py-2">Coverage Available Unit</th>
-                  <th className="px-3 py-2">Item Coverage Unit</th>
-                  <th className="px-3 py-2">Products</th>
-                  <th className="px-3 py-2">Actions</th>
+                  <th className="h-10 px-3 py-2">Category</th>
+                  <th className="h-10 px-3 py-2">Send Unit</th>
+                  <th className="h-10 px-3 py-2">Stock Unit</th>
+                  <th className="h-10 px-3 py-2">Coverage Available Unit</th>
+                  <th className="h-10 px-3 py-2">Item Coverage Unit</th>
+                  <th className="h-10 px-3 py-2">Products</th>
+                  <th className="h-10 px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>

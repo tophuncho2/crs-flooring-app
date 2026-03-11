@@ -362,19 +362,19 @@ export default function FlooringProductsClient({
             <table className="w-full min-w-[1400px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
-                  <th className="px-3 py-2">Product</th>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2">Manufacturer</th>
-                  <th className="px-3 py-2">Style</th>
-                  <th className="px-3 py-2">Color</th>
-                  <th className="px-3 py-2">Base Color</th>
-                  <th className="px-3 py-2">Coverage</th>
-                  <th className="px-3 py-2">Width</th>
-                  <th className="px-3 py-2">Sheet Size</th>
-                  <th className="px-3 py-2">Thickness</th>
-                  <th className="px-3 py-2">Unit Weight</th>
-                  <th className="px-3 py-2">Photos</th>
-                  <th className="px-3 py-2">Actions</th>
+                  <th className="h-10 px-3 py-2">Product</th>
+                  <th className="h-10 px-3 py-2">Category</th>
+                  <th className="h-10 px-3 py-2">Manufacturer</th>
+                  <th className="h-10 px-3 py-2">Style</th>
+                  <th className="h-10 px-3 py-2">Color</th>
+                  <th className="h-10 px-3 py-2">Base Color</th>
+                  <th className="h-10 px-3 py-2">Coverage</th>
+                  <th className="h-10 px-3 py-2">Width</th>
+                  <th className="h-10 px-3 py-2">Sheet Size</th>
+                  <th className="h-10 px-3 py-2">Thickness</th>
+                  <th className="h-10 px-3 py-2">Unit Weight</th>
+                  <th className="h-10 px-3 py-2">Photos</th>
+                  <th className="h-10 px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>

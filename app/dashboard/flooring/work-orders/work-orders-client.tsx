@@ -582,23 +582,23 @@ export default function WorkOrdersClient({
             <table className="w-full min-w-[1280px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
-                  <th className="px-3 py-2">WO</th>
-                  <th className="px-3 py-2">Open</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Warehouse</th>
-                  <th className="px-3 py-2">Property</th>
-                  <th className="px-3 py-2">Address</th>
-                  <th className="px-3 py-2">Custom Address</th>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2">Unit</th>
-                  <th className="px-3 py-2">Unit Type</th>
-                  <th className="px-3 py-2">Vacancy</th>
-                  <th className="px-3 py-2">Instructions</th>
-                  <th className="px-3 py-2">Notes</th>
-                  <th className="px-3 py-2">Image URL</th>
-                  <th className="px-3 py-2">Items</th>
-                  <th className="px-3 py-2">Save</th>
-                  <th className="px-3 py-2">Delete</th>
+                  <th className="h-10 px-3 py-2">WO</th>
+                  <th className="h-10 px-3 py-2">Open</th>
+                  <th className="h-10 px-3 py-2">Status</th>
+                  <th className="h-10 px-3 py-2">Warehouse</th>
+                  <th className="h-10 px-3 py-2">Property</th>
+                  <th className="h-10 px-3 py-2">Address</th>
+                  <th className="h-10 px-3 py-2">Custom Address</th>
+                  <th className="h-10 px-3 py-2">Date</th>
+                  <th className="h-10 px-3 py-2">Unit</th>
+                  <th className="h-10 px-3 py-2">Unit Type</th>
+                  <th className="h-10 px-3 py-2">Vacancy</th>
+                  <th className="h-10 px-3 py-2">Instructions</th>
+                  <th className="h-10 px-3 py-2">Notes</th>
+                  <th className="h-10 px-3 py-2">Image URL</th>
+                  <th className="h-10 px-3 py-2">Items</th>
+                  <th className="h-10 px-3 py-2">Save</th>
+                  <th className="h-10 px-3 py-2">Delete</th>
                 </tr>
               </thead>
               <tbody>
@@ -870,12 +870,12 @@ export default function WorkOrdersClient({
                 <table className="w-full min-w-[900px] text-sm">
                   <thead className="bg-[var(--subpanel-header-background)] text-left">
                     <tr>
-                      <th className="px-3 py-2">Product</th>
-                      <th className="px-3 py-2">Qty</th>
-                      <th className="px-3 py-2">Unit</th>
-                      <th className="px-3 py-2">Notes</th>
-                      <th className="px-3 py-2">Save</th>
-                      <th className="px-3 py-2">Delete</th>
+                      <th className="h-10 px-3 py-2">Product</th>
+                      <th className="h-10 px-3 py-2">Qty</th>
+                      <th className="h-10 px-3 py-2">Unit</th>
+                      <th className="h-10 px-3 py-2">Notes</th>
+                      <th className="h-10 px-3 py-2">Save</th>
+                      <th className="h-10 px-3 py-2">Delete</th>
                     </tr>
                   </thead>
                   <tbody>

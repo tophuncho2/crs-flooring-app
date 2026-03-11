@@ -339,18 +339,18 @@ export default function ManagementCompaniesClient({
           <table className="w-full min-w-[1320px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
-                <th className="px-2 py-2">Open</th>
-                <th className="px-3 py-2">Company</th>
-                <th className="px-3 py-2">Street</th>
-                <th className="px-3 py-2">City</th>
-                <th className="px-3 py-2">State</th>
-                <th className="px-3 py-2">Zip</th>
-                <th className="px-3 py-2">Phone</th>
-                <th className="px-3 py-2">Email</th>
-                <th className="px-3 py-2">Full Address</th>
-                <th className="px-3 py-2">Properties</th>
-                <th className="px-3 py-2">Save</th>
-                <th className="px-3 py-2">Delete</th>
+                <th className="h-10 px-3 py-2">Open</th>
+                <th className="h-10 px-3 py-2">Company</th>
+                <th className="h-10 px-3 py-2">Street</th>
+                <th className="h-10 px-3 py-2">City</th>
+                <th className="h-10 px-3 py-2">State</th>
+                <th className="h-10 px-3 py-2">Zip</th>
+                <th className="h-10 px-3 py-2">Phone</th>
+                <th className="h-10 px-3 py-2">Email</th>
+                <th className="h-10 px-3 py-2">Full Address</th>
+                <th className="h-10 px-3 py-2">Properties</th>
+                <th className="h-10 px-3 py-2">Save</th>
+                <th className="h-10 px-3 py-2">Delete</th>
               </tr>
             </thead>
             <tbody>

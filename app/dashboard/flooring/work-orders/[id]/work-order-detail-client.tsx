@@ -503,10 +503,10 @@ export default function WorkOrderDetailClient({
             <table className="min-w-full text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
-                  <th className="px-3 py-2">Product</th>
-                  <th className="px-3 py-2">Quantity</th>
-                  <th className="px-3 py-2">Notes</th>
-                  <th className="px-3 py-2">Actions</th>
+                  <th className="h-10 px-3 py-2">Product</th>
+                  <th className="h-10 px-3 py-2">Quantity</th>
+                  <th className="h-10 px-3 py-2">Notes</th>
+                  <th className="h-10 px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>

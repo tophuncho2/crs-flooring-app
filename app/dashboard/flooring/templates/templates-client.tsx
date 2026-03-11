@@ -522,15 +522,15 @@ export default function TemplatesClient({
           <table className="w-full min-w-[1260px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
-                <th className="px-3 py-2">Open</th>
-                <th className="px-3 py-2">Template Tag</th>
-                <th className="px-3 py-2">Property</th>
-                <th className="px-3 py-2">Warehouse</th>
-                <th className="px-3 py-2">Instructions</th>
-                <th className="px-3 py-2">Pad Type</th>
-                <th className="px-3 py-2">Template Notes</th>
-                <th className="px-3 py-2">Save</th>
-                <th className="px-3 py-2">Delete</th>
+                <th className="h-10 px-3 py-2">Open</th>
+                <th className="h-10 px-3 py-2">Template Tag</th>
+                <th className="h-10 px-3 py-2">Property</th>
+                <th className="h-10 px-3 py-2">Warehouse</th>
+                <th className="h-10 px-3 py-2">Instructions</th>
+                <th className="h-10 px-3 py-2">Pad Type</th>
+                <th className="h-10 px-3 py-2">Template Notes</th>
+                <th className="h-10 px-3 py-2">Save</th>
+                <th className="h-10 px-3 py-2">Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -728,13 +728,13 @@ export default function TemplatesClient({
                 <table className="w-full min-w-[900px] text-sm">
                   <thead className="bg-[var(--subpanel-header-background)] text-left">
                     <tr>
-                      <th className="px-3 py-2">Product</th>
-                      <th className="px-3 py-2">Qty</th>
-                      <th className="px-3 py-2">Unit</th>
-                      <th className="px-3 py-2">Stored Dye Lot</th>
-                      <th className="px-3 py-2">Notes</th>
-                      <th className="px-3 py-2">Save</th>
-                      <th className="px-3 py-2">Delete</th>
+                      <th className="h-10 px-3 py-2">Product</th>
+                      <th className="h-10 px-3 py-2">Qty</th>
+                      <th className="h-10 px-3 py-2">Unit</th>
+                      <th className="h-10 px-3 py-2">Stored Dye Lot</th>
+                      <th className="h-10 px-3 py-2">Notes</th>
+                      <th className="h-10 px-3 py-2">Save</th>
+                      <th className="h-10 px-3 py-2">Delete</th>
                     </tr>
                   </thead>
                   <tbody>

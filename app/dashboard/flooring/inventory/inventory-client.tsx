@@ -203,22 +203,22 @@ export default function InventoryClient({ initialInventory }: { initialInventory
           <table className="w-full min-w-[1700px] text-sm">
             <thead className="bg-[var(--panel-hover)] text-left">
               <tr>
-                <th className="px-3 py-2">Open</th>
-                <th className="px-3 py-2">Import #</th>
-                <th className="px-3 py-2">Import Tag</th>
-                <th className="px-3 py-2">Import Status</th>
-                <th className="px-3 py-2">Transport</th>
-                <th className="px-3 py-2">Product</th>
-                <th className="px-3 py-2">Item #</th>
-                <th className="px-3 py-2">Starting Stock</th>
-                <th className="px-3 py-2">Cuts Total</th>
-                <th className="px-3 py-2">Running Balance</th>
-                <th className="px-3 py-2">Location</th>
-                <th className="px-3 py-2">Dye Lot</th>
-                <th className="px-3 py-2">Cost $</th>
-                <th className="px-3 py-2">Freight $</th>
-                <th className="px-3 py-2">Import Warehouse</th>
-                <th className="px-3 py-2">Notes</th>
+                <th className="h-10 px-3 py-2">Open</th>
+                <th className="h-10 px-3 py-2">Import #</th>
+                <th className="h-10 px-3 py-2">Import Tag</th>
+                <th className="h-10 px-3 py-2">Import Status</th>
+                <th className="h-10 px-3 py-2">Transport</th>
+                <th className="h-10 px-3 py-2">Product</th>
+                <th className="h-10 px-3 py-2">Item #</th>
+                <th className="h-10 px-3 py-2">Starting Stock</th>
+                <th className="h-10 px-3 py-2">Cuts Total</th>
+                <th className="h-10 px-3 py-2">Running Balance</th>
+                <th className="h-10 px-3 py-2">Location</th>
+                <th className="h-10 px-3 py-2">Dye Lot</th>
+                <th className="h-10 px-3 py-2">Cost $</th>
+                <th className="h-10 px-3 py-2">Freight $</th>
+                <th className="h-10 px-3 py-2">Import Warehouse</th>
+                <th className="h-10 px-3 py-2">Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -364,10 +364,10 @@ export default function InventoryClient({ initialInventory }: { initialInventory
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="bg-[var(--subpanel-header-background)] text-left">
                   <tr>
-                    <th className="px-3 py-2">Created</th>
-                    <th className="px-3 py-2">Adjustment</th>
-                    <th className="px-3 py-2">Effect on Stock</th>
-                    <th className="px-3 py-2">Notes</th>
+                    <th className="h-10 px-3 py-2">Created</th>
+                    <th className="h-10 px-3 py-2">Adjustment</th>
+                    <th className="h-10 px-3 py-2">Effect on Stock</th>
+                    <th className="h-10 px-3 py-2">Notes</th>
                   </tr>
                 </thead>
                 <tbody>

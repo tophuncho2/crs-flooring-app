@@ -189,13 +189,13 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
             <table className="w-full min-w-[960px] text-sm">
               <thead className="bg-[var(--panel-hover)] text-left">
                 <tr>
-                  <th className="px-3 py-2">Company Name</th>
-                  <th className="px-3 py-2">Agent Name</th>
-                  <th className="px-3 py-2">Website URL</th>
-                  <th className="px-3 py-2">Agent Phone</th>
-                  <th className="px-3 py-2">Agent Email</th>
-                  <th className="px-3 py-2">Products</th>
-                  <th className="px-3 py-2">Actions</th>
+                  <th className="h-10 px-3 py-2">Company Name</th>
+                  <th className="h-10 px-3 py-2">Agent Name</th>
+                  <th className="h-10 px-3 py-2">Website URL</th>
+                  <th className="h-10 px-3 py-2">Agent Phone</th>
+                  <th className="h-10 px-3 py-2">Agent Email</th>
+                  <th className="h-10 px-3 py-2">Products</th>
+                  <th className="h-10 px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>

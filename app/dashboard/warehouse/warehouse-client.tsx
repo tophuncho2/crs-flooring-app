@@ -286,12 +286,12 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
               <table className="min-w-full text-sm">
                 <thead className="bg-[var(--panel-hover)] text-left">
                   <tr>
-                    <th className="px-3 py-2">Warehouse</th>
-                    <th className="px-3 py-2">Address</th>
-                    <th className="px-3 py-2">Store Phone</th>
-                    <th className="px-3 py-2">Sections</th>
-                    <th className="px-3 py-2">Locations</th>
-                    <th className="px-3 py-2">Work Orders</th>
+                    <th className="h-10 px-3 py-2">Warehouse</th>
+                    <th className="h-10 px-3 py-2">Address</th>
+                    <th className="h-10 px-3 py-2">Store Phone</th>
+                    <th className="h-10 px-3 py-2">Sections</th>
+                    <th className="h-10 px-3 py-2">Locations</th>
+                    <th className="h-10 px-3 py-2">Work Orders</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -348,8 +348,8 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                 <table className="min-w-full text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
                     <tr>
-                      <th className="px-2 py-2">Section</th>
-                      <th className="px-2 py-2">Locations</th>
+                      <th className="h-10 px-3 py-2">Section</th>
+                      <th className="h-10 px-3 py-2">Locations</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -388,8 +388,8 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                 <table className="min-w-full text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
                     <tr>
-                      <th className="px-2 py-2">Location</th>
-                      <th className="px-2 py-2">Section</th>
+                      <th className="h-10 px-3 py-2">Location</th>
+                      <th className="h-10 px-3 py-2">Section</th>
                     </tr>
                   </thead>
                   <tbody>
