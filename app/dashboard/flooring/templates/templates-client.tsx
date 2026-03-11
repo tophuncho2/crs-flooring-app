@@ -651,9 +651,9 @@ export default function TemplatesClient({
                 <p className="text-sm text-[var(--foreground)]/70">Add the products and quantities this template should carry.</p>
               </div>
 
-              <div className="grid gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-hover)]/20 p-4 md:grid-cols-[minmax(0,1.5fr),120px,160px,minmax(0,1fr),auto] md:items-end">
+              <div className="grid gap-3 rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] md:grid-cols-[minmax(0,1.5fr),120px,160px,minmax(0,1fr),auto] md:items-end">
                 <FormField label="Product">
-                  <select value={itemDraft.productId} onChange={(event) => setItemDraft((prev) => ({ ...prev, productId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <select value={itemDraft.productId} onChange={(event) => setItemDraft((prev) => ({ ...prev, productId: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2">
                     <option value="">Select product</option>
                     {productOptions.map((product) => (
                       <option key={product.id} value={product.id}>{product.label}</option>
@@ -661,22 +661,22 @@ export default function TemplatesClient({
                   </select>
                 </FormField>
                 <FormField label="Qty">
-                  <input value={itemDraft.quantity} onChange={(event) => setItemDraft((prev) => ({ ...prev, quantity: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  <input value={itemDraft.quantity} onChange={(event) => setItemDraft((prev) => ({ ...prev, quantity: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
                 </FormField>
                 <FormField label="Stored Dye Lot">
-                  <input value={itemDraft.storedDyeLot} onChange={(event) => setItemDraft((prev) => ({ ...prev, storedDyeLot: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  <input value={itemDraft.storedDyeLot} onChange={(event) => setItemDraft((prev) => ({ ...prev, storedDyeLot: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
                 </FormField>
                 <FormField label="Notes">
-                  <input value={itemDraft.notes} onChange={(event) => setItemDraft((prev) => ({ ...prev, notes: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  <input value={itemDraft.notes} onChange={(event) => setItemDraft((prev) => ({ ...prev, notes: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
                 </FormField>
                 <button type="button" onClick={() => void addTemplateItem()} disabled={isSavingItem} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
                   {isSavingItem ? "Adding..." : "Add Item"}
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+              <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
                 <table className="w-full min-w-[900px] text-sm">
-                  <thead className="bg-[var(--panel-hover)] text-left">
+                  <thead className="bg-[var(--subpanel-header-background)] text-left">
                     <tr>
                       <th className="px-3 py-2">Product</th>
                       <th className="px-3 py-2">Qty</th>

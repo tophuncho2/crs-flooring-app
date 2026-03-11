@@ -322,7 +322,7 @@ export default function InventoryClient({ initialInventory }: { initialInventory
               </Link>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-[#2b2b2b] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+            <div className="rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
               <div className="grid gap-4 md:grid-cols-[220px,minmax(0,1fr),auto] md:items-end">
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="text-[var(--foreground)]/80">Cut Quantity</span>
@@ -330,7 +330,7 @@ export default function InventoryClient({ initialInventory }: { initialInventory
                     value={cutLogDraft.quantityTaken}
                     onChange={(event) => setCutLogDraft((prev) => ({ ...prev, quantityTaken: event.target.value }))}
                     placeholder="Enter cut amount"
-                    className="rounded-lg border border-white/10 bg-black/10 px-3 py-2"
+                    className="rounded-lg border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
@@ -338,7 +338,7 @@ export default function InventoryClient({ initialInventory }: { initialInventory
                   <input
                     value={cutLogDraft.notes}
                     onChange={(event) => setCutLogDraft((prev) => ({ ...prev, notes: event.target.value }))}
-                    className="rounded-lg border border-white/10 bg-black/10 px-3 py-2"
+                    className="rounded-lg border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
                   />
                 </label>
                 <div className="flex items-end">
@@ -360,9 +360,9 @@ export default function InventoryClient({ initialInventory }: { initialInventory
               </p>
             ) : null}
 
-            <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#2b2b2b] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+            <div className="overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
               <table className="w-full min-w-[760px] text-sm">
-                <thead className="bg-black/15 text-left">
+                <thead className="bg-[var(--subpanel-header-background)] text-left">
                   <tr>
                     <th className="px-3 py-2">Created</th>
                     <th className="px-3 py-2">Adjustment</th>

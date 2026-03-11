@@ -6,6 +6,24 @@
   --panel-background: #ffffff;
   --panel-hover: #e2e8f0;
   --panel-border: rgba(59, 130, 246, 0.3);
+  --subpanel-background: #e5e7eb;
+  --subpanel-input-background: rgba(255, 255, 255, 0.6);
+  --subpanel-header-background: rgba(255, 255, 255, 0.28);
+  --subpanel-border: rgba(148, 163, 184, 0.32);
+}
+
+:root[data-theme="light"] {
+  --subpanel-background: #e5e7eb;
+  --subpanel-input-background: rgba(255, 255, 255, 0.6);
+  --subpanel-header-background: rgba(255, 255, 255, 0.28);
+  --subpanel-border: rgba(148, 163, 184, 0.32);
+}
+
+:root[data-theme="dark"] {
+  --subpanel-background: #2b2b2b;
+  --subpanel-input-background: rgba(0, 0, 0, 0.12);
+  --subpanel-header-background: rgba(0, 0, 0, 0.16);
+  --subpanel-border: rgba(255, 255, 255, 0.1);
 }
 
 @theme inline {
