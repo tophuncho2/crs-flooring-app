@@ -33,9 +33,9 @@ const emptyForm: ManufacturerForm = {
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4">
-      <div className="flex min-h-full items-start justify-center py-4 sm:items-center">
-        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
+      <div className="flex min-h-full items-start justify-center">
+        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
           <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
             <h2 className="text-lg font-semibold">{title}</h2>
             <button

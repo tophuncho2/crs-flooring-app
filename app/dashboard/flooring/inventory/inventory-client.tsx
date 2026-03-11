@@ -54,9 +54,9 @@ const emptyCutLogDraft: CutLogDraft = {
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4">
-      <div className="flex min-h-full items-start justify-center py-4 sm:items-center">
-        <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
+      <div className="flex min-h-full items-start justify-center">
+        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
           <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
             <h2 className="text-lg font-semibold">{title}</h2>
             <button
@@ -104,6 +104,10 @@ export default function InventoryClient({ initialInventory }: { initialInventory
   const [error, setError] = useState("")
 
   const activeRow = useMemo(() => rows.find((row) => row.id === activeRowId) ?? null, [rows, activeRowId])
+  const activeRunningBalance = activeRow ? parseDecimal(activeRow.runningBalance) : 0
+  const canAddPositiveCut = activeRunningBalance > 0
+  const draftQuantity = parseDecimal(cutLogDraft.quantityTaken)
+  const canSubmitAdjustment = canAddPositiveCut || draftQuantity < 0
 
   function openRow(rowId: string) {
     setMessage("")
@@ -126,6 +130,23 @@ export default function InventoryClient({ initialInventory }: { initialInventory
     setIsSavingCutLog(true)
 
     try {
+      if (!cutLogDraft.quantityTaken.trim()) {
+        throw new Error("Enter a cut quantity before saving")
+      }
+
+      const quantityTaken = parseDecimal(cutLogDraft.quantityTaken)
+      if (quantityTaken === 0) {
+        throw new Error("Adjustment quantity must be more than 0 or less than 0")
+      }
+
+      if (quantityTaken > 0 && activeRunningBalance <= 0) {
+        throw new Error("This inventory row has no running balance left")
+      }
+
+      if (quantityTaken > activeRunningBalance) {
+        throw new Error("Cut quantity cannot exceed the current running balance")
+      }
+
       const response = await fetch("/api/flooring/cut-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -294,46 +315,54 @@ export default function InventoryClient({ initialInventory }: { initialInventory
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold">Cut Logs</h3>
-                <p className="text-sm text-[var(--foreground)]/70">Positive quantities reduce stock. Negative quantities raise stock back up.</p>
+                <p className="text-sm text-[var(--foreground)]/70">Enter the cut quantity to reduce stock. It cannot exceed the remaining running balance.</p>
               </div>
               <Link href="/dashboard/flooring/cut-logs" className="text-sm text-blue-500 hover:underline">
                 Open Cut Logs Table
               </Link>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-[180px,1fr,auto]">
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-[var(--foreground)]/80">Adjustment Qty</span>
-                <input
-                  value={cutLogDraft.quantityTaken}
-                  onChange={(event) => setCutLogDraft((prev) => ({ ...prev, quantityTaken: event.target.value }))}
-                  placeholder="2.00 or -2.00"
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-[var(--foreground)]/80">Notes</span>
-                <input
-                  value={cutLogDraft.notes}
-                  onChange={(event) => setCutLogDraft((prev) => ({ ...prev, notes: event.target.value }))}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </label>
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={() => void addCutLog()}
-                  disabled={isSavingCutLog}
-                  className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
-                >
-                  {isSavingCutLog ? "Saving..." : "Add Cut"}
-                </button>
+            <div className="rounded-xl border border-white/10 bg-[#2b2b2b] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+              <div className="grid gap-4 md:grid-cols-[220px,minmax(0,1fr),auto] md:items-end">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-[var(--foreground)]/80">Cut Quantity</span>
+                  <input
+                    value={cutLogDraft.quantityTaken}
+                    onChange={(event) => setCutLogDraft((prev) => ({ ...prev, quantityTaken: event.target.value }))}
+                    placeholder="Enter cut amount"
+                    className="rounded-lg border border-white/10 bg-black/10 px-3 py-2"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-[var(--foreground)]/80">Notes</span>
+                  <input
+                    value={cutLogDraft.notes}
+                    onChange={(event) => setCutLogDraft((prev) => ({ ...prev, notes: event.target.value }))}
+                    className="rounded-lg border border-white/10 bg-black/10 px-3 py-2"
+                  />
+                </label>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => void addCutLog()}
+                    disabled={isSavingCutLog || !canSubmitAdjustment}
+                    className="w-full rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60 md:w-auto"
+                  >
+                    {isSavingCutLog ? "Saving..." : canSubmitAdjustment ? "Add Cut" : "Balance at 0"}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+            {!canAddPositiveCut ? (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+                Running balance is 0. No additional cuts can be added for this inventory row.
+              </p>
+            ) : null}
+
+            <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#2b2b2b] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
               <table className="w-full min-w-[760px] text-sm">
-                <thead className="bg-[var(--panel-hover)] text-left">
+                <thead className="bg-black/15 text-left">
                   <tr>
                     <th className="px-3 py-2">Created</th>
                     <th className="px-3 py-2">Adjustment</th>

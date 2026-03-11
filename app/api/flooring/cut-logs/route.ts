@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { normalizePrismaError, parseDecimal, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
@@ -78,11 +79,39 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>
     const inventoryId = parseRequiredString(body.inventoryId, "inventoryId")
+    const quantityTaken = parseDecimal(body.quantityTaken, "quantityTaken", 2)
+
+    const inventory = await prisma.flooringInventory.findUnique({
+      where: { id: inventoryId },
+      select: {
+        stockCount: true,
+        cutLogs: {
+          select: {
+            quantityTaken: true,
+          },
+        },
+      },
+    })
+
+    if (!inventory) {
+      return NextResponse.json({ error: "Inventory row not found" }, { status: 404 })
+    }
+
+    const cutTotal = inventory.cutLogs.reduce((sum, log) => sum.plus(log.quantityTaken), new Prisma.Decimal(0))
+    const runningBalance = inventory.stockCount.minus(cutTotal)
+
+    if (quantityTaken.gt(0) && runningBalance.lte(0)) {
+      return NextResponse.json({ error: "This inventory row has no running balance left" }, { status: 400 })
+    }
+
+    if (quantityTaken.gt(runningBalance)) {
+      return NextResponse.json({ error: "Quantity taken cannot exceed the current running balance" }, { status: 400 })
+    }
 
     const created = await prisma.flooringCutLog.create({
       data: {
         inventoryId,
-        quantityTaken: parseDecimal(body.quantityTaken, "quantityTaken", 2),
+        quantityTaken,
         notes: parseOptionalString(body.notes),
       },
       include: {
