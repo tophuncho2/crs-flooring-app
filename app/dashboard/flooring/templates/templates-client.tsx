@@ -129,7 +129,7 @@ export default function TemplatesClient({
   const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates)
   const [drafts, setDrafts] = useState<Record<string, DraftTemplate>>({})
   const [newDraft, setNewDraft] = useState<DraftTemplate>(defaultDraft)
-  const [showNewRow, setShowNewRow] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -178,6 +178,18 @@ export default function TemplatesClient({
 
   function setNewDraftField(field: keyof DraftTemplate, value: string) {
     setNewDraft((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function openCreateTemplate() {
+    setMessage("")
+    setError("")
+    setNewDraft(defaultDraft)
+    setIsCreateModalOpen(true)
+  }
+
+  function closeCreateTemplate() {
+    if (isSavingNew) return
+    setIsCreateModalOpen(false)
   }
 
   async function loadTemplateItems(templateId: string) {
@@ -252,8 +264,19 @@ export default function TemplatesClient({
       }
 
       setTemplates((prev) => [payload.template!, ...prev])
-      setShowNewRow(false)
       setNewDraft(defaultDraft)
+      setIsCreateModalOpen(false)
+      setActiveTemplateDraft({
+        templateTag: payload.template.templateTag,
+        propertyId: payload.template.propertyId,
+        warehouseId: payload.template.warehouseId,
+        instructions: payload.template.instructions,
+        templateNotes: payload.template.templateNotes,
+        padProductId: payload.template.padProductId,
+      })
+      setActiveTemplateId(payload.template.id)
+      setTemplateItems([])
+      setItemDraft(emptyItemDraft)
       setMessage("Template created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create template")
@@ -495,45 +518,6 @@ export default function TemplatesClient({
               </tr>
             </thead>
             <tbody>
-              {showNewRow && (
-                <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                  <td className="px-3 py-2">-</td>
-                  <td className="px-3 py-2"><input value={newDraft.templateTag} onChange={(event) => setNewDraftField("templateTag", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">
-                    <select value={newDraft.propertyId} onChange={(event) => setNewDraftField("propertyId", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                      <option value="">Select property</option>
-                      {propertyOptions.map((property) => (
-                        <option key={property.id} value={property.id}>{property.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2">
-                    <select value={newDraft.warehouseId} onChange={(event) => setNewDraftField("warehouseId", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                      <option value="">No warehouse</option>
-                      {warehouseOptions.map((warehouse) => (
-                        <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2"><input value={newDraft.instructions} onChange={(event) => setNewDraftField("instructions", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">
-                    <select value={newDraft.padProductId} onChange={(event) => setNewDraftField("padProductId", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                      <option value="">No pad type</option>
-                      {padProductOptions.map((product) => (
-                        <option key={product.id} value={product.id}>{product.label}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2"><input value={newDraft.templateNotes} onChange={(event) => setNewDraftField("templateNotes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">
-                    <button type="button" onClick={() => void createTemplate()} disabled={isSavingNew} className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60">
-                      {isSavingNew ? "Adding..." : "Add"}
-                    </button>
-                  </td>
-                  <td className="px-3 py-2">-</td>
-                </tr>
-              )}
-
               {templates.map((row) => {
                 const draft = getDraft(row.id)
 
@@ -590,7 +574,7 @@ export default function TemplatesClient({
                 )
               })}
 
-              {templates.length === 0 && !showNewRow && (
+              {templates.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-3 py-8 text-center text-[var(--foreground)]/70">No templates yet.</td>
                 </tr>
@@ -600,11 +584,66 @@ export default function TemplatesClient({
         </div>
 
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => setShowNewRow(true)} disabled={showNewRow} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-            Add Row
+          <button type="button" onClick={openCreateTemplate} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]">
+            Add Template
           </button>
         </div>
       </section>
+
+      {isCreateModalOpen ? (
+        <ModalShell title="New Template" onClose={closeCreateTemplate}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <FormField label="Template Tag">
+                <input value={newDraft.templateTag} onChange={(event) => setNewDraftField("templateTag", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Property">
+                <select value={newDraft.propertyId} onChange={(event) => setNewDraftField("propertyId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">Select property</option>
+                  {propertyOptions.map((property) => (
+                    <option key={property.id} value={property.id}>{property.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Warehouse">
+                <select value={newDraft.warehouseId} onChange={(event) => setNewDraftField("warehouseId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">No warehouse</option>
+                  {warehouseOptions.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Pad Type">
+                <select value={newDraft.padProductId} onChange={(event) => setNewDraftField("padProductId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">No pad type</option>
+                  {padProductOptions.map((product) => (
+                    <option key={product.id} value={product.id}>{product.label}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Instructions">
+                <textarea value={newDraft.instructions} onChange={(event) => setNewDraftField("instructions", event.target.value)} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+              </FormField>
+              <FormField label="Template Notes">
+                <textarea value={newDraft.templateNotes} onChange={(event) => setNewDraftField("templateNotes", event.target.value)} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+              </FormField>
+            </div>
+
+            <div className="rounded-lg border border-[var(--panel-border)] px-4 py-4 text-sm text-[var(--foreground)]/70">
+              Create the template first, then add template items from the opened template form.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={closeCreateTemplate} disabled={isSavingNew} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void createTemplate()} disabled={isSavingNew} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+                {isSavingNew ? "Creating..." : "Create Template"}
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
 
       {activeTemplate ? (
         <ModalShell title={`Template ${activeTemplate.templateTag}`} onClose={closeTemplate}>

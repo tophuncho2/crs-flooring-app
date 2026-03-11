@@ -21,6 +21,12 @@ type PropertyRow = {
   email: string
   fullAddress: string
   managementCompany: ManagementLink | null
+  templates: Array<{
+    id: string
+    templateTag: string
+    warehouseName: string
+    itemsCount: number
+  }>
 }
 
 type ManagementCompanyOption = {
@@ -74,6 +80,15 @@ export default async function FlooringPropertiesPage() {
             managementCompany: { select: { id: true, name: true } },
           },
         },
+        flooringTpls: {
+          select: {
+            id: true,
+            templateTag: true,
+            warehouse: { select: { name: true } },
+            _count: { select: { items: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
     }),
     prisma.flooringManagementCompany.findMany({
@@ -93,6 +108,12 @@ export default async function FlooringPropertiesPage() {
     email: property.email ?? "",
     fullAddress: normalizeAddress(property),
     managementCompany: property.flooringLinks[0]?.managementCompany ?? null,
+    templates: property.flooringTpls.map((template) => ({
+      id: template.id,
+      templateTag: template.templateTag,
+      warehouseName: template.warehouse?.name ?? "",
+      itemsCount: template._count.items,
+    })),
   }))
 
   const managementOptions: ManagementCompanyOption[] = managementCompanies.map((company) => ({

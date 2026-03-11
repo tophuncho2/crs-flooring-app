@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
+import { X } from "lucide-react"
 
 type ManagementCompanyOption = {
   id: string
@@ -23,6 +24,12 @@ type PropertyRow = {
   email: string
   fullAddress: string
   managementCompany: PropertyManagementCompany | null
+  templates: Array<{
+    id: string
+    templateTag: string
+    warehouseName: string
+    itemsCount: number
+  }>
 }
 
 type DraftProperty = {
@@ -47,11 +54,42 @@ const defaultDraft: DraftProperty = {
   managementCompanyId: "",
 }
 
-function normalizeState(value: string) {
-  return value
+function normalizeState(value: string | null | undefined) {
+  return String(value ?? "")
     .replace(/[^a-zA-Z]/g, "")
     .slice(0, 2)
     .toUpperCase()
+}
+
+function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
+      <div className="flex min-h-full items-start justify-center">
+        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
+          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="overflow-y-auto px-5 py-4">{children}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FormField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-[var(--foreground)]/80">{label}</span>
+      {children}
+    </label>
+  )
 }
 
 function computeFullAddress(address: { streetAddress: string; city: string; state: string; zip: string }) {
@@ -72,7 +110,7 @@ export default function PropertiesClient({
   const [properties, setProperties] = useState<PropertyRow[]>(initialProperties)
   const [drafts, setDrafts] = useState<Record<string, DraftProperty>>({})
   const [newDraft, setNewDraft] = useState<DraftProperty>(defaultDraft)
-  const [showNewRow, setShowNewRow] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -147,6 +185,7 @@ export default function PropertiesClient({
             id: string
             name: string
           } | null
+          templates?: PropertyRow["templates"]
         }
       }
 
@@ -154,10 +193,13 @@ export default function PropertiesClient({
         throw new Error(payload.error ?? "Failed to create property")
       }
 
-      const createdProperty = payload.property
+      const createdProperty = {
+        ...payload.property,
+        templates: payload.property.templates ?? [],
+      }
       setProperties((prev) => [createdProperty, ...prev])
-      setShowNewRow(false)
       setNewDraft(defaultDraft)
+      setIsCreateModalOpen(false)
       setMessage("Property created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create property")
@@ -195,6 +237,7 @@ export default function PropertiesClient({
           email: string | null
           managementCompany: { id: string; name: string } | null
           fullAddress: string
+          templates?: PropertyRow["templates"]
         }
       }
 
@@ -213,6 +256,7 @@ export default function PropertiesClient({
         email: payload.property.email ?? "",
         fullAddress: payload.property.fullAddress,
         managementCompany: payload.property.managementCompany,
+        templates: payload.property.templates ?? row.templates,
       }
 
       setProperties((prev) => prev.map((property) => (property.id === row.id ? nextProperty : property)))
@@ -286,53 +330,6 @@ export default function PropertiesClient({
               </tr>
             </thead>
             <tbody>
-              {showNewRow && (
-                <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                  <td className="px-2 py-2">-</td>
-                  <td className="px-3 py-2"><input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.streetAddress} onChange={(event) => setNewDraftField("streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.city} onChange={(event) => setNewDraftField("city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">
-                    <input
-                      value={newDraft.state}
-                      onChange={(event) => setNewDraftField("state", event.target.value)}
-                      onBlur={(event) => setNewDraftField("state", event.target.value)}
-                      maxLength={2}
-                      className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                    />
-                  </td>
-                  <td className="px-3 py-2"><input value={newDraft.zip} onChange={(event) => setNewDraftField("zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.phone} onChange={(event) => setNewDraftField("phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">{computeFullAddress(newDraft)}</td>
-                  <td className="px-3 py-2">
-                    <select
-                      value={newDraft.managementCompanyId}
-                      onChange={(event) => setNewDraftField("managementCompanyId", event.target.value)}
-                      className="min-h-16 w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                    >
-                      <option value="">No management company</option>
-                      {managementOptions.map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => void createProperty()}
-                      disabled={isSavingNew}
-                      className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                    >
-                      {isSavingNew ? "Adding..." : "Add"}
-                    </button>
-                  </td>
-                  <td className="px-3 py-2">-</td>
-                </tr>
-              )}
-
               {properties.map((row) => {
                 const draft = getDraft(row.id)
 
@@ -419,7 +416,7 @@ export default function PropertiesClient({
                 )
               })}
 
-              {properties.length === 0 && !showNewRow && (
+              {properties.length === 0 && (
                 <tr>
                   <td colSpan={12} className="px-3 py-8 text-center text-[var(--foreground)]/70">No properties yet.</td>
                 </tr>
@@ -429,37 +426,125 @@ export default function PropertiesClient({
         </div>
 
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => setShowNewRow(true)} disabled={showNewRow} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">Add Row</button>
+          <button type="button" onClick={() => {
+            setMessage("")
+            setError("")
+            setNewDraft(defaultDraft)
+            setIsCreateModalOpen(true)
+          }} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]">Add Property</button>
         </div>
 
-        {selectedProperty && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedProperty(null)}>
-            <div className="w-full max-w-xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4" onClick={(event) => event.stopPropagation()}>
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-blue-500">Property</h2>
-                  <p className="text-sm text-[var(--foreground)]/70">Click outside to close.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedProperty(null)}
-                  className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-                >
-                  Close
-                </button>
-              </div>
+      </section>
 
-              <div className="space-y-2 text-sm">
-                <p><span className="text-[var(--foreground)]/70">Property:</span> {selectedProperty.name}</p>
-                <p><span className="text-[var(--foreground)]/70">Address:</span> {selectedProperty.fullAddress || "-"}</p>
-                <p><span className="text-[var(--foreground)]/70">Phone:</span> {selectedProperty.phone || "-"}</p>
-                <p><span className="text-[var(--foreground)]/70">Email:</span> {selectedProperty.email || "-"}</p>
-                <p><span className="text-[var(--foreground)]/70">Management Company:</span> {selectedProperty.managementCompany?.name || "None"}</p>
+      {isCreateModalOpen ? (
+        <ModalShell title="New Property" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <FormField label="Property Name">
+                <input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Street Address">
+                <input value={newDraft.streetAddress} onChange={(event) => setNewDraftField("streetAddress", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="City">
+                <input value={newDraft.city} onChange={(event) => setNewDraftField("city", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="State">
+                <input value={newDraft.state} onChange={(event) => setNewDraftField("state", event.target.value)} maxLength={2} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Zip">
+                <input value={newDraft.zip} onChange={(event) => setNewDraftField("zip", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Management Company">
+                <select value={newDraft.managementCompanyId} onChange={(event) => setNewDraftField("managementCompanyId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                  <option value="">No management company</option>
+                  {managementOptions.map((company) => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Phone">
+                <input value={newDraft.phone} onChange={(event) => setNewDraftField("phone", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Email">
+                <input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Full Address">
+                <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
+                  {computeFullAddress(newDraft) || "Property address preview"}
+                </div>
+              </FormField>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} disabled={isSavingNew} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void createProperty()} disabled={isSavingNew} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+                {isSavingNew ? "Creating..." : "Create Property"}
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {selectedProperty ? (
+        <ModalShell title={selectedProperty.name} onClose={() => setSelectedProperty(null)}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Address</p>
+                <p className="mt-1 font-medium">{selectedProperty.fullAddress || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Phone</p>
+                <p className="mt-1 font-medium">{selectedProperty.phone || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Email</p>
+                <p className="mt-1 font-medium">{selectedProperty.email || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Management Company</p>
+                <p className="mt-1 font-medium">{selectedProperty.managementCompany?.name || "None"}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold">Linked Templates</h3>
+                <p className="text-sm text-[var(--foreground)]/70">Templates assigned to this property.</p>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead className="bg-[var(--panel-hover)] text-left">
+                    <tr>
+                      <th className="px-3 py-2">Template Tag</th>
+                      <th className="px-3 py-2">Warehouse</th>
+                      <th className="px-3 py-2">Items</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedProperty.templates.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-3 py-8 text-center text-[var(--foreground)]/70">No templates linked to this property.</td>
+                      </tr>
+                    ) : (
+                      selectedProperty.templates.map((template) => (
+                        <tr key={template.id} className="border-t border-[var(--panel-border)]">
+                          <td className="px-3 py-2">{template.templateTag}</td>
+                          <td className="px-3 py-2">{template.warehouseName || "-"}</td>
+                          <td className="px-3 py-2">{template.itemsCount}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        )}
-      </section>
+        </ModalShell>
+      ) : null}
     </div>
   )
 }

@@ -23,7 +23,7 @@ export default function FlooringHeaderNav({ canUseTools, tools, visibleSlugs, or
   }
 
   return (
-    <nav className="flex max-w-[calc(100vw-11rem)] items-center gap-2 overflow-x-auto rounded-full border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-2 shadow-[0_0_12px_rgba(59,130,246,0.12)]">
+    <nav className="flex w-fit max-w-full items-center gap-2 overflow-x-auto rounded-full border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-2 shadow-[0_0_12px_rgba(59,130,246,0.12)]">
       {orderedItems.filter((item) => visibleSlugSet.has(item.slug)).map((item) => {
         const canOpen = canUseTools || (item.requiredTool ? unlockedToolSet.has(item.requiredTool) : false)
         const isActive = isActiveFlooringItem(pathname, item.href)

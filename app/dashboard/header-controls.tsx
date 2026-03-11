@@ -29,22 +29,26 @@ export default function HeaderControls({
   const orderedItems = orderFlooringNavItems(orderedFlooringSlugs)
 
   return (
-    <div className="ml-auto flex w-fit max-w-full items-center gap-2 sm:gap-4">
-      <FlooringHeaderNav canUseTools={canUseTools} tools={tools} visibleSlugs={visibleFlooringSlugs} orderedItems={orderedItems} />
-      <FlooringToolsMenu
-        canUseTools={canUseTools}
-        tools={tools}
-        visibleSlugs={visibleFlooringSlugs}
-        orderedItems={orderedItems}
-        onVisibleSlugsChange={setVisibleFlooringSlugs}
-        onOrderedSlugsChange={setOrderedFlooringSlugs}
-      />
-      <UserMenu
-        email={email}
-        role={role}
-        canUseTools={canUseTools}
-        unlockedToolSlugs={tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug)}
-      />
+    <div className="flex w-full max-w-full items-center justify-between gap-2 sm:gap-4">
+      <div className="min-w-0 flex-1">
+        <FlooringHeaderNav canUseTools={canUseTools} tools={tools} visibleSlugs={visibleFlooringSlugs} orderedItems={orderedItems} />
+      </div>
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
+        <FlooringToolsMenu
+          canUseTools={canUseTools}
+          tools={tools}
+          visibleSlugs={visibleFlooringSlugs}
+          orderedItems={orderedItems}
+          onVisibleSlugsChange={setVisibleFlooringSlugs}
+          onOrderedSlugsChange={setOrderedFlooringSlugs}
+        />
+        <UserMenu
+          email={email}
+          role={role}
+          canUseTools={canUseTools}
+          unlockedToolSlugs={tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug)}
+        />
+      </div>
     </div>
   )
 }

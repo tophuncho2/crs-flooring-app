@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
+import { X } from "lucide-react"
 
 type ManagementCompanyRow = {
   id: string
@@ -35,8 +36,8 @@ const defaultDraft: DraftCompany = {
   email: "",
 }
 
-function normalizeState(value: string) {
-  return value
+function normalizeState(value: string | null | undefined) {
+  return String(value ?? "")
     .replace(/[^a-zA-Z]/g, "")
     .slice(0, 2)
     .toUpperCase()
@@ -44,6 +45,37 @@ function normalizeState(value: string) {
 
 function computeFullAddress(value: { streetAddress: string; city: string; state: string; zip: string }) {
   return [value.streetAddress, value.city, value.state, value.zip].filter(Boolean).join(", ")
+}
+
+function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
+      <div className="flex min-h-full items-start justify-center">
+        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
+          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="overflow-y-auto px-5 py-4">{children}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FormField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-[var(--foreground)]/80">{label}</span>
+      {children}
+    </label>
+  )
 }
 
 export default function ManagementCompaniesClient({
@@ -54,7 +86,7 @@ export default function ManagementCompaniesClient({
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
   const [drafts, setDrafts] = useState<Record<string, DraftCompany>>({})
   const [newDraft, setNewDraft] = useState<DraftCompany>(defaultDraft)
-  const [showNewRow, setShowNewRow] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -161,8 +193,8 @@ export default function ManagementCompaniesClient({
       }
 
       setCompanies((prev) => [newCompany, ...prev])
-      setShowNewRow(false)
       setNewDraft(defaultDraft)
+      setIsCreateModalOpen(false)
       setMessage("Management company created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create company")
@@ -301,40 +333,6 @@ export default function ManagementCompaniesClient({
               </tr>
             </thead>
             <tbody>
-              {showNewRow && (
-                <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30">
-                  <td className="px-2 py-2">-</td>
-                  <td className="px-3 py-2"><input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.streetAddress} onChange={(event) => setNewDraftField("streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.city} onChange={(event) => setNewDraftField("city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">
-                    <input
-                      value={newDraft.state}
-                      onChange={(event) => setNewDraftField("state", event.target.value)}
-                      onBlur={(event) => setNewDraftField("state", event.target.value)}
-                      maxLength={2}
-                      className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                    />
-                  </td>
-                  <td className="px-3 py-2"><input value={newDraft.zip} onChange={(event) => setNewDraftField("zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.phone} onChange={(event) => setNewDraftField("phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2"><input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  <td className="px-3 py-2">{computeFullAddress(newDraft)}</td>
-                  <td className="px-3 py-2">-</td>
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => void createCompany()}
-                      disabled={isSavingNew}
-                      className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                    >
-                      {isSavingNew ? "Adding..." : "Add"}
-                    </button>
-                  </td>
-                  <td className="px-3 py-2">-</td>
-                </tr>
-              )}
-
               {companies.map((row) => {
                 const draft = getDraft(row.id)
                 const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
@@ -405,7 +403,7 @@ export default function ManagementCompaniesClient({
                 )
               })}
 
-              {companies.length === 0 && !showNewRow && (
+              {companies.length === 0 && (
                 <tr>
                   <td colSpan={12} className="px-3 py-8 text-center text-[var(--foreground)]/70">No management companies yet.</td>
                 </tr>
@@ -415,34 +413,77 @@ export default function ManagementCompaniesClient({
         </div>
 
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => setShowNewRow(true)} disabled={showNewRow} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-            Add Row
+          <button type="button" onClick={() => {
+            setMessage("")
+            setError("")
+            setNewDraft(defaultDraft)
+            setIsCreateModalOpen(true)
+          }} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]">
+            Add Company
           </button>
         </div>
       </section>
 
-      {selectedCompany && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedCompany(null)}>
-          <div className="w-full max-w-2xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-blue-500">Management Company</h2>
-                <p className="text-sm text-[var(--foreground)]/70">Click outside to close.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedCompany(null)}
-                className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-              >
-                Close
-              </button>
+      {isCreateModalOpen ? (
+        <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <FormField label="Company Name">
+                <input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Street Address">
+                <input value={newDraft.streetAddress} onChange={(event) => setNewDraftField("streetAddress", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="City">
+                <input value={newDraft.city} onChange={(event) => setNewDraftField("city", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="State">
+                <input value={newDraft.state} onChange={(event) => setNewDraftField("state", event.target.value)} maxLength={2} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Zip">
+                <input value={newDraft.zip} onChange={(event) => setNewDraftField("zip", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Phone">
+                <input value={newDraft.phone} onChange={(event) => setNewDraftField("phone", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Email">
+                <input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              </FormField>
+              <FormField label="Full Address">
+                <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
+                  {computeFullAddress(newDraft) || "Company address preview"}
+                </div>
+              </FormField>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <p><span className="text-[var(--foreground)]/70">Company:</span> {selectedCompany.name}</p>
-              <p><span className="text-[var(--foreground)]/70">Address:</span> {selectedCompany.fullAddress || "-"}</p>
-              <p><span className="text-[var(--foreground)]/70">Phone:</span> {selectedCompany.phone || "-"}</p>
-              <p><span className="text-[var(--foreground)]/70">Email:</span> {selectedCompany.email || "-"}</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} disabled={isSavingNew} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void createCompany()} disabled={isSavingNew} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+                {isSavingNew ? "Creating..." : "Create Company"}
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {selectedCompany ? (
+        <ModalShell title={selectedCompany.name} onClose={() => setSelectedCompany(null)}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Address</p>
+                <p className="mt-1 font-medium">{selectedCompany.fullAddress || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Phone</p>
+                <p className="mt-1 font-medium">{selectedCompany.phone || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Email</p>
+                <p className="mt-1 font-medium">{selectedCompany.email || "-"}</p>
+              </div>
             </div>
 
             <div className="mt-4">
@@ -461,8 +502,8 @@ export default function ManagementCompaniesClient({
               )}
             </div>
           </div>
-        </div>
-      )}
+        </ModalShell>
+      ) : null}
     </div>
   )
 }
