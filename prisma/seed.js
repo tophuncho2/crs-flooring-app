@@ -9,14 +9,24 @@ async function main() {
   try {
     const hashedPassword = await bcrypt.default.hash("password123", 10)
 
-    await prisma.user.create({
-      data: {
+    await prisma.user.upsert({
+      where: {
+        email: "admin@test.com",
+      },
+      update: {
+        password: hashedPassword,
+        role: "BUILDER",
+        isVerified: true,
+      },
+      create: {
         email: "admin@test.com",
         password: hashedPassword,
+        role: "BUILDER",
+        isVerified: true,
       },
     })
 
-    console.log("User created.")
+    console.log("Seeded verified builder user: admin@test.com")
   } finally {
     await prisma.$disconnect()
   }
