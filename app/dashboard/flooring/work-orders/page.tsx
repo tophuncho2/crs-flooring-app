@@ -127,7 +127,7 @@ export default async function WorkOrdersPage() {
         manufacturerName: true,
         style: true,
         color: true,
-        category: { select: { sendUnit: true } },
+        category: { select: { sendUnit: { select: { name: true } } } },
       },
     }),
   ])
@@ -180,7 +180,7 @@ export default async function WorkOrdersPage() {
       productOptions={products.map((product): ProductOption => ({
         id: product.id,
         name: [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product",
-        sendUnit: product.category.sendUnit ?? "",
+        sendUnit: product.category.sendUnit?.name ?? "",
       }))}
     />
   )

@@ -134,17 +134,38 @@ model FlooringPropertyManagement {
 }
 
 model FlooringCategory {
-  id                    String            @id @default(uuid())
-  name                  String            @unique
-  categoryCode          Int?
-  sendUnit              String?
-  stockUnit             String?
-  coverageAvailableUnit String?
-  itemCoverageUnit      String?
-  products              FlooringProduct[]
-  createdAt             DateTime          @default(now())
+  id                      String                  @id @default(uuid())
+  name                    String                  @unique
+  categoryCode            Int?
+  sendUnitId              String?
+  stockUnitId             String?
+  coverageAvailableUnitId String?
+  itemCoverageUnitId      String?
+  sendUnit                FlooringUnitOfMeasure?  @relation("FlooringCategorySendUnit", fields: [sendUnitId], references: [id], onDelete: SetNull)
+  stockUnit               FlooringUnitOfMeasure?  @relation("FlooringCategoryStockUnit", fields: [stockUnitId], references: [id], onDelete: SetNull)
+  coverageAvailableUnit   FlooringUnitOfMeasure?  @relation("FlooringCategoryCoverageAvailableUnit", fields: [coverageAvailableUnitId], references: [id], onDelete: SetNull)
+  itemCoverageUnit        FlooringUnitOfMeasure?  @relation("FlooringCategoryItemCoverageUnit", fields: [itemCoverageUnitId], references: [id], onDelete: SetNull)
+  products                FlooringProduct[]
+  createdAt               DateTime                @default(now())
+
+  @@index([sendUnitId])
+  @@index([stockUnitId])
+  @@index([coverageAvailableUnitId])
+  @@index([itemCoverageUnitId])
 
   @@map("flooring_category")
+}
+
+model FlooringUnitOfMeasure {
+  id                             String             @id @default(uuid())
+  name                           String             @unique
+  createdAt                      DateTime           @default(now())
+  sendUnitCategories             FlooringCategory[] @relation("FlooringCategorySendUnit")
+  stockUnitCategories            FlooringCategory[] @relation("FlooringCategoryStockUnit")
+  coverageAvailableUnitCategories FlooringCategory[] @relation("FlooringCategoryCoverageAvailableUnit")
+  itemCoverageUnitCategories     FlooringCategory[] @relation("FlooringCategoryItemCoverageUnit")
+
+  @@map("flooring_unit_of_measure")
 }
 
 model FlooringManufacturer {

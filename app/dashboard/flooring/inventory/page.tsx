@@ -41,7 +41,7 @@ export default async function FlooringInventoryPage() {
           manufacturerName: true,
           style: true,
           color: true,
-          category: { select: { stockUnit: true } },
+          category: { select: { stockUnit: { select: { name: true } } } },
         },
       },
       location: {
@@ -93,7 +93,7 @@ export default async function FlooringInventoryPage() {
           importWarehouseName: row.importEntry?.warehouse?.name ?? row.location.warehouse.name,
           productId: row.productId,
           productName: buildProductName(row.product),
-          stockUnit: row.product.category.stockUnit ?? "",
+          stockUnit: row.product.category.stockUnit?.name ?? "",
           itemNumber: row.itemNumber,
           dyeLot: row.dyeLot,
           locationId: row.locationId,

@@ -26,14 +26,14 @@ function normalizeTemplateItem(item: {
     manufacturerName: string | null
     style: string | null
     color: string | null
-    category: { sendUnit: string | null }
+    category: { sendUnit: { name: string } | null }
   }
 }) {
   return {
     id: item.id,
     productId: item.productId,
     productName: buildProductName(item.product),
-    sendUnit: item.product.category.sendUnit ?? "",
+    sendUnit: item.product.category.sendUnit?.name ?? "",
     quantity: item.quantity.toString(),
     notes: item.notes ?? "",
     storedDyeLot: item.storedDyeLot ?? "",
@@ -55,7 +55,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
             manufacturerName: true,
             style: true,
             color: true,
-            category: { select: { sendUnit: true } },
+            category: { select: { sendUnit: { select: { name: true } } } },
           },
         },
       },
@@ -93,7 +93,7 @@ export async function POST(request: Request, { params }: RouteContext) {
             manufacturerName: true,
             style: true,
             color: true,
-            category: { select: { sendUnit: true } },
+            category: { select: { sendUnit: { select: { name: true } } } },
           },
         },
       },

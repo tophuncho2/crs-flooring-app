@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 type UserRow = {
   id: string
@@ -19,9 +19,16 @@ type ActivityRow = {
   loggedInAt: string
 }
 
+type UnitOfMeasureRow = {
+  id: string
+  name: string
+  createdAt: string
+}
+
 type SectionState = {
   users: boolean
   activity: boolean
+  unitOfMeasures: boolean
 }
 
 type SectionId = keyof SectionState
@@ -49,12 +56,41 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString()
 }
 
-export default function BuilderUsersPanel() {
+function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-blue-500">{title}</h2>
+            <p className="text-sm text-[var(--foreground)]/70">Type a unit of measure name.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+          >
+            Close
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUnitOfMeasures: UnitOfMeasureRow[] }) {
   const [users, setUsers] = useState<UserRow[]>([])
   const [activityRows, setActivityRows] = useState<ActivityRow[]>([])
+  const [unitOfMeasures, setUnitOfMeasures] = useState<UnitOfMeasureRow[]>(initialUnitOfMeasures)
 
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [activityLoading, setActivityLoading] = useState(false)
+  const [isSavingUnitOfMeasure, setIsSavingUnitOfMeasure] = useState(false)
+  const [deletingUnitOfMeasureId, setDeletingUnitOfMeasureId] = useState<string | null>(null)
 
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
@@ -65,10 +101,14 @@ export default function BuilderUsersPanel() {
   const [viewerCanManageUsers, setViewerCanManageUsers] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
   const [activityError, setActivityError] = useState("")
+  const [isUnitOfMeasureModalOpen, setIsUnitOfMeasureModalOpen] = useState(false)
+  const [editingUnitOfMeasure, setEditingUnitOfMeasure] = useState<UnitOfMeasureRow | null>(null)
+  const [unitOfMeasureName, setUnitOfMeasureName] = useState("")
 
   const [sectionsOpen, setSectionsOpen] = useState<SectionState>({
     users: true,
     activity: false,
+    unitOfMeasures: false,
   })
 
   const [activityLoaded, setActivityLoaded] = useState(false)
@@ -197,6 +237,85 @@ export default function BuilderUsersPanel() {
       setError(bulkError instanceof Error ? bulkError.message : "Failed bulk update")
     } finally {
       setIsBulkUpdating(false)
+    }
+  }
+
+  function openCreateUnitOfMeasure() {
+    setMessage("")
+    setError("")
+    setEditingUnitOfMeasure(null)
+    setUnitOfMeasureName("")
+    setIsUnitOfMeasureModalOpen(true)
+  }
+
+  function openEditUnitOfMeasure(unit: UnitOfMeasureRow) {
+    setMessage("")
+    setError("")
+    setEditingUnitOfMeasure(unit)
+    setUnitOfMeasureName(unit.name)
+    setIsUnitOfMeasureModalOpen(true)
+  }
+
+  async function saveUnitOfMeasure() {
+    setMessage("")
+    setError("")
+
+    if (!unitOfMeasureName.trim()) {
+      setError("Unit of measure is required")
+      return
+    }
+
+    setIsSavingUnitOfMeasure(true)
+    try {
+      const payload = editingUnitOfMeasure
+        ? await apiJson<{ unitOfMeasure: UnitOfMeasureRow }>(`/api/builder/unit-of-measures/${editingUnitOfMeasure.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ name: unitOfMeasureName }),
+          })
+        : await apiJson<{ unitOfMeasure: UnitOfMeasureRow }>("/api/builder/unit-of-measures", {
+            method: "POST",
+            body: JSON.stringify({ name: unitOfMeasureName }),
+          })
+
+      setUnitOfMeasures((prev) => {
+        const next = editingUnitOfMeasure
+          ? prev.map((unit) => (unit.id === payload.unitOfMeasure.id ? payload.unitOfMeasure : unit))
+          : [...prev, payload.unitOfMeasure]
+        return next.sort((a, b) => a.name.localeCompare(b.name))
+      })
+      setIsUnitOfMeasureModalOpen(false)
+      setEditingUnitOfMeasure(null)
+      setUnitOfMeasureName("")
+      setMessage(editingUnitOfMeasure ? "Unit of measure updated" : "Unit of measure created")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save unit of measure")
+    } finally {
+      setIsSavingUnitOfMeasure(false)
+    }
+  }
+
+  async function deleteUnitOfMeasure(unitId: string) {
+    if (!window.confirm("Delete this unit of measure?")) return
+
+    setMessage("")
+    setError("")
+    setDeletingUnitOfMeasureId(unitId)
+
+    try {
+      await apiJson<{ success: boolean }>(`/api/builder/unit-of-measures/${unitId}`, {
+        method: "DELETE",
+      })
+      setUnitOfMeasures((prev) => prev.filter((unit) => unit.id !== unitId))
+      if (editingUnitOfMeasure?.id === unitId) {
+        setIsUnitOfMeasureModalOpen(false)
+        setEditingUnitOfMeasure(null)
+        setUnitOfMeasureName("")
+      }
+      setMessage("Unit of measure deleted")
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete unit of measure")
+    } finally {
+      setDeletingUnitOfMeasureId(null)
     }
   }
 
@@ -407,6 +526,69 @@ export default function BuilderUsersPanel() {
             </div>
           ) : null}
         </section>
+
+        <section className="border border-[var(--panel-border)] bg-[var(--panel-background)]">
+          {renderTableSectionHeader("Unit of Measures", "unitOfMeasures")}
+          {sectionsOpen.unitOfMeasures ? (
+            <div className="border-t border-[var(--panel-border)]">
+              <div className="flex items-center justify-end px-2 py-2">
+                <button
+                  type="button"
+                  onClick={openCreateUnitOfMeasure}
+                  className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                >
+                  Add UOM
+                </button>
+              </div>
+              <div className="overflow-x-auto border-t border-[var(--panel-border)]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[var(--panel-hover)] text-left">
+                    <tr>
+                      <th className="px-2 py-2">Unit of Measure</th>
+                      <th className="px-2 py-2">Created</th>
+                      <th className="px-2 py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unitOfMeasures.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-2 py-6 text-center text-[var(--foreground)]/70">
+                          No units of measure yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      unitOfMeasures.map((unit) => (
+                        <tr key={unit.id} className="border-t border-[var(--panel-border)]">
+                          <td className="px-2 py-2">{unit.name}</td>
+                          <td className="px-2 py-2 text-[var(--foreground)]/80">{formatDate(unit.createdAt)}</td>
+                          <td className="px-2 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditUnitOfMeasure(unit)}
+                                className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)]"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void deleteUnitOfMeasure(unit.id)}
+                                disabled={deletingUnitOfMeasureId === unit.id}
+                                className="rounded-md border border-rose-500/40 px-3 py-1 text-xs text-rose-600 hover:bg-rose-500/10 disabled:opacity-60"
+                              >
+                                {deletingUnitOfMeasureId === unit.id ? "Deleting..." : "Delete"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+        </section>
       </div>
 
       {selectedUser && (
@@ -460,6 +642,45 @@ export default function BuilderUsersPanel() {
           </div>
         </div>
       )}
+
+      {isUnitOfMeasureModalOpen ? (
+        <ModalShell
+          title={editingUnitOfMeasure ? "Edit Unit of Measure" : "Add Unit of Measure"}
+          onClose={() => {
+            if (!isSavingUnitOfMeasure) {
+              setIsUnitOfMeasureModalOpen(false)
+            }
+          }}
+        >
+          <div className="space-y-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-[var(--foreground)]/80">Unit of Measure</span>
+              <input
+                value={unitOfMeasureName}
+                onChange={(event) => setUnitOfMeasureName(event.target.value)}
+                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsUnitOfMeasureModalOpen(false)}
+                className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveUnitOfMeasure()}
+                disabled={isSavingUnitOfMeasure}
+                className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400 disabled:opacity-60"
+              >
+                {isSavingUnitOfMeasure ? "Saving..." : "Save UOM"}
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
     </div>
   )
 }

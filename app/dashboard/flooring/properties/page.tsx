@@ -145,7 +145,7 @@ export default async function FlooringPropertiesPage() {
         style: true,
         color: true,
         category: {
-          select: { sendUnit: true },
+          select: { sendUnit: { select: { name: true } } },
         },
       },
     }),
@@ -191,7 +191,7 @@ export default async function FlooringPropertiesPage() {
       productOptions={products.map((product): ProductOption => ({
         id: product.id,
         label: [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product",
-        sendUnit: product.category.sendUnit ?? "",
+        sendUnit: product.category.sendUnit?.name ?? "",
       }))}
     />
   )

@@ -7,6 +7,10 @@ import { TableActionsSummary } from "../shared/table-shell"
 type CategoryRow = {
   id: string
   name: string
+  sendUnitId: string
+  stockUnitId: string
+  coverageAvailableUnitId: string
+  itemCoverageUnitId: string
   sendUnit: string
   stockUnit: string
   coverageAvailableUnit: string
@@ -17,18 +21,24 @@ type CategoryRow = {
 
 type CategoryForm = {
   name: string
-  sendUnit: string
-  stockUnit: string
-  coverageAvailableUnit: string
-  itemCoverageUnit: string
+  sendUnitId: string
+  stockUnitId: string
+  coverageAvailableUnitId: string
+  itemCoverageUnitId: string
+}
+
+type UnitOfMeasureOption = {
+  id: string
+  name: string
+  createdAt: string
 }
 
 const emptyCategoryForm: CategoryForm = {
   name: "",
-  sendUnit: "",
-  stockUnit: "",
-  coverageAvailableUnit: "",
-  itemCoverageUnit: "",
+  sendUnitId: "",
+  stockUnitId: "",
+  coverageAvailableUnitId: "",
+  itemCoverageUnitId: "",
 }
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -70,14 +80,41 @@ async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise
 function toCategoryForm(category: CategoryRow): CategoryForm {
   return {
     name: category.name,
-    sendUnit: category.sendUnit,
-    stockUnit: category.stockUnit,
-    coverageAvailableUnit: category.coverageAvailableUnit,
-    itemCoverageUnit: category.itemCoverageUnit,
+    sendUnitId: category.sendUnitId,
+    stockUnitId: category.stockUnitId,
+    coverageAvailableUnitId: category.coverageAvailableUnitId,
+    itemCoverageUnitId: category.itemCoverageUnitId,
   }
 }
 
-export default function CategoriesClient({ initialCategories }: { initialCategories: CategoryRow[] }) {
+function UnitSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string
+  onChange: (value: string) => void
+  options: UnitOfMeasureOption[]
+}) {
+  return (
+    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2">
+      <option value="">None</option>
+      {options.map((option) => (
+        <option key={option.id} value={option.id}>
+          {option.name}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+export default function CategoriesClient({
+  initialCategories,
+  unitOfMeasureOptions,
+}: {
+  initialCategories: CategoryRow[]
+  unitOfMeasureOptions: UnitOfMeasureOption[]
+}) {
   const [categories, setCategories] = useState(initialCategories)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
@@ -228,16 +265,16 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
               <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Send Unit">
-              <input value={categoryForm.sendUnit} onChange={(event) => setCategoryForm((prev) => ({ ...prev, sendUnit: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Stock Unit">
-              <input value={categoryForm.stockUnit} onChange={(event) => setCategoryForm((prev) => ({ ...prev, stockUnit: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <UnitSelect value={categoryForm.stockUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, stockUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Coverage Available Unit">
-              <input value={categoryForm.coverageAvailableUnit} onChange={(event) => setCategoryForm((prev) => ({ ...prev, coverageAvailableUnit: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <UnitSelect value={categoryForm.coverageAvailableUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, coverageAvailableUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Item Coverage Unit">
-              <input value={categoryForm.itemCoverageUnit} onChange={(event) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnit: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
           </div>
           <div className="mt-5 flex justify-end gap-2">

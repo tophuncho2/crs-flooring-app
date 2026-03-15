@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/lib/flooring-unit-measures"
 import { prisma } from "@/lib/prisma"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
 import { ensureBuilderOrAdmin } from "@/lib/route-auth"
@@ -10,20 +11,17 @@ type RouteContext = {
 function normalizeCategory(category: {
   id: string
   name: string
-  sendUnit: string | null
-  stockUnit: string | null
-  coverageAvailableUnit: string | null
-  itemCoverageUnit: string | null
+  sendUnit: { id: string; name: string } | null
+  stockUnit: { id: string; name: string } | null
+  coverageAvailableUnit: { id: string; name: string } | null
+  itemCoverageUnit: { id: string; name: string } | null
   createdAt: Date
   _count?: { products: number }
 }) {
   return {
     id: category.id,
     name: category.name,
-    sendUnit: category.sendUnit ?? "",
-    stockUnit: category.stockUnit ?? "",
-    coverageAvailableUnit: category.coverageAvailableUnit ?? "",
-    itemCoverageUnit: category.itemCoverageUnit ?? "",
+    ...normalizeCategoryUnitValues(category),
     productCount: category._count?.products ?? 0,
     createdAt: category.createdAt.toISOString(),
   }
@@ -40,12 +38,13 @@ export async function PATCH(request: Request, context: RouteContext) {
       where: { id },
       data: {
         name: parseRequiredString(body.name, "name"),
-        sendUnit: parseOptionalString(body.sendUnit),
-        stockUnit: parseOptionalString(body.stockUnit),
-        coverageAvailableUnit: parseOptionalString(body.coverageAvailableUnit),
-        itemCoverageUnit: parseOptionalString(body.itemCoverageUnit),
+        sendUnitId: parseOptionalString(body.sendUnitId),
+        stockUnitId: parseOptionalString(body.stockUnitId),
+        coverageAvailableUnitId: parseOptionalString(body.coverageAvailableUnitId),
+        itemCoverageUnitId: parseOptionalString(body.itemCoverageUnitId),
       },
       include: {
+        ...flooringCategoryUnitInclude,
         _count: {
           select: { products: true },
         },

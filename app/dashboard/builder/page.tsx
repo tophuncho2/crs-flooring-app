@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
+import { normalizeUnitOfMeasureOption } from "@/lib/flooring-unit-measures"
 import { prisma } from "@/lib/prisma"
 import { canAccessBuilderPanel, canBypassVerification } from "@/lib/access-control"
 import BuilderUsersPanel from "./users-panel"
@@ -29,5 +30,9 @@ export default async function BuilderPage() {
     redirect("/login?restricted=1")
   }
 
-  return <BuilderUsersPanel />
+  const unitOfMeasures = await prisma.flooringUnitOfMeasure.findMany({
+    orderBy: { name: "asc" },
+  })
+
+  return <BuilderUsersPanel initialUnitOfMeasures={unitOfMeasures.map(normalizeUnitOfMeasureOption)} />
 }

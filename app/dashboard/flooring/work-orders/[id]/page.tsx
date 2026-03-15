@@ -117,7 +117,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
               color: true,
               category: {
                 select: {
-                  sendUnit: true,
+                  sendUnit: { select: { name: true } },
                 },
               },
             },
@@ -149,7 +149,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       color: true,
       category: {
         select: {
-          sendUnit: true,
+          sendUnit: { select: { name: true } },
         },
       },
     },
@@ -230,7 +230,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       id: item.id,
       productId: item.productId,
       productName: buildProductName(item.product),
-      sendUnit: item.product.category.sendUnit ?? "",
+      sendUnit: item.product.category.sendUnit?.name ?? "",
       quantity: item.quantity.toString(),
       notes: item.notes ?? "",
       linkedInventoryId: item.linkedInventoryId ?? "",
@@ -247,7 +247,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       productOptions={productRows.map((product): ProductOption => ({
         id: product.id,
         name: buildProductName(product),
-        sendUnit: product.category.sendUnit ?? "",
+        sendUnit: product.category.sendUnit?.name ?? "",
       }))}
       inventoryOptions={inventoryRows.map((row): InventoryOption => ({
         id: row.id,

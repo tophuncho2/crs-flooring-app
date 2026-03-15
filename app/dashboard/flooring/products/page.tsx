@@ -6,6 +6,7 @@ import { isToolUnlocked } from "@/lib/tool-subscriptions"
 import { findFlooringManufacturers } from "@/lib/flooring-db-compat"
 import FlooringProductsClient from "./products-client"
 import { Prisma } from "@prisma/client"
+import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/lib/flooring-unit-measures"
 
 function normalizeProduct(product: {
   id: string
@@ -28,10 +29,10 @@ function normalizeProduct(product: {
   category: {
     id: string
     name: string
-    sendUnit: string | null
-    stockUnit: string | null
-    coverageAvailableUnit: string | null
-    itemCoverageUnit: string | null
+    sendUnit: { id: string; name: string } | null
+    stockUnit: { id: string; name: string } | null
+    coverageAvailableUnit: { id: string; name: string } | null
+    itemCoverageUnit: { id: string; name: string } | null
   }
   manufacturer: {
     id: string
@@ -54,7 +55,7 @@ function normalizeProduct(product: {
     unitWeight: product.unitWeight ?? "",
     baseColor: product.baseColor ?? "",
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
-    coverageUnit: product.category.itemCoverageUnit ?? "",
+    coverageUnit: product.category.itemCoverageUnit?.name ?? "",
     photoUrls: product.photoUrls,
     notes: product.notes ?? "",
     createdAt: product.createdAt.toISOString(),
@@ -62,10 +63,7 @@ function normalizeProduct(product: {
     category: {
       id: product.category.id,
       name: product.category.name,
-      sendUnit: product.category.sendUnit ?? "",
-      stockUnit: product.category.stockUnit ?? "",
-      coverageAvailableUnit: product.category.coverageAvailableUnit ?? "",
-      itemCoverageUnit: product.category.itemCoverageUnit ?? "",
+      ...normalizeCategoryUnitValues(product.category),
     },
   }
 }
@@ -89,10 +87,7 @@ export default async function FlooringProductsPage() {
       select: {
         id: true,
         name: true,
-        sendUnit: true,
-        stockUnit: true,
-        coverageAvailableUnit: true,
-        itemCoverageUnit: true,
+        ...flooringCategoryUnitInclude,
       },
     }),
     findFlooringManufacturers(),
@@ -102,10 +97,7 @@ export default async function FlooringProductsPage() {
           select: {
             id: true,
             name: true,
-            sendUnit: true,
-            stockUnit: true,
-            coverageAvailableUnit: true,
-            itemCoverageUnit: true,
+            ...flooringCategoryUnitInclude,
           },
         },
         manufacturer: {
@@ -126,10 +118,7 @@ export default async function FlooringProductsPage() {
       categoryOptions={categories.map((category) => ({
         id: category.id,
         name: category.name,
-        sendUnit: category.sendUnit ?? "",
-        stockUnit: category.stockUnit ?? "",
-        coverageAvailableUnit: category.coverageAvailableUnit ?? "",
-        itemCoverageUnit: category.itemCoverageUnit ?? "",
+        ...normalizeCategoryUnitValues(category),
       }))}
       manufacturerOptions={manufacturers.map((manufacturer) => ({
         id: manufacturer.id,

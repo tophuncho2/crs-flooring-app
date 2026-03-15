@@ -97,7 +97,7 @@ function normalizeImportInventory(row: {
     manufacturerName: string | null
     style: string | null
     color: string | null
-    category: { stockUnit: string | null }
+    category: { stockUnit: { name: string } | null }
   }
   location: {
     id: string
@@ -109,7 +109,7 @@ function normalizeImportInventory(row: {
     id: row.id,
     productId: row.productId,
     productName: buildProductName(row.product),
-    stockUnit: row.product.category.stockUnit ?? "",
+    stockUnit: row.product.category.stockUnit?.name ?? "",
     itemNumber: row.itemNumber,
     dyeLot: row.dyeLot,
     stockCount: row.stockCount.toString(),
@@ -152,7 +152,7 @@ function normalizeImportEntry(entry: {
       manufacturerName: string | null
       style: string | null
       color: string | null
-      category: { stockUnit: string | null }
+      category: { stockUnit: { name: string } | null }
     }
     location: {
       id: string
@@ -270,7 +270,7 @@ export async function POST(request: Request) {
                   manufacturerName: true,
                   style: true,
                   color: true,
-                  category: { select: { stockUnit: true } },
+                  category: { select: { stockUnit: { select: { name: true } } } },
                 },
               },
               location: {

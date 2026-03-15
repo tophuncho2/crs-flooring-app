@@ -30,7 +30,7 @@ function normalizeInventoryRow(row: {
     manufacturerName: string | null
     style: string | null
     color: string | null
-    category: { stockUnit: string | null }
+    category: { stockUnit: { name: string } | null }
   }
   locationId: string
   location: {
@@ -70,7 +70,7 @@ function normalizeInventoryRow(row: {
     importWarehouseName: row.importEntry?.warehouse?.name ?? row.location.warehouse.name,
     productId: row.productId,
     productName: buildProductName(row.product),
-    stockUnit: row.product.category.stockUnit ?? "",
+    stockUnit: row.product.category.stockUnit?.name ?? "",
     itemNumber: row.itemNumber,
     dyeLot: row.dyeLot,
     locationId: row.locationId,
@@ -117,7 +117,7 @@ export async function GET(request: Request) {
             manufacturerName: true,
             style: true,
             color: true,
-            category: { select: { stockUnit: true } },
+            category: { select: { stockUnit: { select: { name: true } } } },
           },
         },
         location: {
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
             manufacturerName: true,
             style: true,
             color: true,
-            category: { select: { stockUnit: true } },
+            category: { select: { stockUnit: { select: { name: true } } } },
           },
         },
         location: {

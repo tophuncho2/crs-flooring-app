@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
+import { flooringCategoryUnitInclude, normalizeCategoryUnitValues, normalizeUnitOfMeasureOption } from "@/lib/flooring-unit-measures"
 import { prisma } from "@/lib/prisma"
 import { isToolUnlocked } from "@/lib/tool-subscriptions"
 import CategoriesClient from "./categories-client"
@@ -8,6 +9,10 @@ import CategoriesClient from "./categories-client"
 type CategoryRow = {
   id: string
   name: string
+  sendUnitId: string
+  stockUnitId: string
+  coverageAvailableUnitId: string
+  itemCoverageUnitId: string
   sendUnit: string
   stockUnit: string
   coverageAvailableUnit: string
@@ -29,25 +34,33 @@ export default async function FlooringCategoriesPage() {
   if (!user) redirect("/login")
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard")
 
-  const categories = await prisma.flooringCategory.findMany({
-    include: {
-      _count: {
-        select: { products: true },
+  const [categories, unitOfMeasures] = await Promise.all([
+    prisma.flooringCategory.findMany({
+      include: {
+        ...flooringCategoryUnitInclude,
+        _count: {
+          select: { products: true },
+        },
       },
-    },
-    orderBy: { name: "asc" },
-  })
+      orderBy: { name: "asc" },
+    }),
+    prisma.flooringUnitOfMeasure.findMany({
+      orderBy: { name: "asc" },
+    }),
+  ])
 
   const initialCategories: CategoryRow[] = categories.map((category) => ({
     id: category.id,
     name: category.name,
-    sendUnit: category.sendUnit ?? "",
-    stockUnit: category.stockUnit ?? "",
-    coverageAvailableUnit: category.coverageAvailableUnit ?? "",
-    itemCoverageUnit: category.itemCoverageUnit ?? "",
+    ...normalizeCategoryUnitValues(category),
     productCount: category._count.products,
     createdAt: category.createdAt.toISOString(),
   }))
 
-  return <CategoriesClient initialCategories={initialCategories} />
+  return (
+    <CategoriesClient
+      initialCategories={initialCategories}
+      unitOfMeasureOptions={unitOfMeasures.map(normalizeUnitOfMeasureOption)}
+    />
+  )
 }

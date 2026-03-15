@@ -41,7 +41,7 @@ export default async function FlooringImportsPage() {
                 manufacturerName: true,
                 style: true,
                 color: true,
-                category: { select: { stockUnit: true } },
+                category: { select: { stockUnit: { select: { name: true } } } },
               },
             },
             location: {
@@ -59,7 +59,7 @@ export default async function FlooringImportsPage() {
     }),
     prisma.flooringProduct.findMany({
       include: {
-        category: { select: { stockUnit: true } },
+        category: { select: { stockUnit: { select: { name: true } } } },
       },
       orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
     }),
@@ -89,7 +89,7 @@ export default async function FlooringImportsPage() {
           id: item.id,
           productId: item.productId,
           productName: buildProductLabel(item.product),
-          stockUnit: item.product.category.stockUnit ?? "",
+          stockUnit: item.product.category.stockUnit?.name ?? "",
           itemNumber: item.itemNumber,
           dyeLot: item.dyeLot,
           stockCount: item.stockCount.toString(),
@@ -106,7 +106,7 @@ export default async function FlooringImportsPage() {
       productOptions={products.map((product) => ({
         id: product.id,
         label: buildProductLabel(product),
-        stockUnit: product.category.stockUnit ?? "",
+        stockUnit: product.category.stockUnit?.name ?? "",
       }))}
       warehouseOptions={warehouses}
       locationOptions={locations.map((location) => ({
