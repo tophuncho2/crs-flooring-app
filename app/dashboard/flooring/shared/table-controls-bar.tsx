@@ -22,6 +22,11 @@ export default function TableControlsBar({
   groupOptions = [],
   groupByKey,
   onGroupByKeyChange,
+  groupByKeys,
+  onGroupByKeyAtIndexChange,
+  onAddGroupBy,
+  onRemoveGroupBy,
+  maxGroupFields = 3,
   children,
 }: {
   searchQuery: string
@@ -37,8 +42,15 @@ export default function TableControlsBar({
   groupOptions?: GroupOption[]
   groupByKey?: string | null
   onGroupByKeyChange?: (value: string) => void
+  groupByKeys?: string[]
+  onGroupByKeyAtIndexChange?: (index: number, value: string) => void
+  onAddGroupBy?: () => void
+  onRemoveGroupBy?: (index: number) => void
+  maxGroupFields?: number
   children?: ReactNode
 }) {
+  const activeGroupKeys = groupByKeys?.length ? groupByKeys : groupByKey ? [groupByKey] : []
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <label className="flex items-center gap-2 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 text-sm">
@@ -64,18 +76,51 @@ export default function TableControlsBar({
           >
             G
           </button>
-          {groupOptions.length > 1 && isGroupingEnabled ? (
-            <select
-              value={groupByKey ?? groupOptions[0]?.key ?? ""}
-              onChange={(event) => onGroupByKeyChange?.(event.target.value)}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 text-sm"
-            >
-              {groupOptions.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          {groupOptions.length > 0 && isGroupingEnabled ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {activeGroupKeys.map((activeKey, index) => {
+                const availableOptions = groupOptions.filter((option) => option.key === activeKey || !activeGroupKeys.includes(option.key))
+                return (
+                  <div key={`${activeKey}-${index}`} className="flex items-center gap-2">
+                    <select
+                      value={activeKey}
+                      onChange={(event) => {
+                        if (groupByKeys?.length && onGroupByKeyAtIndexChange) {
+                          onGroupByKeyAtIndexChange(index, event.target.value)
+                          return
+                        }
+                        onGroupByKeyChange?.(event.target.value)
+                      }}
+                      className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 text-sm"
+                    >
+                      {availableOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {groupByKeys?.length && activeGroupKeys.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveGroupBy?.(index)}
+                        className="rounded-lg border border-[var(--panel-border)] px-2 py-2 text-xs font-semibold hover:bg-[var(--panel-hover)]"
+                      >
+                        X
+                      </button>
+                    ) : null}
+                  </div>
+                )
+              })}
+              {groupByKeys?.length && activeGroupKeys.length < Math.min(maxGroupFields, groupOptions.length) ? (
+                <button
+                  type="button"
+                  onClick={onAddGroupBy}
+                  className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold hover:bg-[var(--panel-hover)]"
+                >
+                  Add Group
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </>
       ) : null}

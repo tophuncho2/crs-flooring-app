@@ -15,6 +15,16 @@ export type GroupField<T> = {
   getValue: TableValueGetter<T>
 }
 
+export type GroupedRowTree<T> = {
+  depth: number
+  key: string
+  label: string
+  rows: T[]
+  children: GroupedRowTree<T>[]
+}
+
+export const MAX_GROUP_FIELDS = 3
+
 type UseTableControlsOptions<T> = {
   rows: T[]
   searchFields: SearchField<T>[]
@@ -22,7 +32,9 @@ type UseTableControlsOptions<T> = {
   groupFields?: GroupField<T>[]
   defaultGrouped?: boolean
   defaultGroupKey?: string | null
+  defaultGroupKeys?: string[]
   defaultAscending?: boolean
+  maxGroupFields?: number
 }
 
 const collator = new Intl.Collator(undefined, {
@@ -41,15 +53,36 @@ export function useTableControls<T>({
   groupFields = [],
   defaultGrouped = false,
   defaultGroupKey = null,
+  defaultGroupKeys,
   defaultAscending = true,
+  maxGroupFields = MAX_GROUP_FIELDS,
 }: UseTableControlsOptions<T>) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isAscendingSort, setIsAscendingSort] = useState(defaultAscending)
   const [isGroupingEnabled, setIsGroupingEnabled] = useState(defaultGrouped && groupFields.length > 0)
-  const [groupByKey, setGroupByKey] = useState<string | null>(defaultGroupKey ?? groupFields[0]?.key ?? null)
+  const initialGroupKeys = useMemo(() => {
+    const requestedKeys = defaultGroupKeys?.length ? defaultGroupKeys : [defaultGroupKey ?? groupFields[0]?.key ?? null]
+    const nextKeys: string[] = []
+    for (const key of requestedKeys) {
+      if (!key) continue
+      if (!groupFields.some((field) => field.key === key)) continue
+      if (nextKeys.includes(key)) continue
+      nextKeys.push(key)
+      if (nextKeys.length >= maxGroupFields) break
+    }
+    if (nextKeys.length === 0 && groupFields[0]) {
+      nextKeys.push(groupFields[0].key)
+    }
+    return nextKeys
+  }, [defaultGroupKey, defaultGroupKeys, groupFields, maxGroupFields])
+  const [groupByKeys, setGroupByKeys] = useState<string[]>(initialGroupKeys)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
-  const activeGroupField = groupFields.find((field) => field.key === groupByKey) ?? groupFields[0] ?? null
+  const activeGroupFields = groupByKeys
+    .map((key) => groupFields.find((field) => field.key === key) ?? null)
+    .filter((field): field is GroupField<T> => Boolean(field))
+    .slice(0, maxGroupFields)
+  const activeGroupField = activeGroupFields[0] ?? groupFields[0] ?? null
 
   const filteredRows = useMemo(
     () =>
@@ -83,6 +116,65 @@ export function useTableControls<T>({
     return Array.from(groups.entries()).sort((a, b) => (isAscendingSort ? collator.compare(a[0], b[0]) : collator.compare(b[0], a[0])))
   }, [sortedRows, isGroupingEnabled, activeGroupField, isAscendingSort])
 
+  const groupedRowTree = useMemo(() => {
+    if (!isGroupingEnabled || activeGroupFields.length === 0) return []
+
+    const buildTree = (treeRows: T[], depth: number): GroupedRowTree<T>[] => {
+      const field = activeGroupFields[depth]
+      if (!field) return []
+
+      const groups = new Map<string, T[]>()
+      for (const row of treeRows) {
+        const groupValue = normalizeValue(field.getValue(row)) || "Ungrouped"
+        const existing = groups.get(groupValue) ?? []
+        existing.push(row)
+        groups.set(groupValue, existing)
+      }
+
+      return Array.from(groups.entries())
+        .sort((a, b) => (isAscendingSort ? collator.compare(a[0], b[0]) : collator.compare(b[0], a[0])))
+        .map(([label, groupRows]) => ({
+          depth,
+          key: `${field.key}:${label}`,
+          label,
+          rows: groupRows,
+          children: buildTree(groupRows, depth + 1),
+        }))
+    }
+
+    return buildTree(sortedRows, 0)
+  }, [sortedRows, isGroupingEnabled, activeGroupFields, isAscendingSort])
+
+  const setGroupByKey = (value: string | null) => {
+    if (!value) {
+      setGroupByKeys([])
+      return
+    }
+    setGroupByKeys([value])
+  }
+
+  const updateGroupByKeyAtIndex = (index: number, nextKey: string) => {
+    setGroupByKeys((previous) => {
+      const next = [...previous]
+      next[index] = nextKey
+      const deduped = next.filter((key, keyIndex) => key && next.indexOf(key) === keyIndex)
+      return deduped.slice(0, maxGroupFields)
+    })
+  }
+
+  const addGroupByKey = () => {
+    setGroupByKeys((previous) => {
+      if (previous.length >= maxGroupFields) return previous
+      const nextField = groupFields.find((field) => !previous.includes(field.key))
+      if (!nextField) return previous
+      return [...previous, nextField.key]
+    })
+  }
+
+  const removeGroupByKeyAtIndex = (index: number) => {
+    setGroupByKeys((previous) => previous.filter((_, keyIndex) => keyIndex !== index))
+  }
+
   return {
     searchQuery,
     setSearchQuery,
@@ -90,11 +182,17 @@ export function useTableControls<T>({
     setIsAscendingSort,
     isGroupingEnabled,
     setIsGroupingEnabled,
-    groupByKey,
+    groupByKey: groupByKeys[0] ?? null,
     setGroupByKey,
+    groupByKeys,
+    setGroupByKeys,
+    updateGroupByKeyAtIndex,
+    addGroupByKey,
+    removeGroupByKeyAtIndex,
     groupFields,
     filteredRows,
     sortedRows,
     groupedRows,
+    groupedRowTree,
   }
 }

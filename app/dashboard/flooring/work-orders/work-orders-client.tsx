@@ -8,7 +8,7 @@ import { TableColumnSettings } from "../shared/table-column-settings"
 import TableControlsBar from "../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
 import { useTableColumns } from "../shared/use-table-columns"
-import { useTableControls } from "../shared/use-table-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../shared/use-table-controls"
 
 type WorkOrderRow = {
   id: string
@@ -226,12 +226,14 @@ export default function WorkOrdersClient({
     setIsAscendingSort,
     isGroupingEnabled,
     setIsGroupingEnabled,
-    groupByKey,
-    setGroupByKey,
+    groupByKeys,
+    updateGroupByKeyAtIndex,
+    addGroupByKey,
+    removeGroupByKeyAtIndex,
     groupFields,
     filteredRows: filteredWorkOrders,
     sortedRows: sortedWorkOrders,
-    groupedRows: groupedWorkOrders,
+    groupedRowTree: groupedWorkOrders,
   } = useTableControls({
     rows: workOrders,
     searchFields: [{ key: "property", getValue: (row) => row.propertyName }],
@@ -242,7 +244,7 @@ export default function WorkOrdersClient({
       { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date") },
       { key: "status", label: "Status", getValue: (row) => row.statusLabel },
     ],
-    defaultGroupKey: "warehouse",
+    defaultGroupKeys: ["warehouse"],
   })
   const workOrderColumns = useMemo(
     () => [
@@ -615,6 +617,18 @@ export default function WorkOrdersClient({
     )
   }
 
+  function renderGroupedWorkOrders(groups: GroupedRowTree<WorkOrderRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow
+        key={`${group.depth}-${group.key}`}
+        label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`}
+        depth={group.depth}
+        colSpan={visibleWorkOrderColumns.length}
+      />,
+      ...(group.children.length > 0 ? renderGroupedWorkOrders(group.children) : group.rows.map((row) => renderWorkOrderRow(row))),
+    ])
+  }
+
   async function addItem() {
     if (!activeWorkOrder) return
 
@@ -732,8 +746,11 @@ export default function WorkOrdersClient({
                 isGroupingEnabled={isGroupingEnabled}
                 onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
                 groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-                groupByKey={groupByKey}
-                onGroupByKeyChange={setGroupByKey}
+                groupByKeys={groupByKeys}
+                onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
+                onAddGroupBy={addGroupByKey}
+                onRemoveGroupBy={removeGroupByKeyAtIndex}
+                maxGroupFields={MAX_GROUP_FIELDS}
               >
                 <TableColumnSettings
                   columns={orderedWorkOrderColumns}
@@ -772,10 +789,7 @@ export default function WorkOrdersClient({
               </TableHead>
               <tbody>
                 {isGroupingEnabled
-                  ? groupedWorkOrders.flatMap(([groupName, rows]) => [
-                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={visibleWorkOrderColumns.length} />,
-                      ...rows.map((row) => renderWorkOrderRow(row)),
-                    ])
+                  ? renderGroupedWorkOrders(groupedWorkOrders)
                   : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
 
                 {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={visibleWorkOrderColumns.length} /> : null}

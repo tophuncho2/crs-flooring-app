@@ -58,15 +58,17 @@ export function TableHeaderCell({ children, className }: { children: ReactNode; 
 export function TableGroupRow({
   label,
   colSpan,
+  depth = 0,
   className,
 }: {
   label: string
   colSpan: number
+  depth?: number
   className?: string
 }) {
   return (
     <tr className={joinClasses("border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30", className)}>
-      <td colSpan={colSpan} className="px-3 py-2 text-sm font-semibold text-blue-500">
+      <td colSpan={colSpan} className="px-3 py-2 text-sm font-semibold text-blue-500" style={{ paddingLeft: `${0.75 + depth * 1.25}rem` }}>
         {label}
       </td>
     </tr>
