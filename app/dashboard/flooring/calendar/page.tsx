@@ -20,7 +20,7 @@ export default async function FlooringCalendarPage() {
   })
 
   if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard/flooring/work-orders")
 
   const workOrders = await prisma.flooringWorkOrder.findMany({
     include: {

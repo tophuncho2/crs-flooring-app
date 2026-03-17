@@ -1,36 +1,29 @@
 import type { Role } from "@prisma/client"
 
-export const MASTER_EMAIL_LIST = [
-  "admin@test.com",
-  "j.ottohull@gmail.com",
-  "tophuncho2@gmail.com",
-] as const
-
-const MASTER_EMAILS: ReadonlySet<string> = new Set<string>(MASTER_EMAIL_LIST)
-
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase()
-}
-
-export function isMasterEmail(email: string): boolean {
-  return MASTER_EMAILS.has(normalizeEmail(email))
-}
-
-export function canAccessBuilderPanel(email: string, role: Role): boolean {
-  void email
+export function isBuilder(role: Role): boolean {
   return role === "BUILDER"
 }
 
-export function canBypassVerification(email: string, role: Role): boolean {
-  void role
-  return isMasterEmail(email)
+export function isAdmin(role: Role): boolean {
+  return role === "ADMIN"
 }
 
-export function canRestrictUser(email: string, role: Role): boolean {
-  return !canBypassVerification(email, role)
+export function hasSystemAccess(role: Role): boolean {
+  return isBuilder(role) || isAdmin(role)
 }
 
-export function canEditRole(email: string, role: Role): boolean {
-  void role
-  return !isMasterEmail(email)
+export function canAccessBuilderPanel(_email: string, role: Role): boolean {
+  return isBuilder(role)
+}
+
+export function canBypassVerification(_email: string, role: Role): boolean {
+  return hasSystemAccess(role)
+}
+
+export function canRestrictUser(_email: string, role: Role): boolean {
+  return hasSystemAccess(role)
+}
+
+export function canEditRole(_email: string, role: Role): boolean {
+  return hasSystemAccess(role)
 }

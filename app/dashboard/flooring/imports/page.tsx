@@ -2,9 +2,9 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/server/auth/auth-options"
 import { prisma } from "@/server/db/prisma"
-import { findFlooringLocationsForImports } from "@/server/flooring/db-compat"
 import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
+import { listImportLocationOptions } from "@/features/flooring/imports/queries"
 
 function buildProductLabel(product: {
   name: string
@@ -25,7 +25,7 @@ export default async function FlooringImportsPage() {
   })
 
   if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard/flooring/work-orders")
 
   const [entries, products, warehouses, locations] = await Promise.all([
     prisma.flooringImportEntry.findMany({
@@ -67,7 +67,7 @@ export default async function FlooringImportsPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    findFlooringLocationsForImports(),
+    listImportLocationOptions(),
   ])
 
   return (

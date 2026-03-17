@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
-import { MASTER_EMAIL_LIST } from "@/server/auth/access-control"
 import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 export async function POST(request: Request) {
@@ -15,9 +14,7 @@ export async function POST(request: Request) {
 
   if (body.action === "restrictAll") {
     const result = await prisma.user.updateMany({
-      where: {
-        email: { notIn: [...MASTER_EMAIL_LIST] },
-      },
+      where: {},
       data: { isVerified: false },
     })
 
@@ -25,9 +22,7 @@ export async function POST(request: Request) {
   }
 
   const result = await prisma.user.updateMany({
-    where: {
-      email: { notIn: [...MASTER_EMAIL_LIST] },
-    },
+    where: {},
     data: { isVerified: true },
   })
 

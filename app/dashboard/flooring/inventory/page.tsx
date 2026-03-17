@@ -30,7 +30,7 @@ export default async function FlooringInventoryPage() {
   })
 
   if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard/flooring/work-orders")
 
   const inventory = await prisma.flooringInventory.findMany({
     include: {

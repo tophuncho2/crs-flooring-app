@@ -84,7 +84,7 @@ export default async function FlooringPropertiesPage() {
   }
 
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) {
-    redirect("/dashboard")
+    redirect("/dashboard/flooring/work-orders")
   }
 
   const [properties, managementCompanies, warehouses, padProducts, products] = await Promise.all([

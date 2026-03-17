@@ -5,10 +5,9 @@ import { useEffect, useState, type ReactNode } from "react"
 type UserRow = {
   id: string
   email: string
-  role: "CONTRACTOR" | "CUSTOMER" | "ADMIN" | "BUILDER"
+  role: "ADMIN" | "BUILDER"
   isVerified: boolean
   createdAt: string
-  isMaster: boolean
   canRestrict: boolean
   canEditRole: boolean
 }
@@ -388,10 +387,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
                           onClick={() => setSelectedUser(user)}
                         >
                           <td className="px-2 py-2">
-                            <div className="flex flex-col">
-                              <span>{user.email}</span>
-                              {user.isMaster && <span className="text-xs text-blue-500">Master Account</span>}
-                            </div>
+                            <span>{user.email}</span>
                           </td>
                           <td className="px-2 py-2">
                             <div className="flex flex-col gap-1">
@@ -406,8 +402,6 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
                                 }
                                 className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1 disabled:opacity-60"
                               >
-                                <option value="CONTRACTOR">CONTRACTOR</option>
-                                <option value="CUSTOMER">CUSTOMER</option>
                                 <option value="ADMIN">ADMIN</option>
                                 <option value="BUILDER">BUILDER</option>
                               </select>
@@ -615,7 +609,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
               <p><span className="text-[var(--foreground)]/70">Email:</span> {selectedUser.email}</p>
               <p>
                 <span className="text-[var(--foreground)]/70">Level:</span>{" "}
-                {selectedUser.isMaster ? "MASTER" : selectedUser.role}
+                {selectedUser.role}
               </p>
               <p>
                 <span className="text-[var(--foreground)]/70">Status:</span>{" "}
@@ -627,7 +621,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
               </p>
             </div>
 
-            {viewerCanManageUsers && !selectedUser.isMaster && (
+            {viewerCanManageUsers && (
               <div className="mt-4 flex items-center justify-end">
                 <button
                   type="button"

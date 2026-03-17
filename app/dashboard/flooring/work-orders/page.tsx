@@ -74,7 +74,7 @@ export default async function WorkOrdersPage() {
   }
 
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) {
-    redirect("/dashboard")
+    redirect("/dashboard/flooring/work-orders")
   }
 
   const [workOrders, properties, warehouses, products] = await Promise.all([

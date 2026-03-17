@@ -3,8 +3,9 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/server/auth/auth-options"
 import { prisma } from "@/server/db/prisma"
 import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
-import { findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/server/flooring/db-compat"
 import ManufacturersClient from "@/features/flooring/manufacturers/components/manufacturers-client"
+import { listManufacturers } from "@/features/flooring/manufacturers/queries"
+import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
 
 export default async function ManufacturersPage() {
   const session = await getServerSession(authOptions)
@@ -16,23 +17,13 @@ export default async function ManufacturersPage() {
   })
 
   if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard/flooring/work-orders")
 
-  const manufacturers = await findFlooringManufacturers()
+  const manufacturers = await listManufacturers()
 
   return (
     <ManufacturersClient
-      initialManufacturers={manufacturers.map((manufacturer) => ({
-        id: manufacturer.id,
-        name: getVisibleManufacturerAgentName(manufacturer.name, manufacturer.companyName),
-        companyName: manufacturer.companyName ?? "",
-        website: manufacturer.website ?? "",
-        phone: manufacturer.phone ?? "",
-        email: manufacturer.email ?? "",
-        productsCount: manufacturer._count?.products ?? 0,
-        createdAt: manufacturer.createdAt.toISOString(),
-        updatedAt: manufacturer.updatedAt.toISOString(),
-      }))}
+      initialManufacturers={manufacturers.map(normalizeManufacturer)}
     />
   )
 }

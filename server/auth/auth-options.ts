@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import { type Role } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { canBypassVerification } from "@/server/auth/access-control"
+import { hasSystemAccess } from "@/server/auth/access-control"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.password)
         if (!valid) return null
 
-        if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+        if (!hasSystemAccess(user.role)) {
           return null
         }
 
@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           role: user.role,
-          isVerified: user.isVerified,
+          isVerified: true,
         }
       },
     }),
@@ -54,14 +54,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.isVerified = user.isVerified
+        token.isVerified = true
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.role = token.role as Role
-        session.user.isVerified = Boolean(token.isVerified)
+        session.user.isVerified = true
       }
       return session
     },

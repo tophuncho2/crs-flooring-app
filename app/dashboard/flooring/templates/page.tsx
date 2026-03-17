@@ -61,7 +61,7 @@ export default async function TemplatesPage() {
   }
 
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) {
-    redirect("/dashboard")
+    redirect("/dashboard/flooring/work-orders")
   }
 
   const [templates, properties, warehouses, padProducts, products] = await Promise.all([

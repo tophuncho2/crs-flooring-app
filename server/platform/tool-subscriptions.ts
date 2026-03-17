@@ -1,4 +1,5 @@
 import type { Role } from "@prisma/client"
+import { hasSystemAccess } from "@/server/auth/access-control"
 
 export const TOOL_CATALOG = [
   {
@@ -70,6 +71,7 @@ export async function getUserToolContext({
   role: Role
 }): Promise<UserToolContext> {
   void userId
+  const isUnlocked = hasSystemAccess(role)
 
   const tools: UserToolRow[] = TOOL_CATALOG.map((tool) => ({
     id: tool.slug,
@@ -77,14 +79,14 @@ export async function getUserToolContext({
     name: tool.name,
     description: tool.description,
     path: tool.path,
-    isUnlocked: true,
+    isUnlocked,
   }))
 
   return {
     role,
     tools,
-    canUseTools: true,
-    hasUnlimitedAccess: true,
+    canUseTools: isUnlocked,
+    hasUnlimitedAccess: isUnlocked,
   }
 }
 
@@ -98,9 +100,8 @@ export async function isToolUnlocked({
   slug: ToolSlug
 }): Promise<boolean> {
   void userId
-  void role
   void slug
-  return true
+  return hasSystemAccess(role)
 }
 
 export function getToolCatalog(): ToolCatalogItem[] {

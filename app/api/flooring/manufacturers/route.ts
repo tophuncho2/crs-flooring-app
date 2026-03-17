@@ -1,38 +1,16 @@
 import { NextResponse } from "next/server"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { buildManufacturerStorageName, createFlooringManufacturer, findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/server/flooring/db-compat"
 import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-
-function normalizeManufacturer(manufacturer: {
-  id: string
-  name: string
-  companyName: string | null
-  website: string | null
-  phone: string | null
-  email: string | null
-  createdAt: Date
-  updatedAt: Date
-  _count?: { products: number }
-}) {
-  return {
-    id: manufacturer.id,
-    name: getVisibleManufacturerAgentName(manufacturer.name, manufacturer.companyName),
-    companyName: manufacturer.companyName ?? "",
-    website: manufacturer.website ?? "",
-    phone: manufacturer.phone ?? "",
-    email: manufacturer.email ?? "",
-    productsCount: manufacturer._count?.products ?? 0,
-    createdAt: manufacturer.createdAt.toISOString(),
-    updatedAt: manufacturer.updatedAt.toISOString(),
-  }
-}
+import { createManufacturer } from "@/features/flooring/manufacturers/mutations"
+import { listManufacturers } from "@/features/flooring/manufacturers/queries"
+import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
 
 export async function GET() {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
   if (authError) return authError
 
   try {
-    const manufacturers = await findFlooringManufacturers()
+    const manufacturers = await listManufacturers()
 
     return NextResponse.json({ manufacturers: manufacturers.map(normalizeManufacturer) })
   } catch (error) {
@@ -47,11 +25,9 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const companyName = parseRequiredString(body.companyName, "companyName")
-    const agentName = parseOptionalString(body.name)
-    const manufacturer = await createFlooringManufacturer({
-      name: buildManufacturerStorageName(agentName, companyName),
-      companyName,
+    const manufacturer = await createManufacturer({
+      name: parseRequiredString(body.name, "name"),
+      companyName: parseOptionalString(body.companyName),
       website: parseOptionalString(body.website),
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),

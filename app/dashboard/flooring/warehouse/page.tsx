@@ -29,7 +29,7 @@ export default async function FlooringWarehousePage() {
   })
 
   if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) redirect("/dashboard/flooring/work-orders")
 
   let warehouses: WarehouseQueryRow[] = []
   try {

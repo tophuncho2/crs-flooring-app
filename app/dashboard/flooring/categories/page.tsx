@@ -32,7 +32,7 @@ export default async function FlooringCategoriesPage() {
   })
 
   if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard")
+  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard/flooring/work-orders")
 
   const [categories, unitOfMeasures] = await Promise.all([
     prisma.flooringCategory.findMany({

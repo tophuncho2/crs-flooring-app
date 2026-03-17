@@ -36,8 +36,8 @@ export async function POST(request: Request) {
       data: {
         email,
         password: hashed,
-        role: "CUSTOMER",
-        isVerified: false,
+        role: "ADMIN",
+        isVerified: true,
       },
       select: { id: true },
     })
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Account created. Your account is pending approval.",
+        message: "Account created.",
       },
       { status: 201 },
     )

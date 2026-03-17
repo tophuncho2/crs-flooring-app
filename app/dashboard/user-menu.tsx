@@ -267,7 +267,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
             <button
               onClick={() => {
-                router.push("/dashboard")
+                router.push("/dashboard/flooring/work-orders")
                 setOpen(false)
               }}
               className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"

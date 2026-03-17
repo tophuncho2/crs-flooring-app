@@ -4,9 +4,8 @@ import { authOptions } from "@/server/auth/auth-options"
 import { prisma } from "@/server/db/prisma"
 import {
   canAccessBuilderPanel,
-  canBypassVerification,
+  hasSystemAccess,
 } from "@/server/auth/access-control"
-import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 
 async function getCurrentUserRecord() {
@@ -34,35 +33,11 @@ export async function ensureBuilderOrAdmin(options: EnsureBuilderOrAdminOptions 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
-  }
-
-  if (!options.toolSlug) {
-    if (user.role !== "BUILDER" && user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
+  void options
+  if (hasSystemAccess(user.role)) {
     return null
   }
-
-  if (user.role === "BUILDER" || user.role === "ADMIN") {
-    return null
-  }
-
-  if (options.toolSlug) {
-    const canUseTool = await isToolUnlocked({
-      userId: user.id,
-      role: user.role,
-      slug: options.toolSlug,
-    })
-
-    if (!canUseTool) {
-      return NextResponse.json({ error: "Tool access required" }, { status: 403 })
-    }
-  }
-
-  return null
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 }
 
 export async function ensureAuthenticated() {
@@ -71,8 +46,8 @@ export async function ensureAuthenticated() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
+  if (!hasSystemAccess(user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   return null
@@ -99,10 +74,6 @@ export async function ensureBuilderPanelAccess() {
 
   if (!canAccessBuilderPanel(user.email, user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  }
-
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
   }
 
   return null

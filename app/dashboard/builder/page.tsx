@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/server/auth/auth-options"
 import { normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
 import { prisma } from "@/server/db/prisma"
-import { canAccessBuilderPanel, canBypassVerification } from "@/server/auth/access-control"
+import { canAccessBuilderPanel } from "@/server/auth/access-control"
 import BuilderUsersPanel from "./users-panel"
 
 export default async function BuilderPage() {
@@ -23,11 +23,7 @@ export default async function BuilderPage() {
   }
 
   if (!canAccessBuilderPanel(user.email, user.role)) {
-    redirect("/dashboard")
-  }
-
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    redirect("/login?restricted=1")
+    redirect("/dashboard/flooring/work-orders")
   }
 
   const unitOfMeasures = await prisma.flooringUnitOfMeasure.findMany({

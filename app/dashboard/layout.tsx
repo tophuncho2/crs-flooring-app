@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { authOptions } from "@/server/auth/auth-options"
 import HeaderControls from "./header-controls"
 import { prisma } from "@/server/db/prisma"
-import { canBypassVerification } from "@/server/auth/access-control"
+import { hasSystemAccess } from "@/server/auth/access-control"
 import { getUserToolContext } from "@/server/platform/tool-subscriptions"
 import { FLOORING_NAV_SLUGS } from "./flooring-navigation"
 
@@ -30,8 +30,8 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    redirect("/login?restricted=1")
+  if (!hasSystemAccess(user.role)) {
+    redirect("/login")
   }
 
   const toolContext = await getUserToolContext({
