@@ -62,6 +62,7 @@ model Hotkey {
 }
 
 enum FlooringWorkOrderStatus {
+  DRAFT
   BUILDING_ORDER
   PENDING_EXPORT
   CARPET_CLEANING

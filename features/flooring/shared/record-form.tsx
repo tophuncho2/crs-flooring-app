@@ -8,14 +8,16 @@ export function RecordModalShell({
   onClose,
   children,
   zIndexClass = "z-40",
+  zIndex,
 }: {
   title: string
   onClose: () => void
   children: ReactNode
   zIndexClass?: string
+  zIndex?: number
 }) {
   return (
-    <div className={`fixed inset-0 ${zIndexClass} overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28`}>
+    <div className={`fixed inset-0 ${zIndexClass} overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28`} style={zIndex ? { zIndex } : undefined}>
       <div className="flex min-h-full items-start justify-center">
         <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
           <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">

@@ -84,7 +84,7 @@ async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput) {
   }
 }
 
-async function syncWorkOrderAnalytics(tx: Prisma.TransactionClient, workOrderId: string) {
+export async function syncWorkOrderAnalytics(tx: Prisma.TransactionClient, workOrderId: string) {
   const [items, serviceItems] = await Promise.all([
     tx.flooringWorkOrderItem.findMany({
       where: { workOrderId },

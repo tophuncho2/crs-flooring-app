@@ -1,4 +1,6 @@
 import { prisma } from "@/server/db/prisma"
+import { listServiceOptions } from "@/features/flooring/services/queries"
+import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
 
 export async function listWorkOrders() {
@@ -153,4 +155,75 @@ export async function listWorkOrderServiceItems(workOrderId: string) {
   })
 
   return items.map(normalizeWorkOrderServiceItem)
+}
+
+export async function getWorkOrdersPageData() {
+  const [workOrders, properties, warehouses, products, templates, services, units] = await Promise.all([
+    listWorkOrders(),
+    prisma.property.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        streetAddress: true,
+        city: true,
+        state: true,
+        postalCode: true,
+      },
+    }),
+    prisma.flooringWarehouse.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.flooringProduct.findMany({
+      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        manufacturerName: true,
+        style: true,
+        color: true,
+        category: { select: { sendUnit: { select: { name: true } } } },
+      },
+    }),
+    prisma.flooringTemplate.findMany({
+      orderBy: [{ property: { name: "asc" } }, { templateTag: "asc" }],
+      select: {
+        id: true,
+        propertyId: true,
+        templateTag: true,
+        property: { select: { name: true } },
+      },
+    }),
+    listServiceOptions(),
+    prisma.flooringUnitOfMeasure.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ])
+
+  return {
+    initialWorkOrders: workOrders.map((workOrder, index) => ({
+      ...workOrder,
+      itemsCount: workOrder.itemsCount ?? 0,
+      workOrderNumber: workOrders.length - index,
+    })),
+    propertyOptions: properties.map((property) => ({
+      id: property.id,
+      name: property.name,
+      address: [property.streetAddress, property.city, property.state, property.postalCode].filter(Boolean).join(", "),
+    })),
+    warehouseOptions: warehouses,
+    productOptions: products.map((product) => ({
+      id: product.id,
+      label: buildProductName(product),
+      sendUnit: product.category.sendUnit?.name ?? "",
+    })),
+    templateOptions: templates.map((template) => ({
+      id: template.id,
+      propertyId: template.propertyId,
+      label: `${template.property.name} / ${template.templateTag}`,
+    })),
+    serviceOptions: services,
+    unitOptions: units,
+  }
 }

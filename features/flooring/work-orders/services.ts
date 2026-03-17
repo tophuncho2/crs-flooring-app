@@ -2,6 +2,7 @@ import { buildProductName } from "@/features/flooring/products/services"
 import type { PricingLine } from "@/features/flooring/templates/services"
 
 export const workOrderStatuses = new Set([
+  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
@@ -15,6 +16,7 @@ export const workOrderStatuses = new Set([
 export const vacancyStatuses = new Set(["VACANT", "OCCUPIED"])
 
 export const workOrderStatusLabels: Record<string, string> = {
+  DRAFT: "Draft",
   BUILDING_ORDER: "Building Order",
   PENDING_EXPORT: "Pending Export",
   CARPET_CLEANING: "Carpet Cleaning",

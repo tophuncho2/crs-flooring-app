@@ -44,6 +44,12 @@ export type UpdateWorkOrderInput = Partial<Omit<CreateWorkOrderInput, "items" | 
 }
 export type UpdateWorkOrderMaterialItemInput = Partial<WorkOrderMaterialItemInput>
 export type UpdateWorkOrderServiceItemInput = Partial<WorkOrderServiceItemInput>
+export type SyncTemplateToWorkOrderInput = {
+  templateId: string
+  mode: "overwrite" | "append"
+  dryRun: boolean
+  expectedUpdatedAt: Date | null
+}
 
 function parseWorkOrderStatus(value: unknown, field: string) {
   const normalized = parseRequiredString(value, field)
@@ -173,7 +179,7 @@ export function validateCreateWorkOrderInput(body: Record<string, unknown>): Cre
     propertyId: parseOptionalString(body.propertyId),
     templateId: parseOptionalString(body.templateId),
     warehouseId: parseOptionalString(body.warehouseId),
-    status: parseWorkOrderStatus(body.status ?? "BUILDING_ORDER", "status"),
+    status: parseWorkOrderStatus(body.status ?? "DRAFT", "status"),
     vacancy: parseOptionalEnumValue(body.vacancy, "vacancy"),
     scheduledFor: parseOptionalDate(body.date, "date"),
     unitLabel: parseOptionalString(body.unitText),
@@ -210,4 +216,22 @@ export function validateUpdateWorkOrderInput(body: Record<string, unknown>): Upd
   if ("googleDocUrl" in body) input.googleDocUrl = parseOptionalString(body.googleDocUrl)
 
   return input
+}
+
+export function validateSyncTemplateToWorkOrderInput(body: Record<string, unknown>): SyncTemplateToWorkOrderInput {
+  const templateId = parseRequiredString(body.templateId, "templateId")
+  const rawMode = String(body.mode ?? "overwrite")
+    .trim()
+    .toLowerCase()
+
+  if (rawMode !== "overwrite" && rawMode !== "append") {
+    throw { message: "mode must be one of overwrite, append", field: "mode" }
+  }
+
+  return {
+    templateId,
+    mode: rawMode,
+    dryRun: body.dryRun === true || String(body.dryRun ?? "").trim().toLowerCase() === "true",
+    expectedUpdatedAt: parseOptionalDate(body.expectedUpdatedAt, "expectedUpdatedAt"),
+  }
 }

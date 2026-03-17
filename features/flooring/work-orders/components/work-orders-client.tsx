@@ -1,14 +1,20 @@
 "use client"
 
 import { type ReactNode, useMemo, useState } from "react"
-import { Plus, X } from "lucide-react"
+import { Plus } from "lucide-react"
+import { WorkOrderRecordPanel } from "./work-order-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { requestJson } from "../../shared/http"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { useUrlRecordPanel } from "../../shared/use-url-record-panel"
+import type { MaterialItemOption } from "../../shared/material-items-editor"
+import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
 type WorkOrderRow = {
   id: string
@@ -45,28 +51,12 @@ type WarehouseOption = {
   name: string
 }
 
-type ProductOption = {
-  id: string
-  name: string
-  sendUnit: string
-}
+type ProductOption = MaterialItemOption
 
-type WorkOrderItem = {
+type TemplateOption = {
   id: string
-  productId: string
-  productName: string
-  sendUnit: string
-  quantity: string
-  notes: string
-  linkedInventoryId: string
-  linkedInventoryLabel: string
-  changeOrderStatus: "SUFFICIENT" | "SHORTAGE"
-}
-
-type WorkOrderItemDraft = {
-  productId: string
-  quantity: string
-  notes: string
+  propertyId: string
+  label: string
 }
 
 type DraftWorkOrder = {
@@ -85,6 +75,7 @@ type DraftWorkOrder = {
 }
 
 const statusOptions = [
+  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
@@ -93,6 +84,7 @@ const statusOptions = [
 ]
 
 const statusLabelByValue: Record<string, string> = {
+  DRAFT: "Draft",
   BUILDING_ORDER: "Building Order",
   PENDING_EXPORT: "Pending Export",
   CARPET_CLEANING: "Carpet Cleaning",
@@ -107,6 +99,7 @@ function statusLabel(value: string) {
 }
 
 function statusFieldClass(value: string) {
+  if (value === "DRAFT") return "border-slate-500/40 bg-slate-500/10 text-slate-700"
   if (value === "BUILDING_ORDER") return "border-amber-500/40 bg-amber-500/10 text-amber-700"
   if (value === "PENDING_EXPORT") return "border-sky-500/40 bg-sky-500/10 text-sky-700"
   if (value === "CARPET_CLEANING") return "border-violet-500/40 bg-violet-500/10 text-violet-700"
@@ -138,7 +131,7 @@ function workOrderDisplayNumber(workOrderNumber: number) {
 const defaultDraft: DraftWorkOrder = {
   propertyId: "",
   warehouseId: "",
-  status: "BUILDING_ORDER",
+  status: "DRAFT",
   vacancy: "",
   date: "",
   unitText: "",
@@ -150,72 +143,33 @@ const defaultDraft: DraftWorkOrder = {
   workOrderImageUrl: "",
 }
 
-const emptyItemDraft: WorkOrderItemDraft = {
-  productId: "",
-  quantity: "",
-  notes: "",
-}
-
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
-      <div className="flex min-h-full items-start justify-center">
-        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
-          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FormField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-[var(--foreground)]/80">{label}</span>
-      {children}
-    </label>
-  )
-}
-
 export default function WorkOrdersClient({
   initialWorkOrders,
   propertyOptions,
   warehouseOptions,
   productOptions,
+  templateOptions,
+  serviceOptions,
+  unitOptions,
 }: {
   initialWorkOrders: WorkOrderRow[]
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   productOptions: ProductOption[]
+  templateOptions: TemplateOption[]
+  serviceOptions: ServiceOption[]
+  unitOptions: UnitOption[]
 }) {
   const [workOrders, setWorkOrders] = useState<WorkOrderRow[]>(initialWorkOrders)
   const [drafts, setDrafts] = useState<Record<string, DraftWorkOrder>>({})
   const [newDraft, setNewDraft] = useState<DraftWorkOrder>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [activeWorkOrderId, setActiveWorkOrderId] = useState<string | null>(null)
-  const [activeWorkOrderDraft, setActiveWorkOrderDraft] = useState<DraftWorkOrder>(defaultDraft)
-  const [activeItems, setActiveItems] = useState<WorkOrderItem[]>([])
-  const [itemDraft, setItemDraft] = useState<WorkOrderItemDraft>(emptyItemDraft)
-  const [loadingItems, setLoadingItems] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSaving, setIsSaving] = useState<string | null>(null)
-  const [isSavingModal, setIsSavingModal] = useState(false)
-  const [isAddingItem, setIsAddingItem] = useState(false)
-  const [savingItemId, setSavingItemId] = useState<string | null>(null)
-  const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = useUrlRecordPanel("workOrder")
 
   const propertyLookup = useMemo(() => new Map(propertyOptions.map((property) => [property.id, property])), [propertyOptions])
   const activeWorkOrder = workOrders.find((row) => row.id === activeWorkOrderId) ?? null
@@ -318,53 +272,14 @@ export default function WorkOrdersClient({
     }
   }
 
-  async function loadWorkOrderItems(workOrderId: string) {
-    setLoadingItems(true)
-
-    try {
-      const response = await fetch(`/api/flooring/work-orders/${workOrderId}/items`)
-      const payload = (await response.json().catch(() => ({}))) as { items?: WorkOrderItem[]; error?: string }
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to load work order items")
-      }
-
-      setActiveItems(payload.items ?? [])
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load work order items")
-      setActiveItems([])
-    } finally {
-      setLoadingItems(false)
-    }
-  }
-
   async function openWorkOrder(row: WorkOrderRow) {
     setMessage("")
     setError("")
-    setActiveWorkOrderDraft({
-      propertyId: row.propertyId,
-      warehouseId: row.warehouseId,
-      status: row.status,
-      vacancy: row.vacancy ?? "",
-      date: dateInputValue(row.date),
-      unitText: row.unitText,
-      unitNumber: row.unitNumber,
-      unitType: row.unitType,
-      customAddress: row.customAddress,
-      instructions: row.instructions,
-      notes: row.notes,
-      workOrderImageUrl: row.workOrderImageUrl,
-    })
-    setItemDraft(emptyItemDraft)
-    setActiveWorkOrderId(row.id)
-    await loadWorkOrderItems(row.id)
+    openWorkOrderPanel(row.id)
   }
 
   function closeWorkOrder() {
-    if (isSavingModal || isAddingItem || savingItemId || deletingItemId) return
-    setActiveWorkOrderId(null)
-    setActiveItems([])
-    setItemDraft(emptyItemDraft)
+    closeWorkOrderPanel()
   }
 
   function selectedAddress(draft: DraftWorkOrder) {
@@ -372,20 +287,14 @@ export default function WorkOrdersClient({
   }
 
   async function persistWorkOrder(id: string, draft: DraftWorkOrder) {
-    const response = await fetch(`/api/flooring/work-orders/${id}`, {
+    const payload = await requestJson<{
+      workOrder?: WorkOrderRow
+    }>(`/api/flooring/work-orders/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(draft),
     })
-
-    const payload = (await response.json().catch(() => ({}))) as {
-      error?: string
-      workOrder?: WorkOrderRow
-    }
-
-    if (!response.ok || !payload.workOrder) {
-      throw new Error(payload.error ?? "Failed to save work order")
-    }
+    if (!payload.workOrder) throw new Error("Failed to save work order")
 
     return payload.workOrder
   }
@@ -411,40 +320,6 @@ export default function WorkOrdersClient({
     }
   }
 
-  async function saveActiveWorkOrder() {
-    if (!activeWorkOrder) return
-
-    setError("")
-    setMessage("")
-    setIsSavingModal(true)
-
-    try {
-      const savedWorkOrder = await persistWorkOrder(activeWorkOrder.id, activeWorkOrderDraft)
-      setWorkOrders((prev) =>
-        prev.map((item) => (item.id === activeWorkOrder.id ? { ...savedWorkOrder, workOrderNumber: item.workOrderNumber } : item)),
-      )
-      setActiveWorkOrderDraft({
-        propertyId: savedWorkOrder.propertyId,
-        warehouseId: savedWorkOrder.warehouseId,
-        status: savedWorkOrder.status,
-        vacancy: savedWorkOrder.vacancy ?? "",
-        date: dateInputValue(savedWorkOrder.date),
-        unitText: savedWorkOrder.unitText,
-        unitNumber: savedWorkOrder.unitNumber,
-        unitType: savedWorkOrder.unitType,
-        customAddress: savedWorkOrder.customAddress,
-        instructions: savedWorkOrder.instructions,
-        notes: savedWorkOrder.notes,
-        workOrderImageUrl: savedWorkOrder.workOrderImageUrl,
-      })
-      setMessage("Work order saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save work order")
-    } finally {
-      setIsSavingModal(false)
-    }
-  }
-
   async function createWorkOrder() {
     setIsSavingNew(true)
     setMessage("")
@@ -455,20 +330,14 @@ export default function WorkOrdersClient({
         throw new Error("Property is required")
       }
 
-      const response = await fetch("/api/flooring/work-orders", {
+      const payload = await requestJson<{
+        workOrder?: WorkOrderRow
+      }>("/api/flooring/work-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newDraft),
       })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        workOrder?: WorkOrderRow
-      }
-
-      if (!response.ok || !payload.workOrder) {
-        throw new Error(payload.error ?? "Failed to create work order")
-      }
+      if (!payload.workOrder) throw new Error("Failed to create work order")
 
       const createdWorkOrder = payload.workOrder
       const property = propertyLookup.get(createdWorkOrder.propertyId)
@@ -502,14 +371,9 @@ export default function WorkOrdersClient({
     setDeletingId(id)
 
     try {
-      const response = await fetch(`/api/flooring/work-orders/${id}`, {
+      await requestJson<{ ok: boolean }>(`/api/flooring/work-orders/${id}`, {
         method: "DELETE",
       })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string }
-        throw new Error(payload.error ?? "Failed to delete work order")
-      }
 
       setWorkOrders((prev) => prev.filter((row) => row.id !== id))
       setDrafts((prev) => {
@@ -518,8 +382,7 @@ export default function WorkOrdersClient({
         return next
       })
       if (activeWorkOrderId === id) {
-        setActiveWorkOrderId(null)
-        setActiveItems([])
+        closeWorkOrderPanel()
       }
       setMessage("Work order deleted")
     } catch (deleteError) {
@@ -627,102 +490,6 @@ export default function WorkOrdersClient({
       />,
       ...(group.children.length > 0 ? renderGroupedWorkOrders(group.children) : group.rows.map((row) => renderWorkOrderRow(row))),
     ])
-  }
-
-  async function addItem() {
-    if (!activeWorkOrder) return
-
-    setIsAddingItem(true)
-    setError("")
-    setMessage("")
-
-    try {
-      if (!itemDraft.productId) throw new Error("Product is required")
-      if (!itemDraft.quantity.trim()) throw new Error("Quantity is required")
-
-      const response = await fetch(`/api/flooring/work-orders/${activeWorkOrder.id}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(itemDraft),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to add item")
-      }
-
-      setItemDraft(emptyItemDraft)
-      await loadWorkOrderItems(activeWorkOrder.id)
-      setWorkOrders((prev) => prev.map((row) => (row.id === activeWorkOrder.id ? { ...row, itemsCount: row.itemsCount + 1 } : row)))
-      setMessage("Item added")
-    } catch (addError) {
-      setError(addError instanceof Error ? addError.message : "Failed to add item")
-    } finally {
-      setIsAddingItem(false)
-    }
-  }
-
-  function setActiveItemField(itemId: string, field: keyof WorkOrderItem, value: string) {
-    setActiveItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-  }
-
-  async function saveItem(item: WorkOrderItem) {
-    if (!activeWorkOrder) return
-
-    setError("")
-    setMessage("")
-    setSavingItemId(item.id)
-
-    try {
-      const response = await fetch(`/api/flooring/work-orders/${activeWorkOrder.id}/items/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: item.productId,
-          quantity: item.quantity,
-          notes: item.notes,
-        }),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to save item")
-      }
-
-      await loadWorkOrderItems(activeWorkOrder.id)
-      setMessage("Item saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save item")
-    } finally {
-      setSavingItemId(null)
-    }
-  }
-
-  async function deleteItem(itemId: string) {
-    if (!activeWorkOrder) return
-
-    setError("")
-    setMessage("")
-    setDeletingItemId(itemId)
-
-    try {
-      const response = await fetch(`/api/flooring/work-orders/${activeWorkOrder.id}/items/${itemId}`, {
-        method: "DELETE",
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to delete item")
-      }
-
-      setActiveItems((prev) => prev.filter((item) => item.id !== itemId))
-      setWorkOrders((prev) => prev.map((row) => (row.id === activeWorkOrder.id ? { ...row, itemsCount: Math.max(0, row.itemsCount - 1) } : row)))
-      setMessage("Item deleted")
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete item")
-    } finally {
-      setDeletingItemId(null)
-    }
   }
 
   return (
@@ -885,160 +652,32 @@ export default function WorkOrdersClient({
 
       {activeWorkOrder ? (
         <ModalShell title={`Work Order ${activeWorkOrder.id.slice(0, 8)}`} onClose={closeWorkOrder}>
-          <div className="space-y-6">
-            {message && <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}
-            {error && <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p>}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <FormField label="Property">
-                <select value={activeWorkOrderDraft.propertyId} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, propertyId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  {propertyOptions.map((property) => (
-                    <option key={property.id} value={property.id}>{property.name}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Warehouse">
-                <select value={activeWorkOrderDraft.warehouseId} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">No warehouse</option>
-                  {warehouseOptions.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Status">
-                <select value={activeWorkOrderDraft.status} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, status: event.target.value }))} className={`rounded border px-3 py-2 ${statusFieldClass(activeWorkOrderDraft.status)}`}>
-                  {statusOptions.map((value) => (
-                    <option key={value} value={value}>{statusLabel(value)}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Vacancy">
-                <select value={activeWorkOrderDraft.vacancy} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, vacancy: event.target.value as DraftWorkOrder["vacancy"] }))} className={`rounded border px-3 py-2 ${vacancyFieldClass(activeWorkOrderDraft.vacancy)}`}>
-                  <option value="">Select</option>
-                  {vacancyOptions.map((value) => (
-                    <option key={value} value={value}>{value}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Address">
-                <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
-                  {selectedAddress(activeWorkOrderDraft) || "Select a property or enter a custom address"}
-                </div>
-              </FormField>
-              <FormField label="Custom Address">
-                <input value={activeWorkOrderDraft.customAddress} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, customAddress: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Date">
-                <input type="date" value={activeWorkOrderDraft.date} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, date: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Unit Type">
-                <input value={activeWorkOrderDraft.unitType} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, unitType: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Unit Label">
-                <input value={activeWorkOrderDraft.unitText} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, unitText: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Unit Number">
-                <input value={activeWorkOrderDraft.unitNumber} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, unitNumber: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Image URL">
-                <input value={activeWorkOrderDraft.workOrderImageUrl} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, workOrderImageUrl: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Instructions">
-                <textarea value={activeWorkOrderDraft.instructions} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, instructions: event.target.value }))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-              </FormField>
-              <FormField label="Notes">
-                <textarea value={activeWorkOrderDraft.notes} onChange={(event) => setActiveWorkOrderDraft((prev) => ({ ...prev, notes: event.target.value }))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-              </FormField>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-semibold">Work Order Items</h3>
-                <p className="text-sm text-[var(--foreground)]/70">Add the line items required for this work order.</p>
-              </div>
-
-              <div className="grid gap-3 rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] md:grid-cols-[minmax(0,1.5fr),120px,minmax(0,1fr),auto] md:items-end">
-                <FormField label="Product">
-                  <select value={itemDraft.productId} onChange={(event) => setItemDraft((prev) => ({ ...prev, productId: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2">
-                    <option value="">Select product</option>
-                    {productOptions.map((product) => (
-                      <option key={product.id} value={product.id}>{product.name}</option>
-                    ))}
-                  </select>
-                </FormField>
-                <FormField label="Qty">
-                  <input value={itemDraft.quantity} onChange={(event) => setItemDraft((prev) => ({ ...prev, quantity: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-                </FormField>
-                <FormField label="Notes">
-                  <input value={itemDraft.notes} onChange={(event) => setItemDraft((prev) => ({ ...prev, notes: event.target.value }))} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-                </FormField>
-                <button type="button" onClick={() => void addItem()} disabled={isAddingItem} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-                  {isAddingItem ? "Adding..." : "Add Item"}
-                </button>
-              </div>
-
-              <ModalTableShell minWidthClass="min-w-[900px]">
-                <ModalTableHead>
-                    <tr>
-                      <TableHeaderCell>Product</TableHeaderCell>
-                      <TableHeaderCell>Qty</TableHeaderCell>
-                      <TableHeaderCell>Unit</TableHeaderCell>
-                      <TableHeaderCell>Notes</TableHeaderCell>
-                      <TableHeaderCell>Save</TableHeaderCell>
-                      <TableHeaderCell>Delete</TableHeaderCell>
-                    </tr>
-                </ModalTableHead>
-                  <tbody>
-                    {loadingItems ? (
-                      <tr>
-                        <td colSpan={6} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>
-                      </tr>
-                    ) : activeItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-3 py-8 text-center text-[var(--foreground)]/70">No work order items yet.</td>
-                      </tr>
-                    ) : (
-                      activeItems.map((item) => (
-                        <tr key={item.id} className="border-t border-[var(--panel-border)]">
-                          <td className="px-3 py-2">
-                            <select value={item.productId} onChange={(event) => setActiveItemField(item.id, "productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                              {productOptions.map((product) => (
-                                <option key={product.id} value={product.id}>{product.name}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-3 py-2">
-                            <input value={item.quantity} onChange={(event) => setActiveItemField(item.id, "quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                          </td>
-                          <td className="px-3 py-2">{productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "-"}</td>
-                          <td className="px-3 py-2">
-                            <input value={item.notes} onChange={(event) => setActiveItemField(item.id, "notes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                          </td>
-                          <td className="px-3 py-2">
-                            <SaveRowButton onClick={() => void saveItem(item)} disabled={savingItemId === item.id}>
-                              {savingItemId === item.id ? "Saving..." : "Save"}
-                            </SaveRowButton>
-                          </td>
-                          <td className="px-3 py-2">
-                            <DeleteRowButton onClick={() => void deleteItem(item.id)} disabled={deletingItemId === item.id}>
-                              {deletingItemId === item.id ? "Deleting..." : "Delete"}
-                            </DeleteRowButton>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-              </ModalTableShell>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={closeWorkOrder} disabled={isSavingModal} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
-                Close
-              </button>
-              <button type="button" onClick={() => void saveActiveWorkOrder()} disabled={isSavingModal} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
-                {isSavingModal ? "Saving..." : "Save Work Order"}
-              </button>
-            </div>
-          </div>
+          <WorkOrderRecordPanel
+            workOrderId={activeWorkOrder.id}
+            propertyOptions={propertyOptions}
+            warehouseOptions={warehouseOptions}
+            productOptions={productOptions}
+            templateOptions={templateOptions}
+            serviceOptions={serviceOptions}
+            unitOptions={unitOptions}
+            onClose={closeWorkOrder}
+            onWorkOrderSaved={(savedWorkOrder) => {
+              setWorkOrders((prev) =>
+                prev.map((row) =>
+                  row.id === savedWorkOrder.id
+                    ? {
+                        ...row,
+                        ...savedWorkOrder,
+                        workOrderNumber: row.workOrderNumber,
+                      }
+                    : row,
+                ),
+              )
+            }}
+            onWorkOrderDeleted={(deletedId) => {
+              setWorkOrders((prev) => prev.filter((row) => row.id !== deletedId))
+            }}
+          />
         </ModalShell>
       ) : null}
     </div>

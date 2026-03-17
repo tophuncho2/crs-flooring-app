@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 
 const statusOptions = [
+  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
@@ -12,6 +13,7 @@ const statusOptions = [
 ]
 
 const statusLabelByValue: Record<string, string> = {
+  DRAFT: "Draft",
   BUILDING_ORDER: "Building Order",
   PENDING_EXPORT: "Pending Export",
   CARPET_CLEANING: "Carpet Cleaning",
