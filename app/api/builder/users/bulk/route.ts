@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { MASTER_EMAIL_LIST } from "@/lib/access-control"
-import { ensureBuilderPanelAccess } from "@/lib/route-auth"
+import { prisma } from "@/server/db/prisma"
+import { MASTER_EMAIL_LIST } from "@/server/auth/access-control"
+import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 export async function POST(request: Request) {
   const authError = await ensureBuilderPanelAccess()

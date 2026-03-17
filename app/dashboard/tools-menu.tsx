@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Wrench } from "lucide-react"
-import type { UserToolRow } from "@/lib/tool-subscriptions"
+import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 
 type ToolLink = {
   slug: UserToolRow["slug"]

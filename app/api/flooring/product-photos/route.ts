@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
-import { uploadFileToBucket } from "@/services/s3.js"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { uploadFileToBucket } from "@/server/storage/s3"
 
 function sanitizeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "-")

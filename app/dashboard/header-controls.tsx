@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { UserToolRow } from "@/lib/tool-subscriptions"
+import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import FlooringHeaderNav from "./flooring-header-nav"
 import FlooringToolsMenu from "./flooring-tools-menu"
 import UserMenu from "./user-menu"

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
-import { prisma } from "@/lib/prisma"
-import { normalizePrismaError } from "@/lib/api-helpers"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { prisma } from "@/server/db/prisma"
+import { normalizePrismaError } from "@/server/http/api-helpers"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 export async function DELETE(_: Request, context: { params: Promise<{ id: string }> }) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })

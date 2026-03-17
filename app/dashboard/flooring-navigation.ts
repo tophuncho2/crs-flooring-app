@@ -1,4 +1,4 @@
-import type { ToolSlug } from "@/lib/tool-subscriptions"
+import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 
 export type FlooringNavItem = {
   slug: string

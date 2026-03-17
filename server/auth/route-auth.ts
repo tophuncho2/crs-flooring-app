@@ -1,13 +1,13 @@
 import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
 import {
   canAccessBuilderPanel,
   canBypassVerification,
-} from "@/lib/access-control"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import type { ToolSlug } from "@/lib/tool-subscriptions"
+} from "@/server/auth/access-control"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 
 async function getCurrentUserRecord() {
   const session = await getServerSession(authOptions)

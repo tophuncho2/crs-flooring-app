@@ -1,11 +1,11 @@
 import type { ReactNode } from "react"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/server/auth/auth-options"
 import HeaderControls from "./header-controls"
-import { prisma } from "@/lib/prisma"
-import { canBypassVerification } from "@/lib/access-control"
-import { getUserToolContext } from "@/lib/tool-subscriptions"
+import { prisma } from "@/server/db/prisma"
+import { canBypassVerification } from "@/server/auth/access-control"
+import { getUserToolContext } from "@/server/platform/tool-subscriptions"
 import { FLOORING_NAV_SLUGS } from "./flooring-navigation"
 
 export default async function DashboardLayout({

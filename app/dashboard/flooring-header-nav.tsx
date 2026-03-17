@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { UserToolRow } from "@/lib/tool-subscriptions"
+import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import type { FlooringNavItem } from "./flooring-navigation"
 import { isActiveFlooringItem, isFlooringRoute } from "./flooring-navigation"
 

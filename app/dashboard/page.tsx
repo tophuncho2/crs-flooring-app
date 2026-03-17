@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { canBypassVerification } from "@/lib/access-control"
-import { prisma } from "@/lib/prisma"
-import { getUserToolContext, type ToolSlug } from "@/lib/tool-subscriptions"
+import { authOptions } from "@/server/auth/auth-options"
+import { canBypassVerification } from "@/server/auth/access-control"
+import { prisma } from "@/server/db/prisma"
+import { getUserToolContext, type ToolSlug } from "@/server/platform/tool-subscriptions"
 
 type ModuleCard = {
   slug: string

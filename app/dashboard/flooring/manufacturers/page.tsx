@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import { findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/lib/flooring-db-compat"
-import ManufacturersClient from "./manufacturers-client"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import { findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/server/flooring/db-compat"
+import ManufacturersClient from "@/features/flooring/manufacturers/components/manufacturers-client"
 
 export default async function ManufacturersPage() {
   const session = await getServerSession(authOptions)

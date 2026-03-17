@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { canBypassVerification } from "@/lib/access-control"
-import { prisma } from "@/lib/prisma"
+import { authOptions } from "@/server/auth/auth-options"
+import { canBypassVerification } from "@/server/auth/access-control"
+import { prisma } from "@/server/db/prisma"
 
 function normalizeBody(body: unknown) {
   if (!body || typeof body !== "object") return null

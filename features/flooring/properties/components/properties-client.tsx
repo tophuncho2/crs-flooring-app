@@ -2,13 +2,13 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
-import { ErrorNotice, SuccessNotice } from "../shared/notices"
-import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../shared/row-action-buttons"
-import { TableColumnSettings } from "../shared/table-column-settings"
-import TableControlsBar from "../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
-import { useTableColumns } from "../shared/use-table-columns"
-import { useTableControls } from "../shared/use-table-controls"
+import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { TableColumnSettings } from "../../shared/table-column-settings"
+import TableControlsBar from "../../shared/table-controls-bar"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { useTableColumns } from "../../shared/use-table-columns"
+import { useTableControls } from "../../shared/use-table-controls"
 
 type ManagementCompanyOption = {
   id: string

@@ -2,14 +2,14 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus, X } from "lucide-react"
-import { ErrorNotice, SuccessNotice } from "../shared/notices"
-import { DeleteRowButton, OpenRowButton } from "../shared/row-action-buttons"
-import { getSharedFormFieldClass } from "../shared/form-field-styles"
-import { TableColumnSettings } from "../shared/table-column-settings"
-import TableControlsBar from "../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
-import { useTableColumns } from "../shared/use-table-columns"
-import { useTableControls } from "../shared/use-table-controls"
+import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { DeleteRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { getSharedFormFieldClass } from "../../shared/form-field-styles"
+import { TableColumnSettings } from "../../shared/table-column-settings"
+import TableControlsBar from "../../shared/table-controls-bar"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { useTableColumns } from "../../shared/use-table-columns"
+import { useTableControls } from "../../shared/use-table-controls"
 
 type ImportRow = {
   id: string

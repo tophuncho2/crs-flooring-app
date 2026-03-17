@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
-import { buildManufacturerStorageName, createFlooringManufacturer, findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/lib/flooring-db-compat"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { buildManufacturerStorageName, createFlooringManufacturer, findFlooringManufacturers, getVisibleManufacturerAgentName } from "@/server/flooring/db-compat"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 function normalizeManufacturer(manufacturer: {
   id: string

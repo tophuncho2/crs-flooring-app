@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { ensureAuthenticated } from "@/lib/route-auth"
-import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
+import { prisma } from "@/server/db/prisma"
+import { ensureAuthenticated } from "@/server/auth/route-auth"
+import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
 
 async function syncHotkeys() {
   const allowedIds = new Set(FLOORING_HOTKEYS.map((hotkey) => hotkey.id))

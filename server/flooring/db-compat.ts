@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/server/db/prisma"
 
 const HIDDEN_AGENT_PREFIX = "__no_agent__:"
 

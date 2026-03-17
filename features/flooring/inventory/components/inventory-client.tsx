@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { type ReactNode, useMemo, useState } from "react"
 import { X } from "lucide-react"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "../../shared/table-shell"
 
 type CutLogRow = {
   id: string

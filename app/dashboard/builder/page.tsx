@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { normalizeUnitOfMeasureOption } from "@/lib/flooring-unit-measures"
-import { prisma } from "@/lib/prisma"
-import { canAccessBuilderPanel, canBypassVerification } from "@/lib/access-control"
+import { authOptions } from "@/server/auth/auth-options"
+import { normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
+import { prisma } from "@/server/db/prisma"
+import { canAccessBuilderPanel, canBypassVerification } from "@/server/auth/access-control"
 import BuilderUsersPanel from "./users-panel"
 
 export default async function BuilderPage() {

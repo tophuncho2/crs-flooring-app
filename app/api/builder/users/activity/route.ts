@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { ensureBuilderPanelAccess } from "@/lib/route-auth"
+import { prisma } from "@/server/db/prisma"
+import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 export async function GET() {
   const authError = await ensureBuilderPanelAccess()

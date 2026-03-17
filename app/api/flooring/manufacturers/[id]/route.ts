@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
-import { prisma } from "@/lib/prisma"
-import { buildManufacturerStorageName, getVisibleManufacturerAgentName, updateFlooringManufacturer } from "@/lib/flooring-db-compat"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { prisma } from "@/server/db/prisma"
+import { buildManufacturerStorageName, getVisibleManufacturerAgentName, updateFlooringManufacturer } from "@/server/flooring/db-compat"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 type RouteContext = {
   params: Promise<{ id: string }>

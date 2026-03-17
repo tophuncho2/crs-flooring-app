@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth"
 import { notFound, redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import WorkOrderDetailClient from "./work-order-detail-client"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
 
 type WorkOrderDetail = {
   id: string

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { ErrorNotice, SuccessNotice } from "../shared/notices"
-import { DeleteRowButton } from "../shared/row-action-buttons"
-import { TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
+import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
+import { TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 
 type CutLogRow = {
   id: string

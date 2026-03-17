@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { prisma } from "@/server/db/prisma"
+import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 function buildPadLabel(product: {
   manufacturerName: string | null

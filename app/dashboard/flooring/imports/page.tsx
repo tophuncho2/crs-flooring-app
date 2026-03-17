@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { findFlooringLocationsForImports } from "@/lib/flooring-db-compat"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import ImportsClient from "./imports-client"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
+import { findFlooringLocationsForImports } from "@/server/flooring/db-compat"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import ImportsClient from "@/features/flooring/imports/components/imports-client"
 
 function buildProductLabel(product: {
   name: string

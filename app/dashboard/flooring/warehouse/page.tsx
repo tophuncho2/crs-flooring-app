@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import WarehouseClient, { type WarehouseRow } from "./warehouse-client"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import WarehouseClient, { type WarehouseRow } from "@/features/flooring/warehouse/components/warehouse-client"
 
 type WarehouseQueryRow = {
   id: string

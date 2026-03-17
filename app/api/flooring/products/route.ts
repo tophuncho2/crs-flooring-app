@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
-import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/lib/flooring-unit-measures"
-import { prisma } from "@/lib/prisma"
-import { normalizePrismaError, parseDecimal, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
+import { prisma } from "@/server/db/prisma"
+import { normalizePrismaError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 function buildProductName(product: {
   manufacturerName: string | null

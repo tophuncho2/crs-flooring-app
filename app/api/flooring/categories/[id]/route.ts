@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/lib/flooring-unit-measures"
-import { prisma } from "@/lib/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/lib/api-helpers"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
+import { prisma } from "@/server/db/prisma"
+import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 type RouteContext = {
   params: Promise<{ id: string }>

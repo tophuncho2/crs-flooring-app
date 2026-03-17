@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { normalizePrismaError, parseOptionalString } from "@/lib/api-helpers"
-import { ensureBuilderOrAdmin } from "@/lib/route-auth"
+import { prisma } from "@/server/db/prisma"
+import { normalizePrismaError, parseOptionalString } from "@/server/http/api-helpers"
+import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
 type RouteContext = {
   params: Promise<{ id: string }>

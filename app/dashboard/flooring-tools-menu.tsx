@@ -20,9 +20,9 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
 import { Boxes, GripVertical } from "lucide-react"
-import type { UserToolRow } from "@/lib/tool-subscriptions"
+import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import type { FlooringNavItem } from "./flooring-navigation"
-import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
+import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean

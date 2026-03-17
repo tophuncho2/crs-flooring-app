@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState } from "react"
 import { Pencil, Plus, Trash2, X } from "lucide-react"
-import { TableActionsSummary } from "../shared/table-shell"
+import { TableActionsSummary } from "../../shared/table-shell"
 
 type ManufacturerRow = {
   id: string

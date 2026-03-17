@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { useCallback } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import type { ToolSlug } from "@/lib/tool-subscriptions"
-import { FLOORING_HOTKEYS } from "@/lib/flooring-hotkeys"
+import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
 
 type Theme = "light" | "dark"
 

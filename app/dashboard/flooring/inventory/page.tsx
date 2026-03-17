@@ -1,10 +1,10 @@
 import { Prisma } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import InventoryClient from "./inventory-client"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import InventoryClient from "@/features/flooring/inventory/components/inventory-client"
 
 function buildProductName(product: {
   name: string

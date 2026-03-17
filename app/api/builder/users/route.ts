@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { canEditRole, canRestrictUser, isMasterEmail } from "@/lib/access-control"
-import { ensureBuilderPanelAccess } from "@/lib/route-auth"
+import { authOptions } from "@/server/auth/auth-options"
+import { prisma } from "@/server/db/prisma"
+import { canEditRole, canRestrictUser, isMasterEmail } from "@/server/auth/access-control"
+import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 export async function GET() {
   const authError = await ensureBuilderPanelAccess()

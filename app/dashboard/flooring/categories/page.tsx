@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { flooringCategoryUnitInclude, normalizeCategoryUnitValues, normalizeUnitOfMeasureOption } from "@/lib/flooring-unit-measures"
-import { prisma } from "@/lib/prisma"
-import { isToolUnlocked } from "@/lib/tool-subscriptions"
-import CategoriesClient from "./categories-client"
+import { authOptions } from "@/server/auth/auth-options"
+import { flooringCategoryUnitInclude, normalizeCategoryUnitValues, normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
+import { prisma } from "@/server/db/prisma"
+import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import CategoriesClient from "@/features/flooring/categories/components/categories-client"
 
 type CategoryRow = {
   id: string

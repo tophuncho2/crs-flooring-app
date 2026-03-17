@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { canEditRole, canRestrictUser, isMasterEmail } from "@/lib/access-control"
-import { ensureBuilderPanelAccess } from "@/lib/route-auth"
+import { prisma } from "@/server/db/prisma"
+import { canEditRole, canRestrictUser, isMasterEmail } from "@/server/auth/access-control"
+import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 type RouteContext = {
   params: Promise<{ id: string }>

@@ -2,13 +2,13 @@
 
 import { type ChangeEvent, type ReactNode, useMemo, useState } from "react"
 import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
-import { ErrorNotice, SuccessNotice } from "../shared/notices"
-import { OpenRowButton } from "../shared/row-action-buttons"
-import { TableColumnSettings } from "../shared/table-column-settings"
-import TableControlsBar from "../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../shared/table-shell"
-import { useTableColumns } from "../shared/use-table-columns"
-import { useTableControls } from "../shared/use-table-controls"
+import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { OpenRowButton } from "../../shared/row-action-buttons"
+import { TableColumnSettings } from "../../shared/table-column-settings"
+import TableControlsBar from "../../shared/table-controls-bar"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { useTableColumns } from "../../shared/use-table-columns"
+import { useTableControls } from "../../shared/use-table-controls"
 
 type CategoryOption = {
   id: string
