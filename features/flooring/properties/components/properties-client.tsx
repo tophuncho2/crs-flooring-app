@@ -546,7 +546,7 @@ export default function PropertiesClient({
         throw new Error("Property name is required")
       }
 
-      const response = await fetch("/api/properties-hub", {
+      const response = await fetch("/api/flooring/properties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -592,7 +592,7 @@ export default function PropertiesClient({
 
     try {
       const draft = getDraft(row.id)
-      const response = await fetch(`/api/properties-hub/${row.id}`, {
+      const response = await fetch(`/api/flooring/properties/${row.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -656,7 +656,7 @@ export default function PropertiesClient({
     setDeletingId(id)
 
     try {
-      const response = await fetch(`/api/properties-hub/${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/flooring/properties/${id}`, { method: "DELETE" })
       const payload = (await response.json().catch(() => ({}))) as { error?: string }
 
       if (!response.ok) {

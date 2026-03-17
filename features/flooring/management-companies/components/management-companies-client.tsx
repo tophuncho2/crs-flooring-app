@@ -328,7 +328,7 @@ export default function ManagementCompaniesClient({
     setLoadingPropertyId(propertyId)
 
     try {
-      const response = await fetch(`/api/properties-hub/${propertyId}`)
+      const response = await fetch(`/api/flooring/properties/${propertyId}`)
       const payload = (await response.json().catch(() => ({}))) as { error?: string; property?: PropertyRow }
       if (!response.ok || !payload.property) {
         throw new Error(payload.error ?? "Failed to load property")
@@ -442,7 +442,7 @@ export default function ManagementCompaniesClient({
     try {
       if (!propertyDraft.name.trim()) throw new Error("Property name is required")
 
-      const response = await fetch("/api/properties-hub", {
+      const response = await fetch("/api/flooring/properties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -706,7 +706,7 @@ export default function ManagementCompaniesClient({
         throw new Error("Company name is required")
       }
 
-      const response = await fetch("/api/management-companies", {
+      const response = await fetch("/api/flooring/management-companies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newDraft),
@@ -768,7 +768,7 @@ export default function ManagementCompaniesClient({
 
     try {
       const draft = getDraft(row.id)
-      const response = await fetch(`/api/management-companies/${row.id}`, {
+      const response = await fetch(`/api/flooring/management-companies/${row.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft),
@@ -832,7 +832,7 @@ export default function ManagementCompaniesClient({
     setDeletingId(id)
 
     try {
-      const response = await fetch(`/api/management-companies/${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/flooring/management-companies/${id}`, { method: "DELETE" })
       const payload = (await response.json().catch(() => ({}))) as { error?: string }
 
       if (!response.ok) {

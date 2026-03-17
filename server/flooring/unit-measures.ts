@@ -23,6 +23,12 @@ export const flooringCategoryUnitInclude = {
       name: true,
     },
   },
+  serviceUnit: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
 } as const
 
 type UnitRef = {
@@ -35,6 +41,7 @@ type CategoryUnitRefs = {
   stockUnit: UnitRef
   coverageAvailableUnit: UnitRef
   itemCoverageUnit: UnitRef
+  serviceUnit: UnitRef
 }
 
 export function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
@@ -43,10 +50,12 @@ export function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
     stockUnitId: category.stockUnit?.id ?? "",
     coverageAvailableUnitId: category.coverageAvailableUnit?.id ?? "",
     itemCoverageUnitId: category.itemCoverageUnit?.id ?? "",
+    serviceUnitId: category.serviceUnit?.id ?? "",
     sendUnit: category.sendUnit?.name ?? "",
     stockUnit: category.stockUnit?.name ?? "",
     coverageAvailableUnit: category.coverageAvailableUnit?.name ?? "",
     itemCoverageUnit: category.itemCoverageUnit?.name ?? "",
+    serviceUnit: category.serviceUnit?.name ?? "",
   }
 }
 

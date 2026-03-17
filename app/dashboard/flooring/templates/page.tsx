@@ -85,7 +85,7 @@ export default async function TemplatesPage() {
       orderBy: { createdAt: "desc" },
       take: 250,
     }),
-    prisma.propertyHub.findMany({
+    prisma.property.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

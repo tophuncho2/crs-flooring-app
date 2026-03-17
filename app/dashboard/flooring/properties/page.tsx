@@ -88,7 +88,7 @@ export default async function FlooringPropertiesPage() {
   }
 
   const [properties, managementCompanies, warehouses, padProducts, products] = await Promise.all([
-    prisma.propertyHub.findMany({
+    prisma.property.findMany({
       orderBy: { name: "asc" },
       select: {
         id: true,
@@ -99,17 +99,15 @@ export default async function FlooringPropertiesPage() {
         postalCode: true,
         phone: true,
         email: true,
-        flooringLinks: {
-          select: {
-            managementCompany: { select: { id: true, name: true } },
-          },
+        managementCompany: {
+          select: { id: true, name: true },
         },
-        flooringTpls: {
+        templates: {
           select: {
             id: true,
             templateTag: true,
             warehouse: { select: { name: true } },
-            _count: { select: { items: true } },
+            _count: { select: { items: true, serviceItems: true } },
           },
           orderBy: { createdAt: "desc" },
         },
@@ -161,12 +159,12 @@ export default async function FlooringPropertiesPage() {
     phone: property.phone ?? "",
     email: property.email ?? "",
     fullAddress: normalizeAddress(property),
-    managementCompany: property.flooringLinks[0]?.managementCompany ?? null,
-    templates: property.flooringTpls.map((template) => ({
+    managementCompany: property.managementCompany ?? null,
+    templates: property.templates.map((template) => ({
       id: template.id,
       templateTag: template.templateTag,
       warehouseName: template.warehouse?.name ?? "",
-      itemsCount: template._count.items,
+      itemsCount: template._count.items + template._count.serviceItems,
     })),
   }))
 

@@ -11,6 +11,7 @@ function normalizeCategory(category: {
   stockUnit: { id: string; name: string } | null
   coverageAvailableUnit: { id: string; name: string } | null
   itemCoverageUnit: { id: string; name: string } | null
+  serviceUnit: { id: string; name: string } | null
   createdAt: Date
   _count?: { products: number }
 }) {
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
         stockUnitId: parseOptionalString(body.stockUnitId),
         coverageAvailableUnitId: parseOptionalString(body.coverageAvailableUnitId),
         itemCoverageUnitId: parseOptionalString(body.itemCoverageUnitId),
+        serviceUnitId: parseOptionalString(body.serviceUnitId),
       },
       include: {
         ...flooringCategoryUnitInclude,

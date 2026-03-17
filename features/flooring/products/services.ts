@@ -34,6 +34,7 @@ export function normalizeCatalogProduct(product: {
     stockUnit: { id: string; name: string } | null
     coverageAvailableUnit: { id: string; name: string } | null
     itemCoverageUnit: { id: string; name: string } | null
+    serviceUnit: { id: string; name: string } | null
   }
   manufacturer: {
     id: string

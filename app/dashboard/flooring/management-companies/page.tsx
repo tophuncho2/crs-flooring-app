@@ -85,21 +85,17 @@ export default async function ManagementCompaniesPage() {
         email: true,
         properties: {
           select: {
-            property: {
-              select: {
-                id: true,
-                name: true,
-                streetAddress: true,
-                city: true,
-                state: true,
-                postalCode: true,
-              },
-            },
+            id: true,
+            name: true,
+            streetAddress: true,
+            city: true,
+            state: true,
+            postalCode: true,
           },
         },
       },
     }),
-    prisma.propertyHub.findMany({
+    prisma.property.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
@@ -150,14 +146,14 @@ export default async function ManagementCompaniesPage() {
       state: company.state,
       postalCode: company.postalCode,
     }),
-    properties: company.properties.map((link) => ({
-      id: link.property.id,
-      name: link.property.name,
+    properties: company.properties.map((property) => ({
+      id: property.id,
+      name: property.name,
       fullAddress: normalizeAddress({
-        streetAddress: link.property.streetAddress,
-        city: link.property.city,
-        state: link.property.state,
-        postalCode: link.property.postalCode,
+        streetAddress: property.streetAddress,
+        city: property.city,
+        state: property.state,
+        postalCode: property.postalCode,
       }),
     })),
   }))

@@ -177,7 +177,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
     orderBy: [{ updatedAt: "desc" }],
   })
 
-  const propertyOptions = await prisma.propertyHub.findMany({
+  const propertyOptions = await prisma.property.findMany({
     orderBy: { name: "asc" },
     select: {
       id: true,

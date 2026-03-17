@@ -11,10 +11,12 @@ type CategoryRow = {
   stockUnitId: string
   coverageAvailableUnitId: string
   itemCoverageUnitId: string
+  serviceUnitId: string
   sendUnit: string
   stockUnit: string
   coverageAvailableUnit: string
   itemCoverageUnit: string
+  serviceUnit: string
   productCount: number
   createdAt: string
 }
@@ -25,6 +27,7 @@ type CategoryForm = {
   stockUnitId: string
   coverageAvailableUnitId: string
   itemCoverageUnitId: string
+  serviceUnitId: string
 }
 
 type UnitOfMeasureOption = {
@@ -39,6 +42,7 @@ const emptyCategoryForm: CategoryForm = {
   stockUnitId: "",
   coverageAvailableUnitId: "",
   itemCoverageUnitId: "",
+  serviceUnitId: "",
 }
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -84,6 +88,7 @@ function toCategoryForm(category: CategoryRow): CategoryForm {
     stockUnitId: category.stockUnitId,
     coverageAvailableUnitId: category.coverageAvailableUnitId,
     itemCoverageUnitId: category.itemCoverageUnitId,
+    serviceUnitId: category.serviceUnitId,
   }
 }
 
@@ -219,6 +224,7 @@ export default function CategoriesClient({
                   <th className="h-10 px-3 py-2">Stock Unit</th>
                   <th className="h-10 px-3 py-2">Coverage Available Unit</th>
                   <th className="h-10 px-3 py-2">Item Coverage Unit</th>
+                  <th className="h-10 px-3 py-2">Service Unit</th>
                   <th className="h-10 px-3 py-2">Products</th>
                   <th className="h-10 px-3 py-2">Actions</th>
                 </tr>
@@ -231,6 +237,7 @@ export default function CategoriesClient({
                     <td className="px-3 py-2">{category.stockUnit || "-"}</td>
                     <td className="px-3 py-2">{category.coverageAvailableUnit || "-"}</td>
                     <td className="px-3 py-2">{category.itemCoverageUnit || "-"}</td>
+                    <td className="px-3 py-2">{category.serviceUnit || "-"}</td>
                     <td className="px-3 py-2">{category.productCount}</td>
                     <td className="px-3 py-2">
                       <div className="flex gap-2">
@@ -246,7 +253,7 @@ export default function CategoriesClient({
                 ))}
                 {categories.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/60">No flooring categories yet.</td>
+                    <td colSpan={8} className="px-3 py-8 text-center text-[var(--foreground)]/60">No flooring categories yet.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -275,6 +282,9 @@ export default function CategoriesClient({
             </FormField>
             <FormField label="Item Coverage Unit">
               <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
+            </FormField>
+            <FormField label="Service Unit">
+              <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, serviceUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
           </div>
           <div className="mt-5 flex justify-end gap-2">
