@@ -18,7 +18,7 @@ import type { ServiceOption, UnitOption } from "../../shared/service-items-edito
 
 type WorkOrderRow = {
   id: string
-  workOrderNumber: number
+  workOrderNumber: string
   propertyId: string
   propertyName: string
   propertyAddress: string
@@ -124,10 +124,6 @@ function buildWorkOrderAddress(property: PropertyOption | undefined, customAddre
   return property?.address ?? ""
 }
 
-function workOrderDisplayNumber(workOrderNumber: number) {
-  return `WO-${String(workOrderNumber).padStart(4, "0")}`
-}
-
 const defaultDraft: DraftWorkOrder = {
   propertyId: "",
   warehouseId: "",
@@ -191,7 +187,7 @@ export default function WorkOrdersClient({
   } = useTableControls({
     rows: workOrders,
     searchFields: [{ key: "property", getValue: (row) => row.propertyName }],
-    sortField: (row) => String(row.workOrderNumber),
+    sortField: (row) => row.workOrderNumber,
     groupFields: [
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
       { key: "property", label: "Property", getValue: (row) => row.propertyName },
@@ -267,7 +263,7 @@ export default function WorkOrdersClient({
 
   function formatRow(row: WorkOrderRow) {
     return {
-      displayOrder: workOrderDisplayNumber(row.workOrderNumber),
+      displayOrder: row.workOrderNumber,
       displayAddress: buildWorkOrderAddress(propertyLookup.get(row.propertyId), row.customAddress),
     }
   }
@@ -306,7 +302,7 @@ export default function WorkOrdersClient({
 
     try {
       const savedWorkOrder = await persistWorkOrder(row.id, getDraft(row.id))
-      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? { ...savedWorkOrder, workOrderNumber: item.workOrderNumber } : item)))
+      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? savedWorkOrder : item)))
       setDrafts((prev) => {
         const next = { ...prev }
         delete next[row.id]
@@ -343,11 +339,9 @@ export default function WorkOrdersClient({
       const property = propertyLookup.get(createdWorkOrder.propertyId)
 
       setWorkOrders((prev) => {
-        const nextWorkOrderNumber = prev.reduce((maxValue, item) => Math.max(maxValue, item.workOrderNumber), 0) + 1
         return [
           {
             ...createdWorkOrder,
-            workOrderNumber: nextWorkOrderNumber,
             propertyName: property?.name ?? createdWorkOrder.propertyName,
             propertyAddress: buildWorkOrderAddress(property, createdWorkOrder.customAddress),
             warehouseName: warehouseOptions.find((item) => item.id === createdWorkOrder.warehouseId)?.name ?? "",
@@ -651,7 +645,7 @@ export default function WorkOrdersClient({
       )}
 
       {activeWorkOrder ? (
-        <ModalShell title={`Work Order ${activeWorkOrder.id.slice(0, 8)}`} onClose={closeWorkOrder}>
+        <ModalShell title={`Work Order ${activeWorkOrder.workOrderNumber}`} onClose={closeWorkOrder}>
           <WorkOrderRecordPanel
             workOrderId={activeWorkOrder.id}
             propertyOptions={propertyOptions}
@@ -668,7 +662,6 @@ export default function WorkOrdersClient({
                     ? {
                         ...row,
                         ...savedWorkOrder,
-                        workOrderNumber: row.workOrderNumber,
                       }
                     : row,
                 ),

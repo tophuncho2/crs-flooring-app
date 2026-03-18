@@ -52,6 +52,7 @@ export function calculateWorkOrderTotal(input: {
 
 export function normalizeWorkOrder(workOrder: {
   id: string
+  workOrderNumber: string
   propertyId: string
   property: { id: string; name: string; streetAddress: string | null; city: string | null; state: string | null; postalCode: string | null }
   warehouse: { id: string; name: string } | null
@@ -77,6 +78,7 @@ export function normalizeWorkOrder(workOrder: {
 }) {
   return {
     id: workOrder.id,
+    workOrderNumber: workOrder.workOrderNumber,
     propertyId: workOrder.propertyId,
     propertyName: workOrder.property.name,
     propertyAddress: normalizeWorkOrderAddress(workOrder.property),

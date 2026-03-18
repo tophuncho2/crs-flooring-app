@@ -15,7 +15,7 @@ This checklist should be updated as work is completed.
 
 # 1. Database / Postgres Hardening
 
-- [ ] Review the current Prisma schema against [PRISMA_SCHEMA_ENGLISH.md](/Users/ottohull/builderswebapp/builderswebapp/plans/PRISMA_SCHEMA_ENGLISH.md) and confirm the schema matches the intended business model.
+
 - [ ] Finalize the work-order status model and remove ambiguous or outdated statuses if they are no longer needed.
 - [ ] Finalize shortage ownership at both item level and order level.
 - [ ] Finalize when analytics should update and what table or domain logic owns that update.

@@ -105,4 +105,12 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     code: "Slash",
     toggleTheme: true,
   },
+  {
+    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00013",
+    key: "Builder Panel",
+    combination: "SHIFT + Q",
+    action: "Open Builder Panel",
+    code: "KeyQ",
+    path: "/dashboard/builder",
+  },
 ]

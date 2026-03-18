@@ -220,6 +220,7 @@ model FlooringService {
   unitId         String
   unit           FlooringUnitOfMeasure          @relation(fields: [unitId], references: [id], onDelete: Restrict)
   isCustom       Boolean                        @default(false)
+  notes          String?
   createdAt      DateTime                       @default(now())
   updatedAt      DateTime                       @updatedAt
   templateItems  FlooringTemplateServiceItem[]
@@ -403,6 +404,7 @@ model FlooringLocation {
 
 model FlooringWorkOrder {
   id              String                         @id @default(uuid())
+  workOrderNumber String                         @unique @map("work_order_number") @default(dbgenerated("('WO-'::text || lpad((nextval('flooring_work_order_number_seq'::regclass))::text, 5, '0'::text))"))
   propertyId      String
   property        Property                       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateId      String?
@@ -427,6 +429,7 @@ model FlooringWorkOrder {
   analytics       FlooringAnalytics?
   cutLogs         FlooringCutLog[]
 
+  @@index([workOrderNumber])
   @@index([propertyId, status])
   @@index([scheduledFor])
   @@map("flooring_work_order")

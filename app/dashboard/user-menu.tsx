@@ -220,6 +220,13 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
       if (!matchedHotkey.path) return
 
+      if (matchedHotkey.code === "KeyQ") {
+        if (hasBuilderPanelAccess) {
+          router.push(matchedHotkey.path)
+        }
+        return
+      }
+
       const requiredTool: ToolSlug = matchedHotkey.code === "KeyP" ? "products" : "warehouse"
       if (canOpenTool(requiredTool)) {
         router.push(matchedHotkey.path)
@@ -228,7 +235,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canUseTools, isMobile, router, unlockedToolSlugs])
+  }, [canUseTools, hasBuilderPanelAccess, isMobile, router, unlockedToolSlugs])
 
   return (
     <>
@@ -284,6 +291,18 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                 className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
               >
                 Warehouse
+              </button>
+            )}
+
+            {canOpenTool("warehouse") && (
+              <button
+                onClick={() => {
+                  router.push("/dashboard/flooring/services")
+                  setOpen(false)
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+              >
+                Services
               </button>
             )}
 

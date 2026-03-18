@@ -7,6 +7,7 @@ import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-o
 
 type WorkOrderDetail = {
   id: string
+  workOrderNumber: string
   property: {
     id: string
     name: string
@@ -200,6 +201,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
 
   const detail: WorkOrderDetail = {
     id: workOrder.id,
+    workOrderNumber: workOrder.workOrderNumber,
     property: {
       id: workOrder.property.id,
       name: workOrder.property.name,

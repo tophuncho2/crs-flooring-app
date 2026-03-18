@@ -60,6 +60,7 @@ type WorkOrderItem = {
 
 type WorkOrderDetail = {
   id: string
+  workOrderNumber: string
   property: {
     id: string
     name: string
@@ -307,7 +308,7 @@ export default function WorkOrderDetailClient({
     <div className="min-h-screen bg-[var(--background)] px-2 pb-12 pt-20 text-[var(--foreground)] sm:px-3 sm:pt-24 lg:px-4">
       <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-          <h1 className="text-2xl font-bold text-blue-500">Work Order {workOrder.id.slice(0, 8)}</h1>
+          <h1 className="text-2xl font-bold text-blue-500">Work Order {workOrder.workOrderNumber}</h1>
           <p className="mt-1 text-sm text-[var(--foreground)]/70">Top fields sync to the row record, items are added below.</p>
 
           {message && <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p>}

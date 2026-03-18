@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
@@ -276,8 +277,16 @@ export function TemplateRecordPanel({
     }
   }
 
-  if (loading || !template || !draft) {
-    return <p className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading template...</p>
+  if (loading) {
+    return <CenteredLoadingState label="Loading template..." />
+  }
+
+  if (error && (!template || !draft)) {
+    return <CenteredErrorState title="Error" message={error} onDismiss={onClose} />
+  }
+
+  if (!template || !draft) {
+    return <CenteredErrorState title="Error" message="Template could not be loaded." onDismiss={onClose} />
   }
 
   return (

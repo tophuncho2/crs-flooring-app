@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
@@ -27,6 +28,7 @@ type TemplateOption = {
 
 type WorkOrderDetail = {
   id: string
+  workOrderNumber: string
   propertyId: string
   propertyName: string
   propertyAddress: string
@@ -457,8 +459,16 @@ export function WorkOrderRecordPanel({
     }
   }
 
-  if (loading || !workOrder || !draft) {
-    return <p className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading work order...</p>
+  if (loading) {
+    return <CenteredLoadingState label="Loading work order..." />
+  }
+
+  if (error && (!workOrder || !draft)) {
+    return <CenteredErrorState title="Error" message={error} onDismiss={onClose} />
+  }
+
+  if (!workOrder || !draft) {
+    return <CenteredErrorState title="Error" message="Work order could not be loaded." onDismiss={onClose} />
   }
 
   return (

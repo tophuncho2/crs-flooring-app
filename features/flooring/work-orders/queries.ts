@@ -202,10 +202,9 @@ export async function getWorkOrdersPageData() {
   ])
 
   return {
-    initialWorkOrders: workOrders.map((workOrder, index) => ({
+    initialWorkOrders: workOrders.map((workOrder) => ({
       ...workOrder,
       itemsCount: workOrder.itemsCount ?? 0,
-      workOrderNumber: workOrders.length - index,
     })),
     propertyOptions: properties.map((property) => ({
       id: property.id,

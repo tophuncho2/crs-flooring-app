@@ -13,7 +13,7 @@ type SharedButtonProps = {
   className?: string
 }
 
-export function OpenRowButton({ children = "Open", onClick, disabled, className }: SharedButtonProps) {
+export function EditRowButton({ children = "Edit", onClick, disabled, className }: SharedButtonProps) {
   return (
     <button
       type="button"
@@ -27,6 +27,10 @@ export function OpenRowButton({ children = "Open", onClick, disabled, className 
       {children}
     </button>
   )
+}
+
+export function OpenRowButton(props: SharedButtonProps) {
+  return <EditRowButton {...props} />
 }
 
 export function SaveRowButton({ children = "Save", onClick, disabled, className }: SharedButtonProps) {
