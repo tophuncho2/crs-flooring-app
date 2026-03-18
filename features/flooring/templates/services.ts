@@ -73,7 +73,6 @@ export function normalizeTemplateItem(item: {
   quantity: { toString(): string }
   unitPrice: { toString(): string }
   notes: string | null
-  storedDyeLot: string | null
   createdAt: Date
   product: {
     manufacturerName: string | null
@@ -90,7 +89,6 @@ export function normalizeTemplateItem(item: {
     quantity: item.quantity.toString(),
     unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
-    storedDyeLot: item.storedDyeLot ?? "",
     createdAt: item.createdAt.toISOString(),
   }
 }

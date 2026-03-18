@@ -6,7 +6,6 @@ export type TemplateMaterialItemInput = {
   quantity: Prisma.Decimal
   unitPrice: Prisma.Decimal | null
   notes: string | null
-  storedDyeLot: string | null
 }
 
 export type TemplateServiceItemInput = {
@@ -39,7 +38,6 @@ export function validateTemplateMaterialItemInput(body: Record<string, unknown>)
     quantity: parseDecimal(body.quantity, "quantity", 2),
     unitPrice: body.unitPrice === undefined ? null : parseDecimal(body.unitPrice, "unitPrice", 2),
     notes: parseOptionalString(body.notes),
-    storedDyeLot: parseOptionalString(body.storedDyeLot),
   }
 }
 
@@ -61,7 +59,6 @@ export function validateUpdateTemplateMaterialItemInput(body: Record<string, unk
   if ("quantity" in body) input.quantity = parseDecimal(body.quantity, "quantity", 2)
   if ("unitPrice" in body) input.unitPrice = parseDecimal(body.unitPrice, "unitPrice", 2)
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
-  if ("storedDyeLot" in body) input.storedDyeLot = parseOptionalString(body.storedDyeLot)
 
   return input
 }

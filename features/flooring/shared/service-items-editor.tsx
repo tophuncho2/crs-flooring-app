@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react"
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
 import { CollapsibleTableSection, useInlineCreateRow } from "./collapsible-table-section"
+import { formatLineTotal } from "./line-totals"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
 export type ServiceOption = {
@@ -102,6 +103,7 @@ export function ServiceItemsEditor({
             <TableHeaderCell>Unit</TableHeaderCell>
             <TableHeaderCell>Qty</TableHeaderCell>
             <TableHeaderCell>Unit Price</TableHeaderCell>
+            <TableHeaderCell>Total</TableHeaderCell>
             <TableHeaderCell>Notes</TableHeaderCell>
             {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
             <TableHeaderCell>Delete</TableHeaderCell>
@@ -163,6 +165,7 @@ export function ServiceItemsEditor({
                 <td className="px-3 py-2">
                   <input value={item.unitPrice} onChange={(event) => onItemFieldChange(item.id, "unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                 </td>
+                <td className="px-3 py-2 font-medium">{formatLineTotal(item)}</td>
                 <td className="px-3 py-2">
                   <input value={item.notes} onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                 </td>
@@ -221,6 +224,7 @@ export function ServiceItemsEditor({
               <td className="px-3 py-2">
                 <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
               </td>
+              <td className="px-3 py-2 font-medium">{formatLineTotal(draft)}</td>
               <td className="px-3 py-2">
                 <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
               </td>

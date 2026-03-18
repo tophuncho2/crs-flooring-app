@@ -73,7 +73,7 @@ export function TemplateRecordPanel({
 }) {
   const [template, setTemplate] = useState<TemplatePanelRow | null>(null)
   const [draft, setDraft] = useState<TemplatePanelDraft | null>(null)
-  const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>({ productId: "", quantity: "", unitPrice: "", notes: "", extraValue: "" })
+  const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>({ productId: "", quantity: "", unitPrice: "", notes: "" })
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>({ serviceId: "", name: "", unitId: "", quantity: "", unitPrice: "", notes: "" })
   const [loading, setLoading] = useState(true)
   const [savingTemplate, setSavingTemplate] = useState(false)
@@ -86,22 +86,18 @@ export function TemplateRecordPanel({
     updateUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
     deleteUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
     mapItems: (payload) =>
-      ((payload.items as Array<{ id: string; productId: string; productName: string; sendUnit: string; quantity: string; unitPrice: string; notes: string; storedDyeLot: string }> | undefined) ?? []).map(
-        (item) => ({ ...item, extraValue: item.storedDyeLot }),
-      ),
+      ((payload.items as Array<{ id: string; productId: string; productName: string; sendUnit: string; quantity: string; unitPrice: string; notes: string }> | undefined) ?? []),
     serializeCreate: (input) => ({
       productId: input.productId,
       quantity: input.quantity,
       unitPrice: input.unitPrice,
       notes: input.notes,
-      storedDyeLot: input.extraValue,
     }),
     serializeUpdate: (item) => ({
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       notes: item.notes,
-      storedDyeLot: item.extraValue,
     }),
   })
   const serviceCollection = useChildCollection<TemplateServiceItem, ServiceItemDraft, EditableServiceItem>({
@@ -131,7 +127,7 @@ export function TemplateRecordPanel({
       try {
         const [templatePayload, materialPayload, servicePayload] = await Promise.all([
           requestJson<{ template: TemplatePanelRow }>(`/api/flooring/templates/${templateId}`),
-          requestJson<{ items?: Array<{ id: string; productId: string; productName: string; sendUnit: string; quantity: string; unitPrice: string; notes: string; storedDyeLot: string }> }>(
+          requestJson<{ items?: Array<{ id: string; productId: string; productName: string; sendUnit: string; quantity: string; unitPrice: string; notes: string }> }>(
             `/api/flooring/templates/${templateId}/items`,
           ),
           requestJson<{ items?: Array<{ id: string; serviceId: string; name: string; unitId: string; unitName: string; quantity: string; unitPrice: string; notes: string }> }>(
@@ -143,12 +139,7 @@ export function TemplateRecordPanel({
 
         setTemplate(templatePayload.template)
         setDraft(toTemplateDraft(templatePayload.template))
-        setMaterialItems(
-          (materialPayload.items ?? []).map((item) => ({
-            ...item,
-            extraValue: item.storedDyeLot,
-          })),
-        )
+        setMaterialItems(materialPayload.items ?? [])
         setServiceItems(servicePayload.items ?? [])
       } catch (loadError) {
         if (cancelled) return
@@ -211,7 +202,7 @@ export function TemplateRecordPanel({
     setError("")
     try {
       const nextMaterialItems = await materialCollection.createItem(materialDraft)
-      setMaterialDraft({ productId: "", quantity: "", unitPrice: "", notes: "", extraValue: "" })
+      setMaterialDraft({ productId: "", quantity: "", unitPrice: "", notes: "" })
       setMessage("Template item added")
       onTemplateSaved?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
     } catch (saveError) {
@@ -346,7 +337,6 @@ export function TemplateRecordPanel({
         adding={materialCollection.adding}
         savingItemId={materialCollection.savingItemId}
         deletingItemId={materialCollection.deletingItemId}
-        extraFieldLabel="Stored Dye Lot"
         onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
         onAdd={() => void addMaterialItem()}
         onItemFieldChange={(itemId, field, value) => {

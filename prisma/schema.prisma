@@ -323,16 +323,15 @@ model FlooringTemplate {
 }
 
 model FlooringTemplateItem {
-  id           String           @id @default(uuid())
-  templateId   String
-  template     FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  productId    String
-  product      FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  quantity     Decimal          @db.Decimal(10, 2)
-  unitPrice    Decimal          @db.Decimal(10, 2)
-  notes        String?
-  storedDyeLot String?
-  createdAt    DateTime         @default(now())
+  id         String           @id @default(uuid())
+  templateId String
+  template   FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  productId  String
+  product    FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity   Decimal          @db.Decimal(10, 2)
+  unitPrice  Decimal          @db.Decimal(10, 2)
+  notes      String?
+  createdAt  DateTime         @default(now())
 
   @@index([templateId])
   @@index([productId])

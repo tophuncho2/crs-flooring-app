@@ -105,7 +105,6 @@ export async function createTemplate(input: CreateTemplateInput) {
           quantity: item.quantity,
           unitPrice: await resolveMaterialUnitPrice(item),
           notes: item.notes,
-          storedDyeLot: item.storedDyeLot,
         },
       })
     }
@@ -159,7 +158,6 @@ export async function createTemplateItem(templateId: string, input: TemplateMate
       quantity: input.quantity,
       unitPrice: await resolveMaterialUnitPrice(input),
       notes: input.notes,
-      storedDyeLot: input.storedDyeLot,
     },
     include: {
       product: {
@@ -184,7 +182,6 @@ export async function updateTemplateItem(itemId: string, input: Partial<Template
       quantity: input.quantity,
       unitPrice: input.unitPrice ?? undefined,
       notes: input.notes,
-      storedDyeLot: input.storedDyeLot,
     },
     include: {
       product: {
