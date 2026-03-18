@@ -24,7 +24,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
-    const name = parseRequiredString(body.name, "name")
+    const name = parseRequiredString(body.name, "name").trim()
 
     if (id.startsWith("legacy:")) {
       const oldName = id.replace("legacy:", "")
@@ -45,6 +45,20 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     await ensureRegistryTable()
 
+    const currentRows = (await prisma.$queryRawUnsafe(
+      `
+      SELECT id, "warehouseId" as "warehouseId", name
+      FROM flooring_section_registry
+      WHERE id = $1
+      `,
+      id,
+    )) as Array<{ id: string; warehouseId: string; name: string }>
+
+    const current = currentRows[0]
+    if (!current) {
+      return NextResponse.json({ error: "Section not found" }, { status: 404 })
+    }
+
     await prisma.$executeRawUnsafe(
       `
       UPDATE flooring_section_registry
@@ -53,6 +67,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       `,
       name,
       id,
+    )
+
+    await prisma.$executeRawUnsafe(
+      `
+      UPDATE flooring_location
+      SET section = $1
+      WHERE "warehouseId" = $2
+        AND section = $3
+      `,
+      name,
+      current.warehouseId,
+      current.name,
     )
 
     return NextResponse.json({ section: { id, name } })

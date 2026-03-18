@@ -11,6 +11,18 @@ type LocationRow = {
   section: string | null
 }
 
+async function ensureRegistryTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS flooring_section_registry (
+      id text PRIMARY KEY,
+      "warehouseId" text NOT NULL,
+      name text NOT NULL,
+      "createdAt" timestamptz NOT NULL DEFAULT now(),
+      UNIQUE ("warehouseId", name)
+    )
+  `)
+}
+
 export async function GET(request: Request) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
@@ -52,6 +64,21 @@ export async function POST(request: Request) {
     const warehouseId = parseRequiredString(body.warehouseId, "warehouseId")
     const locationCode = parseRequiredString(body.locationCode, "locationCode").trim()
     const sectionName = parseOptionalString(body.sectionName)
+
+    if (sectionName) {
+      await ensureRegistryTable()
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO flooring_section_registry (id, "warehouseId", name)
+        VALUES ($1, $2, $3)
+        ON CONFLICT ("warehouseId", name)
+        DO NOTHING
+        `,
+        randomUUID(),
+        warehouseId,
+        sectionName,
+      )
+    }
 
     const rows = (await prisma.$queryRawUnsafe(
       `

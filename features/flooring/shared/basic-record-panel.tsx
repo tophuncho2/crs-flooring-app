@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { RecordModalShell } from "./record-form"
-import { ErrorNotice, SuccessNotice } from "./notices"
+import { ErrorNotice, LoadingNotice, SuccessNotice } from "./notices"
 import { RecordPanelFooter } from "./record-panel-footer"
 
 export function BasicRecordPanel({
@@ -11,6 +11,7 @@ export function BasicRecordPanel({
   children,
   message,
   error,
+  loadingMessage,
   headerActions,
   saveLabel,
   savingLabel,
@@ -26,6 +27,7 @@ export function BasicRecordPanel({
   children: ReactNode
   message?: string
   error?: string
+  loadingMessage?: string
   headerActions?: ReactNode
   saveLabel: string
   savingLabel: string
@@ -41,6 +43,7 @@ export function BasicRecordPanel({
       <div className="space-y-6">
         {message ? <SuccessNotice>{message}</SuccessNotice> : null}
         {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+        {loadingMessage ? <LoadingNotice>{loadingMessage}</LoadingNotice> : null}
         {children}
         <RecordPanelFooter
           deleteLabel={deleteLabel}

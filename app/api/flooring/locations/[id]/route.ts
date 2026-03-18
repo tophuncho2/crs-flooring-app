@@ -12,6 +12,18 @@ type LocationRow = {
   section: string | null
 }
 
+async function ensureRegistryTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS flooring_section_registry (
+      id text PRIMARY KEY,
+      "warehouseId" text NOT NULL,
+      name text NOT NULL,
+      "createdAt" timestamptz NOT NULL DEFAULT now(),
+      UNIQUE ("warehouseId", name)
+    )
+  `)
+}
+
 export async function PATCH(request: Request, { params }: RouteContext) {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
@@ -24,6 +36,30 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const hasSectionName = "sectionName" in body
     const locationCode = hasLocationCode ? parseRequiredString(body.locationCode, "locationCode").trim() : null
     const sectionName = hasSectionName ? parseOptionalString(body.sectionName) : null
+
+    if (sectionName) {
+      const existing = await prisma.flooringLocation.findUnique({
+        where: { id },
+        select: { warehouseId: true },
+      })
+
+      if (!existing) {
+        return NextResponse.json({ error: "Location not found" }, { status: 404 })
+      }
+
+      await ensureRegistryTable()
+      await prisma.$executeRawUnsafe(
+        `
+        INSERT INTO flooring_section_registry (id, "warehouseId", name)
+        VALUES ($1, $2, $3)
+        ON CONFLICT ("warehouseId", name)
+        DO NOTHING
+        `,
+        crypto.randomUUID(),
+        existing.warehouseId,
+        sectionName,
+      )
+    }
 
     const rows = (await prisma.$queryRawUnsafe(
       `

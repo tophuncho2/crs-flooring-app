@@ -60,7 +60,7 @@ export default async function FlooringCutLogsPage() {
       createdAt: log.createdAt.toISOString(),
       productName: buildProductName(log.inventory.product),
       itemNumber: log.inventory.itemNumber,
-      locationLabel: `${log.inventory.location.warehouse.name} / ${log.inventory.location.locationCode}`,
+      locationLabel: log.inventory.location ? `${log.inventory.location.warehouse.name} / ${log.inventory.location.locationCode}` : "No location",
       before: Number(log.before).toFixed(2),
       cut: Number(log.cut).toFixed(2),
       after: Number(log.after).toFixed(2),

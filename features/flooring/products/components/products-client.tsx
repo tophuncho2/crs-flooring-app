@@ -1,11 +1,11 @@
 "use client"
 
 import { type ChangeEvent, type ReactNode, useMemo, useState } from "react"
-import { Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
+import { Plus, Save, Upload, X } from "lucide-react"
 import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
-import { EditRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
@@ -267,7 +267,7 @@ export default function FlooringProductsClient({
   })
   const productColumns = useMemo(
     () => [
-      { key: "edit", label: "Edit" },
+      { key: "open", label: "Open" },
       { key: "product", label: "Product" },
       { key: "category", label: "Category" },
       { key: "manufacturer", label: "Manufacturer" },
@@ -303,9 +303,9 @@ export default function FlooringProductsClient({
 
   function renderProductRow(product: ProductRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => void openProductInventory(product)} />
+      open: (
+        <td key="open" className="px-3 py-2">
+          <OpenRowButton onClick={() => void openProductInventory(product)}>Open</OpenRowButton>
         </td>
       ),
       product: <td key="product" className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>,
@@ -327,12 +327,8 @@ export default function FlooringProductsClient({
       actions: (
         <td key="actions" className="px-3 py-2">
           <div className="flex gap-2">
-            <button type="button" onClick={() => openEditProduct(product)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
-              <Pencil size={16} />
-            </button>
-            <button type="button" onClick={() => deleteProduct(product)} className="rounded-md p-2 text-rose-500 hover:bg-rose-500/10">
-              <Trash2 size={16} />
-            </button>
+            <EditRowButton onClick={() => openEditProduct(product)} />
+            <DeleteRowButton onClick={() => void deleteProduct(product)} />
           </div>
         </td>
       ),

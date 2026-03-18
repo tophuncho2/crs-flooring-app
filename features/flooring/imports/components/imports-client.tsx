@@ -115,24 +115,9 @@ function createEmptyItem(): ImportItemDraft {
   }
 }
 
-function normalizeLocationCode(value: string) {
-  return value.trim().toUpperCase()
-}
-
-function findPendingLocationId(locationOptions: LocationOption[], warehouseId: string) {
-  if (!warehouseId) return ""
-
-  const pendingLocation = locationOptions.find(
-    (location) => location.warehouseId === warehouseId && normalizeLocationCode(location.locationCode) === "PENDING",
-  )
-
-  return pendingLocation?.id ?? ""
-}
-
 function applyDefaultLocationToItem(item: ImportItemDraft, warehouseId: string, locationOptions: LocationOption[]) {
   const warehouseLocations = warehouseId ? locationOptions.filter((location) => location.warehouseId === warehouseId) : []
   const currentLocation = warehouseLocations.find((location) => location.id === item.locationId)
-  const pendingLocationId = findPendingLocationId(locationOptions, warehouseId)
 
   if (currentLocation) {
     return item
@@ -140,7 +125,7 @@ function applyDefaultLocationToItem(item: ImportItemDraft, warehouseId: string, 
 
   return {
     ...item,
-    locationId: pendingLocationId,
+    locationId: "",
   }
 }
 
@@ -778,10 +763,7 @@ export default function ImportsClient({
                             <select
                               value={item.locationId}
                               onChange={(event) => setItemField(index, "locationId", event.target.value)}
-                              className={`w-64 rounded border px-2 py-1 ${getSharedFormFieldClass({
-                                isRequired: false,
-                                isEmpty: item.locationId.trim() === "",
-                              })}`}
+                              className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                             >
                               <option value="">Select location</option>
                               {filteredLocations.map((location) => (

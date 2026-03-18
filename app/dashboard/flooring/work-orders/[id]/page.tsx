@@ -239,7 +239,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       notes: item.notes ?? "",
       linkedInventoryId: item.linkedInventoryId ?? "",
       linkedInventoryLabel: item.linkedInventory
-        ? `${item.linkedInventory.location.warehouse.name} / ${item.linkedInventory.location.locationCode} / Item ${item.linkedInventory.itemNumber}${item.linkedInventory.dyeLot ? ` / Dye ${item.linkedInventory.dyeLot}` : ""}`
+        ? `${item.linkedInventory.location ? `${item.linkedInventory.location.warehouse.name} / ${item.linkedInventory.location.locationCode}` : "No location"} / Item ${item.linkedInventory.itemNumber}${item.linkedInventory.dyeLot ? ` / Dye ${item.linkedInventory.dyeLot}` : ""}`
         : "",
       changeOrderStatus: item.changeOrderStatus ?? "SUFFICIENT",
     })),
@@ -256,7 +256,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
       inventoryOptions={inventoryRows.map((row): InventoryOption => ({
         id: row.id,
         productId: row.productId,
-        name: `${buildProductName(row.product)} / ${row.location.warehouse.name} / ${row.location.locationCode} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
+        name: `${buildProductName(row.product)} / ${row.location ? `${row.location.warehouse.name} / ${row.location.locationCode}` : "No location"} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
       }))}
       propertyOptions={propertyOptions.map((property) => ({
         id: property.id,

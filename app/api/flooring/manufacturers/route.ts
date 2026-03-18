@@ -25,9 +25,11 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
+    const companyName = parseRequiredString(body.companyName, "companyName")
+    const name = parseOptionalString(body.name)
     const manufacturer = await createManufacturer({
-      name: parseRequiredString(body.name, "name"),
-      companyName: parseOptionalString(body.companyName),
+      name: name || companyName,
+      companyName,
       website: parseOptionalString(body.website),
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),

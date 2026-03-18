@@ -4,8 +4,9 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { BasicRecordPanel } from "../../shared/basic-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { EditRowButton, DeleteRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField } from "../../shared/record-form"
+import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
@@ -69,7 +70,6 @@ export default function ServicesClient({
   unitOptions: UnitOption[]
 }) {
   const [services, setServices] = useState(initialServices)
-  const [drafts, setDrafts] = useState<Record<string, ServiceForm>>({})
   const [selectedService, setSelectedService] = useState<ServiceRow | null>(null)
   const [serviceForm, setServiceForm] = useState<ServiceForm>(emptyForm)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -120,7 +120,6 @@ export default function ServicesClient({
       { key: "cost", label: "Cost" },
       { key: "notes", label: "Notes" },
       { key: "usage", label: "Usage" },
-      { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
     ],
     [],
@@ -143,22 +142,6 @@ export default function ServicesClient({
     setError("")
     setPanelMessage("")
     setPanelError("")
-  }
-
-  function getDraft(id: string): ServiceForm {
-    return drafts[id] ?? createDraft(services.find((row) => row.id === id)!)
-  }
-
-  function setDraftField(id: string, field: keyof ServiceForm, value: string) {
-    const base = services.find((row) => row.id === id)
-    if (!base) return
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: {
-        ...(prev[id] ?? createDraft(base)),
-        [field]: value,
-      },
-    }))
   }
 
   function openCreate() {
@@ -202,29 +185,6 @@ export default function ServicesClient({
     }
   }
 
-  async function saveService(row: ServiceRow) {
-    clearNotices()
-    setIsSavingId(row.id)
-    try {
-      const payload = await apiJson<{ service: ServiceRow }>(`/api/flooring/services/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(getDraft(row.id)),
-      })
-      setServices((prev) => prev.map((item) => (item.id === row.id ? payload.service : item)).sort((a, b) => a.name.localeCompare(b.name)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Service saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save service")
-    } finally {
-      setIsSavingId(null)
-    }
-  }
-
   async function savePanelService() {
     if (!selectedService) return
     clearNotices()
@@ -263,46 +223,17 @@ export default function ServicesClient({
   }
 
   function renderRow(row: ServiceRow) {
-    const draft = getDraft(row.id)
     const cells: Record<string, ReactNode> = {
       edit: (
         <td key="edit" className="px-3 py-2">
           <EditRowButton onClick={() => openEdit(row)} />
         </td>
       ),
-      name: (
-        <td key="name" className="px-3 py-2">
-          <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-        </td>
-      ),
-      unit: (
-        <td key="unit" className="px-3 py-2">
-          <select value={draft.unitId} onChange={(event) => setDraftField(row.id, "unitId", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-            <option value="">Select unit</option>
-            {unitOptions.map((unit) => (
-              <option key={unit.id} value={unit.id}>{unit.name}</option>
-            ))}
-          </select>
-        </td>
-      ),
-      cost: (
-        <td key="cost" className="px-3 py-2">
-          <input value={draft.baseCost} onChange={(event) => setDraftField(row.id, "baseCost", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-        </td>
-      ),
-      notes: (
-        <td key="notes" className="px-3 py-2">
-          <input value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-        </td>
-      ),
+      name: <td key="name" className="px-3 py-2 font-medium">{row.name}</td>,
+      unit: <td key="unit" className="px-3 py-2">{row.unitName || "-"}</td>,
+      cost: <td key="cost" className="px-3 py-2">{row.baseCost || "-"}</td>,
+      notes: <td key="notes" className="px-3 py-2">{row.notes || "-"}</td>,
       usage: <td key="usage" className="px-3 py-2">{row.usageCount}</td>,
-      save: (
-        <td key="save" className="px-3 py-2">
-          <SaveRowButton onClick={() => void saveService(row)} disabled={isSavingId === row.id}>
-            {isSavingId === row.id ? "Saving..." : "Save"}
-          </SaveRowButton>
-        </td>
-      ),
       delete: (
         <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteService(row)} disabled={deletingId === row.id}>
@@ -398,7 +329,7 @@ export default function ServicesClient({
               <input value={serviceForm.name} onChange={(event) => setServiceForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Service Unit">
-              <select value={serviceForm.unitId} onChange={(event) => setServiceForm((prev) => ({ ...prev, unitId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+              <select value={serviceForm.unitId} onChange={(event) => setServiceForm((prev) => ({ ...prev, unitId: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.unitId.trim() === "" })}`}>
                 <option value="">Select unit</option>
                 {unitOptions.map((unit) => (
                   <option key={unit.id} value={unit.id}>{unit.name}</option>
@@ -406,10 +337,10 @@ export default function ServicesClient({
               </select>
             </FormField>
             <FormField label="Cost">
-              <input value={serviceForm.baseCost} onChange={(event) => setServiceForm((prev) => ({ ...prev, baseCost: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={serviceForm.baseCost} onChange={(event) => setServiceForm((prev) => ({ ...prev, baseCost: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.baseCost.trim() === "" })}`} />
             </FormField>
             <FormField label="Notes">
-              <textarea value={serviceForm.notes} onChange={(event) => setServiceForm((prev) => ({ ...prev, notes: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <textarea value={serviceForm.notes} onChange={(event) => setServiceForm((prev) => ({ ...prev, notes: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.notes.trim() === "" })}`} />
             </FormField>
           </div>
         </BasicRecordPanel>
@@ -434,7 +365,7 @@ export default function ServicesClient({
               <input value={serviceForm.name} onChange={(event) => setServiceForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Service Unit">
-              <select value={serviceForm.unitId} onChange={(event) => setServiceForm((prev) => ({ ...prev, unitId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+              <select value={serviceForm.unitId} onChange={(event) => setServiceForm((prev) => ({ ...prev, unitId: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.unitId.trim() === "" })}`}>
                 <option value="">Select unit</option>
                 {unitOptions.map((unit) => (
                   <option key={unit.id} value={unit.id}>{unit.name}</option>
@@ -442,10 +373,10 @@ export default function ServicesClient({
               </select>
             </FormField>
             <FormField label="Cost">
-              <input value={serviceForm.baseCost} onChange={(event) => setServiceForm((prev) => ({ ...prev, baseCost: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={serviceForm.baseCost} onChange={(event) => setServiceForm((prev) => ({ ...prev, baseCost: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.baseCost.trim() === "" })}`} />
             </FormField>
             <FormField label="Notes">
-              <textarea value={serviceForm.notes} onChange={(event) => setServiceForm((prev) => ({ ...prev, notes: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <textarea value={serviceForm.notes} onChange={(event) => setServiceForm((prev) => ({ ...prev, notes: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.notes.trim() === "" })}`} />
             </FormField>
           </div>
         </BasicRecordPanel>

@@ -32,12 +32,12 @@ function normalizeInventoryRow(row: {
     color: string | null
     category: { stockUnit: { name: string } | null }
   }
-  locationId: string
+  locationId: string | null
   location: {
     id: string
     locationCode: string
     warehouse: { id: string; name: string }
-  }
+  } | null
   importEntry: {
     id: string
     importNumber: number
@@ -67,15 +67,15 @@ function normalizeInventoryRow(row: {
     importTag: row.importEntry?.tag ?? "",
     importStatus: row.importEntry?.status ?? "FINAL",
     importTransportType: row.importEntry?.transportType ?? "",
-    importWarehouseName: row.importEntry?.warehouse?.name ?? row.location.warehouse.name,
+    importWarehouseName: row.importEntry?.warehouse?.name ?? row.location?.warehouse.name ?? "",
     productId: row.productId,
     productName: buildProductName(row.product),
     stockUnit: row.product.category.stockUnit?.name ?? "",
     itemNumber: row.itemNumber,
     dyeLot: row.dyeLot,
-    locationId: row.locationId,
-    locationCode: row.location.locationCode,
-    warehouseName: row.location.warehouse.name,
+    locationId: row.locationId ?? "",
+    locationCode: row.location?.locationCode ?? "",
+    warehouseName: row.location?.warehouse.name ?? "",
     sectionName: "",
     stockCount: row.stockCount.toString(),
     cutTotal: cutTotal.toFixed(2),
@@ -88,7 +88,7 @@ function normalizeInventoryRow(row: {
     cutLogs: cutLogs.map((log) => ({
       id: log.id,
       inventoryId: log.inventoryId,
-      inventoryLabel: `${row.location.warehouse.name} / ${row.location.locationCode} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
+      inventoryLabel: `${row.location?.warehouse.name ?? "No warehouse"} / ${row.location?.locationCode ?? "No location"} / Item ${row.itemNumber}${row.dyeLot ? ` / Dye ${row.dyeLot}` : ""}`,
       itemNumber: row.itemNumber,
       before: log.before.toString(),
       cut: log.cut.toString(),
@@ -170,7 +170,7 @@ export async function POST(request: Request) {
       data: {
         importEntryId: parseOptionalString(body.importEntryId),
         productId: parseRequiredString(body.productId, "productId"),
-        locationId: parseRequiredString(body.locationId, "locationId"),
+        locationId: parseOptionalString(body.locationId),
         itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
         dyeLot: parseRequiredString(body.dyeLot, "dyeLot"),
         stockCount: parseDecimal(body.stockCount, "stockCount", 2),

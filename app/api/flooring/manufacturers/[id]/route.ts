@@ -16,9 +16,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
+    const companyName = parseRequiredString(body.companyName, "companyName")
+    const name = parseOptionalString(body.name)
     const manufacturer = await updateManufacturer(id, {
-      name: parseRequiredString(body.name, "name"),
-      companyName: parseOptionalString(body.companyName),
+      name: name || companyName,
+      companyName,
       website: parseOptionalString(body.website),
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),

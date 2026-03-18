@@ -4,8 +4,9 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { BasicRecordPanel } from "../../shared/basic-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField } from "../../shared/record-form"
+import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
@@ -102,7 +103,6 @@ export default function CategoriesClient({
   unitOfMeasureOptions: UnitOfMeasureOption[]
 }) {
   const [categories, setCategories] = useState(initialCategories)
-  const [drafts, setDrafts] = useState<Record<string, CategoryForm>>({})
   const [selectedCategory, setSelectedCategory] = useState<CategoryRow | null>(null)
   const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -159,7 +159,6 @@ export default function CategoriesClient({
       { key: "itemCoverageUnit", label: "Item Coverage Unit" },
       { key: "serviceUnit", label: "Service Unit" },
       { key: "products", label: "Products" },
-      { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
     ],
     [],
@@ -182,23 +181,6 @@ export default function CategoriesClient({
     setError("")
     setPanelMessage("")
     setPanelError("")
-  }
-
-  function getDraft(id: string): CategoryForm {
-    const category = categories.find((row) => row.id === id)
-    return drafts[id] ?? (category ? toCategoryForm(category) : emptyCategoryForm)
-  }
-
-  function setDraftField(id: string, field: keyof CategoryForm, value: string) {
-    const base = categories.find((row) => row.id === id)
-    if (!base) return
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: {
-        ...(prev[id] ?? toCategoryForm(base)),
-        [field]: value,
-      },
-    }))
   }
 
   function openCreateCategory() {
@@ -243,25 +225,6 @@ export default function CategoriesClient({
     }
   }
 
-  async function saveCategory(row: CategoryRow) {
-    clearNotices()
-    setIsSavingId(row.id)
-    try {
-      const payload = await persistCategory(getDraft(row.id), row.id)
-      setCategories((prev) => prev.map((category) => (category.id === row.id ? payload.category : category)).sort((a, b) => a.name.localeCompare(b.name)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Category updated")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save category")
-    } finally {
-      setIsSavingId(null)
-    }
-  }
-
   async function savePanelCategory() {
     if (!selectedCategory) return
     clearNotices()
@@ -298,51 +261,19 @@ export default function CategoriesClient({
   }
 
   function renderRow(category: CategoryRow) {
-    const draft = getDraft(category.id)
     const cells: Record<string, ReactNode> = {
       edit: (
         <td key="edit" className="px-3 py-2">
           <EditRowButton onClick={() => openEditCategory(category)} />
         </td>
       ),
-      name: (
-        <td key="name" className="px-3 py-2">
-          <input value={draft.name} onChange={(event) => setDraftField(category.id, "name", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-        </td>
-      ),
-      sendUnit: (
-        <td key="sendUnit" className="px-3 py-2">
-          <UnitSelect value={draft.sendUnitId} onChange={(value) => setDraftField(category.id, "sendUnitId", value)} options={unitOfMeasureOptions} />
-        </td>
-      ),
-      stockUnit: (
-        <td key="stockUnit" className="px-3 py-2">
-          <UnitSelect value={draft.stockUnitId} onChange={(value) => setDraftField(category.id, "stockUnitId", value)} options={unitOfMeasureOptions} />
-        </td>
-      ),
-      coverageAvailableUnit: (
-        <td key="coverageAvailableUnit" className="px-3 py-2">
-          <UnitSelect value={draft.coverageAvailableUnitId} onChange={(value) => setDraftField(category.id, "coverageAvailableUnitId", value)} options={unitOfMeasureOptions} />
-        </td>
-      ),
-      itemCoverageUnit: (
-        <td key="itemCoverageUnit" className="px-3 py-2">
-          <UnitSelect value={draft.itemCoverageUnitId} onChange={(value) => setDraftField(category.id, "itemCoverageUnitId", value)} options={unitOfMeasureOptions} />
-        </td>
-      ),
-      serviceUnit: (
-        <td key="serviceUnit" className="px-3 py-2">
-          <UnitSelect value={draft.serviceUnitId} onChange={(value) => setDraftField(category.id, "serviceUnitId", value)} options={unitOfMeasureOptions} />
-        </td>
-      ),
+      name: <td key="name" className="px-3 py-2 font-medium">{category.name}</td>,
+      sendUnit: <td key="sendUnit" className="px-3 py-2">{category.sendUnit || "-"}</td>,
+      stockUnit: <td key="stockUnit" className="px-3 py-2">{category.stockUnit || "-"}</td>,
+      coverageAvailableUnit: <td key="coverageAvailableUnit" className="px-3 py-2">{category.coverageAvailableUnit || "-"}</td>,
+      itemCoverageUnit: <td key="itemCoverageUnit" className="px-3 py-2">{category.itemCoverageUnit || "-"}</td>,
+      serviceUnit: <td key="serviceUnit" className="px-3 py-2">{category.serviceUnit || "-"}</td>,
       products: <td key="products" className="px-3 py-2">{category.productCount}</td>,
-      save: (
-        <td key="save" className="px-3 py-2">
-          <SaveRowButton onClick={() => void saveCategory(category)} disabled={isSavingId === category.id}>
-            {isSavingId === category.id ? "Saving..." : "Save"}
-          </SaveRowButton>
-        </td>
-      ),
       delete: (
         <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteCategory(category)} disabled={deletingId === category.id}>
@@ -434,7 +365,7 @@ export default function CategoriesClient({
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Name">
-              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: categoryForm.name.trim() === "" })}`} />
             </FormField>
             <FormField label="Send Unit">
               <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />
@@ -471,7 +402,7 @@ export default function CategoriesClient({
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Name">
-              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: categoryForm.name.trim() === "" })}`} />
             </FormField>
             <FormField label="Send Unit">
               <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />

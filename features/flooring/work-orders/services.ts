@@ -126,7 +126,7 @@ export function normalizeWorkOrderItem(item: {
   linkedInventory: {
     itemNumber: string
     dyeLot: string
-    location: { locationCode: string; warehouse: { name: string } }
+    location: { locationCode: string; warehouse: { name: string } } | null
   } | null
 }) {
   return {
@@ -139,7 +139,7 @@ export function normalizeWorkOrderItem(item: {
     notes: item.notes ?? "",
     linkedInventoryId: item.linkedInventoryId ?? "",
     linkedInventoryLabel: item.linkedInventory
-      ? `${item.linkedInventory.location.warehouse.name} / ${item.linkedInventory.location.locationCode} / Item ${item.linkedInventory.itemNumber}${item.linkedInventory.dyeLot ? ` / Dye ${item.linkedInventory.dyeLot}` : ""}`
+      ? `${item.linkedInventory.location ? `${item.linkedInventory.location.warehouse.name} / ${item.linkedInventory.location.locationCode}` : "No location"} / Item ${item.linkedInventory.itemNumber}${item.linkedInventory.dyeLot ? ` / Dye ${item.linkedInventory.dyeLot}` : ""}`
       : "",
     changeOrderStatus: item.changeOrderStatus ?? "SUFFICIENT",
   }

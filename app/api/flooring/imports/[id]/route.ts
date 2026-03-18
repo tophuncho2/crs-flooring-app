@@ -50,7 +50,7 @@ type ParsedImportItem = {
   cost: Prisma.Decimal | null
   freight: Prisma.Decimal | null
   notes: string | null
-  locationId: string
+  locationId: string | null
 }
 
 function parseImportItems(items: unknown[]): ParsedImportItem[] {
@@ -70,9 +70,33 @@ function parseImportItems(items: unknown[]): ParsedImportItem[] {
         cost: parseOptionalDecimal(row.cost, `Item ${index + 1}: cost`, 2),
         freight: parseOptionalDecimal(row.freight, `Item ${index + 1}: freight`, 2),
         notes: parseOptionalString(row.notes),
-        locationId: parseRequiredString(row.locationId, `Item ${index + 1}: location`),
+        locationId: parseOptionalString(row.locationId),
       },
     ]
+  })
+}
+
+async function validateImportLocationIds(tx: Prisma.TransactionClient, warehouseId: string | null, items: ParsedImportItem[]) {
+  const explicitLocationIds = items.map((item) => item.locationId).filter((value): value is string => Boolean(value))
+  if (explicitLocationIds.length === 0) return items
+
+  const locations = await tx.flooringLocation.findMany({
+    where: { id: { in: explicitLocationIds } },
+    select: { id: true, warehouseId: true },
+  })
+  const locationMap = new Map(locations.map((location) => [location.id, location]))
+
+  return items.map((item, index) => {
+    if (!item.locationId) return item
+
+    const explicitLocation = locationMap.get(item.locationId)
+    if (!explicitLocation) {
+      throw { message: `Item ${index + 1}: location is invalid`, field: "locationId" }
+    }
+    if (warehouseId && explicitLocation.warehouseId !== warehouseId) {
+      throw { message: `Item ${index + 1}: location does not belong to the selected warehouse`, field: "locationId" }
+    }
+    return item
   })
 }
 
@@ -94,7 +118,7 @@ function normalizeImportInventory(row: {
   cost: Prisma.Decimal | null
   freight: Prisma.Decimal | null
   notes: string | null
-  locationId: string
+  locationId: string | null
   product: {
     id: string
     name: string
@@ -107,7 +131,7 @@ function normalizeImportInventory(row: {
     id: string
     locationCode: string
     warehouse: { id: string; name: string }
-  }
+  } | null
 }) {
   return {
     id: row.id,
@@ -120,10 +144,10 @@ function normalizeImportInventory(row: {
     cost: row.cost?.toString() ?? "",
     freight: row.freight?.toString() ?? "",
     notes: row.notes ?? "",
-    locationId: row.locationId,
-    locationCode: row.location.locationCode,
-    warehouseId: row.location.warehouse.id,
-    warehouseName: row.location.warehouse.name,
+    locationId: row.locationId ?? "",
+    locationCode: row.location?.locationCode ?? "",
+    warehouseId: row.location?.warehouse.id ?? "",
+    warehouseName: row.location?.warehouse.name ?? "",
     sectionName: "",
   }
 }
@@ -149,7 +173,7 @@ function normalizeImportEntry(entry: {
     cost: Prisma.Decimal | null
     freight: Prisma.Decimal | null
     notes: string | null
-    locationId: string
+    locationId: string | null
     product: {
       id: string
       name: string
@@ -162,7 +186,7 @@ function normalizeImportEntry(entry: {
       id: string
       locationCode: string
       warehouse: { id: string; name: string }
-    }
+    } | null
   }>
   _count: { inventories: number }
 }) {
@@ -195,24 +219,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const entry = await prisma.$transaction(async (tx) => {
       const warehouseId = parseOptionalString(body.warehouseId)
-
-      if (warehouseId && parsedItems.length > 0) {
-        const locations = await tx.flooringLocation.findMany({
-          where: { id: { in: parsedItems.map((item) => item.locationId) } },
-          select: { id: true, warehouseId: true },
-        })
-        const locationMap = new Map(locations.map((location) => [location.id, location]))
-
-        for (const [index, item] of parsedItems.entries()) {
-          const location = locationMap.get(item.locationId)
-          if (!location) {
-            throw { message: `Item ${index + 1}: location is invalid`, field: "locationId" }
-          }
-          if (location.warehouseId !== warehouseId) {
-            throw { message: `Item ${index + 1}: location does not belong to the selected warehouse`, field: "locationId" }
-          }
-        }
-      }
+      const validatedItems = await validateImportLocationIds(tx, warehouseId, parsedItems)
 
       await tx.flooringImportEntry.update({
         where: { id },
@@ -228,7 +235,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       await tx.flooringInventory.deleteMany({ where: { importEntryId: id } })
 
-      for (const item of parsedItems) {
+      for (const item of validatedItems) {
         await tx.flooringInventory.create({
           data: {
             importEntryId: id,
