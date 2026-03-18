@@ -187,6 +187,9 @@ export default function ManagementCompaniesClient({
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [selectedCompany, setSelectedCompany] = useState<ManagementCompanyRow | null>(null)
+  const [selectedCompanyMode, setSelectedCompanyMode] = useState<"view" | "edit">("view")
+  const [selectedCompanyDraft, setSelectedCompanyDraft] = useState<DraftCompany>(defaultDraft)
+  const [isSavingSelectedCompany, setIsSavingSelectedCompany] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
   const [isPropertyCreateOpen, setIsPropertyCreateOpen] = useState(false)
   const [propertyDraft, setPropertyDraft] = useState<DraftProperty>(defaultPropertyDraft)
@@ -246,6 +249,23 @@ export default function ManagementCompaniesClient({
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
+  function setSelectedCompanyDraftField(field: keyof DraftCompany, value: string) {
+    const normalizedValue = field === "state" ? normalizeState(value) : value
+    setSelectedCompanyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function createCompanyDraft(company: ManagementCompanyRow): DraftCompany {
+    return {
+      name: company.name,
+      streetAddress: company.streetAddress,
+      city: company.city,
+      state: company.state,
+      zip: company.zip,
+      phone: company.phone,
+      email: company.email,
+    }
+  }
+
   function setPropertyDraftField(field: keyof DraftProperty, value: string) {
     const normalizedValue = field === "state" ? normalizeState(value) : value
     setPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
@@ -255,12 +275,22 @@ export default function ManagementCompaniesClient({
     setNewTemplateDraft((prev) => ({ ...prev, [field]: value }))
   }
 
-  function openCompany(company: ManagementCompanyRow) {
+  function openCompany(company: ManagementCompanyRow, mode: "view" | "edit") {
     setError("")
     setMessage("")
     setIsPropertyCreateOpen(false)
     setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: company.id })
     setSelectedCompany(company)
+    setSelectedCompanyMode(mode)
+    setSelectedCompanyDraft(createCompanyDraft(company))
+  }
+
+  function closeCompanyPanel() {
+    closeTemplate()
+    setSelectedProperty(null)
+    setSelectedCompany(null)
+    setSelectedCompanyMode("view")
+    setSelectedCompanyDraft(defaultDraft)
   }
 
   async function openProperty(propertyId: string) {
@@ -552,11 +582,100 @@ export default function ManagementCompaniesClient({
       }
 
       setCompanies((prev) => prev.filter((company) => company.id !== id))
+      if (selectedCompany?.id === id) {
+        closeCompanyPanel()
+      }
       setMessage("Management company deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete company")
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function saveSelectedCompany() {
+    if (!selectedCompany) return
+    setError("")
+    setMessage("")
+    setIsSavingSelectedCompany(true)
+
+    try {
+      if (!selectedCompanyDraft.name.trim()) {
+        throw new Error("Company name is required")
+      }
+
+      const response = await fetch(`/api/flooring/management-companies/${selectedCompany.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedCompanyDraft.name,
+          streetAddress: selectedCompanyDraft.streetAddress,
+          city: selectedCompanyDraft.city,
+          state: selectedCompanyDraft.state,
+          zip: selectedCompanyDraft.zip,
+          phone: selectedCompanyDraft.phone,
+          email: selectedCompanyDraft.email,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        managementCompany?: {
+          id: string
+          name: string
+          streetAddress?: string | null
+          city?: string | null
+          state?: string | null
+          zip?: string | null
+          postalCode?: string | null
+          phone?: string | null
+          email?: string | null
+          fullAddress?: string
+          properties?: ManagementCompanyRow["properties"]
+        }
+      }
+
+      if (!response.ok || !payload.managementCompany) {
+        throw new Error(payload.error ?? "Failed to save management company")
+      }
+
+      const updatedCompany: ManagementCompanyRow = {
+        id: payload.managementCompany.id,
+        name: payload.managementCompany.name,
+        streetAddress: payload.managementCompany.streetAddress ?? "",
+        city: payload.managementCompany.city ?? "",
+        state: payload.managementCompany.state ?? "",
+        zip: payload.managementCompany.zip ?? payload.managementCompany.postalCode ?? "",
+        phone: payload.managementCompany.phone ?? "",
+        email: payload.managementCompany.email ?? "",
+        fullAddress:
+          payload.managementCompany.fullAddress ??
+          computeFullAddress({
+            streetAddress: payload.managementCompany.streetAddress ?? "",
+            city: payload.managementCompany.city ?? "",
+            state: payload.managementCompany.state ?? "",
+            zip: payload.managementCompany.zip ?? payload.managementCompany.postalCode ?? "",
+          }),
+        properties: payload.managementCompany.properties ?? selectedCompany.properties,
+      }
+
+      setCompanies((prev) => prev.map((company) => (company.id === updatedCompany.id ? updatedCompany : company)))
+      setSelectedCompany(updatedCompany)
+      setSelectedCompanyDraft(createCompanyDraft(updatedCompany))
+      setSelectedCompanyMode("edit")
+      setSelectedProperty((prev) =>
+        prev && prev.managementCompany?.id === updatedCompany.id
+          ? {
+              ...prev,
+              managementCompany: { id: updatedCompany.id, name: updatedCompany.name },
+            }
+          : prev,
+      )
+      setMessage("Management company saved")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save management company")
+    } finally {
+      setIsSavingSelectedCompany(false)
     }
   }
 
@@ -622,12 +741,12 @@ export default function ManagementCompaniesClient({
                 const cells: Record<string, ReactNode> = {
                   edit: (
                     <td key="edit" className="px-2 py-2">
-                      <EditRowButton onClick={() => openCompany(row)} className="px-2 py-1" />
+                      <EditRowButton onClick={() => openCompany(row, "edit")} className="px-2 py-1" />
                     </td>
                   ),
                   open: (
                     <td key="open" className="px-2 py-2">
-                      <OpenRowButton onClick={() => openCompany(row)} className="px-2 py-1">Open</OpenRowButton>
+                      <OpenRowButton onClick={() => openCompany(row, "view")} className="px-2 py-1">Open</OpenRowButton>
                     </td>
                   ),
                   company: <td key="company" className="px-3 py-2">{row.name}</td>,
@@ -716,17 +835,22 @@ export default function ManagementCompaniesClient({
                 {
                   key: `company-${selectedCompany.id}`,
                   title: selectedCompany.name,
-                  onClose: () => {
-                    closeTemplate()
-                    setSelectedProperty(null)
-                    setSelectedCompany(null)
-                  },
+                  onClose: closeCompanyPanel,
                   content: (
                     <ManagementCompanyRecordPanel
                       company={selectedCompany}
+                      mode={selectedCompanyMode}
+                      draft={selectedCompanyDraft}
+                      message={message}
+                      error={error}
                       isPropertyCreateOpen={isPropertyCreateOpen}
                       propertyDraft={propertyDraft}
                       loadingPropertyId={loadingPropertyId}
+                      isSaving={isSavingSelectedCompany}
+                      onDraftChange={(field, value) => setSelectedCompanyDraftField(field, value)}
+                      onSave={() => void saveSelectedCompany()}
+                      onDelete={() => void deleteCompany(selectedCompany.id)}
+                      onClose={closeCompanyPanel}
                       onPropertyDraftChange={(field, value) => setPropertyDraftField(field, value)}
                       onOpenProperty={(propertyId) => void openProperty(propertyId)}
                       onOpenCreateProperty={() => {

@@ -159,6 +159,9 @@ export default function PropertiesClient({
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
+  const [selectedPropertyMode, setSelectedPropertyMode] = useState<"view" | "edit">("view")
+  const [selectedPropertyDraft, setSelectedPropertyDraft] = useState<DraftProperty>(defaultDraft)
+  const [isSavingSelectedProperty, setIsSavingSelectedProperty] = useState(false)
   const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
   const {
@@ -212,6 +215,32 @@ export default function PropertiesClient({
   function setNewDraftField(field: keyof DraftProperty, value: string | string[]) {
     const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function setSelectedPropertyDraftField(field: keyof DraftProperty, value: string) {
+    const normalizedValue = field === "state" ? normalizeState(value) : value
+    setSelectedPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function createPropertyDraft(property: PropertyRow): DraftProperty {
+    return {
+      name: property.name,
+      streetAddress: property.streetAddress,
+      city: property.city,
+      state: property.state,
+      zip: property.zip,
+      phone: property.phone,
+      email: property.email,
+      managementCompanyId: property.managementCompany?.id ?? "",
+    }
+  }
+
+  function openPropertyPanel(property: PropertyRow, mode: "view" | "edit") {
+    setError("")
+    setMessage("")
+    setSelectedProperty(property)
+    setSelectedPropertyMode(mode)
+    setSelectedPropertyDraft(createPropertyDraft(property))
   }
 
   function updatePropertyTemplateSummary(propertyId: string, templateId: string, updater: (template: PropertyRow["templates"][number]) => PropertyRow["templates"][number] | null) {
@@ -289,6 +318,13 @@ export default function PropertiesClient({
     setActiveTemplate(null)
   }
 
+  function closePropertyPanel() {
+    closeTemplate()
+    setSelectedProperty(null)
+    setSelectedPropertyMode("view")
+    setSelectedPropertyDraft(defaultDraft)
+  }
+
   async function createProperty() {
     setError("")
     setMessage("")
@@ -352,11 +388,84 @@ export default function PropertiesClient({
       }
 
       setProperties((prev) => prev.filter((property) => property.id !== id))
+      if (selectedProperty?.id === id) {
+        closePropertyPanel()
+      }
       setMessage("Property deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete property")
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function saveSelectedProperty() {
+    if (!selectedProperty) return
+    setError("")
+    setMessage("")
+    setIsSavingSelectedProperty(true)
+
+    try {
+      if (!selectedPropertyDraft.name.trim()) {
+        throw new Error("Property name is required")
+      }
+
+      const response = await fetch(`/api/flooring/properties/${selectedProperty.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedPropertyDraft.name,
+          streetAddress: selectedPropertyDraft.streetAddress,
+          city: selectedPropertyDraft.city,
+          state: selectedPropertyDraft.state,
+          zip: selectedPropertyDraft.zip,
+          phone: selectedPropertyDraft.phone,
+          email: selectedPropertyDraft.email,
+          ...(selectedPropertyDraft.managementCompanyId ? { managementCompanyId: selectedPropertyDraft.managementCompanyId } : {}),
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string
+        property?: Omit<PropertyRow, "zip" | "managementCompany" | "templates"> & {
+          zip?: string
+          postalCode?: string
+          managementCompany?: PropertyManagementCompany | null
+          templates?: PropertyRow["templates"]
+        }
+      }
+
+      if (!response.ok || !payload.property) {
+        throw new Error(payload.error ?? "Failed to save property")
+      }
+
+      const updatedProperty: PropertyRow = {
+        id: payload.property.id,
+        name: payload.property.name,
+        streetAddress: payload.property.streetAddress ?? "",
+        city: payload.property.city ?? "",
+        state: payload.property.state ?? "",
+        zip: payload.property.zip ?? payload.property.postalCode ?? "",
+        phone: payload.property.phone ?? "",
+        email: payload.property.email ?? "",
+        fullAddress: payload.property.fullAddress,
+        managementCompany:
+          payload.property.managementCompany ??
+          (selectedPropertyDraft.managementCompanyId
+            ? managementOptions.find((option) => option.id === selectedPropertyDraft.managementCompanyId) ?? null
+            : null),
+        templates: payload.property.templates ?? selectedProperty.templates,
+      }
+
+      setProperties((prev) => prev.map((property) => (property.id === updatedProperty.id ? updatedProperty : property)))
+      setSelectedProperty(updatedProperty)
+      setSelectedPropertyDraft(createPropertyDraft(updatedProperty))
+      setSelectedPropertyMode("edit")
+      setMessage("Property saved")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save property")
+    } finally {
+      setIsSavingSelectedProperty(false)
     }
   }
 
@@ -431,12 +540,12 @@ export default function PropertiesClient({
                 const cells: Record<string, ReactNode> = {
                   edit: (
                     <td key="edit" className="px-2 py-2">
-                      <EditRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1" />
+                      <EditRowButton onClick={() => openPropertyPanel(row, "edit")} className="px-2 py-1" />
                     </td>
                   ),
                   open: (
                     <td key="open" className="px-2 py-2">
-                      <OpenRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1">Open</OpenRowButton>
+                      <OpenRowButton onClick={() => openPropertyPanel(row, "view")} className="px-2 py-1">Open</OpenRowButton>
                     </td>
                   ),
                   property: <td key="property" className="px-3 py-2">{row.name}</td>,
@@ -529,18 +638,25 @@ export default function PropertiesClient({
                 {
                   key: `property-${selectedProperty.id}`,
                   title: selectedProperty.name,
-                  onClose: () => {
-                    closeTemplate()
-                    setSelectedProperty(null)
-                  },
+                  onClose: closePropertyPanel,
                   content: (
                     <PropertyRecordPanel
                       property={selectedProperty}
+                      mode={selectedPropertyMode}
+                      draft={selectedPropertyDraft}
+                      managementOptions={managementOptions}
+                      message={message}
+                      error={error}
                       isTemplateCreateOpen={false}
                       newTemplateDraft={defaultTemplateDraft}
                       warehouseOptions={warehouseOptions}
                       padProductOptions={padProductOptions}
                       loadingTemplate={loadingTemplate}
+                      isSaving={isSavingSelectedProperty}
+                      onDraftChange={(field, value) => setSelectedPropertyDraftField(field, value)}
+                      onSave={() => void saveSelectedProperty()}
+                      onDelete={() => void deleteProperty(selectedProperty.id)}
+                      onClose={closePropertyPanel}
                       onTemplateDraftChange={() => undefined}
                       onOpenTemplate={(templateId) => void openTemplate(templateId)}
                     />
