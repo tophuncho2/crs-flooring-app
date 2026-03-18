@@ -5,7 +5,7 @@ import { Plus } from "lucide-react"
 import { PropertyRecordPanel } from "./property-record-panel"
 import { TemplateRecordPanel } from "../../templates/components/template-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
@@ -544,7 +544,7 @@ export default function PropertiesClient({
                 const cells: Record<string, ReactNode> = {
                   open: (
                     <td key="open" className="px-2 py-2">
-                      <OpenRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1" />
+                      <EditRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1" />
                     </td>
                   ),
                   property: (

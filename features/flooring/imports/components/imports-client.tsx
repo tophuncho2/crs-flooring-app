@@ -1,15 +1,18 @@
 "use client"
 
 import { type ReactNode, useMemo, useState } from "react"
-import { Plus, X } from "lucide-react"
+import { Plus } from "lucide-react"
+import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { RecordOptionsMenu } from "../../shared/record-options-menu"
+import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
+import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
-import { useTableControls } from "../../shared/use-table-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 
 type ImportRow = {
   id: string
@@ -153,37 +156,6 @@ function createEmptyDraft(): ImportDraft {
   }
 }
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
-      <div className="flex min-h-full items-start justify-center">
-        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
-          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FormField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-[var(--foreground)]/80">{label}</span>
-      {children}
-    </label>
-  )
-}
-
 function formatImportStatus(value: string) {
   return value === "FINAL" ? "Final" : "Pending"
 }
@@ -264,24 +236,34 @@ export default function ImportsClient({
     setIsAscendingSort,
     isGroupingEnabled,
     setIsGroupingEnabled,
+    groupByKeys,
+    updateGroupByKeyAtIndex,
+    addGroupByKey,
+    removeGroupByKeyAtIndex,
     groupFields,
     filteredRows: filteredImports,
     sortedRows: sortedImports,
-    groupedRows: groupedImports,
+    groupedRowTree,
   } = useTableControls({
     rows: imports,
     searchFields: [
       { key: "importNumber", getValue: (row) => `IMP-${String(row.importNumber).padStart(4, "0")}` },
       { key: "tag", getValue: (row) => row.tag },
+      { key: "warehouse", getValue: (row) => row.warehouseName },
+      { key: "status", getValue: (row) => row.status },
     ],
     sortField: (row) => String(row.importNumber),
-    groupFields: [{ key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName }],
+    groupFields: [
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
+      { key: "status", label: "Status", getValue: (row) => formatImportStatus(row.status) },
+      { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.transportType) },
+    ],
     defaultGrouped: true,
-    defaultGroupKey: "warehouse",
+    defaultGroupKeys: ["warehouse"],
   })
   const importColumns = useMemo(
     () => [
-      { key: "open", label: "Open" },
+      { key: "edit", label: "Edit" },
       { key: "importNumber", label: "Import #" },
       { key: "tag", label: "Tag" },
       { key: "transport", label: "Transport" },
@@ -529,11 +511,11 @@ export default function ImportsClient({
     }
   }
 
-      function renderImportRow(row: ImportRow) {
+  function renderImportRow(row: ImportRow) {
     const cells: Record<string, ReactNode> = {
-      open: (
-        <td key="open" className="px-3 py-2">
-          <OpenRowButton onClick={() => openImport(row.id)} />
+      edit: (
+        <td key="edit" className="px-3 py-2">
+          <EditRowButton onClick={() => openImport(row.id)} />
         </td>
       ),
       importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>,
@@ -559,6 +541,13 @@ export default function ImportsClient({
     )
   }
 
+  function renderGroupedRows(groups: GroupedRowTree<ImportRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleImportColumns.length} />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderImportRow(row))),
+    ])
+  }
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
@@ -579,6 +568,11 @@ export default function ImportsClient({
               isGroupingEnabled={isGroupingEnabled}
               onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
               groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              groupByKeys={groupByKeys}
+              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
+              onAddGroupBy={addGroupByKey}
+              onRemoveGroupBy={removeGroupByKeyAtIndex}
+              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={orderedImportColumns}
@@ -611,12 +605,7 @@ export default function ImportsClient({
               </tr>
           </TableHead>
             <tbody>
-              {isGroupingEnabled
-                ? groupedImports.flatMap(([groupName, rows]) => [
-                    <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={visibleImportColumns.length} />,
-                    ...rows.map((row) => renderImportRow(row)),
-                  ])
-                : sortedImports.map((row) => renderImportRow(row))}
+              {isGroupingEnabled ? renderGroupedRows(groupedRowTree) : sortedImports.map((row) => renderImportRow(row))}
               {filteredImports.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleImportColumns.length} /> : null}
             </tbody>
         </TableShell>
@@ -701,12 +690,10 @@ export default function ImportsClient({
               </FormField>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold">Inventory Table</h3>
-                  <p className="text-sm text-[var(--foreground)]/70">Pending inventory created here will stay out of live inventory until the import is final.</p>
-                </div>
+            <CollapsibleTableSection
+              title="Inventory Table"
+              defaultOpen
+              actions={
                 <button
                   type="button"
                   onClick={addItemRow}
@@ -714,8 +701,9 @@ export default function ImportsClient({
                 >
                   Add Item
                 </button>
-              </div>
-
+              }
+            >
+              <p className="text-sm text-[var(--foreground)]/70">Pending inventory created here will stay out of live inventory until the import is final.</p>
               <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
                 <table className="w-full min-w-[1380px] text-sm">
                   <thead className="bg-[var(--panel-hover)] text-left">
@@ -860,7 +848,7 @@ export default function ImportsClient({
                   </tbody>
                 </table>
               </div>
-            </div>
+            </CollapsibleTableSection>
 
             <div className="flex justify-end gap-2">
               <button
@@ -885,7 +873,23 @@ export default function ImportsClient({
       ) : null}
 
       {activeImport ? (
-        <ModalShell title={`Import IMP-${String(activeImport.importNumber).padStart(4, "0")}`} onClose={closeImport}>
+        <ModalShell
+          title={`Import IMP-${String(activeImport.importNumber).padStart(4, "0")}`}
+          onClose={closeImport}
+          sizeClass="max-w-6xl"
+          headerActions={
+            <RecordOptionsMenu
+              items={[
+                {
+                  label: "Go to Inventory",
+                  onSelect: () => {
+                    window.location.assign("/dashboard/flooring/inventory")
+                  },
+                },
+              ]}
+            />
+          }
+        >
           <div className="space-y-6">
             {message === "Import saved" ? (
               <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
@@ -971,22 +975,22 @@ export default function ImportsClient({
               </FormField>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold">Import Inventory Rows</h3>
-                <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
-              </div>
-              <button
-                type="button"
-                onClick={addActiveImportItemRow}
-                className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-              >
-                Add Item
-              </button>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-              <table className="w-full min-w-[1320px] text-sm">
+            <CollapsibleTableSection
+              title="Import Inventory Rows"
+              defaultOpen
+              actions={
+                <button
+                  type="button"
+                  onClick={addActiveImportItemRow}
+                  className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+                >
+                  Add Item
+                </button>
+              }
+            >
+              <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
+              <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+                <table className="w-full min-w-[1320px] text-sm">
                 <thead className="bg-[var(--panel-hover)] text-left">
                   <tr>
                     <th className="h-10 px-3 py-2">Product</th>
@@ -1106,6 +1110,7 @@ export default function ImportsClient({
                 </tbody>
               </table>
             </div>
+            </CollapsibleTableSection>
 
             <div className="flex justify-end gap-2">
               <button type="button" onClick={closeImport} disabled={isSaving} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">

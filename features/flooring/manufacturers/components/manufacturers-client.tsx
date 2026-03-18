@@ -1,8 +1,16 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
-import { Pencil, Plus, Trash2, X } from "lucide-react"
-import { TableActionsSummary } from "../../shared/table-shell"
+import { type ReactNode, useMemo, useState } from "react"
+import { Plus } from "lucide-react"
+import { BasicRecordPanel } from "../../shared/basic-record-panel"
+import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { RecordFormField as FormField } from "../../shared/record-form"
+import { TableColumnSettings } from "../../shared/table-column-settings"
+import TableControlsBar from "../../shared/table-controls-bar"
+import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { useTableColumns } from "../../shared/use-table-columns"
 
 type ManufacturerRow = {
   id: string
@@ -32,125 +40,215 @@ const emptyForm: ManufacturerForm = {
   email: "",
 }
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
-      <div className="flex min-h-full items-start justify-center">
-        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
-          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
-        </div>
-      </div>
-    </div>
-  )
+async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const response = await fetch(input, init)
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
+  if (!response.ok) {
+    throw new Error(typeof payload.error === "string" ? payload.error : "Request failed")
+  }
+  return payload as T
 }
 
-function FormField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-[var(--foreground)]/80">{label}</span>
-      {children}
-    </label>
-  )
+function toForm(manufacturer: ManufacturerRow): ManufacturerForm {
+  return {
+    name: manufacturer.name,
+    companyName: manufacturer.companyName,
+    website: manufacturer.website,
+    phone: manufacturer.phone,
+    email: manufacturer.email,
+  }
 }
 
 export default function ManufacturersClient({ initialManufacturers }: { initialManufacturers: ManufacturerRow[] }) {
   const [manufacturers, setManufacturers] = useState(initialManufacturers)
-  const [editingManufacturer, setEditingManufacturer] = useState<ManufacturerRow | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, ManufacturerForm>>({})
+  const [selectedManufacturer, setSelectedManufacturer] = useState<ManufacturerRow | null>(null)
   const [manufacturerForm, setManufacturerForm] = useState<ManufacturerForm>(emptyForm)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isSavingNew, setIsSavingNew] = useState(false)
+  const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [panelMessage, setPanelMessage] = useState("")
+  const [panelError, setPanelError] = useState("")
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    updateGroupByKeyAtIndex,
+    addGroupByKey,
+    removeGroupByKeyAtIndex,
+    groupFields,
+    filteredRows,
+    sortedRows,
+    groupedRowTree,
+  } = useTableControls({
+    rows: manufacturers,
+    searchFields: [
+      { key: "companyName", getValue: (row) => row.companyName },
+      { key: "name", getValue: (row) => row.name },
+      { key: "website", getValue: (row) => row.website },
+      { key: "phone", getValue: (row) => row.phone },
+      { key: "email", getValue: (row) => row.email },
+    ],
+    sortField: (row) => row.companyName || row.name,
+    groupFields: [
+      { key: "companyName", label: "Company", getValue: (row) => row.companyName || "No company" },
+      { key: "agent", label: "Agent", getValue: (row) => row.name },
+      { key: "products", label: "Products", getValue: (row) => String(row.productsCount) },
+    ],
+    defaultGroupKeys: ["companyName"],
+  })
+
+  const columns = useMemo(
+    () => [
+      { key: "edit", label: "Edit" },
+      { key: "companyName", label: "Company Name" },
+      { key: "name", label: "Agent Name" },
+      { key: "website", label: "Website" },
+      { key: "phone", label: "Phone" },
+      { key: "email", label: "Email" },
+      { key: "products", label: "Products" },
+      { key: "save", label: "Save" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+
+  const {
+    allColumns,
+    visibleColumns,
+    hiddenColumnKeys,
+    toggleColumnVisibility,
+    moveColumn,
+    setColumnOrder,
+  } = useTableColumns({
+    tableKey: "manufacturers-main",
+    columns,
+  })
 
   function clearNotices() {
     setMessage("")
     setError("")
+    setPanelMessage("")
+    setPanelError("")
+  }
+
+  function getDraft(id: string): ManufacturerForm {
+    const row = manufacturers.find((manufacturer) => manufacturer.id === id)
+    return drafts[id] ?? (row ? toForm(row) : emptyForm)
+  }
+
+  function setDraftField(id: string, field: keyof ManufacturerForm, value: string) {
+    const base = manufacturers.find((manufacturer) => manufacturer.id === id)
+    if (!base) return
+    setDrafts((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] ?? toForm(base)),
+        [field]: value,
+      },
+    }))
   }
 
   function openCreate() {
     clearNotices()
-    setEditingManufacturer(null)
     setManufacturerForm(emptyForm)
-    setIsModalOpen(true)
+    setIsCreateOpen(true)
   }
 
   function openEdit(manufacturer: ManufacturerRow) {
     clearNotices()
-    setEditingManufacturer(manufacturer)
-    setManufacturerForm({
-      name: manufacturer.name,
-      companyName: manufacturer.companyName,
-      website: manufacturer.website,
-      phone: manufacturer.phone,
-      email: manufacturer.email,
-    })
-    setIsModalOpen(true)
+    setSelectedManufacturer(manufacturer)
+    setManufacturerForm(toForm(manufacturer))
   }
 
-  async function saveManufacturer() {
-    clearNotices()
-    setIsSaving(true)
-
-    try {
-      const response = await fetch(
-        editingManufacturer ? `/api/flooring/manufacturers/${editingManufacturer.id}` : "/api/flooring/manufacturers",
-        {
-          method: editingManufacturer ? "PATCH" : "POST",
+  async function persistManufacturer(input: ManufacturerForm, id?: string) {
+    return id
+      ? apiJson<{ manufacturer: ManufacturerRow }>(`/api/flooring/manufacturers/${id}`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(manufacturerForm),
-        },
-      )
+          body: JSON.stringify(input),
+        })
+      : apiJson<{ manufacturer: ManufacturerRow }>("/api/flooring/manufacturers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        })
+  }
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        manufacturer?: ManufacturerRow
-        error?: string
-      }
-
-      if (!response.ok || !payload.manufacturer) {
-        throw new Error(payload.error ?? "Failed to save manufacturer")
-      }
-
-      setManufacturers((prev) => {
-        const next = editingManufacturer
-          ? prev.map((manufacturer) => (manufacturer.id === payload.manufacturer!.id ? payload.manufacturer! : manufacturer))
-          : [payload.manufacturer!, ...prev]
-        return next.sort((a, b) => a.companyName.localeCompare(b.companyName))
-      })
-      setIsModalOpen(false)
-      setMessage(editingManufacturer ? "Manufacturer updated" : "Manufacturer created")
+  async function createManufacturer() {
+    clearNotices()
+    setIsSavingNew(true)
+    try {
+      const payload = await persistManufacturer(manufacturerForm)
+      setManufacturers((prev) => [payload.manufacturer, ...prev].sort((a, b) => (a.companyName || a.name).localeCompare(b.companyName || b.name)))
+      setManufacturerForm(emptyForm)
+      setIsCreateOpen(false)
+      setMessage("Manufacturer created")
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save manufacturer")
     } finally {
-      setIsSaving(false)
+      setIsSavingNew(false)
+    }
+  }
+
+  async function saveManufacturer(row: ManufacturerRow) {
+    clearNotices()
+    setIsSavingId(row.id)
+    try {
+      const payload = await persistManufacturer(getDraft(row.id), row.id)
+      setManufacturers((prev) =>
+        prev.map((manufacturer) => (manufacturer.id === row.id ? payload.manufacturer : manufacturer)).sort((a, b) => (a.companyName || a.name).localeCompare(b.companyName || b.name)),
+      )
+      setDrafts((prev) => {
+        const next = { ...prev }
+        delete next[row.id]
+        return next
+      })
+      setMessage("Manufacturer updated")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save manufacturer")
+    } finally {
+      setIsSavingId(null)
+    }
+  }
+
+  async function savePanelManufacturer() {
+    if (!selectedManufacturer) return
+    clearNotices()
+    setIsSavingId(selectedManufacturer.id)
+    try {
+      const payload = await persistManufacturer(manufacturerForm, selectedManufacturer.id)
+      setManufacturers((prev) =>
+        prev
+          .map((manufacturer) => (manufacturer.id === selectedManufacturer.id ? payload.manufacturer : manufacturer))
+          .sort((a, b) => (a.companyName || a.name).localeCompare(b.companyName || b.name)),
+      )
+      setSelectedManufacturer(payload.manufacturer)
+      setManufacturerForm(toForm(payload.manufacturer))
+      setPanelMessage("Manufacturer updated")
+    } catch (saveError) {
+      setPanelError(saveError instanceof Error ? saveError.message : "Failed to save manufacturer")
+    } finally {
+      setIsSavingId(null)
     }
   }
 
   async function deleteManufacturer(manufacturer: ManufacturerRow) {
     if (!window.confirm(`Delete ${manufacturer.companyName || manufacturer.name || "this manufacturer"}?`)) return
-
     clearNotices()
     setDeletingId(manufacturer.id)
-
     try {
-      const response = await fetch(`/api/flooring/manufacturers/${manufacturer.id}`, { method: "DELETE" })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to delete manufacturer")
-      }
-
+      await apiJson<{ success: boolean }>(`/api/flooring/manufacturers/${manufacturer.id}`, { method: "DELETE" })
       setManufacturers((prev) => prev.filter((item) => item.id !== manufacturer.id))
+      setSelectedManufacturer((current) => (current?.id === manufacturer.id ? null : current))
       setMessage("Manufacturer deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete manufacturer")
@@ -159,140 +257,188 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     }
   }
 
+  function renderRow(manufacturer: ManufacturerRow) {
+    const draft = getDraft(manufacturer.id)
+    const cells: Record<string, ReactNode> = {
+      edit: (
+        <td key="edit" className="px-3 py-2">
+          <EditRowButton onClick={() => openEdit(manufacturer)} />
+        </td>
+      ),
+      companyName: (
+        <td key="companyName" className="px-3 py-2">
+          <input value={draft.companyName} onChange={(event) => setDraftField(manufacturer.id, "companyName", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+        </td>
+      ),
+      name: (
+        <td key="name" className="px-3 py-2">
+          <input value={draft.name} onChange={(event) => setDraftField(manufacturer.id, "name", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+        </td>
+      ),
+      website: (
+        <td key="website" className="px-3 py-2">
+          <input value={draft.website} onChange={(event) => setDraftField(manufacturer.id, "website", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+        </td>
+      ),
+      phone: (
+        <td key="phone" className="px-3 py-2">
+          <input value={draft.phone} onChange={(event) => setDraftField(manufacturer.id, "phone", event.target.value)} className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+        </td>
+      ),
+      email: (
+        <td key="email" className="px-3 py-2">
+          <input value={draft.email} onChange={(event) => setDraftField(manufacturer.id, "email", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+        </td>
+      ),
+      products: <td key="products" className="px-3 py-2">{manufacturer.productsCount}</td>,
+      save: (
+        <td key="save" className="px-3 py-2">
+          <SaveRowButton onClick={() => void saveManufacturer(manufacturer)} disabled={isSavingId === manufacturer.id}>
+            {isSavingId === manufacturer.id ? "Saving..." : "Save"}
+          </SaveRowButton>
+        </td>
+      ),
+      delete: (
+        <td key="delete" className="px-3 py-2">
+          <DeleteRowButton onClick={() => void deleteManufacturer(manufacturer)} disabled={deletingId === manufacturer.id}>
+            {deletingId === manufacturer.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </td>
+      ),
+    }
+
+    return <tr key={manufacturer.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">{visibleColumns.map((column) => cells[column.key])}</tr>
+  }
+
+  function renderGroupedRows(groups: GroupedRowTree<ManufacturerRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
+    ])
+  }
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Manufacturers</h1>
-            <p className="text-sm text-[var(--foreground)]/70">Manage manufacturer agents and their contact details for product linking.</p>
+            <p className="text-sm text-[var(--foreground)]/70">Manage manufacturer contacts and keep the manufacturer to product path aligned with the shared table and record-panel system.</p>
           </div>
-          <TableActionsSummary count={manufacturers.length}>
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+          <TableActionsSummary count={filteredRows.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search manufacturers"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              isGroupingEnabled={isGroupingEnabled}
+              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              groupByKeys={groupByKeys}
+              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
+              onAddGroupBy={addGroupByKey}
+              onRemoveGroupBy={removeGroupByKeyAtIndex}
+              maxGroupFields={MAX_GROUP_FIELDS}
             >
-              <Plus size={16} />
-              Manufacturer
-            </button>
+              <TableColumnSettings
+                columns={allColumns}
+                hiddenColumnKeys={hiddenColumnKeys}
+                onToggleColumn={toggleColumnVisibility}
+                onMoveColumn={moveColumn}
+                onSetColumnOrder={setColumnOrder}
+              />
+              <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
+                <Plus size={16} />
+                Manufacturer
+              </button>
+            </TableControlsBar>
           </TableActionsSummary>
         </div>
 
-        {message ? <p className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-        {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
-        <section className="mt-6">
-          <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="w-full min-w-[960px] text-sm">
-              <thead className="bg-[var(--panel-hover)] text-left">
-                <tr>
-                  <th className="h-10 px-3 py-2">Company Name</th>
-                  <th className="h-10 px-3 py-2">Agent Name</th>
-                  <th className="h-10 px-3 py-2">Website URL</th>
-                  <th className="h-10 px-3 py-2">Agent Phone</th>
-                  <th className="h-10 px-3 py-2">Agent Email</th>
-                  <th className="h-10 px-3 py-2">Products</th>
-                  <th className="h-10 px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {manufacturers.map((manufacturer) => (
-                  <tr key={manufacturer.id} className="border-t border-[var(--panel-border)]">
-                    <td className="px-3 py-2">{manufacturer.companyName || "-"}</td>
-                    <td className="px-3 py-2 font-medium">{manufacturer.name}</td>
-                    <td className="px-3 py-2">{manufacturer.website || "-"}</td>
-                    <td className="px-3 py-2">{manufacturer.phone || "-"}</td>
-                    <td className="px-3 py-2">{manufacturer.email || "-"}</td>
-                    <td className="px-3 py-2">{manufacturer.productsCount}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => openEdit(manufacturer)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void deleteManufacturer(manufacturer)}
-                          disabled={deletingId === manufacturer.id}
-                          className="rounded-md p-2 text-rose-500 hover:bg-rose-500/10 disabled:opacity-60"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {manufacturers.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-[var(--foreground)]/60">
-                      No manufacturers yet.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <TableShell minWidthClass="min-w-[1320px]">
+          <TableHead>
+            <tr>
+              {visibleColumns.map((column) => (
+                <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+              ))}
+            </tr>
+          </TableHead>
+          <tbody>
+            {isGroupingEnabled ? renderGroupedRows(groupedRowTree) : sortedRows.map((manufacturer) => renderRow(manufacturer))}
+            {filteredRows.length === 0 ? <TableEmptyRow message="No manufacturers yet." colSpan={visibleColumns.length} /> : null}
+          </tbody>
+        </TableShell>
       </div>
 
-      {isModalOpen ? (
-        <ModalShell title={editingManufacturer ? "Edit Manufacturer" : "Add Manufacturer"} onClose={() => setIsModalOpen(false)}>
-          <div className="space-y-5">
-          {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-          {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+      {isCreateOpen ? (
+        <BasicRecordPanel
+          title="New Manufacturer"
+          onClose={() => !isSavingNew && setIsCreateOpen(false)}
+          error={error}
+          saveLabel="Create Manufacturer"
+          savingLabel="Creating..."
+          deleteLabel="Delete Manufacturer"
+          deleteConfirmMessage="Delete this manufacturer?"
+          onSave={() => void createManufacturer()}
+          onDelete={() => {}}
+          isSaving={isSavingNew}
+        >
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label="Company Name">
-              <input
-                value={manufacturerForm.companyName}
-                onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
+              <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Agent Name">
-              <input
-                value={manufacturerForm.name}
-                onChange={(event) => setManufacturerForm((prev) => ({ ...prev, name: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
+              <input value={manufacturerForm.name} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
-            <FormField label="Website URL">
-              <input
-                value={manufacturerForm.website}
-                onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
+            <FormField label="Website">
+              <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
-            <FormField label="Agent Phone">
-              <input
-                value={manufacturerForm.phone}
-                onChange={(event) => setManufacturerForm((prev) => ({ ...prev, phone: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
+            <FormField label="Phone">
+              <input value={manufacturerForm.phone} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, phone: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
-            <FormField label="Agent Email">
-              <input
-                value={manufacturerForm.email}
-                onChange={(event) => setManufacturerForm((prev) => ({ ...prev, email: event.target.value }))}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
+            <FormField label="Email">
+              <input value={manufacturerForm.email} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, email: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
           </div>
+        </BasicRecordPanel>
+      ) : null}
 
-          <div className="mt-5 flex justify-end gap-2">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => void saveManufacturer()}
-              disabled={isSaving}
-              className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
-            >
-              {isSaving ? "Saving..." : "Save Manufacturer"}
-            </button>
+      {selectedManufacturer ? (
+        <BasicRecordPanel
+          title={`Manufacturer ${selectedManufacturer.companyName || selectedManufacturer.name}`}
+          onClose={() => setSelectedManufacturer(null)}
+          message={panelMessage}
+          error={panelError}
+          saveLabel="Save Manufacturer"
+          savingLabel="Saving..."
+          deleteLabel="Delete Manufacturer"
+          deleteConfirmMessage={`Delete ${selectedManufacturer.companyName || selectedManufacturer.name}?`}
+          onSave={() => void savePanelManufacturer()}
+          onDelete={() => void deleteManufacturer(selectedManufacturer)}
+          isSaving={isSavingId === selectedManufacturer.id || deletingId === selectedManufacturer.id}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField label="Company Name">
+              <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            </FormField>
+            <FormField label="Agent Name">
+              <input value={manufacturerForm.name} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            </FormField>
+            <FormField label="Website">
+              <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            </FormField>
+            <FormField label="Phone">
+              <input value={manufacturerForm.phone} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, phone: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            </FormField>
+            <FormField label="Email">
+              <input value={manufacturerForm.email} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, email: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            </FormField>
           </div>
-          </div>
-        </ModalShell>
+        </BasicRecordPanel>
       ) : null}
     </div>
   )

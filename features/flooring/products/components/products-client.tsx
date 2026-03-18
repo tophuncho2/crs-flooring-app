@@ -1,15 +1,17 @@
 "use client"
 
 import { type ChangeEvent, type ReactNode, useMemo, useState } from "react"
-import { ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
+import { Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react"
+import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { OpenRowButton } from "../../shared/row-action-buttons"
+import { RecordOptionsMenu } from "../../shared/record-options-menu"
+import { EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
-import { useTableControls } from "../../shared/use-table-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 
 type CategoryOption = {
   id: string
@@ -206,7 +208,6 @@ export default function FlooringProductsClient({
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
   const [isSavingProduct, setIsSavingProduct] = useState(false)
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false)
-  const [newPhotoUrl, setNewPhotoUrl] = useState("")
   const [newBaseColor, setNewBaseColor] = useState("")
   const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
   const [activeProduct, setActiveProduct] = useState<ProductRow | null>(null)
@@ -239,24 +240,34 @@ export default function FlooringProductsClient({
     setIsAscendingSort,
     isGroupingEnabled,
     setIsGroupingEnabled,
-    groupByKey,
-    setGroupByKey,
+    groupByKeys,
+    updateGroupByKeyAtIndex,
+    addGroupByKey,
+    removeGroupByKeyAtIndex,
     groupFields,
     filteredRows: filteredProducts,
     sortedRows: sortedProducts,
-    groupedRows: groupedProducts,
+    groupedRowTree,
   } = useTableControls({
     rows: products,
-    searchFields: [{ key: "productName", getValue: (row) => row.name }],
+    searchFields: [
+      { key: "productName", getValue: (row) => row.name },
+      { key: "category", getValue: (row) => row.category.name },
+      { key: "manufacturer", getValue: (row) => row.manufacturerName },
+      { key: "style", getValue: (row) => row.style },
+      { key: "color", getValue: (row) => row.color },
+    ],
     sortField: (row) => row.name,
     groupFields: [
       { key: "category", label: "Category", getValue: (row) => row.category.name },
       { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName },
+      { key: "baseColor", label: "Base Color", getValue: (row) => row.baseColor },
     ],
+    defaultGroupKeys: ["category"],
   })
   const productColumns = useMemo(
     () => [
-      { key: "open", label: "Open" },
+      { key: "edit", label: "Edit" },
       { key: "product", label: "Product" },
       { key: "category", label: "Category" },
       { key: "manufacturer", label: "Manufacturer" },
@@ -292,9 +303,9 @@ export default function FlooringProductsClient({
 
   function renderProductRow(product: ProductRow) {
     const cells: Record<string, ReactNode> = {
-      open: (
-        <td key="open" className="px-3 py-2">
-          <OpenRowButton onClick={() => void openProductInventory(product)} />
+      edit: (
+        <td key="edit" className="px-3 py-2">
+          <EditRowButton onClick={() => void openProductInventory(product)} />
         </td>
       ),
       product: <td key="product" className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>,
@@ -334,11 +345,17 @@ export default function FlooringProductsClient({
     )
   }
 
+  function renderGroupedRows(groups: GroupedRowTree<ProductRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleProductColumns.length} />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((product) => renderProductRow(product))),
+    ])
+  }
+
   function openCreateProduct() {
     clearNotices()
     setEditingProduct(null)
     setProductForm(emptyProductForm)
-    setNewPhotoUrl("")
     setNewBaseColor("")
     setIsProductModalOpen(true)
   }
@@ -369,7 +386,6 @@ export default function FlooringProductsClient({
     clearNotices()
     setEditingProduct(product)
     setProductForm(toProductForm(product))
-    setNewPhotoUrl("")
     setNewBaseColor("")
     setIsProductModalOpen(true)
   }
@@ -383,10 +399,6 @@ export default function FlooringProductsClient({
     setCutLogError("")
     setCutLogMessage("")
     setCutLogDraft(emptyCutLogDraft)
-  }
-
-  function toggleWarehouse(warehouseName: string) {
-    setExpandedWarehouses((prev) => (prev.includes(warehouseName) ? prev.filter((name) => name !== warehouseName) : [...prev, warehouseName]))
   }
 
   function openInventoryRow(rowId: string) {
@@ -556,16 +568,6 @@ export default function FlooringProductsClient({
     }
   }
 
-  function addPhotoUrl() {
-    const trimmed = newPhotoUrl.trim()
-    if (!trimmed) return
-    setProductForm((prev) => ({
-      ...prev,
-      photoUrls: Array.from(new Set([...prev.photoUrls, trimmed])),
-    }))
-    setNewPhotoUrl("")
-  }
-
   function removePhotoUrl(url: string) {
     setProductForm((prev) => ({
       ...prev,
@@ -601,8 +603,11 @@ export default function FlooringProductsClient({
               isGroupingEnabled={isGroupingEnabled}
               onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
               groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-              groupByKey={groupByKey}
-              onGroupByKeyChange={setGroupByKey}
+              groupByKeys={groupByKeys}
+              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
+              onAddGroupBy={addGroupByKey}
+              onRemoveGroupBy={removeGroupByKeyAtIndex}
+              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={orderedProductColumns}
@@ -637,12 +642,7 @@ export default function FlooringProductsClient({
                 </tr>
               </TableHead>
               <tbody>
-                {isGroupingEnabled
-                  ? groupedProducts.flatMap(([groupName, rows]) => [
-                      <TableGroupRow key={`group-${groupName}`} label={groupName} colSpan={visibleProductColumns.length} />,
-                      ...rows.map((product) => renderProductRow(product)),
-                    ])
-                  : sortedProducts.map((product) => renderProductRow(product))}
+                {isGroupingEnabled ? renderGroupedRows(groupedRowTree) : sortedProducts.map((product) => renderProductRow(product))}
                 {filteredProducts.length === 0 ? <TableEmptyRow message="No flooring products yet." colSpan={visibleProductColumns.length} /> : null}
               </tbody>
           </TableShell>
@@ -782,24 +782,13 @@ export default function FlooringProductsClient({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="font-medium">Photos</h3>
-                    <p className="text-xs text-[var(--foreground)]/65">Upload to the bucket or attach an existing bucket URL.</p>
+                    <p className="text-xs text-[var(--foreground)]/65">Drop files here through the bucket upload path. Manual URL entry is no longer part of the product panel flow.</p>
                   </div>
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm hover:bg-[var(--panel-hover)]">
                     <Upload size={16} />
                     {isUploadingPhotos ? "Uploading..." : "Upload Photos"}
                     <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
                   </label>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <input
-                    value={newPhotoUrl}
-                    onChange={(event) => setNewPhotoUrl(event.target.value)}
-                    placeholder="https://bucket.example/path/image.jpg"
-                    className="flex-1 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 text-sm"
-                  />
-                  <button type="button" onClick={addPhotoUrl} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-                    Add URL
-                  </button>
                 </div>
               </div>
             </div>
@@ -847,7 +836,22 @@ export default function FlooringProductsClient({
       ) : null}
 
       {activeProduct ? (
-        <ModalShell title={activeProduct.name || "Product"} onClose={closeProductInventory}>
+        <ModalShell
+          title={activeProduct.name || "Product"}
+          onClose={closeProductInventory}
+          headerActions={
+            <RecordOptionsMenu
+              items={[
+                {
+                  label: "Go to Inventory",
+                  onSelect: () => {
+                    window.location.assign("/dashboard/flooring/inventory")
+                  },
+                },
+              ]}
+            />
+          }
+        >
           <div className="space-y-6">
             {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
             {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
@@ -915,23 +919,15 @@ export default function FlooringProductsClient({
               ) : (
                 Array.from(new Set(inventoryRows.map((row) => row.warehouseName))).map((warehouseName) => {
                   const warehouseRows = inventoryRows.filter((row) => row.warehouseName === warehouseName)
-                  const isExpanded = expandedWarehouses.includes(warehouseName)
 
                   return (
-                    <div key={warehouseName} className="overflow-hidden rounded-lg border border-[var(--panel-border)]">
-                      <button
-                        type="button"
-                        onClick={() => toggleWarehouse(warehouseName)}
-                        className="flex w-full items-center justify-between bg-[var(--panel-hover)] px-4 py-3 text-left"
-                      >
-                        <span className="flex items-center gap-2 text-sm font-semibold">
-                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                          {warehouseName}
-                        </span>
-                        <span className="text-xs text-[var(--foreground)]/60">{warehouseRows.length} rows</span>
-                      </button>
-
-                      {isExpanded ? (
+                    <CollapsibleTableSection
+                      key={warehouseName}
+                      title={warehouseName}
+                      defaultOpen={expandedWarehouses.includes(warehouseName)}
+                      actions={<span className="text-xs text-[var(--foreground)]/60">{warehouseRows.length} rows</span>}
+                      className="overflow-hidden rounded-lg border border-[var(--panel-border)] p-0"
+                    >
                         <div className="overflow-x-auto">
                           <table className="w-full min-w-[980px] text-sm">
                             <thead className="bg-[var(--panel-hover)]/60 text-left">
@@ -974,8 +970,7 @@ export default function FlooringProductsClient({
                             </tbody>
                           </table>
                         </div>
-                      ) : null}
-                    </div>
+                    </CollapsibleTableSection>
                   )
                 })
               )}

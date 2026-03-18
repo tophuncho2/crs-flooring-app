@@ -4,7 +4,7 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { TemplateRecordPanel } from "./template-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, OpenRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
@@ -364,7 +364,7 @@ export default function TemplatesClient({
                 const cells: Record<string, ReactNode> = {
                   open: (
                     <td key="open" className="px-3 py-2">
-                      <OpenRowButton onClick={() => void openTemplate(row)} />
+                      <EditRowButton onClick={() => void openTemplate(row)} />
                     </td>
                   ),
                   templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,

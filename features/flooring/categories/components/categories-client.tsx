@@ -1,8 +1,16 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
-import { Pencil, Plus, Save, Trash2, X } from "lucide-react"
-import { TableActionsSummary } from "../../shared/table-shell"
+import { type ReactNode, useMemo, useState } from "react"
+import { Plus } from "lucide-react"
+import { BasicRecordPanel } from "../../shared/basic-record-panel"
+import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { RecordFormField as FormField } from "../../shared/record-form"
+import { TableColumnSettings } from "../../shared/table-column-settings"
+import TableControlsBar from "../../shared/table-controls-bar"
+import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { useTableColumns } from "../../shared/use-table-columns"
 
 type CategoryRow = {
   id: string
@@ -45,33 +53,6 @@ const emptyCategoryForm: CategoryForm = {
   serviceUnitId: "",
 }
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28">
-      <div className="flex min-h-full items-start justify-center">
-        <div className="flex max-h-[calc(100vh-7rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]">
-          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <button type="button" onClick={onClose} className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]">
-              <X size={18} />
-            </button>
-          </div>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FormField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-[var(--foreground)]/80">{label}</span>
-      {children}
-    </label>
-  )
-}
-
 async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init)
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
@@ -102,7 +83,7 @@ function UnitSelect({
   options: UnitOfMeasureOption[]
 }) {
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2">
+    <select value={value} onChange={(event) => onChange(event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
       <option value="">None</option>
       {options.map((option) => (
         <option key={option.id} value={option.id}>
@@ -121,155 +102,339 @@ export default function CategoriesClient({
   unitOfMeasureOptions: UnitOfMeasureOption[]
 }) {
   const [categories, setCategories] = useState(initialCategories)
+  const [drafts, setDrafts] = useState<Record<string, CategoryForm>>({})
+  const [selectedCategory, setSelectedCategory] = useState<CategoryRow | null>(null)
+  const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isSavingNew, setIsSavingNew] = useState(false)
+  const [isSavingId, setIsSavingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null)
-  const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm)
-  const [isSavingCategory, setIsSavingCategory] = useState(false)
+  const [panelMessage, setPanelMessage] = useState("")
+  const [panelError, setPanelError] = useState("")
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    updateGroupByKeyAtIndex,
+    addGroupByKey,
+    removeGroupByKeyAtIndex,
+    groupFields,
+    filteredRows,
+    sortedRows,
+    groupedRowTree,
+  } = useTableControls({
+    rows: categories,
+    searchFields: [
+      { key: "name", getValue: (row) => row.name },
+      { key: "sendUnit", getValue: (row) => row.sendUnit },
+      { key: "stockUnit", getValue: (row) => row.stockUnit },
+      { key: "coverageAvailableUnit", getValue: (row) => row.coverageAvailableUnit },
+      { key: "itemCoverageUnit", getValue: (row) => row.itemCoverageUnit },
+      { key: "serviceUnit", getValue: (row) => row.serviceUnit },
+    ],
+    sortField: (row) => row.name,
+    groupFields: [
+      { key: "name", label: "Category", getValue: (row) => row.name },
+      { key: "sendUnit", label: "Send Unit", getValue: (row) => row.sendUnit },
+      { key: "stockUnit", label: "Stock Unit", getValue: (row) => row.stockUnit },
+      { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit },
+    ],
+    defaultGroupKeys: ["sendUnit"],
+  })
+
+  const columns = useMemo(
+    () => [
+      { key: "edit", label: "Edit" },
+      { key: "name", label: "Category" },
+      { key: "sendUnit", label: "Send Unit" },
+      { key: "stockUnit", label: "Stock Unit" },
+      { key: "coverageAvailableUnit", label: "Coverage Available Unit" },
+      { key: "itemCoverageUnit", label: "Item Coverage Unit" },
+      { key: "serviceUnit", label: "Service Unit" },
+      { key: "products", label: "Products" },
+      { key: "save", label: "Save" },
+      { key: "delete", label: "Delete" },
+    ],
+    [],
+  )
+
+  const {
+    allColumns,
+    visibleColumns,
+    hiddenColumnKeys,
+    toggleColumnVisibility,
+    moveColumn,
+    setColumnOrder,
+  } = useTableColumns({
+    tableKey: "categories-main",
+    columns,
+  })
 
   function clearNotices() {
     setMessage("")
     setError("")
+    setPanelMessage("")
+    setPanelError("")
+  }
+
+  function getDraft(id: string): CategoryForm {
+    const category = categories.find((row) => row.id === id)
+    return drafts[id] ?? (category ? toCategoryForm(category) : emptyCategoryForm)
+  }
+
+  function setDraftField(id: string, field: keyof CategoryForm, value: string) {
+    const base = categories.find((row) => row.id === id)
+    if (!base) return
+    setDrafts((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] ?? toCategoryForm(base)),
+        [field]: value,
+      },
+    }))
   }
 
   function openCreateCategory() {
     clearNotices()
-    setEditingCategory(null)
     setCategoryForm(emptyCategoryForm)
-    setIsCategoryModalOpen(true)
+    setIsCreateOpen(true)
   }
 
   function openEditCategory(category: CategoryRow) {
     clearNotices()
-    setEditingCategory(category)
+    setSelectedCategory(category)
     setCategoryForm(toCategoryForm(category))
-    setIsCategoryModalOpen(true)
   }
 
-  async function saveCategory() {
+  async function persistCategory(input: CategoryForm, id?: string) {
+    return id
+      ? apiJson<{ category: CategoryRow }>(`/api/flooring/categories/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        })
+      : apiJson<{ category: CategoryRow }>("/api/flooring/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        })
+  }
+
+  async function createCategory() {
     clearNotices()
-    if (!categoryForm.name.trim()) {
-      setError("Category name is required")
-      return
-    }
-
-    setIsSavingCategory(true)
+    setIsSavingNew(true)
     try {
-      const payload = editingCategory
-        ? await apiJson<{ category: CategoryRow }>(`/api/flooring/categories/${editingCategory.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(categoryForm),
-          })
-        : await apiJson<{ category: CategoryRow }>("/api/flooring/categories", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(categoryForm),
-          })
-
-      setCategories((prev) => {
-        const next = editingCategory
-          ? prev.map((category) => (category.id === payload.category.id ? payload.category : category))
-          : [...prev, payload.category]
-        return next.sort((a, b) => a.name.localeCompare(b.name))
-      })
-      setIsCategoryModalOpen(false)
-      setMessage(editingCategory ? "Category updated" : "Category created")
+      const payload = await persistCategory(categoryForm)
+      setCategories((prev) => [...prev, payload.category].sort((a, b) => a.name.localeCompare(b.name)))
+      setIsCreateOpen(false)
+      setCategoryForm(emptyCategoryForm)
+      setMessage("Category created")
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save category")
     } finally {
-      setIsSavingCategory(false)
+      setIsSavingNew(false)
+    }
+  }
+
+  async function saveCategory(row: CategoryRow) {
+    clearNotices()
+    setIsSavingId(row.id)
+    try {
+      const payload = await persistCategory(getDraft(row.id), row.id)
+      setCategories((prev) => prev.map((category) => (category.id === row.id ? payload.category : category)).sort((a, b) => a.name.localeCompare(b.name)))
+      setDrafts((prev) => {
+        const next = { ...prev }
+        delete next[row.id]
+        return next
+      })
+      setMessage("Category updated")
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save category")
+    } finally {
+      setIsSavingId(null)
+    }
+  }
+
+  async function savePanelCategory() {
+    if (!selectedCategory) return
+    clearNotices()
+    setIsSavingId(selectedCategory.id)
+    try {
+      const payload = await persistCategory(categoryForm, selectedCategory.id)
+      setCategories((prev) =>
+        prev.map((category) => (category.id === selectedCategory.id ? payload.category : category)).sort((a, b) => a.name.localeCompare(b.name)),
+      )
+      setSelectedCategory(payload.category)
+      setCategoryForm(toCategoryForm(payload.category))
+      setPanelMessage("Category updated")
+    } catch (saveError) {
+      setPanelError(saveError instanceof Error ? saveError.message : "Failed to save category")
+    } finally {
+      setIsSavingId(null)
     }
   }
 
   async function deleteCategory(category: CategoryRow) {
     if (!window.confirm(`Delete ${category.name}?`)) return
     clearNotices()
+    setDeletingId(category.id)
     try {
       await apiJson<{ success: boolean }>(`/api/flooring/categories/${category.id}`, { method: "DELETE" })
       setCategories((prev) => prev.filter((item) => item.id !== category.id))
+      setSelectedCategory((current) => (current?.id === category.id ? null : current))
       setMessage("Category deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete category")
+    } finally {
+      setDeletingId(null)
     }
+  }
+
+  function renderRow(category: CategoryRow) {
+    const draft = getDraft(category.id)
+    const cells: Record<string, ReactNode> = {
+      edit: (
+        <td key="edit" className="px-3 py-2">
+          <EditRowButton onClick={() => openEditCategory(category)} />
+        </td>
+      ),
+      name: (
+        <td key="name" className="px-3 py-2">
+          <input value={draft.name} onChange={(event) => setDraftField(category.id, "name", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+        </td>
+      ),
+      sendUnit: (
+        <td key="sendUnit" className="px-3 py-2">
+          <UnitSelect value={draft.sendUnitId} onChange={(value) => setDraftField(category.id, "sendUnitId", value)} options={unitOfMeasureOptions} />
+        </td>
+      ),
+      stockUnit: (
+        <td key="stockUnit" className="px-3 py-2">
+          <UnitSelect value={draft.stockUnitId} onChange={(value) => setDraftField(category.id, "stockUnitId", value)} options={unitOfMeasureOptions} />
+        </td>
+      ),
+      coverageAvailableUnit: (
+        <td key="coverageAvailableUnit" className="px-3 py-2">
+          <UnitSelect value={draft.coverageAvailableUnitId} onChange={(value) => setDraftField(category.id, "coverageAvailableUnitId", value)} options={unitOfMeasureOptions} />
+        </td>
+      ),
+      itemCoverageUnit: (
+        <td key="itemCoverageUnit" className="px-3 py-2">
+          <UnitSelect value={draft.itemCoverageUnitId} onChange={(value) => setDraftField(category.id, "itemCoverageUnitId", value)} options={unitOfMeasureOptions} />
+        </td>
+      ),
+      serviceUnit: (
+        <td key="serviceUnit" className="px-3 py-2">
+          <UnitSelect value={draft.serviceUnitId} onChange={(value) => setDraftField(category.id, "serviceUnitId", value)} options={unitOfMeasureOptions} />
+        </td>
+      ),
+      products: <td key="products" className="px-3 py-2">{category.productCount}</td>,
+      save: (
+        <td key="save" className="px-3 py-2">
+          <SaveRowButton onClick={() => void saveCategory(category)} disabled={isSavingId === category.id}>
+            {isSavingId === category.id ? "Saving..." : "Save"}
+          </SaveRowButton>
+        </td>
+      ),
+      delete: (
+        <td key="delete" className="px-3 py-2">
+          <DeleteRowButton onClick={() => void deleteCategory(category)} disabled={deletingId === category.id}>
+            {deletingId === category.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </td>
+      ),
+    }
+
+    return <tr key={category.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">{visibleColumns.map((column) => cells[column.key])}</tr>
+  }
+
+  function renderGroupedRows(groups: GroupedRowTree<CategoryRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
+    ])
   }
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Categories</h1>
-            <p className="text-sm text-[var(--foreground)]/70">Manage flooring product categories and units.</p>
+            <p className="text-sm text-[var(--foreground)]/70">Manage flooring product categories and the shared unit mapping used across products, templates, and services.</p>
           </div>
-          <TableActionsSummary count={categories.length}>
-            <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
-              <Plus size={16} />
-              Category
-            </button>
+          <TableActionsSummary count={filteredRows.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              searchPlaceholder="Search categories"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              isGroupingEnabled={isGroupingEnabled}
+              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              groupByKeys={groupByKeys}
+              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
+              onAddGroupBy={addGroupByKey}
+              onRemoveGroupBy={removeGroupByKeyAtIndex}
+              maxGroupFields={MAX_GROUP_FIELDS}
+            >
+              <TableColumnSettings
+                columns={allColumns}
+                hiddenColumnKeys={hiddenColumnKeys}
+                onToggleColumn={toggleColumnVisibility}
+                onMoveColumn={moveColumn}
+                onSetColumnOrder={setColumnOrder}
+              />
+              <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
+                <Plus size={16} />
+                Category
+              </button>
+            </TableControlsBar>
           </TableActionsSummary>
         </div>
 
-        {message ? <p className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-        {error ? <p className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
-        <section className="mt-6">
-          <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-            <table className="w-full min-w-[980px] text-sm">
-              <thead className="bg-[var(--panel-hover)] text-left">
-                <tr>
-                  <th className="h-10 px-3 py-2">Category</th>
-                  <th className="h-10 px-3 py-2">Send Unit</th>
-                  <th className="h-10 px-3 py-2">Stock Unit</th>
-                  <th className="h-10 px-3 py-2">Coverage Available Unit</th>
-                  <th className="h-10 px-3 py-2">Item Coverage Unit</th>
-                  <th className="h-10 px-3 py-2">Service Unit</th>
-                  <th className="h-10 px-3 py-2">Products</th>
-                  <th className="h-10 px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.id} className="border-t border-[var(--panel-border)]">
-                    <td className="px-3 py-2 font-medium">{category.name}</td>
-                    <td className="px-3 py-2">{category.sendUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.stockUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.coverageAvailableUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.itemCoverageUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.serviceUnit || "-"}</td>
-                    <td className="px-3 py-2">{category.productCount}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => openEditCategory(category)} className="rounded-md p-2 hover:bg-[var(--panel-hover)]">
-                          <Pencil size={16} />
-                        </button>
-                        <button type="button" onClick={() => deleteCategory(category)} className="rounded-md p-2 text-rose-500 hover:bg-rose-500/10">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {categories.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-[var(--foreground)]/60">No flooring categories yet.</td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <TableShell minWidthClass="min-w-[1380px]">
+          <TableHead>
+            <tr>
+              {visibleColumns.map((column) => (
+                <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+              ))}
+            </tr>
+          </TableHead>
+          <tbody>
+            {isGroupingEnabled ? renderGroupedRows(groupedRowTree) : sortedRows.map((category) => renderRow(category))}
+            {filteredRows.length === 0 ? <TableEmptyRow message="No flooring categories yet." colSpan={visibleColumns.length} /> : null}
+          </tbody>
+        </TableShell>
       </div>
 
-      {isCategoryModalOpen ? (
-        <ModalShell title={editingCategory ? "Edit Category" : "Add Category"} onClose={() => setIsCategoryModalOpen(false)}>
-          <div className="space-y-5">
-          {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-          {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+      {isCreateOpen ? (
+        <BasicRecordPanel
+          title="New Category"
+          onClose={() => !isSavingNew && setIsCreateOpen(false)}
+          error={error}
+          saveLabel="Create Category"
+          savingLabel="Creating..."
+          deleteLabel="Delete Category"
+          deleteConfirmMessage="Delete this category?"
+          onSave={() => void createCategory()}
+          onDelete={() => {}}
+          isSaving={isSavingNew}
+        >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Name">
-              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Send Unit">
               <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />
@@ -287,15 +452,44 @@ export default function CategoriesClient({
               <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, serviceUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
           </div>
-          <div className="mt-5 flex justify-end gap-2">
-            <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">Cancel</button>
-            <button type="button" onClick={saveCategory} disabled={isSavingCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60">
-              <Save size={16} />
-              {isSavingCategory ? "Saving..." : "Save Category"}
-            </button>
+        </BasicRecordPanel>
+      ) : null}
+
+      {selectedCategory ? (
+        <BasicRecordPanel
+          title={`Category ${selectedCategory.name}`}
+          onClose={() => setSelectedCategory(null)}
+          message={panelMessage}
+          error={panelError}
+          saveLabel="Save Category"
+          savingLabel="Saving..."
+          deleteLabel="Delete Category"
+          deleteConfirmMessage={`Delete ${selectedCategory.name}?`}
+          onSave={() => void savePanelCategory()}
+          onDelete={() => void deleteCategory(selectedCategory)}
+          isSaving={isSavingId === selectedCategory.id || deletingId === selectedCategory.id}
+        >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <FormField label="Category Name">
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            </FormField>
+            <FormField label="Send Unit">
+              <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />
+            </FormField>
+            <FormField label="Stock Unit">
+              <UnitSelect value={categoryForm.stockUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, stockUnitId: value }))} options={unitOfMeasureOptions} />
+            </FormField>
+            <FormField label="Coverage Available Unit">
+              <UnitSelect value={categoryForm.coverageAvailableUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, coverageAvailableUnitId: value }))} options={unitOfMeasureOptions} />
+            </FormField>
+            <FormField label="Item Coverage Unit">
+              <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
+            </FormField>
+            <FormField label="Service Unit">
+              <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, serviceUnitId: value }))} options={unitOfMeasureOptions} />
+            </FormField>
           </div>
-          </div>
-        </ModalShell>
+        </BasicRecordPanel>
       ) : null}
     </div>
   )
