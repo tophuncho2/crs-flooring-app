@@ -5,6 +5,7 @@ import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { RecordLineSummary } from "@/features/flooring/shared/record-line-summary"
+import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
@@ -383,19 +384,16 @@ export function TemplateRecordPanel({
         onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
       />
 
-      <div className="flex justify-between gap-2">
-        <button type="button" onClick={() => void deleteTemplate()} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">
-          Delete Template
-        </button>
-        <div className="flex gap-2">
-          <button type="button" onClick={onClose} disabled={savingTemplate} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
-            Close
-          </button>
-          <button type="button" onClick={() => void saveTemplate()} disabled={savingTemplate} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
-            {savingTemplate ? "Saving..." : "Save Template"}
-          </button>
-        </div>
-      </div>
+      <RecordPanelFooter
+        deleteLabel="Delete Template"
+        deleteConfirmMessage="Delete this template? This cannot be undone."
+        onDelete={() => void deleteTemplate()}
+        onClose={onClose}
+        saveLabel="Save Template"
+        savingLabel="Saving..."
+        onSave={() => void saveTemplate()}
+        isSaving={savingTemplate}
+      />
     </div>
   )
 }

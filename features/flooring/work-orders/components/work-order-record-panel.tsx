@@ -5,6 +5,7 @@ import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
+import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
@@ -558,7 +559,7 @@ export function WorkOrderRecordPanel({
         </RecordFormField>
       </div>
 
-      <div className="flex justify-between gap-2">
+      <div className="flex justify-start">
         <button
           type="button"
           onClick={() => setIsSyncModalOpen(true)}
@@ -567,18 +568,18 @@ export function WorkOrderRecordPanel({
         >
           Sync Template
         </button>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => void deleteWorkOrder()} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">
-            Delete Work Order
-          </button>
-          <button type="button" onClick={onClose} disabled={savingWorkOrder} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
-            Close
-          </button>
-          <button type="button" onClick={() => void saveWorkOrder()} disabled={savingWorkOrder} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
-            {savingWorkOrder ? "Saving..." : "Save Work Order"}
-          </button>
-        </div>
       </div>
+
+      <RecordPanelFooter
+        deleteLabel="Delete Work Order"
+        deleteConfirmMessage="Delete this work order? This cannot be undone."
+        onDelete={() => void deleteWorkOrder()}
+        onClose={onClose}
+        saveLabel="Save Work Order"
+        savingLabel="Saving..."
+        onSave={() => void saveWorkOrder()}
+        isSaving={savingWorkOrder}
+      />
 
       <MaterialItemsEditor
         title="Material Items"
