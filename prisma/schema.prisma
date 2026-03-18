@@ -62,12 +62,10 @@ model Hotkey {
 }
 
 enum FlooringWorkOrderStatus {
-  DRAFT
   BUILDING_ORDER
   PENDING_EXPORT
   CARPET_CLEANING
   SENT_OUT
-  COMPLETE
   PENDING
   PULL_TEMPLATE
   MODIFY
@@ -413,6 +411,7 @@ model FlooringWorkOrder {
   warehouseId     String?
   warehouse       FlooringWarehouse?             @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   status          FlooringWorkOrderStatus
+  isComplete      Boolean                        @default(false) @map("is_complete")
   vacancy         FlooringVacancyStatus?
   scheduledFor    DateTime?                      @db.Date
   unitLabel       String?
@@ -431,6 +430,7 @@ model FlooringWorkOrder {
   cutLogs         FlooringCutLog[]
 
   @@index([workOrderNumber])
+  @@index([isComplete])
   @@index([propertyId, status])
   @@index([scheduledFor])
   @@map("flooring_work_order")

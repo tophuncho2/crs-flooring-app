@@ -2,12 +2,10 @@ import { buildProductName } from "@/features/flooring/products/services"
 import type { PricingLine } from "@/features/flooring/templates/services"
 
 export const workOrderStatuses = new Set([
-  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
   "SENT_OUT",
-  "COMPLETE",
   "PENDING",
   "PULL_TEMPLATE",
   "MODIFY",
@@ -16,15 +14,13 @@ export const workOrderStatuses = new Set([
 export const vacancyStatuses = new Set(["VACANT", "OCCUPIED"])
 
 export const workOrderStatusLabels: Record<string, string> = {
-  DRAFT: "Draft",
   BUILDING_ORDER: "Building Order",
   PENDING_EXPORT: "Pending Export",
   CARPET_CLEANING: "Carpet Cleaning",
   SENT_OUT: "Sent Out",
-  COMPLETE: "Complete",
   PENDING: "Pending Export",
-  PULL_TEMPLATE: "Pending Export",
-  MODIFY: "Complete",
+  PULL_TEMPLATE: "Pull Template",
+  MODIFY: "Modify",
 }
 
 export function normalizeWorkOrderAddress(value: {
@@ -57,6 +53,7 @@ export function normalizeWorkOrder(workOrder: {
   property: { id: string; name: string; streetAddress: string | null; city: string | null; state: string | null; postalCode: string | null }
   warehouse: { id: string; name: string } | null
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | null
   scheduledFor: Date | null
   unitLabel: string | null
@@ -70,11 +67,6 @@ export function normalizeWorkOrder(workOrder: {
   createdAt: Date
   updatedAt: Date
   _count?: { items: number; serviceItems: number }
-  analytics?: {
-    totalMaterialCost: { toString(): string }
-    totalServiceCost: { toString(): string }
-    totalCost: { toString(): string }
-  } | null
 }) {
   return {
     id: workOrder.id,
@@ -86,6 +78,7 @@ export function normalizeWorkOrder(workOrder: {
     warehouseName: workOrder.warehouse?.name ?? "",
     status: workOrder.status,
     statusLabel: workOrderStatusLabels[workOrder.status] ?? workOrder.status,
+    isComplete: workOrder.isComplete,
     vacancy: workOrder.vacancy,
     date: workOrder.scheduledFor?.toISOString() ?? null,
     unitText: workOrder.unitLabel ?? "",
@@ -97,9 +90,6 @@ export function normalizeWorkOrder(workOrder: {
     workOrderImageUrl: workOrder.googleDriveSlip ?? "",
     unitDoc: workOrder.googleDocUrl ?? "",
     itemsCount: workOrder._count ? workOrder._count.items + workOrder._count.serviceItems : undefined,
-    totalMaterialCost: workOrder.analytics?.totalMaterialCost.toString() ?? "0",
-    totalServiceCost: workOrder.analytics?.totalServiceCost.toString() ?? "0",
-    totalCost: workOrder.analytics?.totalCost.toString() ?? "0",
     createdAt: workOrder.createdAt.toISOString(),
     updatedAt: workOrder.updatedAt.toISOString(),
   }

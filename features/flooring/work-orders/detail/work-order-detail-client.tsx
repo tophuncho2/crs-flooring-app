@@ -4,21 +4,17 @@ import Link from "next/link"
 import { useState } from "react"
 
 const statusOptions = [
-  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
   "SENT_OUT",
-  "COMPLETE",
 ]
 
 const statusLabelByValue: Record<string, string> = {
-  DRAFT: "Draft",
   BUILDING_ORDER: "Building Order",
   PENDING_EXPORT: "Pending Export",
   CARPET_CLEANING: "Carpet Cleaning",
   SENT_OUT: "Sent Out",
-  COMPLETE: "Complete",
 }
 
 const vacancyOptions = ["VACANT", "OCCUPIED"] as const
@@ -71,6 +67,7 @@ type WorkOrderDetail = {
     name: string
   } | null
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
@@ -87,6 +84,7 @@ type WorkOrderDraft = {
   propertyId: string
   warehouseId: string
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | ""
   date: string
   unitText: string
@@ -131,6 +129,7 @@ export default function WorkOrderDetailClient({
     propertyId: initial.property.id,
     warehouseId: initial.warehouse?.id ?? "",
     status: initial.status,
+    isComplete: initial.isComplete,
     vacancy: initial.vacancy ?? "",
     date: toDateValue(initial.date),
     unitText: initial.unitText,
@@ -196,6 +195,7 @@ export default function WorkOrderDetailClient({
           instructions: string
           notes: string
           workOrderImageUrl: string
+          isComplete: boolean
         }
       }
 
@@ -222,6 +222,7 @@ export default function WorkOrderDetailClient({
             }
           : null,
         status: updatedWorkOrder.status,
+        isComplete: updatedWorkOrder.isComplete,
         vacancy: updatedWorkOrder.vacancy,
         date: updatedWorkOrder.date,
         unitText: updatedWorkOrder.unitText,

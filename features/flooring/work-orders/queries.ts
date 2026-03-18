@@ -22,13 +22,6 @@ export async function listWorkOrders() {
       _count: {
         select: { items: true, serviceItems: true },
       },
-      analytics: {
-        select: {
-          totalMaterialCost: true,
-          totalServiceCost: true,
-          totalCost: true,
-        },
-      },
     },
     orderBy: { createdAt: "desc" },
     take: 250,
@@ -90,13 +83,6 @@ export async function getWorkOrderById(id: string) {
               name: true,
             },
           },
-        },
-      },
-      analytics: {
-        select: {
-          totalMaterialCost: true,
-          totalServiceCost: true,
-          totalCost: true,
         },
       },
     },

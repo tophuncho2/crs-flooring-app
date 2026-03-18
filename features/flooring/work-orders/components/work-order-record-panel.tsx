@@ -1,11 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
-import { RecordLineSummary } from "@/features/flooring/shared/record-line-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
@@ -36,6 +35,7 @@ type WorkOrderDetail = {
   warehouseId: string
   warehouseName: string
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
@@ -45,9 +45,6 @@ type WorkOrderDetail = {
   instructions: string
   notes: string
   workOrderImageUrl: string
-  totalMaterialCost: string
-  totalServiceCost: string
-  totalCost: string
   createdAt: string
   updatedAt: string
   items: EditableMaterialItem[]
@@ -58,6 +55,7 @@ type WorkOrderDraft = {
   propertyId: string
   warehouseId: string
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | ""
   date: string
   unitText: string
@@ -103,12 +101,10 @@ const defaultServiceDraft: ServiceItemDraft = {
 }
 
 const statusOptions = [
-  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
   "SENT_OUT",
-  "COMPLETE",
 ]
 
 const vacancyOptions: Array<"VACANT" | "OCCUPIED"> = ["VACANT", "OCCUPIED"]
@@ -118,6 +114,7 @@ function toDraft(workOrder: WorkOrderDetail): WorkOrderDraft {
     propertyId: workOrder.propertyId,
     warehouseId: workOrder.warehouseId,
     status: workOrder.status,
+    isComplete: workOrder.isComplete,
     vacancy: workOrder.vacancy ?? "",
     date: workOrder.date ? workOrder.date.split("T")[0] : "",
     unitText: workOrder.unitText,
@@ -229,20 +226,29 @@ export function WorkOrderRecordPanel({
     })
   }, [draft?.propertyId, syncSearch, templateOptions])
 
-  const itemCount = materialItems.length + serviceItems.length
+  const onSummaryChangeRef = useRef(onSummaryChange)
+  const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
 
   useEffect(() => {
-    onSummaryChange?.({ materialItems, serviceItems })
-  }, [materialItems, onSummaryChange, serviceItems])
+    onSummaryChangeRef.current = onSummaryChange
+  }, [onSummaryChange])
+
+  useEffect(() => {
+    onWorkOrderSavedRef.current = onWorkOrderSaved
+  }, [onWorkOrderSaved])
+
+  useEffect(() => {
+    onSummaryChangeRef.current?.({ materialItems, serviceItems })
+  }, [materialItems, serviceItems])
 
   const publishWorkOrder = useCallback((nextWorkOrder: WorkOrderDetail) => {
     setWorkOrder(nextWorkOrder)
     setDraft(toDraft(nextWorkOrder))
-    onWorkOrderSaved?.({
+    onWorkOrderSavedRef.current?.({
       ...nextWorkOrder,
       itemsCount: nextWorkOrder.items.length + nextWorkOrder.serviceItems.length,
     })
-  }, [onWorkOrderSaved])
+  }, [])
 
   const fetchWorkOrderDetail = useCallback(async () => {
     const payload = await requestJson<{ workOrder: WorkOrderDetail }>(`/api/flooring/work-orders/${workOrderId}`)
@@ -507,6 +513,12 @@ export function WorkOrderRecordPanel({
             ))}
           </select>
         </RecordFormField>
+        <RecordFormField label="Completion">
+          <select value={draft.isComplete ? "COMPLETE" : "OPEN"} onChange={(event) => setDraft((prev) => (prev ? { ...prev, isComplete: event.target.value === "COMPLETE" } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+            <option value="OPEN">Open</option>
+            <option value="COMPLETE">Complete</option>
+          </select>
+        </RecordFormField>
         <RecordFormField label="Vacancy">
           <select value={draft.vacancy} onChange={(event) => setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as WorkOrderDraft["vacancy"] } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
             <option value="">Select vacancy</option>
@@ -550,7 +562,7 @@ export function WorkOrderRecordPanel({
         <button
           type="button"
           onClick={() => setIsSyncModalOpen(true)}
-          disabled={!draft.propertyId || draft.status !== "DRAFT"}
+          disabled={!draft.propertyId || draft.isComplete}
           className="rounded border border-blue-500/40 px-4 py-2 text-sm text-blue-500 hover:bg-blue-500/10 disabled:opacity-60"
         >
           Sync Template

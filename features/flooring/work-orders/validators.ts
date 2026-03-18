@@ -25,6 +25,7 @@ export type CreateWorkOrderInput = {
   templateId: string | null
   warehouseId: string | null
   status: FlooringWorkOrderStatus
+  isComplete: boolean
   vacancy: FlooringVacancyStatus | null
   scheduledFor: Date | null
   unitLabel: string | null
@@ -179,7 +180,8 @@ export function validateCreateWorkOrderInput(body: Record<string, unknown>): Cre
     propertyId: parseOptionalString(body.propertyId),
     templateId: parseOptionalString(body.templateId),
     warehouseId: parseOptionalString(body.warehouseId),
-    status: parseWorkOrderStatus(body.status ?? "DRAFT", "status"),
+    status: parseWorkOrderStatus(body.status ?? "BUILDING_ORDER", "status"),
+    isComplete: body.isComplete === true || String(body.isComplete ?? "").trim().toLowerCase() === "true",
     vacancy: parseOptionalEnumValue(body.vacancy, "vacancy"),
     scheduledFor: parseOptionalDate(body.date, "date"),
     unitLabel: parseOptionalString(body.unitText),
@@ -204,6 +206,7 @@ export function validateUpdateWorkOrderInput(body: Record<string, unknown>): Upd
   if ("templateId" in body) input.templateId = parseOptionalString(body.templateId)
   if ("warehouseId" in body) input.warehouseId = parseOptionalString(body.warehouseId)
   if ("status" in body) input.status = parseWorkOrderStatus(body.status, "status")
+  if ("isComplete" in body) input.isComplete = body.isComplete === true || String(body.isComplete ?? "").trim().toLowerCase() === "true"
   if ("vacancy" in body) input.vacancy = parseOptionalEnumValue(body.vacancy, "vacancy")
   if ("date" in body) input.scheduledFor = parseOptionalDate(body.date, "date")
   if ("unitText" in body) input.unitLabel = parseOptionalString(body.unitText)

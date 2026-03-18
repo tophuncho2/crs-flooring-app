@@ -18,6 +18,7 @@ type WorkOrderDetail = {
     name: string
   } | null
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
@@ -219,6 +220,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
         }
       : null,
     status: workOrder.status,
+    isComplete: workOrder.isComplete,
     vacancy: workOrder.vacancy,
     date: workOrder.scheduledFor ? workOrder.scheduledFor.toISOString() : null,
     unitText: workOrder.unitLabel ?? "",

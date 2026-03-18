@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
-import { syncWorkOrderAnalytics } from "@/features/flooring/work-orders/mutations"
 import type { SyncTemplateToWorkOrderInput } from "@/features/flooring/work-orders/validators"
 
 type MaterialSnapshotRow = {
@@ -151,13 +150,13 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       select: {
         id: true,
         propertyId: true,
-        status: true,
+        isComplete: true,
         updatedAt: true,
       },
     })
 
-    if (existingWorkOrder.status !== "DRAFT") {
-      throw { message: "Only draft work orders can sync templates", field: "status" }
+    if (existingWorkOrder.isComplete) {
+      throw { message: "Completed work orders cannot sync templates", field: "isComplete" }
     }
 
     if (input.expectedUpdatedAt && existingWorkOrder.updatedAt.getTime() !== input.expectedUpdatedAt.getTime()) {
@@ -246,7 +245,6 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       where: { id: workOrderId },
       data: { templateId: input.templateId },
     })
-    await syncWorkOrderAnalytics(tx, workOrderId)
 
     return {
       mode: input.mode,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
@@ -119,10 +119,20 @@ export function TemplateRecordPanel({
   const serviceItems = serviceCollection.items
 
   const itemCount = useMemo(() => materialItems.length + serviceItems.length, [materialItems.length, serviceItems.length])
+  const onSummaryChangeRef = useRef(onSummaryChange)
+  const onTemplateSavedRef = useRef(onTemplateSaved)
 
   useEffect(() => {
-    onSummaryChange?.({ materialItems, serviceItems })
-  }, [materialItems, onSummaryChange, serviceItems])
+    onSummaryChangeRef.current = onSummaryChange
+  }, [onSummaryChange])
+
+  useEffect(() => {
+    onTemplateSavedRef.current = onTemplateSaved
+  }, [onTemplateSaved])
+
+  useEffect(() => {
+    onSummaryChangeRef.current?.({ materialItems, serviceItems })
+  }, [materialItems, serviceItems])
 
   useEffect(() => {
     let cancelled = false
@@ -183,7 +193,7 @@ export function TemplateRecordPanel({
       setTemplate(payload.template)
       setDraft(toTemplateDraft(payload.template))
       setMessage("Template saved")
-      onTemplateSaved?.(payload.template, previousPropertyId, itemCount)
+      onTemplateSavedRef.current?.(payload.template, previousPropertyId, itemCount)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save template")
     } finally {
@@ -211,7 +221,7 @@ export function TemplateRecordPanel({
       const nextMaterialItems = await materialCollection.createItem(materialDraft)
       setMaterialDraft({ productId: "", quantity: "", unitPrice: "", notes: "" })
       setMessage("Template item added")
-      onTemplateSaved?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
+      onTemplateSavedRef.current?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to add template item")
     }
@@ -234,7 +244,7 @@ export function TemplateRecordPanel({
     try {
       const nextMaterialItems = await materialCollection.deleteItem(itemId)
       setMessage("Template item deleted")
-      onTemplateSaved?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
+      onTemplateSavedRef.current?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template item")
     }
@@ -247,7 +257,7 @@ export function TemplateRecordPanel({
       const nextServiceItems = await serviceCollection.createItem(serviceDraft)
       setServiceDraft({ serviceId: "", name: "", unitId: "", quantity: "", unitPrice: "", notes: "" })
       setMessage("Template service item added")
-      onTemplateSaved?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
+      onTemplateSavedRef.current?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to add template service item")
     }
@@ -270,7 +280,7 @@ export function TemplateRecordPanel({
     try {
       const nextServiceItems = await serviceCollection.deleteItem(itemId)
       setMessage("Template service item deleted")
-      onTemplateSaved?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
+      onTemplateSavedRef.current?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template service item")
     }

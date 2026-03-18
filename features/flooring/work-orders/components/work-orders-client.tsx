@@ -27,6 +27,7 @@ type WorkOrderRow = {
   warehouseName: string
   status: string
   statusLabel: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
@@ -64,6 +65,7 @@ type DraftWorkOrder = {
   propertyId: string
   warehouseId: string
   status: string
+  isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | ""
   date: string
   unitText: string
@@ -76,21 +78,17 @@ type DraftWorkOrder = {
 }
 
 const statusOptions = [
-  "DRAFT",
   "BUILDING_ORDER",
   "PENDING_EXPORT",
   "CARPET_CLEANING",
   "SENT_OUT",
-  "COMPLETE",
 ]
 
 const statusLabelByValue: Record<string, string> = {
-  DRAFT: "Draft",
   BUILDING_ORDER: "Building Order",
   PENDING_EXPORT: "Pending Export",
   CARPET_CLEANING: "Carpet Cleaning",
   SENT_OUT: "Sent Out",
-  COMPLETE: "Complete",
 }
 
 const vacancyOptions: Array<"VACANT" | "OCCUPIED"> = ["VACANT", "OCCUPIED"]
@@ -100,12 +98,10 @@ function statusLabel(value: string) {
 }
 
 function statusFieldClass(value: string) {
-  if (value === "DRAFT") return "border-slate-500/40 bg-slate-500/10 text-slate-700"
   if (value === "BUILDING_ORDER") return "border-amber-500/40 bg-amber-500/10 text-amber-700"
   if (value === "PENDING_EXPORT") return "border-sky-500/40 bg-sky-500/10 text-sky-700"
   if (value === "CARPET_CLEANING") return "border-violet-500/40 bg-violet-500/10 text-violet-700"
   if (value === "SENT_OUT") return "border-orange-500/40 bg-orange-500/10 text-orange-700"
-  if (value === "COMPLETE") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
   return "border-[var(--panel-border)] bg-transparent text-[var(--foreground)]"
 }
 
@@ -128,7 +124,8 @@ function buildWorkOrderAddress(property: PropertyOption | undefined, customAddre
 const defaultDraft: DraftWorkOrder = {
   propertyId: "",
   warehouseId: "",
-  status: "DRAFT",
+  status: "BUILDING_ORDER",
+  isComplete: false,
   vacancy: "",
   date: "",
   unitText: "",
@@ -244,6 +241,7 @@ export default function WorkOrdersClient({
         propertyId: row.propertyId,
         warehouseId: row.warehouseId,
         status: row.status,
+        isComplete: row.isComplete,
         vacancy: row.vacancy ?? "",
         date: dateInputValue(row.date),
         unitText: row.unitText,

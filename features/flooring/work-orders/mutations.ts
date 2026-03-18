@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { snapshotTemplateLinesToWorkOrderLines } from "@/features/flooring/templates/services"
-import { calculateWorkOrderTotal, normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
+import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
 import type {
   CreateWorkOrderInput,
   UpdateWorkOrderInput,
@@ -25,13 +25,6 @@ const workOrderInclude = {
   },
   _count: {
     select: { items: true, serviceItems: true },
-  },
-  analytics: {
-    select: {
-      totalMaterialCost: true,
-      totalServiceCost: true,
-      totalCost: true,
-    },
   },
 } as const
 
@@ -73,45 +66,6 @@ async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput) {
     name: item.name ?? service.name,
     unitPrice: item.unitPrice ?? service.baseCost,
   }
-}
-
-export async function syncWorkOrderAnalytics(tx: Prisma.TransactionClient, workOrderId: string) {
-  const [items, serviceItems] = await Promise.all([
-    tx.flooringWorkOrderItem.findMany({
-      where: { workOrderId },
-      select: { quantity: true, unitPrice: true },
-    }),
-    tx.flooringWorkOrderServiceItem.findMany({
-      where: { workOrderId },
-      select: { quantity: true, unitPrice: true },
-    }),
-  ])
-
-  const totals = calculateWorkOrderTotal({
-    items: items.map((item) => ({
-      quantity: Number(item.quantity),
-      unitPrice: Number(item.unitPrice),
-    })),
-    serviceItems: serviceItems.map((item) => ({
-      quantity: Number(item.quantity),
-      unitPrice: Number(item.unitPrice),
-    })),
-  })
-
-  await tx.flooringAnalytics.upsert({
-    where: { workOrderId },
-    create: {
-      workOrderId,
-      totalMaterialCost: totals.materialTotal,
-      totalServiceCost: totals.serviceTotal,
-      totalCost: totals.total,
-    },
-    update: {
-      totalMaterialCost: totals.materialTotal,
-      totalServiceCost: totals.serviceTotal,
-      totalCost: totals.total,
-    },
-  })
 }
 
 async function snapshotTemplate(templateId: string, tx: Prisma.TransactionClient) {
@@ -169,6 +123,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         templateId: null,
         warehouseId: input.warehouseId,
         status: input.status,
+        isComplete: input.isComplete ?? false,
         vacancy: input.vacancy,
         scheduledFor: input.scheduledFor,
         unitLabel: input.unitLabel,
@@ -236,8 +191,6 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
       })
     }
 
-    await syncWorkOrderAnalytics(tx, workOrder.id)
-
     return tx.flooringWorkOrder.findUniqueOrThrow({
       where: { id: workOrder.id },
       include: workOrderInclude,
@@ -254,6 +207,7 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
   if (input.templateId !== undefined) data.templateId = input.templateId
   if (input.warehouseId !== undefined) data.warehouseId = input.warehouseId
   if (input.status !== undefined) data.status = input.status
+  if (input.isComplete !== undefined) data.isComplete = input.isComplete
   if (input.vacancy !== undefined) data.vacancy = input.vacancy
   if (input.scheduledFor !== undefined) data.scheduledFor = input.scheduledFor
   if (input.unitLabel !== undefined) data.unitLabel = input.unitLabel
@@ -314,7 +268,6 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
       },
     })
 
-    await syncWorkOrderAnalytics(tx, workOrderId)
     return item
   })
 
@@ -357,7 +310,6 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
       },
     })
 
-    await syncWorkOrderAnalytics(tx, item.workOrderId)
     return item
   })
 
@@ -372,7 +324,6 @@ export async function deleteWorkOrderItem(itemId: string) {
     })
 
     await tx.flooringWorkOrderItem.delete({ where: { id: itemId } })
-    await syncWorkOrderAnalytics(tx, existing.workOrderId)
   })
 }
 
@@ -399,7 +350,6 @@ export async function createWorkOrderServiceItem(workOrderId: string, input: Wor
       },
     })
 
-    await syncWorkOrderAnalytics(tx, workOrderId)
     return item
   })
 
@@ -435,7 +385,6 @@ export async function updateWorkOrderServiceItem(itemId: string, input: Partial<
       },
     })
 
-    await syncWorkOrderAnalytics(tx, item.workOrderId)
     return item
   })
 
@@ -450,6 +399,5 @@ export async function deleteWorkOrderServiceItem(itemId: string) {
     })
 
     await tx.flooringWorkOrderServiceItem.delete({ where: { id: itemId } })
-    await syncWorkOrderAnalytics(tx, existing.workOrderId)
   })
 }
