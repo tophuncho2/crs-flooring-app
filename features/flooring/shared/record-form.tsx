@@ -10,6 +10,7 @@ export function RecordModalShell({
   zIndexClass = "z-40",
   zIndex,
   sizeClass = "max-w-5xl",
+  headerMeta,
 }: {
   title: string
   onClose: () => void
@@ -17,20 +18,30 @@ export function RecordModalShell({
   zIndexClass?: string
   zIndex?: number
   sizeClass?: string
+  headerMeta?: ReactNode
 }) {
   return (
     <div className={`fixed inset-0 ${zIndexClass} overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28`} style={zIndex ? { zIndex } : undefined}>
       <div className="flex min-h-full items-start justify-center">
         <div className={`flex max-h-[calc(100vh-7rem)] w-full ${sizeClass} flex-col overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl sm:max-h-[calc(100vh-8rem)]`}>
-          <div className="flex items-center justify-between border-b border-[var(--panel-border)] px-5 py-4">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-            >
-              <X size={18} />
-            </button>
+          <div className="border-b border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] px-5 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.12)]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="inline-flex w-fit max-w-full items-center rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2">
+                    <h2 className="truncate text-lg font-semibold">{title}</h2>
+                  </div>
+                  {headerMeta ? <div className="min-w-0 flex-1">{headerMeta}</div> : null}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md p-1 text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
           <div className="overflow-y-auto px-5 py-4">{children}</div>
         </div>

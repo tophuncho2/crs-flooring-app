@@ -157,6 +157,7 @@ export function WorkOrderRecordPanel({
   onClose,
   onWorkOrderSaved,
   onWorkOrderDeleted,
+  onSummaryChange,
 }: {
   workOrderId: string
   propertyOptions: PropertyOption[]
@@ -168,6 +169,7 @@ export function WorkOrderRecordPanel({
   onClose: () => void
   onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems"> & { itemsCount: number }) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
+  onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
 }) {
   const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null)
   const [draft, setDraft] = useState<WorkOrderDraft | null>(null)
@@ -228,6 +230,10 @@ export function WorkOrderRecordPanel({
   }, [draft?.propertyId, syncSearch, templateOptions])
 
   const itemCount = materialItems.length + serviceItems.length
+
+  useEffect(() => {
+    onSummaryChange?.({ materialItems, serviceItems })
+  }, [materialItems, onSummaryChange, serviceItems])
 
   const publishWorkOrder = useCallback((nextWorkOrder: WorkOrderDetail) => {
     setWorkOrder(nextWorkOrder)
@@ -539,8 +545,6 @@ export function WorkOrderRecordPanel({
           <textarea value={draft.notes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
         </RecordFormField>
       </div>
-
-      <RecordLineSummary materialItems={materialItems} serviceItems={serviceItems} />
 
       <div className="flex justify-between gap-2">
         <button

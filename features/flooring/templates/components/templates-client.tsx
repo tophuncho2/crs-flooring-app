@@ -11,6 +11,7 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { RecordLineSummary } from "../../shared/record-line-summary"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { useTableControls } from "../../shared/use-table-controls"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
@@ -94,6 +95,10 @@ export default function TemplatesClient({
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [activeTemplateSummary, setActiveTemplateSummary] = useState<{ materialItems: Array<{ quantity: string; unitPrice: string }>; serviceItems: Array<{ quantity: string; unitPrice: string }> }>({
+    materialItems: [],
+    serviceItems: [],
+  })
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = usePrimaryRecordPanel("template")
@@ -195,6 +200,7 @@ export default function TemplatesClient({
   }
 
   function closeTemplate() {
+    setActiveTemplateSummary({ materialItems: [], serviceItems: [] })
     closeTemplatePanel()
   }
 
@@ -489,7 +495,12 @@ export default function TemplatesClient({
       ) : null}
 
       {activeTemplate ? (
-        <ModalShell title={`Template ${activeTemplate.templateNumber}`} onClose={closeTemplate} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
+        <ModalShell
+          title={`Template ${activeTemplate.templateNumber}`}
+          onClose={closeTemplate}
+          sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
+          headerMeta={<RecordLineSummary materialItems={activeTemplateSummary.materialItems} serviceItems={activeTemplateSummary.serviceItems} variant="header" />}
+        >
           <TemplateRecordPanel
             templateId={activeTemplate.id}
             propertyOptions={propertyOptions}
@@ -499,6 +510,7 @@ export default function TemplatesClient({
             serviceOptions={serviceOptions}
             unitOptions={unitOptions}
             onClose={closeTemplate}
+            onSummaryChange={setActiveTemplateSummary}
             onTemplateSaved={(template) => {
               setTemplates((prev) => prev.map((row) => (row.id === template.id ? template : row)))
             }}

@@ -11,6 +11,7 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { RecordLineSummary } from "../../shared/record-line-summary"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
@@ -163,6 +164,10 @@ export default function WorkOrdersClient({
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSaving, setIsSaving] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [activeWorkOrderSummary, setActiveWorkOrderSummary] = useState<{ materialItems: Array<{ quantity: string; unitPrice: string }>; serviceItems: Array<{ quantity: string; unitPrice: string }> }>({
+    materialItems: [],
+    serviceItems: [],
+  })
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
@@ -275,6 +280,7 @@ export default function WorkOrdersClient({
   }
 
   function closeWorkOrder() {
+    setActiveWorkOrderSummary({ materialItems: [], serviceItems: [] })
     closeWorkOrderPanel()
   }
 
@@ -645,7 +651,12 @@ export default function WorkOrdersClient({
       )}
 
       {activeWorkOrder ? (
-        <ModalShell title={`Work Order ${activeWorkOrder.workOrderNumber}`} onClose={closeWorkOrder} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
+        <ModalShell
+          title={`Work Order ${activeWorkOrder.workOrderNumber}`}
+          onClose={closeWorkOrder}
+          sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
+          headerMeta={<RecordLineSummary materialItems={activeWorkOrderSummary.materialItems} serviceItems={activeWorkOrderSummary.serviceItems} variant="header" />}
+        >
           <WorkOrderRecordPanel
             workOrderId={activeWorkOrder.id}
             propertyOptions={propertyOptions}
@@ -655,6 +666,7 @@ export default function WorkOrdersClient({
             serviceOptions={serviceOptions}
             unitOptions={unitOptions}
             onClose={closeWorkOrder}
+            onSummaryChange={setActiveWorkOrderSummary}
             onWorkOrderSaved={(savedWorkOrder) => {
               setWorkOrders((prev) =>
                 prev.map((row) =>

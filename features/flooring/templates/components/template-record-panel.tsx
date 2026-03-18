@@ -60,6 +60,7 @@ export function TemplateRecordPanel({
   onClose,
   onTemplateSaved,
   onTemplateDeleted,
+  onSummaryChange,
 }: {
   templateId: string
   propertyOptions: Array<{ id: string; name: string }>
@@ -71,6 +72,7 @@ export function TemplateRecordPanel({
   onClose: () => void
   onTemplateSaved?: (template: TemplatePanelRow, previousPropertyId: string, itemsCount: number) => void
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
+  onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
 }) {
   const [template, setTemplate] = useState<TemplatePanelRow | null>(null)
   const [draft, setDraft] = useState<TemplatePanelDraft | null>(null)
@@ -117,6 +119,10 @@ export function TemplateRecordPanel({
   const serviceItems = serviceCollection.items
 
   const itemCount = useMemo(() => materialItems.length + serviceItems.length, [materialItems.length, serviceItems.length])
+
+  useEffect(() => {
+    onSummaryChange?.({ materialItems, serviceItems })
+  }, [materialItems, onSummaryChange, serviceItems])
 
   useEffect(() => {
     let cancelled = false
@@ -327,8 +333,6 @@ export function TemplateRecordPanel({
           </RecordFormField>
         </div>
       </div>
-
-      <RecordLineSummary materialItems={materialItems} serviceItems={serviceItems} />
 
       <MaterialItemsEditor
         title="Material Items"
