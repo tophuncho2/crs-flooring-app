@@ -503,6 +503,7 @@ export default function TemplatesClient({
         >
           <TemplateRecordPanel
             templateId={activeTemplate.id}
+            initialTemplate={activeTemplate}
             propertyOptions={propertyOptions}
             warehouseOptions={warehouseOptions}
             padProductOptions={padProductOptions}

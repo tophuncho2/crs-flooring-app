@@ -220,7 +220,6 @@ export default function WorkOrdersClient({
       { key: "vacancy", label: "Vacancy" },
       { key: "instructions", label: "Instructions" },
       { key: "notes", label: "Notes" },
-      { key: "imageUrl", label: "Image URL" },
       { key: "items", label: "Items" },
       { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
@@ -491,7 +490,6 @@ export default function WorkOrdersClient({
       ),
       instructions: <td key="instructions" className="px-3 py-2"><textarea value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
       notes: <td key="notes" className="px-3 py-2"><textarea value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
-      imageUrl: <td key="imageUrl" className="px-3 py-2"><input value={draft.workOrderImageUrl} onChange={(event) => setDraftField(row.id, "workOrderImageUrl", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
       items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
       save: (
         <td key="save" className="px-3 py-2">
@@ -656,9 +654,6 @@ export default function WorkOrdersClient({
               <FormField label="Unit Number">
                 <input value={newDraft.unitNumber} onChange={(event) => setNewDraftField("unitNumber", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
               </FormField>
-              <FormField label="Image URL">
-                <input value={newDraft.workOrderImageUrl} onChange={(event) => setNewDraftField("workOrderImageUrl", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
@@ -715,6 +710,7 @@ export default function WorkOrdersClient({
         >
           <WorkOrderRecordPanel
             workOrderId={activeWorkOrder.id}
+            initialWorkOrder={activeWorkOrder}
             propertyOptions={propertyOptions}
             warehouseOptions={warehouseOptions}
             productOptions={productOptions}

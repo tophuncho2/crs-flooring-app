@@ -52,10 +52,38 @@ export async function getTemplateById(id: string) {
       _count: {
         select: { items: true, serviceItems: true },
       },
+      items: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          product: {
+            select: {
+              manufacturerName: true,
+              style: true,
+              color: true,
+              category: { select: { sendUnit: { select: { name: true } } } },
+            },
+          },
+        },
+      },
+      serviceItems: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          unit: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   })
 
-  return normalizeTemplate(template)
+  return {
+    ...normalizeTemplate(template),
+    items: template.items.map(normalizeTemplateItem),
+    serviceItems: template.serviceItems.map(normalizeTemplateServiceItem),
+  }
 }
 
 export async function listTemplateItems(templateId: string) {

@@ -78,6 +78,7 @@ type DraftProperty = {
 
 type TemplateRow = {
   id: string
+  templateNumber: string
   templateTag: string
   propertyId: string
   propertyName: string
@@ -729,6 +730,7 @@ export default function PropertiesClient({
                   content: (
                     <TemplateRecordPanel
                       templateId={activeTemplate.id}
+                      initialTemplate={activeTemplate}
                       propertyOptions={propertyOptions}
                       warehouseOptions={warehouseOptions}
                       padProductOptions={padProductOptions}

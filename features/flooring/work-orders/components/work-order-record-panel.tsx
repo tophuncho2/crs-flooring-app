@@ -6,6 +6,7 @@ import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/sh
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
+import { clearCachedRecordDetail, getCachedRecordDetail, setCachedRecordDetail } from "@/features/flooring/shared/record-detail-cache"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
@@ -146,6 +147,7 @@ function selectedAddress(propertyOptions: PropertyOption[], draft: WorkOrderDraf
 
 export function WorkOrderRecordPanel({
   workOrderId,
+  initialWorkOrder,
   propertyOptions,
   warehouseOptions,
   productOptions,
@@ -161,6 +163,7 @@ export function WorkOrderRecordPanel({
   onSummaryChange,
 }: {
   workOrderId: string
+  initialWorkOrder: Omit<WorkOrderDetail, "items" | "serviceItems">
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   productOptions: MaterialItemOption[]
@@ -175,11 +178,12 @@ export function WorkOrderRecordPanel({
   onWorkOrderDeleted?: (workOrderId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
 }) {
-  const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null)
-  const [draft, setDraft] = useState<WorkOrderDraft | null>(null)
+  const cachedWorkOrder = getCachedRecordDetail<WorkOrderDetail>("workOrder", workOrderId, initialWorkOrder.updatedAt)
+  const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(cachedWorkOrder ?? { ...initialWorkOrder, items: [], serviceItems: [] })
+  const [draft, setDraft] = useState<WorkOrderDraft | null>(toDraft(cachedWorkOrder ?? { ...initialWorkOrder, items: [], serviceItems: [] }))
   const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>(defaultMaterialDraft)
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>(defaultServiceDraft)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!cachedWorkOrder)
   const [savingWorkOrder, setSavingWorkOrder] = useState(false)
   const [syncSearch, setSyncSearch] = useState("")
   const [selectedTemplateId, setSelectedTemplateId] = useState("")
@@ -220,6 +224,13 @@ export function WorkOrderRecordPanel({
   const materialItems = materialCollection.items
   const serviceItems = serviceCollection.items
 
+  useEffect(() => {
+    if (cachedWorkOrder) {
+      setMaterialItems(cachedWorkOrder.items ?? [])
+      setServiceItems(cachedWorkOrder.serviceItems ?? [])
+    }
+  }, [cachedWorkOrder, setMaterialItems, setServiceItems])
+
   const filteredTemplates = useMemo(() => {
     const activePropertyId = draft?.propertyId ?? ""
     const normalizedSearch = syncSearch.trim().toLowerCase()
@@ -251,6 +262,7 @@ export function WorkOrderRecordPanel({
   const publishWorkOrder = useCallback((nextWorkOrder: WorkOrderDetail) => {
     setWorkOrder(nextWorkOrder)
     setDraft(toDraft(nextWorkOrder))
+    setCachedRecordDetail("workOrder", nextWorkOrder.id, nextWorkOrder.updatedAt, nextWorkOrder)
     onWorkOrderSavedRef.current?.({
       ...nextWorkOrder,
       itemsCount: nextWorkOrder.items.length + nextWorkOrder.serviceItems.length,
@@ -274,10 +286,17 @@ export function WorkOrderRecordPanel({
   }
 
   useEffect(() => {
+    if (cachedWorkOrder) {
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
 
     async function load() {
-      setLoading(true)
+      if (!cachedWorkOrder) {
+        setLoading(true)
+      }
       setError("")
 
       try {
@@ -302,7 +321,7 @@ export function WorkOrderRecordPanel({
     return () => {
       cancelled = true
     }
-  }, [fetchWorkOrderDetail, publishWorkOrder, setMaterialItems, setServiceItems])
+  }, [cachedWorkOrder, fetchWorkOrderDetail, publishWorkOrder, setMaterialItems, setServiceItems])
 
   useEffect(() => {
     setSyncPreview(null)
@@ -342,6 +361,7 @@ export function WorkOrderRecordPanel({
     setError("")
     try {
       await requestJson(`/api/flooring/work-orders/${workOrder.id}`, { method: "DELETE" })
+      clearCachedRecordDetail("workOrder", workOrder.id)
       onWorkOrderDeleted?.(workOrder.id)
       onClose()
     } catch (deleteError) {
@@ -488,7 +508,7 @@ export function WorkOrderRecordPanel({
     }
   }
 
-  if (loading) {
+  if (loading && !workOrder) {
     return <CenteredLoadingState label="Loading work order..." />
   }
 
@@ -563,9 +583,6 @@ export function WorkOrderRecordPanel({
         <RecordFormField label="Unit Number">
           <input value={draft.unitNumber} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitNumber: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
         </RecordFormField>
-        <RecordFormField label="Image URL">
-          <input value={draft.workOrderImageUrl} onChange={(event) => setDraft((prev) => (prev ? { ...prev, workOrderImageUrl: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
         <RecordFormField label="Instructions">
           <textarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
         </RecordFormField>
@@ -580,7 +597,7 @@ export function WorkOrderRecordPanel({
         items={materialItems}
         draft={materialDraft}
         productOptions={productOptions}
-        loading={materialCollection.loading}
+        loading={loading || materialCollection.loading}
         adding={materialCollection.adding}
         savingItemId={materialCollection.savingItemId}
         deletingItemId={materialCollection.deletingItemId}
@@ -598,7 +615,7 @@ export function WorkOrderRecordPanel({
         draft={serviceDraft}
         serviceOptions={serviceOptions}
         unitOptions={unitOptions}
-        loading={serviceCollection.loading}
+        loading={loading || serviceCollection.loading}
         adding={serviceCollection.adding}
         savingItemId={serviceCollection.savingItemId}
         deletingItemId={serviceCollection.deletingItemId}

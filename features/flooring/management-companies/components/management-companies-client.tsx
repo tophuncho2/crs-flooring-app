@@ -76,6 +76,7 @@ type PropertyRow = {
 
 type TemplateRow = {
   id: string
+  templateNumber: string
   templateTag: string
   propertyId: string
   propertyName: string
@@ -928,6 +929,7 @@ export default function ManagementCompaniesClient({
                   content: (
                     <TemplateRecordPanel
                       templateId={activeTemplate.id}
+                      initialTemplate={activeTemplate}
                       propertyOptions={propertySelectOptions}
                       warehouseOptions={warehouseOptions}
                       padProductOptions={padProductOptions}

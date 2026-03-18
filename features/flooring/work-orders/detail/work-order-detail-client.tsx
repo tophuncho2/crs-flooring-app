@@ -422,15 +422,6 @@ export default function WorkOrderDetailClient({
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-[var(--foreground)]/70">Work Order Image URL</span>
-              <input
-                value={draft.workOrderImageUrl}
-                onChange={(event) => setDraftField("workOrderImageUrl", event.target.value)}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-              />
-            </label>
-
             <label className="md:col-span-2 xl:col-span-3 flex flex-col gap-1 text-sm">
               <span className="text-[var(--foreground)]/70">Instructions</span>
               <textarea
