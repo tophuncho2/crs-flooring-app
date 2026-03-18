@@ -29,19 +29,31 @@ const workOrderInclude = {
 } as const
 
 async function resolveWorkOrderProperty(input: CreateWorkOrderInput, tx: Prisma.TransactionClient) {
+  if (input.templateId) {
+    const template = await tx.flooringTemplate.findUniqueOrThrow({
+      where: { id: input.templateId },
+      select: { propertyId: true },
+    })
+
+    if (input.propertyId && input.propertyId !== template.propertyId) {
+      throw { message: "templateId must match the selected property", field: "templateId" }
+    }
+
+    return template.propertyId
+  }
+
   if (input.propertyId) {
     return input.propertyId
   }
-  void tx
   throw { message: "propertyId is required", field: "propertyId" }
 }
 
-async function resolveMaterialUnitPrice(item: WorkOrderMaterialItemInput) {
+async function resolveMaterialUnitPrice(item: WorkOrderMaterialItemInput, tx: Prisma.TransactionClient | typeof prisma) {
   if (item.unitPrice) {
     return item.unitPrice
   }
 
-  const product = await prisma.flooringProduct.findUnique({
+  const product = await tx.flooringProduct.findUnique({
     where: { id: item.productId },
     select: { cost: true },
   })
@@ -49,7 +61,7 @@ async function resolveMaterialUnitPrice(item: WorkOrderMaterialItemInput) {
   return product?.cost ?? "0"
 }
 
-async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput) {
+async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput, tx: Prisma.TransactionClient | typeof prisma) {
   if (!item.serviceId) {
     return {
       name: item.name ?? "Custom Service",
@@ -57,7 +69,7 @@ async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput) {
     }
   }
 
-  const service = await prisma.flooringService.findUniqueOrThrow({
+  const service = await tx.flooringService.findUniqueOrThrow({
     where: { id: item.serviceId },
     select: { name: true, baseCost: true },
   })
@@ -69,7 +81,14 @@ async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput) {
 }
 
 async function snapshotTemplate(templateId: string, tx: Prisma.TransactionClient) {
-  const [items, serviceItems] = await Promise.all([
+  const [header, items, serviceItems] = await Promise.all([
+    tx.flooringTemplate.findUniqueOrThrow({
+      where: { id: templateId },
+      select: {
+        warehouseId: true,
+        instructions: true,
+      },
+    }),
     tx.flooringTemplateItem.findMany({
       where: { templateId },
       select: {
@@ -93,14 +112,15 @@ async function snapshotTemplate(templateId: string, tx: Prisma.TransactionClient
   ])
 
   return {
-    items: snapshotTemplateLinesToWorkOrderLines(
-      items.map((item) => ({
-        productId: item.productId,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-        notes: item.notes,
-      })),
-    ),
+    warehouseId: header.warehouseId,
+    instructions: header.instructions,
+    items: items.map((item) => ({
+      productId: item.productId,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unitPrice),
+      notes: item.notes,
+      changeOrderStatus: "SUFFICIENT" as const,
+    })),
     serviceItems: snapshotTemplateLinesToWorkOrderLines(
       serviceItems.map((item) => ({
         serviceId: item.serviceId,
@@ -117,11 +137,12 @@ async function snapshotTemplate(templateId: string, tx: Prisma.TransactionClient
 export async function createWorkOrder(input: CreateWorkOrderInput) {
   const workOrder = await prisma.$transaction(async (tx) => {
     const propertyId = await resolveWorkOrderProperty(input, tx)
+    const templateSnapshot = input.templateId ? await snapshotTemplate(input.templateId, tx) : null
     const workOrder = await tx.flooringWorkOrder.create({
       data: {
         propertyId,
-        templateId: null,
-        warehouseId: input.warehouseId,
+        templateId: input.templateId,
+        warehouseId: templateSnapshot?.warehouseId ?? input.warehouseId,
         status: input.status,
         isComplete: input.isComplete ?? false,
         vacancy: input.vacancy,
@@ -130,7 +151,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         unitNumber: input.unitNumber,
         unitType: input.unitType,
         customAddress: input.customAddress,
-        instructions: input.instructions,
+        instructions: templateSnapshot?.instructions ?? input.instructions,
         notes: input.notes,
         googleDriveSlip: input.googleDriveSlip,
         googleDocUrl: input.googleDocUrl,
@@ -138,12 +159,24 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
       include: workOrderInclude,
     })
 
+    const materialSourceItems =
+      templateSnapshot && input.items.length === 0
+        ? templateSnapshot.items.map((item) => ({
+            productId: item.productId,
+            linkedInventoryId: null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            notes: item.notes,
+            changeOrderStatus: item.changeOrderStatus,
+          }))
+        : input.items
+
     const materialItems = await Promise.all(
-      input.items.map(async (item) => ({
+      materialSourceItems.map(async (item) => ({
         productId: item.productId,
         linkedInventoryId: item.linkedInventoryId,
         quantity: item.quantity,
-        unitPrice: await resolveMaterialUnitPrice(item),
+        unitPrice: item.unitPrice ?? (await resolveMaterialUnitPrice(item as WorkOrderMaterialItemInput, tx)),
         notes: item.notes,
         changeOrderStatus: item.changeOrderStatus,
       })),
@@ -163,9 +196,14 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
       })
     }
 
+    const serviceSourceItems = templateSnapshot && input.serviceItems.length === 0 ? templateSnapshot.serviceItems : input.serviceItems
+
     const serviceItems = await Promise.all(
-      input.serviceItems.map(async (item) => {
-        const resolved = await resolveServiceNameAndPrice(item)
+      serviceSourceItems.map(async (item) => {
+        const resolved =
+          item.unitPrice !== null && item.unitPrice !== undefined && "name" in item
+            ? { name: item.name ?? "Custom Service", unitPrice: item.unitPrice }
+            : await resolveServiceNameAndPrice(item as WorkOrderServiceItemInput, tx)
         return {
           serviceId: item.serviceId,
           name: resolved.name,
@@ -245,7 +283,7 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
         productId: input.productId,
         linkedInventoryId: input.linkedInventoryId,
         quantity: input.quantity,
-        unitPrice: await resolveMaterialUnitPrice(input),
+        unitPrice: await resolveMaterialUnitPrice(input, tx),
         notes: input.notes,
         changeOrderStatus: input.changeOrderStatus,
       },
@@ -323,18 +361,13 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
 
 export async function deleteWorkOrderItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
-    const existing = await tx.flooringWorkOrderItem.findUniqueOrThrow({
-      where: { id: itemId },
-      select: { workOrderId: true },
-    })
-
     await tx.flooringWorkOrderItem.delete({ where: { id: itemId } })
   })
 }
 
 export async function createWorkOrderServiceItem(workOrderId: string, input: WorkOrderServiceItemInput) {
-  const resolved = await resolveServiceNameAndPrice(input)
   const created = await prisma.$transaction(async (tx) => {
+    const resolved = await resolveServiceNameAndPrice(input, tx)
     const item = await tx.flooringWorkOrderServiceItem.create({
       data: {
         workOrderId,
@@ -398,11 +431,6 @@ export async function updateWorkOrderServiceItem(itemId: string, input: Partial<
 
 export async function deleteWorkOrderServiceItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
-    const existing = await tx.flooringWorkOrderServiceItem.findUniqueOrThrow({
-      where: { id: itemId },
-      select: { workOrderId: true },
-    })
-
     await tx.flooringWorkOrderServiceItem.delete({ where: { id: itemId } })
   })
 }

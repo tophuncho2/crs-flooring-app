@@ -1,4 +1,6 @@
 import { buildProductName } from "@/features/flooring/products/services"
+import type { LineTotalInput } from "@/features/flooring/shared/line-totals"
+import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
 
 export type PricingLine = {
   quantity: number
@@ -17,13 +19,15 @@ export function calculateTemplateTotal(input: {
   items: PricingLine[]
   serviceItems: PricingLine[]
 }) {
-  const materialTotal = input.items.reduce((total, line) => total + line.quantity * line.unitPrice, 0)
-  const serviceTotal = input.serviceItems.reduce((total, line) => total + line.quantity * line.unitPrice, 0)
+  const summary = buildRecordSummary({
+    materialItems: input.items,
+    serviceItems: input.serviceItems,
+  })
 
   return {
-    materialTotal,
-    serviceTotal,
-    total: materialTotal + serviceTotal,
+    materialTotal: summary.materialTotal,
+    serviceTotal: summary.serviceTotal,
+    total: summary.grandTotal,
   }
 }
 
@@ -65,6 +69,16 @@ export function normalizeTemplate(template: {
     createdAt: template.createdAt.toISOString(),
     updatedAt: template.updatedAt.toISOString(),
   }
+}
+
+export function normalizeTemplateSummary(input: {
+  items: LineTotalInput[]
+  serviceItems: LineTotalInput[]
+}) {
+  return buildRecordSummary({
+    materialItems: input.items,
+    serviceItems: input.serviceItems,
+  })
 }
 
 export function normalizeTemplateItem(item: {

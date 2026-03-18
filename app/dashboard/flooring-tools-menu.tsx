@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   DndContext,
   KeyboardSensor,
@@ -39,9 +39,7 @@ function SortableFlooringNavRow({
   isVisible,
   hotkeyLabel,
   visibleSlugs,
-  orderedItems,
   onVisibleSlugsChange,
-  onOrderedSlugsChange,
   onNavigate,
 }: {
   tool: FlooringNavItem
@@ -49,9 +47,7 @@ function SortableFlooringNavRow({
   isVisible: boolean
   hotkeyLabel?: string
   visibleSlugs: string[]
-  orderedItems: FlooringNavItem[]
   onVisibleSlugsChange: (slugs: string[]) => void
-  onOrderedSlugsChange: (slugs: string[]) => void
   onNavigate: (href: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tool.slug })
@@ -148,7 +144,7 @@ export default function FlooringToolsMenu({
     }),
   )
 
-  async function persistPreferences(nextVisibleSlugs: string[], nextOrderedSlugs: string[]) {
+  const persistPreferences = useCallback(async (nextVisibleSlugs: string[], nextOrderedSlugs: string[]) => {
     const serialized = JSON.stringify({ nextVisibleSlugs, nextOrderedSlugs })
     if (serialized === lastSavedValueRef.current) {
       return
@@ -178,9 +174,9 @@ export default function FlooringToolsMenu({
     })
     onVisibleSlugsChange(payload.visibleSlugs)
     onOrderedSlugsChange(payload.orderedSlugs)
-  }
+  }, [onOrderedSlugsChange, onVisibleSlugsChange])
 
-  async function closeAndSave() {
+  const closeAndSave = useCallback(async () => {
     setOpen(false)
 
     try {
@@ -191,7 +187,7 @@ export default function FlooringToolsMenu({
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Failed to save header tabs")
     }
-  }
+  }, [orderedItems, persistPreferences, visibleSlugs])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -201,7 +197,7 @@ export default function FlooringToolsMenu({
     }
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [visibleSlugs])
+  }, [closeAndSave])
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -279,9 +275,7 @@ export default function FlooringToolsMenu({
                     isVisible={isVisible}
                     hotkeyLabel={hotkeyLabel}
                     visibleSlugs={visibleSlugs}
-                    orderedItems={orderedItems}
                     onVisibleSlugsChange={onVisibleSlugsChange}
-                    onOrderedSlugsChange={onOrderedSlugsChange}
                     onNavigate={navigateToTool}
                   />
                 )

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
+import { TEMPLATE_SYNC_POLICY } from "@/features/flooring/work-orders/contracts"
 import type { SyncTemplateToWorkOrderInput } from "@/features/flooring/work-orders/validators"
 
 type MaterialSnapshotRow = {
@@ -21,6 +22,11 @@ type ServiceSnapshotRow = {
 }
 
 type SyncPreview = {
+  headerUpdates: {
+    warehouseId: boolean
+    instructions: boolean
+    templateId: boolean
+  }
   rowsToCreate: {
     materialItems: number
     serviceItems: number
@@ -38,6 +44,7 @@ type SyncPreview = {
 export type SyncTemplateToWorkOrderResult = SyncPreview & {
   mode: "overwrite" | "append"
   dryRun: boolean
+  policy: typeof TEMPLATE_SYNC_POLICY
   workOrder: Awaited<ReturnType<typeof getWorkOrderById>> | null
 }
 
@@ -66,6 +73,8 @@ async function buildTemplateSyncSnapshot(templateId: string, tx: Prisma.Transact
     where: { id: templateId },
     select: {
       propertyId: true,
+      warehouseId: true,
+      instructions: true,
       items: {
         select: {
           productId: true,
@@ -89,6 +98,8 @@ async function buildTemplateSyncSnapshot(templateId: string, tx: Prisma.Transact
 
   return {
     propertyId: template.propertyId,
+    warehouseId: template.warehouseId,
+    instructions: template.instructions,
     items: template.items.map<MaterialSnapshotRow>((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -109,6 +120,11 @@ async function buildTemplateSyncSnapshot(templateId: string, tx: Prisma.Transact
 
 function buildSyncPreview(args: {
   mode: "overwrite" | "append"
+  existingWorkOrder: {
+    templateId: string | null
+    warehouseId: string | null
+    instructions: string | null
+  }
   existingMaterialItems: Array<{ productId: string; quantity: Prisma.Decimal; unitPrice: Prisma.Decimal; notes: string | null }>
   existingServiceItems: Array<{ serviceId: string | null; name: string; unitId: string; quantity: Prisma.Decimal; unitPrice: Prisma.Decimal; notes: string | null }>
   templateSnapshot: Awaited<ReturnType<typeof buildTemplateSyncSnapshot>>
@@ -126,6 +142,11 @@ function buildSyncPreview(args: {
       : args.templateSnapshot.serviceItems.filter((item) => !existingServiceKeys.has(serviceKey(item)))
 
   return {
+    headerUpdates: {
+      warehouseId: args.existingWorkOrder.warehouseId !== args.templateSnapshot.warehouseId,
+      instructions: (args.existingWorkOrder.instructions ?? "") !== (args.templateSnapshot.instructions ?? ""),
+      templateId: true,
+    },
     rowsToCreate: {
       materialItems: materialItemsToCreate.length,
       serviceItems: serviceItemsToCreate.length,
@@ -150,6 +171,9 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       select: {
         id: true,
         propertyId: true,
+        templateId: true,
+        warehouseId: true,
+        instructions: true,
         isComplete: true,
         updatedAt: true,
       },
@@ -193,6 +217,11 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
 
     const preview = buildSyncPreview({
       mode: input.mode,
+      existingWorkOrder: {
+        templateId: existingWorkOrder.templateId,
+        warehouseId: existingWorkOrder.warehouseId,
+        instructions: existingWorkOrder.instructions,
+      },
       existingMaterialItems,
       existingServiceItems,
       templateSnapshot,
@@ -202,7 +231,9 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       return {
         mode: input.mode,
         dryRun: true,
+        policy: TEMPLATE_SYNC_POLICY,
         workOrder: null,
+        headerUpdates: preview.headerUpdates,
         rowsToCreate: preview.rowsToCreate,
         rowsToDelete: preview.rowsToDelete,
         counts: preview.counts,
@@ -243,13 +274,19 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
 
     await tx.flooringWorkOrder.update({
       where: { id: workOrderId },
-      data: { templateId: input.templateId },
+      data: {
+        templateId: input.templateId,
+        warehouseId: templateSnapshot.warehouseId,
+        instructions: templateSnapshot.instructions,
+      },
     })
 
     return {
       mode: input.mode,
       dryRun: false,
+      policy: TEMPLATE_SYNC_POLICY,
       workOrder: await getWorkOrderById(workOrderId),
+      headerUpdates: preview.headerUpdates,
       rowsToCreate: preview.rowsToCreate,
       rowsToDelete: preview.rowsToDelete,
       counts: preview.counts,

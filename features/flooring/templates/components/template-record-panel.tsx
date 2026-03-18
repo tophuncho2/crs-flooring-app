@@ -4,13 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
-import { RecordLineSummary } from "@/features/flooring/shared/record-line-summary"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { clearCachedRecordDetail, getCachedRecordDetail, setCachedRecordDetail } from "@/features/flooring/shared/record-detail-cache"
+import { buildRecordSummary, emptyRecordSummary } from "@/features/flooring/shared/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
+import { useRecordDetailController } from "@/features/flooring/shared/use-record-detail-controller"
 
 export type TemplatePanelRow = {
   id: string
@@ -42,6 +42,7 @@ type TemplateServiceItem = EditableServiceItem
 type TemplateDetail = TemplatePanelRow & {
   items: TemplateMaterialItem[]
   serviceItems: TemplateServiceItem[]
+  summary: ReturnType<typeof buildRecordSummary>
 }
 
 function toTemplateDraft(template: TemplatePanelRow): TemplatePanelDraft {
@@ -82,15 +83,36 @@ export function TemplateRecordPanel({
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
 }) {
-  const cachedTemplate = getCachedRecordDetail<TemplateDetail>("template", templateId, initialTemplate.updatedAt)
-  const [template, setTemplate] = useState<TemplatePanelRow | null>(cachedTemplate ?? initialTemplate)
-  const [draft, setDraft] = useState<TemplatePanelDraft | null>(toTemplateDraft(cachedTemplate ?? initialTemplate))
+  const initialTemplateDetail = useMemo<TemplateDetail>(
+    () => ({
+      ...initialTemplate,
+      items: [],
+      serviceItems: [],
+      summary: emptyRecordSummary(),
+    }),
+    [initialTemplate],
+  )
   const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>({ productId: "", quantity: "", unitPrice: "", notes: "" })
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>({ serviceId: "", name: "", unitId: "", quantity: "", unitPrice: "", notes: "" })
-  const [loading, setLoading] = useState(!cachedTemplate)
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
+  const {
+    record: template,
+    draft,
+    setDraft,
+    loading,
+    error,
+    setError,
+    syncRecord,
+    clearRecordCache,
+  } = useRecordDetailController<TemplateDetail, TemplatePanelDraft>({
+    scope: "template",
+    id: templateId,
+    initialRecord: initialTemplateDetail,
+    toDraft: toTemplateDraft,
+    url: `/api/flooring/templates/${templateId}`,
+    payloadKey: "template",
+  })
 
   const materialCollection = useChildCollection<TemplateMaterialItem, MaterialItemDraft, EditableMaterialItem>({
     listUrl: `/api/flooring/templates/${templateId}/items`,
@@ -127,13 +149,6 @@ export function TemplateRecordPanel({
   const materialItems = materialCollection.items
   const serviceItems = serviceCollection.items
 
-  useEffect(() => {
-    if (cachedTemplate) {
-      setMaterialItems(cachedTemplate.items ?? [])
-      setServiceItems(cachedTemplate.serviceItems ?? [])
-    }
-  }, [cachedTemplate, setMaterialItems, setServiceItems])
-
   const itemCount = useMemo(() => materialItems.length + serviceItems.length, [materialItems.length, serviceItems.length])
   const onSummaryChangeRef = useRef(onSummaryChange)
   const onTemplateSavedRef = useRef(onTemplateSaved)
@@ -151,43 +166,13 @@ export function TemplateRecordPanel({
   }, [materialItems, serviceItems])
 
   useEffect(() => {
-    if (cachedTemplate) {
-      setLoading(false)
+    if (!template) {
       return
     }
 
-    let cancelled = false
-
-    async function load() {
-      if (!cachedTemplate) {
-        setLoading(true)
-      }
-      setError("")
-
-      try {
-        const templatePayload = await requestJson<{ template: TemplateDetail }>(`/api/flooring/templates/${templateId}`)
-
-        if (cancelled) return
-
-        setTemplate(templatePayload.template)
-        setDraft(toTemplateDraft(templatePayload.template))
-        setMaterialItems(templatePayload.template.items ?? [])
-        setServiceItems(templatePayload.template.serviceItems ?? [])
-        setCachedRecordDetail("template", templateId, templatePayload.template.updatedAt, templatePayload.template)
-      } catch (loadError) {
-        if (cancelled) return
-        setError(loadError instanceof Error ? loadError.message : "Failed to load template")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [cachedTemplate, setMaterialItems, setServiceItems, templateId])
+    setMaterialItems(template.items ?? [])
+    setServiceItems(template.serviceItems ?? [])
+  }, [setMaterialItems, setServiceItems, template])
 
   async function saveTemplate() {
     if (!template || !draft) return
@@ -206,12 +191,14 @@ export function TemplateRecordPanel({
         }),
       })
 
-      setTemplate(payload.template)
-      setDraft(toTemplateDraft(payload.template))
-      setCachedRecordDetail("template", template.id, payload.template.updatedAt, {
+      syncRecord({
         ...payload.template,
         items: materialItems,
         serviceItems,
+        summary: buildRecordSummary({
+          materialItems,
+          serviceItems,
+        }),
       })
       setMessage("Template saved")
       onTemplateSavedRef.current?.(payload.template, previousPropertyId, itemCount)
@@ -228,7 +215,7 @@ export function TemplateRecordPanel({
 
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/templates/${template.id}`, { method: "DELETE" })
-      clearCachedRecordDetail("template", template.id)
+      clearRecordCache()
       onTemplateDeleted?.(template.id, template.propertyId)
       onClose()
     } catch (deleteError) {
@@ -242,11 +229,15 @@ export function TemplateRecordPanel({
     try {
       const nextMaterialItems = await materialCollection.createItem(materialDraft)
       setMaterialDraft({ productId: "", quantity: "", unitPrice: "", notes: "" })
-      setCachedRecordDetail("template", template.id, template.updatedAt, {
+      syncRecord({
         ...template,
         items: nextMaterialItems,
         serviceItems,
-      })
+        summary: buildRecordSummary({
+          materialItems: nextMaterialItems,
+          serviceItems,
+        }),
+      }, { syncDraft: false })
       setMessage("Template item added")
       onTemplateSavedRef.current?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
     } catch (saveError) {
@@ -259,11 +250,15 @@ export function TemplateRecordPanel({
     setError("")
     try {
       const nextMaterialItems = await materialCollection.updateItem(item.id, item)
-      setCachedRecordDetail("template", template.id, template.updatedAt, {
+      syncRecord({
         ...template,
         items: nextMaterialItems,
         serviceItems,
-      })
+        summary: buildRecordSummary({
+          materialItems: nextMaterialItems,
+          serviceItems,
+        }),
+      }, { syncDraft: false })
       setMessage("Template item saved")
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save template item")
@@ -275,11 +270,15 @@ export function TemplateRecordPanel({
     setError("")
     try {
       const nextMaterialItems = await materialCollection.deleteItem(itemId)
-      setCachedRecordDetail("template", template.id, template.updatedAt, {
+      syncRecord({
         ...template,
         items: nextMaterialItems,
         serviceItems,
-      })
+        summary: buildRecordSummary({
+          materialItems: nextMaterialItems,
+          serviceItems,
+        }),
+      }, { syncDraft: false })
       setMessage("Template item deleted")
       onTemplateSavedRef.current?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
     } catch (deleteError) {
@@ -293,11 +292,15 @@ export function TemplateRecordPanel({
     try {
       const nextServiceItems = await serviceCollection.createItem(serviceDraft)
       setServiceDraft({ serviceId: "", name: "", unitId: "", quantity: "", unitPrice: "", notes: "" })
-      setCachedRecordDetail("template", template.id, template.updatedAt, {
+      syncRecord({
         ...template,
         items: materialItems,
         serviceItems: nextServiceItems,
-      })
+        summary: buildRecordSummary({
+          materialItems,
+          serviceItems: nextServiceItems,
+        }),
+      }, { syncDraft: false })
       setMessage("Template service item added")
       onTemplateSavedRef.current?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
     } catch (saveError) {
@@ -310,11 +313,15 @@ export function TemplateRecordPanel({
     setError("")
     try {
       const nextServiceItems = await serviceCollection.updateItem(item.id, item)
-      setCachedRecordDetail("template", template.id, template.updatedAt, {
+      syncRecord({
         ...template,
         items: materialItems,
         serviceItems: nextServiceItems,
-      })
+        summary: buildRecordSummary({
+          materialItems,
+          serviceItems: nextServiceItems,
+        }),
+      }, { syncDraft: false })
       setMessage("Template service item saved")
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save template service item")
@@ -326,11 +333,15 @@ export function TemplateRecordPanel({
     setError("")
     try {
       const nextServiceItems = await serviceCollection.deleteItem(itemId)
-      setCachedRecordDetail("template", template.id, template.updatedAt, {
+      syncRecord({
         ...template,
         items: materialItems,
         serviceItems: nextServiceItems,
-      })
+        summary: buildRecordSummary({
+          materialItems,
+          serviceItems: nextServiceItems,
+        }),
+      }, { syncDraft: false })
       setMessage("Template service item deleted")
       onTemplateSavedRef.current?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
     } catch (deleteError) {

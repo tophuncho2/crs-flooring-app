@@ -6,10 +6,12 @@ import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/sh
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { clearCachedRecordDetail, getCachedRecordDetail, setCachedRecordDetail } from "@/features/flooring/shared/record-detail-cache"
+import { buildRecordSummary, emptyRecordSummary } from "@/features/flooring/shared/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
+import { useRecordDetailController } from "@/features/flooring/shared/use-record-detail-controller"
+import { TEMPLATE_SYNC_POLICY, WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 
 type PropertyOption = {
   id: string
@@ -32,6 +34,7 @@ type WorkOrderDetail = {
   id: string
   workOrderNumber: string
   propertyId: string
+  templateId: string
   propertyName: string
   propertyAddress: string
   warehouseId: string
@@ -49,12 +52,15 @@ type WorkOrderDetail = {
   workOrderImageUrl: string
   createdAt: string
   updatedAt: string
+  hasShortage?: boolean
   items: EditableMaterialItem[]
   serviceItems: EditableServiceItem[]
+  summary: ReturnType<typeof buildRecordSummary>
 }
 
 type WorkOrderDraft = {
   propertyId: string
+  templateId: string
   warehouseId: string
   status: string
   isComplete: boolean
@@ -102,18 +108,12 @@ const defaultServiceDraft: ServiceItemDraft = {
   notes: "",
 }
 
-const statusOptions = [
-  "BUILDING_ORDER",
-  "PENDING_EXPORT",
-  "CARPET_CLEANING",
-  "SENT_OUT",
-]
-
 const vacancyOptions: Array<"VACANT" | "OCCUPIED"> = ["VACANT", "OCCUPIED"]
 
 function toDraft(workOrder: WorkOrderDetail): WorkOrderDraft {
   return {
     propertyId: workOrder.propertyId,
+    templateId: workOrder.templateId,
     warehouseId: workOrder.warehouseId,
     status: workOrder.status,
     isComplete: workOrder.isComplete,
@@ -130,11 +130,7 @@ function toDraft(workOrder: WorkOrderDetail): WorkOrderDraft {
 }
 
 function statusLabel(value: string) {
-  return value
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
+  return getWorkOrderStatusLabel({ status: value, isComplete: false })
 }
 
 function selectedAddress(propertyOptions: PropertyOption[], draft: WorkOrderDraft, fallbackAddress: string) {
@@ -163,7 +159,7 @@ export function WorkOrderRecordPanel({
   onSummaryChange,
 }: {
   workOrderId: string
-  initialWorkOrder: Omit<WorkOrderDetail, "items" | "serviceItems">
+  initialWorkOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary">
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   productOptions: MaterialItemOption[]
@@ -174,16 +170,22 @@ export function WorkOrderRecordPanel({
   isSyncModalOpen: boolean
   onCloseSync: () => void
   refreshNonce?: number
-  onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems"> & { itemsCount: number }) => void
+  onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary"> & { itemsCount: number }) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
 }) {
-  const cachedWorkOrder = getCachedRecordDetail<WorkOrderDetail>("workOrder", workOrderId, initialWorkOrder.updatedAt)
-  const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(cachedWorkOrder ?? { ...initialWorkOrder, items: [], serviceItems: [] })
-  const [draft, setDraft] = useState<WorkOrderDraft | null>(toDraft(cachedWorkOrder ?? { ...initialWorkOrder, items: [], serviceItems: [] }))
+  const initialWorkOrderDetail = useMemo<WorkOrderDetail>(
+    () => ({
+      ...initialWorkOrder,
+      templateId: initialWorkOrder.templateId ?? "",
+      items: [],
+      serviceItems: [],
+      summary: emptyRecordSummary(),
+    }),
+    [initialWorkOrder],
+  )
   const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>(defaultMaterialDraft)
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>(defaultServiceDraft)
-  const [loading, setLoading] = useState(!cachedWorkOrder)
   const [savingWorkOrder, setSavingWorkOrder] = useState(false)
   const [syncSearch, setSyncSearch] = useState("")
   const [selectedTemplateId, setSelectedTemplateId] = useState("")
@@ -191,7 +193,24 @@ export function WorkOrderRecordPanel({
   const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null)
   const [syncingTemplate, setSyncingTemplate] = useState(false)
   const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
+  const {
+    record: workOrder,
+    draft,
+    setDraft,
+    loading,
+    error,
+    setError,
+    publishRecord,
+    refreshRecord,
+    clearRecordCache,
+  } = useRecordDetailController<WorkOrderDetail, WorkOrderDraft>({
+    scope: "workOrder",
+    id: workOrderId,
+    initialRecord: initialWorkOrderDetail,
+    toDraft,
+    url: `/api/flooring/work-orders/${workOrderId}`,
+    payloadKey: "workOrder",
+  })
 
   const materialCollection = useChildCollection<EditableMaterialItem, MaterialItemDraft, EditableMaterialItem>({
     listUrl: `/api/flooring/work-orders/${workOrderId}/items`,
@@ -224,13 +243,6 @@ export function WorkOrderRecordPanel({
   const materialItems = materialCollection.items
   const serviceItems = serviceCollection.items
 
-  useEffect(() => {
-    if (cachedWorkOrder) {
-      setMaterialItems(cachedWorkOrder.items ?? [])
-      setServiceItems(cachedWorkOrder.serviceItems ?? [])
-    }
-  }, [cachedWorkOrder, setMaterialItems, setServiceItems])
-
   const filteredTemplates = useMemo(() => {
     const activePropertyId = draft?.propertyId ?? ""
     const normalizedSearch = syncSearch.trim().toLowerCase()
@@ -260,68 +272,32 @@ export function WorkOrderRecordPanel({
   }, [materialItems, serviceItems])
 
   const publishWorkOrder = useCallback((nextWorkOrder: WorkOrderDetail) => {
-    setWorkOrder(nextWorkOrder)
-    setDraft(toDraft(nextWorkOrder))
-    setCachedRecordDetail("workOrder", nextWorkOrder.id, nextWorkOrder.updatedAt, nextWorkOrder)
+    publishRecord(nextWorkOrder)
     onWorkOrderSavedRef.current?.({
       ...nextWorkOrder,
       itemsCount: nextWorkOrder.items.length + nextWorkOrder.serviceItems.length,
     })
-  }, [])
+  }, [publishRecord])
 
-  const fetchWorkOrderDetail = useCallback(async () => {
-    const payload = await requestJson<{ workOrder: WorkOrderDetail }>(`/api/flooring/work-orders/${workOrderId}`)
-    return payload.workOrder
-  }, [workOrderId])
-
-  async function refreshWorkOrderDetail() {
+  const refreshWorkOrderDetail = useCallback(async () => {
     try {
-      const nextWorkOrder = await fetchWorkOrderDetail()
+      const nextWorkOrder = await refreshRecord()
       publishWorkOrder(nextWorkOrder)
       setMaterialItems(nextWorkOrder.items ?? [])
       setServiceItems(nextWorkOrder.serviceItems ?? [])
       return nextWorkOrder
     } finally {
     }
-  }
+  }, [publishWorkOrder, refreshRecord, setMaterialItems, setServiceItems])
 
   useEffect(() => {
-    if (cachedWorkOrder) {
-      setLoading(false)
+    if (!workOrder) {
       return
     }
 
-    let cancelled = false
-
-    async function load() {
-      if (!cachedWorkOrder) {
-        setLoading(true)
-      }
-      setError("")
-
-      try {
-        const nextWorkOrder = await fetchWorkOrderDetail()
-        if (cancelled) return
-        publishWorkOrder(nextWorkOrder)
-        setMaterialItems(nextWorkOrder.items ?? [])
-        setServiceItems(nextWorkOrder.serviceItems ?? [])
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load work order")
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [cachedWorkOrder, fetchWorkOrderDetail, publishWorkOrder, setMaterialItems, setServiceItems])
+    setMaterialItems(workOrder.items ?? [])
+    setServiceItems(workOrder.serviceItems ?? [])
+  }, [setMaterialItems, setServiceItems, workOrder])
 
   useEffect(() => {
     setSyncPreview(null)
@@ -334,7 +310,7 @@ export function WorkOrderRecordPanel({
     }
 
     void refreshWorkOrderDetail()
-  }, [refreshNonce])
+  }, [refreshNonce, refreshWorkOrderDetail])
 
   async function saveWorkOrder() {
     if (!draft || !workOrder) return
@@ -361,7 +337,7 @@ export function WorkOrderRecordPanel({
     setError("")
     try {
       await requestJson(`/api/flooring/work-orders/${workOrder.id}`, { method: "DELETE" })
-      clearCachedRecordDetail("workOrder", workOrder.id)
+      clearRecordCache()
       onWorkOrderDeleted?.(workOrder.id)
       onClose()
     } catch (deleteError) {
@@ -544,9 +520,9 @@ export function WorkOrderRecordPanel({
         </RecordFormField>
         <RecordFormField label="Status">
           <select value={draft.status} onChange={(event) => setDraft((prev) => (prev ? { ...prev, status: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>{statusLabel(status)}</option>
-            ))}
+              {WORK_ORDER_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>{statusLabel(status)}</option>
+              ))}
           </select>
         </RecordFormField>
         <RecordFormField label="Completion">
@@ -670,7 +646,7 @@ export function WorkOrderRecordPanel({
                 </select>
               </RecordFormField>
               <p className="rounded-lg border border-[var(--panel-border)] px-3 py-3 text-sm text-[var(--foreground)]/70">
-                Sync copies template material and service rows into this draft work order. No pad rows or derived quantity adjustments are applied during sync.
+                Sync snapshots template warehouse and instructions, then copies template material and service rows into this draft work order. Property must already match, and work-order-only fields stay untouched. Policy: {TEMPLATE_SYNC_POLICY.rowBehavior.overwrite.replaceAll("_", " ")} in overwrite mode; {TEMPLATE_SYNC_POLICY.rowBehavior.append.replaceAll("_", " ")} in append mode.
               </p>
               {syncPreview ? (
                 <div className="rounded-lg border border-[var(--panel-border)] px-3 py-3 text-sm text-[var(--foreground)]/80">

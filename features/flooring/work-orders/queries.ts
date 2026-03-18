@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/prisma"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
-import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
+import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
 export async function listWorkOrders() {
   const workOrders = await prisma.flooringWorkOrder.findMany({
@@ -22,12 +22,22 @@ export async function listWorkOrders() {
       _count: {
         select: { items: true, serviceItems: true },
       },
+      items: {
+        where: { changeOrderStatus: "SHORTAGE" },
+        select: { id: true },
+        take: 1,
+      },
     },
     orderBy: { createdAt: "desc" },
     take: 250,
   })
 
-  return workOrders.map(normalizeWorkOrder)
+  return workOrders.map((workOrder) =>
+    normalizeWorkOrder({
+      ...workOrder,
+      hasShortage: workOrder.items.length > 0,
+    }),
+  )
 }
 
 export async function getWorkOrderById(id: string) {
@@ -89,9 +99,23 @@ export async function getWorkOrderById(id: string) {
   })
 
   return {
-    ...normalizeWorkOrder(workOrder),
-    items: workOrder.items.map(normalizeWorkOrderItem),
-    serviceItems: workOrder.serviceItems.map(normalizeWorkOrderServiceItem),
+    ...(() => {
+      const normalizedItems = workOrder.items.map(normalizeWorkOrderItem)
+      const normalizedServiceItems = workOrder.serviceItems.map(normalizeWorkOrderServiceItem)
+
+      return {
+        ...normalizeWorkOrder({
+          ...workOrder,
+          hasShortage: workOrder.items.some((item) => item.changeOrderStatus === "SHORTAGE"),
+        }),
+        items: normalizedItems,
+        serviceItems: normalizedServiceItems,
+        summary: normalizeWorkOrderSummary({
+          items: normalizedItems,
+          serviceItems: normalizedServiceItems,
+        }),
+      }
+    })(),
   }
 }
 

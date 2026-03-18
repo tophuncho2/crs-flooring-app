@@ -63,7 +63,7 @@ function parseWorkOrderStatus(value: unknown, field: string) {
     EXPORTPENDING: "PENDING_EXPORT",
   }[normalized] ?? normalized
 
-  if (!workOrderStatuses.has(mapped)) {
+  if (!workOrderStatuses.has(mapped as (typeof FlooringWorkOrderStatus)[keyof typeof FlooringWorkOrderStatus])) {
     throw { message: `${field} must be one of ${Array.from(workOrderStatuses).join(", ")}`, field }
   }
 
@@ -78,7 +78,7 @@ function parseOptionalEnumValue(value: unknown, field: string) {
     .toUpperCase()
     .replace(/\s+/g, "_")
 
-  if (!vacancyStatuses.has(normalized)) {
+  if (!vacancyStatuses.has(normalized as (typeof FlooringVacancyStatus)[keyof typeof FlooringVacancyStatus])) {
     throw { message: `${field} must be one of ${Array.from(vacancyStatuses).join(", ")}`, field }
   }
 

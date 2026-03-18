@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/prisma"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
-import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem } from "./services"
+import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
 export async function listTemplates() {
   const templates = await prisma.flooringTemplate.findMany({
@@ -80,9 +80,20 @@ export async function getTemplateById(id: string) {
   })
 
   return {
-    ...normalizeTemplate(template),
-    items: template.items.map(normalizeTemplateItem),
-    serviceItems: template.serviceItems.map(normalizeTemplateServiceItem),
+    ...(() => {
+      const normalizedItems = template.items.map(normalizeTemplateItem)
+      const normalizedServiceItems = template.serviceItems.map(normalizeTemplateServiceItem)
+
+      return {
+        ...normalizeTemplate(template),
+        items: normalizedItems,
+        serviceItems: normalizedServiceItems,
+        summary: normalizeTemplateSummary({
+          items: normalizedItems,
+          serviceItems: normalizedServiceItems,
+        }),
+      }
+    })(),
   }
 }
 

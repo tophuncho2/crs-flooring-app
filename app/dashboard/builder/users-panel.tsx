@@ -164,7 +164,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     }, 10000)
 
     return () => window.clearInterval(timer)
-  }, [sectionsOpen.activity, activityLoaded])
+  }, [activityLoaded, activityRows.length, sectionsOpen.activity])
 
   async function updateUser(userId: string, next: Partial<Pick<UserRow, "role" | "isVerified">>) {
     if (!viewerCanManageUsers) return

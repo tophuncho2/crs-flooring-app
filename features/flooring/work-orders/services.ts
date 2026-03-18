@@ -1,27 +1,19 @@
 import { buildProductName } from "@/features/flooring/products/services"
+import type { LineTotalInput } from "@/features/flooring/shared/line-totals"
+import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
 import type { PricingLine } from "@/features/flooring/templates/services"
+import {
+  TEMPLATE_SYNC_POLICY,
+  VACANCY_OPTIONS,
+  WORK_ORDER_STATUS_LABELS,
+  WORK_ORDER_STATUS_OPTIONS,
+  getWorkOrderStatusLabel,
+} from "./contracts"
 
-export const workOrderStatuses = new Set([
-  "BUILDING_ORDER",
-  "PENDING_EXPORT",
-  "CARPET_CLEANING",
-  "SENT_OUT",
-  "PENDING",
-  "PULL_TEMPLATE",
-  "MODIFY",
-])
-
-export const vacancyStatuses = new Set(["VACANT", "OCCUPIED"])
-
-export const workOrderStatusLabels: Record<string, string> = {
-  BUILDING_ORDER: "Building Order",
-  PENDING_EXPORT: "Pending Export",
-  CARPET_CLEANING: "Carpet Cleaning",
-  SENT_OUT: "Sent Out",
-  PENDING: "Pending Export",
-  PULL_TEMPLATE: "Pull Template",
-  MODIFY: "Modify",
-}
+export const workOrderStatuses = new Set(WORK_ORDER_STATUS_OPTIONS)
+export const vacancyStatuses = new Set(VACANCY_OPTIONS)
+export const workOrderStatusLabels = WORK_ORDER_STATUS_LABELS
+export const templateSyncPolicy = TEMPLATE_SYNC_POLICY
 
 export function normalizeWorkOrderAddress(value: {
   streetAddress: string | null
@@ -36,13 +28,15 @@ export function calculateWorkOrderTotal(input: {
   items: PricingLine[]
   serviceItems: PricingLine[]
 }) {
-  const materialTotal = input.items.reduce((total, line) => total + line.quantity * line.unitPrice, 0)
-  const serviceTotal = input.serviceItems.reduce((total, line) => total + line.quantity * line.unitPrice, 0)
+  const summary = buildRecordSummary({
+    materialItems: input.items,
+    serviceItems: input.serviceItems,
+  })
 
   return {
-    materialTotal,
-    serviceTotal,
-    total: materialTotal + serviceTotal,
+    materialTotal: summary.materialTotal,
+    serviceTotal: summary.serviceTotal,
+    total: summary.grandTotal,
   }
 }
 
@@ -50,6 +44,7 @@ export function normalizeWorkOrder(workOrder: {
   id: string
   workOrderNumber: string
   propertyId: string
+  templateId?: string | null
   property: { id: string; name: string; streetAddress: string | null; city: string | null; state: string | null; postalCode: string | null }
   warehouse: { id: string; name: string } | null
   status: string
@@ -67,18 +62,27 @@ export function normalizeWorkOrder(workOrder: {
   createdAt: Date
   updatedAt: Date
   _count?: { items: number; serviceItems: number }
+  hasShortage?: boolean
 }) {
+  const hasShortage = workOrder.hasShortage ?? false
+
   return {
     id: workOrder.id,
     workOrderNumber: workOrder.workOrderNumber,
     propertyId: workOrder.propertyId,
+    templateId: workOrder.templateId ?? "",
     propertyName: workOrder.property.name,
     propertyAddress: normalizeWorkOrderAddress(workOrder.property),
     warehouseId: workOrder.warehouse?.id ?? "",
     warehouseName: workOrder.warehouse?.name ?? "",
     status: workOrder.status,
-    statusLabel: workOrder.isComplete ? "Complete" : workOrderStatusLabels[workOrder.status] ?? workOrder.status,
+    statusLabel: getWorkOrderStatusLabel({
+      status: workOrder.status,
+      isComplete: workOrder.isComplete,
+      hasShortage,
+    }),
     isComplete: workOrder.isComplete,
+    hasShortage,
     vacancy: workOrder.vacancy,
     date: workOrder.scheduledFor?.toISOString() ?? null,
     unitText: workOrder.unitLabel ?? "",
@@ -93,6 +97,16 @@ export function normalizeWorkOrder(workOrder: {
     createdAt: workOrder.createdAt.toISOString(),
     updatedAt: workOrder.updatedAt.toISOString(),
   }
+}
+
+export function normalizeWorkOrderSummary(input: {
+  items: LineTotalInput[]
+  serviceItems: LineTotalInput[]
+}) {
+  return buildRecordSummary({
+    materialItems: input.items,
+    serviceItems: input.serviceItems,
+  })
 }
 
 export function normalizeWorkOrderItem(item: {

@@ -317,6 +317,8 @@ model FlooringTemplate {
   @@index([propertyId])
   @@index([warehouseId])
   @@index([templateTag])
+  @@index([createdAt])
+  @@index([updatedAt])
   @@map("flooring_template")
 }
 
@@ -332,6 +334,7 @@ model FlooringTemplateItem {
   createdAt  DateTime         @default(now())
 
   @@index([templateId])
+  @@index([templateId, createdAt])
   @@index([productId])
   @@map("flooring_template_item")
 }
@@ -351,6 +354,7 @@ model FlooringTemplateServiceItem {
   createdAt  DateTime              @default(now())
 
   @@index([templateId])
+  @@index([templateId, createdAt])
   @@index([serviceId])
   @@index([unitId])
   @@map("flooring_template_service_item")
@@ -432,7 +436,12 @@ model FlooringWorkOrder {
   @@index([workOrderNumber])
   @@index([isComplete])
   @@index([propertyId, status])
+  @@index([status, scheduledFor])
   @@index([scheduledFor])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([templateId])
+  @@index([warehouseId])
   @@map("flooring_work_order")
 }
 
@@ -452,6 +461,7 @@ model FlooringWorkOrderItem {
   cutLogs           FlooringCutLog[]
 
   @@index([workOrderId])
+  @@index([workOrderId, createdAt])
   @@index([productId])
   @@index([linkedInventoryId])
   @@map("flooring_work_order_item")
@@ -472,6 +482,7 @@ model FlooringWorkOrderServiceItem {
   createdAt   DateTime              @default(now())
 
   @@index([workOrderId])
+  @@index([workOrderId, createdAt])
   @@index([serviceId])
   @@index([unitId])
   @@map("flooring_work_order_service_item")

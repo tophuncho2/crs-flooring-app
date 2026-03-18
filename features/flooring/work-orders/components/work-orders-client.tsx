@@ -17,11 +17,19 @@ import { useTableColumns } from "../../shared/use-table-columns"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
+import {
+  VACANCY_OPTIONS,
+  WORK_ORDER_STATUS_OPTIONS,
+  getVacancyFieldClass,
+  getWorkOrderStatusFieldClass,
+  getWorkOrderStatusLabel,
+} from "../contracts"
 
 type WorkOrderRow = {
   id: string
   workOrderNumber: string
   propertyId: string
+  templateId: string
   propertyName: string
   propertyAddress: string
   warehouseId: string
@@ -29,6 +37,7 @@ type WorkOrderRow = {
   status: string
   statusLabel: string
   isComplete: boolean
+  hasShortage?: boolean
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
@@ -64,6 +73,7 @@ type TemplateOption = {
 
 type DraftWorkOrder = {
   propertyId: string
+  templateId: string
   warehouseId: string
   status: string
   isComplete: boolean
@@ -78,42 +88,12 @@ type DraftWorkOrder = {
   workOrderImageUrl: string
 }
 
-const statusOptions = [
-  "BUILDING_ORDER",
-  "PENDING_EXPORT",
-  "CARPET_CLEANING",
-  "SENT_OUT",
-]
-
-const statusLabelByValue: Record<string, string> = {
-  BUILDING_ORDER: "Building Order",
-  PENDING_EXPORT: "Pending Export",
-  CARPET_CLEANING: "Carpet Cleaning",
-  SENT_OUT: "Sent Out",
-}
-
-const vacancyOptions: Array<"VACANT" | "OCCUPIED"> = ["VACANT", "OCCUPIED"]
-
 function statusLabel(value: string) {
-  return statusLabelByValue[value] ?? value
+  return getWorkOrderStatusLabel({ status: value, isComplete: false })
 }
 
-function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete">) {
-  return row.isComplete ? "Complete" : statusLabel(row.status)
-}
-
-function statusFieldClass(value: string) {
-  if (value === "BUILDING_ORDER") return "border-amber-500/40 bg-amber-500/10 text-amber-700"
-  if (value === "PENDING_EXPORT") return "border-sky-500/40 bg-sky-500/10 text-sky-700"
-  if (value === "CARPET_CLEANING") return "border-violet-500/40 bg-violet-500/10 text-violet-700"
-  if (value === "SENT_OUT") return "border-orange-500/40 bg-orange-500/10 text-orange-700"
-  return "border-[var(--panel-border)] bg-transparent text-[var(--foreground)]"
-}
-
-function vacancyFieldClass(value: string) {
-  if (value === "OCCUPIED") return "border-yellow-500/40 bg-yellow-500/10 text-yellow-700"
-  if (value === "VACANT") return "border-lime-400/40 bg-lime-400/10 text-lime-700"
-  return "border-[var(--panel-border)] bg-transparent text-[var(--foreground)]"
+function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete" | "hasShortage">) {
+  return getWorkOrderStatusLabel(row)
 }
 
 function dateInputValue(value: string | null) {
@@ -128,6 +108,7 @@ function buildWorkOrderAddress(property: PropertyOption | undefined, customAddre
 
 const defaultDraft: DraftWorkOrder = {
   propertyId: "",
+  templateId: "",
   warehouseId: "",
   status: "BUILDING_ORDER",
   isComplete: false,
@@ -245,6 +226,7 @@ export default function WorkOrdersClient({
     return (
       drafts[id] ?? {
         propertyId: row.propertyId,
+        templateId: row.templateId,
         warehouseId: row.warehouseId,
         status: row.status,
         isComplete: row.isComplete,
@@ -438,8 +420,8 @@ export default function WorkOrdersClient({
               Complete
             </span>
           ) : (
-            <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
-              {statusOptions.map((value) => (
+            <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${getWorkOrderStatusFieldClass(draft.status)}`}>
+              {WORK_ORDER_STATUS_OPTIONS.map((value) => (
                 <option key={value} value={value}>{statusLabel(value)}</option>
               ))}
             </select>
@@ -480,9 +462,9 @@ export default function WorkOrdersClient({
       unitType: <td key="unitType" className="px-3 py-2"><input value={draft.unitType} onChange={(event) => setDraftField(row.id, "unitType", event.target.value)} className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
       vacancy: (
         <td key="vacancy" className="px-3 py-2">
-          <select value={draft.vacancy} onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)} className={`w-28 rounded border px-2 py-1 ${vacancyFieldClass(draft.vacancy)}`}>
+          <select value={draft.vacancy} onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)} className={`w-28 rounded border px-2 py-1 ${getVacancyFieldClass(draft.vacancy)}`}>
             <option value="">Select</option>
-            {vacancyOptions.map((value) => (
+            {VACANCY_OPTIONS.map((value) => (
               <option key={value} value={value}>{value}</option>
             ))}
           </select>
@@ -611,6 +593,28 @@ export default function WorkOrdersClient({
                   ))}
                 </select>
               </FormField>
+              <FormField label="Template">
+                <select
+                  value={newDraft.templateId}
+                  onChange={(event) => {
+                    const nextTemplateId = event.target.value
+                    const selectedTemplate = templateOptions.find((template) => template.id === nextTemplateId)
+                    setNewDraft((prev) => ({
+                      ...prev,
+                      templateId: nextTemplateId,
+                      propertyId: selectedTemplate?.propertyId ?? prev.propertyId,
+                    }))
+                  }}
+                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                >
+                  <option value="">No template</option>
+                  {templateOptions
+                    .filter((template) => !newDraft.propertyId || template.propertyId === newDraft.propertyId || template.id === newDraft.templateId)
+                    .map((template) => (
+                      <option key={template.id} value={template.id}>{template.label}</option>
+                    ))}
+                </select>
+              </FormField>
               <FormField label="Warehouse">
                 <select value={newDraft.warehouseId} onChange={(event) => setNewDraftField("warehouseId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
                   <option value="">Select Warehouse</option>
@@ -620,16 +624,16 @@ export default function WorkOrdersClient({
                 </select>
               </FormField>
               <FormField label="Status">
-                <select value={newDraft.status} onChange={(event) => setNewDraftField("status", event.target.value)} className={`rounded border px-3 py-2 ${statusFieldClass(newDraft.status)}`}>
-                  {statusOptions.map((value) => (
+                <select value={newDraft.status} onChange={(event) => setNewDraftField("status", event.target.value)} className={`rounded border px-3 py-2 ${getWorkOrderStatusFieldClass(newDraft.status)}`}>
+                  {WORK_ORDER_STATUS_OPTIONS.map((value) => (
                     <option key={value} value={value}>{statusLabel(value)}</option>
                   ))}
                 </select>
               </FormField>
               <FormField label="Vacancy">
-                <select value={newDraft.vacancy} onChange={(event) => setNewDraftField("vacancy", event.target.value)} className={`rounded border px-3 py-2 ${vacancyFieldClass(newDraft.vacancy)}`}>
+                <select value={newDraft.vacancy} onChange={(event) => setNewDraftField("vacancy", event.target.value)} className={`rounded border px-3 py-2 ${getVacancyFieldClass(newDraft.vacancy)}`}>
                   <option value="">Select</option>
-                  {vacancyOptions.map((value) => (
+                  {VACANCY_OPTIONS.map((value) => (
                     <option key={value} value={value}>{value}</option>
                   ))}
                 </select>
@@ -666,7 +670,7 @@ export default function WorkOrdersClient({
             </div>
 
             <div className="rounded-lg border border-[var(--panel-border)] px-4 py-4 text-sm text-[var(--foreground)]/70">
-              Work order items are added after the row is created by opening that work order from the table.
+              Select a template to create a work order from a reusable snapshot. If no template is selected, the work order is created empty and items are added after the row is created.
             </div>
 
             <div className="flex items-center justify-end gap-3">

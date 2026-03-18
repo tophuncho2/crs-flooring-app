@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem } from "./services"
 import type {
@@ -27,12 +28,12 @@ const templateInclude = {
   },
 } as const
 
-async function ensurePadProduct(productId: string | null) {
+async function ensurePadProduct(productId: string | null, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   if (!productId) {
     return null
   }
 
-  const product = await prisma.flooringProduct.findFirst({
+  const product = await tx.flooringProduct.findFirst({
     where: {
       id: productId,
       category: {
@@ -49,12 +50,15 @@ async function ensurePadProduct(productId: string | null) {
   return product.id
 }
 
-async function resolveMaterialUnitPrice(item: TemplateMaterialItemInput) {
+async function resolveMaterialUnitPrice(
+  item: TemplateMaterialItemInput,
+  tx: Prisma.TransactionClient | typeof prisma = prisma,
+) {
   if (item.unitPrice) {
     return item.unitPrice
   }
 
-  const product = await prisma.flooringProduct.findUnique({
+  const product = await tx.flooringProduct.findUnique({
     where: { id: item.productId },
     select: { cost: true },
   })
@@ -62,7 +66,10 @@ async function resolveMaterialUnitPrice(item: TemplateMaterialItemInput) {
   return product?.cost ?? "0"
 }
 
-async function resolveServiceNameAndPrice(item: TemplateServiceItemInput) {
+async function resolveServiceNameAndPrice(
+  item: TemplateServiceItemInput,
+  tx: Prisma.TransactionClient | typeof prisma = prisma,
+) {
   if (!item.serviceId) {
     return {
       name: item.name ?? "Custom Service",
@@ -70,7 +77,7 @@ async function resolveServiceNameAndPrice(item: TemplateServiceItemInput) {
     }
   }
 
-  const service = await prisma.flooringService.findUniqueOrThrow({
+  const service = await tx.flooringService.findUniqueOrThrow({
     where: { id: item.serviceId },
     select: { name: true, baseCost: true },
   })
@@ -82,9 +89,8 @@ async function resolveServiceNameAndPrice(item: TemplateServiceItemInput) {
 }
 
 export async function createTemplate(input: CreateTemplateInput) {
-  const padProductId = await ensurePadProduct(input.padProductId)
-
   const template = await prisma.$transaction(async (tx) => {
+    const padProductId = await ensurePadProduct(input.padProductId, tx)
     const created = await tx.flooringTemplate.create({
       data: {
         propertyId: input.propertyId,
@@ -103,14 +109,14 @@ export async function createTemplate(input: CreateTemplateInput) {
           templateId: created.id,
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: await resolveMaterialUnitPrice(item),
+          unitPrice: await resolveMaterialUnitPrice(item, tx),
           notes: item.notes,
         },
       })
     }
 
     for (const item of input.serviceItems) {
-      const resolved = await resolveServiceNameAndPrice(item)
+      const resolved = await resolveServiceNameAndPrice(item, tx)
       await tx.flooringTemplateServiceItem.create({
         data: {
           templateId: created.id,
@@ -138,7 +144,7 @@ export async function updateTemplate(id: string, input: UpdateTemplateInput) {
     where: { id },
     data: {
       ...input,
-      ...(input.padProductId !== undefined ? { padProductId: await ensurePadProduct(input.padProductId) } : {}),
+      ...(input.padProductId !== undefined ? { padProductId: await ensurePadProduct(input.padProductId, prisma) } : {}),
     },
     include: templateInclude,
   })
@@ -160,7 +166,7 @@ export async function createTemplateItem(templateId: string, input: TemplateMate
       templateId,
       productId: input.productId,
       quantity: input.quantity,
-      unitPrice: await resolveMaterialUnitPrice(input),
+      unitPrice: await resolveMaterialUnitPrice(input, prisma),
       notes: input.notes,
     },
     include: {
@@ -207,7 +213,7 @@ export async function deleteTemplateItem(itemId: string) {
 }
 
 export async function createTemplateServiceItem(templateId: string, input: TemplateServiceItemInput) {
-  const resolved = await resolveServiceNameAndPrice(input)
+  const resolved = await resolveServiceNameAndPrice(input, prisma)
   const created = await prisma.flooringTemplateServiceItem.create({
     data: {
       templateId,

@@ -82,13 +82,6 @@ function parseDecimal(value: string) {
   return Number.isFinite(numeric) ? numeric : 0
 }
 
-function formatSignedValue(value: string) {
-  const numeric = parseDecimal(value)
-  if (numeric > 0) return `-${numeric.toFixed(2)}`
-  if (numeric < 0) return `+${Math.abs(numeric).toFixed(2)}`
-  return "0.00"
-}
-
 function formatTransportType(value: string) {
   if (!value) return "-"
   return value === "RETURN" ? "Return" : "Purchase Order"

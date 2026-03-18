@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useCallback } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
@@ -68,8 +67,8 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   const isBuilder = role === "BUILDER"
   const hasBuilderPanelAccess = isBuilder
   const canUseTools = canUseToolsProp ?? (role === "BUILDER" || role === "ADMIN")
-  const unlockedToolSet = new Set(unlockedToolSlugs)
-  const canOpenTool = (slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug)
+  const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
+  const canOpenTool = useCallback((slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug), [canUseTools, unlockedToolSet])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -235,7 +234,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canUseTools, hasBuilderPanelAccess, isMobile, router, unlockedToolSlugs])
+  }, [canOpenTool, hasBuilderPanelAccess, isMobile, router])
 
   return (
     <>
