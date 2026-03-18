@@ -1,7 +1,8 @@
 "use client"
 
+import { Plus } from "lucide-react"
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
-import { CollapsibleTableSection } from "./collapsible-table-section"
+import { CollapsibleTableSection, useInlineCreateRow } from "./collapsible-table-section"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
 export type ServiceOption = {
@@ -71,9 +72,28 @@ export function ServiceItemsEditor({
   onDeleteItem: (itemId: string) => void
 }) {
   const colSpan = onSaveItem ? 8 : 7
+  const addRow = useInlineCreateRow(false)
+
+  async function handleAdd() {
+    await onAdd()
+    addRow.close()
+  }
 
   return (
-    <CollapsibleTableSection title={title} description={description}>
+    <CollapsibleTableSection
+      title={title}
+      description={description}
+      actions={
+        <button
+          type="button"
+          onClick={addRow.open}
+          aria-label={`Add ${title}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+        >
+          <Plus size={16} />
+        </button>
+      }
+    >
       <ModalTableShell minWidthClass="min-w-[1200px]">
         <ModalTableHead>
           <tr>
@@ -88,62 +108,9 @@ export function ServiceItemsEditor({
           </tr>
         </ModalTableHead>
         <tbody>
-          <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
-            <td className="px-3 py-2">
-              <select
-                value={draft.serviceId}
-                onChange={(event) => {
-                  const nextServiceId = event.target.value
-                  const selected = serviceOptions.find((service) => service.id === nextServiceId)
-                  onDraftChange("serviceId", nextServiceId)
-                  if (selected) {
-                    onDraftChange("name", selected.name)
-                    onDraftChange("unitId", selected.unitId)
-                    onDraftChange("unitPrice", selected.baseCost)
-                  }
-                }}
-                className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-              >
-                <option value="">Custom service</option>
-                {serviceOptions.map((service) => (
-                  <option key={service.id} value={service.id}>{service.name}</option>
-                ))}
-              </select>
-            </td>
-            <td className="px-3 py-2">
-              <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            <td className="px-3 py-2">
-              <select value={draft.unitId} onChange={(event) => onDraftChange("unitId", event.target.value)} className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                <option value="">Select unit</option>
-                {unitOptions.map((unit) => (
-                  <option key={unit.id} value={unit.id}>{unit.name}</option>
-                ))}
-              </select>
-            </td>
-            <td className="px-3 py-2">
-              <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            <td className="px-3 py-2">
-              <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            <td className="px-3 py-2">
-              <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            {onSaveItem ? <td className="px-3 py-2" /> : null}
-            <td className="px-3 py-2">
-              <button type="button" onClick={onAdd} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-                {adding ? "Adding..." : "Add"}
-              </button>
-            </td>
-          </tr>
           {loading ? (
             <tr>
               <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading services...</td>
-            </tr>
-          ) : items.length === 0 ? (
-            <tr>
-              <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">No service items yet.</td>
             </tr>
           ) : (
             items.map((item) => (
@@ -214,6 +181,57 @@ export function ServiceItemsEditor({
               </tr>
             ))
           )}
+          {addRow.isOpen ? (
+            <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
+              <td className="px-3 py-2">
+                <select
+                  value={draft.serviceId}
+                  onChange={(event) => {
+                    const nextServiceId = event.target.value
+                    const selected = serviceOptions.find((service) => service.id === nextServiceId)
+                    onDraftChange("serviceId", nextServiceId)
+                    if (selected) {
+                      onDraftChange("name", selected.name)
+                      onDraftChange("unitId", selected.unitId)
+                      onDraftChange("unitPrice", selected.baseCost)
+                    }
+                  }}
+                  className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                >
+                  <option value="">Custom service</option>
+                  {serviceOptions.map((service) => (
+                    <option key={service.id} value={service.id}>{service.name}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-3 py-2">
+                <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              <td className="px-3 py-2">
+                <select value={draft.unitId} onChange={(event) => onDraftChange("unitId", event.target.value)} className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                  <option value="">Select unit</option>
+                  {unitOptions.map((unit) => (
+                    <option key={unit.id} value={unit.id}>{unit.name}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-3 py-2">
+                <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              <td className="px-3 py-2">
+                <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              <td className="px-3 py-2">
+                <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              {onSaveItem ? <td className="px-3 py-2" /> : null}
+              <td className="px-3 py-2">
+                <button type="button" onClick={() => void handleAdd()} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                  {adding ? "Adding..." : "Add"}
+                </button>
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </ModalTableShell>
     </CollapsibleTableSection>

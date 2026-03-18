@@ -1,7 +1,8 @@
 "use client"
 
+import { Plus } from "lucide-react"
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
-import { CollapsibleTableSection } from "./collapsible-table-section"
+import { CollapsibleTableSection, useInlineCreateRow } from "./collapsible-table-section"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
 export type MaterialItemOption = {
@@ -63,9 +64,28 @@ export function MaterialItemsEditor({
   onDeleteItem: (itemId: string) => void
 }) {
   const colSpan = onSaveItem ? 8 : 7
+  const addRow = useInlineCreateRow(false)
+
+  async function handleAdd() {
+    await onAdd()
+    addRow.close()
+  }
 
   return (
-    <CollapsibleTableSection title={title} description={description}>
+    <CollapsibleTableSection
+      title={title}
+      description={description}
+      actions={
+        <button
+          type="button"
+          onClick={addRow.open}
+          aria-label={`Add ${title}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+        >
+          <Plus size={16} />
+        </button>
+      }
+    >
       <ModalTableShell minWidthClass="min-w-[1120px]">
         <ModalTableHead>
           <tr>
@@ -80,44 +100,9 @@ export function MaterialItemsEditor({
           </tr>
         </ModalTableHead>
         <tbody>
-          <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
-            <td className="px-3 py-2">
-              <select value={draft.productId} onChange={(event) => onDraftChange("productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                <option value="">Select product</option>
-                {productOptions.map((product) => (
-                  <option key={product.id} value={product.id}>{product.label}</option>
-                ))}
-              </select>
-            </td>
-            <td className="px-3 py-2">
-              <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            <td className="px-3 py-2">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</td>
-            <td className="px-3 py-2">
-              <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            {extraFieldLabel ? (
-              <td className="px-3 py-2">
-                <input value={draft.extraValue ?? ""} onChange={(event) => onDraftChange("extraValue", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-              </td>
-            ) : null}
-            <td className="px-3 py-2">
-              <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            </td>
-            {onSaveItem ? <td className="px-3 py-2" /> : null}
-            <td className="px-3 py-2">
-              <button type="button" onClick={onAdd} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-                {adding ? "Adding..." : "Add"}
-              </button>
-            </td>
-          </tr>
           {loading ? (
             <tr>
               <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>
-            </tr>
-          ) : items.length === 0 ? (
-            <tr>
-              <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">No items yet.</td>
             </tr>
           ) : (
             items.map((item) => (
@@ -159,6 +144,39 @@ export function MaterialItemsEditor({
               </tr>
             ))
           )}
+          {addRow.isOpen ? (
+            <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
+              <td className="px-3 py-2">
+                <select value={draft.productId} onChange={(event) => onDraftChange("productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                  <option value="">Select product</option>
+                  {productOptions.map((product) => (
+                    <option key={product.id} value={product.id}>{product.label}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-3 py-2">
+                <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              <td className="px-3 py-2">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</td>
+              <td className="px-3 py-2">
+                <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              {extraFieldLabel ? (
+                <td className="px-3 py-2">
+                  <input value={draft.extraValue ?? ""} onChange={(event) => onDraftChange("extraValue", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                </td>
+              ) : null}
+              <td className="px-3 py-2">
+                <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              {onSaveItem ? <td className="px-3 py-2" /> : null}
+              <td className="px-3 py-2">
+                <button type="button" onClick={() => void handleAdd()} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                  {adding ? "Adding..." : "Add"}
+                </button>
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </ModalTableShell>
     </CollapsibleTableSection>

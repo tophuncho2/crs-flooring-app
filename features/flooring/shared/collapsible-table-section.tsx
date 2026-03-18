@@ -17,18 +17,31 @@ export function useCollapsibleSection(defaultOpen = true) {
   }
 }
 
+export function useInlineCreateRow(defaultOpen = false) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+
+  return {
+    isOpen,
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false),
+    toggle: () => setIsOpen((current) => !current),
+  }
+}
+
 export function CollapsibleTableSection({
   title,
   description,
   defaultOpen = true,
   children,
   className,
+  actions,
 }: {
   title: string
   description?: string
   defaultOpen?: boolean
   children: ReactNode
   className?: string
+  actions?: ReactNode
 }) {
   const { isOpen, toggle } = useCollapsibleSection(defaultOpen)
 
@@ -39,15 +52,18 @@ export function CollapsibleTableSection({
           <h3 className="text-base font-semibold">{title}</h3>
           {description ? <p className="text-sm text-[var(--foreground)]/70">{description}</p> : null}
         </div>
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={isOpen}
-          aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
-          className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-        >
-          {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </button>
+        <div className="mt-0.5 flex items-center gap-2">
+          {actions}
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+          >
+            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+        </div>
       </div>
 
       {isOpen ? children : null}
