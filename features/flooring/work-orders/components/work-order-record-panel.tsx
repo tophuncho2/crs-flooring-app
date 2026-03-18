@@ -5,6 +5,7 @@ import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
+import { RecordLineSummary } from "@/features/flooring/shared/record-line-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
@@ -539,24 +540,7 @@ export function WorkOrderRecordPanel({
         </RecordFormField>
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--subpanel-background)] p-4 md:grid-cols-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Rows</p>
-          <p className="mt-1 text-lg font-semibold">{itemCount}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Material Total</p>
-          <p className="mt-1 text-lg font-semibold">{workOrder.totalMaterialCost}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Service Total</p>
-          <p className="mt-1 text-lg font-semibold">{workOrder.totalServiceCost}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Grand Total</p>
-          <p className="mt-1 text-lg font-semibold">{workOrder.totalCost}</p>
-        </div>
-      </div>
+      <RecordLineSummary materialItems={materialItems} serviceItems={serviceItems} />
 
       <div className="flex justify-between gap-2">
         <button

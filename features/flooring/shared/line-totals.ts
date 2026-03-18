@@ -13,5 +13,13 @@ export function calculateLineTotal(input: LineTotalInput) {
 }
 
 export function formatLineTotal(input: LineTotalInput) {
-  return calculateLineTotal(input).toFixed(2)
+  return `$${calculateLineTotal(input).toFixed(2)}`
+}
+
+export function formatCurrencyValue(value: string | number) {
+  return `$${toNumber(value).toFixed(2)}`
+}
+
+export function sumLineTotals(lines: LineTotalInput[]) {
+  return lines.reduce((total, line) => total + calculateLineTotal(line), 0)
 }

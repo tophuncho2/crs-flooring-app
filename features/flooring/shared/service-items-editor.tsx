@@ -81,20 +81,7 @@ export function ServiceItemsEditor({
   }
 
   return (
-    <CollapsibleTableSection
-      title={title}
-      description={description}
-      actions={
-        <button
-          type="button"
-          onClick={addRow.open}
-          aria-label={`Add ${title}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-        >
-          <Plus size={16} />
-        </button>
-      }
-    >
+    <CollapsibleTableSection title={title} description={description}>
       <ModalTableShell minWidthClass="min-w-[1200px]">
         <ModalTableHead>
           <tr>
@@ -163,7 +150,11 @@ export function ServiceItemsEditor({
                   <input value={item.quantity} onChange={(event) => onItemFieldChange(item.id, "quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                 </td>
                 <td className="px-3 py-2">
-                  <input value={item.unitPrice} onChange={(event) => onItemFieldChange(item.id, "unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                  <div className="flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1">
+                    <span className="text-[var(--foreground)]/60">$</span>
+                    <input value={item.unitPrice} onChange={(event) => onItemFieldChange(item.id, "unitPrice", event.target.value)} className="w-20 bg-transparent outline-none" />
+                    <span className="text-xs text-[var(--foreground)]/50">/ {item.unitName || "unit"}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2 font-medium">{formatLineTotal(item)}</td>
                 <td className="px-3 py-2">
@@ -184,6 +175,20 @@ export function ServiceItemsEditor({
               </tr>
             ))
           )}
+          {!loading && !addRow.isOpen ? (
+            <tr className="border-t border-[var(--panel-border)]">
+              <td colSpan={colSpan} className="px-3 py-3">
+                <button
+                  type="button"
+                  onClick={addRow.open}
+                  aria-label={`Add ${title}`}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+                >
+                  <Plus size={16} />
+                </button>
+              </td>
+            </tr>
+          ) : null}
           {addRow.isOpen ? (
             <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
               <td className="px-3 py-2">
@@ -222,7 +227,11 @@ export function ServiceItemsEditor({
                 <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
               </td>
               <td className="px-3 py-2">
-                <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                <div className="flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1">
+                  <span className="text-[var(--foreground)]/60">$</span>
+                  <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-20 bg-transparent outline-none" />
+                  <span className="text-xs text-[var(--foreground)]/50">/ {unitOptions.find((unit) => unit.id === draft.unitId)?.name || "unit"}</span>
+                </div>
               </td>
               <td className="px-3 py-2 font-medium">{formatLineTotal(draft)}</td>
               <td className="px-3 py-2">

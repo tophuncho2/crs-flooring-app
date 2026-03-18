@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
+import { RecordLineSummary } from "@/features/flooring/shared/record-line-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
@@ -286,46 +287,48 @@ export function TemplateRecordPanel({
       {message ? <SuccessNotice>{message}</SuccessNotice> : null}
       {error ? <ErrorNotice>{error}</ErrorNotice> : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <RecordFormField label="Template Number">
-          <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm font-medium text-blue-500">
-            {template.templateNumber}
-          </div>
-        </RecordFormField>
-        <RecordFormField label="Template Tag">
-          <input value={draft.templateTag} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateTag: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Property">
-          <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="">Select property</option>
-            {propertyOptions.map((property) => (
-              <option key={property.id} value={property.id}>{property.name}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Warehouse">
-          <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="">No warehouse</option>
-            {warehouseOptions.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Pad Type">
-          <select value={draft.padProductId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, padProductId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="">No pad type</option>
-            {padProductOptions.map((product) => (
-              <option key={product.id} value={product.id}>{product.label}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Instructions">
-          <textarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-        </RecordFormField>
-        <RecordFormField label="Template Notes">
-          <textarea value={draft.templateNotes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateNotes: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-        </RecordFormField>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,1fr)]">
+        <div className="grid gap-4 md:grid-cols-2">
+          <RecordFormField label="Property">
+            <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2">
+              <option value="">Select property</option>
+              {propertyOptions.map((property) => (
+                <option key={property.id} value={property.id}>{property.name}</option>
+              ))}
+            </select>
+          </RecordFormField>
+          <RecordFormField label="Template Tag">
+            <input value={draft.templateTag} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateTag: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          </RecordFormField>
+          <RecordFormField label="Warehouse">
+            <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+              <option value="">No warehouse</option>
+              {warehouseOptions.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+              ))}
+            </select>
+          </RecordFormField>
+          <RecordFormField label="Pad Type">
+            <select value={draft.padProductId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, padProductId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2">
+              <option value="">No pad type</option>
+              {padProductOptions.map((product) => (
+                <option key={product.id} value={product.id}>{product.label}</option>
+              ))}
+            </select>
+          </RecordFormField>
+        </div>
+
+        <div className="grid gap-4">
+          <RecordFormField label="Instructions">
+            <textarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          </RecordFormField>
+          <RecordFormField label="Template Notes">
+            <textarea value={draft.templateNotes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateNotes: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          </RecordFormField>
+        </div>
       </div>
+
+      <RecordLineSummary materialItems={materialItems} serviceItems={serviceItems} />
 
       <MaterialItemsEditor
         title="Material Items"
