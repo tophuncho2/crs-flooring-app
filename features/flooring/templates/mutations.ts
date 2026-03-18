@@ -147,7 +147,11 @@ export async function updateTemplate(id: string, input: UpdateTemplateInput) {
 }
 
 export async function deleteTemplate(id: string) {
-  await prisma.flooringTemplate.delete({ where: { id } })
+  await prisma.$transaction(async (tx) => {
+    await tx.flooringTemplateServiceItem.deleteMany({ where: { templateId: id } })
+    await tx.flooringTemplateItem.deleteMany({ where: { templateId: id } })
+    await tx.flooringTemplate.delete({ where: { id } })
+  })
 }
 
 export async function createTemplateItem(templateId: string, input: TemplateMaterialItemInput) {
