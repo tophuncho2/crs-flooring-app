@@ -77,7 +77,7 @@ export function normalizeWorkOrder(workOrder: {
     warehouseId: workOrder.warehouse?.id ?? "",
     warehouseName: workOrder.warehouse?.name ?? "",
     status: workOrder.status,
-    statusLabel: workOrderStatusLabels[workOrder.status] ?? workOrder.status,
+    statusLabel: workOrder.isComplete ? "Complete" : workOrderStatusLabels[workOrder.status] ?? workOrder.status,
     isComplete: workOrder.isComplete,
     vacancy: workOrder.vacancy,
     date: workOrder.scheduledFor?.toISOString() ?? null,

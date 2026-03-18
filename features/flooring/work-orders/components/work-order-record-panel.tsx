@@ -155,6 +155,7 @@ export function WorkOrderRecordPanel({
   onClose,
   isSyncModalOpen,
   onCloseSync,
+  refreshNonce = 0,
   onWorkOrderSaved,
   onWorkOrderDeleted,
   onSummaryChange,
@@ -169,6 +170,7 @@ export function WorkOrderRecordPanel({
   onClose: () => void
   isSyncModalOpen: boolean
   onCloseSync: () => void
+  refreshNonce?: number
   onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems"> & { itemsCount: number }) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
@@ -232,6 +234,7 @@ export function WorkOrderRecordPanel({
 
   const onSummaryChangeRef = useRef(onSummaryChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
+  const hasMountedRefreshRef = useRef(false)
 
   useEffect(() => {
     onSummaryChangeRef.current = onSummaryChange
@@ -304,6 +307,15 @@ export function WorkOrderRecordPanel({
   useEffect(() => {
     setSyncPreview(null)
   }, [selectedTemplateId, syncMode])
+
+  useEffect(() => {
+    if (!hasMountedRefreshRef.current) {
+      hasMountedRefreshRef.current = true
+      return
+    }
+
+    void refreshWorkOrderDetail()
+  }, [refreshNonce])
 
   async function saveWorkOrder() {
     if (!draft || !workOrder) return

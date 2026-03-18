@@ -230,7 +230,6 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
 
 export async function deleteWorkOrder(id: string) {
   await prisma.$transaction(async (tx) => {
-    await tx.flooringCutLog.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderServiceItem.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderItem.deleteMany({ where: { workOrderId: id } })
     await tx.flooringAnalytics.deleteMany({ where: { workOrderId: id } })

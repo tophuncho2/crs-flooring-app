@@ -12,6 +12,7 @@ import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHead
 import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
+import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
@@ -97,6 +98,10 @@ function statusLabel(value: string) {
   return statusLabelByValue[value] ?? value
 }
 
+function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete">) {
+  return row.isComplete ? "Complete" : statusLabel(row.status)
+}
+
 function statusFieldClass(value: string) {
   if (value === "BUILDING_ORDER") return "border-amber-500/40 bg-amber-500/10 text-amber-700"
   if (value === "PENDING_EXPORT") return "border-sky-500/40 bg-sky-500/10 text-sky-700"
@@ -166,6 +171,7 @@ export default function WorkOrdersClient({
     serviceItems: [],
   })
   const [isWorkOrderSyncOpen, setIsWorkOrderSyncOpen] = useState(false)
+  const [workOrderRefreshNonce, setWorkOrderRefreshNonce] = useState(0)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
@@ -195,7 +201,7 @@ export default function WorkOrdersClient({
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
       { key: "property", label: "Property", getValue: (row) => row.propertyName },
       { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date") },
-      { key: "status", label: "Status", getValue: (row) => row.statusLabel },
+      { key: "status", label: "Status", getValue: (row) => workOrderStatusText(row) },
     ],
     defaultGroupKeys: ["warehouse"],
   })
@@ -282,6 +288,30 @@ export default function WorkOrdersClient({
     setActiveWorkOrderSummary({ materialItems: [], serviceItems: [] })
     setIsWorkOrderSyncOpen(false)
     closeWorkOrderPanel()
+  }
+
+  async function markWorkOrderComplete() {
+    if (!activeWorkOrder || activeWorkOrder.isComplete) return
+    if (!window.confirm("Mark this work order complete?")) return
+
+    setError("")
+    setMessage("")
+
+    try {
+      const payload = await requestJson<{ workOrder?: WorkOrderRow }>(`/api/flooring/work-orders/${activeWorkOrder.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isComplete: true }),
+      })
+      if (!payload.workOrder) throw new Error("Failed to complete work order")
+
+      setWorkOrders((prev) => prev.map((row) => (row.id === payload.workOrder!.id ? payload.workOrder! : row)))
+      setIsWorkOrderSyncOpen(false)
+      setWorkOrderRefreshNonce((current) => current + 1)
+      setMessage("Work order marked complete")
+    } catch (completeError) {
+      setError(completeError instanceof Error ? completeError.message : "Failed to complete work order")
+    }
   }
 
   function selectedAddress(draft: DraftWorkOrder) {
@@ -404,11 +434,17 @@ export default function WorkOrdersClient({
       ),
       status: (
         <td key="status" className="px-3 py-2">
-          <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
-            {statusOptions.map((value) => (
-              <option key={value} value={value}>{statusLabel(value)}</option>
-            ))}
-          </select>
+          {row.isComplete ? (
+            <span className="inline-flex min-w-[110px] rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-center text-sm text-emerald-700">
+              Complete
+            </span>
+          ) : (
+            <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${statusFieldClass(draft.status)}`}>
+              {statusOptions.map((value) => (
+                <option key={value} value={value}>{statusLabel(value)}</option>
+              ))}
+            </select>
+          )}
         </td>
       ),
       warehouse: (
@@ -657,14 +693,24 @@ export default function WorkOrdersClient({
           sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
           headerMeta={<RecordLineSummary materialItems={activeWorkOrderSummary.materialItems} serviceItems={activeWorkOrderSummary.serviceItems} variant="header" />}
           headerActions={
-            <button
-              type="button"
-              onClick={() => setIsWorkOrderSyncOpen(true)}
-              disabled={!activeWorkOrder.propertyId || activeWorkOrder.isComplete}
-              className="rounded border border-blue-500/40 px-4 py-2 text-sm text-blue-500 hover:bg-blue-500/10 disabled:opacity-60"
-            >
-              Sync Template
-            </button>
+            <RecordOptionsMenu
+              items={[
+                {
+                  label: "Sync Template",
+                  onSelect: () => setIsWorkOrderSyncOpen(true),
+                  disabled: !activeWorkOrder.propertyId || activeWorkOrder.isComplete,
+                },
+                {
+                  label: "Complete",
+                  onSelect: () => void markWorkOrderComplete(),
+                  disabled: activeWorkOrder.isComplete,
+                },
+                {
+                  label: "Invoice",
+                  disabled: true,
+                },
+              ]}
+            />
           }
         >
           <WorkOrderRecordPanel
@@ -678,6 +724,7 @@ export default function WorkOrdersClient({
             onClose={closeWorkOrder}
             isSyncModalOpen={isWorkOrderSyncOpen}
             onCloseSync={() => setIsWorkOrderSyncOpen(false)}
+            refreshNonce={workOrderRefreshNonce}
             onSummaryChange={setActiveWorkOrderSummary}
             onWorkOrderSaved={(savedWorkOrder) => {
               setWorkOrders((prev) =>
