@@ -165,6 +165,7 @@ export default function WorkOrdersClient({
     materialItems: [],
     serviceItems: [],
   })
+  const [isWorkOrderSyncOpen, setIsWorkOrderSyncOpen] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
@@ -279,6 +280,7 @@ export default function WorkOrdersClient({
 
   function closeWorkOrder() {
     setActiveWorkOrderSummary({ materialItems: [], serviceItems: [] })
+    setIsWorkOrderSyncOpen(false)
     closeWorkOrderPanel()
   }
 
@@ -654,6 +656,16 @@ export default function WorkOrdersClient({
           onClose={closeWorkOrder}
           sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
           headerMeta={<RecordLineSummary materialItems={activeWorkOrderSummary.materialItems} serviceItems={activeWorkOrderSummary.serviceItems} variant="header" />}
+          headerActions={
+            <button
+              type="button"
+              onClick={() => setIsWorkOrderSyncOpen(true)}
+              disabled={!activeWorkOrder.propertyId || activeWorkOrder.isComplete}
+              className="rounded border border-blue-500/40 px-4 py-2 text-sm text-blue-500 hover:bg-blue-500/10 disabled:opacity-60"
+            >
+              Sync Template
+            </button>
+          }
         >
           <WorkOrderRecordPanel
             workOrderId={activeWorkOrder.id}
@@ -664,6 +676,8 @@ export default function WorkOrdersClient({
             serviceOptions={serviceOptions}
             unitOptions={unitOptions}
             onClose={closeWorkOrder}
+            isSyncModalOpen={isWorkOrderSyncOpen}
+            onCloseSync={() => setIsWorkOrderSyncOpen(false)}
             onSummaryChange={setActiveWorkOrderSummary}
             onWorkOrderSaved={(savedWorkOrder) => {
               setWorkOrders((prev) =>

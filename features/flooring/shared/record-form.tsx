@@ -11,6 +11,7 @@ export function RecordModalShell({
   zIndex,
   sizeClass = "max-w-5xl",
   headerMeta,
+  headerActions,
 }: {
   title: string
   onClose: () => void
@@ -19,6 +20,7 @@ export function RecordModalShell({
   zIndex?: number
   sizeClass?: string
   headerMeta?: ReactNode
+  headerActions?: ReactNode
 }) {
   return (
     <div className={`fixed inset-0 ${zIndexClass} overflow-y-auto bg-black/50 p-4 pt-24 sm:p-6 sm:pt-28`} style={zIndex ? { zIndex } : undefined}>
@@ -31,7 +33,10 @@ export function RecordModalShell({
                   <div className="inline-flex w-fit max-w-full items-center rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2">
                     <h2 className="truncate text-lg font-semibold">{title}</h2>
                   </div>
-                  {headerMeta ? <div className="min-w-0 flex-1">{headerMeta}</div> : null}
+                  <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+                    {headerMeta ? <div className="min-w-0 flex-1">{headerMeta}</div> : null}
+                    {headerActions ? <div className="shrink-0">{headerActions}</div> : null}
+                  </div>
                 </div>
               </div>
               <button

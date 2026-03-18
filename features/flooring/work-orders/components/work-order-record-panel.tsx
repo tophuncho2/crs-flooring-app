@@ -153,6 +153,8 @@ export function WorkOrderRecordPanel({
   unitOptions,
   templateOptions,
   onClose,
+  isSyncModalOpen,
+  onCloseSync,
   onWorkOrderSaved,
   onWorkOrderDeleted,
   onSummaryChange,
@@ -165,6 +167,8 @@ export function WorkOrderRecordPanel({
   unitOptions: UnitOption[]
   templateOptions: TemplateOption[]
   onClose: () => void
+  isSyncModalOpen: boolean
+  onCloseSync: () => void
   onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems"> & { itemsCount: number }) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
@@ -176,7 +180,6 @@ export function WorkOrderRecordPanel({
   const [loading, setLoading] = useState(true)
   const [savingWorkOrder, setSavingWorkOrder] = useState(false)
   const [syncSearch, setSyncSearch] = useState("")
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [selectedTemplateId, setSelectedTemplateId] = useState("")
   const [syncMode, setSyncMode] = useState<SyncMode>("overwrite")
   const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null)
@@ -461,7 +464,7 @@ export function WorkOrderRecordPanel({
         rowsToDelete: payload.rowsToDelete,
         counts: payload.counts,
       })
-      setIsSyncModalOpen(false)
+      onCloseSync()
       setSelectedTemplateId("")
       setSyncSearch("")
       setSyncMode("overwrite")
@@ -559,28 +562,6 @@ export function WorkOrderRecordPanel({
         </RecordFormField>
       </div>
 
-      <div className="flex justify-start">
-        <button
-          type="button"
-          onClick={() => setIsSyncModalOpen(true)}
-          disabled={!draft.propertyId || draft.isComplete}
-          className="rounded border border-blue-500/40 px-4 py-2 text-sm text-blue-500 hover:bg-blue-500/10 disabled:opacity-60"
-        >
-          Sync Template
-        </button>
-      </div>
-
-      <RecordPanelFooter
-        deleteLabel="Delete Work Order"
-        deleteConfirmMessage="Delete this work order? This cannot be undone."
-        onDelete={() => void deleteWorkOrder()}
-        onClose={onClose}
-        saveLabel="Save Work Order"
-        savingLabel="Saving..."
-        onSave={() => void saveWorkOrder()}
-        isSaving={savingWorkOrder}
-      />
-
       <MaterialItemsEditor
         title="Material Items"
         description="Editable material lines for this work order."
@@ -623,7 +604,7 @@ export function WorkOrderRecordPanel({
               <h3 className="text-base font-semibold">Sync Template</h3>
               <p className="text-sm text-[var(--foreground)]/70">Choose a template for this property and copy its material and service rows into the work order.</p>
             </div>
-            <button type="button" onClick={() => setIsSyncModalOpen(false)} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm">
+            <button type="button" onClick={onCloseSync} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm">
               Close
             </button>
           </div>
@@ -681,6 +662,17 @@ export function WorkOrderRecordPanel({
           </div>
         </div>
       ) : null}
+
+      <RecordPanelFooter
+        deleteLabel="Delete Work Order"
+        deleteConfirmMessage="Delete this work order? This cannot be undone."
+        onDelete={() => void deleteWorkOrder()}
+        onClose={onClose}
+        saveLabel="Save Work Order"
+        savingLabel="Saving..."
+        onSave={() => void saveWorkOrder()}
+        isSaving={savingWorkOrder}
+      />
     </div>
   )
 }
