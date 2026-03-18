@@ -1,11 +1,16 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import type { UserToolRow } from "@/server/platform/tool-subscriptions"
-import FlooringHeaderNav from "./flooring-header-nav"
 import FlooringToolsMenu from "./flooring-tools-menu"
 import UserMenu from "./user-menu"
 import { orderFlooringNavItems } from "./flooring-navigation"
+
+const FlooringHeaderNav = dynamic(() => import("./flooring-header-nav"), {
+  ssr: false,
+  loading: () => <div className="h-12 w-full" aria-hidden="true" />,
+})
 
 type HeaderControlsProps = {
   email: string
