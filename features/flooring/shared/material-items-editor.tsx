@@ -1,7 +1,6 @@
 "use client"
 
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
-import { RecordFormField } from "./record-form"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
 export type MaterialItemOption = {
@@ -71,34 +70,6 @@ export function MaterialItemsEditor({
         <p className="text-sm text-[var(--foreground)]/70">{description}</p>
       </div>
 
-      <div className={`grid gap-3 rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] ${extraFieldLabel ? "md:grid-cols-[minmax(0,1.5fr),120px,120px,160px,minmax(0,1fr),auto]" : "md:grid-cols-[minmax(0,1.5fr),120px,120px,minmax(0,1fr),auto]"} md:items-end`}>
-        <RecordFormField label="Product">
-          <select value={draft.productId} onChange={(event) => onDraftChange("productId", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2">
-            <option value="">Select product</option>
-            {productOptions.map((product) => (
-              <option key={product.id} value={product.id}>{product.label}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Qty">
-          <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Unit Price">
-          <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        {extraFieldLabel ? (
-          <RecordFormField label={extraFieldLabel}>
-            <input value={draft.extraValue ?? ""} onChange={(event) => onDraftChange("extraValue", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-          </RecordFormField>
-        ) : null}
-        <RecordFormField label="Notes">
-          <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        <button type="button" onClick={onAdd} disabled={adding} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-          {adding ? "Adding..." : "Add Item"}
-        </button>
-      </div>
-
       <ModalTableShell minWidthClass="min-w-[980px]">
         <ModalTableHead>
           <tr>
@@ -113,6 +84,37 @@ export function MaterialItemsEditor({
           </tr>
         </ModalTableHead>
         <tbody>
+          <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
+            <td className="px-3 py-2">
+              <select value={draft.productId} onChange={(event) => onDraftChange("productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                <option value="">Select product</option>
+                {productOptions.map((product) => (
+                  <option key={product.id} value={product.id}>{product.label}</option>
+                ))}
+              </select>
+            </td>
+            <td className="px-3 py-2">
+              <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            <td className="px-3 py-2">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</td>
+            <td className="px-3 py-2">
+              <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            {extraFieldLabel ? (
+              <td className="px-3 py-2">
+                <input value={draft.extraValue ?? ""} onChange={(event) => onDraftChange("extraValue", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+            ) : null}
+            <td className="px-3 py-2">
+              <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            {onSaveItem ? <td className="px-3 py-2" /> : null}
+            <td className="px-3 py-2">
+              <button type="button" onClick={onAdd} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                {adding ? "Adding..." : "Add"}
+              </button>
+            </td>
+          </tr>
           {loading ? (
             <tr>
               <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>

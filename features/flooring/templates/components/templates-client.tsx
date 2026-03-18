@@ -10,13 +10,14 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { useTableControls } from "../../shared/use-table-controls"
-import { useUrlRecordPanel } from "../../shared/use-url-record-panel"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
 type TemplateRow = {
   id: string
+  templateNumber: string
   templateTag: string
   propertyId: string
   propertyName: string
@@ -95,7 +96,7 @@ export default function TemplatesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useUrlRecordPanel("template")
+  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = usePrimaryRecordPanel("template")
 
   const activeTemplate = templates.find((template) => template.id === activeTemplateId) ?? null
   const {
@@ -118,6 +119,7 @@ export default function TemplatesClient({
   const templateColumns = useMemo(
     () => [
       { key: "open", label: "Open" },
+      { key: "templateNumber", label: "Template #" },
       { key: "templateTag", label: "Template Tag" },
       { key: "property", label: "Property" },
       { key: "warehouse", label: "Warehouse" },
@@ -359,6 +361,7 @@ export default function TemplatesClient({
                       <OpenRowButton onClick={() => void openTemplate(row)} />
                     </td>
                   ),
+                  templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
                   templateTag: (
                     <td key="templateTag" className="px-3 py-2"><input value={draft.templateTag} onChange={(event) => setDraftField(row.id, "templateTag", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
                   ),
@@ -486,7 +489,7 @@ export default function TemplatesClient({
       ) : null}
 
       {activeTemplate ? (
-        <ModalShell title={`Template ${activeTemplate.templateTag}`} onClose={closeTemplate}>
+        <ModalShell title={`Template ${activeTemplate.templateNumber}`} onClose={closeTemplate} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
           <TemplateRecordPanel
             templateId={activeTemplate.id}
             propertyOptions={propertyOptions}

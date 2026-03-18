@@ -1,7 +1,6 @@
 "use client"
 
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
-import { RecordFormField } from "./record-form"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
 export type ServiceOption = {
@@ -79,53 +78,6 @@ export function ServiceItemsEditor({
         <p className="text-sm text-[var(--foreground)]/70">{description}</p>
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] md:grid-cols-[minmax(0,1.2fr),minmax(0,1fr),140px,120px,120px,minmax(0,1fr),auto] md:items-end">
-        <RecordFormField label="Service">
-          <select
-            value={draft.serviceId}
-            onChange={(event) => {
-              const nextServiceId = event.target.value
-              const selected = serviceOptions.find((service) => service.id === nextServiceId)
-              onDraftChange("serviceId", nextServiceId)
-              if (selected) {
-                onDraftChange("name", selected.name)
-                onDraftChange("unitId", selected.unitId)
-                onDraftChange("unitPrice", selected.baseCost)
-              }
-            }}
-            className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2"
-          >
-            <option value="">Custom service</option>
-            {serviceOptions.map((service) => (
-              <option key={service.id} value={service.id}>{service.name}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Name">
-          <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Unit">
-          <select value={draft.unitId} onChange={(event) => onDraftChange("unitId", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2">
-            <option value="">Select unit</option>
-            {unitOptions.map((unit) => (
-              <option key={unit.id} value={unit.id}>{unit.name}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Qty">
-          <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Unit Price">
-          <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Notes">
-          <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="rounded border border-[color:var(--subpanel-border)] bg-[var(--subpanel-input-background)] px-3 py-2" />
-        </RecordFormField>
-        <button type="button" onClick={onAdd} disabled={adding} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
-          {adding ? "Adding..." : "Add Service"}
-        </button>
-      </div>
-
       <ModalTableShell minWidthClass="min-w-[1080px]">
         <ModalTableHead>
           <tr>
@@ -140,6 +92,55 @@ export function ServiceItemsEditor({
           </tr>
         </ModalTableHead>
         <tbody>
+          <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
+            <td className="px-3 py-2">
+              <select
+                value={draft.serviceId}
+                onChange={(event) => {
+                  const nextServiceId = event.target.value
+                  const selected = serviceOptions.find((service) => service.id === nextServiceId)
+                  onDraftChange("serviceId", nextServiceId)
+                  if (selected) {
+                    onDraftChange("name", selected.name)
+                    onDraftChange("unitId", selected.unitId)
+                    onDraftChange("unitPrice", selected.baseCost)
+                  }
+                }}
+                className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+              >
+                <option value="">Custom service</option>
+                {serviceOptions.map((service) => (
+                  <option key={service.id} value={service.id}>{service.name}</option>
+                ))}
+              </select>
+            </td>
+            <td className="px-3 py-2">
+              <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            <td className="px-3 py-2">
+              <select value={draft.unitId} onChange={(event) => onDraftChange("unitId", event.target.value)} className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                <option value="">Select unit</option>
+                {unitOptions.map((unit) => (
+                  <option key={unit.id} value={unit.id}>{unit.name}</option>
+                ))}
+              </select>
+            </td>
+            <td className="px-3 py-2">
+              <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            <td className="px-3 py-2">
+              <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            <td className="px-3 py-2">
+              <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+            </td>
+            {onSaveItem ? <td className="px-3 py-2" /> : null}
+            <td className="px-3 py-2">
+              <button type="button" onClick={onAdd} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
+                {adding ? "Adding..." : "Add"}
+              </button>
+            </td>
+          </tr>
           {loading ? (
             <tr>
               <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading services...</td>

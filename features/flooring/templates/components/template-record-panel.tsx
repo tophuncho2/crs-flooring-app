@@ -11,6 +11,7 @@ import { useChildCollection } from "@/features/flooring/shared/use-child-collect
 
 export type TemplatePanelRow = {
   id: string
+  templateNumber: string
   templateTag: string
   propertyId: string
   propertyName: string
@@ -295,6 +296,11 @@ export function TemplateRecordPanel({
       {error ? <ErrorNotice>{error}</ErrorNotice> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <RecordFormField label="Template Number">
+          <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm font-medium text-blue-500">
+            {template.templateNumber}
+          </div>
+        </RecordFormField>
         <RecordFormField label="Template Tag">
           <input value={draft.templateTag} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateTag: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
         </RecordFormField>
@@ -330,45 +336,47 @@ export function TemplateRecordPanel({
         </RecordFormField>
       </div>
 
-      <MaterialItemsEditor
-        title="Material Items"
-        description="Products and quantities included in this template."
-        items={materialItems}
-        draft={materialDraft}
-        productOptions={productOptions}
-        loading={materialCollection.loading}
-        adding={materialCollection.adding}
-        savingItemId={materialCollection.savingItemId}
-        deletingItemId={materialCollection.deletingItemId}
-        extraFieldLabel="Stored Dye Lot"
-        onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
-        onAdd={() => void addMaterialItem()}
-        onItemFieldChange={(itemId, field, value) => {
-          setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-        }}
-        onSaveItem={(item) => void saveMaterialItem(item)}
-        onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
-      />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <MaterialItemsEditor
+          title="Material Items"
+          description="Products and quantities included in this template."
+          items={materialItems}
+          draft={materialDraft}
+          productOptions={productOptions}
+          loading={materialCollection.loading}
+          adding={materialCollection.adding}
+          savingItemId={materialCollection.savingItemId}
+          deletingItemId={materialCollection.deletingItemId}
+          extraFieldLabel="Stored Dye Lot"
+          onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
+          onAdd={() => void addMaterialItem()}
+          onItemFieldChange={(itemId, field, value) => {
+            setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+          }}
+          onSaveItem={(item) => void saveMaterialItem(item)}
+          onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
+        />
 
-      <ServiceItemsEditor
-        title="Service Items"
-        description="Service rows included in this template."
-        items={serviceItems}
-        draft={serviceDraft}
-        serviceOptions={serviceOptions}
-        unitOptions={unitOptions}
-        loading={serviceCollection.loading}
-        adding={serviceCollection.adding}
-        savingItemId={serviceCollection.savingItemId}
-        deletingItemId={serviceCollection.deletingItemId}
-        onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
-        onAdd={() => void addServiceItem()}
-        onItemFieldChange={(itemId, field, value) => {
-          setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-        }}
-        onSaveItem={(item) => void saveServiceItem(item)}
-        onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
-      />
+        <ServiceItemsEditor
+          title="Service Items"
+          description="Service rows included in this template."
+          items={serviceItems}
+          draft={serviceDraft}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          loading={serviceCollection.loading}
+          adding={serviceCollection.adding}
+          savingItemId={serviceCollection.savingItemId}
+          deletingItemId={serviceCollection.deletingItemId}
+          onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
+          onAdd={() => void addServiceItem()}
+          onItemFieldChange={(itemId, field, value) => {
+            setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+          }}
+          onSaveItem={(item) => void saveServiceItem(item)}
+          onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
+        />
+      </div>
 
       <div className="flex justify-between gap-2">
         <button type="button" onClick={() => void deleteTemplate()} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">

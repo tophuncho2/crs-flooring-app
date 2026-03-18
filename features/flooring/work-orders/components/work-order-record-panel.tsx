@@ -580,40 +580,42 @@ export function WorkOrderRecordPanel({
         </div>
       </div>
 
-      <MaterialItemsEditor
-        title="Material Items"
-        description="Editable material lines for this work order."
-        items={materialItems}
-        draft={materialDraft}
-        productOptions={productOptions}
-        loading={materialCollection.loading}
-        adding={materialCollection.adding}
-        savingItemId={materialCollection.savingItemId}
-        deletingItemId={materialCollection.deletingItemId}
-        onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
-        onAdd={() => void addMaterialItem()}
-        onItemFieldChange={(itemId, field, value) => setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))}
-        onSaveItem={(item) => void saveMaterialItem(item)}
-        onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
-      />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <MaterialItemsEditor
+          title="Material Items"
+          description="Editable material lines for this work order."
+          items={materialItems}
+          draft={materialDraft}
+          productOptions={productOptions}
+          loading={materialCollection.loading}
+          adding={materialCollection.adding}
+          savingItemId={materialCollection.savingItemId}
+          deletingItemId={materialCollection.deletingItemId}
+          onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
+          onAdd={() => void addMaterialItem()}
+          onItemFieldChange={(itemId, field, value) => setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))}
+          onSaveItem={(item) => void saveMaterialItem(item)}
+          onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
+        />
 
-      <ServiceItemsEditor
-        title="Service Items"
-        description="Editable service lines for this work order."
-        items={serviceItems}
-        draft={serviceDraft}
-        serviceOptions={serviceOptions}
-        unitOptions={unitOptions}
-        loading={serviceCollection.loading}
-        adding={serviceCollection.adding}
-        savingItemId={serviceCollection.savingItemId}
-        deletingItemId={serviceCollection.deletingItemId}
-        onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
-        onAdd={() => void addServiceItem()}
-        onItemFieldChange={(itemId, field, value) => setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))}
-        onSaveItem={(item) => void saveServiceItem(item)}
-        onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
-      />
+        <ServiceItemsEditor
+          title="Service Items"
+          description="Editable service lines for this work order."
+          items={serviceItems}
+          draft={serviceDraft}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          loading={serviceCollection.loading}
+          adding={serviceCollection.adding}
+          savingItemId={serviceCollection.savingItemId}
+          deletingItemId={serviceCollection.deletingItemId}
+          onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
+          onAdd={() => void addServiceItem()}
+          onItemFieldChange={(itemId, field, value) => setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))}
+          onSaveItem={(item) => void saveServiceItem(item)}
+          onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
+        />
+      </div>
 
       {isSyncModalOpen ? (
         <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">

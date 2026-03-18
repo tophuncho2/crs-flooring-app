@@ -37,6 +37,7 @@ export function snapshotTemplateLinesToWorkOrderLines<T extends PricingLine>(lin
 
 export function normalizeTemplate(template: {
   id: string
+  templateNumber: string
   templateTag: string
   instructions: string | null
   templateNotes: string | null
@@ -50,6 +51,7 @@ export function normalizeTemplate(template: {
 }) {
   return {
     id: template.id,
+    templateNumber: template.templateNumber,
     templateTag: template.templateTag,
     propertyId: template.propertyId,
     propertyName: template.property.name,

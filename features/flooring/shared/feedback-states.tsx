@@ -61,12 +61,23 @@ export function CenteredErrorState({
   }
 
   return (
-    <button
-      type="button"
+    <div
       onClick={onDismiss}
-      className="flex min-h-[280px] w-full items-center justify-center bg-transparent px-4 py-10 text-left"
+      className="flex min-h-[280px] w-full items-center justify-center bg-transparent px-4 py-10"
     >
-      {content}
-    </button>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            onDismiss()
+          }
+        }}
+        className="w-full max-w-xl"
+      >
+        {content}
+      </div>
+    </div>
   )
 }

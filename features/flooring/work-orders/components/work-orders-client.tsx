@@ -10,9 +10,9 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
-import { useUrlRecordPanel } from "../../shared/use-url-record-panel"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
@@ -165,7 +165,7 @@ export default function WorkOrdersClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = useUrlRecordPanel("workOrder")
+  const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
 
   const propertyLookup = useMemo(() => new Map(propertyOptions.map((property) => [property.id, property])), [propertyOptions])
   const activeWorkOrder = workOrders.find((row) => row.id === activeWorkOrderId) ?? null
@@ -645,7 +645,7 @@ export default function WorkOrdersClient({
       )}
 
       {activeWorkOrder ? (
-        <ModalShell title={`Work Order ${activeWorkOrder.workOrderNumber}`} onClose={closeWorkOrder}>
+        <ModalShell title={`Work Order ${activeWorkOrder.workOrderNumber}`} onClose={closeWorkOrder} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
           <WorkOrderRecordPanel
             workOrderId={activeWorkOrder.id}
             propertyOptions={propertyOptions}

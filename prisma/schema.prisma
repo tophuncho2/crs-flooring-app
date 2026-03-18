@@ -297,23 +297,25 @@ model FlooringCutLog {
 }
 
 model FlooringTemplate {
-  id            String                        @id @default(uuid())
-  propertyId    String
-  property      Property                      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  templateTag   String
-  store         FlooringStoreCode?
-  warehouseId   String?
-  warehouse     FlooringWarehouse?            @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  instructions  String?
-  templateNotes String?
-  padProductId  String?
-  padProduct    FlooringProduct?              @relation(fields: [padProductId], references: [id], onDelete: SetNull)
-  createdAt     DateTime                      @default(now())
-  updatedAt     DateTime                      @updatedAt
-  items         FlooringTemplateItem[]
-  serviceItems  FlooringTemplateServiceItem[]
-  workOrders    FlooringWorkOrder[]
+  id             String                        @id @default(uuid())
+  templateNumber String                        @unique @map("template_number") @default(dbgenerated("('TP-'::text || lpad((nextval('flooring_template_number_seq'::regclass))::text, 5, '0'::text))"))
+  propertyId     String
+  property       Property                      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  templateTag    String
+  store          FlooringStoreCode?
+  warehouseId    String?
+  warehouse      FlooringWarehouse?            @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  instructions   String?
+  templateNotes  String?
+  padProductId   String?
+  padProduct     FlooringProduct?              @relation(fields: [padProductId], references: [id], onDelete: SetNull)
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
+  items          FlooringTemplateItem[]
+  serviceItems   FlooringTemplateServiceItem[]
+  workOrders     FlooringWorkOrder[]
 
+  @@index([templateNumber])
   @@index([propertyId])
   @@index([warehouseId])
   @@index([templateTag])
