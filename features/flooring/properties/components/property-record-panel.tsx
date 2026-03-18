@@ -1,5 +1,8 @@
 "use client"
 
+import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
+import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
+import { getSharedFormFieldClass } from "@/features/flooring/shared/form-field-styles"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 
 type PropertyRow = {
@@ -32,11 +35,21 @@ type DraftTemplate = {
 
 export function PropertyRecordPanel({
   property,
+  mode = "view",
+  draft,
+  managementOptions = [],
+  message = "",
+  error = "",
   isTemplateCreateOpen,
   newTemplateDraft,
   warehouseOptions,
   padProductOptions,
   loadingTemplate,
+  isSaving = false,
+  onDraftChange,
+  onSave,
+  onDelete,
+  onClose,
   onTemplateDraftChange,
   onOpenTemplate,
   onOpenCreateTemplate,
@@ -45,11 +58,30 @@ export function PropertyRecordPanel({
   isCreatingTemplate = false,
 }: {
   property: PropertyRow
+  mode?: "view" | "edit"
+  draft?: {
+    name: string
+    streetAddress: string
+    city: string
+    state: string
+    zip: string
+    phone: string
+    email: string
+    managementCompanyId: string
+  }
+  managementOptions?: Array<{ id: string; name: string }>
+  message?: string
+  error?: string
   isTemplateCreateOpen: boolean
   newTemplateDraft: DraftTemplate
   warehouseOptions: Array<{ id: string; name: string }>
   padProductOptions: Array<{ id: string; label: string }>
   loadingTemplate: boolean
+  isSaving?: boolean
+  onDraftChange?: (field: "name" | "streetAddress" | "city" | "state" | "zip" | "phone" | "email" | "managementCompanyId", value: string) => void
+  onSave?: () => void
+  onDelete?: () => void
+  onClose?: () => void
   onTemplateDraftChange: (field: keyof DraftTemplate, value: string) => void
   onOpenTemplate: (templateId: string) => void
   onOpenCreateTemplate?: () => void
@@ -57,26 +89,71 @@ export function PropertyRecordPanel({
   onCreateTemplate?: () => void
   isCreatingTemplate?: boolean
 }) {
+  const isEditing = mode === "edit" && draft && onDraftChange && onSave && onDelete && onClose
+  const fullAddress = isEditing
+    ? [draft.streetAddress, draft.city, draft.state, draft.zip].filter(Boolean).join(", ")
+    : property.fullAddress
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Address</p>
-          <p className="mt-1 font-medium">{property.fullAddress || "-"}</p>
+      {message ? <SuccessNotice>{message}</SuccessNotice> : null}
+      {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+
+      {isEditing ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <RecordFormField label="Property Name">
+            <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: draft.name.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Street Address">
+            <input value={draft.streetAddress} onChange={(event) => onDraftChange("streetAddress", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.streetAddress.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="City">
+            <input value={draft.city} onChange={(event) => onDraftChange("city", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.city.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="State">
+            <input value={draft.state} onChange={(event) => onDraftChange("state", event.target.value)} maxLength={2} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.state.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Zip">
+            <input value={draft.zip} onChange={(event) => onDraftChange("zip", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.zip.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Management Company">
+            <select value={draft.managementCompanyId} onChange={(event) => onDraftChange("managementCompanyId", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.managementCompanyId.trim() === "" })}`}>
+              <option value="">No management company</option>
+              {managementOptions.map((company) => (
+                <option key={company.id} value={company.id}>{company.name}</option>
+              ))}
+            </select>
+          </RecordFormField>
+          <RecordFormField label="Phone">
+            <input value={draft.phone} onChange={(event) => onDraftChange("phone", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.phone.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Email">
+            <input value={draft.email} onChange={(event) => onDraftChange("email", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.email.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Full Address">
+            <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">{fullAddress || "Property address preview"}</div>
+          </RecordFormField>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Management Company</p>
-          <p className="mt-1 font-medium">{property.managementCompany?.name || "None"}</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Address</p>
+            <p className="mt-1 font-medium">{property.fullAddress || "-"}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Management Company</p>
+            <p className="mt-1 font-medium">{property.managementCompany?.name || "None"}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Phone</p>
+            <p className="mt-1 font-medium">{property.phone || "-"}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Email</p>
+            <p className="mt-1 font-medium">{property.email || "-"}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Phone</p>
-          <p className="mt-1 font-medium">{property.phone || "-"}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Email</p>
-          <p className="mt-1 font-medium">{property.email || "-"}</p>
-        </div>
-      </div>
+      )}
 
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -145,6 +222,19 @@ export function PropertyRecordPanel({
           )}
         </div>
       </div>
+
+      {isEditing ? (
+        <RecordPanelFooter
+          deleteLabel="Delete Property"
+          deleteConfirmMessage={`Delete ${property.name}?`}
+          onDelete={onDelete}
+          onClose={onClose}
+          saveLabel="Save Property"
+          savingLabel="Saving..."
+          onSave={onSave}
+          isSaving={isSaving}
+        />
+      ) : null}
     </div>
   )
 }

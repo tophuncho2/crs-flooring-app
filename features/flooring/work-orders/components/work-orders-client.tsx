@@ -4,7 +4,7 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
@@ -96,11 +96,6 @@ function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete" | "
   return getWorkOrderStatusLabel(row)
 }
 
-function dateInputValue(value: string | null) {
-  if (!value) return ""
-  return value.split("T")[0]
-}
-
 function buildWorkOrderAddress(property: PropertyOption | undefined, customAddress: string) {
   if (customAddress.trim()) return customAddress
   return property?.address ?? ""
@@ -141,11 +136,9 @@ export default function WorkOrdersClient({
   unitOptions: UnitOption[]
 }) {
   const [workOrders, setWorkOrders] = useState<WorkOrderRow[]>(initialWorkOrders)
-  const [drafts, setDrafts] = useState<Record<string, DraftWorkOrder>>({})
   const [newDraft, setNewDraft] = useState<DraftWorkOrder>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
-  const [isSaving, setIsSaving] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [activeWorkOrderSummary, setActiveWorkOrderSummary] = useState<{ materialItems: Array<{ quantity: string; unitPrice: string }>; serviceItems: Array<{ quantity: string; unitPrice: string }> }>({
     materialItems: [],
@@ -189,6 +182,7 @@ export default function WorkOrdersClient({
   const workOrderColumns = useMemo(
     () => [
       { key: "wo", label: "WO" },
+      { key: "edit", label: "Edit" },
       { key: "open", label: "Open" },
       { key: "status", label: "Status" },
       { key: "warehouse", label: "Warehouse" },
@@ -202,7 +196,6 @@ export default function WorkOrdersClient({
       { key: "instructions", label: "Instructions" },
       { key: "notes", label: "Notes" },
       { key: "items", label: "Items" },
-      { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
     ],
     [],
@@ -218,35 +211,6 @@ export default function WorkOrdersClient({
     tableKey: "work-orders-main",
     columns: workOrderColumns,
   })
-
-  function getDraft(id: string): DraftWorkOrder {
-    const row = workOrders.find((order) => order.id === id)
-    if (!row) return defaultDraft
-
-    return (
-      drafts[id] ?? {
-        propertyId: row.propertyId,
-        templateId: row.templateId,
-        warehouseId: row.warehouseId,
-        status: row.status,
-        isComplete: row.isComplete,
-        vacancy: row.vacancy ?? "",
-        date: dateInputValue(row.date),
-        unitText: row.unitText,
-        unitNumber: row.unitNumber,
-        unitType: row.unitType,
-        customAddress: row.customAddress,
-        instructions: row.instructions,
-        notes: row.notes,
-        workOrderImageUrl: row.workOrderImageUrl,
-      }
-    )
-  }
-
-  function setDraftField(id: string, field: keyof DraftWorkOrder, value: string) {
-    const base = getDraft(id)
-    setDrafts((prev) => ({ ...prev, [id]: { ...base, ...prev[id], [field]: value } }))
-  }
 
   function setNewDraftField(field: keyof DraftWorkOrder, value: string) {
     setNewDraft((prev) => ({ ...prev, [field]: value }))
@@ -297,40 +261,6 @@ export default function WorkOrdersClient({
 
   function selectedAddress(draft: DraftWorkOrder) {
     return buildWorkOrderAddress(propertyLookup.get(draft.propertyId), draft.customAddress)
-  }
-
-  async function persistWorkOrder(id: string, draft: DraftWorkOrder) {
-    const payload = await requestJson<{
-      workOrder?: WorkOrderRow
-    }>(`/api/flooring/work-orders/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(draft),
-    })
-    if (!payload.workOrder) throw new Error("Failed to save work order")
-
-    return payload.workOrder
-  }
-
-  async function saveWorkOrder(row: WorkOrderRow) {
-    setError("")
-    setMessage("")
-    setIsSaving(row.id)
-
-    try {
-      const savedWorkOrder = await persistWorkOrder(row.id, getDraft(row.id))
-      setWorkOrders((prev) => prev.map((item) => (item.id === row.id ? savedWorkOrder : item)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Work order saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save work order")
-    } finally {
-      setIsSaving(null)
-    }
   }
 
   async function createWorkOrder() {
@@ -387,11 +317,6 @@ export default function WorkOrdersClient({
       })
 
       setWorkOrders((prev) => prev.filter((row) => row.id !== id))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[id]
-        return next
-      })
       if (activeWorkOrderId === id) {
         closeWorkOrderPanel()
       }
@@ -405,12 +330,16 @@ export default function WorkOrdersClient({
 
   function renderWorkOrderRow(row: WorkOrderRow) {
     const line = formatRow(row)
-    const draft = getDraft(row.id)
     const cells: Record<string, ReactNode> = {
       wo: <td key="wo" className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>,
+      edit: (
+        <td key="edit" className="px-3 py-2">
+          <EditRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1" />
+        </td>
+      ),
       open: (
         <td key="open" className="px-3 py-2">
-          <EditRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1" />
+          <OpenRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1">Open</OpenRowButton>
         </td>
       ),
       status: (
@@ -420,66 +349,21 @@ export default function WorkOrdersClient({
               Complete
             </span>
           ) : (
-            <select value={draft.status} onChange={(event) => setDraftField(row.id, "status", event.target.value)} className={`w-44 rounded border px-2 py-1 ${getWorkOrderStatusFieldClass(draft.status)}`}>
-              {WORK_ORDER_STATUS_OPTIONS.map((value) => (
-                <option key={value} value={value}>{statusLabel(value)}</option>
-              ))}
-            </select>
+            <span className={`inline-flex min-w-[110px] rounded border px-2 py-1 text-center text-sm ${getWorkOrderStatusFieldClass(row.status)}`}>{workOrderStatusText(row)}</span>
           )}
         </td>
       ),
-      warehouse: (
-        <td key="warehouse" className="px-3 py-2">
-          <select value={draft.warehouseId} onChange={(event) => setDraftField(row.id, "warehouseId", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-            <option value="">No warehouse</option>
-            {warehouseOptions.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-            ))}
-          </select>
-        </td>
-      ),
-      property: (
-        <td key="property" className="px-3 py-2">
-          <select value={draft.propertyId} onChange={(event) => setDraftField(row.id, "propertyId", event.target.value)} className="w-60 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-            <option value="">Select Property</option>
-            {propertyOptions.map((property) => (
-              <option key={property.id} value={property.id}>{property.name}</option>
-            ))}
-          </select>
-        </td>
-      ),
+      warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
+      property: <td key="property" className="px-3 py-2">{row.propertyName}</td>,
       address: <td key="address" className="px-3 py-2">{line.displayAddress}</td>,
-      customAddress: <td key="customAddress" className="px-3 py-2"><input value={draft.customAddress} onChange={(event) => setDraftField(row.id, "customAddress", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
-      date: <td key="date" className="px-3 py-2"><input type="date" value={draft.date} onChange={(event) => setDraftField(row.id, "date", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
-      unit: (
-        <td key="unit" className="px-3 py-2">
-          <div className="flex gap-1">
-            <input value={draft.unitText} onChange={(event) => setDraftField(row.id, "unitText", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-            <input value={draft.unitNumber} onChange={(event) => setDraftField(row.id, "unitNumber", event.target.value)} className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-          </div>
-        </td>
-      ),
-      unitType: <td key="unitType" className="px-3 py-2"><input value={draft.unitType} onChange={(event) => setDraftField(row.id, "unitType", event.target.value)} className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
-      vacancy: (
-        <td key="vacancy" className="px-3 py-2">
-          <select value={draft.vacancy} onChange={(event) => setDraftField(row.id, "vacancy", event.target.value)} className={`w-28 rounded border px-2 py-1 ${getVacancyFieldClass(draft.vacancy)}`}>
-            <option value="">Select</option>
-            {VACANCY_OPTIONS.map((value) => (
-              <option key={value} value={value}>{value}</option>
-            ))}
-          </select>
-        </td>
-      ),
-      instructions: <td key="instructions" className="px-3 py-2"><textarea value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
-      notes: <td key="notes" className="px-3 py-2"><textarea value={draft.notes} onChange={(event) => setDraftField(row.id, "notes", event.target.value)} className="min-h-[80px] w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>,
+      customAddress: <td key="customAddress" className="px-3 py-2">{row.customAddress || "-"}</td>,
+      date: <td key="date" className="px-3 py-2">{row.date ? row.date.split("T")[0] : "-"}</td>,
+      unit: <td key="unit" className="px-3 py-2">{[row.unitText, row.unitNumber].filter(Boolean).join(" ") || "-"}</td>,
+      unitType: <td key="unitType" className="px-3 py-2">{row.unitType || "-"}</td>,
+      vacancy: <td key="vacancy" className="px-3 py-2">{row.vacancy || "-"}</td>,
+      instructions: <td key="instructions" className="px-3 py-2">{row.instructions || "-"}</td>,
+      notes: <td key="notes" className="px-3 py-2">{row.notes || "-"}</td>,
       items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
-      save: (
-        <td key="save" className="px-3 py-2">
-          <SaveRowButton onClick={() => void saveWorkOrder(row)} disabled={isSaving === row.id} className="border-blue-500/50 text-blue-500 hover:bg-blue-500/10">
-            {isSaving === row.id ? "Saving..." : "Save"}
-          </SaveRowButton>
-        </td>
-      ),
       delete: (
         <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteWorkOrder(row.id)} disabled={deletingId === row.id}>

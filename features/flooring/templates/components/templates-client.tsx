@@ -4,7 +4,7 @@ import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { TemplateRecordPanel } from "./template-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
@@ -89,11 +89,9 @@ export default function TemplatesClient({
   unitOptions: UnitOption[]
 }) {
   const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates)
-  const [drafts, setDrafts] = useState<Record<string, DraftTemplate>>({})
   const [newDraft, setNewDraft] = useState<DraftTemplate>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
-  const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [activeTemplateSummary, setActiveTemplateSummary] = useState<{ materialItems: Array<{ quantity: string; unitPrice: string }>; serviceItems: Array<{ quantity: string; unitPrice: string }> }>({
     materialItems: [],
@@ -123,6 +121,7 @@ export default function TemplatesClient({
   })
   const templateColumns = useMemo(
     () => [
+      { key: "edit", label: "Edit" },
       { key: "open", label: "Open" },
       { key: "templateNumber", label: "Template #" },
       { key: "templateTag", label: "Template Tag" },
@@ -131,7 +130,6 @@ export default function TemplatesClient({
       { key: "instructions", label: "Instructions" },
       { key: "padType", label: "Pad Type" },
       { key: "templateNotes", label: "Template Notes" },
-      { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
     ],
     [],
@@ -147,35 +145,6 @@ export default function TemplatesClient({
     tableKey: "templates-main",
     columns: templateColumns,
   })
-
-  function getDraft(id: string): DraftTemplate {
-    if (drafts[id]) return drafts[id]
-
-    const row = templates.find((template) => template.id === id)
-    if (!row) return defaultDraft
-
-    return {
-      templateTag: row.templateTag,
-      propertyId: row.propertyId,
-      warehouseId: row.warehouseId,
-      instructions: row.instructions,
-      templateNotes: row.templateNotes,
-      padProductId: row.padProductId,
-    }
-  }
-
-  function setDraftField(id: string, field: keyof DraftTemplate, value: string) {
-    setDrafts((prev) => {
-      const base = getDraft(id)
-      return {
-        ...prev,
-        [id]: {
-          ...base,
-          [field]: value,
-        },
-      }
-    })
-  }
 
   function setNewDraftField(field: keyof DraftTemplate, value: string) {
     setNewDraft((prev) => ({ ...prev, [field]: value }))
@@ -238,40 +207,6 @@ export default function TemplatesClient({
     }
   }
 
-  async function saveTemplate(row: TemplateRow) {
-    setError("")
-    setMessage("")
-    setIsSavingId(row.id)
-
-    try {
-      const draft = getDraft(row.id)
-      const payload = await requestJson<{
-        template?: TemplateRow
-      }>(`/api/flooring/templates/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...draft,
-          warehouseId: draft.warehouseId || null,
-          padProductId: draft.padProductId || null,
-        }),
-      })
-      if (!payload.template) throw new Error("Failed to save template")
-
-      setTemplates((prev) => prev.map((template) => (template.id === row.id ? payload.template! : template)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Template saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save template")
-    } finally {
-      setIsSavingId(null)
-    }
-  }
-
   async function deleteTemplate(id: string) {
     setError("")
     setMessage("")
@@ -281,11 +216,6 @@ export default function TemplatesClient({
       await requestJson<{ ok: boolean }>(`/api/flooring/templates/${id}`, { method: "DELETE" })
 
       setTemplates((prev) => prev.filter((template) => template.id !== id))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[id]
-        return next
-      })
       if (activeTemplateId === id) {
         closeTemplatePanel()
       }
@@ -360,61 +290,24 @@ export default function TemplatesClient({
                 }
 
                 const row = entry.row
-                const draft = getDraft(row.id)
                 const cells: Record<string, ReactNode> = {
-                  open: (
-                    <td key="open" className="px-3 py-2">
+                  edit: (
+                    <td key="edit" className="px-3 py-2">
                       <EditRowButton onClick={() => void openTemplate(row)} />
                     </td>
                   ),
+                  open: (
+                    <td key="open" className="px-3 py-2">
+                      <OpenRowButton onClick={() => void openTemplate(row)}>Open</OpenRowButton>
+                    </td>
+                  ),
                   templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
-                  templateTag: (
-                    <td key="templateTag" className="px-3 py-2"><input value={draft.templateTag} onChange={(event) => setDraftField(row.id, "templateTag", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  ),
-                  property: (
-                    <td key="property" className="px-3 py-2">
-                      <select value={draft.propertyId} onChange={(event) => setDraftField(row.id, "propertyId", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                        <option value="">Select property</option>
-                        {propertyOptions.map((property) => (
-                          <option key={property.id} value={property.id}>{property.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                  ),
-                  warehouse: (
-                    <td key="warehouse" className="px-3 py-2">
-                      <select value={draft.warehouseId} onChange={(event) => setDraftField(row.id, "warehouseId", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                        <option value="">No warehouse</option>
-                        {warehouseOptions.map((warehouse) => (
-                          <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                  ),
-                  instructions: (
-                    <td key="instructions" className="px-3 py-2"><input value={draft.instructions} onChange={(event) => setDraftField(row.id, "instructions", event.target.value)} className="w-48 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  ),
-                  padType: (
-                    <td key="padType" className="px-3 py-2">
-                      <select value={draft.padProductId} onChange={(event) => setDraftField(row.id, "padProductId", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                        <option value="">No pad type</option>
-                        {padProductOptions.map((product) => (
-                          <option key={product.id} value={product.id}>{product.label}</option>
-                        ))}
-                      </select>
-                      <p className="mt-1 text-xs text-[var(--foreground)]/60">{row.padTypeLabel || "-"}</p>
-                    </td>
-                  ),
-                  templateNotes: (
-                    <td key="templateNotes" className="px-3 py-2"><input value={draft.templateNotes} onChange={(event) => setDraftField(row.id, "templateNotes", event.target.value)} className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" /></td>
-                  ),
-                  save: (
-                    <td key="save" className="px-3 py-2">
-                      <SaveRowButton onClick={() => void saveTemplate(row)} disabled={isSavingId === row.id}>
-                        {isSavingId === row.id ? "Saving..." : "Save"}
-                      </SaveRowButton>
-                    </td>
-                  ),
+                  templateTag: <td key="templateTag" className="px-3 py-2">{row.templateTag}</td>,
+                  property: <td key="property" className="px-3 py-2">{row.propertyName}</td>,
+                  warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
+                  instructions: <td key="instructions" className="px-3 py-2">{row.instructions || "-"}</td>,
+                  padType: <td key="padType" className="px-3 py-2">{row.padTypeLabel || "-"}</td>,
+                  templateNotes: <td key="templateNotes" className="px-3 py-2">{row.templateNotes || "-"}</td>,
                   delete: (
                     <td key="delete" className="px-3 py-2">
                       <DeleteRowButton onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id}>

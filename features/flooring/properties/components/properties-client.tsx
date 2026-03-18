@@ -5,7 +5,7 @@ import { Plus } from "lucide-react"
 import { PropertyRecordPanel } from "./property-record-panel"
 import { TemplateRecordPanel } from "../../templates/components/template-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
@@ -132,10 +132,6 @@ function computeFullAddress(address: { streetAddress: string; city: string; stat
   return [address.streetAddress, address.city, address.state, address.zip].filter(Boolean).join(", ")
 }
 
-function getManagementCompanyId(row: PropertyRow): string {
-  return row.managementCompany?.id ?? ""
-}
-
 export default function PropertiesClient({
   initialProperties,
   managementOptions,
@@ -156,11 +152,9 @@ export default function PropertiesClient({
   unitOptions: UnitOption[]
 }) {
   const [properties, setProperties] = useState<PropertyRow[]>(initialProperties)
-  const [drafts, setDrafts] = useState<Record<string, DraftProperty>>({})
   const [newDraft, setNewDraft] = useState<DraftProperty>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
-  const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
@@ -188,6 +182,7 @@ export default function PropertiesClient({
   })
   const propertyColumns = useMemo(
     () => [
+      { key: "edit", label: "Edit" },
       { key: "open", label: "Open" },
       { key: "property", label: "Property" },
       { key: "street", label: "Street" },
@@ -198,7 +193,6 @@ export default function PropertiesClient({
       { key: "email", label: "Email" },
       { key: "fullAddress", label: "Full Address" },
       { key: "managementCompany", label: "Management Company" },
-      { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
     ],
     [],
@@ -214,42 +208,6 @@ export default function PropertiesClient({
     tableKey: "properties-main",
     columns: propertyColumns,
   })
-
-  function getDraft(id: string): DraftProperty {
-    if (drafts[id]) {
-      return drafts[id]
-    }
-
-    const row = properties.find((property) => property.id === id)
-    if (!row) {
-      return defaultDraft
-    }
-
-    return {
-      name: row.name,
-      streetAddress: row.streetAddress,
-      city: row.city,
-      state: normalizeState(row.state),
-      zip: row.zip,
-      phone: row.phone,
-      email: row.email,
-      managementCompanyId: getManagementCompanyId(row),
-    }
-  }
-
-  function setDraftField(id: string, field: keyof DraftProperty, value: string | string[]) {
-    setDrafts((prev) => {
-      const base = getDraft(id)
-      const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
-      return {
-        ...prev,
-        [id]: {
-          ...base,
-          [field]: normalizedValue,
-        },
-      }
-    })
-  }
 
   function setNewDraftField(field: keyof DraftProperty, value: string | string[]) {
     const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
@@ -380,71 +338,6 @@ export default function PropertiesClient({
     }
   }
 
-  async function saveProperty(row: PropertyRow) {
-    setError("")
-    setMessage("")
-    setIsSavingId(row.id)
-
-    try {
-      const draft = getDraft(row.id)
-      const response = await fetch(`/api/flooring/properties/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...draft,
-          managementCompanyId: draft.managementCompanyId || null,
-        }),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        property?: {
-          id: string
-          name: string
-          streetAddress: string | null
-          city: string | null
-          state: string | null
-          zip: string | null
-          phone: string | null
-          email: string | null
-          managementCompany: { id: string; name: string } | null
-          fullAddress: string
-          templates?: PropertyRow["templates"]
-        }
-      }
-
-      if (!response.ok || !payload.property) {
-        throw new Error(payload.error ?? "Failed to save property")
-      }
-
-      const nextProperty = {
-        id: payload.property.id,
-        name: payload.property.name,
-        streetAddress: payload.property.streetAddress ?? "",
-        city: payload.property.city ?? "",
-        state: payload.property.state ?? "",
-        zip: payload.property.zip ?? "",
-        phone: payload.property.phone ?? "",
-        email: payload.property.email ?? "",
-        fullAddress: payload.property.fullAddress,
-        managementCompany: payload.property.managementCompany,
-        templates: payload.property.templates ?? row.templates,
-      }
-
-      setProperties((prev) => prev.map((property) => (property.id === row.id ? nextProperty : property)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Property saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save property")
-    } finally {
-      setIsSavingId(null)
-    }
-  }
-
   async function deleteProperty(id: string) {
     setError("")
     setMessage("")
@@ -459,11 +352,6 @@ export default function PropertiesClient({
       }
 
       setProperties((prev) => prev.filter((property) => property.id !== id))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[id]
-        return next
-      })
       setMessage("Property deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete property")
@@ -540,87 +428,26 @@ export default function PropertiesClient({
                 }
 
                 const row = entry.row
-                const draft = getDraft(row.id)
                 const cells: Record<string, ReactNode> = {
-                  open: (
-                    <td key="open" className="px-2 py-2">
+                  edit: (
+                    <td key="edit" className="px-2 py-2">
                       <EditRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1" />
                     </td>
                   ),
-                  property: (
-                    <td key="property" className="px-3 py-2">
-                      <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                  open: (
+                    <td key="open" className="px-2 py-2">
+                      <OpenRowButton onClick={() => setSelectedProperty(row)} className="px-2 py-1">Open</OpenRowButton>
                     </td>
                   ),
-                  street: (
-                    <td key="street" className="px-3 py-2">
-                      <input value={draft.streetAddress} onChange={(event) => setDraftField(row.id, "streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  city: (
-                    <td key="city" className="px-3 py-2">
-                      <input value={draft.city} onChange={(event) => setDraftField(row.id, "city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  state: (
-                    <td key="state" className="px-3 py-2">
-                      <input
-                        value={draft.state}
-                        onChange={(event) => setDraftField(row.id, "state", event.target.value)}
-                        onBlur={(event) => setDraftField(row.id, "state", event.target.value)}
-                        maxLength={2}
-                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                  ),
-                  zip: (
-                    <td key="zip" className="px-3 py-2">
-                      <input value={draft.zip} onChange={(event) => setDraftField(row.id, "zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  phone: (
-                    <td key="phone" className="px-3 py-2">
-                      <input value={draft.phone} onChange={(event) => setDraftField(row.id, "phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  email: (
-                    <td key="email" className="px-3 py-2">
-                      <input value={draft.email} onChange={(event) => setDraftField(row.id, "email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  fullAddress: (
-                    <td key="fullAddress" className="px-3 py-2">
-                      {computeFullAddress({
-                        streetAddress: draft.streetAddress,
-                        city: draft.city,
-                        state: draft.state,
-                        zip: draft.zip,
-                      })}
-                    </td>
-                  ),
-                  managementCompany: (
-                    <td key="managementCompany" className="px-3 py-2">
-                      <select
-                        value={draft.managementCompanyId}
-                        onChange={(event) => setDraftField(row.id, "managementCompanyId", event.target.value)}
-                        className="min-h-16 w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        <option value="">No management company</option>
-                        {managementOptions.map((company) => (
-                          <option key={company.id} value={company.id}>
-                            {company.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  ),
-                  save: (
-                    <td key="save" className="px-3 py-2">
-                      <SaveRowButton onClick={() => void saveProperty(row)} disabled={isSavingId === row.id}>
-                        {isSavingId === row.id ? "Saving..." : "Save"}
-                      </SaveRowButton>
-                    </td>
-                  ),
+                  property: <td key="property" className="px-3 py-2">{row.name}</td>,
+                  street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+                  city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+                  state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+                  zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+                  phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+                  email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+                  fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
+                  managementCompany: <td key="managementCompany" className="px-3 py-2">{row.managementCompany?.name || "No management company"}</td>,
                   delete: (
                     <td key="delete" className="px-3 py-2">
                       <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>

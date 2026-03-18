@@ -1,5 +1,8 @@
 "use client"
 
+import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
+import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
+import { getSharedFormFieldClass } from "@/features/flooring/shared/form-field-styles"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 
 type DraftProperty = {
@@ -28,9 +31,18 @@ type ManagementCompanyRow = {
 
 export function ManagementCompanyRecordPanel({
   company,
+  mode = "view",
+  draft,
+  message = "",
+  error = "",
   isPropertyCreateOpen,
   propertyDraft,
   loadingPropertyId,
+  isSaving = false,
+  onDraftChange,
+  onSave,
+  onDelete,
+  onClose,
   onPropertyDraftChange,
   onOpenProperty,
   onOpenCreateProperty,
@@ -39,9 +51,26 @@ export function ManagementCompanyRecordPanel({
   isCreatingProperty = false,
 }: {
   company: ManagementCompanyRow
+  mode?: "view" | "edit"
+  draft?: {
+    name: string
+    streetAddress: string
+    city: string
+    state: string
+    zip: string
+    phone: string
+    email: string
+  }
+  message?: string
+  error?: string
   isPropertyCreateOpen: boolean
   propertyDraft: DraftProperty
   loadingPropertyId: string | null
+  isSaving?: boolean
+  onDraftChange?: (field: "name" | "streetAddress" | "city" | "state" | "zip" | "phone" | "email", value: string) => void
+  onSave?: () => void
+  onDelete?: () => void
+  onClose?: () => void
   onPropertyDraftChange: (field: keyof DraftProperty, value: string) => void
   onOpenProperty: (propertyId: string) => void
   onOpenCreateProperty: () => void
@@ -49,22 +78,59 @@ export function ManagementCompanyRecordPanel({
   onCreateProperty: () => void
   isCreatingProperty?: boolean
 }) {
+  const isEditing = mode === "edit" && draft && onDraftChange && onSave && onDelete && onClose
+  const fullAddress = isEditing
+    ? [draft.streetAddress, draft.city, draft.state, draft.zip].filter(Boolean).join(", ")
+    : company.fullAddress
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Address</p>
-          <p className="mt-1 font-medium">{company.fullAddress || "-"}</p>
+      {message ? <SuccessNotice>{message}</SuccessNotice> : null}
+      {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+
+      {isEditing ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <RecordFormField label="Company Name">
+            <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: draft.name.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Street Address">
+            <input value={draft.streetAddress} onChange={(event) => onDraftChange("streetAddress", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.streetAddress.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="City">
+            <input value={draft.city} onChange={(event) => onDraftChange("city", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.city.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="State">
+            <input value={draft.state} onChange={(event) => onDraftChange("state", event.target.value)} maxLength={2} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.state.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Zip">
+            <input value={draft.zip} onChange={(event) => onDraftChange("zip", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.zip.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Phone">
+            <input value={draft.phone} onChange={(event) => onDraftChange("phone", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.phone.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Email">
+            <input value={draft.email} onChange={(event) => onDraftChange("email", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.email.trim() === "" })}`} />
+          </RecordFormField>
+          <RecordFormField label="Full Address">
+            <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">{fullAddress || "Company address preview"}</div>
+          </RecordFormField>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Phone</p>
-          <p className="mt-1 font-medium">{company.phone || "-"}</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Address</p>
+            <p className="mt-1 font-medium">{company.fullAddress || "-"}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Phone</p>
+            <p className="mt-1 font-medium">{company.phone || "-"}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Email</p>
+            <p className="mt-1 font-medium">{company.email || "-"}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Email</p>
-          <p className="mt-1 font-medium">{company.email || "-"}</p>
-        </div>
-      </div>
+      )}
 
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -127,6 +193,19 @@ export function ManagementCompanyRecordPanel({
           )}
         </div>
       </div>
+
+      {isEditing ? (
+        <RecordPanelFooter
+          deleteLabel="Delete Company"
+          deleteConfirmMessage={`Delete ${company.name}?`}
+          onDelete={onDelete}
+          onClose={onClose}
+          saveLabel="Save Company"
+          savingLabel="Saving..."
+          onSave={onSave}
+          isSaving={isSaving}
+        />
+      ) : null}
     </div>
   )
 }

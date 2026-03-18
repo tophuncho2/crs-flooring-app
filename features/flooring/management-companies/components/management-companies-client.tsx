@@ -6,7 +6,7 @@ import { ManagementCompanyRecordPanel } from "./management-company-record-panel"
 import { PropertyRecordPanel } from "../../properties/components/property-record-panel"
 import { TemplateRecordPanel } from "../../templates/components/template-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, SaveRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
@@ -180,11 +180,9 @@ export default function ManagementCompaniesClient({
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
   const [propertySelectOptions, setPropertySelectOptions] = useState<PropertyOption[]>(propertyOptions)
-  const [drafts, setDrafts] = useState<Record<string, DraftCompany>>({})
   const [newDraft, setNewDraft] = useState<DraftCompany>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
-  const [isSavingId, setIsSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
@@ -216,6 +214,7 @@ export default function ManagementCompaniesClient({
   })
   const companyColumns = useMemo(
     () => [
+      { key: "edit", label: "Edit" },
       { key: "open", label: "Open" },
       { key: "company", label: "Company" },
       { key: "street", label: "Street" },
@@ -226,7 +225,6 @@ export default function ManagementCompaniesClient({
       { key: "email", label: "Email" },
       { key: "fullAddress", label: "Full Address" },
       { key: "properties", label: "Properties" },
-      { key: "save", label: "Save" },
       { key: "delete", label: "Delete" },
     ],
     [],
@@ -242,41 +240,6 @@ export default function ManagementCompaniesClient({
     tableKey: "management-companies-main",
     columns: companyColumns,
   })
-
-  function getDraft(id: string): DraftCompany {
-    if (drafts[id]) {
-      return drafts[id]
-    }
-
-    const row = companies.find((company) => company.id === id)
-    if (!row) {
-      return defaultDraft
-    }
-
-    return {
-      name: row.name,
-      streetAddress: row.streetAddress,
-      city: row.city,
-      state: normalizeState(row.state),
-      zip: row.zip,
-      phone: row.phone,
-      email: row.email,
-    }
-  }
-
-  function setDraftField(id: string, field: keyof DraftCompany, value: string | string[]) {
-    setDrafts((prev) => {
-      const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
-      const base = getDraft(id)
-      return {
-        ...prev,
-        [id]: {
-          ...base,
-          [field]: normalizedValue,
-        },
-      }
-    })
-  }
 
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {
     const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
@@ -575,71 +538,6 @@ export default function ManagementCompaniesClient({
     }
   }
 
-  async function saveCompany(row: ManagementCompanyRow) {
-    setError("")
-    setMessage("")
-    setIsSavingId(row.id)
-
-    try {
-      const draft = getDraft(row.id)
-      const response = await fetch(`/api/flooring/management-companies/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        managementCompany?: {
-          id: string
-          name: string
-          streetAddress: string | null
-          city: string | null
-          state: string | null
-          postalCode: string | null
-          phone: string | null
-          email: string | null
-          properties: Array<{ id: string; name: string; fullAddress: string }>
-        }
-      }
-
-      if (!response.ok || !payload.managementCompany) {
-        throw new Error(payload.error ?? "Failed to save company")
-      }
-
-      const company = payload.managementCompany
-      const updatedCompany: ManagementCompanyRow = {
-        id: company.id,
-        name: company.name,
-        streetAddress: company.streetAddress ?? "",
-        city: company.city ?? "",
-        state: company.state ?? "",
-        zip: company.postalCode ?? "",
-        phone: company.phone ?? "",
-        email: company.email ?? "",
-        fullAddress: computeFullAddress({
-          streetAddress: company.streetAddress ?? "",
-          city: company.city ?? "",
-          state: company.state ?? "",
-          zip: company.postalCode ?? "",
-        }),
-        properties: company.properties,
-      }
-
-      setCompanies((prev) => prev.map((item) => (item.id === row.id ? updatedCompany : item)))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[row.id]
-        return next
-      })
-      setMessage("Management company saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save company")
-    } finally {
-      setIsSavingId(null)
-    }
-  }
-
   async function deleteCompany(id: string) {
     setError("")
     setMessage("")
@@ -654,11 +552,6 @@ export default function ManagementCompaniesClient({
       }
 
       setCompanies((prev) => prev.filter((company) => company.id !== id))
-      setDrafts((prev) => {
-        const next = { ...prev }
-        delete next[id]
-        return next
-      })
       setMessage("Management company deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete company")
@@ -725,66 +618,29 @@ export default function ManagementCompaniesClient({
             </TableHead>
             <tbody>
               {sortedCompanies.map((row) => {
-                const draft = getDraft(row.id)
                 const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
                 const cells: Record<string, ReactNode> = {
-                  open: (
-                    <td key="open" className="px-2 py-2">
+                  edit: (
+                    <td key="edit" className="px-2 py-2">
                       <EditRowButton onClick={() => openCompany(row)} className="px-2 py-1" />
                     </td>
                   ),
-                  company: (
-                    <td key="company" className="px-3 py-2">
-                      <input value={draft.name} onChange={(event) => setDraftField(row.id, "name", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                  open: (
+                    <td key="open" className="px-2 py-2">
+                      <OpenRowButton onClick={() => openCompany(row)} className="px-2 py-1">Open</OpenRowButton>
                     </td>
                   ),
-                  street: (
-                    <td key="street" className="px-3 py-2">
-                      <input value={draft.streetAddress} onChange={(event) => setDraftField(row.id, "streetAddress", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  city: (
-                    <td key="city" className="px-3 py-2">
-                      <input value={draft.city} onChange={(event) => setDraftField(row.id, "city", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  state: (
-                    <td key="state" className="px-3 py-2">
-                      <input
-                        value={draft.state}
-                        onChange={(event) => setDraftField(row.id, "state", event.target.value)}
-                        onBlur={(event) => setDraftField(row.id, "state", event.target.value)}
-                        maxLength={2}
-                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                  ),
-                  zip: (
-                    <td key="zip" className="px-3 py-2">
-                      <input value={draft.zip} onChange={(event) => setDraftField(row.id, "zip", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  phone: (
-                    <td key="phone" className="px-3 py-2">
-                      <input value={draft.phone} onChange={(event) => setDraftField(row.id, "phone", event.target.value)} className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  email: (
-                    <td key="email" className="px-3 py-2">
-                      <input value={draft.email} onChange={(event) => setDraftField(row.id, "email", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                    </td>
-                  ),
-                  fullAddress: <td key="fullAddress" className="px-3 py-2">{computeFullAddress(draft)}</td>,
+                  company: <td key="company" className="px-3 py-2">{row.name}</td>,
+                  street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+                  city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+                  state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+                  zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+                  phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+                  email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+                  fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
                   properties: (
                     <td key="properties" className="px-3 py-2">
                       <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
-                    </td>
-                  ),
-                  save: (
-                    <td key="save" className="px-3 py-2">
-                      <SaveRowButton onClick={() => void saveCompany(row)} disabled={isSavingId === row.id}>
-                        {isSavingId === row.id ? "Saving..." : "Save"}
-                      </SaveRowButton>
                     </td>
                   ),
                   delete: (
