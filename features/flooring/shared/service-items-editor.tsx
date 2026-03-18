@@ -1,6 +1,7 @@
 "use client"
 
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
+import { CollapsibleTableSection } from "./collapsible-table-section"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
 export type ServiceOption = {
@@ -72,13 +73,8 @@ export function ServiceItemsEditor({
   const colSpan = onSaveItem ? 8 : 7
 
   return (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="text-sm text-[var(--foreground)]/70">{description}</p>
-      </div>
-
-      <ModalTableShell minWidthClass="min-w-[1080px]">
+    <CollapsibleTableSection title={title} description={description}>
+      <ModalTableShell minWidthClass="min-w-[1200px]">
         <ModalTableHead>
           <tr>
             <TableHeaderCell>Service</TableHeaderCell>
@@ -220,6 +216,6 @@ export function ServiceItemsEditor({
           )}
         </tbody>
       </ModalTableShell>
-    </div>
+    </CollapsibleTableSection>
   )
 }

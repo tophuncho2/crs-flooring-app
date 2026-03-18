@@ -336,47 +336,45 @@ export function TemplateRecordPanel({
         </RecordFormField>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <MaterialItemsEditor
-          title="Material Items"
-          description="Products and quantities included in this template."
-          items={materialItems}
-          draft={materialDraft}
-          productOptions={productOptions}
-          loading={materialCollection.loading}
-          adding={materialCollection.adding}
-          savingItemId={materialCollection.savingItemId}
-          deletingItemId={materialCollection.deletingItemId}
-          extraFieldLabel="Stored Dye Lot"
-          onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
-          onAdd={() => void addMaterialItem()}
-          onItemFieldChange={(itemId, field, value) => {
-            setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-          }}
-          onSaveItem={(item) => void saveMaterialItem(item)}
-          onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
-        />
+      <MaterialItemsEditor
+        title="Material Items"
+        description="Products and quantities included in this template."
+        items={materialItems}
+        draft={materialDraft}
+        productOptions={productOptions}
+        loading={materialCollection.loading}
+        adding={materialCollection.adding}
+        savingItemId={materialCollection.savingItemId}
+        deletingItemId={materialCollection.deletingItemId}
+        extraFieldLabel="Stored Dye Lot"
+        onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
+        onAdd={() => void addMaterialItem()}
+        onItemFieldChange={(itemId, field, value) => {
+          setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+        }}
+        onSaveItem={(item) => void saveMaterialItem(item)}
+        onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
+      />
 
-        <ServiceItemsEditor
-          title="Service Items"
-          description="Service rows included in this template."
-          items={serviceItems}
-          draft={serviceDraft}
-          serviceOptions={serviceOptions}
-          unitOptions={unitOptions}
-          loading={serviceCollection.loading}
-          adding={serviceCollection.adding}
-          savingItemId={serviceCollection.savingItemId}
-          deletingItemId={serviceCollection.deletingItemId}
-          onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
-          onAdd={() => void addServiceItem()}
-          onItemFieldChange={(itemId, field, value) => {
-            setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-          }}
-          onSaveItem={(item) => void saveServiceItem(item)}
-          onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
-        />
-      </div>
+      <ServiceItemsEditor
+        title="Service Items"
+        description="Service rows included in this template."
+        items={serviceItems}
+        draft={serviceDraft}
+        serviceOptions={serviceOptions}
+        unitOptions={unitOptions}
+        loading={serviceCollection.loading}
+        adding={serviceCollection.adding}
+        savingItemId={serviceCollection.savingItemId}
+        deletingItemId={serviceCollection.deletingItemId}
+        onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
+        onAdd={() => void addServiceItem()}
+        onItemFieldChange={(itemId, field, value) => {
+          setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+        }}
+        onSaveItem={(item) => void saveServiceItem(item)}
+        onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
+      />
 
       <div className="flex justify-between gap-2">
         <button type="button" onClick={() => void deleteTemplate()} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">

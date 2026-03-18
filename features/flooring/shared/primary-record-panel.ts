@@ -2,7 +2,7 @@
 
 import { useUrlRecordPanel } from "./use-url-record-panel"
 
-export const PRIMARY_RECORD_PANEL_WIDTH_CLASS = "max-w-7xl"
+export const PRIMARY_RECORD_PANEL_WIDTH_CLASS = "max-w-[92rem]"
 
 const PRIMARY_RECORD_PANEL_KEYS = {
   template: "template",
