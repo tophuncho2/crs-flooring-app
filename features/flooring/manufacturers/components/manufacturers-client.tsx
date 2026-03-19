@@ -15,8 +15,8 @@ import { useTableColumns } from "../../shared/use-table-columns"
 
 type ManufacturerRow = {
   id: string
-  name: string
   companyName: string
+  agentName: string
   website: string
   phone: string
   email: string
@@ -26,16 +26,16 @@ type ManufacturerRow = {
 }
 
 type ManufacturerForm = {
-  name: string
   companyName: string
+  agentName: string
   website: string
   phone: string
   email: string
 }
 
 const emptyForm: ManufacturerForm = {
-  name: "",
   companyName: "",
+  agentName: "",
   website: "",
   phone: "",
   email: "",
@@ -56,8 +56,8 @@ async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise
 
 function toForm(manufacturer: ManufacturerRow): ManufacturerForm {
   return {
-    name: manufacturer.name,
     companyName: manufacturer.companyName,
+    agentName: manufacturer.agentName,
     website: manufacturer.website,
     phone: manufacturer.phone,
     email: manufacturer.email,
@@ -96,15 +96,15 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     rows: manufacturers,
     searchFields: [
       { key: "companyName", getValue: (row) => row.companyName },
-      { key: "name", getValue: (row) => row.name },
+      { key: "agentName", getValue: (row) => row.agentName },
       { key: "website", getValue: (row) => row.website },
       { key: "phone", getValue: (row) => row.phone },
       { key: "email", getValue: (row) => row.email },
     ],
-    sortField: (row) => row.companyName || row.name,
+    sortField: (row) => row.companyName || row.agentName,
     groupFields: [
       { key: "companyName", label: "Company", getValue: (row) => row.companyName || "No company" },
-      { key: "agent", label: "Agent", getValue: (row) => row.name },
+      { key: "agent", label: "Agent", getValue: (row) => row.agentName || "No agent" },
       { key: "products", label: "Products", getValue: (row) => String(row.productsCount) },
     ],
     defaultGroupKeys: ["companyName"],
@@ -114,7 +114,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     () => [
       { key: "edit", label: "Edit" },
       { key: "companyName", label: "Company Name" },
-      { key: "name", label: "Agent Name" },
+      { key: "agentName", label: "Agent Name" },
       { key: "website", label: "Website" },
       { key: "phone", label: "Phone" },
       { key: "email", label: "Email" },
@@ -179,7 +179,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     setIsSavingNew(true)
     try {
       const payload = await persistManufacturer(manufacturerForm)
-      setManufacturers((prev) => [payload.manufacturer, ...prev].sort((a, b) => (a.companyName || a.name).localeCompare(b.companyName || b.name)))
+      setManufacturers((prev) => [payload.manufacturer, ...prev].sort((a, b) => a.companyName.localeCompare(b.companyName)))
       setManufacturerForm(emptyForm)
       setIsCreateOpen(false)
       setMessage("Manufacturer created")
@@ -204,7 +204,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
       setManufacturers((prev) =>
         prev
           .map((manufacturer) => (manufacturer.id === selectedManufacturer.id ? payload.manufacturer : manufacturer))
-          .sort((a, b) => (a.companyName || a.name).localeCompare(b.companyName || b.name)),
+          .sort((a, b) => a.companyName.localeCompare(b.companyName)),
       )
       setSelectedManufacturer(payload.manufacturer)
       setManufacturerForm(toForm(payload.manufacturer))
@@ -217,7 +217,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
   }
 
   async function deleteManufacturer(manufacturer: ManufacturerRow) {
-    if (!window.confirm(`Delete ${manufacturer.companyName || manufacturer.name || "this manufacturer"}?`)) return
+    if (!window.confirm(`Delete ${manufacturer.companyName || manufacturer.agentName || "this manufacturer"}?`)) return
     clearNotices()
     setDeletingId(manufacturer.id)
     try {
@@ -240,7 +240,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
         </td>
       ),
       companyName: <td key="companyName" className="px-3 py-2">{manufacturer.companyName || "-"}</td>,
-      name: <td key="name" className="px-3 py-2 font-medium">{manufacturer.name || "-"}</td>,
+      agentName: <td key="agentName" className="px-3 py-2 font-medium">{manufacturer.agentName || "-"}</td>,
       website: <td key="website" className="px-3 py-2">{manufacturer.website || "-"}</td>,
       phone: <td key="phone" className="px-3 py-2">{manufacturer.phone || "-"}</td>,
       email: <td key="email" className="px-3 py-2">{manufacturer.email || "-"}</td>,
@@ -339,7 +339,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
               <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: manufacturerForm.companyName.trim() === "" })}`} required />
             </FormField>
             <FormField label="Agent Name">
-              <input value={manufacturerForm.name} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.name.trim() === "" })}`} />
+              <input value={manufacturerForm.agentName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, agentName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.agentName.trim() === "" })}`} />
             </FormField>
             <FormField label="Website">
               <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
@@ -356,14 +356,14 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
 
       {selectedManufacturer ? (
         <BasicRecordPanel
-          title={`Manufacturer ${selectedManufacturer.companyName || selectedManufacturer.name}`}
+          title={`Manufacturer ${selectedManufacturer.companyName || selectedManufacturer.agentName}`}
           onClose={() => setSelectedManufacturer(null)}
           message={panelMessage}
           error={panelError}
           saveLabel="Save Manufacturer"
           savingLabel="Saving..."
           deleteLabel="Delete Manufacturer"
-          deleteConfirmMessage={`Delete ${selectedManufacturer.companyName || selectedManufacturer.name}?`}
+          deleteConfirmMessage={`Delete ${selectedManufacturer.companyName || selectedManufacturer.agentName}?`}
           onSave={() => void savePanelManufacturer()}
           onDelete={() => void deleteManufacturer(selectedManufacturer)}
           isSaving={isSavingId === selectedManufacturer.id || deletingId === selectedManufacturer.id}
@@ -373,7 +373,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
               <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: manufacturerForm.companyName.trim() === "" })}`} required />
             </FormField>
             <FormField label="Agent Name">
-              <input value={manufacturerForm.name} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.name.trim() === "" })}`} />
+              <input value={manufacturerForm.agentName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, agentName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.agentName.trim() === "" })}`} />
             </FormField>
             <FormField label="Website">
               <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />

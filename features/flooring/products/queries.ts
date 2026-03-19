@@ -15,7 +15,7 @@ export async function listCatalogProducts() {
       manufacturer: {
         select: {
           id: true,
-          name: true,
+          agentName: true,
           companyName: true,
           website: true,
         },

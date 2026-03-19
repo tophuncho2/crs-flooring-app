@@ -10,10 +10,10 @@ async function resolveManufacturerName(manufacturerId: string | null | undefined
 
   const manufacturer = await prisma.flooringManufacturer.findUnique({
     where: { id: manufacturerId },
-    select: { companyName: true, name: true },
+    select: { companyName: true, agentName: true },
   })
 
-  return manufacturer?.companyName ?? manufacturer?.name ?? null
+  return manufacturer?.companyName ?? manufacturer?.agentName ?? null
 }
 
 export async function createProduct(input: CreateProductInput) {
@@ -50,7 +50,7 @@ export async function createProduct(input: CreateProductInput) {
       manufacturer: {
         select: {
           id: true,
-          name: true,
+          agentName: true,
           companyName: true,
           website: true,
         },
@@ -107,7 +107,7 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
       manufacturer: {
         select: {
           id: true,
-          name: true,
+          agentName: true,
           companyName: true,
           website: true,
         },

@@ -166,8 +166,8 @@ model FlooringUnitOfMeasure {
 
 model FlooringManufacturer {
   id          String            @id @default(uuid())
-  name        String            @unique
-  companyName String?
+  companyName String            @unique
+  agentName   String?
   website     String?
   phone       String?
   email       String?

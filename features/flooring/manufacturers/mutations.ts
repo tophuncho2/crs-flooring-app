@@ -1,8 +1,8 @@
 import { prisma } from "@/server/db/prisma"
 
 type ManufacturerInput = {
-  name: string
-  companyName: string | null
+  companyName: string
+  agentName: string | null
   website: string | null
   phone: string | null
   email: string | null

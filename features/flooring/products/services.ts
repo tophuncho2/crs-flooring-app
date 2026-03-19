@@ -38,7 +38,7 @@ export function normalizeCatalogProduct(product: {
   }
   manufacturer: {
     id: string
-    name: string
+    agentName: string | null
     companyName: string | null
     website: string | null
   } | null
@@ -48,7 +48,7 @@ export function normalizeCatalogProduct(product: {
     name: product.name,
     categoryId: product.categoryId,
     manufacturerId: product.manufacturerId ?? "",
-    manufacturerName: product.manufacturer?.companyName ?? product.manufacturer?.name ?? product.manufacturerName ?? "",
+    manufacturerName: product.manufacturer?.companyName ?? product.manufacturer?.agentName ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",
