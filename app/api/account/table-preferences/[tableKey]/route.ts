@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/server/auth/auth-options"
 import { canBypassVerification } from "@/server/auth/access-control"
+import { getSessionUser } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
 
 function normalizeBody(body: unknown) {
@@ -37,17 +36,11 @@ function normalizeBody(body: unknown) {
 }
 
 async function getCurrentUser() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
+  const user = await getSessionUser()
+  if (!user) {
     return null
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, email: true, role: true, isVerified: true },
-  })
-
-  if (!user) return null
   if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
     return "forbidden" as const
   }

@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/server/auth/auth-options"
 import { prisma } from "@/server/db/prisma"
 import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 export async function GET() {
   const authError = await ensureBuilderPanelAccess()
   if (authError) return authError
-  const session = await getServerSession(authOptions)
-  const viewerCanManageUsers = Boolean(session?.user?.email)
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -22,7 +18,7 @@ export async function GET() {
   })
 
   return NextResponse.json({
-    viewerCanManageUsers,
+    viewerCanManageUsers: true,
     users: users.map((user) => ({
       ...user,
       createdAt: user.createdAt.toISOString(),

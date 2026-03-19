@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           role: user.role,
-          isVerified: true,
+          isVerified: user.isVerified,
         }
       },
     }),
@@ -53,15 +53,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id
+        token.sub = user.id
         token.role = user.role
-        token.isVerified = true
+        token.isVerified = user.isVerified
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
+        session.user.id = token.id ?? token.sub ?? ""
         session.user.role = token.role as Role
-        session.user.isVerified = true
+        session.user.isVerified = Boolean(token.isVerified)
       }
       return session
     },

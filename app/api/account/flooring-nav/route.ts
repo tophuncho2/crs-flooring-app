@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/server/auth/auth-options"
 import { canBypassVerification } from "@/server/auth/access-control"
+import { getSessionUser } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
 import { FLOORING_NAV_SLUGS } from "@/app/dashboard/flooring-navigation"
 
@@ -34,18 +33,9 @@ function normalizeBody(body: unknown): { visibleSlugs: string[]; orderedSlugs: s
 }
 
 export async function PATCH(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, email: true, role: true, isVerified: true },
-  })
-
+  const user = await getSessionUser()
   if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 })
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   if (!canBypassVerification(user.email, user.role) && !user.isVerified) {

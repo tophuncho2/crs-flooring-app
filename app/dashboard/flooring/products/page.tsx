@@ -1,8 +1,5 @@
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import { authOptions } from "@/server/auth/auth-options"
 import { prisma } from "@/server/db/prisma"
-import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import { requireToolAccess } from "@/server/auth/session"
 import FlooringProductsClient from "@/features/flooring/products/components/products-client"
 import { Prisma } from "@prisma/client"
 import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
@@ -70,17 +67,7 @@ function normalizeProduct(product: {
 }
 
 export default async function FlooringProductsPage() {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.email) redirect("/login")
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, role: true },
-  })
-
-  if (!user) redirect("/login")
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "products" }))) redirect("/dashboard/flooring/work-orders")
+  await requireToolAccess("products")
 
   const [categories, manufacturers, products] = await Promise.all([
     prisma.flooringCategory.findMany({

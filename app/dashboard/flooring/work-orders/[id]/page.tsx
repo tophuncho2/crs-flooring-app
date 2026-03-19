@@ -1,8 +1,6 @@
-import { getServerSession } from "next-auth"
-import { notFound, redirect } from "next/navigation"
-import { authOptions } from "@/server/auth/auth-options"
+import { notFound } from "next/navigation"
 import { prisma } from "@/server/db/prisma"
-import { isToolUnlocked } from "@/server/platform/tool-subscriptions"
+import { requireToolAccess } from "@/server/auth/session"
 import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
 
 type WorkOrderDetail = {
@@ -71,24 +69,7 @@ function normalizeAddress(value: {
 }
 
 export default async function WorkOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.email) {
-    redirect("/login")
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, role: true },
-  })
-
-  if (!user) {
-    redirect("/login")
-  }
-
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug: "warehouse" }))) {
-    redirect("/dashboard/flooring/work-orders")
-  }
+  await requireToolAccess("warehouse")
 
   const { id } = await params
 

@@ -1,48 +1,35 @@
-import { getServerSession } from "next-auth"
 import { NextResponse } from "next/server"
-import { authOptions } from "@/server/auth/auth-options"
-import { prisma } from "@/server/db/prisma"
 import {
   canAccessBuilderPanel,
   hasSystemAccess,
 } from "@/server/auth/access-control"
-import type { ToolSlug } from "@/server/platform/tool-subscriptions"
-
-async function getCurrentUserRecord() {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user?.email) {
-    return { session: null, user: null }
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, email: true, role: true, isVerified: true },
-  })
-
-  return { session, user }
-}
+import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-subscriptions"
+import { getSessionUser } from "@/server/auth/session"
 
 type EnsureBuilderOrAdminOptions = {
   toolSlug?: ToolSlug
 }
 
 export async function ensureBuilderOrAdmin(options: EnsureBuilderOrAdminOptions = {}) {
-  const { session, user } = await getCurrentUserRecord()
-  if (!session || !user) {
+  const user = await getSessionUser()
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  void options
-  if (hasSystemAccess(user.role)) {
-    return null
+  if (!hasSystemAccess(user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
-  return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  if (options.toolSlug && !(await isToolUnlocked({ userId: user.id, role: user.role, slug: options.toolSlug }))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  return null
 }
 
 export async function ensureAuthenticated() {
-  const { session, user } = await getCurrentUserRecord()
-  if (!session || !user) {
+  const user = await getSessionUser()
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -54,8 +41,8 @@ export async function ensureAuthenticated() {
 }
 
 export async function ensureBuilderOnly() {
-  const { session, user } = await getCurrentUserRecord()
-  if (!session || !user) {
+  const user = await getSessionUser()
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -67,8 +54,8 @@ export async function ensureBuilderOnly() {
 }
 
 export async function ensureBuilderPanelAccess() {
-  const { session, user } = await getCurrentUserRecord()
-  if (!session || !user) {
+  const user = await getSessionUser()
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

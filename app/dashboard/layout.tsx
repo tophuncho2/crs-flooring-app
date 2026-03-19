@@ -1,10 +1,9 @@
 import type { ReactNode } from "react"
-import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/server/auth/auth-options"
 import HeaderControls from "./header-controls"
 import { prisma } from "@/server/db/prisma"
 import { hasSystemAccess } from "@/server/auth/access-control"
+import { requireSessionUser } from "@/server/auth/session"
 import { getUserToolContext } from "@/server/platform/tool-subscriptions"
 import { FLOORING_NAV_SLUGS } from "./flooring-navigation"
 
@@ -13,18 +12,11 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode
 }) {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/login")
-  }
-
-  const user = session.user.email
-    ? await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
-      })
-    : null
+  const sessionUser = await requireSessionUser()
+  const user = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
+  })
 
   if (!user) {
     redirect("/login")
