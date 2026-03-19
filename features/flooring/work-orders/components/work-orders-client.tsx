@@ -383,10 +383,9 @@ export default function WorkOrdersClient({
       <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-blue-500">Work Orders</h1>
-              <p className="mt-1 text-sm text-[var(--foreground)]/70">Create and manage work orders for flooring operations.</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-blue-500">Work Orders</h1>
+          </div>
             <TableActionsSummary count={filteredWorkOrders.length}>
               <TableControlsBar
                 searchQuery={searchQuery}

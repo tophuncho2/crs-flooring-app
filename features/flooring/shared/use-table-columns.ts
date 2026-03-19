@@ -25,12 +25,19 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     () => columns.filter((column) => column.defaultHidden).map((column) => column.key),
     [columns],
   )
+  const columnKeySignature = useMemo(() => columnKeys.join("|"), [columnKeys])
+  const defaultHiddenSignature = useMemo(() => defaultHiddenKeys.join("|"), [defaultHiddenKeys])
+  const columnKeysRef = useRef(columnKeys)
+  const defaultHiddenKeysRef = useRef(defaultHiddenKeys)
 
   const [hiddenColumnKeys, setHiddenColumnKeys] = useState<string[]>(defaultHiddenKeys)
   const [columnOrderKeys, setColumnOrderKeys] = useState<string[]>(columnKeys)
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(true)
   const [preferenceError, setPreferenceError] = useState("")
   const hasLoadedRef = useRef(false)
+
+  columnKeysRef.current = columnKeys
+  defaultHiddenKeysRef.current = defaultHiddenKeys
 
   useEffect(() => {
     let isCancelled = false
@@ -49,21 +56,23 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
 
         if (isCancelled) return
 
-        const nextOrder = Array.isArray(payload.columnOrderKeys) ? payload.columnOrderKeys.filter((key) => columnKeys.includes(key)) : []
-        for (const key of columnKeys) {
+        const nextOrder = Array.isArray(payload.columnOrderKeys)
+          ? payload.columnOrderKeys.filter((key) => columnKeysRef.current.includes(key))
+          : []
+        for (const key of columnKeysRef.current) {
           if (!nextOrder.includes(key)) nextOrder.push(key)
         }
 
         const nextHidden = Array.isArray(payload.hiddenColumnKeys)
-          ? payload.hiddenColumnKeys.filter((key) => columnKeys.includes(key))
-          : defaultHiddenKeys
+          ? payload.hiddenColumnKeys.filter((key) => columnKeysRef.current.includes(key))
+          : defaultHiddenKeysRef.current
 
         setColumnOrderKeys(nextOrder)
         setHiddenColumnKeys(nextHidden)
       } catch (error) {
         if (isCancelled) return
-        setColumnOrderKeys(columnKeys)
-        setHiddenColumnKeys(defaultHiddenKeys)
+        setColumnOrderKeys(columnKeysRef.current)
+        setHiddenColumnKeys(defaultHiddenKeysRef.current)
         setPreferenceError(error instanceof Error ? error.message : "Failed to load table preferences")
       } finally {
         if (!isCancelled) {
@@ -78,7 +87,7 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     return () => {
       isCancelled = true
     }
-  }, [columnKeys, defaultHiddenKeys, tableKey])
+  }, [columnKeySignature, defaultHiddenSignature, tableKey])
 
   async function persistPreferences(nextHiddenKeys: string[], nextOrderKeys: string[]) {
     try {

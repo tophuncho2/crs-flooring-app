@@ -29,7 +29,6 @@ export default async function FlooringCalendarPage() {
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <h1 className="text-2xl font-bold text-blue-500">Calendar</h1>
-        <p className="mt-1 text-sm text-[var(--foreground)]/70">Work order schedule view. More calendar behavior can be layered onto this page next.</p>
 
         <div className="mt-6 space-y-4">
           {Array.from(grouped.entries()).map(([dateKey, entries]) => (

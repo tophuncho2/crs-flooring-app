@@ -259,7 +259,6 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Manufacturers</h1>
-            <p className="text-sm text-[var(--foreground)]/70">Manage manufacturer contacts and keep the manufacturer to product path aligned with the shared table and record-panel system.</p>
           </div>
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar

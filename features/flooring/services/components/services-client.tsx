@@ -250,7 +250,6 @@ export default function ServicesClient({
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Services</h1>
-            <p className="text-sm text-[var(--foreground)]/70">Manage reusable labor and service definitions for templates and work orders.</p>
           </div>
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar

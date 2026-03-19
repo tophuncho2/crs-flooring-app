@@ -463,9 +463,6 @@ export default function PropertiesClient({
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Properties</h1>
-            <p className="mt-1 text-sm text-[var(--foreground)]/70">
-              Manage property records for flooring work orders, including full address formulas and management links.
-            </p>
           </div>
           <TableActionsSummary count={filteredProperties.length}>
             <TableControlsBar

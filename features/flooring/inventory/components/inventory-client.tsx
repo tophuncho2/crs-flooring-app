@@ -197,9 +197,6 @@ export default function InventoryClient({ initialInventory }: { initialInventory
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <h1 className="text-2xl font-bold text-blue-500">Inventory</h1>
-        <p className="mt-1 text-sm text-[var(--foreground)]/70">
-          Live inventory only. Pending import rows stay on the Imports page until the import is marked final.
-        </p>
 
         {message ? <p className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
         {error ? <p className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}

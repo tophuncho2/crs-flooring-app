@@ -585,9 +585,6 @@ export default function FlooringProductsClient({
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Flooring Products</h1>
-            <p className="text-sm text-[var(--foreground)]/70">
-              Manage flooring product attributes, bucket photo previews, and category-linked coverage units.
-            </p>
           </div>
           <TableActionsSummary count={filteredProducts.length}>
             <TableControlsBar

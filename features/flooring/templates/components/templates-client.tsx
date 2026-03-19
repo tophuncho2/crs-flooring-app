@@ -224,9 +224,6 @@ export default function TemplatesClient({
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Templates</h1>
-            <p className="mt-1 text-sm text-[var(--foreground)]/70">
-              Manage flooring templates by property, warehouse, instructions, pad type, and notes.
-            </p>
           </div>
           <TableActionsSummary count={filteredTemplates.length}>
             <TableControlsBar

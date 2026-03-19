@@ -286,7 +286,6 @@ export default function CategoriesClient({
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-blue-500">Categories</h1>
-            <p className="text-sm text-[var(--foreground)]/70">Manage flooring product categories and the shared unit mapping used across products, templates, and services.</p>
           </div>
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
