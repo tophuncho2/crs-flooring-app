@@ -13,6 +13,8 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
+import { FormStatusNotices } from "../../shared/notices"
 
 type ManagementCompanyOption = {
   id: string
@@ -120,17 +122,6 @@ const defaultTemplateDraft: DraftTemplate = {
   padProductId: "",
 }
 
-function normalizeState(value: string | null | undefined) {
-  return String(value ?? "")
-    .replace(/[^a-zA-Z]/g, "")
-    .slice(0, 2)
-    .toUpperCase()
-}
-
-function computeFullAddress(address: { streetAddress: string; city: string; state: string; zip: string }) {
-  return [address.streetAddress, address.city, address.state, address.zip].filter(Boolean).join(", ")
-}
-
 export default function PropertiesClient({
   initialProperties,
   managementOptions,
@@ -201,12 +192,12 @@ export default function PropertiesClient({
   })
 
   function setNewDraftField(field: keyof DraftProperty, value: string | string[]) {
-    const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
+    const normalizedValue = field === "state" && typeof value === "string" ? normalizeAddressState(value) : value
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
   function setSelectedPropertyDraftField(field: keyof DraftProperty, value: string) {
-    const normalizedValue = field === "state" ? normalizeState(value) : value
+    const normalizedValue = field === "state" ? normalizeAddressState(value) : value
     setSelectedPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
@@ -567,6 +558,7 @@ export default function PropertiesClient({
       {isCreateModalOpen ? (
         <ModalShell title="New Property" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
           <div className="space-y-6">
+            <FormStatusNotices error={error} loadingMessage={isSavingNew ? "Creating property..." : ""} />
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <FormField label="Property Name">
                 <input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
@@ -599,7 +591,7 @@ export default function PropertiesClient({
               </FormField>
               <FormField label="Full Address">
                 <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
-                  {computeFullAddress(newDraft) || "Property address preview"}
+                  {buildFullAddress(newDraft) || "Property address preview"}
                 </div>
               </FormField>
             </div>

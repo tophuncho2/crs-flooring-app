@@ -1,5 +1,7 @@
 import { prisma } from "@/server/db/prisma"
 import { flooringCategoryUnitInclude } from "@/server/flooring/unit-measures"
+import { normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
+import { listManufacturers } from "@/features/flooring/manufacturers/queries"
 import { normalizeCatalogProduct, normalizeProductOption } from "./services"
 
 export async function listCatalogProducts() {
@@ -39,4 +41,35 @@ export async function listProductOptions() {
   })
 
   return products.map(normalizeProductOption)
+}
+
+export async function getProductsPageData() {
+  const [categories, manufacturers, products] = await Promise.all([
+    prisma.flooringCategory.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        ...flooringCategoryUnitInclude,
+      },
+    }),
+    listManufacturers(),
+    listCatalogProducts(),
+  ])
+
+  return {
+    categoryOptions: categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      ...normalizeCategoryUnitValues(category),
+    })),
+    manufacturerOptions: manufacturers.map((manufacturer) => ({
+      id: manufacturer.id,
+      name: manufacturer.companyName,
+      website: manufacturer.website ?? "",
+      phone: manufacturer.phone ?? "",
+      email: manufacturer.email ?? "",
+    })),
+    initialProducts: products,
+  }
 }

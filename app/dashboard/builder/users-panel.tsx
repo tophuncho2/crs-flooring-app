@@ -1,6 +1,9 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState } from "react"
+import { requestJson } from "@/features/flooring/shared/http"
+import { FormStatusNotices } from "@/features/flooring/shared/notices"
+import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/record-form"
 
 type UserRow = {
   id: string
@@ -32,53 +35,8 @@ type SectionState = {
 
 type SectionId = keyof SectionState
 
-async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  })
-
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
-
-  if (!response.ok) {
-    const message = typeof payload.error === "string" ? payload.error : "Request failed"
-    throw new Error(message)
-  }
-
-  return payload as T
-}
-
 function formatDate(value: string) {
   return new Date(value).toLocaleString()
-}
-
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-blue-500">{title}</h2>
-            <p className="text-sm text-[var(--foreground)]/70">Type a unit of measure name.</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-          >
-            Close
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
 }
 
 export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUnitOfMeasures: UnitOfMeasureRow[] }) {
@@ -121,7 +79,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setError("")
 
     try {
-      const payload = await apiJson<{ users: UserRow[]; viewerCanManageUsers: boolean }>("/api/builder/users")
+      const payload = await requestJson<{ users: UserRow[]; viewerCanManageUsers: boolean }>("/api/builder/users")
       setUsers(payload.users)
       setViewerCanManageUsers(payload.viewerCanManageUsers)
     } catch (loadError) {
@@ -136,7 +94,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setActivityLoading(true)
 
     try {
-      const payload = await apiJson<{ activity: ActivityRow[] }>("/api/builder/users/activity")
+      const payload = await requestJson<{ activity: ActivityRow[] }>("/api/builder/users/activity")
       setActivityRows(payload.activity)
       setActivityLoaded(true)
     } catch (loadError) {
@@ -174,8 +132,9 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setSavingUserIds((prev) => new Set(prev).add(userId))
 
     try {
-      const payload = await apiJson<{ user: UserRow }>(`/api/builder/users/${userId}`, {
+      const payload = await requestJson<{ user: UserRow }>(`/api/builder/users/${userId}`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(next),
       })
 
@@ -200,7 +159,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setSavingUserIds((prev) => new Set(prev).add(userId))
 
     try {
-      await apiJson<{ success: boolean }>(`/api/builder/users/${userId}`, {
+      await requestJson<{ success: boolean }>(`/api/builder/users/${userId}`, {
         method: "DELETE",
       })
 
@@ -226,8 +185,9 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setIsBulkUpdating(true)
 
     try {
-      await apiJson<{ success: boolean }>("/api/builder/users/bulk", {
+      await requestJson<{ success: boolean }>("/api/builder/users/bulk", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       })
       await loadUsers()
@@ -267,12 +227,14 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setIsSavingUnitOfMeasure(true)
     try {
       const payload = editingUnitOfMeasure
-        ? await apiJson<{ unitOfMeasure: UnitOfMeasureRow }>(`/api/builder/unit-of-measures/${editingUnitOfMeasure.id}`, {
+        ? await requestJson<{ unitOfMeasure: UnitOfMeasureRow }>(`/api/builder/unit-of-measures/${editingUnitOfMeasure.id}`, {
             method: "PATCH",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: unitOfMeasureName }),
           })
-        : await apiJson<{ unitOfMeasure: UnitOfMeasureRow }>("/api/builder/unit-of-measures", {
+        : await requestJson<{ unitOfMeasure: UnitOfMeasureRow }>("/api/builder/unit-of-measures", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: unitOfMeasureName }),
           })
 
@@ -301,7 +263,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
     setDeletingUnitOfMeasureId(unitId)
 
     try {
-      await apiJson<{ success: boolean }>(`/api/builder/unit-of-measures/${unitId}`, {
+      await requestJson<{ success: boolean }>(`/api/builder/unit-of-measures/${unitId}`, {
         method: "DELETE",
       })
       setUnitOfMeasures((prev) => prev.filter((unit) => unit.id !== unitId))
@@ -638,23 +600,24 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
       )}
 
       {isUnitOfMeasureModalOpen ? (
-        <ModalShell
+        <RecordModalShell
           title={editingUnitOfMeasure ? "Edit Unit of Measure" : "Add Unit of Measure"}
           onClose={() => {
             if (!isSavingUnitOfMeasure) {
               setIsUnitOfMeasureModalOpen(false)
             }
           }}
+          sizeClass="max-w-md"
         >
           <div className="space-y-4">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-[var(--foreground)]/80">Unit of Measure</span>
+            <FormStatusNotices error={error} loadingMessage={isSavingUnitOfMeasure ? "Saving unit of measure..." : ""} />
+            <RecordFormField label="Unit of Measure">
               <input
                 value={unitOfMeasureName}
                 onChange={(event) => setUnitOfMeasureName(event.target.value)}
                 className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
               />
-            </label>
+            </RecordFormField>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -673,7 +636,7 @@ export default function BuilderUsersPanel({ initialUnitOfMeasures }: { initialUn
               </button>
             </div>
           </div>
-        </ModalShell>
+        </RecordModalShell>
       ) : null}
     </div>
   )

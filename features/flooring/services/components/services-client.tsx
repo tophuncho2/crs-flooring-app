@@ -13,6 +13,7 @@ import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-co
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
+import { requestJson } from "../../shared/http"
 
 type ServiceRow = {
   id: string
@@ -43,15 +44,6 @@ const emptyForm: ServiceForm = {
   unitId: "",
   baseCost: "",
   notes: "",
-}
-
-async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init)
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
-  if (!response.ok) {
-    throw new Error(typeof payload.error === "string" ? payload.error : "Request failed")
-  }
-  return payload as T
 }
 
 function createDraft(row: ServiceRow): ServiceForm {
@@ -159,7 +151,7 @@ export default function ServicesClient({
     clearNotices()
     setIsSavingNew(true)
     try {
-      const payload = await apiJson<{ service: ServiceRow }>("/api/flooring/services", {
+      const payload = await requestJson<{ service: ServiceRow }>("/api/flooring/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(serviceForm ?? emptyForm),
@@ -180,7 +172,7 @@ export default function ServicesClient({
     clearNotices()
     setIsSavingId(selectedService.id)
     try {
-      const payload = await apiJson<{ service: ServiceRow }>(`/api/flooring/services/${selectedService.id}`, {
+      const payload = await requestJson<{ service: ServiceRow }>(`/api/flooring/services/${selectedService.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(serviceForm),
@@ -200,7 +192,7 @@ export default function ServicesClient({
     clearNotices()
     setDeletingId(row.id)
     try {
-      await apiJson<{ success?: boolean }>(`/api/flooring/services/${row.id}`, { method: "DELETE" })
+      await requestJson<{ success?: boolean }>(`/api/flooring/services/${row.id}`, { method: "DELETE" })
       setServices((prev) => prev.filter((item) => item.id !== row.id))
       if (selectedService?.id === row.id) {
         closeServiceRecord()

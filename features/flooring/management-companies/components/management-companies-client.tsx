@@ -14,6 +14,8 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
+import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
+import { FormStatusNotices } from "../../shared/notices"
 
 type ManagementCompanyRow = {
   id: string
@@ -149,17 +151,6 @@ const defaultTemplateDraft: DraftTemplate = {
   padProductId: "",
 }
 
-function normalizeState(value: string | null | undefined) {
-  return String(value ?? "")
-    .replace(/[^a-zA-Z]/g, "")
-    .slice(0, 2)
-    .toUpperCase()
-}
-
-function computeFullAddress(value: { streetAddress: string; city: string; state: string; zip: string }) {
-  return [value.streetAddress, value.city, value.state, value.zip].filter(Boolean).join(", ")
-}
-
 export default function ManagementCompaniesClient({
   initialCompanies,
   propertyOptions,
@@ -233,12 +224,12 @@ export default function ManagementCompaniesClient({
   })
 
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {
-    const normalizedValue = field === "state" && typeof value === "string" ? normalizeState(value) : value
+    const normalizedValue = field === "state" && typeof value === "string" ? normalizeAddressState(value) : value
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
   function setSelectedCompanyDraftField(field: keyof DraftCompany, value: string) {
-    const normalizedValue = field === "state" ? normalizeState(value) : value
+    const normalizedValue = field === "state" ? normalizeAddressState(value) : value
     setSelectedCompanyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
@@ -255,7 +246,7 @@ export default function ManagementCompaniesClient({
   }
 
   function setPropertyDraftField(field: keyof DraftProperty, value: string) {
-    const normalizedValue = field === "state" ? normalizeState(value) : value
+    const normalizedValue = field === "state" ? normalizeAddressState(value) : value
     setPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
@@ -536,7 +527,7 @@ export default function ManagementCompaniesClient({
         zip: payloadCompany.postalCode ?? "",
         phone: payloadCompany.phone ?? "",
         email: payloadCompany.email ?? "",
-        fullAddress: computeFullAddress({
+        fullAddress: buildFullAddress({
           streetAddress: payloadCompany.streetAddress ?? "",
           city: payloadCompany.city ?? "",
           state: payloadCompany.state ?? "",
@@ -638,7 +629,7 @@ export default function ManagementCompaniesClient({
         email: payload.managementCompany.email ?? "",
         fullAddress:
           payload.managementCompany.fullAddress ??
-          computeFullAddress({
+          buildFullAddress({
             streetAddress: payload.managementCompany.streetAddress ?? "",
             city: payload.managementCompany.city ?? "",
             state: payload.managementCompany.state ?? "",
@@ -769,10 +760,11 @@ export default function ManagementCompaniesClient({
 
       </section>
 
-      {isCreateModalOpen ? (
-        <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
-          <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {isCreateModalOpen ? (
+          <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
+            <div className="space-y-6">
+              <FormStatusNotices error={error} loadingMessage={isSavingNew ? "Creating management company..." : ""} />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <FormField label="Company Name">
                 <input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
               </FormField>
@@ -794,11 +786,11 @@ export default function ManagementCompaniesClient({
               <FormField label="Email">
                 <input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
               </FormField>
-              <FormField label="Full Address">
-                <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
-                  {computeFullAddress(newDraft) || "Company address preview"}
-                </div>
-              </FormField>
+                <FormField label="Full Address">
+                  <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
+                    {buildFullAddress(newDraft) || "Company address preview"}
+                  </div>
+                </FormField>
             </div>
 
             <div className="flex justify-end gap-2">

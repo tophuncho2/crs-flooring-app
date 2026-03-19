@@ -1,17 +1,18 @@
 "use client"
 
-import { type ChangeEvent, type ReactNode, useMemo, useState } from "react"
+import { type ChangeEvent, type ReactNode, useState } from "react"
 import { Plus, Save, Upload, X } from "lucide-react"
 import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
-import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { FormStatusNotices } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
-import { useTableColumns } from "../../shared/use-table-columns"
-import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { requestJson } from "../../shared/http"
+import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 
 type CategoryOption = {
   id: string
@@ -152,17 +153,6 @@ const emptyCutLogDraft: CutLogDraft = {
   notes: "",
 }
 
-async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init)
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
-
-  if (!response.ok) {
-    throw new Error(typeof payload.error === "string" ? payload.error : "Request failed")
-  }
-
-  return payload as T
-}
-
 function toProductForm(product: ProductRow): ProductForm {
   return {
     categoryId: product.categoryId,
@@ -248,52 +238,37 @@ export default function FlooringProductsClient({
     filteredRows: filteredProducts,
     sortedRows: sortedProducts,
     groupedRowTree,
-  } = useTableControls({
-    rows: products,
-    searchFields: [
-      { key: "productName", getValue: (row) => row.name },
-      { key: "category", getValue: (row) => row.category.name },
-      { key: "manufacturer", getValue: (row) => row.manufacturerName },
-      { key: "style", getValue: (row) => row.style },
-      { key: "color", getValue: (row) => row.color },
-    ],
-    sortField: (row) => row.name,
-    groupFields: [
-      { key: "category", label: "Category", getValue: (row) => row.category.name },
-      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName },
-      { key: "baseColor", label: "Base Color", getValue: (row) => row.baseColor },
-    ],
-    defaultGroupKeys: ["category"],
-  })
-  const productColumns = useMemo(
-    () => [
-      { key: "open", label: "Open" },
-      { key: "product", label: "Product" },
-      { key: "category", label: "Category" },
-      { key: "manufacturer", label: "Manufacturer" },
-      { key: "style", label: "Style" },
-      { key: "color", label: "Color" },
-      { key: "baseColor", label: "Base Color" },
-      { key: "coverage", label: "Coverage" },
-      { key: "width", label: "Width" },
-      { key: "sheetSize", label: "Sheet Size" },
-      { key: "thickness", label: "Thickness" },
-      { key: "unitWeight", label: "Unit Weight" },
-      { key: "photos", label: "Photos" },
-      { key: "actions", label: "Actions" },
-    ],
-    [],
-  )
-  const {
     allColumns: orderedProductColumns,
     visibleColumns: visibleProductColumns,
     hiddenColumnKeys: hiddenProductColumnKeys,
     toggleColumnVisibility: toggleProductColumnVisibility,
     moveColumn: moveProductColumn,
     setColumnOrder: setProductColumnOrder,
-  } = useTableColumns({
+  } = useConfiguredTableState({
+    rows: products,
     tableKey: "products-main",
-    columns: productColumns,
+    fields: [
+      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
+      { key: "product", label: "Product", getValue: (row) => row.name || "Pending name" },
+      { key: "category", label: "Category", getValue: (row) => row.category.name },
+      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName },
+      { key: "style", label: "Style", getValue: (row) => row.style },
+      { key: "color", label: "Color", getValue: (row) => row.color },
+      { key: "baseColor", label: "Base Color", getValue: (row) => row.baseColor },
+      {
+        key: "coverage",
+        label: "Coverage",
+        getValue: (row) => (row.coveragePerUnit ? `${row.coveragePerUnit} / ${row.coverageUnit || "unit"}` : ""),
+      },
+      { key: "width", label: "Width", getValue: (row) => row.width },
+      { key: "sheetSize", label: "Sheet Size", getValue: (row) => row.sheetSize },
+      { key: "thickness", label: "Thickness", getValue: (row) => row.thickness },
+      { key: "unitWeight", label: "Unit Weight", getValue: (row) => row.unitWeight },
+      { key: "photos", label: "Photos", getValue: (row) => String(row.photoUrls.length) },
+      { key: "actions", label: "Actions", getValue: () => "", searchable: false, groupable: false },
+    ],
+    sortField: (row) => row.name,
+    defaultGroupKeys: ["category"],
   })
 
   function clearNotices() {
@@ -366,7 +341,7 @@ export default function FlooringProductsClient({
     setLoadingInventory(true)
 
     try {
-      const payload = await apiJson<{ inventory: InventoryRow[] }>(`/api/flooring/inventory?productId=${product.id}`)
+      const payload = await requestJson<{ inventory: InventoryRow[] }>(`/api/flooring/inventory?productId=${product.id}`)
       setInventoryRows(payload.inventory)
       setExpandedWarehouses(Array.from(new Set(payload.inventory.map((row) => row.warehouseName))))
     } catch (loadError) {
@@ -439,7 +414,7 @@ export default function FlooringProductsClient({
         throw new Error("Cut quantity cannot exceed the current running balance")
       }
 
-      const payload = await apiJson<{ cutLog: CutLogRow }>("/api/flooring/cut-logs", {
+      const payload = await requestJson<{ cutLog: CutLogRow }>("/api/flooring/cut-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -492,12 +467,12 @@ export default function FlooringProductsClient({
       }
 
       const payload = editingProduct
-        ? await apiJson<{ product: ProductRow }>(`/api/flooring/products/${editingProduct.id}`, {
+        ? await requestJson<{ product: ProductRow }>(`/api/flooring/products/${editingProduct.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           })
-        : await apiJson<{ product: ProductRow }>("/api/flooring/products", {
+        : await requestJson<{ product: ProductRow }>("/api/flooring/products", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
@@ -523,7 +498,7 @@ export default function FlooringProductsClient({
     clearNotices()
 
     try {
-      await apiJson<{ success: boolean }>(`/api/flooring/products/${product.id}`, { method: "DELETE" })
+      await requestJson<{ success: boolean }>(`/api/flooring/products/${product.id}`, { method: "DELETE" })
       setProducts((prev) => prev.filter((item) => item.id !== product.id))
       setMessage("Product deleted")
     } catch (deleteError) {
@@ -544,7 +519,7 @@ export default function FlooringProductsClient({
       for (const file of Array.from(files)) {
         const formData = new FormData()
         formData.append("file", file)
-        const payload = await apiJson<{ url: string }>("/api/flooring/product-photos", {
+        const payload = await requestJson<{ url: string }>("/api/flooring/product-photos", {
           method: "POST",
           body: formData,
         })
@@ -621,8 +596,7 @@ export default function FlooringProductsClient({
           </TableActionsSummary>
         </div>
 
-        {message ? <SuccessNotice className="mt-4">{message}</SuccessNotice> : null}
-        {error ? <ErrorNotice className="mt-4">{error}</ErrorNotice> : null}
+        <FormStatusNotices message={message} error={error} className="mt-4" />
 
         <section className="mt-6">
           <h2 className="mb-4 text-lg font-semibold">Products</h2>
@@ -645,8 +619,7 @@ export default function FlooringProductsClient({
       {isProductModalOpen ? (
         <ModalShell title={editingProduct ? "Edit Product" : "Add Product"} onClose={() => setIsProductModalOpen(false)}>
           <div className="space-y-5">
-          {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-          {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+          <FormStatusNotices error={error} loadingMessage={isSavingProduct ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : ""} />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Link">
               <select
@@ -846,8 +819,7 @@ export default function FlooringProductsClient({
           }
         >
           <div className="space-y-6">
-            {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-            {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
+            <FormStatusNotices message={message} error={error} />
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Category</p>

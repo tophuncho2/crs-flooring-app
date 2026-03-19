@@ -13,6 +13,7 @@ import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-co
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
+import { requestJson } from "../../shared/http"
 import { validateManufacturerForm } from "../validators"
 
 type ManufacturerRow = {
@@ -41,15 +42,6 @@ const emptyForm: ManufacturerForm = {
   website: "",
   phone: "",
   email: "",
-}
-
-async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init)
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
-  if (!response.ok) {
-    throw new Error(typeof payload.error === "string" ? payload.error : "Request failed")
-  }
-  return payload as T
 }
 
 function toForm(manufacturer: ManufacturerRow): ManufacturerForm {
@@ -142,12 +134,12 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
 
   async function persistManufacturer(input: ManufacturerForm, id?: string) {
     return id
-      ? apiJson<{ manufacturer: ManufacturerRow }>(`/api/flooring/manufacturers/${id}`, {
+      ? requestJson<{ manufacturer: ManufacturerRow }>(`/api/flooring/manufacturers/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(input),
         })
-      : apiJson<{ manufacturer: ManufacturerRow }>("/api/flooring/manufacturers", {
+      : requestJson<{ manufacturer: ManufacturerRow }>("/api/flooring/manufacturers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(input),
@@ -205,7 +197,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     clearNotices()
     setDeletingId(manufacturer.id)
     try {
-      await apiJson<{ success: boolean }>(`/api/flooring/manufacturers/${manufacturer.id}`, { method: "DELETE" })
+      await requestJson<{ success: boolean }>(`/api/flooring/manufacturers/${manufacturer.id}`, { method: "DELETE" })
       setManufacturers((prev) => prev.filter((item) => item.id !== manufacturer.id))
       if (selectedManufacturer?.id === manufacturer.id) {
         closeManufacturerRecord()

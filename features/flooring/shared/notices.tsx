@@ -62,3 +62,27 @@ export function LoadingNotice({
     </p>
   )
 }
+
+export function FormStatusNotices({
+  message = "",
+  error = "",
+  loadingMessage = "",
+  className,
+}: {
+  message?: string
+  error?: string
+  loadingMessage?: string
+  className?: string
+}) {
+  if (!message && !error && !loadingMessage) {
+    return null
+  }
+
+  return (
+    <div className={joinClasses("space-y-3", className)}>
+      {message ? <SuccessNotice>{message}</SuccessNotice> : null}
+      {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+      {loadingMessage ? <LoadingNotice>{loadingMessage}</LoadingNotice> : null}
+    </div>
+  )
+}

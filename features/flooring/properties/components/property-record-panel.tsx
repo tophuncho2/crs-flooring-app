@@ -1,6 +1,6 @@
 "use client"
 
-import { ErrorNotice, LoadingNotice, SuccessNotice } from "@/features/flooring/shared/notices"
+import { FormStatusNotices } from "@/features/flooring/shared/notices"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { getSharedFormFieldClass } from "@/features/flooring/shared/form-field-styles"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
@@ -96,9 +96,7 @@ export function PropertyRecordPanel({
 
   return (
     <div className="space-y-6">
-      {message ? <SuccessNotice>{message}</SuccessNotice> : null}
-      {error ? <ErrorNotice>{error}</ErrorNotice> : null}
-      {isSaving ? <LoadingNotice>Saving property...</LoadingNotice> : null}
+      <FormStatusNotices message={message} error={error} loadingMessage={isSaving ? "Saving property..." : ""} />
 
       {isEditing ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -13,6 +13,7 @@ import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-co
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
+import { requestJson } from "../../shared/http"
 
 type CategoryRow = {
   id: string
@@ -53,15 +54,6 @@ const emptyCategoryForm: CategoryForm = {
   coverageAvailableUnitId: "",
   itemCoverageUnitId: "",
   serviceUnitId: "",
-}
-
-async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init)
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
-  if (!response.ok) {
-    throw new Error(typeof payload.error === "string" ? payload.error : "Request failed")
-  }
-  return payload as T
 }
 
 function toCategoryForm(category: CategoryRow): CategoryForm {
@@ -183,12 +175,12 @@ export default function CategoriesClient({
 
   async function persistCategory(input: CategoryForm, id?: string) {
     return id
-      ? apiJson<{ category: CategoryRow }>(`/api/flooring/categories/${id}`, {
+      ? requestJson<{ category: CategoryRow }>(`/api/flooring/categories/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(input),
         })
-      : apiJson<{ category: CategoryRow }>("/api/flooring/categories", {
+      : requestJson<{ category: CategoryRow }>("/api/flooring/categories", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(input),
@@ -234,7 +226,7 @@ export default function CategoriesClient({
     clearNotices()
     setDeletingId(category.id)
     try {
-      await apiJson<{ success: boolean }>(`/api/flooring/categories/${category.id}`, { method: "DELETE" })
+      await requestJson<{ success: boolean }>(`/api/flooring/categories/${category.id}`, { method: "DELETE" })
       setCategories((prev) => prev.filter((item) => item.id !== category.id))
       if (selectedCategory?.id === category.id) {
         closeCategoryRecord()
