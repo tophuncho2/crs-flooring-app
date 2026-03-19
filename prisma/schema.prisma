@@ -185,7 +185,7 @@ model FlooringProduct {
   category         FlooringCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   manufacturerName String?                 @map("manufacturer")
   manufacturerId   String?
-  manufacturer     FlooringManufacturer?   @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+  manufacturer     FlooringManufacturer?   @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
   style            String?
   color            String?
   width            String?

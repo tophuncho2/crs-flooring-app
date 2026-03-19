@@ -80,5 +80,13 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     }
   }
 
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    return { status: 503, message: "Database is unavailable right now. Please try again." }
+  }
+
+  if (error instanceof Prisma.PrismaClientRustPanicError) {
+    return { status: 500, message: "Database client crashed while processing the request" }
+  }
+
   return { status: 500, message: "Unexpected server error" }
 }

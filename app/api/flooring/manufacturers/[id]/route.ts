@@ -39,6 +39,17 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
+    const linkedProducts = await prisma.flooringProduct.count({
+      where: { manufacturerId: id },
+    })
+
+    if (linkedProducts > 0) {
+      return NextResponse.json(
+        { error: "This manufacturer has linked products and cannot be deleted" },
+        { status: 409 },
+      )
+    }
+
     await prisma.flooringManufacturer.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (error) {
