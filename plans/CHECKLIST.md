@@ -220,19 +220,11 @@ This checklist should be updated as work is completed.
 
 # 10. Testing
 
-- [ ] Add domain/service tests for core workflow logic.
-- [ ] Add API integration tests for critical routes.
-- [ ] Add template creation tests.
-- [ ] Add template item/service item tests.
-- [ ] Add work-order creation tests.
-- [ ] Add sync-template tests.
-- [ ] Add shortage behavior tests.
-- [ ] Add analytics update tests.
-- [ ] Add auth/role protection tests.
-- [ ] Add destructive action tests.
-- [ ] Add queue/job tests once workers are live.
-- [ ] Add end-to-end tests for the main operational workflow.
-- [ ] Add testing to CI or release gating.
+Detailed testing execution now lives in [`plans/testing/TESTING_CHECKLIST.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_CHECKLIST.md).
+
+- [ ] Keep the canonical testing checklist updated in `plans/testing/TESTING_CHECKLIST.md`.
+- [ ] Keep the simple-table domain status board updated in `plans/testing/SIMPLE_TABLE_DOMAIN_STATUS.md`.
+- [ ] Keep `plans/testing/TESTING_MASTER_PLAN.md` aligned with real testing standards as the system grows.
 
 ---
 

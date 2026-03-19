@@ -1,82 +1,31 @@
 # Testing Plan
-## Quality Standards, Critical Workflows, And Minimum Coverage
+## Legacy Entry Point To The Canonical Testing Planning System
 
-This file defines how the system should be tested to reach production quality.
+The canonical home for testing planning now lives under [`plans/testing/`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing).
 
----
+Start there:
+- [`README.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/README.md)
+- [`TESTING_MASTER_PLAN.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_MASTER_PLAN.md)
+- [`SIMPLE_TABLE_TEST_MATRIX.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/SIMPLE_TABLE_TEST_MATRIX.md)
+- [`TESTING_CHECKLIST.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_CHECKLIST.md)
+- [`SIMPLE_TABLE_DOMAIN_STATUS.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/SIMPLE_TABLE_DOMAIN_STATUS.md)
 
-# 1. Purpose
-
-Testing is required to make sure:
-- critical workflows keep working
-- refactors do not silently break operations
-- business rules remain correct
-- production changes are safer
-
----
-
-# 2. Test Categories
-
-## Domain tests
-Test business rules and mutation logic directly.
-
-## API integration tests
-Test routes and validation boundaries.
-
-## UI flow tests
-Test important user interactions.
-
-## End-to-end tests
-Test complete workflows across major system layers.
+This top-level file remains only as a bridge so older references do not break.
 
 ---
 
-# 3. Highest-Priority Workflows
+# Testing Philosophy
 
-The system should first test:
-- login/auth
-- create template
-- add template material items
-- add template service items
-- create work order
-- sync template to draft work order
-- edit work-order rows
-- delete protections
-- shortage behavior once implemented
-- completion flow once implemented
+Testing exists to make sure:
+- invalid data is rejected consistently
+- shared record-panel behavior stays stable
+- critical workflow rules remain correct
+- refactors can be validated quickly
+- high-risk regressions are caught before release
 
----
+The core rule is:
+- backend owns correctness
+- frontend provides UX guardrails
+- shared patterns require shared tests
 
-# 4. Minimum Production Test Requirements
-
-Before calling the system production-ready, test coverage should exist for:
-- critical domain mutations
-- critical routes
-- critical workflow transitions
-- template/work-order integrity
-- concurrency-sensitive operations
-
----
-
-# 5. Regression Priorities
-
-Refactors must not break:
-- template totals
-- work-order totals
-- sync behavior
-- status transitions
-- inventory linkage
-- analytics updates
-
----
-
-# 6. Definition Of Success
-
-Testing is successful when:
-- critical workflows are covered
-- major refactors can be validated quickly
-- high-risk bugs are caught before deploy
-
----
-
-This file should be updated as the workflow surface grows.
+For all active testing strategy and execution tracking, update the files in `plans/testing/` rather than expanding this file again.

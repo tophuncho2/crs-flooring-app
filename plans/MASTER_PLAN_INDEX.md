@@ -154,7 +154,27 @@ Use for:
 # 5. Quality And Readiness Planning Files
 
 ## [TESTING_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/TESTING_PLAN.md)
-Testing strategy and minimum quality bar.
+Legacy bridge to the canonical testing planning system.
+
+## [testing/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/README.md)
+Canonical testing planning index.
+
+Use for:
+- test planning entrypoint
+- testing ownership and update rules
+- navigating testing strategy, matrices, and checklists
+
+## [testing/TESTING_MASTER_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_MASTER_PLAN.md)
+Canonical testing strategy and quality gates.
+
+## [testing/SIMPLE_TABLE_TEST_MATRIX.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/SIMPLE_TABLE_TEST_MATRIX.md)
+Reusable coverage template for simple CRUD table domains.
+
+## [testing/TESTING_CHECKLIST.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_CHECKLIST.md)
+Action checklist for testing rollout and maintenance.
+
+## [testing/SIMPLE_TABLE_DOMAIN_STATUS.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/SIMPLE_TABLE_DOMAIN_STATUS.md)
+Coverage board for the current simple-table domains.
 
 ## [PROJECT_STARTER_CHECKLIST.md](/Users/ottohull/builderswebapp/builderswebapp/plans/PROJECT_STARTER_CHECKLIST.md)
 Project setup and restart checklist for this app and future internal apps.
@@ -226,7 +246,9 @@ Read:
 
 ## For testing and release work
 Read:
-- `TESTING_PLAN.md`
+- `testing/README.md`
+- `testing/TESTING_MASTER_PLAN.md`
+- `testing/TESTING_CHECKLIST.md`
 - `RELEASE_READINESS_CHECKLIST.md`
 - `DEPLOYMENT_PLAN.md`
 - `OBSERVABILITY_PLAN.md`
