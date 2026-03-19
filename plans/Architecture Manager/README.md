@@ -16,6 +16,8 @@ Files in this folder:
 - [SHARED_FEATURES_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Architecture%20Manager/SHARED_FEATURES_PLAN.md)
 - [CODEX_EXECUTION_GUIDE.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Architecture%20Manager/CODEX_EXECUTION_GUIDE.md)
 - [PROJECT_STARTER_CHECKLIST.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Architecture%20Manager/PROJECT_STARTER_CHECKLIST.md)
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Architecture%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Architecture%20Manager/assessment/strengths-weaknesses.md)
 
 Current posture:
 - strengths: strong architecture intent, clear reusable standards, good planning breadth

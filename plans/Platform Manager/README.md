@@ -19,6 +19,8 @@ Primary files:
 - [REDIS_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/REDIS_BLUEPRINT.md)
 - [WORKERS_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/WORKERS_BLUEPRINT.md)
 - [Railway Manager README](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/Railway%20Manager/README.md)
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/assessment/strengths-weaknesses.md)
 
 Current posture:
 - strengths: platform planning is broad and detailed

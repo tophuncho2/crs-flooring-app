@@ -28,3 +28,7 @@ Recommended future files in this folder:
 - complex-workflows-roadmap.md
 - template-work-order-detail-plan.md
 - inventory-imports-cutlogs-plan.md
+
+Assessment files:
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Flooring%20Domain%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Flooring%20Domain%20Manager/assessment/strengths-weaknesses.md)

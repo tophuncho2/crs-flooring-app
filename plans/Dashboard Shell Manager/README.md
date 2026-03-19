@@ -29,3 +29,7 @@ Recommended future files in this folder:
 - hotkeys-and-shortcuts-plan.md
 - table-preferences-plan.md
 - dashboard-shell-consistency-checklist.md
+
+Assessment files:
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Dashboard%20Shell%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Dashboard%20Shell%20Manager/assessment/strengths-weaknesses.md)

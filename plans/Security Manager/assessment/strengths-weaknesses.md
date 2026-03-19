@@ -1,4 +1,4 @@
-# Security Strengths, Weaknesses, And Immediate Actions
+# Security Manager Strengths Vs Weaknesses
 
 Date: 2026-03-19
 

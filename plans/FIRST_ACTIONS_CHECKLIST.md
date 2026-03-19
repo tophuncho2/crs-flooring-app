@@ -12,5 +12,6 @@ It is the root-level action list for what should happen first, not the full proj
 - [ ] Decide the worker rollout boundary: what stays synchronous and what moves to BullMQ.
 - [ ] Add startup env validation so missing or malformed platform secrets fail fast.
 - [ ] Expand automated tests around template sync, work-order mutation flows, and destructive protections.
-- [ ] Standardize manager update discipline so each thread keeps its own `README`, assessment, and next actions current.
+- [x] Standardize manager assessment coverage so each manager now has an `assessment/overall-assessment.md` and `assessment/strengths-weaknesses.md`.
+- [ ] Standardize manager update discipline so each thread keeps its own `README`, assessment, and next actions current after real project changes.
 - [ ] Run the program checklist against the current repo state and mark what is already complete versus still assumed.

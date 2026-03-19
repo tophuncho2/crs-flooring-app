@@ -30,3 +30,7 @@ Recommended future files in this folder:
 - builder-panel-governance.md
 - registration-verification-plan.md
 - route-access-audit.md
+
+Assessment files:
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Access%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Access%20Manager/assessment/strengths-weaknesses.md)

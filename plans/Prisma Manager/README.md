@@ -14,8 +14,8 @@ Folder structure:
 - [README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/README.md)
 - [DATA_MODEL_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/DATA_MODEL_PLAN.md)
 - [POSTGRES_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/POSTGRES_BLUEPRINT.md)
-- [overall-system-schema-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/assessment/overall-system-schema-assessment.md)
-- [strengths-weaknesses-checklist.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/assessment/strengths-weaknesses-checklist.md)
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/assessment/strengths-weaknesses.md)
 
 Connected managers:
 - [Platform Manager ENVIRONMENT_VARIABLES_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/ENVIRONMENT_VARIABLES_PLAN.md)

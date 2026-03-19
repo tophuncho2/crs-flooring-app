@@ -1,4 +1,4 @@
-# Prisma Manager Strengths / Weaknesses Checklist
+# Prisma Manager Strengths Vs Weaknesses
 
 ## Strengths
 

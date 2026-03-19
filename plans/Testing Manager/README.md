@@ -54,6 +54,12 @@ Use for:
 - identifying missing route/UI/regression coverage
 - keeping the rollout standardized across domains
 
+## [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/assessment/overall-assessment.md)
+Manager-level testing maturity assessment.
+
+## [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/assessment/strengths-weaknesses.md)
+Strengths, weaknesses, and immediate reinforcement priorities.
+
 ---
 
 # Update Rules

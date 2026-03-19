@@ -23,4 +23,5 @@ Working rules for this area:
 - security posture should be reassessed after major schema, API, storage, or deployment changes
 
 Current assessment:
-- [Initial overall security assessment](./assessment/overall-security-assessment.md)
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Security%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Security%20Manager/assessment/strengths-weaknesses.md)

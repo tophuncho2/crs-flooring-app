@@ -33,3 +33,7 @@ Current context:
 - Update the service folders as each Railway service is configured or changed.
 - Treat workers as planned infrastructure until the worker runtime is actually installed.
 - Use the blueprint docs in this folder for target-state standards, then use the service folders to track service-specific setup and gaps.
+
+Assessment files:
+- [overall-assessment.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/Railway%20Manager/assessment/overall-assessment.md)
+- [strengths-weaknesses.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Platform%20Manager/Railway%20Manager/assessment/strengths-weaknesses.md)

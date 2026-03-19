@@ -6,8 +6,10 @@ This folder tracks the current state of shared variables, constants, config valu
 
 - `inventory/current-status.md`
   Current shared-variable inventory across the app.
-- `assessment/strengths-weaknesses-checklist.md`
-  Checklist of strong points, weak points, and cleanup priorities.
+- `assessment/overall-assessment.md`
+  Current manager-level assessment of shared-value maturity and scaling gaps.
+- `assessment/strengths-weaknesses.md`
+  Strengths, weaknesses, and cleanup priorities.
 
 ## Scope
 
