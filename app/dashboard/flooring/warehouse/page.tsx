@@ -10,6 +10,7 @@ type WarehouseQueryRow = {
   createdAt: Date
   updatedAt: Date
   _count: {
+    sections: number
     locations: number
     workOrders: number
   }
@@ -24,6 +25,7 @@ export default async function FlooringWarehousePage() {
       include: {
         _count: {
           select: {
+            sections: true,
             locations: true,
             workOrders: true,
           },
@@ -41,7 +43,7 @@ export default async function FlooringWarehousePage() {
     name: warehouse.name,
     address: warehouse.address,
     phone: warehouse.phone,
-    sectionsCount: 0,
+    sectionsCount: warehouse._count.sections,
     locationsCount: warehouse._count.locations,
     workOrdersCount: warehouse._count.workOrders,
     createdAt: warehouse.createdAt.toISOString(),

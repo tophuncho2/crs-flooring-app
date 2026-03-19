@@ -393,8 +393,8 @@ model FlooringLocation {
   id           String              @id @default(uuid())
   warehouseId  String
   warehouse    FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  sectionId    String?
-  section      FlooringSection?    @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId    String
+  section      FlooringSection     @relation(fields: [sectionId], references: [id], onDelete: Restrict)
   locationCode String
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt

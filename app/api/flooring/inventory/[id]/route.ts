@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
 import { normalizePrismaError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -85,12 +86,17 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
+    const importEntryId = parseOptionalString(body.importEntryId)
+    const locationId = parseOptionalString(body.locationId)
+
+    await validateInventoryLocationSelection(prisma, { importEntryId, locationId })
+
     const inventory = await prisma.flooringInventory.update({
       where: { id },
       data: {
-        importEntryId: parseOptionalString(body.importEntryId),
+        importEntryId,
         productId: parseRequiredString(body.productId, "productId"),
-        locationId: parseOptionalString(body.locationId),
+        locationId,
         itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
         dyeLot: parseRequiredString(body.dyeLot, "dyeLot"),
         stockCount: parseDecimal(body.stockCount, "stockCount", 2),

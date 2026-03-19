@@ -15,8 +15,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     const hasLocationCode = "locationCode" in body
     const hasSectionId = "sectionId" in body
-    const locationCode = hasLocationCode ? parseRequiredString(body.locationCode, "locationCode").trim() : null
-    const sectionId = hasSectionId ? parseRequiredString(body.sectionId, "sectionId") : null
+    const locationCode = hasLocationCode ? parseRequiredString(body.locationCode, "locationCode").trim() : undefined
+    const sectionId = hasSectionId ? parseRequiredString(body.sectionId, "sectionId").trim() : undefined
 
     const existing = await prisma.flooringLocation.findUnique({
       where: { id },
@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Location not found" }, { status: 404 })
     }
 
-    if (sectionId) {
+    if (hasSectionId) {
       const section = await prisma.flooringSection.findUnique({
         where: { id: sectionId },
         select: { warehouseId: true },
@@ -61,6 +61,39 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         sectionId: updated.sectionId,
         sectionName: updated.section?.name ?? null,
       },
+    })
+  } catch (error) {
+    const normalized = normalizePrismaError(error)
+    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+  }
+}
+
+export async function DELETE(_request: Request, { params }: RouteContext) {
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
+  if (authError) return authError
+
+  try {
+    const { id } = await params
+    const location = await prisma.flooringLocation.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        warehouseId: true,
+        sectionId: true,
+      },
+    })
+
+    if (!location) {
+      return NextResponse.json({ error: "Location not found" }, { status: 404 })
+    }
+
+    await prisma.flooringLocation.delete({ where: { id } })
+
+    return NextResponse.json({
+      ok: true,
+      locationId: id,
+      warehouseId: location.warehouseId,
+      sectionId: location.sectionId,
     })
   } catch (error) {
     const normalized = normalizePrismaError(error)

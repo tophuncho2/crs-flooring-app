@@ -78,7 +78,7 @@ async function validateImportLocationIds(tx: Prisma.TransactionClient, warehouse
 
   const locations = await tx.flooringLocation.findMany({
     where: { id: { in: explicitLocationIds } },
-    select: { id: true, warehouseId: true },
+    select: { id: true, warehouseId: true, sectionId: true },
   })
   const locationMap = new Map(locations.map((location) => [location.id, location]))
 
@@ -88,6 +88,9 @@ async function validateImportLocationIds(tx: Prisma.TransactionClient, warehouse
     const explicitLocation = locationMap.get(item.locationId)
     if (!explicitLocation) {
       throw { message: `Item ${index + 1}: location is invalid`, field: "locationId" }
+    }
+    if (!explicitLocation.sectionId) {
+      throw { message: `Item ${index + 1}: location must belong to a section`, field: "locationId" }
     }
     if (warehouseId && explicitLocation.warehouseId !== warehouseId) {
       throw { message: `Item ${index + 1}: location does not belong to the selected warehouse`, field: "locationId" }

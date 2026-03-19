@@ -3,15 +3,48 @@ import { prisma } from "@/server/db/prisma"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 
+function normalizeWarehouseRow(warehouse: {
+  id: string
+  name: string
+  address: string | null
+  phone: string | null
+  createdAt: Date
+  updatedAt: Date
+  _count: {
+    sections: number
+    locations: number
+    workOrders: number
+  }
+}) {
+  return {
+    id: warehouse.id,
+    name: warehouse.name,
+    address: warehouse.address,
+    phone: warehouse.phone,
+    sectionsCount: warehouse._count.sections,
+    locationsCount: warehouse._count.locations,
+    workOrdersCount: warehouse._count.workOrders,
+    createdAt: warehouse.createdAt.toISOString(),
+    updatedAt: warehouse.updatedAt.toISOString(),
+  }
+}
+
 export async function GET() {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
   if (authError) return authError
 
   try {
     const warehouses = await prisma.flooringWarehouse.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phone: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
+            sections: true,
             locations: true,
             workOrders: true,
           },
@@ -20,7 +53,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json({ warehouses })
+    return NextResponse.json({ warehouses: warehouses.map(normalizeWarehouseRow) })
   } catch (error) {
     const normalized = normalizePrismaError(error)
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })
@@ -40,9 +73,16 @@ export async function POST(request: Request) {
         address: parseOptionalString(body.address),
         phone: parseOptionalString(body.phone),
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phone: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
+            sections: true,
             locations: true,
             workOrders: true,
           },
@@ -50,7 +90,7 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ warehouse }, { status: 201 })
+    return NextResponse.json({ warehouse: normalizeWarehouseRow(warehouse) }, { status: 201 })
   } catch (error) {
     const normalized = normalizePrismaError(error)
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })
