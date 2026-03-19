@@ -46,6 +46,13 @@ const emptyForm: ServiceForm = {
   notes: "",
 }
 
+function validateServiceForm(input: ServiceForm) {
+  if (!input.name.trim()) return "Service name is required"
+  if (!input.unitId.trim()) return "Unit is required"
+  if (!input.baseCost.trim()) return "Cost is required"
+  return ""
+}
+
 function createDraft(row: ServiceRow): ServiceForm {
   return {
     name: row.name,
@@ -156,6 +163,11 @@ export default function ServicesClient({
 
   async function createService() {
     clearNotices()
+    const validationError = validateServiceForm(serviceForm ?? emptyForm)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
     setIsSavingNew(true)
     try {
       const payload = await requestJson<{ service: ServiceRow }>("/api/flooring/services", {
@@ -177,6 +189,11 @@ export default function ServicesClient({
   async function savePanelService() {
     if (!selectedService || !serviceForm) return
     clearNotices()
+    const validationError = validateServiceForm(serviceForm)
+    if (validationError) {
+      setPanelError(validationError)
+      return
+    }
     setIsSavingId(selectedService.id)
     try {
       const payload = await requestJson<{ service: ServiceRow }>(`/api/flooring/services/${selectedService.id}`, {
@@ -325,10 +342,14 @@ export default function ServicesClient({
         >
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label="Service Name">
-              <input value={serviceForm?.name ?? ""} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input
+                value={serviceForm?.name ?? ""}
+                onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), name: event.target.value }))}
+                className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: (serviceForm?.name ?? "").trim() === "" })}`}
+              />
             </FormField>
             <FormField label="Service Unit">
-              <select value={serviceForm?.unitId ?? ""} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), unitId: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: (serviceForm?.unitId ?? "").trim() === "" })}`}>
+              <select value={serviceForm?.unitId ?? ""} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), unitId: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: (serviceForm?.unitId ?? "").trim() === "" })}`}>
                 <option value="">Select unit</option>
                 {unitOptions.map((unit) => (
                   <option key={unit.id} value={unit.id}>{unit.name}</option>
@@ -336,7 +357,7 @@ export default function ServicesClient({
               </select>
             </FormField>
             <FormField label="Cost">
-              <input value={serviceForm?.baseCost ?? ""} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), baseCost: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: (serviceForm?.baseCost ?? "").trim() === "" })}`} />
+              <input value={serviceForm?.baseCost ?? ""} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), baseCost: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: (serviceForm?.baseCost ?? "").trim() === "" })}`} />
             </FormField>
             <FormField label="Notes">
               <textarea value={serviceForm?.notes ?? ""} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), notes: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: (serviceForm?.notes ?? "").trim() === "" })}`} />
@@ -361,10 +382,14 @@ export default function ServicesClient({
         >
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label="Service Name">
-              <input value={serviceForm.name} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), name: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input
+                value={serviceForm.name}
+                onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), name: event.target.value }))}
+                className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: serviceForm.name.trim() === "" })}`}
+              />
             </FormField>
             <FormField label="Service Unit">
-              <select value={serviceForm.unitId} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), unitId: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.unitId.trim() === "" })}`}>
+              <select value={serviceForm.unitId} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), unitId: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: serviceForm.unitId.trim() === "" })}`}>
                 <option value="">Select unit</option>
                 {unitOptions.map((unit) => (
                   <option key={unit.id} value={unit.id}>{unit.name}</option>
@@ -372,7 +397,7 @@ export default function ServicesClient({
               </select>
             </FormField>
             <FormField label="Cost">
-              <input value={serviceForm.baseCost} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), baseCost: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.baseCost.trim() === "" })}`} />
+              <input value={serviceForm.baseCost} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), baseCost: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: serviceForm.baseCost.trim() === "" })}`} />
             </FormField>
             <FormField label="Notes">
               <textarea value={serviceForm.notes} onChange={(event) => setServiceForm((prev) => ({ ...(prev ?? emptyForm), notes: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: serviceForm.notes.trim() === "" })}`} />
