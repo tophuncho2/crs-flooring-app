@@ -10,7 +10,7 @@ import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
 import { requestJson } from "../../shared/http"
@@ -98,6 +98,13 @@ export default function ServicesClient({
     filteredRows,
     sortedRows,
     groupedRowTree,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
     allColumns,
     visibleColumns,
     hiddenColumnKeys,
@@ -290,6 +297,16 @@ export default function ServicesClient({
             {filteredRows.length === 0 ? <TableEmptyRow message="No services yet." colSpan={visibleColumns.length} /> : null}
           </tbody>
         </TableShell>
+        <TablePaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredRows.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+        />
       </div>
 
       {isCreateOpen ? (

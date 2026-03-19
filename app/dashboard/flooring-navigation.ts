@@ -5,10 +5,13 @@ export type FlooringNavItem = {
   name: string
   href: string
   requiredTool?: ToolSlug
+  builderOnly?: boolean
 }
 
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
+  { slug: "builder-users", name: "Users & Verification", href: "/dashboard/builder", builderOnly: true },
   { slug: "products", name: "Products", href: "/dashboard/flooring/products", requiredTool: "products" },
+  { slug: "flooring-categories", name: "Categories", href: "/dashboard/flooring/categories", requiredTool: "products" },
   { slug: "calendar", name: "Calendar", href: "/dashboard/flooring/calendar", requiredTool: "warehouse" },
   { slug: "flooring-cut-logs", name: "Cut Logs", href: "/dashboard/flooring/cut-logs", requiredTool: "warehouse" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/flooring/inventory", requiredTool: "warehouse" },
@@ -24,6 +27,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-services", name: "Services", href: "/dashboard/flooring/services", requiredTool: "warehouse" },
   { slug: "flooring-templates", name: "Templates", href: "/dashboard/flooring/templates", requiredTool: "warehouse" },
   { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/flooring/manufacturers", requiredTool: "products" },
+  { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/flooring/unit-of-measures", builderOnly: true },
 ]
 
 export const FLOORING_NAV_SLUGS = FLOORING_NAV_ITEMS.map((item) => item.slug)

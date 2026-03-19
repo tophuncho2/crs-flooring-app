@@ -11,7 +11,7 @@ import { RecordFormField as FormField, RecordModalShell as ModalShell } from "..
 import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
@@ -197,6 +197,13 @@ export default function ManagementCompaniesClient({
     setIsAscendingSort,
     filteredRows: filteredCompanies,
     sortedRows: sortedCompanies,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
     allColumns: orderedCompanyColumns,
     visibleColumns: visibleCompanyColumns,
     hiddenColumnKeys: hiddenCompanyColumnKeys,
@@ -757,6 +764,16 @@ export default function ManagementCompaniesClient({
               {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
             </tbody>
         </TableShell>
+        <TablePaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredCompanies.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+        />
 
       </section>
 

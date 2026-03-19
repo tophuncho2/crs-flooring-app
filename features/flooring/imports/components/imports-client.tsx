@@ -10,7 +10,7 @@ import { RecordFormField as FormField, RecordModalShell as ModalShell } from "..
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 
@@ -229,6 +229,13 @@ export default function ImportsClient({
     filteredRows: filteredImports,
     sortedRows: sortedImports,
     groupedRowTree,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
   } = useTableControls({
     rows: imports,
     searchFields: [
@@ -593,6 +600,16 @@ export default function ImportsClient({
               {filteredImports.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleImportColumns.length} /> : null}
             </tbody>
         </TableShell>
+        <TablePaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredImports.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+        />
       </section>
 
       {isModalOpen ? (

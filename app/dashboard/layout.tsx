@@ -9,6 +9,8 @@ import { requireSessionUser } from "@/server/auth/session"
 import { getUserToolContext } from "@/server/platform/tool-subscriptions"
 import { FLOORING_NAV_SLUGS } from "./flooring-navigation"
 
+const ALWAYS_VISIBLE_FLOORING_SLUGS = new Set(["flooring-services"])
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -49,7 +51,9 @@ export default async function DashboardLayout({
     userId: user.id,
     role: user.role,
   })
-  const initialVisibleFlooringSlugs = FLOORING_NAV_SLUGS.filter((slug) => !user.hiddenFlooringNavSlugs.includes(slug))
+  const initialVisibleFlooringSlugs = FLOORING_NAV_SLUGS.filter(
+    (slug) => ALWAYS_VISIBLE_FLOORING_SLUGS.has(slug) || !user.hiddenFlooringNavSlugs.includes(slug),
+  )
   const initialOrderedFlooringSlugs = user.flooringNavOrderSlugs.length > 0 ? user.flooringNavOrderSlugs : FLOORING_NAV_SLUGS
 
   return (

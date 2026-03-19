@@ -24,6 +24,7 @@ export type GroupedRowTree<T> = {
 }
 
 export const MAX_GROUP_FIELDS = 3
+export const DEFAULT_TABLE_PAGE_SIZE = 50
 
 type UseTableControlsOptions<T> = {
   rows: T[]
@@ -35,6 +36,7 @@ type UseTableControlsOptions<T> = {
   defaultGroupKeys?: string[]
   defaultAscending?: boolean
   maxGroupFields?: number
+  pageSize?: number
 }
 
 const collator = new Intl.Collator(undefined, {
@@ -56,6 +58,7 @@ export function useTableControls<T>({
   defaultGroupKeys,
   defaultAscending = true,
   maxGroupFields = MAX_GROUP_FIELDS,
+  pageSize = DEFAULT_TABLE_PAGE_SIZE,
 }: UseTableControlsOptions<T>) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isAscendingSort, setIsAscendingSort] = useState(defaultAscending)
@@ -76,6 +79,7 @@ export function useTableControls<T>({
     return nextKeys
   }, [defaultGroupKey, defaultGroupKeys, groupFields, maxGroupFields])
   const [groupByKeys, setGroupByKeys] = useState<string[]>(initialGroupKeys)
+  const [pageState, setPageState] = useState(1)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const activeGroupFields = groupByKeys
@@ -93,13 +97,23 @@ export function useTableControls<T>({
     [rows, searchFields, normalizedSearchQuery],
   )
 
-  const sortedRows = useMemo(
+  const allSortedRows = useMemo(
     () =>
       [...filteredRows].sort((a, b) => {
         const comparison = collator.compare(normalizeValue(sortField(a)), normalizeValue(sortField(b)))
         return isAscendingSort ? comparison : -comparison
       }),
     [filteredRows, sortField, isAscendingSort],
+  )
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
+  const safePage = Math.min(pageState, totalPages)
+  const pageStart = (safePage - 1) * pageSize
+  const pageEnd = pageStart + pageSize
+
+  const sortedRows = useMemo(
+    () => allSortedRows.slice(pageStart, pageEnd),
+    [allSortedRows, pageEnd, pageStart],
   )
 
   const groupedRows = useMemo(() => {
@@ -175,13 +189,37 @@ export function useTableControls<T>({
     setGroupByKeys((previous) => previous.filter((_, keyIndex) => keyIndex !== index))
   }
 
+  const hasPreviousPage = safePage > 1
+  const hasNextPage = safePage < totalPages
+
+  const goToPreviousPage = () => {
+    setPageState((current) => Math.max(1, current - 1))
+  }
+
+  const goToNextPage = () => {
+    setPageState((current) => Math.min(totalPages, current + 1))
+  }
+
+  const resetPage = () => {
+    setPageState(1)
+  }
+
   return {
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: (value: string) => {
+      resetPage()
+      setSearchQuery(value)
+    },
     isAscendingSort,
-    setIsAscendingSort,
+    setIsAscendingSort: (value: boolean | ((current: boolean) => boolean)) => {
+      resetPage()
+      setIsAscendingSort(value)
+    },
     isGroupingEnabled,
-    setIsGroupingEnabled,
+    setIsGroupingEnabled: (value: boolean | ((current: boolean) => boolean)) => {
+      resetPage()
+      setIsGroupingEnabled(value)
+    },
     groupByKey: groupByKeys[0] ?? null,
     setGroupByKey,
     groupByKeys,
@@ -192,7 +230,21 @@ export function useTableControls<T>({
     groupFields,
     filteredRows,
     sortedRows,
+    allSortedRows,
     groupedRows,
     groupedRowTree,
+    page: safePage,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
+    setPage: (value: number | ((current: number) => number)) => {
+      setPageState((current) => {
+        const nextValue = typeof value === "function" ? value(current) : value
+        return Math.min(totalPages, Math.max(1, nextValue))
+      })
+    },
   }
 }

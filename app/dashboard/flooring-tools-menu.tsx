@@ -24,6 +24,7 @@ import type { FlooringNavItem } from "./flooring-navigation"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean
+  hasBuilderPanelAccess: boolean
   visibleSlugs: string[]
   orderedItems: FlooringNavItem[]
   hotkeyByPath: Map<string, string>
@@ -114,6 +115,7 @@ function SortableFlooringNavRow({
 
 export default function FlooringToolsMenu({
   canUseTools,
+  hasBuilderPanelAccess,
   visibleSlugs,
   orderedItems,
   hotkeyByPath,
@@ -218,7 +220,7 @@ export default function FlooringToolsMenu({
     router.push(href)
   }
 
-  if (!canUseTools) return null
+  if (!canUseTools && !hasBuilderPanelAccess) return null
 
   return (
     <div ref={menuRef} className="relative">

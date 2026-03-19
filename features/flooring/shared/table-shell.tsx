@@ -117,3 +117,61 @@ export function TableActionsSummary({
     </div>
   )
 }
+
+export function TablePaginationControls({
+  page,
+  totalPages,
+  pageSize,
+  totalItems,
+  hasPreviousPage,
+  hasNextPage,
+  onPreviousPage,
+  onNextPage,
+  className,
+}: {
+  page: number
+  totalPages: number
+  pageSize: number
+  totalItems: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  onPreviousPage: () => void
+  onNextPage: () => void
+  className?: string
+}) {
+  if (totalItems <= pageSize) {
+    return null
+  }
+
+  const start = (page - 1) * pageSize + 1
+  const end = Math.min(page * pageSize, totalItems)
+
+  return (
+    <div className={joinClasses("mt-3 flex items-center justify-between gap-3", className)}>
+      <span className="text-xs text-[var(--foreground)]/60">
+        Showing {start}-{end} of {totalItems}
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onPreviousPage}
+          disabled={!hasPreviousPage}
+          className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span className="text-xs text-[var(--foreground)]/60">
+          Page {page} of {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={onNextPage}
+          disabled={!hasNextPage}
+          className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  )
+}

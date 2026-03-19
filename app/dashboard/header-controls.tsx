@@ -28,8 +28,10 @@ export default function HeaderControls({
   initialVisibleFlooringSlugs,
   initialOrderedFlooringSlugs,
 }: HeaderControlsProps) {
+  const hasBuilderPanelAccess = role === "BUILDER"
   const navigation = useFlooringNavigationState({
     canUseTools,
+    hasBuilderPanelAccess,
     tools,
     initialVisibleSlugs: initialVisibleFlooringSlugs,
     initialOrderedSlugs: initialOrderedFlooringSlugs,
@@ -40,6 +42,7 @@ export default function HeaderControls({
       <div className="min-w-0 flex-1">
         <FlooringHeaderNav
           canUseTools={canUseTools}
+          hasBuilderPanelAccess={hasBuilderPanelAccess}
           orderedItems={navigation.orderedItems}
           visibleSlugSet={navigation.visibleSlugSet}
           canOpenItem={navigation.canOpenItem}
@@ -49,6 +52,7 @@ export default function HeaderControls({
         <>
           <FlooringToolsMenu
             canUseTools={canUseTools}
+            hasBuilderPanelAccess={hasBuilderPanelAccess}
             visibleSlugs={navigation.visibleSlugs}
             orderedItems={navigation.orderedItems}
             hotkeyByPath={navigation.hotkeyByPath}

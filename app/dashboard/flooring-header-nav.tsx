@@ -7,15 +7,22 @@ import { isActiveFlooringItem, isFlooringRoute } from "./flooring-navigation"
 
 type FlooringHeaderNavProps = {
   canUseTools: boolean
+  hasBuilderPanelAccess: boolean
   orderedItems: FlooringNavItem[]
   visibleSlugSet: Set<string>
   canOpenItem: (item: FlooringNavItem) => boolean
 }
 
-export default function FlooringHeaderNav({ canUseTools, orderedItems, visibleSlugSet, canOpenItem }: FlooringHeaderNavProps) {
+export default function FlooringHeaderNav({
+  canUseTools,
+  hasBuilderPanelAccess,
+  orderedItems,
+  visibleSlugSet,
+  canOpenItem,
+}: FlooringHeaderNavProps) {
   const pathname = usePathname()
 
-  if (!pathname || !isFlooringRoute(pathname) || !canUseTools) {
+  if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasBuilderPanelAccess)) {
     return null
   }
 

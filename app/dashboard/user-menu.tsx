@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 import { useFlooringHotkeys } from "./use-flooring-hotkeys"
@@ -44,6 +45,7 @@ type UserMenuProps = {
 }
 
 export default function UserMenu({ email, role, canUseTools: canUseToolsProp, unlockedToolSlugs = [] }: UserMenuProps) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [hotkeysOpen, setHotkeysOpen] = useState(false)
   const [hotkeys, setHotkeys] = useState<HotkeyRow[]>([])
@@ -256,27 +258,29 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               </button>
             )}
 
-            {canOpenTool("warehouse") && (
+            {canOpenTool("products") && (
               <button
                 onClick={() => {
-                  router.push("/dashboard/flooring/services")
+                  router.push("/dashboard/flooring/categories")
                   setOpen(false)
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
               >
-                Services
+                Categories
               </button>
             )}
 
-            <button
-              onClick={() => {
-                router.push("/dashboard/flooring/categories")
-                setOpen(false)
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-            >
-              Categories
-            </button>
+            {hasBuilderPanelAccess && (
+              <button
+                onClick={() => {
+                  router.push("/dashboard/flooring/unit-of-measures")
+                  setOpen(false)
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+              >
+                Unit Of Measures
+              </button>
+            )}
 
             {hasBuilderPanelAccess && (
               <button

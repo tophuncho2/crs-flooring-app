@@ -8,7 +8,7 @@ import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
@@ -111,6 +111,13 @@ export default function TemplatesClient({
     filteredRows: filteredTemplates,
     sortedRows: sortedTemplates,
     groupedRows: groupedTemplates,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
     allColumns: orderedTemplateColumns,
     visibleColumns: visibleTemplateColumns,
     hiddenColumnKeys: hiddenTemplateColumnKeys,
@@ -315,6 +322,16 @@ export default function TemplatesClient({
               {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
             </tbody>
         </TableShell>
+        <TablePaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredTemplates.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+        />
 
       </section>
 

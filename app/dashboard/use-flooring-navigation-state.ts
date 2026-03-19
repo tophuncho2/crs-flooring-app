@@ -7,11 +7,13 @@ import { orderFlooringNavItems, type FlooringNavItem } from "./flooring-navigati
 
 export function useFlooringNavigationState({
   canUseTools,
+  hasBuilderPanelAccess,
   tools,
   initialVisibleSlugs,
   initialOrderedSlugs,
 }: {
   canUseTools: boolean
+  hasBuilderPanelAccess: boolean
   tools: UserToolRow[]
   initialVisibleSlugs: string[]
   initialOrderedSlugs: string[]
@@ -29,8 +31,14 @@ export function useFlooringNavigationState({
   )
 
   const canOpenItem = useCallback(
-    (item: FlooringNavItem) => canUseTools || (item.requiredTool ? unlockedToolSet.has(item.requiredTool) : false),
-    [canUseTools, unlockedToolSet],
+    (item: FlooringNavItem) => {
+      if (item.builderOnly) {
+        return hasBuilderPanelAccess
+      }
+
+      return canUseTools || (item.requiredTool ? unlockedToolSet.has(item.requiredTool) : false)
+    },
+    [canUseTools, hasBuilderPanelAccess, unlockedToolSet],
   )
 
   return {

@@ -9,7 +9,7 @@ import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -238,6 +238,13 @@ export default function FlooringProductsClient({
     filteredRows: filteredProducts,
     sortedRows: sortedProducts,
     groupedRowTree,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
     allColumns: orderedProductColumns,
     visibleColumns: visibleProductColumns,
     hiddenColumnKeys: hiddenProductColumnKeys,
@@ -613,6 +620,16 @@ export default function FlooringProductsClient({
                 {filteredProducts.length === 0 ? <TableEmptyRow message="No flooring products yet." colSpan={visibleProductColumns.length} /> : null}
               </tbody>
           </TableShell>
+          <TablePaginationControls
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={filteredProducts.length}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+          />
         </section>
       </div>
 

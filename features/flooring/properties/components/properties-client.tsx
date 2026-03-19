@@ -10,7 +10,7 @@ import { RecordFormField as FormField, RecordModalShell as ModalShell } from "..
 import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
+import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
@@ -164,6 +164,13 @@ export default function PropertiesClient({
     filteredRows: filteredProperties,
     sortedRows: sortedProperties,
     groupedRows: groupedProperties,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
     allColumns: orderedPropertyColumns,
     visibleColumns: visiblePropertyColumns,
     hiddenColumnKeys: hiddenPropertyColumnKeys,
@@ -552,6 +559,16 @@ export default function PropertiesClient({
               {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visiblePropertyColumns.length} /> : null}
             </tbody>
         </TableShell>
+        <TablePaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredProperties.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+        />
 
       </section>
 
