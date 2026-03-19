@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Prisma } from "@prisma/client"
 import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
+import { validateManufacturerForm } from "@/features/flooring/manufacturers/validators"
 import { normalizeCatalogProduct } from "@/features/flooring/products/services"
 import { POST } from "@/app/api/flooring/manufacturers/route"
 import { DELETE } from "@/app/api/flooring/manufacturers/[id]/route"
@@ -108,6 +109,75 @@ describe("manufacturers", () => {
         }),
       ),
     )
+  })
+
+  it("requires company name when creating a manufacturer", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/flooring/manufacturers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: "   ",
+          website: "",
+          phone: "",
+          email: "",
+        }),
+      }),
+    )
+
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("companyName is required")
+    expect(createManufacturerMock).not.toHaveBeenCalled()
+  })
+
+  it("returns a company-name specific message when the company name is not unique", async () => {
+    createManufacturerMock.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`companyName`)", {
+        code: "P2002",
+        clientVersion: "5.22.0",
+        meta: { target: ["companyName"] },
+      }),
+    )
+
+    const response = await POST(
+      new Request("http://localhost/api/flooring/manufacturers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: "Acme Flooring",
+          website: "",
+          phone: "",
+          email: "",
+        }),
+      }),
+    )
+
+    const payload = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(payload.error).toBe("Company Name must be unique")
+  })
+
+  it("validates company name presence and uniqueness in the manufacturer form", () => {
+    expect(validateManufacturerForm({ companyName: "" })).toBe("Company name is required")
+    expect(
+      validateManufacturerForm(
+        { companyName: "Acme Flooring" },
+        [
+          { id: "mfg-1", companyName: "Acme Flooring" },
+          { id: "mfg-2", companyName: "Other Mill" },
+        ],
+      ),
+    ).toBe("Company name must be unique")
+    expect(
+      validateManufacturerForm(
+        { companyName: "Acme Flooring" },
+        [{ id: "mfg-1", companyName: "Acme Flooring" }],
+        "mfg-1",
+      ),
+    ).toBe("")
   })
 
   it("products resolve manufacturer display names from company name", () => {

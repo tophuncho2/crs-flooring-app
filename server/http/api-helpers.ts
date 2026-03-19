@@ -6,6 +6,15 @@ export type AppError = {
   field?: string
 }
 
+function formatFieldLabel(field: string) {
+  return field
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (value) => value.toUpperCase())
+}
+
 export function parseRequiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.trim() === "") {
     throw { message: `${field} is required`, field } as AppError
@@ -101,6 +110,11 @@ export function normalizePrismaError(error: unknown): { status: number; message:
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === "P2002") {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target : []
+      if (target.length === 1 && typeof target[0] === "string") {
+        return { status: 409, message: `${formatFieldLabel(target[0])} must be unique` }
+      }
+
       return { status: 409, message: "Unique constraint violation" }
     }
     if (error.code === "P2003") {

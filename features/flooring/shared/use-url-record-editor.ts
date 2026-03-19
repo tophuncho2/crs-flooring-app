@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react"
 import { useUrlRecordPanel } from "./use-url-record-panel"
 
+const CREATE_DRAFT_RECORD_ID = "__create__"
+
 export function useUrlRecordEditor<Row extends { id: string }, Draft>({
   rows,
   paramKey,
@@ -24,19 +26,21 @@ export function useUrlRecordEditor<Row extends { id: string }, Draft>({
     ? draftState?.recordId === activeRecord.id
       ? draftState.value
       : createDraft(activeRecord)
-    : null
+    : draftState?.recordId === CREATE_DRAFT_RECORD_ID
+      ? draftState.value
+      : null
 
   function setDraft(next: Draft | ((current: Draft | null) => Draft | null)) {
     const currentDraft = draft
     const resolved = typeof next === "function" ? next(currentDraft) : next
 
-    if (!activeRecordId || resolved === null) {
+    if (resolved === null) {
       setDraftState(null)
       return
     }
 
     setDraftState({
-      recordId: activeRecordId,
+      recordId: activeRecordId ?? CREATE_DRAFT_RECORD_ID,
       value: resolved,
     })
   }

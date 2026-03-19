@@ -13,6 +13,7 @@ import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-co
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
+import { validateManufacturerForm } from "../validators"
 
 type ManufacturerRow = {
   id: string
@@ -40,10 +41,6 @@ const emptyForm: ManufacturerForm = {
   website: "",
   phone: "",
   email: "",
-}
-
-function validateManufacturerForm(input: ManufacturerForm) {
-  return input.companyName.trim() ? "" : "Company name is required"
 }
 
 async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
@@ -159,7 +156,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
 
   async function createManufacturer() {
     clearNotices()
-    const validationError = validateManufacturerForm(manufacturerForm ?? emptyForm)
+    const validationError = validateManufacturerForm(manufacturerForm ?? emptyForm, manufacturers)
     if (validationError) {
       setError(validationError)
       return
@@ -181,7 +178,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
   async function savePanelManufacturer() {
     if (!selectedManufacturer || !manufacturerForm) return
     clearNotices()
-    const validationError = validateManufacturerForm(manufacturerForm)
+    const validationError = validateManufacturerForm(manufacturerForm, manufacturers, selectedManufacturer.id)
     if (validationError) {
       setPanelError(validationError)
       return
