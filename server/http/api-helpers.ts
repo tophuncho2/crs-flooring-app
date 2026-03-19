@@ -78,6 +78,9 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     if (error.code === "P2003") {
       return { status: 409, message: "This record is linked and cannot be modified" }
     }
+    if (error.code === "P2011") {
+      return { status: 400, message: "A required database field was missing" }
+    }
   }
 
   if (error instanceof Prisma.PrismaClientInitializationError) {
