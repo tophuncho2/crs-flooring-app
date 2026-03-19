@@ -144,6 +144,7 @@ Canonical detail now lives in:
 - [ ] Remove any remaining fallback pricing behavior that does not match final business rules.
 - [ ] Ensure all domain mutations return server truth rather than relying on client assumptions.
 - [ ] Add stronger validation coverage across all critical mutation inputs.
+- [x] Lock warehouse section/location integrity behind schema enforcement and focused automated tests.
 - [ ] Review item create/update/delete flows for idempotency and safety.
 - [ ] Add audit-event hooks where needed for domain actions.
 

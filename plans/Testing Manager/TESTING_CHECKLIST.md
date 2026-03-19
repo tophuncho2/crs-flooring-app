@@ -79,7 +79,9 @@ Shared leverage comes first, then the golden reference domain, then the remainin
 - [ ] Create a dedicated testing plan for `management-companies`.
 - [ ] Create a dedicated testing plan for `templates`.
 - [ ] Create a dedicated testing plan for `work-orders`.
-- [ ] Create dedicated testing plans for `imports`, `inventory`, and `warehouse` as needed.
+- [ ] Create a dedicated testing plan for `imports`.
+- [ ] Create a dedicated testing plan for `inventory`.
+- [x] Create and execute dedicated route/helper/component coverage for `warehouse`.
 - [ ] Add workflow and child-row coverage checklists for complex domains instead of reusing the simple-table matrix blindly.
 
 ---

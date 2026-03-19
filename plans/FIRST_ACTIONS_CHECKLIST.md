@@ -6,7 +6,7 @@ It is the root-level action list for what should happen first, not the full proj
 
 - [ ] Lock down public registration so unauthenticated users cannot create privileged accounts.
 - [ ] Define the canonical work-order lifecycle, shortage lifecycle, resend rules, and completion rules.
-- [ ] Align warehouse section/location behavior with the Prisma schema and remove legacy drift.
+- [x] Align warehouse section/location behavior with the Prisma schema and remove legacy drift.
 - [ ] Move the inventory table onto the configurable table-controls system so `section` is a true groupable and hideable field while `location` remains the worker-facing location selector.
 - [ ] Create the first explicit permissions matrix for `ADMIN`, `BUILDER`, and any narrower roles that should exist.
 - [ ] Add rate limiting to login, registration, uploads, and sensitive write endpoints.

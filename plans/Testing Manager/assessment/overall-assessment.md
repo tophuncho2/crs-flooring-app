@@ -9,12 +9,12 @@ Current rating:
 - strong planning, low-to-moderate real coverage
 
 Testing planning is in good shape.
-The codebase also now has real tests in `tests/`, which is better than the earlier near-empty state.
+The codebase now has real tests in `tests/`, including route, helper, workflow, and warehouse-focused coverage.
 But the current suite is still too narrow for the risk profile of the app.
 
 ## Current Confirmed Signals
 
-- test files exist for management companies, manufacturers, properties, services client behavior, and workflow core
+- test files exist for management companies, manufacturers, properties, services client behavior, workflow core, warehouse sections, warehouse locations, warehouse client behavior, and location integrity
 - a dedicated testing manager already includes a master plan, matrix, checklist, and domain status board
 
 ## What Is Missing

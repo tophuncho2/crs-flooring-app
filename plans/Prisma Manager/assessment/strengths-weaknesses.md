@@ -11,7 +11,7 @@
 
 ## Weaknesses
 
-- [ ] Warehouse section/location routes are fully aligned to the Prisma schema.
+- [x] Warehouse section/location routes are fully aligned to the Prisma schema.
 - [ ] Raw SQL exceptions are documented and governed by a Prisma-manager policy.
 - [ ] Schema-level check constraints exist for the most important numeric and lifecycle invariants.
 - [ ] Enum cleanup is complete across schema, code, and workflow terminology.
@@ -21,7 +21,6 @@
 
 ## Immediate Prisma Manager Actions
 
-- [ ] Reconcile `FlooringSection` / `FlooringLocation.sectionId` with the live warehouse routes.
 - [ ] Create a raw-SQL inventory and classify each use as canonical, temporary, or debt.
 - [ ] Define the first set of DB-level check constraints for quantities, costs, and lifecycle consistency.
 - [ ] Write a Prisma migration review checklist for future schema changes.

@@ -132,11 +132,11 @@ model FlooringCategory {
   coverageAvailableUnitId String?
   itemCoverageUnitId      String?
   serviceUnitId           String?
-  sendUnit                FlooringUnitOfMeasure? @relation("FlooringCategorySendUnit", fields: [sendUnitId], references: [id], onDelete: SetNull)
-  stockUnit               FlooringUnitOfMeasure? @relation("FlooringCategoryStockUnit", fields: [stockUnitId], references: [id], onDelete: SetNull)
-  coverageAvailableUnit   FlooringUnitOfMeasure? @relation("FlooringCategoryCoverageAvailableUnit", fields: [coverageAvailableUnitId], references: [id], onDelete: SetNull)
-  itemCoverageUnit        FlooringUnitOfMeasure? @relation("FlooringCategoryItemCoverageUnit", fields: [itemCoverageUnitId], references: [id], onDelete: SetNull)
-  serviceUnit             FlooringUnitOfMeasure? @relation("FlooringCategoryServiceUnit", fields: [serviceUnitId], references: [id], onDelete: SetNull)
+  sendUnit                FlooringUnitOfMeasure? @relation("FlooringCategorySendUnit", fields: [sendUnitId], references: [id], onDelete: Restrict)
+  stockUnit               FlooringUnitOfMeasure? @relation("FlooringCategoryStockUnit", fields: [stockUnitId], references: [id], onDelete: Restrict)
+  coverageAvailableUnit   FlooringUnitOfMeasure? @relation("FlooringCategoryCoverageAvailableUnit", fields: [coverageAvailableUnitId], references: [id], onDelete: Restrict)
+  itemCoverageUnit        FlooringUnitOfMeasure? @relation("FlooringCategoryItemCoverageUnit", fields: [itemCoverageUnitId], references: [id], onDelete: Restrict)
+  serviceUnit             FlooringUnitOfMeasure? @relation("FlooringCategoryServiceUnit", fields: [serviceUnitId], references: [id], onDelete: Restrict)
   products                FlooringProduct[]
   createdAt               DateTime               @default(now())
 
