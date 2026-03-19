@@ -90,6 +90,12 @@ Owns test strategy, coverage rollout, matrices, and testing execution.
 Primary entry:
 - [Testing Manager README](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/README.md)
 
+## [Table Manager](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager)
+Owns user navigation and table-to-table workflow truth across the app.
+
+Primary entry:
+- [Table Manager README](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/README.md)
+
 ---
 
 # 3. Root Update Rules

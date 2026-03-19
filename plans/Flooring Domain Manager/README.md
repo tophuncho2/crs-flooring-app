@@ -22,6 +22,10 @@ Use this folder for flooring-specific decisions, rollout sequencing, and domain 
 - `KEY_FEATURES.md`
 - `ANALYTICS_PLAN.md`
 
+Ownership boundary:
+- this manager owns business and operational workflow truth
+- [Table Manager](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/README.md) owns user navigation and table-to-table interaction workflow truth
+
 Recommended future files in this folder:
 - flooring-domain-index.md
 - simple-domains-rollout.md

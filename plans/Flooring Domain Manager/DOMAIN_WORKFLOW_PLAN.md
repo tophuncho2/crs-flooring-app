@@ -3,6 +3,9 @@
 
 This file defines the intended domain workflow of the system in operational terms.
 
+This file is not the canonical source for user navigation between tables.
+User navigation and table-to-table interaction flow now live under [Table Manager](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/README.md).
+
 It should be used whenever:
 - schema changes are proposed
 - workflow logic changes are proposed

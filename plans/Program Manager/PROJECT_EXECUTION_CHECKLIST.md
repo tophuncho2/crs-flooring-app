@@ -100,6 +100,38 @@ This checklist should be updated as work is completed.
 
 ---
 
+# 3.1 User Workflow Completion
+
+Canonical detail now lives in:
+- [Table Manager README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/README.md)
+- [Workflow 1](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/workflow-1-manufacturers-products-imports-inventory-cut-logs/workflow.md)
+- [Workflow 2](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/workflow-2-management-companies-properties-templates/workflow.md)
+- [Workflow 3](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/workflow-3-work-orders-sync-processing-completion-analytics/workflow.md)
+- [Workflow 4](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/workflow-4-basic-backend-tables-and-login-activity/workflow.md)
+
+- [ ] Add manufacturer `Open` behavior with linked downstream visibility if that is the intended primary workflow.
+- [ ] Make the manufacturer -> product transition more explicit in the UI and workflow guidance.
+- [ ] Confirm whether inventory rows must be editable directly from the product open workflow.
+- [ ] Move the inventory table onto the configurable table-controls system so `section` is groupable and hideable.
+- [ ] Make imports -> inventory -> cut logs drilldown behavior more explicit and consistent.
+- [ ] Standardize the management-company and property linked record-panel behavior so the child-record workflow feels identical across both screens.
+- [ ] Clarify when users should create templates from the property panel versus the standalone templates table.
+- [ ] Keep the templates workflow clearly separate from work-order creation in the UI and docs.
+- [ ] Finalize the work-order status lifecycle and visible user states.
+- [ ] Finalize the sync workflow rules for overwrite, append, preview, and duplicate prevention.
+- [ ] Implement the worker-driven send/process workflow.
+- [ ] Return allocation, shortage, and generated-file results back onto the work order and item rows.
+- [ ] Finalize how inventory attachments appear on work-order items.
+- [ ] Finalize how cut logs relate to work-order processing and long-term retention.
+- [ ] Implement the completed-orders review experience and connect it to analytics.
+- [ ] Finalize analytics update timing and ownership after completion.
+- [ ] Clarify which backend tables are pure reference tables versus operational support tables.
+- [ ] Standardize simple-table behavior where it should stay simple.
+- [ ] Keep warehouses documented and implemented as a nested workflow, not just a flat backend table.
+- [ ] Define the intended user workflow for reviewing login activity and related governance records.
+
+---
+
 # 4. Backend / Domain Layer Hardening
 
 - [ ] Verify all major flooring routes are thin and delegate to domain/query functions.
