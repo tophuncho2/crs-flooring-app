@@ -13,6 +13,7 @@ import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
 type TemplateRow = {
@@ -70,6 +71,13 @@ type ServerPaginationState = {
   nextPageHref: string
 }
 
+type ServerTableState = {
+  searchQuery: string
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
+}
+
 const defaultDraft: DraftTemplate = {
   templateTag: "",
   propertyId: "",
@@ -87,6 +95,7 @@ export default function TemplatesClient({
   productOptions,
   serviceOptions,
   unitOptions,
+  tableState,
   pagination,
 }: {
   initialTemplates: TemplateRow[]
@@ -96,6 +105,7 @@ export default function TemplatesClient({
   productOptions: ProductOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates)
@@ -119,6 +129,8 @@ export default function TemplatesClient({
     setIsAscendingSort,
     isGroupingEnabled,
     setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
     filteredRows: filteredTemplates,
     sortedRows: sortedTemplates,
     groupedRows: groupedTemplates,
@@ -151,8 +163,33 @@ export default function TemplatesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => `${row.propertyName} ${row.templateTag}`,
-    defaultGrouped: true,
-    defaultGroupKey: "property",
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    disableClientFiltering: true,
+    disableClientSorting: true,
+    disableClientPagination: true,
+  })
+  const templateGroupOptions = [
+    { key: "templateNumber", label: "Template #" },
+    { key: "templateTag", label: "Template Tag" },
+    { key: "property", label: "Property" },
+    { key: "warehouse", label: "Warehouse" },
+    { key: "instructions", label: "Instructions" },
+    { key: "padType", label: "Pad Type" },
+    { key: "templateNotes", label: "Template Notes" },
+  ]
+  const serverTableControls = useServerTableQueryControls({
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
+    groupOptions: templateGroupOptions,
   })
 
   function setNewDraftField(field: keyof DraftTemplate, value: string) {
@@ -246,12 +283,17 @@ export default function TemplatesClient({
           <TableActionsSummary count={filteredTemplates.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={serverTableControls.onSearchQueryChange}
               searchPlaceholder="Search property"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              onToggleSort={serverTableControls.onToggleSort}
               isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              onToggleGrouping={serverTableControls.onToggleGrouping}
+              groupOptions={templateGroupOptions}
+              groupByKeys={groupByKeys}
+              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
+              onAddGroupBy={serverTableControls.onAddGroupBy}
+              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
             >
               <TableColumnSettings
                 columns={orderedTemplateColumns}

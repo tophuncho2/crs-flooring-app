@@ -10,7 +10,14 @@ export async function GET() {
   if (authError) return authError
 
   try {
-    return NextResponse.json({ workOrders: await listWorkOrders() })
+    return NextResponse.json({
+      workOrders: await listWorkOrders(undefined, {
+        searchQuery: "",
+        isAscendingSort: true,
+        isGroupingEnabled: false,
+        groupByKeys: [],
+      }),
+    })
   } catch (error) {
     const normalized = normalizePrismaError(error)
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })

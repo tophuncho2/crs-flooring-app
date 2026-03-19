@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { buildPageHref, parsePageParam } from "@/server/pagination"
+import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getWorkOrdersPageData } from "@/features/flooring/work-orders/queries"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
 
@@ -12,7 +12,12 @@ export default async function WorkOrdersPage({
   await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
-  const result = await getWorkOrdersPageData(page)
+  const tableState = parseServerTableQueryState({
+    searchParams: resolvedSearchParams,
+    allowedGroupKeys: ["wo", "status", "warehouse", "property", "address", "customAddress", "date", "unit", "unitType", "vacancy", "instructions", "notes"],
+    defaultGroupKeys: ["warehouse"],
+  })
+  const result = await getWorkOrdersPageData(page, tableState)
 
   if (!result.ok) {
     return (
@@ -29,6 +34,7 @@ export default async function WorkOrdersPage({
 
   return (
     <WorkOrdersClient
+      key={`wo-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialWorkOrders={pageData.initialWorkOrders}
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
@@ -36,6 +42,7 @@ export default async function WorkOrdersPage({
       templateOptions={pageData.templateOptions}
       serviceOptions={pageData.serviceOptions}
       unitOptions={pageData.unitOptions}
+      tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,
         previousPageHref: buildPageHref("/dashboard/flooring/work-orders", pageData.pagination.page - 1),

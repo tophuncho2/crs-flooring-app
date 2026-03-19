@@ -1,6 +1,7 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
-import { createServerPagination } from "@/server/pagination"
+import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 
 function buildProductLabel(product: {
   name: string
@@ -32,8 +33,52 @@ export async function listImportLocationOptions() {
   }))
 }
 
-async function loadImportsPageData(page: number) {
-  const totalItems = await prisma.flooringImportEntry.count()
+function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
+  if (!searchQuery) return undefined
+
+  const numericImportNumber = Number(searchQuery)
+  const numericSearchClauses =
+    Number.isFinite(numericImportNumber) && searchQuery.trim() !== ""
+      ? [{ importNumber: Math.floor(numericImportNumber) }]
+      : []
+
+  return {
+    OR: [
+      ...numericSearchClauses,
+      { orderNumber: { contains: searchQuery, mode: "insensitive" } },
+      { tag: { contains: searchQuery, mode: "insensitive" } },
+      { notes: { contains: searchQuery, mode: "insensitive" } },
+      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
+    ],
+  }
+}
+
+function buildImportsOrderBy(tableState: ServerTableQueryState): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
+  const orderBy: Prisma.FlooringImportEntryOrderByWithRelationInput[] = []
+  const fieldMap: Record<string, Prisma.FlooringImportEntryOrderByWithRelationInput> = {
+    importNumber: { importNumber: direction },
+    tag: { tag: direction },
+    transport: { transportType: direction },
+    status: { status: direction },
+    warehouse: { warehouse: { name: direction } },
+    created: { createdAt: direction },
+  }
+
+  if (tableState.isGroupingEnabled) {
+    for (const groupKey of tableState.groupByKeys) {
+      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
+    }
+  }
+
+  appendUniqueOrderBy(orderBy, { importNumber: direction })
+
+  return orderBy
+}
+
+async function loadImportsPageData(page: number, tableState: ServerTableQueryState) {
+  const where = buildImportsWhere(tableState.searchQuery)
+  const totalItems = await prisma.flooringImportEntry.count({ where })
   const pagination = createServerPagination({ page, totalItems })
   const [entries, products, warehouses, locations] = await Promise.all([
     prisma.flooringImportEntry.findMany({
@@ -63,7 +108,8 @@ async function loadImportsPageData(page: number) {
           orderBy: [{ createdAt: "asc" }],
         },
       },
-      orderBy: [{ createdAt: "desc" }, { importNumber: "desc" }],
+      where,
+      orderBy: buildImportsOrderBy(tableState),
       skip: pagination.skip,
       take: pagination.take,
     }),
@@ -87,6 +133,7 @@ async function loadImportsPageData(page: number) {
       totalItems: pagination.totalItems,
       totalPages: pagination.totalPages,
     },
+    tableState,
     initialImports: entries.map((entry) => ({
       id: entry.id,
       importNumber: entry.importNumber,
@@ -133,6 +180,6 @@ async function loadImportsPageData(page: number) {
   }
 }
 
-export async function getImportsPageData(page: number) {
-  return withPrismaConnectivityHandling(() => loadImportsPageData(page))
+export async function getImportsPageData(page: number, tableState: ServerTableQueryState) {
+  return withPrismaConnectivityHandling(() => loadImportsPageData(page, tableState))
 }

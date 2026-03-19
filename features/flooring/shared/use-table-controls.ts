@@ -31,12 +31,16 @@ type UseTableControlsOptions<T> = {
   searchFields: SearchField<T>[]
   sortField: TableValueGetter<T>
   groupFields?: GroupField<T>[]
+  initialSearchQuery?: string
   defaultGrouped?: boolean
   defaultGroupKey?: string | null
   defaultGroupKeys?: string[]
   defaultAscending?: boolean
   maxGroupFields?: number
   pageSize?: number
+  disableClientFiltering?: boolean
+  disableClientSorting?: boolean
+  disableClientPagination?: boolean
 }
 
 const collator = new Intl.Collator(undefined, {
@@ -53,14 +57,18 @@ export function useTableControls<T>({
   searchFields,
   sortField,
   groupFields = [],
+  initialSearchQuery = "",
   defaultGrouped = false,
   defaultGroupKey = null,
   defaultGroupKeys,
   defaultAscending = true,
   maxGroupFields = MAX_GROUP_FIELDS,
   pageSize = DEFAULT_TABLE_PAGE_SIZE,
+  disableClientFiltering = false,
+  disableClientSorting = false,
+  disableClientPagination = false,
 }: UseTableControlsOptions<T>) {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
   const [isAscendingSort, setIsAscendingSort] = useState(defaultAscending)
   const [isGroupingEnabled, setIsGroupingEnabled] = useState(defaultGrouped && groupFields.length > 0)
   const initialGroupKeys = useMemo(() => {
@@ -89,21 +97,31 @@ export function useTableControls<T>({
   const activeGroupField = activeGroupFields[0] ?? groupFields[0] ?? null
 
   const filteredRows = useMemo(
-    () =>
-      rows.filter((row) => {
+    () => {
+      if (disableClientFiltering) {
+        return rows
+      }
+
+      return rows.filter((row) => {
         if (!normalizedSearchQuery) return true
         return searchFields.some((field) => normalizeValue(field.getValue(row)).toLowerCase().includes(normalizedSearchQuery))
-      }),
-    [rows, searchFields, normalizedSearchQuery],
+      })
+    },
+    [disableClientFiltering, rows, searchFields, normalizedSearchQuery],
   )
 
   const allSortedRows = useMemo(
-    () =>
-      [...filteredRows].sort((a, b) => {
+    () => {
+      if (disableClientSorting) {
+        return filteredRows
+      }
+
+      return [...filteredRows].sort((a, b) => {
         const comparison = collator.compare(normalizeValue(sortField(a)), normalizeValue(sortField(b)))
         return isAscendingSort ? comparison : -comparison
-      }),
-    [filteredRows, sortField, isAscendingSort],
+      })
+    },
+    [disableClientSorting, filteredRows, sortField, isAscendingSort],
   )
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
@@ -112,8 +130,8 @@ export function useTableControls<T>({
   const pageEnd = pageStart + pageSize
 
   const sortedRows = useMemo(
-    () => allSortedRows.slice(pageStart, pageEnd),
-    [allSortedRows, pageEnd, pageStart],
+    () => (disableClientPagination ? allSortedRows : allSortedRows.slice(pageStart, pageEnd)),
+    [allSortedRows, disableClientPagination, pageEnd, pageStart],
   )
 
   const groupedRows = useMemo(() => {

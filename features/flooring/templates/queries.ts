@@ -1,11 +1,54 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
-import { createServerPagination } from "@/server/pagination"
+import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
-export async function listTemplates(pagination?: { skip: number; take: number }) {
+function buildTemplatesWhere(searchQuery: string): Prisma.FlooringTemplateWhereInput | undefined {
+  if (!searchQuery) return undefined
+
+  return {
+    OR: [
+      { templateNumber: { contains: searchQuery, mode: "insensitive" } },
+      { templateTag: { contains: searchQuery, mode: "insensitive" } },
+      { property: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { instructions: { contains: searchQuery, mode: "insensitive" } },
+      { templateNotes: { contains: searchQuery, mode: "insensitive" } },
+    ],
+  }
+}
+
+function buildTemplatesOrderBy(tableState: ServerTableQueryState): Prisma.FlooringTemplateOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
+  const orderBy: Prisma.FlooringTemplateOrderByWithRelationInput[] = []
+  const fieldMap: Record<string, Prisma.FlooringTemplateOrderByWithRelationInput> = {
+    templateNumber: { templateNumber: direction },
+    templateTag: { templateTag: direction },
+    property: { property: { name: direction } },
+    warehouse: { warehouse: { name: direction } },
+    instructions: { instructions: direction },
+    padType: { padProduct: { style: direction } },
+    templateNotes: { templateNotes: direction },
+  }
+
+  if (tableState.isGroupingEnabled) {
+    for (const groupKey of tableState.groupByKeys) {
+      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
+    }
+  }
+
+  appendUniqueOrderBy(orderBy, { templateNumber: direction })
+
+  return orderBy
+}
+
+export async function listTemplates(
+  pagination: { skip: number; take: number } | undefined,
+  tableState: ServerTableQueryState,
+) {
   const templates = await prisma.flooringTemplate.findMany({
     include: {
       property: {
@@ -26,7 +69,8 @@ export async function listTemplates(pagination?: { skip: number; take: number })
         select: { items: true, serviceItems: true },
       },
     },
-    orderBy: { createdAt: "desc" },
+    where: buildTemplatesWhere(tableState.searchQuery),
+    orderBy: buildTemplatesOrderBy(tableState),
     ...(pagination ?? {}),
   })
 
@@ -143,11 +187,12 @@ function buildPadLabel(product: {
   return buildProductName(product).replace("Flooring Product", "Pad Product")
 }
 
-async function loadTemplatesPageData(page: number) {
-  const totalItems = await prisma.flooringTemplate.count()
+async function loadTemplatesPageData(page: number, tableState: ServerTableQueryState) {
+  const where = buildTemplatesWhere(tableState.searchQuery)
+  const totalItems = await prisma.flooringTemplate.count({ where })
   const pagination = createServerPagination({ page, totalItems })
   const [initialTemplates, properties, warehouses, padProducts, products, services, units] = await Promise.all([
-    listTemplates({ skip: pagination.skip, take: pagination.take }),
+    listTemplates({ skip: pagination.skip, take: pagination.take }, tableState),
     prisma.property.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -196,6 +241,7 @@ async function loadTemplatesPageData(page: number) {
       totalItems: pagination.totalItems,
       totalPages: pagination.totalPages,
     },
+    tableState,
     initialTemplates,
     propertyOptions: properties,
     warehouseOptions: warehouses,
@@ -213,6 +259,6 @@ async function loadTemplatesPageData(page: number) {
   }
 }
 
-export async function getTemplatesPageData(page: number) {
-  return withPrismaConnectivityHandling(() => loadTemplatesPageData(page))
+export async function getTemplatesPageData(page: number, tableState: ServerTableQueryState) {
+  return withPrismaConnectivityHandling(() => loadTemplatesPageData(page, tableState))
 }

@@ -13,7 +13,14 @@ export async function GET(request: Request) {
 
   try {
     return NextResponse.json({
-      products: catalogMode ? await listCatalogProducts() : await listProductOptions(),
+      products: catalogMode
+        ? await listCatalogProducts(undefined, {
+            searchQuery: "",
+            isAscendingSort: true,
+            isGroupingEnabled: false,
+            groupByKeys: [],
+          })
+        : await listProductOptions(),
     })
   } catch (error) {
     const normalized = normalizePrismaError(error)

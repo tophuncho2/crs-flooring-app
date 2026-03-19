@@ -12,6 +12,7 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
+import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 
 type ImportRow = {
@@ -98,6 +99,13 @@ type ServerPaginationState = {
   totalPages: number
   previousPageHref: string
   nextPageHref: string
+}
+
+type ServerTableState = {
+  searchQuery: string
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
 }
 
 const transportTypeOptions = [
@@ -202,12 +210,14 @@ export default function ImportsClient({
   productOptions,
   warehouseOptions,
   locationOptions,
+  tableState,
   pagination,
 }: {
   initialImports: ImportRow[]
   productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
+  tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const [imports, setImports] = useState(initialImports)
@@ -233,9 +243,7 @@ export default function ImportsClient({
     isGroupingEnabled,
     setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
+    setGroupByKeys,
     groupFields,
     filteredRows: filteredImports,
     sortedRows: sortedImports,
@@ -261,8 +269,25 @@ export default function ImportsClient({
       { key: "status", label: "Status", getValue: (row) => formatImportStatus(row.status) },
       { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.transportType) },
     ],
-    defaultGrouped: true,
-    defaultGroupKeys: ["warehouse"],
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    disableClientFiltering: true,
+    disableClientSorting: true,
+    disableClientPagination: true,
+  })
+  const importGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
+  const serverTableControls = useServerTableQueryControls({
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
+    groupOptions: importGroupOptions,
   })
   const importColumns = useMemo(
     () => [
@@ -561,19 +586,19 @@ export default function ImportsClient({
           <TableActionsSummary count={filteredImports.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={serverTableControls.onSearchQueryChange}
               searchPlaceholder="Search import # or tag"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              onToggleSort={serverTableControls.onToggleSort}
               ascendingSortLabel="1-9"
               descendingSortLabel="9-1"
               isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              onToggleGrouping={serverTableControls.onToggleGrouping}
+              groupOptions={importGroupOptions}
               groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-              onAddGroupBy={addGroupByKey}
-              onRemoveGroupBy={removeGroupByKeyAtIndex}
+              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
+              onAddGroupBy={serverTableControls.onAddGroupBy}
+              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
               maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings

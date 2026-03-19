@@ -1,11 +1,64 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
-import { createServerPagination } from "@/server/pagination"
+import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
-export async function listWorkOrders(pagination?: { skip: number; take: number }) {
+function buildWorkOrderWhere(searchQuery: string): Prisma.FlooringWorkOrderWhereInput | undefined {
+  if (!searchQuery) return undefined
+
+  return {
+    OR: [
+      { workOrderNumber: { contains: searchQuery, mode: "insensitive" } },
+      { property: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { property: { streetAddress: { contains: searchQuery, mode: "insensitive" } } },
+      { property: { city: { contains: searchQuery, mode: "insensitive" } } },
+      { property: { state: { contains: searchQuery, mode: "insensitive" } } },
+      { property: { postalCode: { contains: searchQuery, mode: "insensitive" } } },
+      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { unitType: { contains: searchQuery, mode: "insensitive" } },
+      { customAddress: { contains: searchQuery, mode: "insensitive" } },
+      { instructions: { contains: searchQuery, mode: "insensitive" } },
+      { notes: { contains: searchQuery, mode: "insensitive" } },
+    ],
+  }
+}
+
+function buildWorkOrderOrderBy(tableState: ServerTableQueryState): Prisma.FlooringWorkOrderOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
+  const orderBy: Prisma.FlooringWorkOrderOrderByWithRelationInput[] = []
+  const fieldMap: Record<string, Prisma.FlooringWorkOrderOrderByWithRelationInput> = {
+    wo: { workOrderNumber: direction },
+    status: { status: direction },
+    warehouse: { warehouse: { name: direction } },
+    property: { property: { name: direction } },
+    address: { customAddress: direction },
+    customAddress: { customAddress: direction },
+    date: { scheduledFor: direction },
+    unit: { unitNumber: direction },
+    unitType: { unitType: direction },
+    vacancy: { vacancy: direction },
+    instructions: { instructions: direction },
+    notes: { notes: direction },
+  }
+
+  if (tableState.isGroupingEnabled) {
+    for (const groupKey of tableState.groupByKeys) {
+      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
+    }
+  }
+
+  appendUniqueOrderBy(orderBy, { workOrderNumber: direction })
+
+  return orderBy
+}
+
+export async function listWorkOrders(
+  pagination: { skip: number; take: number } | undefined,
+  tableState: ServerTableQueryState,
+) {
   const workOrders = await prisma.flooringWorkOrder.findMany({
     include: {
       property: {
@@ -30,7 +83,8 @@ export async function listWorkOrders(pagination?: { skip: number; take: number }
         take: 1,
       },
     },
-    orderBy: { createdAt: "desc" },
+    where: buildWorkOrderWhere(tableState.searchQuery),
+    orderBy: buildWorkOrderOrderBy(tableState),
     ...(pagination ?? {}),
   })
 
@@ -169,12 +223,13 @@ export async function listWorkOrderServiceItems(workOrderId: string) {
   return items.map(normalizeWorkOrderServiceItem)
 }
 
-async function loadWorkOrdersPageData(page: number) {
-  const totalItems = await prisma.flooringWorkOrder.count()
+async function loadWorkOrdersPageData(page: number, tableState: ServerTableQueryState) {
+  const where = buildWorkOrderWhere(tableState.searchQuery)
+  const totalItems = await prisma.flooringWorkOrder.count({ where })
   const pagination = createServerPagination({ page, totalItems })
 
   const [workOrders, properties, warehouses, products, templates, services, units] = await Promise.all([
-    listWorkOrders({ skip: pagination.skip, take: pagination.take }),
+    listWorkOrders({ skip: pagination.skip, take: pagination.take }, tableState),
     prisma.property.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -223,6 +278,7 @@ async function loadWorkOrdersPageData(page: number) {
       totalItems: pagination.totalItems,
       totalPages: pagination.totalPages,
     },
+    tableState,
     initialWorkOrders: workOrders.map((workOrder) => ({
       ...workOrder,
       itemsCount: workOrder.itemsCount ?? 0,
@@ -248,6 +304,6 @@ async function loadWorkOrdersPageData(page: number) {
   }
 }
 
-export async function getWorkOrdersPageData(page: number) {
-  return withPrismaConnectivityHandling(() => loadWorkOrdersPageData(page))
+export async function getWorkOrdersPageData(page: number, tableState: ServerTableQueryState) {
+  return withPrismaConnectivityHandling(() => loadWorkOrdersPageData(page, tableState))
 }

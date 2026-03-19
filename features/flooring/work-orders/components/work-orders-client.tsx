@@ -14,6 +14,7 @@ import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../s
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
@@ -97,6 +98,13 @@ type ServerPaginationState = {
   nextPageHref: string
 }
 
+type ServerTableState = {
+  searchQuery: string
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
+}
+
 function statusLabel(value: string) {
   return getWorkOrderStatusLabel({ status: value, isComplete: false })
 }
@@ -135,6 +143,7 @@ export default function WorkOrdersClient({
   templateOptions,
   serviceOptions,
   unitOptions,
+  tableState,
   pagination,
 }: {
   initialWorkOrders: WorkOrderRow[]
@@ -144,6 +153,7 @@ export default function WorkOrdersClient({
   templateOptions: TemplateOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const [workOrders, setWorkOrders] = useState<WorkOrderRow[]>(initialWorkOrders)
@@ -171,9 +181,7 @@ export default function WorkOrdersClient({
     isGroupingEnabled,
     setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
+    setGroupByKeys,
     groupFields,
     filteredRows: filteredWorkOrders,
     sortedRows: sortedWorkOrders,
@@ -213,7 +221,24 @@ export default function WorkOrdersClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.workOrderNumber,
-    defaultGroupKeys: ["warehouse"],
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    disableClientFiltering: true,
+    disableClientSorting: true,
+    disableClientPagination: true,
+  })
+  const serverTableControls = useServerTableQueryControls({
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
+    groupOptions: groupFields.map((field) => ({ key: field.key, label: field.label })),
   })
 
   function setNewDraftField(field: keyof DraftWorkOrder, value: string) {
@@ -407,19 +432,19 @@ export default function WorkOrdersClient({
             <TableActionsSummary count={filteredWorkOrders.length}>
               <TableControlsBar
                 searchQuery={searchQuery}
-                onSearchQueryChange={setSearchQuery}
+                onSearchQueryChange={serverTableControls.onSearchQueryChange}
                 searchPlaceholder="Search property"
                 isAscendingSort={isAscendingSort}
-                onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+                onToggleSort={serverTableControls.onToggleSort}
                 ascendingSortLabel="1-9"
                 descendingSortLabel="9-1"
                 isGroupingEnabled={isGroupingEnabled}
-                onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+                onToggleGrouping={serverTableControls.onToggleGrouping}
                 groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
                 groupByKeys={groupByKeys}
-                onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-                onAddGroupBy={addGroupByKey}
-                onRemoveGroupBy={removeGroupByKeyAtIndex}
+                onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
+                onAddGroupBy={serverTableControls.onAddGroupBy}
+                onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
                 maxGroupFields={MAX_GROUP_FIELDS}
               >
                 <TableColumnSettings

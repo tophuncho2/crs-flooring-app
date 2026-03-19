@@ -1,5 +1,5 @@
 import { requireToolAccess } from "@/server/auth/session"
-import { buildPageHref, parsePageParam } from "@/server/pagination"
+import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { getManagementCompaniesPageData } from "@/features/flooring/management-companies/queries"
 import ManagementCompaniesClient from "@/features/flooring/management-companies/components/management-companies-client"
@@ -12,7 +12,11 @@ export default async function ManagementCompaniesPage({
   await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
-  const result = await getManagementCompaniesPageData(page)
+  const tableState = parseServerTableQueryState({
+    searchParams: resolvedSearchParams,
+    allowedGroupKeys: ["company", "street", "city", "state", "zip", "phone", "email", "fullAddress"],
+  })
+  const result = await getManagementCompaniesPageData(page, tableState)
 
   if (!result.ok) {
     return (
@@ -29,6 +33,7 @@ export default async function ManagementCompaniesPage({
 
   return (
     <ManagementCompaniesClient
+      key={`management-companies-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialCompanies={pageData.initialCompanies}
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
@@ -36,6 +41,7 @@ export default async function ManagementCompaniesPage({
       productOptions={pageData.productOptions}
       serviceOptions={pageData.serviceOptions}
       unitOptions={pageData.unitOptions}
+      tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,
         previousPageHref: buildPageHref("/dashboard/flooring/management-companies", pageData.pagination.page - 1),

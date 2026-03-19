@@ -13,6 +13,7 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
 import { FormStatusNotices } from "../../shared/notices"
 
@@ -102,6 +103,13 @@ type ServerPaginationState = {
   nextPageHref: string
 }
 
+type ServerTableState = {
+  searchQuery: string
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
+}
+
 type DraftTemplate = {
   templateTag: string
   propertyId: string
@@ -140,6 +148,7 @@ export default function PropertiesClient({
   productOptions,
   serviceOptions,
   unitOptions,
+  tableState,
   pagination,
 }: {
   initialProperties: PropertyRow[]
@@ -150,6 +159,7 @@ export default function PropertiesClient({
   productOptions: ProductOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const [properties, setProperties] = useState<PropertyRow[]>(initialProperties)
@@ -172,6 +182,8 @@ export default function PropertiesClient({
     setIsAscendingSort,
     isGroupingEnabled,
     setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
     filteredRows: filteredProperties,
     sortedRows: sortedProperties,
     groupedRows: groupedProperties,
@@ -206,7 +218,35 @@ export default function PropertiesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
-    defaultGroupKey: "managementCompany",
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    disableClientFiltering: true,
+    disableClientSorting: true,
+    disableClientPagination: true,
+  })
+  const propertyGroupOptions = [
+    { key: "property", label: "Property" },
+    { key: "street", label: "Street" },
+    { key: "city", label: "City" },
+    { key: "state", label: "State" },
+    { key: "zip", label: "Zip" },
+    { key: "phone", label: "Phone" },
+    { key: "email", label: "Email" },
+    { key: "fullAddress", label: "Full Address" },
+    { key: "managementCompany", label: "Management Company" },
+  ]
+  const serverTableControls = useServerTableQueryControls({
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
+    groupOptions: propertyGroupOptions,
   })
 
   function setNewDraftField(field: keyof DraftProperty, value: string | string[]) {
@@ -476,12 +516,17 @@ export default function PropertiesClient({
           <TableActionsSummary count={filteredProperties.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={serverTableControls.onSearchQueryChange}
               searchPlaceholder="Search property or company"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              onToggleSort={serverTableControls.onToggleSort}
               isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
+              onToggleGrouping={serverTableControls.onToggleGrouping}
+              groupOptions={propertyGroupOptions}
+              groupByKeys={groupByKeys}
+              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
+              onAddGroupBy={serverTableControls.onAddGroupBy}
+              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
             >
               <TableColumnSettings
                 columns={orderedPropertyColumns}

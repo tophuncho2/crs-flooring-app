@@ -32,7 +32,10 @@ export function useUrlRecordEditor<Row extends { id: string }, Draft>({
 
   function setDraft(next: Draft | ((current: Draft | null) => Draft | null)) {
     const currentDraft = draft
-    const resolved = typeof next === "function" ? next(currentDraft) : next
+    const resolved =
+      typeof next === "function"
+        ? (next as (current: Draft | null) => Draft | null)(currentDraft)
+        : next
 
     if (resolved === null) {
       setDraftState(null)

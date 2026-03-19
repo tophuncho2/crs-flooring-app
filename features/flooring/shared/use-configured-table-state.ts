@@ -16,19 +16,27 @@ export function useConfiguredTableState<T>({
   tableKey,
   fields,
   sortField,
+  initialSearchQuery = "",
   defaultGrouped = false,
   defaultGroupKey = null,
   defaultGroupKeys,
   defaultAscending = true,
+  disableClientFiltering = false,
+  disableClientSorting = false,
+  disableClientPagination = false,
 }: {
   rows: T[]
   tableKey: string
   fields: ConfiguredTableField<T>[]
   sortField: TableValueGetter<T>
+  initialSearchQuery?: string
   defaultGrouped?: boolean
   defaultGroupKey?: string | null
   defaultGroupKeys?: string[]
   defaultAscending?: boolean
+  disableClientFiltering?: boolean
+  disableClientSorting?: boolean
+  disableClientPagination?: boolean
 }) {
   const columns = useMemo(
     () => fields.map(({ key, label, defaultHidden }) => ({ key, label, defaultHidden })),
@@ -51,10 +59,14 @@ export function useConfiguredTableState<T>({
     searchFields,
     sortField,
     groupFields,
+    initialSearchQuery,
     defaultGrouped,
     defaultGroupKey,
     defaultGroupKeys,
     defaultAscending,
+    disableClientFiltering,
+    disableClientSorting,
+    disableClientPagination,
   })
 
   const tableColumns = useTableColumns({
@@ -66,7 +78,6 @@ export function useConfiguredTableState<T>({
     fields,
     columns,
     searchFields,
-    groupFields,
     ...tableControls,
     ...tableColumns,
   }

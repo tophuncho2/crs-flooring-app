@@ -1,12 +1,60 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
-import { createServerPagination } from "@/server/pagination"
+import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { loadTemplatePanelOptions } from "@/features/flooring/shared/template-panel-options"
 import { normalizeProperty, normalizePropertyOption } from "./services"
 
-export async function listProperties(pagination?: { skip: number; take: number }) {
+function buildPropertiesWhere(searchQuery: string): Prisma.PropertyWhereInput | undefined {
+  if (!searchQuery) return undefined
+
+  return {
+    OR: [
+      { name: { contains: searchQuery, mode: "insensitive" } },
+      { streetAddress: { contains: searchQuery, mode: "insensitive" } },
+      { city: { contains: searchQuery, mode: "insensitive" } },
+      { state: { contains: searchQuery, mode: "insensitive" } },
+      { postalCode: { contains: searchQuery, mode: "insensitive" } },
+      { phone: { contains: searchQuery, mode: "insensitive" } },
+      { email: { contains: searchQuery, mode: "insensitive" } },
+      { managementCompany: { name: { contains: searchQuery, mode: "insensitive" } } },
+    ],
+  }
+}
+
+function buildPropertiesOrderBy(tableState: ServerTableQueryState): Prisma.PropertyOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
+  const orderBy: Prisma.PropertyOrderByWithRelationInput[] = []
+  const fieldMap: Record<string, Prisma.PropertyOrderByWithRelationInput> = {
+    property: { name: direction },
+    street: { streetAddress: direction },
+    city: { city: direction },
+    state: { state: direction },
+    zip: { postalCode: direction },
+    phone: { phone: direction },
+    email: { email: direction },
+    fullAddress: { streetAddress: direction },
+    managementCompany: { managementCompany: { name: direction } },
+  }
+
+  if (tableState.isGroupingEnabled) {
+    for (const groupKey of tableState.groupByKeys) {
+      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
+    }
+  }
+
+  appendUniqueOrderBy(orderBy, { name: direction })
+
+  return orderBy
+}
+
+export async function listProperties(
+  pagination: { skip: number; take: number } | undefined,
+  tableState: ServerTableQueryState,
+) {
   const properties = await prisma.property.findMany({
-    orderBy: { name: "asc" },
+    where: buildPropertiesWhere(tableState.searchQuery),
+    orderBy: buildPropertiesOrderBy(tableState),
     select: {
       id: true,
       name: true,
@@ -81,11 +129,12 @@ export async function getPropertyById(id: string) {
   return normalizeProperty(property)
 }
 
-async function loadPropertiesPageData(page: number) {
-  const totalItems = await prisma.property.count()
+async function loadPropertiesPageData(page: number, tableState: ServerTableQueryState) {
+  const where = buildPropertiesWhere(tableState.searchQuery)
+  const totalItems = await prisma.property.count({ where })
   const pagination = createServerPagination({ page, totalItems })
   const [initialProperties, managementOptions, templatePanelOptions] = await Promise.all([
-    listProperties({ skip: pagination.skip, take: pagination.take }),
+    listProperties({ skip: pagination.skip, take: pagination.take }, tableState),
     prisma.flooringManagementCompany.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -100,6 +149,7 @@ async function loadPropertiesPageData(page: number) {
       totalItems: pagination.totalItems,
       totalPages: pagination.totalPages,
     },
+    tableState,
     initialProperties,
     managementOptions,
     propertyOptions: initialProperties.map((property) => ({
@@ -110,6 +160,6 @@ async function loadPropertiesPageData(page: number) {
   }
 }
 
-export async function getPropertiesPageData(page: number) {
-  return withPrismaConnectivityHandling(() => loadPropertiesPageData(page))
+export async function getPropertiesPageData(page: number, tableState: ServerTableQueryState) {
+  return withPrismaConnectivityHandling(() => loadPropertiesPageData(page, tableState))
 }

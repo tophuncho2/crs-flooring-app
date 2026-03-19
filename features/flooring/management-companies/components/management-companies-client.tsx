@@ -13,6 +13,7 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
 import { FormStatusNotices } from "../../shared/notices"
@@ -130,6 +131,13 @@ type ServerPaginationState = {
   nextPageHref: string
 }
 
+type ServerTableState = {
+  searchQuery: string
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
+}
+
 const defaultDraft: DraftCompany = {
   name: "",
   streetAddress: "",
@@ -168,6 +176,7 @@ export default function ManagementCompaniesClient({
   productOptions,
   serviceOptions,
   unitOptions,
+  tableState,
   pagination,
 }: {
   initialCompanies: ManagementCompanyRow[]
@@ -177,6 +186,7 @@ export default function ManagementCompaniesClient({
   productOptions: ProductOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
@@ -206,6 +216,7 @@ export default function ManagementCompaniesClient({
     setSearchQuery,
     isAscendingSort,
     setIsAscendingSort,
+    setGroupByKeys,
     filteredRows: filteredCompanies,
     sortedRows: sortedCompanies,
     page,
@@ -239,6 +250,24 @@ export default function ManagementCompaniesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    disableClientFiltering: true,
+    disableClientSorting: true,
+    disableClientPagination: true,
+  })
+  const serverTableControls = useServerTableQueryControls({
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled: false,
+    setIsGroupingEnabled: () => undefined,
+    groupByKeys: [],
+    setGroupByKeys,
+    groupOptions: [],
   })
 
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {
@@ -686,10 +715,10 @@ export default function ManagementCompaniesClient({
           <TableActionsSummary count={filteredCompanies.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={serverTableControls.onSearchQueryChange}
               searchPlaceholder="Search company or property"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              onToggleSort={serverTableControls.onToggleSort}
               isGroupingEnabled={false}
               onToggleGrouping={() => {}}
               showGrouping={false}

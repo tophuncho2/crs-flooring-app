@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { buildPageHref, parsePageParam } from "@/server/pagination"
+import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getPropertiesPageData } from "@/features/flooring/properties/queries"
 import PropertiesClient from "@/features/flooring/properties/components/properties-client"
 
@@ -12,7 +12,12 @@ export default async function FlooringPropertiesPage({
   await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
-  const result = await getPropertiesPageData(page)
+  const tableState = parseServerTableQueryState({
+    searchParams: resolvedSearchParams,
+    allowedGroupKeys: ["property", "street", "city", "state", "zip", "phone", "email", "fullAddress", "managementCompany"],
+    defaultGroupKeys: ["managementCompany"],
+  })
+  const result = await getPropertiesPageData(page, tableState)
 
   if (!result.ok) {
     return (
@@ -29,6 +34,7 @@ export default async function FlooringPropertiesPage({
 
   return (
     <PropertiesClient
+      key={`properties-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialProperties={pageData.initialProperties}
       managementOptions={pageData.managementOptions}
       propertyOptions={pageData.propertyOptions}
@@ -37,6 +43,7 @@ export default async function FlooringPropertiesPage({
       productOptions={pageData.productOptions}
       serviceOptions={pageData.serviceOptions}
       unitOptions={pageData.unitOptions}
+      tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,
         previousPageHref: buildPageHref("/dashboard/flooring/properties", pageData.pagination.page - 1),

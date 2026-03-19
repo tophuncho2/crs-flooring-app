@@ -12,6 +12,7 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 
 type CategoryOption = {
@@ -82,6 +83,13 @@ type ServerPaginationState = {
   totalPages: number
   previousPageHref: string
   nextPageHref: string
+}
+
+type ServerTableState = {
+  searchQuery: string
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
 }
 
 type CutLogRow = {
@@ -192,11 +200,13 @@ export default function FlooringProductsClient({
   categoryOptions,
   manufacturerOptions,
   initialProducts,
+  tableState,
   pagination,
 }: {
   categoryOptions: CategoryOption[]
   manufacturerOptions: ManufacturerOption[]
   initialProducts: ProductRow[]
+  tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const categories = categoryOptions
@@ -242,9 +252,7 @@ export default function FlooringProductsClient({
     isGroupingEnabled,
     setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
+    setGroupByKeys,
     groupFields,
     filteredRows: filteredProducts,
     sortedRows: sortedProducts,
@@ -286,7 +294,25 @@ export default function FlooringProductsClient({
       { key: "actions", label: "Actions", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
-    defaultGroupKeys: ["category"],
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    disableClientFiltering: true,
+    disableClientSorting: true,
+    disableClientPagination: true,
+  })
+  const productGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
+  const serverTableControls = useServerTableQueryControls({
+    searchQuery,
+    setSearchQuery,
+    isAscendingSort,
+    setIsAscendingSort,
+    isGroupingEnabled,
+    setIsGroupingEnabled,
+    groupByKeys,
+    setGroupByKeys,
+    groupOptions: productGroupOptions,
   })
 
   function clearNotices() {
@@ -582,17 +608,17 @@ export default function FlooringProductsClient({
           <TableActionsSummary count={filteredProducts.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={serverTableControls.onSearchQueryChange}
               searchPlaceholder="Search product name"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((prev) => !prev)}
+              onToggleSort={serverTableControls.onToggleSort}
               isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
+              onToggleGrouping={serverTableControls.onToggleGrouping}
+              groupOptions={productGroupOptions}
               groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-              onAddGroupBy={addGroupByKey}
-              onRemoveGroupBy={removeGroupByKeyAtIndex}
+              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
+              onAddGroupBy={serverTableControls.onAddGroupBy}
+              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
               maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
