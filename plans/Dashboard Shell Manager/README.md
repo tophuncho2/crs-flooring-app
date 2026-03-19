@@ -17,7 +17,7 @@ This folder exists because the dashboard shell has become its own concern across
 - `server/flooring/hotkeys.ts`
 
 This is not the same as shared variables or shared feature components.
-Use `sharedvariablesmanager` for central values and `SHARED_FEATURES_PLAN.md` for reusable architecture patterns.
+Use [Shared Variables Manager](/Users/ottohull/builderswebapp/builderswebapp/plans/Shared%20Variables%20Manager/README.md) for central values and [Architecture Manager SHARED_FEATURES_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Architecture%20Manager/SHARED_FEATURES_PLAN.md) for reusable architecture patterns.
 Use this folder for the user-facing shell rules that coordinate:
 - which tools are visible
 - how nav order persists

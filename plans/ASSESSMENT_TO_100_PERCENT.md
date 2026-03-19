@@ -1,223 +1,98 @@
-# Remaining Work To 100%
-## Current Status, Remaining Gaps, And Final Execution Path
+# Assessment To 100%
+## Current Roll-Up Compared To A True Production Finish
 
-This file is the current gap document for taking the flooring operations platform from its present state to a full system that is:
-- scalable
-- fast
-- efficient
-- safe
-- operationally correct
-- aligned with the standards in the planning system
+Date:
+- 2026-03-19
 
-This document is not a replacement for the blueprint files.
-It is the practical status file for what is already real, what is still incomplete, and what must be done before this system should be considered fully production-ready.
+This is the root assessment of how close the flooring system is to a real 100%.
+It rolls up the manager folders rather than replacing them.
 
----
+Current overall assessment:
+- planning system maturity: `90%`
+- implementation maturity: `70%`
+- production-hardening maturity: `50-60%`
+- true overall readiness to call the project 100%: `about 68%`
 
-# 1. Current Status
-
-## 1.1 Planning system status
-
-The `plans/` folder is strong and already covers the main decision surface:
-- architecture
-- domain workflow
-- data model
-- shared frontend patterns
-- database standards
-- Redis and workers
-- Railway and deployment
-- security
-- observability
-- testing
-- release readiness
-
-Current planning system maturity:
-- `85-90% complete`
-
-The remaining gap is not mainly missing planning.
-The remaining gap is mainly implementation, hardening, operational readiness, and validation.
-
-## 1.2 Application status
-
-The application is no longer an early prototype.
-It already has:
-- a substantial Prisma schema
-- real flooring domain modules
-- feature-based organization
-- shared table controls
-- shared notices and form styling
-- record-panel architecture across major modules
-- template and work-order child-row editing
-- template-to-work-order creation and sync logic
-- bucket-backed product photo upload
-- imports, inventory, warehouse, and cut-log modules
-- basic Vitest coverage for the workflow core
-
-Current application maturity:
-- `65-75% complete`
-
-This is a credible internal system with real operational value now.
-It is not yet a full production-grade operating system.
-
-## 1.3 Current quality bar
-
-As of the latest implementation state:
-- `npm run lint` passes
-- `npm run build` passes
-- `npm test` exists and covers part of the workflow core
-
-That is real progress, but it is not enough by itself to call the system finished.
+The main gap is no longer “missing ideas.”
+The main gap is turning the existing architecture into a trustworthy operating system with tighter security, finalized workflow truth, stronger runtime discipline, and far better testing.
 
 ---
 
-# 2. What Is Already In Good Shape
+# 1. What Is Already Strong
 
-## 2.1 Domain coverage
-
-The following modules are present and materially implemented:
-- management companies
-- properties
-- categories
-- units of measure
-- manufacturers
-- products
-- services
-- templates
-- work orders
-- warehouses
-- sections
-- locations
-- imports
-- inventory
-- cut logs
-- users and hotkeys
-
-## 2.2 Core data model direction
-
-The Prisma schema already reflects the main operating model:
-- templates are reusable source records
-- work orders are live operational records
-- products, services, properties, and management companies are linked domain records
-- inventory and imports are part of the warehouse model
-- cut logs are part of inventory traceability
-
-The schema is far beyond a placeholder stage.
-
-## 2.3 Shared UI progress
-
-The UI has already moved meaningfully toward a reusable internal database model:
-- shared search, sort, grouping, and column settings exist
-- major tables use shared row-action buttons
-- main table views have largely moved away from inline editing
-- record panels exist for major workflows
-- templates and work orders have richer child-table editing patterns
-- shared notices, record-panel footers, and shared field-state styling now exist
-
-## 2.4 Template and work-order foundation
-
-The most important business foundation is already in place:
-- templates are reusable
-- work orders can be created from templates
-- sync logic exists
-- shared contract work has started for template/work-order behavior
-- child rows and pricing behavior are no longer purely ad hoc
-
-This is the strongest part of the system and should remain the primary architectural reference.
+- The product domain is real, not conceptual. Templates, work orders, inventory, imports, warehouses, and cut logs already exist.
+- The Prisma schema is substantial and models actual business relationships instead of placeholder tables.
+- Shared UI patterns are present across major flooring areas, especially record panels and reusable table controls.
+- The planning system itself is now broad enough to support disciplined work across architecture, platform, security, Prisma, testing, and domain execution.
+- Lint, build, and at least some workflow tests already exist, which means the repo is not operating without any quality bar.
 
 ---
 
-# 3. What Still Prevents 100%
+# 2. What Keeps The Project Below 100%
 
-The system is not yet 100% because the remaining work is concentrated in the parts that determine safety, speed, resilience, and operational trust.
-
-Those gaps are listed below in priority order.
+- Security posture is not yet acceptable for a high-trust or externally exposed environment.
+- The final workflow truth for statuses, shortages, resend behavior, completion, and analytics timing is still not locked.
+- Platform services are planned better than they are implemented; workers, queue ownership, and observability are not yet fully operating.
+- Test coverage is still too narrow for a system that will carry real operational data and destructive mutations.
+- Some architectural drift remains between plan, schema, runtime behavior, and older implementation paths.
+- The planning folder itself had become cluttered at the root; that has now been reorganized into manager ownership, but it still needs disciplined upkeep.
 
 ---
 
-# 4. Highest-Priority Remaining Work
+# 3. Manager Status Roll-Up
 
-## 4.1 Finalize the domain contract for templates, work orders, shortages, and completion
+## Architecture Manager
+- Status: strong direction, moderate execution drift
+- Main need: keep shared patterns and standards enforced during implementation
 
-This remains the single most important unfinished area.
+## Program Manager
+- Status: useful execution checklist exists
+- Main need: convert broad checklist items into completed, verified delivery gates
 
-Still needs to be explicitly finalized and enforced in code:
-- full work-order status model
-- shortage lifecycle and resend behavior
-- completion eligibility rules
-- generated file lifecycle
-- inventory allocation timing vs deduction timing
-- analytics update timing
-- sync contract details for overwrite vs append behavior
-- canonical ownership of calculated fields and status labels
+## Flooring Domain Manager
+- Status: strongest business area in the repo
+- Main need: finalize workflow truth and analytics ownership
 
-This matters because:
-- schema choices depend on it
-- worker payloads depend on it
-- analytics correctness depends on it
-- UI behavior depends on it
+## Prisma Manager
+- Status: strong schema foundation
+- Main need: remove schema-to-runtime drift and harden invariants, constraints, and migration discipline
 
-Until this is fully locked, the system is still vulnerable to rule drift.
+## Platform Manager
+- Status: well planned, partially implemented
+- Main need: workers, queue runtime, env validation, deploy discipline, and observability
 
-## 4.2 Finish the shared UI architecture without weakening the core flows
+## Security Manager
+- Status: early foundation, currently high risk
+- Main need: immediate containment and a real least-privilege model
 
-Shared UI work is materially improved, but still incomplete.
+## Access Manager
+- Status: planning home exists, but implementation is still too role-coarse
+- Main need: permission matrix, signup rules, builder/admin governance
 
-Still needed:
-- finish extracting controller logic out of the larger page clients
-- standardize editable record-panel behavior across all domains
-- finish shared linked-record navigation across the major domain chains
-- make panel stack behavior more predictable and reusable
-- standardize shared status display and summary blocks
-- reduce one-off option-loading patterns
+## Dashboard Shell Manager
+- Status: defined concern, light planning depth so far
+- Main need: durable shell behavior, nav persistence, preference ownership, decluttering
 
-Important rule:
-- templates and work orders remain the reference implementation
-- secondary tables should catch up to that standard without dumbing it down
+## Shared Variables Manager
+- Status: decent inside flooring, early across the wider app
+- Main need: centralize env/config/defaults and reduce literal duplication
 
-## 4.3 Complete the record-panel model for all remaining admin and warehouse flows
+## Testing Manager
+- Status: good planning shape, low real coverage relative to risk
+- Main need: route, workflow, destructive-action, and regression protection
 
-The major table views are in better shape now, but some areas still need a cleaner panel model or more robust orchestration.
+---
 
-Still needed:
-- finish the simpler panel standard for hotkeys and unit-of-measure management
-- tighten warehouse record behavior around warehouse, section, and location editing
-- verify imports, products, and inventory child-table flows at larger scale
-- ensure linked navigation feels continuous across:
-  - manufacturers → products → inventory → cut logs
-  - management companies → properties → templates
-  - imports → inventory
+# 4. Definition Of 100%
 
-## 4.4 Increase test coverage from narrow core tests to real workflow protection
-
-There is now at least one real test file and the project is no longer test-empty.
-That is progress, but coverage is still far below the production bar.
-
-Still needed:
-- domain tests for shortage and completion rules
-- route/integration tests for core mutations
-- panel-level flow tests for critical record editing
-- cross-module workflow tests
-- failure-path tests for transactional sync and deletes
-- concurrency-sensitive tests where correctness matters
-
-Before calling the system production-ready, the following must be covered:
-- template create/edit/delete
-- work-order create/edit/delete
-- template-to-work-order sync
-- shortage behavior
-- completion behavior
-- import to inventory behavior
-- warehouse section/location behavior
-- destructive action protections
-
-## 4.5 Implement real workers and queue infrastructure
-
-Workers are still planned, not truly operating.
-
-Current state:
-- queue/job placeholder files exist
-- `workers/` and `server/queues/` are not yet a complete runtime
-- BullMQ is not functioning as an active production subsystem
+The project should only be called 100% when all of the following are true:
+- security flaws are contained and privilege boundaries are explicit
+- workflow truth is finalized and implemented consistently
+- schema, runtime behavior, and migrations are aligned
+- workers and observability are real operating systems, not placeholders
+- critical workflows are protected by meaningful automated tests
+- deploy, rollback, backup, and restore are proven
+- the codebase and planning system are both organized enough to scale without confusion
 
 Still needed:
 - shared Redis config

@@ -220,11 +220,11 @@ This checklist should be updated as work is completed.
 
 # 10. Testing
 
-Detailed testing execution now lives in [`plans/testing/TESTING_CHECKLIST.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_CHECKLIST.md).
+Detailed testing execution now lives in [`plans/Testing Manager/TESTING_CHECKLIST.md`](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/TESTING_CHECKLIST.md).
 
-- [ ] Keep the canonical testing checklist updated in `plans/testing/TESTING_CHECKLIST.md`.
-- [ ] Keep the simple-table domain status board updated in `plans/testing/SIMPLE_TABLE_DOMAIN_STATUS.md`.
-- [ ] Keep `plans/testing/TESTING_MASTER_PLAN.md` aligned with real testing standards as the system grows.
+- [ ] Keep the canonical testing checklist updated in `plans/Testing Manager/TESTING_CHECKLIST.md`.
+- [ ] Keep the simple-table domain status board updated in `plans/Testing Manager/SIMPLE_TABLE_DOMAIN_STATUS.md`.
+- [ ] Keep `plans/Testing Manager/TESTING_MASTER_PLAN.md` aligned with real testing standards as the system grows.
 
 ---
 
@@ -243,13 +243,13 @@ Detailed testing execution now lives in [`plans/testing/TESTING_CHECKLIST.md`](/
 
 # 12. Planning System Completion
 
-- [ ] Add [UI_UX_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans)
+- [ ] Add `UI_UX_PLAN.md` under the correct manager folder.
 - [ ] Add `QUEUE_AUTOMATION_PLAN.md`
 - [ ] Add `ROLES_AND_PERMISSIONS_PLAN.md`
 - [ ] Add `INCIDENT_RESPONSE_RUNBOOK.md`
-- [ ] Update [MASTER_PLAN_INDEX.md](/Users/ottohull/builderswebapp/builderswebapp/plans/MASTER_PLAN_INDEX.md) whenever a new planning file is added.
-- [ ] Keep [REMAINING_WORK_TO_100.md](/Users/ottohull/builderswebapp/builderswebapp/plans/REMAINING_WORK_TO_100.md) updated as tasks are completed.
-- [ ] Keep [plans/prismamanager/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/prismamanager/README.md) and its assessment files aligned with schema changes.
+- [ ] Update [MASTER_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/MASTER_PLAN.md) whenever manager ownership changes materially.
+- [ ] Keep [ASSESSMENT_TO_100_PERCENT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/ASSESSMENT_TO_100_PERCENT.md) updated as major gaps are closed.
+- [ ] Keep [Prisma Manager README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/README.md) and its assessment files aligned with schema changes.
 
 ---
 

@@ -34,12 +34,12 @@ Do not make assumptions when the code can be inspected.
 # 3. Required Plan References
 
 Codex should use:
-- `MASTER_PLAN_INDEX.md`
+- `MASTER_PLAN.md`
 - `BUILD_STANDARDS.md`
 - the relevant blueprint/domain files for the task
 
 Examples:
-- schema work → `DATA_MODEL_PLAN.md`, `prismamanager/POSTGRES_BLUEPRINT.md`
+- schema work → `Prisma Manager/DATA_MODEL_PLAN.md`, `Prisma Manager/POSTGRES_BLUEPRINT.md`
 - worker work → `WORKERS_BLUEPRINT.md`, `REDIS_BLUEPRINT.md`
 - workflow work → `DOMAIN_WORKFLOW_PLAN.md`
 

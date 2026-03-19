@@ -19,7 +19,7 @@ Other planning files should summarize and point here, not restate these document
 
 # Files In This Folder
 
-## [TESTING_MASTER_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_MASTER_PLAN.md)
+## [TESTING_MASTER_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/TESTING_MASTER_PLAN.md)
 Canonical testing strategy for the system.
 
 Use for:
@@ -28,7 +28,7 @@ Use for:
 - validation philosophy
 - workflow testing priorities
 
-## [SIMPLE_TABLE_TEST_MATRIX.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/SIMPLE_TABLE_TEST_MATRIX.md)
+## [SIMPLE_TABLE_TEST_MATRIX.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/SIMPLE_TABLE_TEST_MATRIX.md)
 Reusable coverage template for simple CRUD table domains that use the shared record-panel pattern.
 
 Use for:
@@ -37,7 +37,7 @@ Use for:
 - route-validation expectations
 - copyable pass/fail scenarios for new simple domains
 
-## [TESTING_CHECKLIST.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/TESTING_CHECKLIST.md)
+## [TESTING_CHECKLIST.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/TESTING_CHECKLIST.md)
 Execution checklist for bringing the testing system up to date with the architecture.
 
 Use for:
@@ -46,7 +46,7 @@ Use for:
 - tracking simple-table rollout
 - tracking later complex-domain work
 
-## [SIMPLE_TABLE_DOMAIN_STATUS.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/SIMPLE_TABLE_DOMAIN_STATUS.md)
+## [SIMPLE_TABLE_DOMAIN_STATUS.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Testing%20Manager/SIMPLE_TABLE_DOMAIN_STATUS.md)
 Operational board for the current simple-table domains.
 
 Use for:

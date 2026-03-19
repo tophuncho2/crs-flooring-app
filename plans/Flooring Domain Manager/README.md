@@ -20,7 +20,7 @@ Keep global architecture in the top-level plans.
 Use this folder for flooring-specific decisions, rollout sequencing, and domain breakdowns that would otherwise overload:
 - `DOMAIN_WORKFLOW_PLAN.md`
 - `KEY_FEATURES.md`
-- `SHARED_FEATURES_PLAN.md`
+- `ANALYTICS_PLAN.md`
 
 Recommended future files in this folder:
 - flooring-domain-index.md

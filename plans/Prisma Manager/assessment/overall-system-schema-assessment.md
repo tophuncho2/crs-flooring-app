@@ -79,9 +79,9 @@ This is necessary for a schema that is starting to carry real workflow state.
 ## 2.5 The project already has supporting planning documents
 Prisma work is not isolated from architecture.
 The presence of:
-- [DATA_MODEL_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/DATA_MODEL_PLAN.md)
-- [POSTGRES_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/prismamanager/POSTGRES_BLUEPRINT.md)
-- [prismamanager/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/prismamanager/README.md)
+- [DATA_MODEL_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/DATA_MODEL_PLAN.md)
+- [POSTGRES_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/POSTGRES_BLUEPRINT.md)
+- [Prisma Manager README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Prisma%20Manager/README.md)
 
 means the project already has the right planning shape for disciplined schema evolution.
 

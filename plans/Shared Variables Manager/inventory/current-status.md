@@ -89,7 +89,7 @@ Last reviewed: 2026-03-19
 - `server/db/prisma.ts`
   Reads:
   - `NODE_ENV`
-- `plans/ENVIRONMENT_VARIABLES_PLAN.md`
+- `plans/Platform Manager/ENVIRONMENT_VARIABLES_PLAN.md`
   Existing planning doc for env-variable discipline, but not yet implemented as a typed runtime env module.
 
 ## Current State Summary
