@@ -39,7 +39,7 @@ Codex should use:
 - the relevant blueprint/domain files for the task
 
 Examples:
-- schema work → `DATA_MODEL_PLAN.md`, `POSTGRES_BLUEPRINT.md`
+- schema work → `DATA_MODEL_PLAN.md`, `prismamanager/POSTGRES_BLUEPRINT.md`
 - worker work → `WORKERS_BLUEPRINT.md`, `REDIS_BLUEPRINT.md`
 - workflow work → `DOMAIN_WORKFLOW_PLAN.md`
 

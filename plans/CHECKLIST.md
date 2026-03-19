@@ -249,7 +249,7 @@ Detailed testing execution now lives in [`plans/testing/TESTING_CHECKLIST.md`](/
 - [ ] Add `INCIDENT_RESPONSE_RUNBOOK.md`
 - [ ] Update [MASTER_PLAN_INDEX.md](/Users/ottohull/builderswebapp/builderswebapp/plans/MASTER_PLAN_INDEX.md) whenever a new planning file is added.
 - [ ] Keep [REMAINING_WORK_TO_100.md](/Users/ottohull/builderswebapp/builderswebapp/plans/REMAINING_WORK_TO_100.md) updated as tasks are completed.
-- [ ] Keep [PRISMA_SCHEMA_ENGLISH.md](/Users/ottohull/builderswebapp/builderswebapp/plans/PRISMA_SCHEMA_ENGLISH.md) aligned with schema changes.
+- [ ] Keep [plans/prismamanager/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/prismamanager/README.md) and its assessment files aligned with schema changes.
 
 ---
 

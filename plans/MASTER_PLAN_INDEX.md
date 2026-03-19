@@ -77,6 +77,60 @@ Use for:
 
 ---
 
+# 2.1 Dedicated Planning Folders
+
+These folders exist for categories that now have enough moving parts to need their own planning thread instead of a single file.
+
+## [testing/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/testing/README.md)
+Canonical testing planning index.
+
+Use for:
+- test strategy
+- coverage rollout
+- quality gates
+
+## [sharedvariablesmanager/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/sharedvariablesmanager/README.md)
+Canonical shared-variable tracking index.
+
+Use for:
+- constant inventory
+- config cleanup
+- shared value centralization
+
+## [prismamanager/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/prismamanager/README.md)
+Canonical Prisma planning index.
+
+Use for:
+- schema review entrypoint
+- migration planning
+- Prisma-related plan navigation
+
+## [flooringdomain/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/flooringdomain/README.md)
+Canonical flooring domain planning index.
+
+Use for:
+- flooring module planning
+- simple and complex flooring domain breakdowns
+- flooring-specific rollout tracking
+
+## [accessmanagement/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/accessmanagement/README.md)
+Canonical access and builder-governance planning index.
+
+Use for:
+- auth and session planning
+- role/access rules
+- builder/admin management rules
+
+## [dashboardshell/README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/dashboardshell/README.md)
+Canonical dashboard shell planning index.
+
+Use for:
+- navigation persistence
+- table preferences
+- hotkeys and workspace behavior
+
+---
+
 # 3. Product And Domain Planning Files
 
 ## [DOMAIN_WORKFLOW_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/DOMAIN_WORKFLOW_PLAN.md)
@@ -111,7 +165,7 @@ Use for:
 
 # 4. Infrastructure Planning Files
 
-## [POSTGRES_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/POSTGRES_BLUEPRINT.md)
+## [prismamanager/POSTGRES_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/prismamanager/POSTGRES_BLUEPRINT.md)
 Postgres safety, performance, and scalability standard.
 
 ## [REDIS_BLUEPRINT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/REDIS_BLUEPRINT.md)
@@ -201,7 +255,7 @@ Use for:
 ## For schema work
 Read:
 - `DATA_MODEL_PLAN.md`
-- `POSTGRES_BLUEPRINT.md`
+- `prismamanager/POSTGRES_BLUEPRINT.md`
 - `ANALYTICS_PLAN.md`
 - `DEPLOYMENT_PLAN.md`
 
@@ -224,7 +278,7 @@ Read:
 ## For infrastructure/deployment work
 Read:
 - `RAILWAY_BLUEPRINT.md`
-- `POSTGRES_BLUEPRINT.md`
+- `prismamanager/POSTGRES_BLUEPRINT.md`
 - `ENVIRONMENT_VARIABLES_PLAN.md`
 - `DEPLOYMENT_PLAN.md`
 - `SECURITY_PLAN.md`
@@ -242,7 +296,7 @@ Read:
 - `ANALYTICS_PLAN.md`
 - `DATA_MODEL_PLAN.md`
 - `DOMAIN_WORKFLOW_PLAN.md`
-- `POSTGRES_BLUEPRINT.md`
+- `prismamanager/POSTGRES_BLUEPRINT.md`
 
 ## For testing and release work
 Read:
@@ -259,7 +313,7 @@ Read:
 - `SYSTEM_BLUEPRINT.md`
 - `ENVIRONMENT_VARIABLES_PLAN.md`
 - `RAILWAY_BLUEPRINT.md`
-- `POSTGRES_BLUEPRINT.md`
+- `prismamanager/POSTGRES_BLUEPRINT.md`
 
 ## For major Codex-assisted refactors
 Read:
