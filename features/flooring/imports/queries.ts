@@ -101,6 +101,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
               select: {
                 id: true,
                 locationCode: true,
+                section: { select: { name: true } },
                 warehouse: { select: { id: true, name: true } },
               },
             },
@@ -162,7 +163,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
         locationCode: item.location?.locationCode ?? "",
         warehouseId: item.location?.warehouse.id ?? "",
         warehouseName: item.location?.warehouse.name ?? "",
-        sectionName: "",
+        sectionName: item.location?.section?.name ?? "",
       })),
     })),
     productOptions: products.map((product) => ({
@@ -175,7 +176,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
       id: location.id,
       warehouseId: location.warehouseId,
       locationCode: location.locationCode,
-      label: `${location.warehouseName} - ${location.sectionName ? `${location.sectionName} - ` : ""}${location.locationCode}`,
+      label: location.locationCode,
     })),
   }
 }

@@ -36,6 +36,7 @@ async function loadInventoryPageData(page: number) {
         select: {
           id: true,
           locationCode: true,
+          section: { select: { name: true } },
           warehouse: { select: { id: true, name: true } },
         },
       },
@@ -94,7 +95,7 @@ async function loadInventoryPageData(page: number) {
         locationId: row.locationId ?? "",
         locationCode: row.location?.locationCode ?? "",
         warehouseName: row.location?.warehouse.name ?? "",
-        sectionName: "",
+        sectionName: row.location?.section?.name ?? "",
         stockCount: row.stockCount.toString(),
         cutTotal: cutTotal.toFixed(2),
         runningBalance: runningBalance.toFixed(2),

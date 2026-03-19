@@ -956,6 +956,7 @@ export default function FlooringProductsClient({
                                 <th className="h-10 px-3 py-2">Open</th>
                                 <th className="h-10 px-3 py-2">Item #</th>
                                 <th className="h-10 px-3 py-2">Dye Lot</th>
+                                <th className="h-10 px-3 py-2">Section</th>
                                 <th className="h-10 px-3 py-2">Location</th>
                                 <th className="h-10 px-3 py-2">Starting Stock</th>
                                 <th className="h-10 px-3 py-2">Cuts Total</th>
@@ -977,11 +978,8 @@ export default function FlooringProductsClient({
                                   </td>
                                   <td className="px-3 py-2">{row.itemNumber}</td>
                                   <td className="px-3 py-2">{row.dyeLot || "-"}</td>
-                                  <td className="px-3 py-2">
-                                    {row.warehouseName}
-                                    {row.sectionName ? ` / ${row.sectionName}` : ""}
-                                    {row.locationCode ? ` / ${row.locationCode}` : ""}
-                                  </td>
+                                  <td className="px-3 py-2">{row.sectionName || "-"}</td>
+                                  <td className="px-3 py-2">{row.locationCode || "-"}</td>
                                   <td className="px-3 py-2">{row.stockCount} {row.stockUnit}</td>
                                   <td className="px-3 py-2">{row.cutTotal}</td>
                                   <td className="px-3 py-2 font-semibold">{row.runningBalance} {row.stockUnit}</td>
@@ -1013,12 +1011,16 @@ export default function FlooringProductsClient({
                 <p className="mt-1 font-medium">{activeInventoryRow.dyeLot || "-"}</p>
               </div>
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Warehouse</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.warehouseName || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Section</p>
+                <p className="mt-1 font-medium">{activeInventoryRow.sectionName || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Location</p>
-                <p className="mt-1 font-medium">
-                  {activeInventoryRow.warehouseName}
-                  {activeInventoryRow.sectionName ? ` / ${activeInventoryRow.sectionName}` : ""}
-                  {activeInventoryRow.locationCode ? ` / ${activeInventoryRow.locationCode}` : ""}
-                </p>
+                <p className="mt-1 font-medium">{activeInventoryRow.locationCode || "-"}</p>
               </div>
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Product</p>

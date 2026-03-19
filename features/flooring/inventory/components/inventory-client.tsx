@@ -230,6 +230,7 @@ export default function InventoryClient({
                 <th className="h-10 px-3 py-2">Starting Stock</th>
                 <th className="h-10 px-3 py-2">Cuts Total</th>
                 <th className="h-10 px-3 py-2">Running Balance</th>
+                <th className="h-10 px-3 py-2">Section</th>
                 <th className="h-10 px-3 py-2">Location</th>
                 <th className="h-10 px-3 py-2">Dye Lot</th>
                 <th className="h-10 px-3 py-2">Cost $</th>
@@ -263,11 +264,8 @@ export default function InventoryClient({
                   <td className="px-3 py-2 font-semibold">
                     {row.runningBalance} {row.stockUnit || ""}
                   </td>
-                  <td className="px-3 py-2">
-                    {row.warehouseName}
-                    {row.sectionName ? ` / ${row.sectionName}` : ""}
-                    {row.locationCode ? ` / ${row.locationCode}` : ""}
-                  </td>
+                  <td className="px-3 py-2">{row.sectionName || "-"}</td>
+                  <td className="px-3 py-2">{row.locationCode || "-"}</td>
                   <td className="px-3 py-2">{row.dyeLot || "-"}</td>
                   <td className="px-3 py-2">{row.cost || "-"}</td>
                   <td className="px-3 py-2">{row.freight || "-"}</td>
@@ -277,7 +275,7 @@ export default function InventoryClient({
               ))}
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="px-3 py-8 text-center text-[var(--foreground)]/70">
+                  <td colSpan={17} className="px-3 py-8 text-center text-[var(--foreground)]/70">
                     No live inventory rows yet.
                   </td>
                 </tr>
@@ -310,12 +308,16 @@ export default function InventoryClient({
                 <p className="mt-1 font-medium">{activeRow.dyeLot || "-"}</p>
               </div>
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Warehouse</p>
+                <p className="mt-1 font-medium">{activeRow.warehouseName || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
+                <p className="text-xs text-[var(--foreground)]/60">Section</p>
+                <p className="mt-1 font-medium">{activeRow.sectionName || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Location</p>
-                <p className="mt-1 font-medium">
-                  {activeRow.warehouseName}
-                  {activeRow.sectionName ? ` / ${activeRow.sectionName}` : ""}
-                  {activeRow.locationCode ? ` / ${activeRow.locationCode}` : ""}
-                </p>
+                <p className="mt-1 font-medium">{activeRow.locationCode || "-"}</p>
               </div>
               <div className="rounded-lg border border-[var(--panel-border)] px-4 py-3">
                 <p className="text-xs text-[var(--foreground)]/60">Product</p>

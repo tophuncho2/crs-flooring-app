@@ -40,6 +40,7 @@ function normalizeInventoryRow(row: {
   location: {
     id: string
     locationCode: string
+    section: { name: string } | null
     warehouse: { id: string; name: string }
   } | null
   importEntry: {
@@ -67,7 +68,7 @@ function normalizeInventoryRow(row: {
     locationId: row.locationId ?? "",
     locationCode: row.location?.locationCode ?? "",
     warehouseName: row.location?.warehouse.name ?? "",
-    sectionName: "",
+    sectionName: row.location?.section?.name ?? "",
     stockCount: row.stockCount.toString(),
     cost: row.cost?.toString() ?? "",
     freight: row.freight?.toString() ?? "",
@@ -112,6 +113,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           select: {
             id: true,
             locationCode: true,
+            section: { select: { name: true } },
             warehouse: { select: { id: true, name: true } },
           },
         },

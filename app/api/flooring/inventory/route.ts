@@ -36,6 +36,7 @@ function normalizeInventoryRow(row: {
   location: {
     id: string
     locationCode: string
+    section: { name: string } | null
     warehouse: { id: string; name: string }
   } | null
   importEntry: {
@@ -76,7 +77,7 @@ function normalizeInventoryRow(row: {
     locationId: row.locationId ?? "",
     locationCode: row.location?.locationCode ?? "",
     warehouseName: row.location?.warehouse.name ?? "",
-    sectionName: "",
+    sectionName: row.location?.section?.name ?? "",
     stockCount: row.stockCount.toString(),
     cutTotal: cutTotal.toFixed(2),
     runningBalance: runningBalance.toFixed(2),
@@ -124,6 +125,7 @@ export async function GET(request: Request) {
           select: {
             id: true,
             locationCode: true,
+            section: { select: { name: true } },
             warehouse: { select: { id: true, name: true } },
           },
         },
@@ -193,6 +195,7 @@ export async function POST(request: Request) {
           select: {
             id: true,
             locationCode: true,
+            section: { select: { name: true } },
             warehouse: { select: { id: true, name: true } },
           },
         },

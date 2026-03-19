@@ -18,6 +18,7 @@ type SectionRow = {
 type LocationRow = {
   id: string
   locationCode: string
+  sectionId: string
   sectionName: string | null
 }
 
@@ -67,9 +68,9 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
   const [sections, setSections] = useState<SectionRow[]>([])
   const [locations, setLocations] = useState<LocationRow[]>([])
   const [sectionDrafts, setSectionDrafts] = useState<Record<string, string>>({})
-  const [locationDrafts, setLocationDrafts] = useState<Record<string, { locationCode: string; sectionName: string }>>({})
+  const [locationDrafts, setLocationDrafts] = useState<Record<string, { locationCode: string; sectionId: string }>>({})
   const [newSection, setNewSection] = useState("")
-  const [newLocation, setNewLocation] = useState({ locationCode: "", sectionName: "" })
+  const [newLocation, setNewLocation] = useState({ locationCode: "", sectionId: "" })
 
   useEffect(() => {
     if (!activeRow) return
@@ -86,7 +87,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
           sections?: Array<{ id: string; name: string; locationsCount?: number }>
         }
         const locationsPayload = (await locationsRes.json().catch(() => ({}))) as {
-          locations?: Array<{ id: string; locationCode: string; sectionName: string | null }>
+          locations?: Array<{ id: string; locationCode: string; sectionId: string; sectionName: string | null }>
         }
 
         setSections(sectionsPayload.sections ?? [])
@@ -205,12 +206,12 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
     const response = await fetch("/api/flooring/locations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ warehouseId: activeRow.id, locationCode: newLocation.locationCode, sectionName: newLocation.sectionName || null }),
+      body: JSON.stringify({ warehouseId: activeRow.id, locationCode: newLocation.locationCode, sectionId: newLocation.sectionId }),
     })
 
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string
-      location?: { id: string; locationCode: string; sectionName: string | null }
+      location?: { id: string; locationCode: string; sectionId: string; sectionName: string | null }
     }
 
     if (!response.ok || !payload.location) {
@@ -220,27 +221,27 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
 
     setLocations((prev) => [...prev, payload.location as LocationRow].sort((a, b) => a.locationCode.localeCompare(b.locationCode)))
     setRows((prev) => prev.map((row) => (row.id === activeRow.id ? { ...row, locationsCount: row.locationsCount + 1 } : row)))
-    setNewLocation({ locationCode: "", sectionName: "" })
+    setNewLocation({ locationCode: "", sectionId: "" })
   }
 
   async function saveLocation(location: LocationRow) {
     const draft =
       locationDrafts[location.id] ?? {
         locationCode: location.locationCode,
-        sectionName: location.sectionName ?? "",
+        sectionId: location.sectionId,
       }
 
-    if (!draft.locationCode.trim()) return
+    if (!draft.locationCode.trim() || !draft.sectionId) return
 
     const response = await fetch(`/api/flooring/locations/${location.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locationCode: draft.locationCode, sectionName: draft.sectionName || null }),
+      body: JSON.stringify({ locationCode: draft.locationCode, sectionId: draft.sectionId }),
     })
 
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string
-      location?: { id: string; locationCode: string; sectionName: string | null }
+      location?: { id: string; locationCode: string; sectionId: string; sectionName: string | null }
     }
 
     if (!response.ok || !payload.location) {
@@ -249,7 +250,11 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
     }
 
     setLocations((prev) =>
-      prev.map((row) => (row.id === location.id ? { ...row, locationCode: payload.location!.locationCode, sectionName: payload.location!.sectionName } : row)),
+      prev.map((row) =>
+        row.id === location.id
+          ? { ...row, locationCode: payload.location!.locationCode, sectionId: payload.location!.sectionId, sectionName: payload.location!.sectionName }
+          : row,
+      ),
     )
     setLocationDrafts((prev) => {
       const next = { ...prev }
@@ -411,13 +416,13 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--foreground)]/70">Locations</h3>
               <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-3">
                 <input value={newLocation.locationCode} onChange={(event) => setNewLocation((prev) => ({ ...prev, locationCode: event.target.value }))} placeholder="Location code" className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1 md:col-span-2" />
-                <select value={newLocation.sectionName} onChange={(event) => setNewLocation((prev) => ({ ...prev, sectionName: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                  <option value="">No Section</option>
+                <select value={newLocation.sectionId} onChange={(event) => setNewLocation((prev) => ({ ...prev, sectionId: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                  <option value="">Select section</option>
                   {sections.map((section) => (
-                    <option key={section.id} value={section.name}>{section.name}</option>
+                    <option key={section.id} value={section.id}>{section.name}</option>
                   ))}
                 </select>
-                <button onClick={addLocation} type="button" className="rounded border border-[var(--panel-border)] px-3 py-1 md:col-span-3">Add Location</button>
+                <button onClick={addLocation} type="button" disabled={!newLocation.sectionId} className="rounded border border-[var(--panel-border)] px-3 py-1 disabled:opacity-60 md:col-span-3">Add Location</button>
               </div>
 
               <div className="max-h-72 overflow-auto rounded border border-[var(--panel-border)]">
@@ -430,7 +435,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                   </thead>
                   <tbody>
                     {locations.map((location) => {
-                      const draft = locationDrafts[location.id] ?? { locationCode: location.locationCode, sectionName: location.sectionName ?? "" }
+                      const draft = locationDrafts[location.id] ?? { locationCode: location.locationCode, sectionId: location.sectionId }
                       return (
                         <tr key={location.id} className="border-t border-[var(--panel-border)]">
                           <td className="px-2 py-2">
@@ -443,14 +448,14 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
                           </td>
                           <td className="px-2 py-2">
                             <select
-                              value={draft.sectionName}
-                              onChange={(event) => setLocationDrafts((prev) => ({ ...prev, [location.id]: { ...draft, sectionName: event.target.value } }))}
+                              value={draft.sectionId}
+                              onChange={(event) => setLocationDrafts((prev) => ({ ...prev, [location.id]: { ...draft, sectionId: event.target.value } }))}
                               onBlur={() => saveLocation(location)}
                               className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                             >
-                              <option value="">No Section</option>
+                              <option value="">Select section</option>
                               {sections.map((section) => (
-                                <option key={section.id} value={section.name}>{section.name}</option>
+                                <option key={section.id} value={section.id}>{section.name}</option>
                               ))}
                             </select>
                           </td>

@@ -126,6 +126,7 @@ function normalizeImportInventory(row: {
   location: {
     id: string
     locationCode: string
+    section: { name: string } | null
     warehouse: { id: string; name: string }
   } | null
 }) {
@@ -144,7 +145,7 @@ function normalizeImportInventory(row: {
     locationCode: row.location?.locationCode ?? "",
     warehouseId: row.location?.warehouse.id ?? "",
     warehouseName: row.location?.warehouse.name ?? "",
-    sectionName: "",
+    sectionName: row.location?.section?.name ?? "",
   }
 }
 
@@ -181,6 +182,7 @@ function normalizeImportEntry(entry: {
     location: {
       id: string
       locationCode: string
+      section: { name: string } | null
       warehouse: { id: string; name: string }
     } | null
   }>
@@ -284,6 +286,7 @@ export async function POST(request: Request) {
                 select: {
                   id: true,
                   locationCode: true,
+                  section: { select: { name: true } },
                   warehouse: { select: { id: true, name: true } },
                 },
               },
