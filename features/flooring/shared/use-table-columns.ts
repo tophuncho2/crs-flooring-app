@@ -13,6 +13,9 @@ type PreferencePayload = {
   columnOrderKeys: string[]
 }
 
+const tablePreferencesCache = new Map<string, PreferencePayload>()
+const tablePreferencesInflight = new Map<string, Promise<PreferencePayload>>()
+
 export function useTableColumns<TColumn extends TableColumnDefinition>({
   tableKey,
   columns,
@@ -27,6 +30,10 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   )
   const columnKeySignature = useMemo(() => columnKeys.join("|"), [columnKeys])
   const defaultHiddenSignature = useMemo(() => defaultHiddenKeys.join("|"), [defaultHiddenKeys])
+  const preferenceCacheKey = useMemo(
+    () => `${tableKey}::${columnKeySignature}::${defaultHiddenSignature}`,
+    [columnKeySignature, defaultHiddenSignature, tableKey],
+  )
   const columnKeysRef = useRef(columnKeys)
   const defaultHiddenKeysRef = useRef(defaultHiddenKeys)
 
@@ -42,33 +49,65 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   useEffect(() => {
     let isCancelled = false
 
+    function normalizePayload(payload: Partial<PreferencePayload>) {
+      const nextOrder = Array.isArray(payload.columnOrderKeys)
+        ? payload.columnOrderKeys.filter((key) => columnKeysRef.current.includes(key))
+        : []
+      for (const key of columnKeysRef.current) {
+        if (!nextOrder.includes(key)) nextOrder.push(key)
+      }
+
+      const nextHidden = Array.isArray(payload.hiddenColumnKeys)
+        ? payload.hiddenColumnKeys.filter((key) => columnKeysRef.current.includes(key))
+        : defaultHiddenKeysRef.current
+
+      return {
+        columnOrderKeys: nextOrder,
+        hiddenColumnKeys: nextHidden,
+      }
+    }
+
+    const cachedPreferences = tablePreferencesCache.get(preferenceCacheKey)
+    if (cachedPreferences) {
+      setColumnOrderKeys(cachedPreferences.columnOrderKeys)
+      setHiddenColumnKeys(cachedPreferences.hiddenColumnKeys)
+      setIsLoadingPreferences(false)
+      setPreferenceError("")
+      hasLoadedRef.current = true
+      return
+    }
+
     async function loadPreferences() {
       try {
         setIsLoadingPreferences(true)
         setPreferenceError("")
 
-        const response = await fetch(`/api/account/table-preferences/${tableKey}`, { cache: "no-store" })
-        const payload = (await response.json().catch(() => ({}))) as Partial<PreferencePayload> & { error?: string }
+        let request = tablePreferencesInflight.get(preferenceCacheKey)
+        if (!request) {
+          request = fetch(`/api/account/table-preferences/${tableKey}`, { cache: "no-store" })
+            .then(async (response) => {
+              const payload = (await response.json().catch(() => ({}))) as Partial<PreferencePayload> & { error?: string }
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "Failed to load table preferences")
+              if (!response.ok) {
+                throw new Error(payload.error ?? "Failed to load table preferences")
+              }
+
+              const normalizedPayload = normalizePayload(payload)
+              tablePreferencesCache.set(preferenceCacheKey, normalizedPayload)
+              return normalizedPayload
+            })
+            .finally(() => {
+              tablePreferencesInflight.delete(preferenceCacheKey)
+            })
+          tablePreferencesInflight.set(preferenceCacheKey, request)
         }
+
+        const payload = await request
 
         if (isCancelled) return
 
-        const nextOrder = Array.isArray(payload.columnOrderKeys)
-          ? payload.columnOrderKeys.filter((key) => columnKeysRef.current.includes(key))
-          : []
-        for (const key of columnKeysRef.current) {
-          if (!nextOrder.includes(key)) nextOrder.push(key)
-        }
-
-        const nextHidden = Array.isArray(payload.hiddenColumnKeys)
-          ? payload.hiddenColumnKeys.filter((key) => columnKeysRef.current.includes(key))
-          : defaultHiddenKeysRef.current
-
-        setColumnOrderKeys(nextOrder)
-        setHiddenColumnKeys(nextHidden)
+        setColumnOrderKeys(payload.columnOrderKeys)
+        setHiddenColumnKeys(payload.hiddenColumnKeys)
       } catch (error) {
         if (isCancelled) return
         setColumnOrderKeys(columnKeysRef.current)
@@ -87,7 +126,7 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     return () => {
       isCancelled = true
     }
-  }, [columnKeySignature, defaultHiddenSignature, tableKey])
+  }, [preferenceCacheKey, tableKey])
 
   async function persistPreferences(nextHiddenKeys: string[], nextOrderKeys: string[]) {
     try {
@@ -105,6 +144,10 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
       if (!response.ok) {
         throw new Error(payload.error ?? "Failed to save table preferences")
       }
+      tablePreferencesCache.set(preferenceCacheKey, {
+        hiddenColumnKeys: nextHiddenKeys,
+        columnOrderKeys: nextOrderKeys,
+      })
     } catch (error) {
       setPreferenceError(error instanceof Error ? error.message : "Failed to save table preferences")
     }
