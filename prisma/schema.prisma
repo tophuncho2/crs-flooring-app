@@ -103,9 +103,9 @@ model FlooringManagementCompany {
 }
 
 model Property {
-  id                  String                    @id @default(uuid())
-  managementCompanyId String
-  managementCompany   FlooringManagementCompany @relation(fields: [managementCompanyId], references: [id], onDelete: Restrict)
+  id                  String                     @id @default(uuid())
+  managementCompanyId String?
+  managementCompany   FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
   name                String
   streetAddress       String?
   city                String?
@@ -113,8 +113,8 @@ model Property {
   postalCode          String?
   phone               String?
   email               String?
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
   workOrders          FlooringWorkOrder[]
   templates           FlooringTemplate[]
 

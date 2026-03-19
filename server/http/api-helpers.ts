@@ -21,6 +21,28 @@ export function parseOptionalString(value: unknown): string | null {
   return trimmed === "" ? null : trimmed
 }
 
+export function parseOptionalStateAbbreviation(value: unknown, field: string): string | null {
+  const parsed = parseOptionalString(value)
+  if (parsed === null) {
+    return null
+  }
+
+  const normalized = parsed.replace(/[^a-zA-Z]/g, "").slice(0, 2).toUpperCase()
+  if (normalized.length === 0) {
+    return null
+  }
+
+  if (normalized.length > 2) {
+    throw { message: `${field} must be a 2-letter state abbreviation`, field } as AppError
+  }
+
+  if (parsed.replace(/[^a-zA-Z]/g, "").length > 2) {
+    throw { message: `${field} must be a 2-letter state abbreviation`, field } as AppError
+  }
+
+  return normalized
+}
+
 export function parseBoolean(value: unknown, field: string): boolean {
   if (typeof value !== "boolean") {
     throw { message: `${field} must be true or false`, field } as AppError

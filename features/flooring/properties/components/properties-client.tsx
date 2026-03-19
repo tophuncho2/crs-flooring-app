@@ -421,7 +421,7 @@ export default function PropertiesClient({
           zip: selectedPropertyDraft.zip,
           phone: selectedPropertyDraft.phone,
           email: selectedPropertyDraft.email,
-          ...(selectedPropertyDraft.managementCompanyId ? { managementCompanyId: selectedPropertyDraft.managementCompanyId } : {}),
+          managementCompanyId: selectedPropertyDraft.managementCompanyId || null,
         }),
       })
 
