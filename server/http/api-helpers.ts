@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client"
+import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
 
 export type AppError = {
   message: string
@@ -93,6 +94,11 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     return { status: 400, message: (error as AppError).message }
   }
 
+  const connectivityIssue = getPrismaConnectivityIssue(error)
+  if (connectivityIssue) {
+    return { status: 503, message: connectivityIssue.message }
+  }
+
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === "P2002") {
       return { status: 409, message: "Unique constraint violation" }
@@ -104,11 +110,6 @@ export function normalizePrismaError(error: unknown): { status: number; message:
       return { status: 400, message: "A required database field was missing" }
     }
   }
-
-  if (error instanceof Prisma.PrismaClientInitializationError) {
-    return { status: 503, message: "Database is unavailable right now. Please try again." }
-  }
-
   if (error instanceof Prisma.PrismaClientRustPanicError) {
     return { status: 500, message: "Database client crashed while processing the request" }
   }

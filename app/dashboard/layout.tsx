@@ -1,7 +1,9 @@
 import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
+import DashboardErrorState from "./dashboard-error-state"
 import HeaderControls from "./header-controls"
 import { prisma } from "@/server/db/prisma"
+import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
 import { hasSystemAccess } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
 import { getUserToolContext } from "@/server/platform/tool-subscriptions"
@@ -13,10 +15,27 @@ export default async function DashboardLayout({
   children: ReactNode
 }) {
   const sessionUser = await requireSessionUser()
-  const user = await prisma.user.findUnique({
-    where: { id: sessionUser.id },
-    select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
-  })
+  let user
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: sessionUser.id },
+      select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
+    })
+  } catch (error) {
+    const connectivityIssue = getPrismaConnectivityIssue(error)
+    if (connectivityIssue) {
+      return (
+        <DashboardErrorState
+          title={connectivityIssue.title}
+          message={connectivityIssue.message}
+          detail={connectivityIssue.detail}
+          errorCode={connectivityIssue.code}
+        />
+      )
+    }
+
+    throw error
+  }
 
   if (!user) {
     redirect("/login")

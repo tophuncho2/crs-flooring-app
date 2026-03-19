@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma"
+import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
@@ -141,7 +142,7 @@ function buildPadLabel(product: {
   return buildProductName(product).replace("Flooring Product", "Pad Product")
 }
 
-export async function getTemplatesPageData() {
+async function loadTemplatesPageData() {
   const [initialTemplates, properties, warehouses, padProducts, products, services, units] = await Promise.all([
     listTemplates(),
     prisma.property.findMany({
@@ -201,4 +202,8 @@ export async function getTemplatesPageData() {
     serviceOptions: services,
     unitOptions: units,
   }
+}
+
+export async function getTemplatesPageData() {
+  return withPrismaConnectivityHandling(loadTemplatesPageData)
 }

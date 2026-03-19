@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma"
+import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
@@ -167,7 +168,7 @@ export async function listWorkOrderServiceItems(workOrderId: string) {
   return items.map(normalizeWorkOrderServiceItem)
 }
 
-export async function getWorkOrdersPageData() {
+async function loadWorkOrdersPageData() {
   const [workOrders, properties, warehouses, products, templates, services, units] = await Promise.all([
     listWorkOrders(),
     prisma.property.findMany({
@@ -235,4 +236,8 @@ export async function getWorkOrdersPageData() {
     serviceOptions: services,
     unitOptions: units,
   }
+}
+
+export async function getWorkOrdersPageData() {
+  return withPrismaConnectivityHandling(loadWorkOrdersPageData)
 }

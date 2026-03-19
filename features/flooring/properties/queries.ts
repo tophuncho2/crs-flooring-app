@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma"
+import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeProperty, normalizePropertyOption } from "./services"
@@ -88,7 +89,7 @@ function buildPadLabel(product: {
   return buildProductName(product).replace("Flooring Product", "Pad Product")
 }
 
-export async function getPropertiesPageData() {
+async function loadPropertiesPageData() {
   const [initialProperties, managementOptions, propertyOptions, warehouses, padProducts, products, services, units] = await Promise.all([
     listProperties(),
     prisma.flooringManagementCompany.findMany({
@@ -153,4 +154,8 @@ export async function getPropertiesPageData() {
     serviceOptions: services,
     unitOptions: units,
   }
+}
+
+export async function getPropertiesPageData() {
+  return withPrismaConnectivityHandling(loadPropertiesPageData)
 }
