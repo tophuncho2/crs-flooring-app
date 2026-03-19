@@ -13,8 +13,8 @@ import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
-import { useTableColumns } from "../../shared/use-table-columns"
-import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import {
@@ -167,49 +167,35 @@ export default function WorkOrdersClient({
     filteredRows: filteredWorkOrders,
     sortedRows: sortedWorkOrders,
     groupedRowTree: groupedWorkOrders,
-  } = useTableControls({
-    rows: workOrders,
-    searchFields: [{ key: "property", getValue: (row) => row.propertyName }],
-    sortField: (row) => row.workOrderNumber,
-    groupFields: [
-      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
-      { key: "property", label: "Property", getValue: (row) => row.propertyName },
-      { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date") },
-      { key: "status", label: "Status", getValue: (row) => workOrderStatusText(row) },
-    ],
-    defaultGroupKeys: ["warehouse"],
-  })
-  const workOrderColumns = useMemo(
-    () => [
-      { key: "wo", label: "WO" },
-      { key: "edit", label: "Edit" },
-      { key: "open", label: "Open" },
-      { key: "status", label: "Status" },
-      { key: "warehouse", label: "Warehouse" },
-      { key: "property", label: "Property" },
-      { key: "address", label: "Address" },
-      { key: "customAddress", label: "Custom Address" },
-      { key: "date", label: "Date" },
-      { key: "unit", label: "Unit" },
-      { key: "unitType", label: "Unit Type" },
-      { key: "vacancy", label: "Vacancy" },
-      { key: "instructions", label: "Instructions" },
-      { key: "notes", label: "Notes" },
-      { key: "items", label: "Items" },
-      { key: "delete", label: "Delete" },
-    ],
-    [],
-  )
-  const {
     allColumns: orderedWorkOrderColumns,
     visibleColumns: visibleWorkOrderColumns,
     hiddenColumnKeys: hiddenWorkOrderColumnKeys,
     toggleColumnVisibility: toggleWorkOrderColumnVisibility,
     moveColumn: moveWorkOrderColumn,
     setColumnOrder: setWorkOrderColumnOrder,
-  } = useTableColumns({
+  } = useConfiguredTableState({
+    rows: workOrders,
     tableKey: "work-orders-main",
-    columns: workOrderColumns,
+    fields: [
+      { key: "wo", label: "WO", getValue: (row) => row.workOrderNumber },
+      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
+      { key: "status", label: "Status", getValue: (row) => workOrderStatusText(row) },
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
+      { key: "property", label: "Property", getValue: (row) => row.propertyName },
+      { key: "address", label: "Address", getValue: (row) => buildWorkOrderAddress(propertyLookup.get(row.propertyId), row.customAddress) },
+      { key: "customAddress", label: "Custom Address", getValue: (row) => row.customAddress },
+      { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date") },
+      { key: "unit", label: "Unit", getValue: (row) => row.unitNumber },
+      { key: "unitType", label: "Unit Type", getValue: (row) => row.unitType },
+      { key: "vacancy", label: "Vacancy", getValue: (row) => row.vacancy ?? "" },
+      { key: "instructions", label: "Instructions", getValue: (row) => row.instructions },
+      { key: "notes", label: "Notes", getValue: (row) => row.notes },
+      { key: "items", label: "Items", getValue: (row) => String(row.itemsCount ?? 0) },
+      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+    ],
+    sortField: (row) => row.workOrderNumber,
+    defaultGroupKeys: ["warehouse"],
   })
 
   function setNewDraftField(field: keyof DraftWorkOrder, value: string) {

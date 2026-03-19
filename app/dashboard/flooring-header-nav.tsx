@@ -2,21 +2,18 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import type { FlooringNavItem } from "./flooring-navigation"
 import { isActiveFlooringItem, isFlooringRoute } from "./flooring-navigation"
 
 type FlooringHeaderNavProps = {
   canUseTools: boolean
-  tools: UserToolRow[]
-  visibleSlugs: string[]
   orderedItems: FlooringNavItem[]
+  visibleSlugSet: Set<string>
+  canOpenItem: (item: FlooringNavItem) => boolean
 }
 
-export default function FlooringHeaderNav({ canUseTools, tools, visibleSlugs, orderedItems }: FlooringHeaderNavProps) {
+export default function FlooringHeaderNav({ canUseTools, orderedItems, visibleSlugSet, canOpenItem }: FlooringHeaderNavProps) {
   const pathname = usePathname()
-  const unlockedToolSet = new Set(tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
-  const visibleSlugSet = new Set(visibleSlugs)
 
   if (!pathname || !isFlooringRoute(pathname) || !canUseTools) {
     return null
@@ -25,7 +22,7 @@ export default function FlooringHeaderNav({ canUseTools, tools, visibleSlugs, or
   return (
     <nav className="flex w-fit max-w-full items-center gap-2 overflow-x-auto rounded-full border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-2 shadow-[0_0_12px_rgba(59,130,246,0.12)]">
       {orderedItems.filter((item) => visibleSlugSet.has(item.slug)).map((item) => {
-        const canOpen = canUseTools || (item.requiredTool ? unlockedToolSet.has(item.requiredTool) : false)
+        const canOpen = canOpenItem(item)
         const isActive = isActiveFlooringItem(pathname, item.href)
 
         if (isActive) {

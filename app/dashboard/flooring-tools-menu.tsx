@@ -20,15 +20,14 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
 import { Boxes, GripVertical } from "lucide-react"
-import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import type { FlooringNavItem } from "./flooring-navigation"
-import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean
-  tools: UserToolRow[]
   visibleSlugs: string[]
   orderedItems: FlooringNavItem[]
+  hotkeyByPath: Map<string, string>
+  canOpenItem: (item: FlooringNavItem) => boolean
   onVisibleSlugsChange: (slugs: string[]) => void
   onOrderedSlugsChange: (slugs: string[]) => void
 }
@@ -115,9 +114,10 @@ function SortableFlooringNavRow({
 
 export default function FlooringToolsMenu({
   canUseTools,
-  tools,
   visibleSlugs,
   orderedItems,
+  hotkeyByPath,
+  canOpenItem,
   onVisibleSlugsChange,
   onOrderedSlugsChange,
 }: FlooringToolsMenuProps) {
@@ -125,10 +125,6 @@ export default function FlooringToolsMenu({
   const [saveError, setSaveError] = useState("")
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const unlockedToolSet = new Set(tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug))
-  const hotkeyByPath = new Map(
-    FLOORING_HOTKEYS.filter((hotkey) => hotkey.path).map((hotkey) => [hotkey.path!, hotkey.combination]),
-  )
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -263,7 +259,7 @@ export default function FlooringToolsMenu({
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedItems.map((item) => item.slug)} strategy={verticalListSortingStrategy}>
               {orderedItems.map((tool) => {
-                const canOpen = canUseTools || (tool.requiredTool ? unlockedToolSet.has(tool.requiredTool) : false)
+                const canOpen = canOpenItem(tool)
                 const isVisible = visibleSlugs.includes(tool.slug)
                 const hotkeyLabel = hotkeyByPath.get(tool.href)
 

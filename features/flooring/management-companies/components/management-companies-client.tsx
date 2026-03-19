@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { ManagementCompanyRecordPanel } from "./management-company-record-panel"
 import { PropertyRecordPanel } from "../../properties/components/property-record-panel"
@@ -12,8 +12,7 @@ import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
-import { useTableColumns } from "../../shared/use-table-columns"
-import { useTableControls } from "../../shared/use-table-controls"
+import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
 type ManagementCompanyRow = {
@@ -207,41 +206,30 @@ export default function ManagementCompaniesClient({
     setIsAscendingSort,
     filteredRows: filteredCompanies,
     sortedRows: sortedCompanies,
-  } = useTableControls({
-    rows: companies,
-    searchFields: [
-      { key: "name", getValue: (row) => row.name },
-      { key: "properties", getValue: (row) => row.properties.map((property) => property.name).join(" ") },
-    ],
-    sortField: (row) => row.name,
-  })
-  const companyColumns = useMemo(
-    () => [
-      { key: "edit", label: "Edit" },
-      { key: "open", label: "Open" },
-      { key: "company", label: "Company" },
-      { key: "street", label: "Street" },
-      { key: "city", label: "City" },
-      { key: "state", label: "State" },
-      { key: "zip", label: "Zip" },
-      { key: "phone", label: "Phone" },
-      { key: "email", label: "Email" },
-      { key: "fullAddress", label: "Full Address" },
-      { key: "properties", label: "Properties" },
-      { key: "delete", label: "Delete" },
-    ],
-    [],
-  )
-  const {
     allColumns: orderedCompanyColumns,
     visibleColumns: visibleCompanyColumns,
     hiddenColumnKeys: hiddenCompanyColumnKeys,
     toggleColumnVisibility: toggleCompanyColumnVisibility,
     moveColumn: moveCompanyColumn,
     setColumnOrder: setCompanyColumnOrder,
-  } = useTableColumns({
+  } = useConfiguredTableState({
+    rows: companies,
     tableKey: "management-companies-main",
-    columns: companyColumns,
+    fields: [
+      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
+      { key: "company", label: "Company", getValue: (row) => row.name },
+      { key: "street", label: "Street", getValue: (row) => row.streetAddress },
+      { key: "city", label: "City", getValue: (row) => row.city },
+      { key: "state", label: "State", getValue: (row) => row.state },
+      { key: "zip", label: "Zip", getValue: (row) => row.zip },
+      { key: "phone", label: "Phone", getValue: (row) => row.phone },
+      { key: "email", label: "Email", getValue: (row) => row.email },
+      { key: "fullAddress", label: "Full Address", getValue: (row) => row.fullAddress },
+      { key: "properties", label: "Properties", getValue: (row) => row.properties.map((property) => property.name).join(" ") },
+      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+    ],
+    sortField: (row) => row.name,
   })
 
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {

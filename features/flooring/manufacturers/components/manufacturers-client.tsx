@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { BasicRecordPanel } from "../../shared/basic-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
@@ -9,9 +9,10 @@ import { RecordFormField as FormField } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
-import { useTableColumns } from "../../shared/use-table-columns"
+import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
 
 type ManufacturerRow = {
   id: string
@@ -66,8 +67,6 @@ function toForm(manufacturer: ManufacturerRow): ManufacturerForm {
 
 export default function ManufacturersClient({ initialManufacturers }: { initialManufacturers: ManufacturerRow[] }) {
   const [manufacturers, setManufacturers] = useState(initialManufacturers)
-  const [selectedManufacturer, setSelectedManufacturer] = useState<ManufacturerRow | null>(null)
-  const [manufacturerForm, setManufacturerForm] = useState<ManufacturerForm>(emptyForm)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSavingId, setIsSavingId] = useState<string | null>(null)
@@ -76,6 +75,17 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
   const [error, setError] = useState("")
   const [panelMessage, setPanelMessage] = useState("")
   const [panelError, setPanelError] = useState("")
+  const {
+    activeRecord: selectedManufacturer,
+    draft: manufacturerForm,
+    setDraft: setManufacturerForm,
+    openRecord: openManufacturerRecord,
+    closeRecord: closeManufacturerRecord,
+  } = useUrlRecordEditor({
+    rows: manufacturers,
+    paramKey: "manufacturer",
+    createDraft: toForm,
+  })
 
   const {
     searchQuery,
@@ -92,48 +102,27 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     filteredRows,
     sortedRows,
     groupedRowTree,
-  } = useTableControls({
-    rows: manufacturers,
-    searchFields: [
-      { key: "companyName", getValue: (row) => row.companyName },
-      { key: "agentName", getValue: (row) => row.agentName },
-      { key: "website", getValue: (row) => row.website },
-      { key: "phone", getValue: (row) => row.phone },
-      { key: "email", getValue: (row) => row.email },
-    ],
-    sortField: (row) => row.companyName || row.agentName,
-    groupFields: [
-      { key: "companyName", label: "Company", getValue: (row) => row.companyName || "No company" },
-      { key: "agent", label: "Agent", getValue: (row) => row.agentName || "No agent" },
-      { key: "products", label: "Products", getValue: (row) => String(row.productsCount) },
-    ],
-    defaultGroupKeys: ["companyName"],
-  })
-
-  const columns = useMemo(
-    () => [
-      { key: "edit", label: "Edit" },
-      { key: "companyName", label: "Company Name" },
-      { key: "agentName", label: "Agent Name" },
-      { key: "website", label: "Website" },
-      { key: "phone", label: "Phone" },
-      { key: "email", label: "Email" },
-      { key: "products", label: "Products" },
-      { key: "delete", label: "Delete" },
-    ],
-    [],
-  )
-
-  const {
     allColumns,
     visibleColumns,
     hiddenColumnKeys,
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
-  } = useTableColumns({
+  } = useConfiguredTableState({
+    rows: manufacturers,
     tableKey: "manufacturers-main",
-    columns,
+    fields: [
+      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      { key: "companyName", label: "Company Name", getValue: (row) => row.companyName || "No company" },
+      { key: "agentName", label: "Agent Name", getValue: (row) => row.agentName || "No agent" },
+      { key: "website", label: "Website", getValue: (row) => row.website },
+      { key: "phone", label: "Phone", getValue: (row) => row.phone },
+      { key: "email", label: "Email", getValue: (row) => row.email },
+      { key: "products", label: "Products", getValue: (row) => String(row.productsCount) },
+      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+    ],
+    sortField: (row) => row.companyName || row.agentName,
+    defaultGroupKeys: ["companyName"],
   })
 
   function clearNotices() {
@@ -151,8 +140,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
 
   function openEdit(manufacturer: ManufacturerRow) {
     clearNotices()
-    setSelectedManufacturer(manufacturer)
-    setManufacturerForm(toForm(manufacturer))
+    openManufacturerRecord(manufacturer)
   }
 
   async function persistManufacturer(input: ManufacturerForm, id?: string) {
@@ -171,14 +159,14 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
 
   async function createManufacturer() {
     clearNotices()
-    const validationError = validateManufacturerForm(manufacturerForm)
+    const validationError = validateManufacturerForm(manufacturerForm ?? emptyForm)
     if (validationError) {
       setError(validationError)
       return
     }
     setIsSavingNew(true)
     try {
-      const payload = await persistManufacturer(manufacturerForm)
+      const payload = await persistManufacturer(manufacturerForm ?? emptyForm)
       setManufacturers((prev) => [payload.manufacturer, ...prev].sort((a, b) => a.companyName.localeCompare(b.companyName)))
       setManufacturerForm(emptyForm)
       setIsCreateOpen(false)
@@ -191,7 +179,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
   }
 
   async function savePanelManufacturer() {
-    if (!selectedManufacturer) return
+    if (!selectedManufacturer || !manufacturerForm) return
     clearNotices()
     const validationError = validateManufacturerForm(manufacturerForm)
     if (validationError) {
@@ -206,8 +194,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
           .map((manufacturer) => (manufacturer.id === selectedManufacturer.id ? payload.manufacturer : manufacturer))
           .sort((a, b) => a.companyName.localeCompare(b.companyName)),
       )
-      setSelectedManufacturer(payload.manufacturer)
-      setManufacturerForm(toForm(payload.manufacturer))
+      openManufacturerRecord(payload.manufacturer)
       setPanelMessage("Manufacturer updated")
     } catch (saveError) {
       setPanelError(saveError instanceof Error ? saveError.message : "Failed to save manufacturer")
@@ -223,7 +210,9 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     try {
       await apiJson<{ success: boolean }>(`/api/flooring/manufacturers/${manufacturer.id}`, { method: "DELETE" })
       setManufacturers((prev) => prev.filter((item) => item.id !== manufacturer.id))
-      setSelectedManufacturer((current) => (current?.id === manufacturer.id ? null : current))
+      if (selectedManufacturer?.id === manufacturer.id) {
+        closeManufacturerRecord()
+      }
       setMessage("Manufacturer deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete manufacturer")
@@ -321,7 +310,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
         </TableShell>
       </div>
 
-      {isCreateOpen ? (
+      {isCreateOpen && manufacturerForm ? (
         <BasicRecordPanel
           title="New Manufacturer"
           onClose={() => !isSavingNew && setIsCreateOpen(false)}
@@ -336,28 +325,28 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
         >
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label="Company Name">
-              <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: manufacturerForm.companyName.trim() === "" })}`} required />
+              <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), companyName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: manufacturerForm.companyName.trim() === "" })}`} required />
             </FormField>
             <FormField label="Agent Name">
-              <input value={manufacturerForm.agentName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, agentName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.agentName.trim() === "" })}`} />
+              <input value={manufacturerForm.agentName} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), agentName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.agentName.trim() === "" })}`} />
             </FormField>
             <FormField label="Website">
-              <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Phone">
-              <input value={manufacturerForm.phone} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, phone: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={manufacturerForm.phone} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), phone: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Email">
-              <input value={manufacturerForm.email} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, email: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={manufacturerForm.email} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), email: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
           </div>
         </BasicRecordPanel>
       ) : null}
 
-      {selectedManufacturer ? (
+      {selectedManufacturer && manufacturerForm ? (
         <BasicRecordPanel
           title={`Manufacturer ${selectedManufacturer.companyName || selectedManufacturer.agentName}`}
-          onClose={() => setSelectedManufacturer(null)}
+          onClose={closeManufacturerRecord}
           message={panelMessage}
           error={panelError}
           saveLabel="Save Manufacturer"
@@ -370,19 +359,19 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
         >
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label="Company Name">
-              <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, companyName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: manufacturerForm.companyName.trim() === "" })}`} required />
+              <input value={manufacturerForm.companyName} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), companyName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: manufacturerForm.companyName.trim() === "" })}`} required />
             </FormField>
             <FormField label="Agent Name">
-              <input value={manufacturerForm.agentName} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, agentName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.agentName.trim() === "" })}`} />
+              <input value={manufacturerForm.agentName} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), agentName: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: manufacturerForm.agentName.trim() === "" })}`} />
             </FormField>
             <FormField label="Website">
-              <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={manufacturerForm.website} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), website: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Phone">
-              <input value={manufacturerForm.phone} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, phone: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={manufacturerForm.phone} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), phone: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
             <FormField label="Email">
-              <input value={manufacturerForm.email} onChange={(event) => setManufacturerForm((prev) => ({ ...prev, email: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+              <input value={manufacturerForm.email} onChange={(event) => setManufacturerForm((prev) => ({ ...(prev ?? emptyForm), email: event.target.value }))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </FormField>
           </div>
         </BasicRecordPanel>

@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { BasicRecordPanel } from "../../shared/basic-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
@@ -9,9 +9,10 @@ import { RecordFormField as FormField } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
-import { useTableColumns } from "../../shared/use-table-columns"
+import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
 
 type CategoryRow = {
   id: string
@@ -103,8 +104,6 @@ export default function CategoriesClient({
   unitOfMeasureOptions: UnitOfMeasureOption[]
 }) {
   const [categories, setCategories] = useState(initialCategories)
-  const [selectedCategory, setSelectedCategory] = useState<CategoryRow | null>(null)
-  const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [isSavingId, setIsSavingId] = useState<string | null>(null)
@@ -113,6 +112,17 @@ export default function CategoriesClient({
   const [error, setError] = useState("")
   const [panelMessage, setPanelMessage] = useState("")
   const [panelError, setPanelError] = useState("")
+  const {
+    activeRecord: selectedCategory,
+    draft: categoryForm,
+    setDraft: setCategoryForm,
+    openRecord: openCategoryRecord,
+    closeRecord: closeCategoryRecord,
+  } = useUrlRecordEditor({
+    rows: categories,
+    paramKey: "category",
+    createDraft: toCategoryForm,
+  })
 
   const {
     searchQuery,
@@ -129,51 +139,28 @@ export default function CategoriesClient({
     filteredRows,
     sortedRows,
     groupedRowTree,
-  } = useTableControls({
-    rows: categories,
-    searchFields: [
-      { key: "name", getValue: (row) => row.name },
-      { key: "sendUnit", getValue: (row) => row.sendUnit },
-      { key: "stockUnit", getValue: (row) => row.stockUnit },
-      { key: "coverageAvailableUnit", getValue: (row) => row.coverageAvailableUnit },
-      { key: "itemCoverageUnit", getValue: (row) => row.itemCoverageUnit },
-      { key: "serviceUnit", getValue: (row) => row.serviceUnit },
-    ],
-    sortField: (row) => row.name,
-    groupFields: [
-      { key: "name", label: "Category", getValue: (row) => row.name },
-      { key: "sendUnit", label: "Send Unit", getValue: (row) => row.sendUnit },
-      { key: "stockUnit", label: "Stock Unit", getValue: (row) => row.stockUnit },
-      { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit },
-    ],
-    defaultGroupKeys: ["sendUnit"],
-  })
-
-  const columns = useMemo(
-    () => [
-      { key: "edit", label: "Edit" },
-      { key: "name", label: "Category" },
-      { key: "sendUnit", label: "Send Unit" },
-      { key: "stockUnit", label: "Stock Unit" },
-      { key: "coverageAvailableUnit", label: "Coverage Available Unit" },
-      { key: "itemCoverageUnit", label: "Item Coverage Unit" },
-      { key: "serviceUnit", label: "Service Unit" },
-      { key: "products", label: "Products" },
-      { key: "delete", label: "Delete" },
-    ],
-    [],
-  )
-
-  const {
     allColumns,
     visibleColumns,
     hiddenColumnKeys,
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
-  } = useTableColumns({
+  } = useConfiguredTableState({
+    rows: categories,
     tableKey: "categories-main",
-    columns,
+    fields: [
+      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      { key: "name", label: "Category", getValue: (row) => row.name },
+      { key: "sendUnit", label: "Send Unit", getValue: (row) => row.sendUnit },
+      { key: "stockUnit", label: "Stock Unit", getValue: (row) => row.stockUnit },
+      { key: "coverageAvailableUnit", label: "Coverage Available Unit", getValue: (row) => row.coverageAvailableUnit },
+      { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row) => row.itemCoverageUnit },
+      { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit },
+      { key: "products", label: "Products", getValue: (row) => String(row.productCount) },
+      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+    ],
+    sortField: (row) => row.name,
+    defaultGroupKeys: ["sendUnit"],
   })
 
   function clearNotices() {
@@ -191,8 +178,7 @@ export default function CategoriesClient({
 
   function openEditCategory(category: CategoryRow) {
     clearNotices()
-    setSelectedCategory(category)
-    setCategoryForm(toCategoryForm(category))
+    openCategoryRecord(category)
   }
 
   async function persistCategory(input: CategoryForm, id?: string) {
@@ -213,7 +199,7 @@ export default function CategoriesClient({
     clearNotices()
     setIsSavingNew(true)
     try {
-      const payload = await persistCategory(categoryForm)
+      const payload = await persistCategory(categoryForm ?? emptyCategoryForm)
       setCategories((prev) => [...prev, payload.category].sort((a, b) => a.name.localeCompare(b.name)))
       setIsCreateOpen(false)
       setCategoryForm(emptyCategoryForm)
@@ -226,7 +212,7 @@ export default function CategoriesClient({
   }
 
   async function savePanelCategory() {
-    if (!selectedCategory) return
+    if (!selectedCategory || !categoryForm) return
     clearNotices()
     setIsSavingId(selectedCategory.id)
     try {
@@ -234,8 +220,7 @@ export default function CategoriesClient({
       setCategories((prev) =>
         prev.map((category) => (category.id === selectedCategory.id ? payload.category : category)).sort((a, b) => a.name.localeCompare(b.name)),
       )
-      setSelectedCategory(payload.category)
-      setCategoryForm(toCategoryForm(payload.category))
+      openCategoryRecord(payload.category)
       setPanelMessage("Category updated")
     } catch (saveError) {
       setPanelError(saveError instanceof Error ? saveError.message : "Failed to save category")
@@ -251,7 +236,9 @@ export default function CategoriesClient({
     try {
       await apiJson<{ success: boolean }>(`/api/flooring/categories/${category.id}`, { method: "DELETE" })
       setCategories((prev) => prev.filter((item) => item.id !== category.id))
-      setSelectedCategory((current) => (current?.id === category.id ? null : current))
+      if (selectedCategory?.id === category.id) {
+        closeCategoryRecord()
+      }
       setMessage("Category deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete category")
@@ -350,7 +337,7 @@ export default function CategoriesClient({
         </TableShell>
       </div>
 
-      {isCreateOpen ? (
+      {isCreateOpen && categoryForm ? (
         <BasicRecordPanel
           title="New Category"
           onClose={() => !isSavingNew && setIsCreateOpen(false)}
@@ -365,31 +352,31 @@ export default function CategoriesClient({
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Name">
-              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: categoryForm.name.trim() === "" })}`} />
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: categoryForm.name.trim() === "" })}`} />
             </FormField>
             <FormField label="Send Unit">
-              <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), sendUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Stock Unit">
-              <UnitSelect value={categoryForm.stockUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, stockUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.stockUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), stockUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Coverage Available Unit">
-              <UnitSelect value={categoryForm.coverageAvailableUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, coverageAvailableUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.coverageAvailableUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), coverageAvailableUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Item Coverage Unit">
-              <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Service Unit">
-              <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, serviceUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), serviceUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
           </div>
         </BasicRecordPanel>
       ) : null}
 
-      {selectedCategory ? (
+      {selectedCategory && categoryForm ? (
         <BasicRecordPanel
           title={`Category ${selectedCategory.name}`}
-          onClose={() => setSelectedCategory(null)}
+          onClose={closeCategoryRecord}
           message={panelMessage}
           error={panelError}
           saveLabel="Save Category"
@@ -402,22 +389,22 @@ export default function CategoriesClient({
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <FormField label="Category Name">
-              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: categoryForm.name.trim() === "" })}`} />
+              <input value={categoryForm.name} onChange={(event) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), name: event.target.value }))} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: categoryForm.name.trim() === "" })}`} />
             </FormField>
             <FormField label="Send Unit">
-              <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, sendUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.sendUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), sendUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Stock Unit">
-              <UnitSelect value={categoryForm.stockUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, stockUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.stockUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), stockUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Coverage Available Unit">
-              <UnitSelect value={categoryForm.coverageAvailableUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, coverageAvailableUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.coverageAvailableUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), coverageAvailableUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Item Coverage Unit">
-              <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.itemCoverageUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), itemCoverageUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
             <FormField label="Service Unit">
-              <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...prev, serviceUnitId: value }))} options={unitOfMeasureOptions} />
+              <UnitSelect value={categoryForm.serviceUnitId} onChange={(value) => setCategoryForm((prev) => ({ ...(prev ?? emptyCategoryForm), serviceUnitId: value }))} options={unitOfMeasureOptions} />
             </FormField>
           </div>
         </BasicRecordPanel>

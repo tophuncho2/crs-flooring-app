@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { TemplateRecordPanel } from "./template-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
@@ -12,8 +12,7 @@ import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHead
 import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
-import { useTableColumns } from "../../shared/use-table-columns"
-import { useTableControls } from "../../shared/use-table-controls"
+import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
 type TemplateRow = {
@@ -112,38 +111,30 @@ export default function TemplatesClient({
     filteredRows: filteredTemplates,
     sortedRows: sortedTemplates,
     groupedRows: groupedTemplates,
-  } = useTableControls({
-    rows: templates,
-    searchFields: [{ key: "propertyName", getValue: (row) => row.propertyName }],
-    sortField: (row) => `${row.propertyName} ${row.templateTag}`,
-    groupFields: [{ key: "propertyName", label: "Property", getValue: (row) => row.propertyName }],
-    defaultGrouped: true,
-  })
-  const templateColumns = useMemo(
-    () => [
-      { key: "edit", label: "Edit" },
-      { key: "open", label: "Open" },
-      { key: "templateNumber", label: "Template #" },
-      { key: "templateTag", label: "Template Tag" },
-      { key: "property", label: "Property" },
-      { key: "warehouse", label: "Warehouse" },
-      { key: "instructions", label: "Instructions" },
-      { key: "padType", label: "Pad Type" },
-      { key: "templateNotes", label: "Template Notes" },
-      { key: "delete", label: "Delete" },
-    ],
-    [],
-  )
-  const {
     allColumns: orderedTemplateColumns,
     visibleColumns: visibleTemplateColumns,
     hiddenColumnKeys: hiddenTemplateColumnKeys,
     toggleColumnVisibility: toggleTemplateColumnVisibility,
     moveColumn: moveTemplateColumn,
     setColumnOrder: setTemplateColumnOrder,
-  } = useTableColumns({
+  } = useConfiguredTableState({
+    rows: templates,
     tableKey: "templates-main",
-    columns: templateColumns,
+    fields: [
+      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
+      { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber },
+      { key: "templateTag", label: "Template Tag", getValue: (row) => row.templateTag },
+      { key: "property", label: "Property", getValue: (row) => row.propertyName },
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
+      { key: "instructions", label: "Instructions", getValue: (row) => row.instructions },
+      { key: "padType", label: "Pad Type", getValue: (row) => row.padTypeLabel },
+      { key: "templateNotes", label: "Template Notes", getValue: (row) => row.templateNotes },
+      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+    ],
+    sortField: (row) => `${row.propertyName} ${row.templateTag}`,
+    defaultGrouped: true,
+    defaultGroupKey: "property",
   })
 
   function setNewDraftField(field: keyof DraftTemplate, value: string) {

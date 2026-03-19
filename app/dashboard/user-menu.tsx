@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
-import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
+import { useFlooringHotkeys } from "./use-flooring-hotkeys"
 
 type Theme = "light" | "dark"
 
@@ -15,12 +14,6 @@ type HotkeyRow = {
   action: string
   createdAt: string
   updatedAt: string
-}
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tagName = target.tagName.toLowerCase()
-  return tagName === "input" || tagName === "textarea" || tagName === "select" || target.isContentEditable
 }
 
 function KeyVisualization({ combination }: { combination: string }) {
@@ -61,7 +54,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   const [savingHotkeyId, setSavingHotkeyId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
 
   const firstLetter = email.charAt(0).toUpperCase()
   const isBuilder = role === "BUILDER"
@@ -110,6 +102,13 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   async function handleLogout() {
     await signOut({ callbackUrl: "/login" })
   }
+
+  useFlooringHotkeys({
+    enabled: !isMobile,
+    hasBuilderPanelAccess,
+    canOpenTool,
+    onToggleTheme: () => toggleTheme(false),
+  })
 
   const fetchHotkeys = useCallback(async () => {
     setHotkeysLoading(true)
@@ -199,42 +198,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
       setSavingHotkeyId(null)
     }
   }
-
-  useEffect(() => {
-    if (isMobile) return
-
-    async function onKeyDown(event: KeyboardEvent) {
-      if (isEditableTarget(event.target)) return
-      if (!event.shiftKey) return
-
-      const matchedHotkey = FLOORING_HOTKEYS.find((hotkey) => hotkey.code === event.code)
-      if (!matchedHotkey) return
-
-      event.preventDefault()
-
-      if (matchedHotkey.toggleTheme) {
-        toggleTheme(false)
-        return
-      }
-
-      if (!matchedHotkey.path) return
-
-      if (matchedHotkey.code === "KeyQ") {
-        if (hasBuilderPanelAccess) {
-          router.push(matchedHotkey.path)
-        }
-        return
-      }
-
-      const requiredTool: ToolSlug = matchedHotkey.code === "KeyP" ? "products" : "warehouse"
-      if (canOpenTool(requiredTool)) {
-        router.push(matchedHotkey.path)
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canOpenTool, hasBuilderPanelAccess, isMobile, router])
 
   return (
     <>

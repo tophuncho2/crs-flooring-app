@@ -1,11 +1,10 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useState } from "react"
 import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import FlooringToolsMenu from "./flooring-tools-menu"
 import UserMenu from "./user-menu"
-import { orderFlooringNavItems } from "./flooring-navigation"
+import { useFlooringNavigationState } from "./use-flooring-navigation-state"
 
 const FlooringHeaderNav = dynamic(() => import("./flooring-header-nav"), {
   ssr: false,
@@ -29,30 +28,39 @@ export default function HeaderControls({
   initialVisibleFlooringSlugs,
   initialOrderedFlooringSlugs,
 }: HeaderControlsProps) {
-  const [visibleFlooringSlugs, setVisibleFlooringSlugs] = useState(initialVisibleFlooringSlugs)
-  const [orderedFlooringSlugs, setOrderedFlooringSlugs] = useState(initialOrderedFlooringSlugs)
-  const orderedItems = orderFlooringNavItems(orderedFlooringSlugs)
+  const navigation = useFlooringNavigationState({
+    canUseTools,
+    tools,
+    initialVisibleSlugs: initialVisibleFlooringSlugs,
+    initialOrderedSlugs: initialOrderedFlooringSlugs,
+  })
 
   return (
     <div className="flex w-full max-w-full items-center justify-between gap-2 sm:gap-4">
       <div className="min-w-0 flex-1">
-        <FlooringHeaderNav canUseTools={canUseTools} tools={tools} visibleSlugs={visibleFlooringSlugs} orderedItems={orderedItems} />
+        <FlooringHeaderNav
+          canUseTools={canUseTools}
+          orderedItems={navigation.orderedItems}
+          visibleSlugSet={navigation.visibleSlugSet}
+          canOpenItem={navigation.canOpenItem}
+        />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <>
           <FlooringToolsMenu
             canUseTools={canUseTools}
-            tools={tools}
-            visibleSlugs={visibleFlooringSlugs}
-            orderedItems={orderedItems}
-            onVisibleSlugsChange={setVisibleFlooringSlugs}
-            onOrderedSlugsChange={setOrderedFlooringSlugs}
+            visibleSlugs={navigation.visibleSlugs}
+            orderedItems={navigation.orderedItems}
+            hotkeyByPath={navigation.hotkeyByPath}
+            canOpenItem={navigation.canOpenItem}
+            onVisibleSlugsChange={navigation.setVisibleSlugs}
+            onOrderedSlugsChange={navigation.setOrderedSlugs}
           />
           <UserMenu
             email={email}
             role={role}
             canUseTools={canUseTools}
-            unlockedToolSlugs={tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug)}
+            unlockedToolSlugs={navigation.unlockedToolSlugs}
           />
         </>
       </div>
