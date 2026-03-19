@@ -25,7 +25,7 @@ export default function DashboardErrorState({
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="/dashboard/flooring/work-orders"
+            href="/dashboard/flooring/inventory"
             className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
           >
             Retry Dashboard

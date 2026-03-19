@@ -22,7 +22,7 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
     })
 
     if (result?.ok) {
-      window.location.href = "/dashboard/flooring/work-orders"
+      window.location.href = "/dashboard/flooring/inventory"
     } else {
       setError("Invalid credentials or account not approved")
     }

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { type ReactNode } from "react"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
@@ -127,6 +128,8 @@ export function TablePaginationControls({
   hasNextPage,
   onPreviousPage,
   onNextPage,
+  previousPageHref,
+  nextPageHref,
   className,
 }: {
   page: number
@@ -135,11 +138,13 @@ export function TablePaginationControls({
   totalItems: number
   hasPreviousPage: boolean
   hasNextPage: boolean
-  onPreviousPage: () => void
-  onNextPage: () => void
+  onPreviousPage?: () => void
+  onNextPage?: () => void
+  previousPageHref?: string
+  nextPageHref?: string
   className?: string
 }) {
-  if (totalItems <= pageSize) {
+  if (totalItems <= pageSize && totalPages <= 1) {
     return null
   }
 
@@ -152,25 +157,55 @@ export function TablePaginationControls({
         Showing {start}-{end} of {totalItems}
       </span>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onPreviousPage}
-          disabled={!hasPreviousPage}
-          className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Previous
-        </button>
+        {previousPageHref ? (
+          hasPreviousPage ? (
+            <Link
+              href={previousPageHref}
+              className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold opacity-50">
+              Previous
+            </span>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={onPreviousPage}
+            disabled={!hasPreviousPage}
+            className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+        )}
         <span className="text-xs text-[var(--foreground)]/60">
           Page {page} of {totalPages}
         </span>
-        <button
-          type="button"
-          onClick={onNextPage}
-          disabled={!hasNextPage}
-          className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Next
-        </button>
+        {nextPageHref ? (
+          hasNextPage ? (
+            <Link
+              href={nextPageHref}
+              className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold opacity-50">
+              Next
+            </span>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={onNextPage}
+            disabled={!hasNextPage}
+            className="rounded border border-[var(--panel-border)] px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        )}
       </div>
     </div>
   )

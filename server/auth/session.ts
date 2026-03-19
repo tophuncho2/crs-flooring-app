@@ -41,7 +41,7 @@ export async function requireToolAccess(slug: ToolSlug): Promise<SessionUser> {
   const user = await requireSessionUser()
 
   if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug }))) {
-    redirect("/dashboard/flooring/work-orders")
+    redirect("/dashboard/flooring/inventory")
   }
 
   return user

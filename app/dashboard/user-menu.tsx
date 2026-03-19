@@ -236,16 +236,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               {email}
             </div>
 
-            <button
-              onClick={() => {
-                router.push("/dashboard/flooring/work-orders")
-                setOpen(false)
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-            >
-              Dashboard
-            </button>
-
             {canOpenTool("warehouse") && (
               <button
                 onClick={() => {
@@ -255,30 +245,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                 className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
               >
                 Warehouse
-              </button>
-            )}
-
-            {canOpenTool("products") && (
-              <button
-                onClick={() => {
-                  router.push("/dashboard/flooring/categories")
-                  setOpen(false)
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-              >
-                Categories
-              </button>
-            )}
-
-            {hasBuilderPanelAccess && (
-              <button
-                onClick={() => {
-                  router.push("/dashboard/flooring/unit-of-measures")
-                  setOpen(false)
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-              >
-                Unit Of Measures
               </button>
             )}
 

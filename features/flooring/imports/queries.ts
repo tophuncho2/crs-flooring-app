@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createServerPagination } from "@/server/pagination"
 
 function buildProductLabel(product: {
   name: string
@@ -31,7 +32,9 @@ export async function listImportLocationOptions() {
   }))
 }
 
-async function loadImportsPageData() {
+async function loadImportsPageData(page: number) {
+  const totalItems = await prisma.flooringImportEntry.count()
+  const pagination = createServerPagination({ page, totalItems })
   const [entries, products, warehouses, locations] = await Promise.all([
     prisma.flooringImportEntry.findMany({
       include: {
@@ -61,6 +64,8 @@ async function loadImportsPageData() {
         },
       },
       orderBy: [{ createdAt: "desc" }, { importNumber: "desc" }],
+      skip: pagination.skip,
+      take: pagination.take,
     }),
     prisma.flooringProduct.findMany({
       include: {
@@ -76,6 +81,12 @@ async function loadImportsPageData() {
   ])
 
   return {
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalItems: pagination.totalItems,
+      totalPages: pagination.totalPages,
+    },
     initialImports: entries.map((entry) => ({
       id: entry.id,
       importNumber: entry.importNumber,
@@ -122,6 +133,6 @@ async function loadImportsPageData() {
   }
 }
 
-export async function getImportsPageData() {
-  return withPrismaConnectivityHandling(loadImportsPageData)
+export async function getImportsPageData(page: number) {
+  return withPrismaConnectivityHandling(() => loadImportsPageData(page))
 }

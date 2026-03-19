@@ -1,4 +1,4 @@
 import { redirect } from "next/navigation"
 export default async function Dashboard() {
-  redirect("/dashboard/flooring/work-orders")
+  redirect("/dashboard/flooring/inventory")
 }

@@ -88,6 +88,15 @@ type DraftWorkOrder = {
   workOrderImageUrl: string
 }
 
+type ServerPaginationState = {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+  previousPageHref: string
+  nextPageHref: string
+}
+
 function statusLabel(value: string) {
   return getWorkOrderStatusLabel({ status: value, isComplete: false })
 }
@@ -126,6 +135,7 @@ export default function WorkOrdersClient({
   templateOptions,
   serviceOptions,
   unitOptions,
+  pagination,
 }: {
   initialWorkOrders: WorkOrderRow[]
   propertyOptions: PropertyOption[]
@@ -134,6 +144,7 @@ export default function WorkOrdersClient({
   templateOptions: TemplateOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  pagination?: ServerPaginationState
 }) {
   const [workOrders, setWorkOrders] = useState<WorkOrderRow[]>(initialWorkOrders)
   const [newDraft, setNewDraft] = useState<DraftWorkOrder>(defaultDraft)
@@ -455,14 +466,16 @@ export default function WorkOrdersClient({
               </tbody>
           </TableShell>
           <TablePaginationControls
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredWorkOrders.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
+            page={pagination?.page ?? page}
+            totalPages={pagination?.totalPages ?? totalPages}
+            pageSize={pagination?.pageSize ?? pageSize}
+            totalItems={pagination?.totalItems ?? filteredWorkOrders.length}
+            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+            onPreviousPage={pagination ? undefined : goToPreviousPage}
+            onNextPage={pagination ? undefined : goToNextPage}
+            previousPageHref={pagination?.previousPageHref}
+            nextPageHref={pagination?.nextPageHref}
           />
         </section>
       </div>

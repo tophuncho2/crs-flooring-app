@@ -1,10 +1,11 @@
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createServerPagination } from "@/server/pagination"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
-export async function listTemplates() {
+export async function listTemplates(pagination?: { skip: number; take: number }) {
   const templates = await prisma.flooringTemplate.findMany({
     include: {
       property: {
@@ -26,7 +27,7 @@ export async function listTemplates() {
       },
     },
     orderBy: { createdAt: "desc" },
-    take: 250,
+    ...(pagination ?? {}),
   })
 
   return templates.map(normalizeTemplate)
@@ -142,9 +143,11 @@ function buildPadLabel(product: {
   return buildProductName(product).replace("Flooring Product", "Pad Product")
 }
 
-async function loadTemplatesPageData() {
+async function loadTemplatesPageData(page: number) {
+  const totalItems = await prisma.flooringTemplate.count()
+  const pagination = createServerPagination({ page, totalItems })
   const [initialTemplates, properties, warehouses, padProducts, products, services, units] = await Promise.all([
-    listTemplates(),
+    listTemplates({ skip: pagination.skip, take: pagination.take }),
     prisma.property.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -187,6 +190,12 @@ async function loadTemplatesPageData() {
   ])
 
   return {
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalItems: pagination.totalItems,
+      totalPages: pagination.totalPages,
+    },
     initialTemplates,
     propertyOptions: properties,
     warehouseOptions: warehouses,
@@ -204,6 +213,6 @@ async function loadTemplatesPageData() {
   }
 }
 
-export async function getTemplatesPageData() {
-  return withPrismaConnectivityHandling(loadTemplatesPageData)
+export async function getTemplatesPageData(page: number) {
+  return withPrismaConnectivityHandling(() => loadTemplatesPageData(page))
 }

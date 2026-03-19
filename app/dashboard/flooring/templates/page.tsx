@@ -1,11 +1,18 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
+import { buildPageHref, parsePageParam } from "@/server/pagination"
 import { getTemplatesPageData } from "@/features/flooring/templates/queries"
 import TemplatesClient from "@/features/flooring/templates/components/templates-client"
 
-export default async function TemplatesPage() {
+export default async function TemplatesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   await requireToolAccess("warehouse")
-  const result = await getTemplatesPageData()
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const page = parsePageParam(resolvedSearchParams?.page)
+  const result = await getTemplatesPageData(page)
 
   if (!result.ok) {
     return (
@@ -29,6 +36,11 @@ export default async function TemplatesPage() {
       productOptions={pageData.productOptions}
       serviceOptions={pageData.serviceOptions}
       unitOptions={pageData.unitOptions}
+      pagination={{
+        ...pageData.pagination,
+        previousPageHref: buildPageHref("/dashboard/flooring/templates", pageData.pagination.page - 1),
+        nextPageHref: buildPageHref("/dashboard/flooring/templates", pageData.pagination.page + 1),
+      }}
     />
   )
 }

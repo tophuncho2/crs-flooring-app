@@ -121,6 +121,15 @@ type DraftProperty = {
   managementCompanyId: string
 }
 
+type ServerPaginationState = {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+  previousPageHref: string
+  nextPageHref: string
+}
+
 const defaultDraft: DraftCompany = {
   name: "",
   streetAddress: "",
@@ -159,6 +168,7 @@ export default function ManagementCompaniesClient({
   productOptions,
   serviceOptions,
   unitOptions,
+  pagination,
 }: {
   initialCompanies: ManagementCompanyRow[]
   propertyOptions: PropertyOption[]
@@ -167,6 +177,7 @@ export default function ManagementCompaniesClient({
   productOptions: ProductOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  pagination?: ServerPaginationState
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
   const [propertySelectOptions, setPropertySelectOptions] = useState<PropertyOption[]>(propertyOptions)
@@ -765,14 +776,16 @@ export default function ManagementCompaniesClient({
             </tbody>
         </TableShell>
         <TablePaginationControls
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={filteredCompanies.length}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
+          page={pagination?.page ?? page}
+          totalPages={pagination?.totalPages ?? totalPages}
+          pageSize={pagination?.pageSize ?? pageSize}
+          totalItems={pagination?.totalItems ?? filteredCompanies.length}
+          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+          onPreviousPage={pagination ? undefined : goToPreviousPage}
+          onNextPage={pagination ? undefined : goToNextPage}
+          previousPageHref={pagination?.previousPageHref}
+          nextPageHref={pagination?.nextPageHref}
         />
 
       </section>

@@ -9,7 +9,7 @@ export default async function UnitOfMeasuresPage() {
   const user = await requireSessionUser()
 
   if (!canAccessBuilderPanel(user.email, user.role)) {
-    redirect("/dashboard/flooring/work-orders")
+    redirect("/dashboard/flooring/inventory")
   }
 
   const unitOfMeasures = await prisma.flooringUnitOfMeasure.findMany({

@@ -7,7 +7,7 @@ export default async function BuilderPage() {
   const user = await requireSessionUser()
 
   if (!canAccessBuilderPanel(user.email, user.role)) {
-    redirect("/dashboard/flooring/work-orders")
+    redirect("/dashboard/flooring/inventory")
   }
 
   return <BuilderUsersPanel />

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createServerPagination } from "@/server/pagination"
 
 function buildProductName(product: {
   name: string
@@ -16,7 +17,9 @@ function toFixedString(value: Prisma.Decimal | number) {
   return numeric.toFixed(2)
 }
 
-async function loadInventoryPageData() {
+async function loadInventoryPageData(page: number) {
+  const totalItems = await prisma.flooringInventory.count()
+  const pagination = createServerPagination({ page, totalItems })
   const inventory = await prisma.flooringInventory.findMany({
     include: {
       product: {
@@ -60,9 +63,17 @@ async function loadInventoryPageData() {
       },
     },
     orderBy: [{ updatedAt: "desc" }, { itemNumber: "asc" }],
+    skip: pagination.skip,
+    take: pagination.take,
   })
 
   return {
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalItems: pagination.totalItems,
+      totalPages: pagination.totalPages,
+    },
     initialInventory: inventory.map((row) => {
       const cutTotal = row.cutLogs.reduce((total, log) => total + Number(log.cut), 0)
       const runningBalance = Number(row.stockCount) - cutTotal
@@ -108,6 +119,6 @@ async function loadInventoryPageData() {
   }
 }
 
-export async function getInventoryPageData() {
-  return withPrismaConnectivityHandling(loadInventoryPageData)
+export async function getInventoryPageData(page: number) {
+  return withPrismaConnectivityHandling(() => loadInventoryPageData(page))
 }

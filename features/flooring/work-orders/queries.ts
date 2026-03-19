@@ -1,10 +1,11 @@
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createServerPagination } from "@/server/pagination"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
-export async function listWorkOrders() {
+export async function listWorkOrders(pagination?: { skip: number; take: number }) {
   const workOrders = await prisma.flooringWorkOrder.findMany({
     include: {
       property: {
@@ -30,7 +31,7 @@ export async function listWorkOrders() {
       },
     },
     orderBy: { createdAt: "desc" },
-    take: 250,
+    ...(pagination ?? {}),
   })
 
   return workOrders.map((workOrder) =>
@@ -168,9 +169,12 @@ export async function listWorkOrderServiceItems(workOrderId: string) {
   return items.map(normalizeWorkOrderServiceItem)
 }
 
-async function loadWorkOrdersPageData() {
+async function loadWorkOrdersPageData(page: number) {
+  const totalItems = await prisma.flooringWorkOrder.count()
+  const pagination = createServerPagination({ page, totalItems })
+
   const [workOrders, properties, warehouses, products, templates, services, units] = await Promise.all([
-    listWorkOrders(),
+    listWorkOrders({ skip: pagination.skip, take: pagination.take }),
     prisma.property.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -213,6 +217,12 @@ async function loadWorkOrdersPageData() {
   ])
 
   return {
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalItems: pagination.totalItems,
+      totalPages: pagination.totalPages,
+    },
     initialWorkOrders: workOrders.map((workOrder) => ({
       ...workOrder,
       itemsCount: workOrder.itemsCount ?? 0,
@@ -238,6 +248,6 @@ async function loadWorkOrdersPageData() {
   }
 }
 
-export async function getWorkOrdersPageData() {
-  return withPrismaConnectivityHandling(loadWorkOrdersPageData)
+export async function getWorkOrdersPageData(page: number) {
+  return withPrismaConnectivityHandling(() => loadWorkOrdersPageData(page))
 }

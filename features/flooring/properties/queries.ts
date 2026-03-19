@@ -1,9 +1,10 @@
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createServerPagination } from "@/server/pagination"
 import { loadTemplatePanelOptions } from "@/features/flooring/shared/template-panel-options"
 import { normalizeProperty, normalizePropertyOption } from "./services"
 
-export async function listProperties() {
+export async function listProperties(pagination?: { skip: number; take: number }) {
   const properties = await prisma.property.findMany({
     orderBy: { name: "asc" },
     select: {
@@ -28,7 +29,7 @@ export async function listProperties() {
         orderBy: { createdAt: "desc" },
       },
     },
-    take: 250,
+    ...(pagination ?? {}),
   })
 
   return properties.map(normalizeProperty)
@@ -80,9 +81,11 @@ export async function getPropertyById(id: string) {
   return normalizeProperty(property)
 }
 
-async function loadPropertiesPageData() {
+async function loadPropertiesPageData(page: number) {
+  const totalItems = await prisma.property.count()
+  const pagination = createServerPagination({ page, totalItems })
   const [initialProperties, managementOptions, templatePanelOptions] = await Promise.all([
-    listProperties(),
+    listProperties({ skip: pagination.skip, take: pagination.take }),
     prisma.flooringManagementCompany.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -91,6 +94,12 @@ async function loadPropertiesPageData() {
   ])
 
   return {
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalItems: pagination.totalItems,
+      totalPages: pagination.totalPages,
+    },
     initialProperties,
     managementOptions,
     propertyOptions: initialProperties.map((property) => ({
@@ -101,6 +110,6 @@ async function loadPropertiesPageData() {
   }
 }
 
-export async function getPropertiesPageData() {
-  return withPrismaConnectivityHandling(loadPropertiesPageData)
+export async function getPropertiesPageData(page: number) {
+  return withPrismaConnectivityHandling(() => loadPropertiesPageData(page))
 }

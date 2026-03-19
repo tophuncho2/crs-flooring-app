@@ -61,6 +61,15 @@ type DraftTemplate = {
   padProductId: string
 }
 
+type ServerPaginationState = {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+  previousPageHref: string
+  nextPageHref: string
+}
+
 const defaultDraft: DraftTemplate = {
   templateTag: "",
   propertyId: "",
@@ -78,6 +87,7 @@ export default function TemplatesClient({
   productOptions,
   serviceOptions,
   unitOptions,
+  pagination,
 }: {
   initialTemplates: TemplateRow[]
   propertyOptions: PropertyOption[]
@@ -86,6 +96,7 @@ export default function TemplatesClient({
   productOptions: ProductOption[]
   serviceOptions: ServiceOption[]
   unitOptions: UnitOption[]
+  pagination?: ServerPaginationState
 }) {
   const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates)
   const [newDraft, setNewDraft] = useState<DraftTemplate>(defaultDraft)
@@ -323,14 +334,16 @@ export default function TemplatesClient({
             </tbody>
         </TableShell>
         <TablePaginationControls
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={filteredTemplates.length}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
+          page={pagination?.page ?? page}
+          totalPages={pagination?.totalPages ?? totalPages}
+          pageSize={pagination?.pageSize ?? pageSize}
+          totalItems={pagination?.totalItems ?? filteredTemplates.length}
+          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+          onPreviousPage={pagination ? undefined : goToPreviousPage}
+          onNextPage={pagination ? undefined : goToNextPage}
+          previousPageHref={pagination?.previousPageHref}
+          nextPageHref={pagination?.nextPageHref}
         />
 
       </section>

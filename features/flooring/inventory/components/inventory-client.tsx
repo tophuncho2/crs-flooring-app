@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { type ReactNode, useMemo, useState } from "react"
 import { X } from "lucide-react"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "../../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell, TablePaginationControls } from "../../shared/table-shell"
 
 type CutLogRow = {
   id: string
@@ -50,6 +50,15 @@ type CutLogDraft = {
   notes: string
 }
 
+type ServerPaginationState = {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+  previousPageHref: string
+  nextPageHref: string
+}
+
 const emptyCutLogDraft: CutLogDraft = {
   quantityTaken: "",
   notes: "",
@@ -91,7 +100,13 @@ function formatImportStatus(value: string) {
   return value === "PENDING" ? "Pending" : "Final"
 }
 
-export default function InventoryClient({ initialInventory }: { initialInventory: InventoryRow[] }) {
+export default function InventoryClient({
+  initialInventory,
+  pagination,
+}: {
+  initialInventory: InventoryRow[]
+  pagination?: ServerPaginationState
+}) {
   const [rows, setRows] = useState(initialInventory)
   const [activeRowId, setActiveRowId] = useState<string | null>(null)
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(emptyCutLogDraft)
@@ -270,6 +285,16 @@ export default function InventoryClient({ initialInventory }: { initialInventory
             </tbody>
           </table>
         </div>
+        <TablePaginationControls
+          page={pagination?.page ?? 1}
+          totalPages={pagination?.totalPages ?? 1}
+          pageSize={pagination?.pageSize ?? rows.length}
+          totalItems={pagination?.totalItems ?? rows.length}
+          hasPreviousPage={pagination ? pagination.page > 1 : false}
+          hasNextPage={pagination ? pagination.page < pagination.totalPages : false}
+          previousPageHref={pagination?.previousPageHref}
+          nextPageHref={pagination?.nextPageHref}
+        />
       </section>
 
       {activeRow ? (
