@@ -187,6 +187,7 @@ describe("TemplatesClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }))
     expect(await screen.findByText("Panel tpl-1")).toBeTruthy()
+    expect(screen.getByText("Template TP-00001")).toBeTruthy()
   })
 
   it("open row opens the template record panel", async () => {
@@ -207,6 +208,7 @@ describe("TemplatesClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Open" }))
     expect(await screen.findByText("Panel tpl-1")).toBeTruthy()
+    expect(screen.getByText("Template TP-00001")).toBeTruthy()
   })
 
   it("table delete requires confirmation before request dispatch", async () => {

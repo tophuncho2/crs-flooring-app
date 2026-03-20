@@ -4,7 +4,7 @@ import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { ManagementCompanyRecordPanel } from "./management-company-record-panel"
 import { PropertyRecordPanel } from "../../properties/components/property-record-panel"
-import { TemplateRecordPanel } from "../../templates/components/template-record-panel"
+import { TemplateRecordModal } from "../../templates/components/template-record-modal"
 import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -18,6 +18,7 @@ import { useServerTableQueryControls } from "../../shared/use-server-table-query
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
 import { FormStatusNotices } from "../../shared/notices"
+import type { TemplatePanelRow } from "../../templates/components/template-record-panel"
 
 type ManagementCompanyRow = {
   id: string
@@ -77,21 +78,7 @@ type PropertyRow = {
   }>
 }
 
-type TemplateRow = {
-  id: string
-  templateNumber: string
-  templateTag: string
-  propertyId: string
-  propertyName: string
-  warehouseId: string
-  warehouseName: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-  padTypeLabel: string
-  createdAt: string
-  updatedAt: string
-}
+type TemplateRow = TemplatePanelRow
 
 type DraftTemplate = {
   templateTag: string
@@ -934,42 +921,57 @@ export default function ManagementCompaniesClient({
                 },
               ]
             : []),
-          ...(activeTemplate
-            ? [
-                {
-                  key: `template-${activeTemplate.id}`,
-                  title: `Template ${activeTemplate.templateTag}`,
-                  onClose: closeTemplate,
-                  content: (
-                    <TemplateRecordPanel
-                      templateId={activeTemplate.id}
-                      initialTemplate={activeTemplate}
-                      propertyOptions={propertySelectOptions}
-                      warehouseOptions={warehouseOptions}
-                      padProductOptions={padProductOptions}
-                      productOptions={productOptions}
-                      serviceOptions={serviceOptions}
-                      unitOptions={unitOptions}
-                      onClose={closeTemplate}
-                      onTemplateSaved={(template, _previousPropertyId, itemsCount) => {
-                        setActiveTemplate(template)
-                        if (selectedProperty?.id === template.propertyId) {
-                          updateSelectedPropertyTemplateSummary(template.id, itemsCount, template)
-                        }
-                      }}
-                      onTemplateDeleted={(templateId) => {
-                        if (selectedProperty) {
-                          updateSelectedPropertyTemplateSummary(templateId, 0)
-                        }
-                        setActiveTemplate(null)
-                      }}
-                    />
-                  ),
-                },
-              ]
-            : []),
         ]}
       />
+
+      {activeTemplate ? (
+        <TemplateRecordModal
+          template={activeTemplate}
+          propertyOptions={propertySelectOptions}
+          warehouseOptions={warehouseOptions}
+          padProductOptions={padProductOptions}
+          productOptions={productOptions}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          onClose={closeTemplate}
+          onTemplateSaved={(template, previousPropertyId, itemsCount) => {
+            setActiveTemplate(template)
+            if (!selectedProperty) {
+              return
+            }
+
+            if (selectedProperty.id === previousPropertyId && previousPropertyId !== template.propertyId) {
+              setSelectedProperty((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      templates: prev.templates.filter((row) => row.id !== template.id),
+                    }
+                  : prev,
+              )
+              return
+            }
+
+            if (selectedProperty.id === template.propertyId) {
+              updateSelectedPropertyTemplateSummary(template.id, itemsCount, template)
+            }
+          }}
+          onTemplateDeleted={(templateId) => {
+            if (selectedProperty) {
+              setSelectedProperty((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      templates: prev.templates.filter((row) => row.id !== templateId),
+                    }
+                  : prev,
+              )
+            }
+            setActiveTemplate(null)
+          }}
+          zIndex={60}
+        />
+      ) : null}
     </div>
   )
 }

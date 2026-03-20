@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
-import { TemplateRecordPanel } from "./template-record-panel"
+import { TemplateRecordModal } from "./template-record-modal"
 import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -12,8 +12,7 @@ import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { confirmRecordDelete } from "../../shared/record-panel-footer"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
-import { RecordLineSummary } from "../../shared/record-line-summary"
+import { usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -116,10 +115,6 @@ export default function TemplatesClient({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [activeTemplateSummary, setActiveTemplateSummary] = useState<{ materialItems: Array<{ quantity: string; unitPrice: string }>; serviceItems: Array<{ quantity: string; unitPrice: string }> }>({
-    materialItems: [],
-    serviceItems: [],
-  })
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = usePrimaryRecordPanel("template")
@@ -211,7 +206,6 @@ export default function TemplatesClient({
   }
 
   function closeTemplate() {
-    setActiveTemplateSummary({ materialItems: [], serviceItems: [] })
     closeTemplatePanel()
   }
 
@@ -446,31 +440,22 @@ export default function TemplatesClient({
       ) : null}
 
       {activeTemplate ? (
-        <ModalShell
-          title={`Template ${activeTemplate.templateNumber}`}
+        <TemplateRecordModal
+          template={activeTemplate}
+          propertyOptions={propertyOptions}
+          warehouseOptions={warehouseOptions}
+          padProductOptions={padProductOptions}
+          productOptions={productOptions}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
           onClose={closeTemplate}
-          sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
-          headerMeta={<RecordLineSummary materialItems={activeTemplateSummary.materialItems} serviceItems={activeTemplateSummary.serviceItems} variant="header" />}
-        >
-          <TemplateRecordPanel
-            templateId={activeTemplate.id}
-            initialTemplate={activeTemplate}
-            propertyOptions={propertyOptions}
-            warehouseOptions={warehouseOptions}
-            padProductOptions={padProductOptions}
-            productOptions={productOptions}
-            serviceOptions={serviceOptions}
-            unitOptions={unitOptions}
-            onClose={closeTemplate}
-            onSummaryChange={setActiveTemplateSummary}
-            onTemplateSaved={(template) => {
-              setTemplates((prev) => prev.map((row) => (row.id === template.id ? template : row)))
-            }}
-            onTemplateDeleted={(templateId) => {
-              setTemplates((prev) => prev.filter((row) => row.id !== templateId))
-            }}
-          />
-        </ModalShell>
+          onTemplateSaved={(template) => {
+            setTemplates((prev) => prev.map((row) => (row.id === template.id ? template : row)))
+          }}
+          onTemplateDeleted={(templateId) => {
+            setTemplates((prev) => prev.filter((row) => row.id !== templateId))
+          }}
+        />
       ) : null}
     </div>
   )

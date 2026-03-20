@@ -3,12 +3,11 @@
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { PropertyRecordPanel } from "./property-record-panel"
-import { TemplateRecordPanel } from "../../templates/components/template-record-panel"
+import { TemplateRecordModal } from "../../templates/components/template-record-modal"
 import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
-import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
@@ -18,6 +17,7 @@ import { useServerTableQueryControls } from "../../shared/use-server-table-query
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
 import { FormStatusNotices } from "../../shared/notices"
+import type { TemplatePanelRow } from "../../templates/components/template-record-panel"
 
 type ManagementCompanyOption = {
   id: string
@@ -80,21 +80,7 @@ type DraftProperty = {
   managementCompanyId: string
 }
 
-type TemplateRow = {
-  id: string
-  templateNumber: string
-  templateTag: string
-  propertyId: string
-  propertyName: string
-  warehouseId: string
-  warehouseName: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-  padTypeLabel: string
-  createdAt: string
-  updatedAt: string
-}
+type TemplateRow = TemplatePanelRow
 
 type ServerPaginationState = {
   page: number
@@ -675,72 +661,53 @@ export default function PropertiesClient({
         </ModalShell>
       ) : null}
 
-      <RecordPanelStack
-        layers={[
-          ...(selectedProperty
-            ? [
-                {
-                  key: `property-${selectedProperty.id}`,
-                  title: selectedProperty.name,
-                  onClose: closePropertyPanel,
-                  content: (
-                    <PropertyRecordPanel
-                      property={selectedProperty}
-                      mode={selectedPropertyMode}
-                      draft={selectedPropertyDraft}
-                      managementOptions={managementOptions}
-                      message={message}
-                      error={error}
-                      isTemplateCreateOpen={false}
-                      newTemplateDraft={defaultTemplateDraft}
-                      warehouseOptions={warehouseOptions}
-                      padProductOptions={padProductOptions}
-                      loadingTemplate={loadingTemplate}
-                      isSaving={isSavingSelectedProperty}
-                      onDraftChange={(field, value) => setSelectedPropertyDraftField(field, value)}
-                      onSave={() => void saveSelectedProperty()}
-                      onDelete={() => void deleteProperty(selectedProperty.id)}
-                      onClose={closePropertyPanel}
-                      onTemplateDraftChange={() => undefined}
-                      onOpenTemplate={(templateId) => void openTemplate(templateId)}
-                    />
-                  ),
-                },
-              ]
-            : []),
-          ...(activeTemplate
-            ? [
-                {
-                  key: `template-${activeTemplate.id}`,
-                  title: `Template ${activeTemplate.templateTag}`,
-                  onClose: closeTemplate,
-                  content: (
-                    <TemplateRecordPanel
-                      templateId={activeTemplate.id}
-                      initialTemplate={activeTemplate}
-                      propertyOptions={propertyOptions}
-                      warehouseOptions={warehouseOptions}
-                      padProductOptions={padProductOptions}
-                      productOptions={productOptions}
-                      serviceOptions={serviceOptions}
-                      unitOptions={unitOptions}
-                      onClose={closeTemplate}
-                      onTemplateSaved={(template, previousPropertyId, itemsCount) => {
-                        updatePropertyTemplateSummary(previousPropertyId, template.id, () => null)
-                        appendPropertyTemplateSummary(template.propertyId, template, itemsCount)
-                        setActiveTemplate(template)
-                      }}
-                      onTemplateDeleted={(templateId, propertyId) => {
-                        updatePropertyTemplateSummary(propertyId, templateId, () => null)
-                        setActiveTemplate(null)
-                      }}
-                    />
-                  ),
-                },
-              ]
-            : []),
-        ]}
-      />
+      {selectedProperty ? (
+        <ModalShell title={selectedProperty.name} onClose={closePropertyPanel}>
+          <PropertyRecordPanel
+            property={selectedProperty}
+            mode={selectedPropertyMode}
+            draft={selectedPropertyDraft}
+            managementOptions={managementOptions}
+            message={message}
+            error={error}
+            isTemplateCreateOpen={false}
+            newTemplateDraft={defaultTemplateDraft}
+            warehouseOptions={warehouseOptions}
+            padProductOptions={padProductOptions}
+            loadingTemplate={loadingTemplate}
+            isSaving={isSavingSelectedProperty}
+            onDraftChange={(field, value) => setSelectedPropertyDraftField(field, value)}
+            onSave={() => void saveSelectedProperty()}
+            onDelete={() => void deleteProperty(selectedProperty.id)}
+            onClose={closePropertyPanel}
+            onTemplateDraftChange={() => undefined}
+            onOpenTemplate={(templateId) => void openTemplate(templateId)}
+          />
+        </ModalShell>
+      ) : null}
+
+      {activeTemplate ? (
+        <TemplateRecordModal
+          template={activeTemplate}
+          propertyOptions={propertyOptions}
+          warehouseOptions={warehouseOptions}
+          padProductOptions={padProductOptions}
+          productOptions={productOptions}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          onClose={closeTemplate}
+          onTemplateSaved={(template, previousPropertyId, itemsCount) => {
+            updatePropertyTemplateSummary(previousPropertyId, template.id, () => null)
+            appendPropertyTemplateSummary(template.propertyId, template, itemsCount)
+            setActiveTemplate(template)
+          }}
+          onTemplateDeleted={(templateId, propertyId) => {
+            updatePropertyTemplateSummary(propertyId, templateId, () => null)
+            setActiveTemplate(null)
+          }}
+          zIndex={50}
+        />
+      ) : null}
     </div>
   )
 }
