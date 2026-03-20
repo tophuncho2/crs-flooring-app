@@ -11,6 +11,7 @@ import { RecordFormField } from "@/features/flooring/shared/record-form"
 import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
 import { useRecordDetailController } from "@/features/flooring/shared/use-record-detail-controller"
+import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/use-record-notices"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 
 type PropertyOption = {
@@ -131,6 +132,7 @@ export function WorkOrderRecordPanel({
   onWorkOrderSaved,
   onWorkOrderDeleted,
   onSummaryChange,
+  notices,
 }: {
   workOrderId: string
   initialWorkOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary">
@@ -144,6 +146,7 @@ export function WorkOrderRecordPanel({
   onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary"> & { itemsCount: number }) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
+  notices?: RecordNotices
 }) {
   const initialWorkOrderDetail = useMemo<WorkOrderDetail>(
     () => ({
@@ -158,7 +161,8 @@ export function WorkOrderRecordPanel({
   const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>(defaultMaterialDraft)
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>(defaultServiceDraft)
   const [savingWorkOrder, setSavingWorkOrder] = useState(false)
-  const [message, setMessage] = useState("")
+  const localNotices = useRecordNotices()
+  const noticeController = notices ?? localNotices
   const {
     record: workOrder,
     draft,
@@ -212,6 +216,7 @@ export function WorkOrderRecordPanel({
   const onSummaryChangeRef = useRef(onSummaryChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
   const hasMountedRefreshRef = useRef(false)
+  const { message, error: noticeError, showSuccess, showError, setError: setNoticeError } = noticeController
 
   useEffect(() => {
     onSummaryChangeRef.current = onSummaryChange
@@ -266,6 +271,7 @@ export function WorkOrderRecordPanel({
     if (!draft || !workOrder) return
     setSavingWorkOrder(true)
     setError("")
+    setNoticeError("")
 
     try {
       await requestJson<{ workOrder: Omit<WorkOrderDetail, "items" | "serviceItems"> }>(`/api/flooring/work-orders/${workOrder.id}`, {
@@ -274,9 +280,11 @@ export function WorkOrderRecordPanel({
         body: JSON.stringify(draft),
       })
       await refreshWorkOrderDetail()
-      setMessage("Work order saved")
+      showSuccess("Work order saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save work order")
+      const message = saveError instanceof Error ? saveError.message : "Failed to save work order"
+      setError(message)
+      showError(message)
     } finally {
       setSavingWorkOrder(false)
     }
@@ -285,87 +293,108 @@ export function WorkOrderRecordPanel({
   async function deleteWorkOrder() {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await requestJson(`/api/flooring/work-orders/${workOrder.id}`, { method: "DELETE" })
       clearRecordCache()
       onWorkOrderDeleted?.(workOrder.id)
       onClose()
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete work order")
+      const message = deleteError instanceof Error ? deleteError.message : "Failed to delete work order"
+      setError(message)
+      showError(message)
     }
   }
 
   async function addMaterialItem() {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await materialCollection.createItem(materialDraft)
       setMaterialDraft(defaultMaterialDraft)
       await refreshWorkOrderDetail()
-      setMessage("Material item added")
+      showSuccess("Material item added")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to add material item")
+      const message = saveError instanceof Error ? saveError.message : "Failed to add material item"
+      setError(message)
+      showError(message)
     }
   }
 
   async function saveMaterialItem(item: EditableMaterialItem) {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await materialCollection.updateItem(item.id, item)
       await refreshWorkOrderDetail()
-      setMessage("Material item saved")
+      showSuccess("Material item saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save material item")
+      const message = saveError instanceof Error ? saveError.message : "Failed to save material item"
+      setError(message)
+      showError(message)
     }
   }
 
   async function deleteMaterialItem(itemId: string) {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await materialCollection.deleteItem(itemId)
       await refreshWorkOrderDetail()
-      setMessage("Material item deleted")
+      showSuccess("Material item deleted")
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete material item")
+      const message = deleteError instanceof Error ? deleteError.message : "Failed to delete material item"
+      setError(message)
+      showError(message)
     }
   }
 
   async function addServiceItem() {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await serviceCollection.createItem(serviceDraft)
       setServiceDraft(defaultServiceDraft)
       await refreshWorkOrderDetail()
-      setMessage("Service item added")
+      showSuccess("Service item added")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to add service item")
+      const message = saveError instanceof Error ? saveError.message : "Failed to add service item"
+      setError(message)
+      showError(message)
     }
   }
 
   async function saveServiceItem(item: EditableServiceItem) {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await serviceCollection.updateItem(item.id, item)
       await refreshWorkOrderDetail()
-      setMessage("Service item saved")
+      showSuccess("Service item saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save service item")
+      const message = saveError instanceof Error ? saveError.message : "Failed to save service item"
+      setError(message)
+      showError(message)
     }
   }
 
   async function deleteServiceItem(itemId: string) {
     if (!workOrder) return
     setError("")
+    setNoticeError("")
     try {
       await serviceCollection.deleteItem(itemId)
       await refreshWorkOrderDetail()
-      setMessage("Service item deleted")
+      showSuccess("Service item deleted")
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete service item")
+      const message = deleteError instanceof Error ? deleteError.message : "Failed to delete service item"
+      setError(message)
+      showError(message)
     }
   }
 
@@ -384,7 +413,7 @@ export function WorkOrderRecordPanel({
   return (
     <div className="space-y-6">
       {message ? <SuccessNotice>{message}</SuccessNotice> : null}
-      {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+      {noticeError ? <ErrorNotice>{noticeError}</ErrorNotice> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <RecordFormField label="Property">

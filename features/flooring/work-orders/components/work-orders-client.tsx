@@ -3,7 +3,7 @@
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"
-import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { FormStatusNotices } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
@@ -14,6 +14,7 @@ import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../s
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useRecordNotices } from "../../shared/use-record-notices"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import type { MaterialItemOption } from "../../shared/material-items-editor"
@@ -175,8 +176,8 @@ export default function WorkOrdersClient({
     serviceItems: [],
   })
   const [workOrderRefreshNonce, setWorkOrderRefreshNonce] = useState(0)
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
+  const tableNotices = useRecordNotices()
+  const panelNotices = useRecordNotices()
   const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
 
   const propertyLookup = useMemo(() => new Map(propertyOptions.map((property) => [property.id, property])), [propertyOptions])
@@ -290,13 +291,14 @@ export default function WorkOrdersClient({
   }
 
   async function openWorkOrder(row: WorkOrderRow) {
-    setMessage("")
-    setError("")
+    tableNotices.clearNotices()
+    panelNotices.clearNotices()
     openWorkOrderPanel(row.id)
   }
 
   function closeWorkOrder() {
     setActiveWorkOrderSummary({ materialItems: [], serviceItems: [] })
+    panelNotices.clearNotices()
     closeWorkOrderPanel()
   }
 
@@ -304,8 +306,7 @@ export default function WorkOrdersClient({
     if (!activeWorkOrder || activeWorkOrder.isComplete) return
     if (!window.confirm("Mark this work order complete?")) return
 
-    setError("")
-    setMessage("")
+    panelNotices.clearNotices()
 
     try {
       const payload = await requestJson<{ workOrder?: WorkOrderRow }>(`/api/flooring/work-orders/${activeWorkOrder.id}`, {
@@ -317,9 +318,9 @@ export default function WorkOrdersClient({
 
       setWorkOrders((prev) => prev.map((row) => (row.id === payload.workOrder!.id ? hydrateWorkOrderRow(payload.workOrder!) : row)))
       setWorkOrderRefreshNonce((current) => current + 1)
-      setMessage("Work order marked complete")
+      panelNotices.showSuccess("Work order marked complete")
     } catch (completeError) {
-      setError(completeError instanceof Error ? completeError.message : "Failed to complete work order")
+      panelNotices.showError(completeError instanceof Error ? completeError.message : "Failed to complete work order")
     }
   }
 
@@ -329,8 +330,8 @@ export default function WorkOrdersClient({
 
   async function createWorkOrder() {
     setIsSavingNew(true)
-    setMessage("")
-    setError("")
+    tableNotices.clearNotices()
+    panelNotices.clearNotices()
 
     try {
       if (!newDraft.propertyId) {
@@ -356,9 +357,10 @@ export default function WorkOrdersClient({
       })
       setIsCreateModalOpen(false)
       setNewDraft(defaultDraft)
-      setMessage("Work order created")
+      openWorkOrderPanel(createdWorkOrder.id)
+      panelNotices.showSuccess("Work order created")
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create work order")
+      tableNotices.showError(createError instanceof Error ? createError.message : "Failed to create work order")
     } finally {
       setIsSavingNew(false)
     }
@@ -366,8 +368,8 @@ export default function WorkOrdersClient({
 
   async function createWorkOrderFromTemplate() {
     setIsCreatingFromTemplate(true)
-    setMessage("")
-    setError("")
+    tableNotices.clearNotices()
+    panelNotices.clearNotices()
 
     try {
       if (!syncPropertyId) {
@@ -396,18 +398,17 @@ export default function WorkOrdersClient({
       setWorkOrders((prev) => [createdWorkOrder, ...prev])
       setIsSyncCreateModalOpen(false)
       resetTemplateCreateFlow()
-      setMessage("Work order created from template")
       openWorkOrderPanel(createdWorkOrder.id)
+      panelNotices.showSuccess("Work order created from template")
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create work order from template")
+      tableNotices.showError(createError instanceof Error ? createError.message : "Failed to create work order from template")
     } finally {
       setIsCreatingFromTemplate(false)
     }
   }
 
   async function deleteWorkOrder(id: string) {
-    setError("")
-    setMessage("")
+    tableNotices.clearNotices()
     setDeletingId(id)
 
     try {
@@ -419,9 +420,9 @@ export default function WorkOrdersClient({
       if (activeWorkOrderId === id) {
         closeWorkOrderPanel()
       }
-      setMessage("Work order deleted")
+      tableNotices.showSuccess("Work order deleted")
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete work order")
+      tableNotices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete work order")
     } finally {
       setDeletingId(null)
     }
@@ -527,8 +528,7 @@ export default function WorkOrdersClient({
                 <button
                   type="button"
                   onClick={() => {
-                    setMessage("")
-                    setError("")
+                    tableNotices.clearNotices()
                     setNewDraft(defaultDraft)
                     setIsCreateModalOpen(true)
                   }}
@@ -540,8 +540,7 @@ export default function WorkOrdersClient({
                 <button
                   type="button"
                   onClick={() => {
-                    setMessage("")
-                    setError("")
+                    tableNotices.clearNotices()
                     resetTemplateCreateFlow()
                     setIsSyncCreateModalOpen(true)
                   }}
@@ -553,8 +552,9 @@ export default function WorkOrdersClient({
             </TableActionsSummary>
           </div>
 
-          {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
-          {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
+          {!isCreateModalOpen && !isSyncCreateModalOpen && !activeWorkOrder ? (
+            <FormStatusNotices message={tableNotices.message} error={tableNotices.error} className="mt-3" />
+          ) : null}
 
           <TableShell minWidthClass="min-w-[1280px]">
               <TableHead>
@@ -590,6 +590,7 @@ export default function WorkOrdersClient({
       {isCreateModalOpen && (
         <ModalShell title="New Work Order" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
           <div className="space-y-6">
+            <FormStatusNotices message={tableNotices.message} error={tableNotices.error} />
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <FormField label="Property">
                 <select value={newDraft.propertyId} onChange={(event) => setNewDraftField("propertyId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
@@ -672,6 +673,7 @@ export default function WorkOrdersClient({
       {isSyncCreateModalOpen && (
         <ModalShell title="Create Work Order From Template" onClose={() => !isCreatingFromTemplate && setIsSyncCreateModalOpen(false)}>
           <div className="space-y-6">
+            <FormStatusNotices message={tableNotices.message} error={tableNotices.error} />
             <div className="grid gap-4 lg:grid-cols-[280px,minmax(0,1fr)]">
               <div className="space-y-4">
                 <FormField label="Property">
@@ -773,6 +775,7 @@ export default function WorkOrdersClient({
             />
           }
         >
+          <div className="space-y-6">
           <WorkOrderRecordPanel
             workOrderId={activeWorkOrder.id}
             initialWorkOrder={activeWorkOrder}
@@ -784,6 +787,7 @@ export default function WorkOrdersClient({
             onClose={closeWorkOrder}
             refreshNonce={workOrderRefreshNonce}
             onSummaryChange={setActiveWorkOrderSummary}
+            notices={panelNotices}
             onWorkOrderSaved={(savedWorkOrder) => {
               setWorkOrders((prev) =>
                 prev.map((row) =>
@@ -799,6 +803,7 @@ export default function WorkOrdersClient({
               setWorkOrders((prev) => prev.filter((row) => row.id !== deletedId))
             }}
           />
+          </div>
         </ModalShell>
       ) : null}
     </div>

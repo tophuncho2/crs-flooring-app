@@ -11,7 +11,19 @@ import {
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
 
 vi.mock("@/features/flooring/work-orders/components/work-order-record-panel", () => ({
-  WorkOrderRecordPanel: ({ workOrderId }: { workOrderId: string }) => <div>{`Panel ${workOrderId}`}</div>,
+  WorkOrderRecordPanel: ({
+    workOrderId,
+    notices,
+  }: {
+    workOrderId: string
+    notices?: { message?: string; error?: string }
+  }) => (
+    <div>
+      <div>{`Panel ${workOrderId}`}</div>
+      {notices?.message ? <div>{notices.message}</div> : null}
+      {notices?.error ? <div>{notices.error}</div> : null}
+    </div>
+  ),
 }))
 
 vi.mock("@/features/flooring/shared/primary-record-panel", async () => {
@@ -147,6 +159,45 @@ function workOrderRow(overrides: Partial<WorkOrderRow> = {}): WorkOrderRow {
 describe("WorkOrdersClient", () => {
   beforeEach(() => {
     resetSimpleTableClientMocks()
+    vi.restoreAllMocks()
+  })
+
+  it("creates a blank work order from the form, opens the record panel, and shows the success inside the panel", async () => {
+    const user = userEvent.setup()
+
+    requestJsonMock.mockResolvedValue({
+      workOrder: workOrderRow({
+        id: "wo-3",
+        workOrderNumber: "WO-00003",
+      }),
+    })
+
+    render(
+      <WorkOrdersClient
+        initialWorkOrders={[]}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        templateOptions={[]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: /\+?Work Order/ }))
+    fireEvent.change(screen.getByLabelText("Property"), { target: { value: "prop-1" } })
+    await user.click(screen.getByRole("button", { name: "Create Work Order" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders", expect.objectContaining({
+        method: "POST",
+      }))
+    })
+
+    expect(await screen.findByText("Panel wo-3")).toBeTruthy()
+    expect(screen.getByText("Work order created")).toBeTruthy()
+    expect(screen.queryByRole("heading", { name: "New Work Order" })).toBeNull()
   })
 
   it("creates a work order from the table-level sync flow and opens the created row", async () => {
@@ -270,5 +321,42 @@ describe("WorkOrdersClient", () => {
     expect(within(optionsMenu).queryByRole("button", { name: "Sync Template" })).toBeNull()
     expect(within(optionsMenu).getByRole("button", { name: "Complete" })).toBeTruthy()
     expect(within(optionsMenu).getByRole("button", { name: "Invoice" })).toBeTruthy()
+  })
+
+  it("shows completion success inside the record panel notice area", async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
+
+    requestJsonMock.mockResolvedValue({
+      workOrder: workOrderRow({
+        id: "wo-1",
+        isComplete: true,
+      }),
+    })
+
+    render(
+      <WorkOrdersClient
+        initialWorkOrders={[workOrderRow()]}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        templateOptions={[]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Edit" }))
+    await user.click(screen.getByRole("button", { name: "Complete" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders/wo-1", expect.objectContaining({
+        method: "PATCH",
+      }))
+    })
+
+    expect(await screen.findByText("Work order marked complete")).toBeTruthy()
+    expect(screen.getByText("Panel wo-1")).toBeTruthy()
   })
 })
