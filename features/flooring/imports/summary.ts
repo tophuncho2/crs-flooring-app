@@ -12,7 +12,7 @@ function toNumber(value: string | number) {
 }
 
 export function calculateImportItemTotal(item: ImportSummaryItem) {
-  return toNumber(item.stockCount) * toNumber(item.cost) + toNumber(item.freight)
+  return toNumber(item.cost) + toNumber(item.freight)
 }
 
 export function calculateImportSummary(input: ImportSummaryItem[]) {
