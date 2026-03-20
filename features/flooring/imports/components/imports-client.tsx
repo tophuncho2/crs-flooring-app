@@ -8,6 +8,7 @@ import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
+import { RecordMetricSummary } from "../../shared/record-metric-summary"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
@@ -22,6 +23,7 @@ import {
   getImportStatusFieldClass,
   getTransportTypeFieldClass,
 } from "../contracts"
+import { calculateImportSummary } from "../summary"
 
 type ImportRow = {
   id: string
@@ -230,6 +232,17 @@ export default function ImportsClient({
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
   const activeImport = useMemo(() => imports.find((row) => row.id === activeImportId) ?? null, [imports, activeImportId])
+  const activeImportSummary = useMemo(
+    () =>
+      calculateImportSummary(
+        activeImportDraft.items.map((item) => ({
+          stockCount: item.stockCount,
+          cost: item.cost,
+          freight: item.freight,
+        })),
+      ),
+    [activeImportDraft.items],
+  )
   const {
     searchQuery,
     setSearchQuery,
@@ -658,9 +671,6 @@ export default function ImportsClient({
           <div className="space-y-6">
             {createModalError ? <ErrorNotice>{createModalError}</ErrorNotice> : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <FormField label="Import Number">
-                <input value="Assigned on save" readOnly className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75" />
-              </FormField>
               <FormField label="Import Warehouse">
                 <select
                   value={draft.warehouseId}
@@ -906,6 +916,15 @@ export default function ImportsClient({
           title={`Import IMP-${String(activeImport.importNumber).padStart(4, "0")}`}
           onClose={closeImport}
           sizeClass="max-w-6xl"
+          headerMeta={
+            <RecordMetricSummary
+              variant="header"
+              metrics={[
+                { label: "Total Cost", value: activeImportSummary.totalCostLabel },
+                { label: "Material Items", value: activeImportSummary.materialItemsCount },
+              ]}
+            />
+          }
           headerActions={
             <RecordOptionsMenu
               items={[
@@ -928,13 +947,6 @@ export default function ImportsClient({
             {activeImportError ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{activeImportError}</p> : null}
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <FormField label="Import Number">
-                <input
-                  value={`IMP-${String(activeImport.importNumber).padStart(4, "0")}`}
-                  readOnly
-                  className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
-                />
-              </FormField>
               <FormField label="Order Number">
                 <input
                   value={activeImportDraft.orderNumber}

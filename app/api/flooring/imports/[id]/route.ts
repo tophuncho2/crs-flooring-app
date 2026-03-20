@@ -301,6 +301,22 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
+    const entry = await prisma.flooringImportEntry.findUnique({
+      where: { id },
+      select: { id: true, _count: { select: { inventories: true } } },
+    })
+
+    if (!entry) {
+      return NextResponse.json({ error: "Import not found" }, { status: 404 })
+    }
+
+    if (entry._count.inventories > 0) {
+      return NextResponse.json(
+        { error: "This import has inventory rows and cannot be deleted" },
+        { status: 409 },
+      )
+    }
+
     await prisma.flooringImportEntry.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (error) {

@@ -232,7 +232,7 @@ model FlooringService {
 model FlooringInventory {
   id                  String                 @id @default(uuid())
   importEntryId       String?
-  importEntry         FlooringImportEntry?   @relation(fields: [importEntryId], references: [id], onDelete: SetNull)
+  importEntry         FlooringImportEntry?   @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   productId           String
   product             FlooringProduct        @relation(fields: [productId], references: [id], onDelete: Restrict)
   itemNumber          String
