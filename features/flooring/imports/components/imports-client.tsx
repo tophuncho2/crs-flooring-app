@@ -2,7 +2,7 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
-import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
+import { CollapsibleTableSection, InlineAddRowButton } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
@@ -733,13 +733,7 @@ export default function ImportsClient({
               title="Inventory Table"
               defaultOpen
               actions={
-                <button
-                  type="button"
-                  onClick={addItemRow}
-                  className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-                >
-                  Add Item
-                </button>
+                <InlineAddRowButton label="Add Inventory Item" onClick={addItemRow} />
               }
             >
               <p className="text-sm text-[var(--foreground)]/70">Pending inventory created here will stay out of live inventory until the import is final.</p>
@@ -1015,13 +1009,7 @@ export default function ImportsClient({
               title="Import Inventory Rows"
               defaultOpen
               actions={
-                <button
-                  type="button"
-                  onClick={addActiveImportItemRow}
-                  className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-                >
-                  Add Item
-                </button>
+                <InlineAddRowButton label="Add Import Inventory Item" onClick={addActiveImportItemRow} />
               }
             >
               <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>

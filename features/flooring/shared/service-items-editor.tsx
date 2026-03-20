@@ -1,8 +1,7 @@
 "use client"
 
-import { Plus } from "lucide-react"
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
-import { CollapsibleTableSection, useInlineCreateRow } from "./collapsible-table-section"
+import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "./collapsible-table-section"
 import { formatLineTotal } from "./line-totals"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 
@@ -178,14 +177,7 @@ export function ServiceItemsEditor({
           {!loading && !addRow.isOpen ? (
             <tr className="border-t border-[var(--panel-border)]">
               <td colSpan={colSpan} className="px-3 py-3">
-                <button
-                  type="button"
-                  onClick={addRow.open}
-                  aria-label={`Add ${title}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-                >
-                  <Plus size={16} />
-                </button>
+                <InlineAddRowButton label={`Add ${title}`} onClick={addRow.open} />
               </td>
             </tr>
           ) : null}
