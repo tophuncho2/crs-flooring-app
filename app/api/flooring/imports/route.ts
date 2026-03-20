@@ -41,7 +41,7 @@ function parseOptionalDecimal(value: unknown, field: string, scale: number) {
 type ParsedImportItem = {
   productId: string
   itemNumber: string
-  dyeLot: string
+  dyeLot: string | null
   stockCount: Prisma.Decimal
   cost: Prisma.Decimal | null
   freight: Prisma.Decimal | null
@@ -55,13 +55,11 @@ function parseImportItems(items: unknown[]): ParsedImportItem[] {
 
     const row = item as Record<string, unknown>
     const itemNumber = String(row.itemNumber ?? "").trim()
-    const dyeLot = String(row.dyeLot ?? "").trim()
-
     return [
       {
         productId: parseRequiredString(row.productId, `Item ${index + 1}: product`),
         itemNumber,
-        dyeLot,
+        dyeLot: parseOptionalString(row.dyeLot),
         stockCount: parseDecimal(row.stockCount, `Item ${index + 1}: stockCount`, 2),
         cost: parseOptionalDecimal(row.cost, `Item ${index + 1}: cost`, 2),
         freight: parseOptionalDecimal(row.freight, `Item ${index + 1}: freight`, 2),
@@ -112,7 +110,7 @@ function normalizeImportInventory(row: {
   id: string
   productId: string
   itemNumber: string
-  dyeLot: string
+  dyeLot: string | null
   stockCount: Prisma.Decimal
   cost: Prisma.Decimal | null
   freight: Prisma.Decimal | null
@@ -139,7 +137,7 @@ function normalizeImportInventory(row: {
     productName: buildProductName(row.product),
     stockUnit: row.product.category.stockUnit?.name ?? "",
     itemNumber: row.itemNumber,
-    dyeLot: row.dyeLot,
+    dyeLot: row.dyeLot ?? "",
     stockCount: row.stockCount.toString(),
     cost: row.cost?.toString() ?? "",
     freight: row.freight?.toString() ?? "",
@@ -168,7 +166,7 @@ function normalizeImportEntry(entry: {
     id: string
     productId: string
     itemNumber: string
-    dyeLot: string
+    dyeLot: string | null
     stockCount: Prisma.Decimal
     cost: Prisma.Decimal | null
     freight: Prisma.Decimal | null

@@ -3,6 +3,7 @@
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "./collapsible-table-section"
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
 import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "./table-shell"
+import { CUT_LOGS_TABLE_MIN_WIDTH_CLASS, CUT_LOGS_WITH_ACTIONS_TABLE_MIN_WIDTH_CLASS } from "./table-size-classes"
 
 export type EditableCutLog = {
   id: string
@@ -38,7 +39,7 @@ export function CutLogsEditor({
   onDeleteItem,
   canSubmit = true,
   submitLabel = "Add",
-  emptyMessage = "No cut logs yet.",
+  emptyMessage = "",
   readOnly = false,
 }: {
   title?: string
@@ -70,7 +71,7 @@ export function CutLogsEditor({
 
   return (
     <CollapsibleTableSection title={title}>
-      <ModalTableShell minWidthClass={showDelete ? "min-w-[840px]" : "min-w-[720px]"}>
+      <ModalTableShell minWidthClass={showDelete ? CUT_LOGS_WITH_ACTIONS_TABLE_MIN_WIDTH_CLASS : CUT_LOGS_TABLE_MIN_WIDTH_CLASS}>
         <ModalTableHead>
           <tr>
             <TableHeaderCell>Created</TableHeaderCell>
@@ -142,7 +143,7 @@ export function CutLogsEditor({
               ) : null}
             </tr>
           ) : null}
-          {!loading && items.length === 0 && (readOnly || !addRow.isOpen) ? <TableEmptyRow message={emptyMessage} colSpan={colSpan} /> : null}
+          {!loading && items.length === 0 && emptyMessage && (readOnly || !addRow.isOpen) ? <TableEmptyRow message={emptyMessage} colSpan={colSpan} /> : null}
         </tbody>
       </ModalTableShell>
     </CollapsibleTableSection>

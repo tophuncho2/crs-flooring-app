@@ -10,6 +10,7 @@ import { RecordFormField as FormField, RecordModalShell as ModalShell } from "..
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { RecordMetricSummary } from "../../shared/record-metric-summary"
 import { StatusPill } from "../../shared/status-pill"
+import { IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS } from "../../shared/table-size-classes"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
@@ -734,7 +735,7 @@ export default function ImportsClient({
               defaultOpen
             >
               <p className="text-sm text-[var(--foreground)]/70">Pending inventory created here will stay out of live inventory until the import is final.</p>
-              <ModalTableShell minWidthClass="min-w-[1380px]">
+              <ModalTableShell minWidthClass={IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS}>
                 <ModalTableHead>
                   <tr>
                     <TableHeaderCell>Product</TableHeaderCell>

@@ -185,7 +185,7 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
         productName: buildProductName(row.product),
         stockUnit: row.product.category.stockUnit?.name ?? "",
         itemNumber: row.itemNumber,
-        dyeLot: row.dyeLot,
+        dyeLot: row.dyeLot ?? "",
         locationId: row.locationId ?? "",
         locationCode: row.location?.locationCode ?? "",
         warehouseId: row.location?.warehouse.id ?? "",

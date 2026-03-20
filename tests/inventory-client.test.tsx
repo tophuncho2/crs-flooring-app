@@ -142,8 +142,8 @@ describe("InventoryClient", () => {
       />,
     )
 
-    expect(screen.getAllByRole("button", { name: "Edit" }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole("button", { name: "Open" }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(1)
+    expect(screen.getAllByRole("button", { name: "Open" })).toHaveLength(1)
     expect(screen.getByText("Purchase Order").className).toContain("bg-violet-200")
     expect(screen.getByText("Pending").className).toContain("bg-sky-200")
   })
@@ -165,6 +165,23 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Cut Logs")).toBeTruthy()
     expect(screen.queryByText("Open Cut Logs Table")).toBeNull()
     expect(screen.getByText("Unit turn")).toBeTruthy()
+  })
+
+  it("does not render the no-cut-logs empty-state copy when there are no cut logs", async () => {
+    const user = userEvent.setup()
+
+    render(
+      <InventoryClient
+        initialInventory={[inventoryRow({ cutLogs: [], cutTotal: "0.00", runningBalance: "12.00" })]}
+        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
+        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+      />,
+    )
+
+    await user.click(screen.getAllByRole("button", { name: "Edit" })[0]!)
+
+    expect(screen.queryByText("No cut logs yet for this inventory row.")).toBeNull()
+    expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
   })
 
   it("opens the edit panel, uses shared footer actions, and saves the new location", async () => {

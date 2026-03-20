@@ -21,7 +21,7 @@ function normalizeInventoryRow(row: {
   id: string
   importEntryId: string | null
   itemNumber: string
-  dyeLot: string
+  dyeLot: string | null
   stockCount: { toString(): string }
   cost: { toString(): string } | null
   freight: { toString(): string } | null
@@ -66,7 +66,7 @@ function normalizeInventoryRow(row: {
     productName: buildProductName(row.product),
     stockUnit: row.product.category.stockUnit?.name ?? "",
     itemNumber: row.itemNumber,
-    dyeLot: row.dyeLot,
+    dyeLot: row.dyeLot ?? "",
     locationId: row.locationId ?? "",
     locationCode: row.location?.locationCode ?? "",
     warehouseId: row.location?.warehouse.id ?? "",
@@ -100,7 +100,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         productId: parseRequiredString(body.productId, "productId"),
         locationId,
         itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
-        dyeLot: parseRequiredString(body.dyeLot, "dyeLot"),
+        dyeLot: parseOptionalString(body.dyeLot),
         stockCount: parseDecimal(body.stockCount, "stockCount", 2),
         cost: body.cost === "" || body.cost === null || body.cost === undefined ? null : parseDecimal(body.cost, "cost", 2),
         freight: body.freight === "" || body.freight === null || body.freight === undefined ? null : parseDecimal(body.freight, "freight", 2),

@@ -125,7 +125,7 @@ export function normalizeWorkOrderItem(item: {
   }
   linkedInventory: {
     itemNumber: string
-    dyeLot: string
+    dyeLot: string | null
     location: { locationCode: string; warehouse: { name: string } } | null
   } | null
 }) {

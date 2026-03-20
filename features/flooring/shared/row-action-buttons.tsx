@@ -29,8 +29,8 @@ export function EditRowButton({ children = "Edit", onClick, disabled, className 
   )
 }
 
-export function OpenRowButton(props: SharedButtonProps) {
-  return <EditRowButton {...props} />
+export function OpenRowButton({ children = "Open", ...props }: SharedButtonProps) {
+  return <EditRowButton {...props}>{children}</EditRowButton>
 }
 
 export function SaveRowButton({ children = "Save", onClick, disabled, className }: SharedButtonProps) {

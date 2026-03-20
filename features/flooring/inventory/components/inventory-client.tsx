@@ -642,7 +642,6 @@ export default function InventoryClient({
               items={activeRow.cutLogs}
               unitLabel={activeRow.stockUnit}
               readOnly
-              emptyMessage="No cut logs yet for this inventory row."
             />
           </div>
         </RecordModalShell>
@@ -713,7 +712,6 @@ export default function InventoryClient({
             onDeleteItem={(itemId) => void deleteCutLog(itemId)}
             canSubmit={canSubmitCutLog}
             submitLabel="Add"
-            emptyMessage="No cut logs yet for this inventory row."
           />
           {activeRunningBalance <= 0 ? (
             <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">

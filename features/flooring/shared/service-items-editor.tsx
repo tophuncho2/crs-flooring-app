@@ -4,6 +4,7 @@ import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "./collapsible-table-section"
 import { formatLineTotal } from "./line-totals"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
+import { SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS } from "./table-size-classes"
 
 export type ServiceOption = {
   id: string
@@ -81,7 +82,7 @@ export function ServiceItemsEditor({
 
   return (
     <CollapsibleTableSection title={title} description={description}>
-      <ModalTableShell minWidthClass="min-w-[1200px]">
+      <ModalTableShell minWidthClass={SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS}>
         <ModalTableHead>
           <tr>
             <TableHeaderCell>Service</TableHeaderCell>

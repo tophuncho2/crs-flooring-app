@@ -4,6 +4,7 @@ import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "./collapsible-table-section"
 import { formatLineTotal } from "./line-totals"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
+import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "./table-size-classes"
 
 export type MaterialItemOption = {
   id: string
@@ -69,7 +70,7 @@ export function MaterialItemsEditor({
 
   return (
     <CollapsibleTableSection title={title} description={description}>
-      <ModalTableShell minWidthClass="min-w-[1120px]">
+      <ModalTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
         <ModalTableHead>
           <tr>
             <TableHeaderCell>Product</TableHeaderCell>

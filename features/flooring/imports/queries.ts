@@ -154,7 +154,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
         productName: buildProductLabel(item.product),
         stockUnit: item.product.category.stockUnit?.name ?? "",
         itemNumber: item.itemNumber,
-        dyeLot: item.dyeLot,
+        dyeLot: item.dyeLot ?? "",
         stockCount: item.stockCount.toString(),
         cost: item.cost?.toString() ?? "",
         freight: item.freight?.toString() ?? "",
