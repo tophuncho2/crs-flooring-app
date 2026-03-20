@@ -79,4 +79,65 @@ describe("TableColumnSettings", () => {
     expect((screen.getByRole("button", { name: "Group by Product" }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole("button", { name: "Remove grouping for Warehouse" }) as HTMLButtonElement).disabled).toBe(false)
   })
+
+  it("stays open across a remount when the grouping state changes for the same panel", () => {
+    const { unmount } = render(
+      <TableColumnSettings
+        panelKey="inventory-main"
+        columns={[
+          { key: "warehouse", label: "Warehouse", groupable: true },
+          { key: "status", label: "Status", groupable: true },
+        ]}
+        hiddenColumnKeys={[]}
+        onToggleColumn={vi.fn()}
+        onMoveColumn={vi.fn()}
+        groupedColumnKeys={[]}
+        onToggleGroupedColumn={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }))
+    expect(screen.getByRole("button", { name: "Group by Warehouse" })).toBeTruthy()
+
+    unmount()
+
+    render(
+      <TableColumnSettings
+        panelKey="inventory-main"
+        columns={[
+          { key: "warehouse", label: "Warehouse", groupable: true },
+          { key: "status", label: "Status", groupable: true },
+        ]}
+        hiddenColumnKeys={[]}
+        onToggleColumn={vi.fn()}
+        onMoveColumn={vi.fn()}
+        groupedColumnKeys={["warehouse"]}
+        onToggleGroupedColumn={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole("button", { name: "Remove grouping for Warehouse" })).toBeTruthy()
+  })
+
+  it("closes when clicking outside the panel", () => {
+    render(
+      <TableColumnSettings
+        panelKey="services-main"
+        columns={[
+          { key: "unit", label: "Unit", groupable: true },
+        ]}
+        hiddenColumnKeys={[]}
+        onToggleColumn={vi.fn()}
+        onMoveColumn={vi.fn()}
+        onToggleGroupedColumn={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }))
+    expect(screen.getByRole("button", { name: "Group by Unit" })).toBeTruthy()
+
+    fireEvent.mouseDown(document.body)
+
+    expect(screen.queryByRole("button", { name: "Group by Unit" })).toBeNull()
+  })
 })

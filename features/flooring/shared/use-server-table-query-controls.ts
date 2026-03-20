@@ -132,8 +132,9 @@ export function useServerTableQueryControls({
         return Boolean(key) && keys.indexOf(key) === index && stableGroupOptions.includes(key)
       })
 
-      const nextGroupByKeys = activeGroupByKeys.includes(columnKey)
-        ? activeGroupByKeys.filter((key) => key !== columnKey)
+      const existingIndex = activeGroupByKeys.indexOf(columnKey)
+      const nextGroupByKeys = existingIndex >= 0
+        ? activeGroupByKeys.slice(0, existingIndex)
         : activeGroupByKeys.length >= 3
           ? activeGroupByKeys
           : [...activeGroupByKeys, columnKey]

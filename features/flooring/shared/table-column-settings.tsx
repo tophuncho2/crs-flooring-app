@@ -22,6 +22,7 @@ import { Columns3, GripVertical } from "lucide-react"
 import type { TableColumnDefinition } from "./use-table-columns"
 
 type TableColumnSettingsProps<TColumn extends TableColumnDefinition> = {
+  panelKey?: string
   columns: TColumn[]
   hiddenColumnKeys: string[]
   onToggleColumn: (columnKey: string, isVisible: boolean) => void
@@ -31,6 +32,8 @@ type TableColumnSettingsProps<TColumn extends TableColumnDefinition> = {
   maxGroupFields?: number
   onToggleGroupedColumn?: (columnKey: string) => void
 }
+
+const openPanelState = new Map<string, boolean>()
 
 function SortableColumnRow<TColumn extends TableColumnDefinition>({
   column,
@@ -101,6 +104,7 @@ function SortableColumnRow<TColumn extends TableColumnDefinition>({
 }
 
 export function TableColumnSettings<TColumn extends TableColumnDefinition>({
+  panelKey,
   columns,
   hiddenColumnKeys,
   onToggleColumn,
@@ -110,7 +114,8 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
   maxGroupFields = 3,
   onToggleGroupedColumn,
 }: TableColumnSettingsProps<TColumn>) {
-  const [isOpen, setIsOpen] = useState(false)
+  const resolvedPanelKey = panelKey ?? columns.map((column) => column.key).join("|")
+  const [isOpen, setIsOpen] = useState(() => openPanelState.get(resolvedPanelKey) ?? false)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -120,6 +125,10 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   )
+
+  useEffect(() => {
+    openPanelState.set(resolvedPanelKey, isOpen)
+  }, [isOpen, resolvedPanelKey])
 
   useEffect(() => {
     if (!isOpen) return

@@ -206,7 +206,7 @@ export function useTableControls<T>({
   }
 
   const removeGroupByKeyAtIndex = (index: number) => {
-    const nextGroupByKeys = groupByKeys.filter((_, keyIndex) => keyIndex !== index)
+    const nextGroupByKeys = groupByKeys.slice(0, index)
     setGroupByKeys(nextGroupByKeys)
     setIsGroupingEnabled(nextGroupByKeys.length > 0)
   }
@@ -218,8 +218,9 @@ export function useTableControls<T>({
       return Boolean(key) && keys.indexOf(key) === index && groupFields.some((field) => field.key === key)
     })
 
-    const nextGroupByKeys = activeGroupKeys.includes(nextKey)
-      ? activeGroupKeys.filter((key) => key !== nextKey)
+    const existingIndex = activeGroupKeys.indexOf(nextKey)
+    const nextGroupByKeys = existingIndex >= 0
+      ? activeGroupKeys.slice(0, existingIndex)
       : activeGroupKeys.length >= maxGroupFields
         ? activeGroupKeys
         : [...activeGroupKeys, nextKey]
