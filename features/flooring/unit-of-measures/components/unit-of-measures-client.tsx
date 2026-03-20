@@ -7,6 +7,7 @@ import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
+import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -228,7 +229,7 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-blue-500">Unit Of Measures</h1>
+            <DashboardCardTitle>Unit Of Measures</DashboardCardTitle>
           </div>
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar

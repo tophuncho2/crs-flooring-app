@@ -8,6 +8,7 @@ import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
+import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { RecordMetricSummary } from "../../shared/record-metric-summary"
 import { StatusPill } from "../../shared/status-pill"
 import { IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS } from "../../shared/table-size-classes"
@@ -585,7 +586,7 @@ export default function ImportsClient({
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-blue-500">Imports</h1>
+            <DashboardCardTitle>Imports</DashboardCardTitle>
           </div>
           <TableActionsSummary count={filteredImports.length}>
             <TableControlsBar

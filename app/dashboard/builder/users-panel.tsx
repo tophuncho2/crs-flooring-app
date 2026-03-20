@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { requestJson } from "@/features/flooring/shared/http"
 
 type UserRow = {
@@ -203,7 +204,7 @@ export default function BuilderUsersPanel() {
     <div className="min-h-screen bg-[var(--background)] px-1 pb-6 pt-20 text-[var(--foreground)] sm:px-2 lg:px-3">
       <div className="w-full space-y-4">
         <div className="space-y-1 px-1">
-          <h1 className="text-2xl font-bold text-blue-500">Builder Control Panel</h1>
+          <DashboardCardTitle>Builder Control Panel</DashboardCardTitle>
           <p className="text-sm text-[var(--foreground)]/70">
             Manage users and recent account activity.
           </p>

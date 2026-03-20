@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { prisma } from "@/server/db/prisma"
 import { requireToolAccess } from "@/server/auth/session"
 
@@ -28,7 +29,7 @@ export default async function FlooringCalendarPage() {
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <h1 className="text-2xl font-bold text-blue-500">Calendar</h1>
+        <DashboardCardTitle>Calendar</DashboardCardTitle>
 
         <div className="mt-6 space-y-4">
           {Array.from(grouped.entries()).map(([dateKey, entries]) => (

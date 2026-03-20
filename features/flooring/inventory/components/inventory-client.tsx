@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { BasicRecordPanel } from "@/features/flooring/shared/basic-record-panel"
 import { CutLogsEditor, type CutLogDraft, type EditableCutLog } from "@/features/flooring/shared/cut-logs-editor"
+import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/primary-record-panel"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/record-form"
@@ -563,7 +564,7 @@ export default function InventoryClient({
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-blue-500">Inventory</h1>
+            <DashboardCardTitle>Inventory</DashboardCardTitle>
           </div>
           <TableActionsSummary count={filteredInventory.length}>
             <TableControlsBar

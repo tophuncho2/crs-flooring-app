@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Plus } from "lucide-react"
+import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { DeleteRowButton, OpenRowButton } from "@/features/flooring/shared/row-action-buttons"
 import { RecordModalShell } from "@/features/flooring/shared/record-form"
 import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell, TableHead, TableShell, TableSectionMeta } from "@/features/flooring/shared/table-shell"
@@ -381,7 +382,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
     <div className="min-h-screen bg-[var(--background)] px-1 pb-8 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h1 className="text-2xl font-bold text-blue-500">Warehouse</h1>
+          <DashboardCardTitle>Warehouse</DashboardCardTitle>
           <div className="flex items-center gap-3">
             <span className="text-xs text-[var(--foreground)]/60">{rows.length} total</span>
             <button

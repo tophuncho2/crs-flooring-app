@@ -3,6 +3,7 @@
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { Plus, Save, Upload, X } from "lucide-react"
 import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
+import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -603,7 +604,7 @@ export default function FlooringProductsClient({
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-blue-500">Flooring Products</h1>
+            <DashboardCardTitle>Flooring Products</DashboardCardTitle>
           </div>
           <TableActionsSummary count={filteredProducts.length}>
             <TableControlsBar

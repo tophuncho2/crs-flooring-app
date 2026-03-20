@@ -5,6 +5,7 @@ import { Plus } from "lucide-react"
 import { ManagementCompanyRecordPanel } from "./management-company-record-panel"
 import { PropertyRecordPanel } from "../../properties/components/property-record-panel"
 import { TemplateRecordPanel } from "../../templates/components/template-record-panel"
+import { DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
@@ -710,7 +711,7 @@ export default function ManagementCompaniesClient({
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-blue-500">Management Companies</h1>
+            <DashboardCardTitle>Management Companies</DashboardCardTitle>
           </div>
           <TableActionsSummary count={filteredCompanies.length}>
             <TableControlsBar
