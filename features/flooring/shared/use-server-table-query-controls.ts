@@ -74,16 +74,32 @@ export function useServerTableQueryControls({
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchQueryRef = useRef(searchQuery)
   const stableGroupOptions = useMemo(() => groupOptions.map((option) => option.key), [groupOptions])
+  const getCurrentSearchParams = useCallback(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search)
+    }
+    return new URLSearchParams(searchParams?.toString() ?? "")
+  }, [searchParams])
 
   const replaceUrl = useCallback((nextState: ServerTableQueryState) => {
     if (!pathname) return
     const nextSearchParams = buildNextSearchParams({
-      currentSearchParams: new URLSearchParams(searchParams?.toString() ?? ""),
+      currentSearchParams: getCurrentSearchParams(),
       ...nextState,
     })
     const nextQueryString = nextSearchParams.toString()
     router.replace(nextQueryString ? `${pathname}?${nextQueryString}` : pathname, { scroll: false })
-  }, [pathname, router, searchParams])
+  }, [getCurrentSearchParams, pathname, router])
+
+  const replaceBrowserUrl = useCallback((nextState: ServerTableQueryState) => {
+    if (!pathname || typeof window === "undefined") return
+    const nextSearchParams = buildNextSearchParams({
+      currentSearchParams: getCurrentSearchParams(),
+      ...nextState,
+    })
+    const nextQueryString = nextSearchParams.toString()
+    window.history.replaceState(window.history.state, "", nextQueryString ? `${pathname}?${nextQueryString}` : pathname)
+  }, [getCurrentSearchParams, pathname])
 
   useEffect(() => {
     if (lastSearchQueryRef.current === searchQuery) {
@@ -142,7 +158,7 @@ export function useServerTableQueryControls({
 
       setGroupByKeys(nextGroupByKeys)
       setIsGroupingEnabled(nextIsGroupingEnabled)
-      replaceUrl({
+      replaceBrowserUrl({
         searchQuery,
         isAscendingSort,
         isGroupingEnabled: nextIsGroupingEnabled,

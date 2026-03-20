@@ -14,7 +14,7 @@ export default async function FlooringPropertiesPage({
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    allowedGroupKeys: ["property", "street", "city", "state", "zip", "phone", "email", "fullAddress", "managementCompany"],
+    allowedGroupKeys: ["city", "state", "managementCompany"],
     defaultGroupKeys: ["managementCompany"],
   })
   const result = await getPropertiesPageData(page, tableState)

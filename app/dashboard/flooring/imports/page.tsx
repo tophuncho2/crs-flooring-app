@@ -16,7 +16,7 @@ export default async function FlooringImportsPage({
     searchParams: resolvedSearchParams,
     defaultGrouped: true,
     defaultGroupKeys: ["warehouse"],
-    allowedGroupKeys: ["importNumber", "tag", "transport", "status", "warehouse", "created"],
+    allowedGroupKeys: ["transport", "status", "warehouse"],
   })
   const result = await getImportsPageData(page, tableState)
 

@@ -13,7 +13,7 @@ export default async function FlooringProductsPage({
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    allowedGroupKeys: ["name", "category", "manufacturer", "manufacturerName", "style", "color", "baseColor", "width", "sheetSize", "thickness", "unitWeight", "coveragePerUnit", "notes"],
+    allowedGroupKeys: ["category", "manufacturer", "style", "color", "baseColor"],
     defaultGroupKeys: ["category"],
   })
   const pageData = await getProductsPageData(page, tableState)

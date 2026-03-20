@@ -16,7 +16,7 @@ export default async function FlooringInventoryPage({
     searchParams: resolvedSearchParams,
     defaultGrouped: false,
     defaultGroupKeys: [],
-    allowedGroupKeys: ["importNumber", "importTag", "status", "transport", "product", "itemNumber", "warehouse", "section", "location", "dyeLot", "cost", "freight", "updated"],
+    allowedGroupKeys: ["status", "transport", "product", "warehouse", "section", "location"],
   })
   const result = await getInventoryPageData(page, tableState)
 

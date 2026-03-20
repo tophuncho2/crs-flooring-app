@@ -16,7 +16,7 @@ export default async function TemplatesPage({
     searchParams: resolvedSearchParams,
     defaultGrouped: true,
     defaultGroupKeys: ["property"],
-    allowedGroupKeys: ["templateNumber", "templateTag", "property", "warehouse", "instructions", "padType", "templateNotes"],
+    allowedGroupKeys: ["templateTag", "property", "warehouse", "padType"],
   })
   const result = await getTemplatesPageData(page, tableState)
 

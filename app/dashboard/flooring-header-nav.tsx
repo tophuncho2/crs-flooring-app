@@ -1,5 +1,6 @@
 "use client"
 
+import { useSyncExternalStore } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { FlooringNavItem } from "./flooring-navigation"
@@ -20,9 +21,14 @@ export default function FlooringHeaderNav({
   visibleSlugSet,
   canOpenItem,
 }: FlooringHeaderNavProps) {
+  const isMounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  )
   const pathname = usePathname()
 
-  if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasBuilderPanelAccess)) {
+  if (!isMounted || !pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasBuilderPanelAccess)) {
     return null
   }
 

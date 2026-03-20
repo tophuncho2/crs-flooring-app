@@ -14,7 +14,7 @@ export default async function WorkOrdersPage({
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    allowedGroupKeys: ["wo", "status", "warehouse", "property", "address", "customAddress", "date", "unit", "unitType", "vacancy", "instructions", "notes"],
+    allowedGroupKeys: ["status", "warehouse", "property", "date", "unitType", "vacancy"],
     defaultGroupKeys: ["warehouse"],
   })
   const result = await getWorkOrdersPageData(page, tableState)
