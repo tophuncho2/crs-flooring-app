@@ -65,6 +65,7 @@ function normalizeInventoryRow(row: {
   return {
     id: row.id,
     importEntryId: row.importEntryId ?? "",
+    importWarehouseId: row.importEntry?.warehouse?.id ?? "",
     importNumber: row.importEntry?.importNumber ? String(row.importEntry.importNumber) : "",
     importTag: row.importEntry?.tag ?? "",
     importStatus: row.importEntry?.status ?? "FINAL",
@@ -77,6 +78,7 @@ function normalizeInventoryRow(row: {
     dyeLot: row.dyeLot,
     locationId: row.locationId ?? "",
     locationCode: row.location?.locationCode ?? "",
+    warehouseId: row.location?.warehouse.id ?? "",
     warehouseName: row.location?.warehouse.name ?? "",
     sectionName: row.location?.section?.name ?? "",
     stockCount: row.stockCount.toString(),

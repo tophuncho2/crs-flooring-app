@@ -15,6 +15,8 @@ type UrlRecordEditorInput<Row extends { id: string }> = {
 export const requestJsonMock = vi.fn()
 
 export const lucideReactModule = {
+  ChevronDown: () => <span>v</span>,
+  ChevronRight: () => <span>&gt;</span>,
   Plus: () => <span>+</span>,
   X: () => <span>x</span>,
 }
@@ -96,6 +98,8 @@ export const tableColumnSettingsModule = {
 }
 
 export const tableShellModule = {
+  ModalTableHead: ({ children }: { children: React.ReactNode }) => <thead>{children}</thead>,
+  ModalTableShell: ({ children }: { children: React.ReactNode }) => <table>{children}</table>,
   TableActionsSummary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   TableEmptyRow: ({ message, colSpan }: { message: string; colSpan: number }) => (
     <tr>

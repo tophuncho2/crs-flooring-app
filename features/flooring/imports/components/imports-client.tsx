@@ -9,6 +9,7 @@ import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { RecordMetricSummary } from "../../shared/record-metric-summary"
+import { StatusPill } from "../../shared/status-pill"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
@@ -186,20 +187,6 @@ function hasCreateImportValidationErrors(validation: CreateImportValidation) {
   if (validation.items) return true
 
   return Object.values(validation.itemFields).some((fields) => fields.productId || fields.stockCount)
-}
-
-function StatusPill({
-  label,
-  toneClassName,
-}: {
-  label: string
-  toneClassName: string
-}) {
-  return (
-    <span className={`inline-flex min-w-[110px] justify-center rounded border px-2 py-1 text-center text-sm ${toneClassName}`}>
-      {label}
-    </span>
-  )
 }
 
 export default function ImportsClient({

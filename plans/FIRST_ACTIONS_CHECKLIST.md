@@ -32,7 +32,7 @@ When the remaining items below are complete, the app should be ready to start wo
 # Phase 3. Data And Operational Alignment
 
 - [x] Align warehouse section/location behavior with the Prisma schema and remove legacy drift.
-- [ ] Move the inventory table onto the configurable table-controls system so `section` is a true groupable and hideable field while `location` remains the worker-facing location selector.
+- [x] Move the inventory table onto the configurable table-controls system so `section` is a true groupable and hideable field while `location` remains the worker-facing location selector.
 - [ ] Audit remaining schema/runtime/legacy drift in inventory, templates, work orders, imports, and analytics-adjacent flows.
 - [ ] Verify that worker-relevant operational fields are stored, exposed, and mutated consistently across schema, API, and UI.
 - [ ] Standardize manager update discipline so each thread keeps its own `README`, assessment, and next actions current after real project changes.
