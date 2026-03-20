@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardCardTitle } from "../../shared/dashboard-card-title"
+import { DashboardCardHeader } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
@@ -54,7 +54,7 @@ export default function CutLogsClient({ initialLogs }: { initialLogs: CutLogRow[
 
   return (
     <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-      <DashboardCardTitle>Cut Logs</DashboardCardTitle>
+      <DashboardCardHeader title="Cut Logs" />
 
       {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
       {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}

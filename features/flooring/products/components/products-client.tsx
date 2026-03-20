@@ -3,7 +3,7 @@
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { Plus, Save, Upload, X } from "lucide-react"
 import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
-import { DashboardCardTitle } from "../../shared/dashboard-card-title"
+import { DashboardCardHeader } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -602,49 +602,48 @@ export default function FlooringProductsClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <DashboardCardTitle>Flooring Products</DashboardCardTitle>
-          </div>
-          <TableActionsSummary count={filteredProducts.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={serverTableControls.onSearchQueryChange}
-              searchPlaceholder="Search product name"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={serverTableControls.onToggleSort}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={serverTableControls.onToggleGrouping}
-              groupOptions={productGroupOptions}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-              onAddGroupBy={serverTableControls.onAddGroupBy}
-              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
-              maxGroupFields={MAX_GROUP_FIELDS}
-            >
-              <TableColumnSettings
-                columns={orderedProductColumns}
-                hiddenColumnKeys={hiddenProductColumnKeys}
-                onToggleColumn={toggleProductColumnVisibility}
-                onMoveColumn={moveProductColumn}
-                onSetColumnOrder={setProductColumnOrder}
-              />
-              <button
-                type="button"
-                onClick={openCreateProduct}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+        <DashboardCardHeader
+          title="Flooring Products"
+          actions={(
+            <TableActionsSummary count={filteredProducts.length}>
+              <TableControlsBar
+                searchQuery={searchQuery}
+                onSearchQueryChange={serverTableControls.onSearchQueryChange}
+                searchPlaceholder="Search product name"
+                isAscendingSort={isAscendingSort}
+                onToggleSort={serverTableControls.onToggleSort}
+                isGroupingEnabled={isGroupingEnabled}
+                onToggleGrouping={serverTableControls.onToggleGrouping}
+                groupOptions={productGroupOptions}
+                groupByKeys={groupByKeys}
+                onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
+                onAddGroupBy={serverTableControls.onAddGroupBy}
+                onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
+                maxGroupFields={MAX_GROUP_FIELDS}
               >
-                <Plus size={16} />
-                Product
-              </button>
-            </TableControlsBar>
-          </TableActionsSummary>
-        </div>
+                <TableColumnSettings
+                  columns={orderedProductColumns}
+                  hiddenColumnKeys={hiddenProductColumnKeys}
+                  onToggleColumn={toggleProductColumnVisibility}
+                  onMoveColumn={moveProductColumn}
+                  onSetColumnOrder={setProductColumnOrder}
+                />
+                <button
+                  type="button"
+                  onClick={openCreateProduct}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                >
+                  <Plus size={16} />
+                  Product
+                </button>
+              </TableControlsBar>
+            </TableActionsSummary>
+          )}
+        />
 
         <FormStatusNotices message={message} error={error} className="mt-4" />
 
         <section className="mt-6">
-          <h2 className="mb-4 text-lg font-semibold">Products</h2>
           <TableShell minWidthClass="min-w-[1400px]">
               <TableHead>
                 <tr>
