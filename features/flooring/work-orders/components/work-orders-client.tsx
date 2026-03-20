@@ -53,6 +53,10 @@ type WorkOrderRow = {
   updatedAt: string
 }
 
+type WorkOrderRowInput = Omit<WorkOrderRow, "statusLabel"> & {
+  statusLabel?: string
+}
+
 type PropertyOption = {
   id: string
   name: string
@@ -273,11 +277,12 @@ export default function WorkOrdersClient({
     }
   }
 
-  function hydrateWorkOrderRow(workOrder: WorkOrderRow) {
+  function hydrateWorkOrderRow(workOrder: WorkOrderRowInput): WorkOrderRow {
     const property = propertyLookup.get(workOrder.propertyId)
 
     return {
       ...workOrder,
+      statusLabel: workOrderStatusText(workOrder),
       propertyName: property?.name ?? workOrder.propertyName,
       propertyAddress: buildWorkOrderAddress(property, workOrder.customAddress),
       warehouseName: warehouseLookup.get(workOrder.warehouseId) ?? workOrder.warehouseName,

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 import DashboardErrorState from "./dashboard-error-state"
-import HeaderControls from "./header-controls"
+import HeaderControlsShell from "./header-controls-shell"
 import { prisma } from "@/server/db/prisma"
 import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
 import { hasSystemAccess } from "@/server/auth/access-control"
@@ -59,7 +59,7 @@ export default async function DashboardLayout({
   return (
     <div className="relative min-h-screen">
       <div className="fixed inset-x-0 top-3 z-50 px-3 sm:top-6 sm:px-6">
-        <HeaderControls
+        <HeaderControlsShell
           email={user.email}
           role={user.role}
           canUseTools={toolContext.canUseTools}

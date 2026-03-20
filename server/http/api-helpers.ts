@@ -3,6 +3,7 @@ import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
 
 export type AppError = {
   message: string
+  status?: number
   field?: string
 }
 
@@ -100,7 +101,12 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     typeof (error as { message: unknown }).message === "string" &&
     "field" in error
   ) {
-    return { status: typeof (error as AppError).status === "number" ? (error as AppError).status : 400, message: (error as AppError).message }
+    const appError = error as AppError
+
+    return {
+      status: typeof appError.status === "number" ? appError.status : 400,
+      message: appError.message,
+    }
   }
 
   const connectivityIssue = getPrismaConnectivityIssue(error)
