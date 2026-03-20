@@ -1,0 +1,247 @@
+// @vitest-environment jsdom
+
+import React from "react"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { requestJsonMock } from "./helpers/simple-table-client-mocks"
+import { TemplateRecordPanel } from "@/features/flooring/templates/components/template-record-panel"
+
+vi.mock("@/features/flooring/shared/feedback-states", () => ({
+  CenteredErrorState: ({ message }: { message: string }) => <div>{message}</div>,
+  CenteredLoadingState: ({ label }: { label: string }) => <div>{label}</div>,
+}))
+
+vi.mock("@/features/flooring/shared/record-summary", () => ({
+  buildRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
+  emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
+}))
+
+vi.mock("@/features/flooring/shared/material-items-editor", () => ({
+  MaterialItemsEditor: ({
+    items,
+    onAdd,
+    onSaveItem,
+    onDeleteItem,
+  }: {
+    items: Array<{ id: string }>
+    onAdd: () => void
+    onSaveItem: (item: { id: string; productId: string; quantity: string; unitPrice: string; notes: string }) => void
+    onDeleteItem: (itemId: string) => void
+  }) => (
+    <div>
+      <div>{`Material count ${items.length}`}</div>
+      <button type="button" onClick={onAdd}>Add Material</button>
+      <button type="button" onClick={() => onSaveItem({ id: items[0]?.id ?? "item-1", productId: "prod-1", quantity: "3", unitPrice: "4.00", notes: "" })}>Save Material</button>
+      <button type="button" onClick={() => onDeleteItem(items[0]?.id ?? "item-1")}>Delete Material</button>
+    </div>
+  ),
+}))
+
+vi.mock("@/features/flooring/shared/service-items-editor", () => ({
+  ServiceItemsEditor: ({
+    items,
+    onAdd,
+    onSaveItem,
+    onDeleteItem,
+  }: {
+    items: Array<{ id: string }>
+    onAdd: () => void
+    onSaveItem: (item: { id: string; serviceId: string; name: string; unitId: string; quantity: string; unitPrice: string; notes: string }) => void
+    onDeleteItem: (itemId: string) => void
+  }) => (
+    <div>
+      <div>{`Service count ${items.length}`}</div>
+      <button type="button" onClick={onAdd}>Add Service</button>
+      <button type="button" onClick={() => onSaveItem({ id: items[0]?.id ?? "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: "2", unitPrice: "9.00", notes: "" })}>Save Service</button>
+      <button type="button" onClick={() => onDeleteItem(items[0]?.id ?? "svc-1")}>Delete Service</button>
+    </div>
+  ),
+}))
+
+vi.mock("@/features/flooring/shared/use-record-detail-controller", async () => {
+  const ReactModule = await import("react")
+
+  return {
+    useRecordDetailController: ({ initialRecord, toDraft }: { initialRecord: Record<string, unknown>; toDraft: (record: Record<string, unknown>) => unknown }) => {
+      const [record, setRecord] = ReactModule.useState(initialRecord)
+      const [draft, setDraft] = ReactModule.useState(toDraft(initialRecord))
+      const [error, setError] = ReactModule.useState("")
+
+      return {
+        record,
+        draft,
+        setDraft,
+        loading: false,
+        error,
+        setError,
+        syncRecord: (nextRecord: Record<string, unknown>, options?: { syncDraft?: boolean }) => {
+          setRecord(nextRecord)
+          if (options?.syncDraft !== false) setDraft(toDraft(nextRecord))
+        },
+        clearRecordCache: vi.fn(),
+      }
+    },
+  }
+})
+
+function listPayload(items: unknown[]) {
+  return { items }
+}
+
+function templateRow() {
+  return {
+    id: "tpl-1",
+    templateNumber: "TP-00001",
+    templateTag: "Turn",
+    propertyId: "prop-1",
+    propertyName: "Oak Apartments",
+    warehouseId: "",
+    warehouseName: "",
+    instructions: "",
+    templateNotes: "",
+    padProductId: "",
+    padTypeLabel: "",
+    createdAt: "2026-03-19T00:00:00.000Z",
+    updatedAt: "2026-03-19T00:00:00.000Z",
+  }
+}
+
+function renderPanel() {
+  return render(
+    <TemplateRecordPanel
+      templateId="tpl-1"
+      initialTemplate={templateRow()}
+      propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
+      warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+      padProductOptions={[{ id: "pad-1", label: "Pad Product" }]}
+      productOptions={[{ id: "prod-1", label: "Pad", sendUnit: "SF" }]}
+      serviceOptions={[{ id: "svc-1", name: "Install", baseCost: "9.00", unitId: "unit-1", unitName: "SF" }]}
+      unitOptions={[{ id: "unit-1", name: "SF" }]}
+      onClose={vi.fn()}
+      onTemplateSaved={vi.fn()}
+      onTemplateDeleted={vi.fn()}
+      onSummaryChange={vi.fn()}
+    />,
+  )
+}
+
+describe("TemplateRecordPanel", () => {
+  beforeEach(() => {
+    cleanup()
+    vi.clearAllMocks()
+  })
+
+  it("record-panel save flow PATCHes expected payload", async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockResolvedValue({
+      template: { ...templateRow(), templateTag: "Saved", updatedAt: "2026-03-19T01:00:00.000Z" },
+    })
+
+    renderPanel()
+    await user.clear(screen.getByLabelText("Template Tag"))
+    await user.type(screen.getByLabelText("Template Tag"), "Saved")
+    await user.click(screen.getByRole("button", { name: "Save Template" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/templates/tpl-1", expect.objectContaining({
+        method: "PATCH",
+      }))
+    })
+  })
+
+  it("record-panel delete uses shared confirmation behavior and removes on success", async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
+    const onClose = vi.fn()
+    const onTemplateDeleted = vi.fn()
+    requestJsonMock.mockResolvedValue({ ok: true })
+
+    render(
+      <TemplateRecordPanel
+        templateId="tpl-1"
+        initialTemplate={templateRow()}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
+        warehouseOptions={[]}
+        padProductOptions={[]}
+        productOptions={[]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        onClose={onClose}
+        onTemplateDeleted={onTemplateDeleted}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Delete Template" }))
+
+    expect(window.confirm).toHaveBeenCalledWith("Delete this template? This cannot be undone.")
+    await waitFor(() => {
+      expect(onTemplateDeleted).toHaveBeenCalledWith("tpl-1", "prop-1")
+    })
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it("record-panel delete failure surfaces the error", async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
+    requestJsonMock.mockRejectedValue(new Error("Failed to delete template"))
+
+    renderPanel()
+    await user.click(screen.getByRole("button", { name: "Delete Template" }))
+
+    expect(await screen.findByText("Failed to delete template")).toBeTruthy()
+  })
+
+  it("adding, saving, and deleting material items keeps the template panel open and updates panel state", async () => {
+    const user = userEvent.setup()
+    requestJsonMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([{ id: "item-1" }]))
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([{ id: "item-1" }]))
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([]))
+
+    renderPanel()
+    await user.click(screen.getByRole("button", { name: "Add Material" }))
+    expect(await screen.findByText("Material count 1")).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: "Save Material" }))
+    await user.click(screen.getByRole("button", { name: "Delete Material" }))
+    expect(await screen.findByText("Material count 0")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
+  })
+
+  it("adding, saving, and deleting service items keeps the template panel open and updates panel state", async () => {
+    const user = userEvent.setup()
+    requestJsonMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([{ id: "svc-1" }]))
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([{ id: "svc-1" }]))
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([]))
+
+    renderPanel()
+    await user.click(screen.getByRole("button", { name: "Add Service" }))
+    expect(await screen.findByText("Service count 1")).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: "Save Service" }))
+    await user.click(screen.getByRole("button", { name: "Delete Service" }))
+    expect(await screen.findByText("Service count 0")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
+  })
+
+  it("child-row delete failures surface errors and do not close the panel", async () => {
+    const user = userEvent.setup()
+    requestJsonMock
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce(listPayload([{ id: "item-1" }]))
+      .mockRejectedValueOnce(new Error("Failed to delete template item"))
+
+    renderPanel()
+    await user.click(screen.getByRole("button", { name: "Add Material" }))
+    await user.click(screen.getByRole("button", { name: "Delete Material" }))
+
+    expect(await screen.findByText("Failed to delete template item")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
+  })
+})

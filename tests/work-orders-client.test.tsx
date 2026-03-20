@@ -201,6 +201,52 @@ describe("WorkOrdersClient", () => {
     expect(screen.getByText("Panel wo-2")).toBeTruthy()
   })
 
+  it("requires property and template selection, filters templates by property and search, and surfaces create errors", async () => {
+    const user = userEvent.setup()
+
+    requestJsonMock.mockRejectedValue(new Error("Failed to create work order from template"))
+
+    render(
+      <WorkOrdersClient
+        initialWorkOrders={[]}
+        propertyOptions={[
+          { id: "prop-1", name: "Oak Apartments", address: "123 Main St" },
+          { id: "prop-2", name: "Pine Grove", address: "987 Elm St" },
+        ]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        templateOptions={[
+          { id: "tpl-1", propertyId: "prop-1", label: "Oak Apartments / Turn" },
+          { id: "tpl-2", propertyId: "prop-2", label: "Pine Grove / Rehab" },
+        ]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Sync Template" }))
+    expect((screen.getByRole("button", { name: "Create And Open Work Order" }) as HTMLButtonElement).disabled).toBe(true)
+
+    fireEvent.change(screen.getByLabelText("Property"), { target: { value: "prop-1" } })
+    expect(screen.getByRole("button", { name: /Oak Apartments \/ Turn/ })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: /Pine Grove \/ Rehab/ })).toBeNull()
+    expect((screen.getByRole("button", { name: "Create And Open Work Order" }) as HTMLButtonElement).disabled).toBe(true)
+
+    const searchInput = screen.getByLabelText("Search Templates")
+    expect((searchInput as HTMLInputElement).disabled).toBe(false)
+    await user.type(searchInput, "Rehab")
+    expect(screen.queryByRole("button", { name: /Oak Apartments \/ Turn/ })).toBeNull()
+
+    await user.clear(searchInput)
+    await user.click(screen.getByRole("button", { name: /Oak Apartments \/ Turn/ }))
+    expect((screen.getByRole("button", { name: "Create And Open Work Order" }) as HTMLButtonElement).disabled).toBe(false)
+    await user.click(screen.getByRole("button", { name: "Create And Open Work Order" }))
+
+    expect(await screen.findByText("Failed to create work order from template")).toBeTruthy()
+    expect(screen.queryByText(/^Panel /)).toBeNull()
+  })
+
   it("removes Sync Template from the record-panel options menu", async () => {
     const user = userEvent.setup()
 

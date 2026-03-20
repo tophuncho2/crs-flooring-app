@@ -100,7 +100,7 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     typeof (error as { message: unknown }).message === "string" &&
     "field" in error
   ) {
-    return { status: 400, message: (error as AppError).message }
+    return { status: typeof (error as AppError).status === "number" ? (error as AppError).status : 400, message: (error as AppError).message }
   }
 
   const connectivityIssue = getPrismaConnectivityIssue(error)

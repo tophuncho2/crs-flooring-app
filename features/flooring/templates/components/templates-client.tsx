@@ -10,6 +10,7 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
+import { confirmRecordDelete } from "../../shared/record-panel-footer"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
@@ -254,6 +255,9 @@ export default function TemplatesClient({
   }
 
   async function deleteTemplate(id: string) {
+    if (!confirmRecordDelete("Delete this template? This cannot be undone.")) {
+      return
+    }
     setError("")
     setMessage("")
     setDeletingId(id)
