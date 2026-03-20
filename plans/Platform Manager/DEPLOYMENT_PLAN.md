@@ -131,3 +131,23 @@ For the current `staging` to `production` promotion:
 Current release notes:
 - current local branch delta from `main` includes shared table architecture changes, new route auth/server structure, dashboard shell changes, and many data model changes
 - treat this as a release train, not as a small patch
+
+---
+
+# 9. Migration Rebaseline Safety
+
+Do not assume a rebased migration baseline is structurally safe for every environment just because `_prisma_migrations` looks valid.
+
+Before major production promotion:
+- compare staging and production migration history to local migration history
+- run an environment-specific schema diff, not only `migrate status`
+- explicitly verify high-risk legacy tables and renamed columns before applying migrations that assume new tables already exist
+
+Current recorded example:
+- production retained legacy warehouse section storage through `flooring_section_registry` and `flooring_location.section`
+- the rebased migration chain assumed `flooring_section` and `flooring_location.sectionId` already existed
+- result: production failed at `20260319103000_require_section_for_location`
+
+Release standard going forward:
+- any migration-baseline reset requires schema diff validation against every persistent environment before promotion
+- when legacy data models are being retired, add explicit cleanup migrations with `IF EXISTS` guards so older environments converge instead of drifting silently
