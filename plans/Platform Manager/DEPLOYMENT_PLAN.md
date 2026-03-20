@@ -84,3 +84,50 @@ Deployment is successful when:
 ---
 
 This file should be updated as the deployment flow matures.
+
+---
+
+# 8. Current Safe Merge Plan
+
+For the current `staging` to `production` promotion:
+
+1. Confirm branch shape
+- verify `staging` is clean
+- verify `main` has not advanced unexpectedly
+- prefer fast-forward promotion of the tested `staging` commit instead of a manual cherry-pick set
+
+2. Validate before staging deploy
+- `npm test`
+- `npm run build`
+- confirm Prisma migration set is reviewed
+
+3. Deploy to staging
+- deploy the current `staging` commit
+- run `npx prisma migrate deploy`
+- verify application boot, auth, and dashboard layout render successfully
+
+4. Run staging smoke pass
+- login flow
+- header navigation and user menu
+- warehouse sections and locations
+- imports create/edit/delete restriction behavior
+- inventory grouping, open/edit/delete, cut logs, location reassignment
+- templates create/edit/delete and child item behavior
+- work-order create flow and template sync flow
+
+5. Production promotion
+- only promote the exact staging-tested commit
+- apply `npx prisma migrate deploy` in production
+- run a focused production smoke pass immediately after deploy
+
+6. Rollback posture
+- code rollback is easy only if no newer commit is mixed in
+- database rollback is not assumed safe for this release because multiple migrations are additive and restrictive
+- recovery posture should be:
+  - verify backups first
+  - stop at staging if migration behavior is not clean
+  - do not promote partial schema uncertainty into production
+
+Current release notes:
+- current local branch delta from `main` includes shared table architecture changes, new route auth/server structure, dashboard shell changes, and many data model changes
+- treat this as a release train, not as a small patch

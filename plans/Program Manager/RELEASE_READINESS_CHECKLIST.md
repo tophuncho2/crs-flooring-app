@@ -88,3 +88,35 @@ Release readiness is successful when:
 ---
 
 This file should be used as the final gate before major releases and updated as the system matures.
+
+---
+
+# 9. Current Staging To Production Gate
+
+Current local branch state on March 19, 2026:
+- `staging` is a fast-forward ahead of local `main`
+- delta from `main` is large: `361 files changed, 35360 insertions, 16090 deletions`
+- current local validation passed:
+  - `npm test` -> `39` files, `197` tests passed
+  - `npm run build` passed
+
+Current release risk profile:
+- schema and migration risk is high because the release includes `18` new Prisma migrations after the baseline
+- workflow risk is medium-high because imports, inventory, templates, work orders, warehouse, and header shell behavior all changed
+- merge-conflict risk is currently low only if production is still at local `main`
+
+Required promotion gate for this release:
+- deploy `staging` first
+- run deploy-safe Prisma migrations in staging
+- manually smoke test:
+  - login and dashboard header hydration
+  - warehouse sections and locations
+  - imports create, edit, delete restriction
+  - inventory open, edit, cut logs, location change
+  - templates create, edit, delete, child items
+  - work-order create, template sync, record-panel notices
+  - grouping, columns, search, sort on the shared table pages
+- verify no staging-only env or data assumptions surfaced
+- only then promote the exact tested `staging` commit to production
+
+Do not call this release production-safe unless the staging migration and the staging smoke pass are both complete.
