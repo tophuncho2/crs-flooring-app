@@ -4,129 +4,47 @@ import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import {
+  requestJsonMock,
+  resetSimpleTableClientMocks,
+} from "./helpers/simple-table-client-mocks"
 import ServicesClient from "@/features/flooring/services/components/services-client"
 
-const { requestJsonMock } = vi.hoisted(() => ({
-  requestJsonMock: vi.fn(),
-}))
-
-vi.mock("lucide-react", () => ({
-  Plus: () => <span>+</span>,
-  X: () => <span>x</span>,
-}))
-
-vi.mock("@/features/flooring/shared/http", () => ({
-  requestJson: requestJsonMock,
-}))
-
-vi.mock("@/features/flooring/shared/use-configured-table-state", () => ({
-  useConfiguredTableState: ({ rows, fields }: { rows: Array<{ id: string }>; fields: Array<{ key: string; label: string }> }) => ({
-    searchQuery: "",
-    setSearchQuery: vi.fn(),
-    isAscendingSort: true,
-    setIsAscendingSort: vi.fn(),
-    isGroupingEnabled: false,
-    setIsGroupingEnabled: vi.fn(),
-    groupByKeys: [],
-    updateGroupByKeyAtIndex: vi.fn(),
-    addGroupByKey: vi.fn(),
-    removeGroupByKeyAtIndex: vi.fn(),
-    groupFields: [],
-    filteredRows: rows,
-    sortedRows: rows,
-    groupedRowTree: [],
-    page: 1,
-    pageSize: rows.length || 1,
-    totalPages: 1,
-    hasPreviousPage: false,
-    hasNextPage: false,
-    goToPreviousPage: vi.fn(),
-    goToNextPage: vi.fn(),
-    allColumns: fields.map((field) => ({ key: field.key, label: field.label })),
-    visibleColumns: fields.map((field) => ({ key: field.key, label: field.label })),
-    hiddenColumnKeys: [],
-    toggleColumnVisibility: vi.fn(),
-    moveColumn: vi.fn(),
-    setColumnOrder: vi.fn(),
-  }),
-}))
-
-vi.mock("@/features/flooring/shared/use-url-record-editor", async () => {
-  const ReactModule = await import("react")
-
+function serviceRow(overrides: Partial<{
+  id: string
+  name: string
+  unitId: string
+  unitName: string
+  baseCost: string
+  notes: string
+  usageCount: number
+  createdAt: string
+  updatedAt: string
+}> = {}) {
   return {
-    useUrlRecordEditor: () => {
-      const [draft, setDraft] = ReactModule.useState<{
-        name: string
-        unitId: string
-        baseCost: string
-        notes: string
-      } | null>(null)
-
-      return {
-        activeRecord: null,
-        draft,
-        setDraft,
-        openRecord: vi.fn(),
-        closeRecord: vi.fn(),
-      }
-    },
+    id: "svc-1",
+    name: "Install",
+    unitId: "unit-1",
+    unitName: "Square Feet",
+    baseCost: "9.50",
+    notes: "",
+    usageCount: 0,
+    createdAt: "2026-03-19T00:00:00.000Z",
+    updatedAt: "2026-03-19T00:00:00.000Z",
+    ...overrides,
   }
-})
-
-vi.mock("@/features/flooring/shared/table-controls-bar", () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}))
-
-vi.mock("@/features/flooring/shared/table-column-settings", () => ({
-  TableColumnSettings: () => null,
-}))
-
-vi.mock("@/features/flooring/shared/table-shell", () => ({
-  TableActionsSummary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  TableEmptyRow: ({ message, colSpan }: { message: string; colSpan: number }) => (
-    <tr>
-      <td colSpan={colSpan}>{message}</td>
-    </tr>
-  ),
-  TableGroupRow: ({ label, colSpan }: { label: string; colSpan: number }) => (
-    <tr>
-      <td colSpan={colSpan}>{label}</td>
-    </tr>
-  ),
-  TableHead: ({ children }: { children: React.ReactNode }) => <thead>{children}</thead>,
-  TableHeaderCell: ({ children }: { children: React.ReactNode }) => <th>{children}</th>,
-  TablePaginationControls: () => null,
-  TableShell: ({ children }: { children: React.ReactNode }) => <table>{children}</table>,
-}))
-
-vi.mock("@/features/flooring/shared/row-action-buttons", () => ({
-  EditRowButton: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Edit</button>,
-  DeleteRowButton: ({ onClick, children, disabled }: { onClick: () => void; children: React.ReactNode; disabled?: boolean }) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
-  ),
-}))
+}
 
 describe("ServicesClient", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    resetSimpleTableClientMocks()
   })
 
   it("requires service name, unit, and cost before submitting and posts the valid form payload", async () => {
     const user = userEvent.setup()
 
     requestJsonMock.mockResolvedValue({
-      service: {
-        id: "svc-1",
-        name: "Install",
-        unitId: "unit-1",
-        unitName: "Square Feet",
-        baseCost: "9.50",
-        notes: "",
-        usageCount: 0,
-        createdAt: "2026-03-19T00:00:00.000Z",
-        updatedAt: "2026-03-19T00:00:00.000Z",
-      },
+      service: serviceRow(),
     })
 
     render(
@@ -164,5 +82,95 @@ describe("ServicesClient", () => {
     })
 
     expect(screen.getByText("Service created")).toBeTruthy()
+  })
+
+  it("edit flow validates and PATCHes the expected payload", async () => {
+    const user = userEvent.setup()
+
+    render(
+      <ServicesClient
+        initialServices={[serviceRow()]}
+        unitOptions={[
+          { id: "unit-1", name: "Square Feet" },
+          { id: "unit-2", name: "Room" },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Edit" }))
+
+    const nameInput = screen.getAllByLabelText("Service Name")[0]
+    await user.clear(nameInput)
+    await user.click(screen.getByRole("button", { name: "Save Service" }))
+
+    expect(requestJsonMock).not.toHaveBeenCalled()
+    expect(screen.getByText("Service name is required")).toBeTruthy()
+
+    requestJsonMock.mockResolvedValue({
+      service: serviceRow({ name: "Repair", unitId: "unit-2", unitName: "Room", baseCost: "12.00", notes: "Rush" }),
+    })
+
+    await user.type(nameInput, "Repair")
+    fireEvent.change(screen.getAllByLabelText("Service Unit")[0], { target: { value: "unit-2" } })
+    const costInput = screen.getAllByLabelText("Cost")[0]
+    await user.clear(costInput)
+    await user.type(costInput, "12.00")
+    await user.type(screen.getAllByLabelText("Notes")[0], "Rush")
+    await user.click(screen.getByRole("button", { name: "Save Service" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/services/svc-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Repair",
+          unitId: "unit-2",
+          baseCost: "12.00",
+          notes: "Rush",
+        }),
+      })
+    })
+
+    expect(screen.getByText("Service saved")).toBeTruthy()
+  })
+
+  it("delete flow confirms and removes the row on success", async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
+    requestJsonMock.mockResolvedValue({ ok: true })
+
+    render(
+      <ServicesClient
+        initialServices={[serviceRow()]}
+        unitOptions={[{ id: "unit-1", name: "Square Feet" }]}
+      />,
+    )
+
+    expect(screen.getByText("Install")).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: "Delete" }))
+
+    await waitFor(() => {
+      expect(screen.queryByText("Install")).toBeNull()
+    })
+
+    expect(screen.getByText("Service deleted")).toBeTruthy()
+  })
+
+  it("delete flow surfaces linked-record errors without removing the row", async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
+    requestJsonMock.mockRejectedValue(new Error("This record is linked and cannot be modified"))
+
+    render(
+      <ServicesClient
+        initialServices={[serviceRow()]}
+        unitOptions={[{ id: "unit-1", name: "Square Feet" }]}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Delete" }))
+
+    expect(await screen.findByText("This record is linked and cannot be modified")).toBeTruthy()
+    expect(screen.getByText("Install")).toBeTruthy()
   })
 })

@@ -14,6 +14,7 @@ import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHead
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useUrlRecordEditor } from "../../shared/use-url-record-editor"
 import { requestJson } from "../../shared/http"
+import { validateCategoryForm } from "../validators"
 
 type CategoryRow = {
   id: string
@@ -196,6 +197,11 @@ export default function CategoriesClient({
 
   async function createCategory() {
     clearNotices()
+    const validationError = validateCategoryForm(categoryForm ?? emptyCategoryForm, categories)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
     setIsSavingNew(true)
     try {
       const payload = await persistCategory(categoryForm ?? emptyCategoryForm)
@@ -213,6 +219,11 @@ export default function CategoriesClient({
   async function savePanelCategory() {
     if (!selectedCategory || !categoryForm) return
     clearNotices()
+    const validationError = validateCategoryForm(categoryForm, categories, selectedCategory.id)
+    if (validationError) {
+      setPanelError(validationError)
+      return
+    }
     setIsSavingId(selectedCategory.id)
     try {
       const payload = await persistCategory(categoryForm, selectedCategory.id)

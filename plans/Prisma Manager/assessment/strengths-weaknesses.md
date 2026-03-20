@@ -4,6 +4,8 @@
 
 - [x] Prisma schema models a real operational workflow rather than placeholder CRUD.
 - [x] Most relations use intentional `Cascade`, `Restrict`, or `SetNull` behavior.
+- [x] Category-to-unit-of-measure relations now preserve links by restricting deletes instead of silently nulling them.
+- [x] The unit-of-measure delete restriction migration has been applied to the active database.
 - [x] Work-order and related operational tables have meaningful hot-path indexes.
 - [x] Critical multi-step mutations already use Prisma transactions.
 - [x] The project has supporting schema/data-model/Postgres planning documents.

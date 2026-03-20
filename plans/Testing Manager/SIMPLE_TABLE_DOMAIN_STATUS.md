@@ -11,10 +11,10 @@ Legend:
 
 | Domain | Validator Coverage | Route Coverage | Component Flow Coverage | Delete Protections | Regression Coverage | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| Services | Partial | Missing | Partial | Missing | Partial | First reference domain. Create-flow component coverage exists, but route, edit, and delete coverage still need to be brought up to the full matrix. |
-| Unit Of Measures | Partial | Missing | Missing | Missing | Missing | Has client-side validation logic and shared panel pattern, but no standardized domain test suite yet. |
-| Manufacturers | Partial | Partial | Missing | Missing | Missing | Some route and normalization coverage exists, but not the reusable simple-table panel matrix. |
-| Categories | Missing | Missing | Missing | Missing | Missing | In-scope simple-table domain with no standardized testing coverage yet. |
+| Services | Done | Done | Done | Done | Done | Route plus client coverage is backed by direct shared CRUD primitive tests, and the client suite now uses the standardized simple-table harness. |
+| Unit Of Measures | Done | Done | Done | Done | Done | Route plus client coverage includes linked-delete conflict behavior and now sits on the shared client harness with direct shared primitive protection underneath it. |
+| Manufacturers | Done | Done | Done | Done | Done | Route and client coverage covers create/edit/delete plus linked-delete regression behavior, and the client suite now uses the shared simple-table harness. |
+| Categories | Done | Done | Done | Done | Done | Route, client, and local validator coverage now sit on top of the direct shared primitive suites and standardized client harness. |
 
 ---
 
@@ -23,3 +23,4 @@ Legend:
 - Keep statuses conservative. Do not mark `Done` unless the matrix is fully satisfied for that category.
 - If a domain introduces a new rule, note it in `Notes` and add route plus UI regression coverage.
 - If a domain grows beyond the simple-table pattern, move it out of this board and into a dedicated plan.
+- Re-check this board if the shared client harness or shared CRUD primitives change materially.

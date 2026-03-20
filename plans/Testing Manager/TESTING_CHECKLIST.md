@@ -11,64 +11,67 @@ Shared leverage comes first, then the golden reference domain, then the remainin
 
 # 1. Shared Primitives
 
-- [ ] Add direct tests for `requestJson`.
-- [ ] Add direct tests for `BasicRecordPanel`.
-- [ ] Add direct tests for `RecordPanelFooter`.
-- [ ] Add direct tests for `useUrlRecordEditor`.
-- [ ] Add direct tests for shared required-field styling behavior.
-- [ ] Document the standard component test harness for record-panel clients.
-- [ ] Confirm shared test helpers are reusable across simple-table domains.
+- [x] Add direct tests for `requestJson`.
+- [x] Add direct tests for `BasicRecordPanel`.
+- [x] Add direct tests for `RecordPanelFooter`.
+- [x] Add direct tests for `useUrlRecordPanel`.
+- [x] Add direct tests for `useUrlRecordEditor`.
+- [x] Add direct tests for `useChildCollection`.
+- [x] Add direct tests for shared required-field styling behavior.
+- [x] Add direct tests for shared form status notices.
+- [x] Document and implement the standard component test harness for simple table record-panel clients.
+- [x] Confirm shared test helpers are reusable across simple-table domains.
 
 ---
 
 # 2. Golden Reference Domain: Services
 
-- [ ] Add service route tests for POST required-field validation.
-- [ ] Add service route tests for PATCH required-field validation.
-- [ ] Add service route happy-path tests.
-- [ ] Add service route tests for normalized error responses.
-- [ ] Expand service component tests for create-flow required fields.
-- [ ] Add service component edit-flow test.
-- [ ] Add service delete and confirm test.
-- [ ] Add service linked-delete or conflict-error regression test.
-- [ ] Confirm service tests are the copyable reference for other simple-table domains.
+- [x] Add service route tests for POST required-field validation.
+- [x] Add service route tests for PATCH required-field validation.
+- [x] Add service route happy-path tests.
+- [x] Add service route tests for normalized error responses.
+- [x] Expand service component tests for create-flow required fields.
+- [x] Add service component edit-flow test.
+- [x] Add service delete and confirm test.
+- [x] Add service linked-delete or conflict-error regression test.
+- [x] Confirm service tests are the copyable reference for other simple-table domains.
 
 ---
 
 # 3. Remaining Simple-Table Domains
 
 ## Unit Of Measures
-- [ ] Add route validation tests.
-- [ ] Add route happy-path tests.
-- [ ] Add create-flow component test.
-- [ ] Add edit-flow component test.
-- [ ] Add delete and confirm test.
-- [ ] Add one server-error regression test.
+- [x] Add route validation tests.
+- [x] Add route happy-path tests.
+- [x] Add create-flow component test.
+- [x] Add edit-flow component test.
+- [x] Add delete and confirm test.
+- [x] Add one server-error regression test.
 
 ## Manufacturers
-- [ ] Add route validation tests.
-- [ ] Add route happy-path tests.
-- [ ] Add create-flow component test.
-- [ ] Add edit-flow component test.
-- [ ] Add delete and confirm test.
-- [ ] Add one server-error regression test.
+- [x] Add route validation tests.
+- [x] Add route happy-path tests.
+- [x] Add create-flow component test.
+- [x] Add edit-flow component test.
+- [x] Add delete and confirm test.
+- [x] Add one server-error regression test.
 
 ## Categories
-- [ ] Add route validation tests.
-- [ ] Add route happy-path tests.
-- [ ] Add create-flow component test.
-- [ ] Add edit-flow component test.
-- [ ] Add delete and confirm test.
-- [ ] Add one server-error regression test.
+- [x] Add route validation tests.
+- [x] Add route happy-path tests.
+- [x] Add create-flow component test.
+- [x] Add edit-flow component test.
+- [x] Add delete and confirm test.
+- [x] Add one server-error regression test.
 
 ---
 
 # 4. Matrix And Governance
 
-- [ ] Keep `services`, `unit-of-measures`, `manufacturers`, and `categories` aligned to the simple-table matrix.
+- [x] Normalize `services`, `unit-of-measures`, `manufacturers`, and `categories` onto the shared client test harness and shared primitive layer.
 - [ ] Require route plus UI regression tests for every validation bug fix in these domains.
-- [ ] Require shared-primitive tests before broad domain rewrites to shared CRUD panel code.
-- [ ] Update the domain status board when any simple-table coverage changes.
+- [x] Require shared-primitive tests before broad domain rewrites to shared CRUD panel code.
+- [x] Update the domain status board when any simple-table coverage changes.
 
 ---
 
