@@ -10,10 +10,18 @@ import { RecordFormField as FormField, RecordModalShell as ModalShell } from "..
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
+import {
+  IMPORT_STATUS_OPTIONS,
+  IMPORT_TRANSPORT_TYPE_OPTIONS,
+  formatImportStatus,
+  formatTransportType,
+  getImportStatusFieldClass,
+  getTransportTypeFieldClass,
+} from "../contracts"
 
 type ImportRow = {
   id: string
@@ -89,6 +97,7 @@ type ImportDraft = {
 
 type CreateImportValidation = {
   warehouseId: boolean
+  items: boolean
   itemFields: Record<string, { productId: boolean; stockCount: boolean }>
 }
 
@@ -107,16 +116,6 @@ type ServerTableState = {
   isGroupingEnabled: boolean
   groupByKeys: string[]
 }
-
-const transportTypeOptions = [
-  { value: "RETURN", label: "Return" },
-  { value: "PURCHASE_ORDER", label: "Purchase Order" },
-]
-
-const statusOptions = [
-  { value: "PENDING", label: "Pending" },
-  { value: "FINAL", label: "Final" },
-]
 
 function createEmptyItem(): ImportItemDraft {
   return {
@@ -154,33 +153,13 @@ function createEmptyDraft(): ImportDraft {
     status: "PENDING",
     notes: "",
     warehouseId: "",
-    items: [createEmptyItem()],
+    items: [],
   }
-}
-
-function formatImportStatus(value: string) {
-  return value === "FINAL" ? "Final" : "Pending"
-}
-
-function formatTransportType(value: string) {
-  return value === "RETURN" ? "Return" : "Purchase Order"
 }
 
 function autoResizeTextarea(element: HTMLTextAreaElement) {
   element.style.height = "0px"
   element.style.height = `${Math.max(element.scrollHeight, 42)}px`
-}
-
-function getImportStatusFieldClass(value: string) {
-  return value === "FINAL"
-    ? "border-emerald-300 bg-emerald-200 text-emerald-900"
-    : "border-sky-300 bg-sky-200 text-sky-900"
-}
-
-function getTransportTypeFieldClass(value: string) {
-  return value === "RETURN"
-    ? "border-stone-300 bg-stone-200 text-stone-900"
-    : "border-violet-300 bg-violet-200 text-violet-900"
 }
 
 function validateCreateImportDraft(draft: ImportDraft): CreateImportValidation {
@@ -195,14 +174,30 @@ function validateCreateImportDraft(draft: ImportDraft): CreateImportValidation {
 
   return {
     warehouseId: draft.warehouseId.trim() === "",
+    items: draft.items.length === 0,
     itemFields,
   }
 }
 
 function hasCreateImportValidationErrors(validation: CreateImportValidation) {
   if (validation.warehouseId) return true
+  if (validation.items) return true
 
   return Object.values(validation.itemFields).some((fields) => fields.productId || fields.stockCount)
+}
+
+function StatusPill({
+  label,
+  toneClassName,
+}: {
+  label: string
+  toneClassName: string
+}) {
+  return (
+    <span className={`inline-flex min-w-[110px] justify-center rounded border px-2 py-1 text-center text-sm ${toneClassName}`}>
+      {label}
+    </span>
+  )
 }
 
 export default function ImportsClient({
@@ -336,16 +331,16 @@ export default function ImportsClient({
     setMessage("")
     setPageError("")
     setActiveImportError("")
-    setActiveImportDraft({
-      orderNumber: row.orderNumber,
-      tag: row.tag,
-      transportType: row.transportType,
+      setActiveImportDraft({
+        orderNumber: row.orderNumber,
+        tag: row.tag,
+        transportType: row.transportType,
       status: row.status,
       notes: row.notes,
       warehouseId: row.warehouseId,
-      items: row.inventories.map((item) => ({
-        clientId: crypto.randomUUID(),
-        productId: item.productId,
+        items: row.inventories.map((item) => ({
+          clientId: crypto.randomUUID(),
+          productId: item.productId,
         itemNumber: item.itemNumber,
         stockCount: item.stockCount,
         locationId: item.locationId,
@@ -438,7 +433,7 @@ export default function ImportsClient({
   function addItemRow() {
     setDraft((prev) => {
       const nextItem = applyDefaultLocationToItem(createEmptyItem(), prev.warehouseId, locationOptions)
-      const next = { ...prev, items: [nextItem, ...prev.items] }
+      const next = { ...prev, items: [...prev.items, nextItem] }
       setCreateValidation(validateCreateImportDraft(next))
       return next
     })
@@ -448,7 +443,7 @@ export default function ImportsClient({
     setDraft((prev) => {
       const next = {
         ...prev,
-        items: prev.items.length === 1 ? [createEmptyItem()] : prev.items.filter((_, itemIndex) => itemIndex !== index),
+        items: prev.items.filter((_, itemIndex) => itemIndex !== index),
       }
       setCreateValidation(validateCreateImportDraft(next))
       return next
@@ -465,14 +460,14 @@ export default function ImportsClient({
   function addActiveImportItemRow() {
     setActiveImportDraft((prev) => ({
       ...prev,
-      items: [applyDefaultLocationToItem(createEmptyItem(), prev.warehouseId, locationOptions), ...prev.items],
+      items: [...prev.items, applyDefaultLocationToItem(createEmptyItem(), prev.warehouseId, locationOptions)],
     }))
   }
 
   function removeActiveImportItemRow(index: number) {
     setActiveImportDraft((prev) => ({
       ...prev,
-      items: prev.items.length === 1 ? [createEmptyItem()] : prev.items.filter((_, itemIndex) => itemIndex !== index),
+      items: prev.items.filter((_, itemIndex) => itemIndex !== index),
     }))
   }
 
@@ -483,7 +478,7 @@ export default function ImportsClient({
     const nextValidation = validateCreateImportDraft(draft)
     setCreateValidation(nextValidation)
     if (hasCreateImportValidationErrors(nextValidation)) {
-      setCreateModalError("Fill the highlighted required fields before creating the import")
+      setCreateModalError(nextValidation.items ? "Add at least one inventory row before creating the import" : "Fill the highlighted required fields before creating the import")
       return
     }
     setIsSaving(true)
@@ -548,8 +543,16 @@ export default function ImportsClient({
       ),
       importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>,
       tag: <td key="tag" className="px-3 py-2">{row.tag || "-"}</td>,
-      transport: <td key="transport" className="px-3 py-2">{formatTransportType(row.transportType)}</td>,
-      status: <td key="status" className="px-3 py-2">{formatImportStatus(row.status)}</td>,
+      transport: (
+        <td key="transport" className="px-3 py-2">
+          <StatusPill label={formatTransportType(row.transportType)} toneClassName={getTransportTypeFieldClass(row.transportType)} />
+        </td>
+      ),
+      status: (
+        <td key="status" className="px-3 py-2">
+          <StatusPill label={formatImportStatus(row.status)} toneClassName={getImportStatusFieldClass(row.status)} />
+        </td>
+      ),
       warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
       created: <td key="created" className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>,
       items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
@@ -688,7 +691,7 @@ export default function ImportsClient({
                   onChange={(event) => setDraftField("transportType", event.target.value)}
                   className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(draft.transportType)}`}
                 >
-                  {transportTypeOptions.map((option) => (
+                  {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -720,7 +723,7 @@ export default function ImportsClient({
                   onChange={(event) => setDraftField("status", event.target.value)}
                   className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(draft.status)}`}
                 >
-                  {statusOptions.map((option) => (
+                  {IMPORT_STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -732,28 +735,24 @@ export default function ImportsClient({
             <CollapsibleTableSection
               title="Inventory Table"
               defaultOpen
-              actions={
-                <InlineAddRowButton label="Add Inventory Item" onClick={addItemRow} />
-              }
             >
               <p className="text-sm text-[var(--foreground)]/70">Pending inventory created here will stay out of live inventory until the import is final.</p>
-              <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-                <table className="w-full min-w-[1380px] text-sm">
-                  <thead className="bg-[var(--panel-hover)] text-left">
-                    <tr>
-                      <th className="h-10 px-3 py-2">Product</th>
-                      <th className="h-10 px-3 py-2">Item #</th>
-                      <th className="h-10 px-3 py-2">Starting Stock</th>
-                      <th className="h-10 px-3 py-2">Location</th>
-                      <th className="h-10 px-3 py-2">Dye Lot</th>
-                      <th className="h-10 px-3 py-2">Cost $</th>
-                      <th className="h-10 px-3 py-2">Freight $</th>
-                      <th className="h-10 px-3 py-2">Import Warehouse</th>
-                      <th className="h-10 px-3 py-2">Import Status</th>
-                      <th className="h-10 px-3 py-2">Notes</th>
-                      <th className="h-10 px-3 py-2">Remove</th>
-                    </tr>
-                  </thead>
+              <ModalTableShell minWidthClass="min-w-[1380px]">
+                <ModalTableHead>
+                  <tr>
+                    <TableHeaderCell>Product</TableHeaderCell>
+                    <TableHeaderCell>Item #</TableHeaderCell>
+                    <TableHeaderCell>Starting Stock</TableHeaderCell>
+                    <TableHeaderCell>Location</TableHeaderCell>
+                    <TableHeaderCell>Dye Lot</TableHeaderCell>
+                    <TableHeaderCell>Cost $</TableHeaderCell>
+                    <TableHeaderCell>Freight $</TableHeaderCell>
+                    <TableHeaderCell>Import Warehouse</TableHeaderCell>
+                    <TableHeaderCell>Import Status</TableHeaderCell>
+                    <TableHeaderCell>Notes</TableHeaderCell>
+                    <TableHeaderCell>Remove</TableHeaderCell>
+                  </tr>
+                </ModalTableHead>
                   <tbody>
                     {draft.items.map((item, index) => {
                       const filteredLocations = draft.warehouseId
@@ -852,7 +851,9 @@ export default function ImportsClient({
                             />
                           </td>
                           <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === draft.warehouseId)?.name || "-"}</td>
-                          <td className="px-3 py-2">{formatImportStatus(draft.status)}</td>
+                          <td className="px-3 py-2">
+                            <StatusPill label={formatImportStatus(draft.status)} toneClassName={getImportStatusFieldClass(draft.status)} />
+                          </td>
                           <td className="px-3 py-2">
                             <input
                               value={item.notes}
@@ -864,20 +865,18 @@ export default function ImportsClient({
                             />
                           </td>
                           <td className="px-3 py-2">
-                            <button
-                              type="button"
-                              onClick={() => removeItemRow(index)}
-                              className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10"
-                            >
-                              Remove
-                            </button>
+                            <DeleteRowButton onClick={() => removeItemRow(index)}>Remove</DeleteRowButton>
                           </td>
                         </tr>
                       )
                     })}
+                    <tr className="border-t border-[var(--panel-border)]">
+                      <td colSpan={11} className="px-3 py-3">
+                        <InlineAddRowButton label="Add Inventory Item" onClick={addItemRow} />
+                      </td>
+                    </tr>
                   </tbody>
-                </table>
-              </div>
+              </ModalTableShell>
             </CollapsibleTableSection>
 
             <div className="flex justify-end gap-2">
@@ -954,9 +953,9 @@ export default function ImportsClient({
                 <select
                   value={activeImportDraft.transportType}
                   onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, transportType: event.target.value }))}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(activeImportDraft.transportType)}`}
                 >
-                  {transportTypeOptions.map((option) => (
+                  {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -967,9 +966,9 @@ export default function ImportsClient({
                 <select
                   value={activeImportDraft.status}
                   onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, status: event.target.value }))}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(activeImportDraft.status)}`}
                 >
-                  {statusOptions.map((option) => (
+                  {IMPORT_STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -1008,27 +1007,23 @@ export default function ImportsClient({
             <CollapsibleTableSection
               title="Import Inventory Rows"
               defaultOpen
-              actions={
-                <InlineAddRowButton label="Add Import Inventory Item" onClick={addActiveImportItemRow} />
-              }
             >
               <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
-              <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-                <table className="w-full min-w-[1320px] text-sm">
-                <thead className="bg-[var(--panel-hover)] text-left">
+              <ModalTableShell minWidthClass="min-w-[1320px]">
+                <ModalTableHead>
                   <tr>
-                    <th className="h-10 px-3 py-2">Product</th>
-                    <th className="h-10 px-3 py-2">Item #</th>
-                    <th className="h-10 px-3 py-2">Stock</th>
-                    <th className="h-10 px-3 py-2">Location</th>
-                    <th className="h-10 px-3 py-2">Dye Lot</th>
-                    <th className="h-10 px-3 py-2">Cost $</th>
-                    <th className="h-10 px-3 py-2">Freight $</th>
-                    <th className="h-10 px-3 py-2">Warehouse</th>
-                    <th className="h-10 px-3 py-2">Notes</th>
-                    <th className="h-10 px-3 py-2">Remove</th>
+                    <TableHeaderCell>Product</TableHeaderCell>
+                    <TableHeaderCell>Item #</TableHeaderCell>
+                    <TableHeaderCell>Stock</TableHeaderCell>
+                    <TableHeaderCell>Location</TableHeaderCell>
+                    <TableHeaderCell>Dye Lot</TableHeaderCell>
+                    <TableHeaderCell>Cost $</TableHeaderCell>
+                    <TableHeaderCell>Freight $</TableHeaderCell>
+                    <TableHeaderCell>Warehouse</TableHeaderCell>
+                    <TableHeaderCell>Notes</TableHeaderCell>
+                    <TableHeaderCell>Remove</TableHeaderCell>
                   </tr>
-                </thead>
+                </ModalTableHead>
                 <tbody>
                   {activeImportDraft.items.map((item, index) => {
                     const filteredLocations = activeImportDraft.warehouseId
@@ -1113,27 +1108,18 @@ export default function ImportsClient({
                           />
                         </td>
                         <td className="px-3 py-2">
-                          <button
-                            type="button"
-                            onClick={() => removeActiveImportItemRow(index)}
-                            className="rounded border border-rose-500/40 px-3 py-1 text-rose-600 transition hover:bg-rose-500/10"
-                          >
-                            Remove
-                          </button>
+                          <DeleteRowButton onClick={() => removeActiveImportItemRow(index)}>Remove</DeleteRowButton>
                         </td>
                       </tr>
                     )
                   })}
-                  {activeImportDraft.items.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="px-3 py-8 text-center text-[var(--foreground)]/70">
-                        No inventory rows were attached to this import.
-                      </td>
-                    </tr>
-                  ) : null}
+                  <tr className="border-t border-[var(--panel-border)]">
+                    <td colSpan={10} className="px-3 py-3">
+                      <InlineAddRowButton label="Add Import Inventory Item" onClick={addActiveImportItemRow} />
+                    </td>
+                  </tr>
                 </tbody>
-              </table>
-            </div>
+              </ModalTableShell>
             </CollapsibleTableSection>
 
             <div className="flex justify-end gap-2">
