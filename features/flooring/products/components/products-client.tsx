@@ -364,7 +364,7 @@ export default function FlooringProductsClient({
 
   function renderGroupedRows(groups: GroupedRowTree<ProductRow>[]): ReactNode[] {
     return groups.flatMap((group) => [
-      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleProductColumns.length} />,
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleProductColumns.length} />,
       ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((product) => renderProductRow(product))),
     ])
   }

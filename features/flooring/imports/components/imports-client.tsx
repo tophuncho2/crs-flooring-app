@@ -576,7 +576,7 @@ export default function ImportsClient({
 
   function renderGroupedRows(groups: GroupedRowTree<ImportRow>[]): ReactNode[] {
     return groups.flatMap((group) => [
-      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleImportColumns.length} />,
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleImportColumns.length} />,
       ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderImportRow(row))),
     ])
   }

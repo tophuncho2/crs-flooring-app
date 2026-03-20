@@ -18,6 +18,8 @@ export type GroupField<T> = {
 export type GroupedRowTree<T> = {
   depth: number
   key: string
+  fieldKey: string
+  fieldLabel: string
   label: string
   rows: T[]
   children: GroupedRowTree<T>[]
@@ -168,6 +170,8 @@ export function useTableControls<T>({
         .map(([label, groupRows]) => ({
           depth,
           key: `${field.key}:${label}`,
+          fieldKey: field.key,
+          fieldLabel: field.label,
           label,
           rows: groupRows,
           children: buildTree(groupRows, depth + 1),

@@ -485,7 +485,7 @@ export default function WorkOrdersClient({
     return groups.flatMap((group) => [
       <TableGroupRow
         key={`${group.depth}-${group.key}`}
-        label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`}
+        label={`${group.fieldLabel}: ${group.label}`}
         depth={group.depth}
         colSpan={visibleWorkOrderColumns.length}
       />,

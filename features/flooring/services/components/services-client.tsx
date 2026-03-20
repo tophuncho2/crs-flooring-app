@@ -98,7 +98,6 @@ export default function ServicesClient({
     setIsAscendingSort,
     isGroupingEnabled,
     groupByKeys,
-    groupFields,
     toggleGroupByKey,
     filteredRows,
     sortedRows,
@@ -253,7 +252,7 @@ export default function ServicesClient({
 
   function renderGroupedRows(groups: GroupedRowTree<ServiceRow>[]): ReactNode[] {
     return groups.flatMap((group) => [
-      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
       ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
     ])
   }

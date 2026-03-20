@@ -67,7 +67,6 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
     setIsAscendingSort,
     isGroupingEnabled,
     groupByKeys,
-    groupFields,
     toggleGroupByKey,
     filteredRows,
     sortedRows,
@@ -216,7 +215,7 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
 
   function renderGroupedRows(groups: GroupedRowTree<UnitOfMeasureRow>[]): ReactNode[] {
     return groups.flatMap((group) => [
-      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
       ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
     ])
   }
