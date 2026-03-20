@@ -720,9 +720,6 @@ export default function ManagementCompaniesClient({
               searchPlaceholder="Search company or property"
               isAscendingSort={isAscendingSort}
               onToggleSort={serverTableControls.onToggleSort}
-              isGroupingEnabled={false}
-              onToggleGrouping={() => {}}
-              showGrouping={false}
             >
               <TableColumnSettings
                 columns={orderedCompanyColumns}

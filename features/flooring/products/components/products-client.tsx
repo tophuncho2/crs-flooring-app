@@ -276,22 +276,23 @@ export default function FlooringProductsClient({
     tableKey: "products-main",
     fields: [
       { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
-      { key: "product", label: "Product", getValue: (row) => row.name || "Pending name" },
-      { key: "category", label: "Category", getValue: (row) => row.category.name },
-      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName },
-      { key: "style", label: "Style", getValue: (row) => row.style },
-      { key: "color", label: "Color", getValue: (row) => row.color },
-      { key: "baseColor", label: "Base Color", getValue: (row) => row.baseColor },
+      { key: "product", label: "Product", getValue: (row) => row.name || "Pending name", groupable: false },
+      { key: "category", label: "Category", getValue: (row) => row.category.name, groupable: true },
+      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName, groupable: true },
+      { key: "style", label: "Style", getValue: (row) => row.style, groupable: true },
+      { key: "color", label: "Color", getValue: (row) => row.color, groupable: true },
+      { key: "baseColor", label: "Base Color", getValue: (row) => row.baseColor, groupable: true },
       {
         key: "coverage",
         label: "Coverage",
         getValue: (row) => (row.coveragePerUnit ? `${row.coveragePerUnit} / ${row.coverageUnit || "unit"}` : ""),
+        groupable: false,
       },
-      { key: "width", label: "Width", getValue: (row) => row.width },
-      { key: "sheetSize", label: "Sheet Size", getValue: (row) => row.sheetSize },
-      { key: "thickness", label: "Thickness", getValue: (row) => row.thickness },
-      { key: "unitWeight", label: "Unit Weight", getValue: (row) => row.unitWeight },
-      { key: "photos", label: "Photos", getValue: (row) => String(row.photoUrls.length) },
+      { key: "width", label: "Width", getValue: (row) => row.width, groupable: false },
+      { key: "sheetSize", label: "Sheet Size", getValue: (row) => row.sheetSize, groupable: false },
+      { key: "thickness", label: "Thickness", getValue: (row) => row.thickness, groupable: false },
+      { key: "unitWeight", label: "Unit Weight", getValue: (row) => row.unitWeight, groupable: false },
+      { key: "photos", label: "Photos", getValue: (row) => String(row.photoUrls.length), groupable: false },
       { key: "actions", label: "Actions", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
@@ -612,14 +613,6 @@ export default function FlooringProductsClient({
                 searchPlaceholder="Search product name"
                 isAscendingSort={isAscendingSort}
                 onToggleSort={serverTableControls.onToggleSort}
-                isGroupingEnabled={isGroupingEnabled}
-                onToggleGrouping={serverTableControls.onToggleGrouping}
-                groupOptions={productGroupOptions}
-                groupByKeys={groupByKeys}
-                onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-                onAddGroupBy={serverTableControls.onAddGroupBy}
-                onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
-                maxGroupFields={MAX_GROUP_FIELDS}
               >
                 <TableColumnSettings
                   columns={orderedProductColumns}
@@ -627,6 +620,9 @@ export default function FlooringProductsClient({
                   onToggleColumn={toggleProductColumnVisibility}
                   onMoveColumn={moveProductColumn}
                   onSetColumnOrder={setProductColumnOrder}
+                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                  maxGroupFields={MAX_GROUP_FIELDS}
+                  onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
                 />
                 <button
                   type="button"

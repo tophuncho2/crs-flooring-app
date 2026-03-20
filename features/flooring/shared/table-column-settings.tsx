@@ -27,16 +27,25 @@ type TableColumnSettingsProps<TColumn extends TableColumnDefinition> = {
   onToggleColumn: (columnKey: string, isVisible: boolean) => void
   onMoveColumn: (columnKey: string, direction: "up" | "down") => void
   onSetColumnOrder?: (columnKeys: string[]) => void
+  groupedColumnKeys?: string[]
+  maxGroupFields?: number
+  onToggleGroupedColumn?: (columnKey: string) => void
 }
 
 function SortableColumnRow<TColumn extends TableColumnDefinition>({
   column,
   isVisible,
   onToggleColumn,
+  groupOrder,
+  isGroupToggleDisabled,
+  onToggleGroupedColumn,
 }: {
   column: TColumn
   isVisible: boolean
   onToggleColumn: (columnKey: string, isVisible: boolean) => void
+  groupOrder: number | null
+  isGroupToggleDisabled: boolean
+  onToggleGroupedColumn?: (columnKey: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: column.key })
   const style = {
@@ -67,6 +76,26 @@ function SortableColumnRow<TColumn extends TableColumnDefinition>({
         />
         <span className="truncate">{column.label}</span>
       </label>
+      {column.groupable && onToggleGroupedColumn ? (
+        <button
+          type="button"
+          onClick={() => onToggleGroupedColumn(column.key)}
+          disabled={isGroupToggleDisabled}
+          aria-label={groupOrder === null ? `Group by ${column.label}` : `Remove grouping for ${column.label}`}
+          aria-pressed={groupOrder !== null}
+          title={groupOrder === null ? "Group by this column" : `Grouping order ${groupOrder + 1}`}
+          className={[
+            "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded border text-[11px] font-semibold transition",
+            groupOrder !== null
+              ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
+              : isGroupToggleDisabled
+                ? "cursor-not-allowed border-[var(--panel-border)] text-[var(--foreground)]/35"
+                : "border-[var(--panel-border)] text-[var(--foreground)]/70 hover:bg-[var(--panel-hover)]",
+          ].join(" ")}
+        >
+          {groupOrder === null ? "G" : String(groupOrder + 1)}
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -77,6 +106,9 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
   onToggleColumn,
   onMoveColumn,
   onSetColumnOrder,
+  groupedColumnKeys = [],
+  maxGroupFields = 3,
+  onToggleGroupedColumn,
 }: TableColumnSettingsProps<TColumn>) {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -143,14 +175,20 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={columns.map((column) => column.key)} strategy={verticalListSortingStrategy}>
               <div className="space-y-2">
-                {columns.map((column) => (
-                  <SortableColumnRow
-                    key={column.key}
-                    column={column}
-                    isVisible={!hiddenColumnKeys.includes(column.key)}
-                    onToggleColumn={onToggleColumn}
-                  />
-                ))}
+                {columns.map((column) => {
+                  const groupOrder = groupedColumnKeys.indexOf(column.key)
+                  return (
+                    <SortableColumnRow
+                      key={column.key}
+                      column={column}
+                      isVisible={!hiddenColumnKeys.includes(column.key)}
+                      onToggleColumn={onToggleColumn}
+                      groupOrder={groupOrder === -1 ? null : groupOrder}
+                      isGroupToggleDisabled={groupOrder === -1 && groupedColumnKeys.length >= maxGroupFields}
+                      onToggleGroupedColumn={onToggleGroupedColumn}
+                    />
+                  )
+                })}
               </div>
             </SortableContext>
           </DndContext>

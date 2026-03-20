@@ -124,12 +124,9 @@ export default function CategoriesClient({
     isAscendingSort,
     setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
     groupFields,
+    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -151,13 +148,13 @@ export default function CategoriesClient({
     tableKey: "categories-main",
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "name", label: "Category", getValue: (row) => row.name },
-      { key: "sendUnit", label: "Send Unit", getValue: (row) => row.sendUnit },
-      { key: "stockUnit", label: "Stock Unit", getValue: (row) => row.stockUnit },
-      { key: "coverageAvailableUnit", label: "Coverage Available Unit", getValue: (row) => row.coverageAvailableUnit },
-      { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row) => row.itemCoverageUnit },
-      { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit },
-      { key: "products", label: "Products", getValue: (row) => String(row.productCount) },
+      { key: "name", label: "Category", getValue: (row) => row.name, groupable: false },
+      { key: "sendUnit", label: "Send Unit", getValue: (row) => row.sendUnit, groupable: true },
+      { key: "stockUnit", label: "Stock Unit", getValue: (row) => row.stockUnit, groupable: true },
+      { key: "coverageAvailableUnit", label: "Coverage Available Unit", getValue: (row) => row.coverageAvailableUnit, groupable: true },
+      { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row) => row.itemCoverageUnit, groupable: true },
+      { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit, groupable: true },
+      { key: "products", label: "Products", getValue: (row) => String(row.productCount), groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
@@ -305,14 +302,6 @@ export default function CategoriesClient({
               searchPlaceholder="Search categories"
               isAscendingSort={isAscendingSort}
               onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-              onAddGroupBy={addGroupByKey}
-              onRemoveGroupBy={removeGroupByKeyAtIndex}
-              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -320,6 +309,9 @@ export default function CategoriesClient({
                 onToggleColumn={toggleColumnVisibility}
                 onMoveColumn={moveColumn}
                 onSetColumnOrder={setColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={toggleGroupByKey}
               />
               <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
                 <Plus size={16} />

@@ -42,7 +42,7 @@ function buildNextSearchParams({
   nextSearchParams.set("sort", isAscendingSort ? "asc" : "desc")
   nextSearchParams.set("grouped", isGroupingEnabled ? "1" : "0")
 
-  if (groupByKeys.length > 0) {
+  if (isGroupingEnabled && groupByKeys.length > 0) {
     nextSearchParams.set("groups", groupByKeys.join(","))
   } else {
     nextSearchParams.delete("groups")
@@ -125,44 +125,20 @@ export function useServerTableQueryControls({
         groupByKeys,
       })
     },
-    onToggleGrouping: () => {
-      const nextIsGroupingEnabled = !isGroupingEnabled
-      setIsGroupingEnabled(nextIsGroupingEnabled)
-      replaceUrl({
-        searchQuery,
-        isAscendingSort,
-        isGroupingEnabled: nextIsGroupingEnabled,
-        groupByKeys,
+    onToggleGroupByKey: (columnKey: string) => {
+      if (!stableGroupOptions.includes(columnKey)) return
+
+      const activeGroupByKeys = (isGroupingEnabled ? groupByKeys : []).filter((key, index, keys) => {
+        return Boolean(key) && keys.indexOf(key) === index && stableGroupOptions.includes(key)
       })
-    },
-    onGroupByKeyAtIndexChange: (index: number, nextKey: string) => {
-      const nextGroupByKeys = [...groupByKeys]
-      nextGroupByKeys[index] = nextKey
-      const dedupedGroupByKeys = nextGroupByKeys.filter((key, keyIndex) => key && nextGroupByKeys.indexOf(key) === keyIndex).slice(0, 3)
-      setGroupByKeys(dedupedGroupByKeys)
-      replaceUrl({
-        searchQuery,
-        isAscendingSort,
-        isGroupingEnabled: true,
-        groupByKeys: dedupedGroupByKeys,
-      })
-    },
-    onAddGroupBy: () => {
-      const nextKey = stableGroupOptions.find((key) => !groupByKeys.includes(key))
-      if (!nextKey) return
-      const nextGroupByKeys = [...groupByKeys, nextKey].slice(0, 3)
-      setGroupByKeys(nextGroupByKeys)
-      setIsGroupingEnabled(true)
-      replaceUrl({
-        searchQuery,
-        isAscendingSort,
-        isGroupingEnabled: true,
-        groupByKeys: nextGroupByKeys,
-      })
-    },
-    onRemoveGroupBy: (index: number) => {
-      const nextGroupByKeys = groupByKeys.filter((_, keyIndex) => keyIndex !== index)
-      const nextIsGroupingEnabled = nextGroupByKeys.length > 0 ? isGroupingEnabled : false
+
+      const nextGroupByKeys = activeGroupByKeys.includes(columnKey)
+        ? activeGroupByKeys.filter((key) => key !== columnKey)
+        : activeGroupByKeys.length >= 3
+          ? activeGroupByKeys
+          : [...activeGroupByKeys, columnKey]
+      const nextIsGroupingEnabled = nextGroupByKeys.length > 0
+
       setGroupByKeys(nextGroupByKeys)
       setIsGroupingEnabled(nextIsGroupingEnabled)
       replaceUrl({

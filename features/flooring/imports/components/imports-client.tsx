@@ -288,15 +288,15 @@ export default function ImportsClient({
   })
   const importColumns = useMemo(
     () => [
-      { key: "edit", label: "Edit" },
-      { key: "importNumber", label: "Import #" },
-      { key: "tag", label: "Tag" },
-      { key: "transport", label: "Transport" },
-      { key: "status", label: "Status" },
-      { key: "warehouse", label: "Warehouse" },
-      { key: "created", label: "Created" },
-      { key: "items", label: "Items" },
-      { key: "delete", label: "Delete" },
+      { key: "edit", label: "Edit", groupable: false },
+      { key: "importNumber", label: "Import #", groupable: false },
+      { key: "tag", label: "Tag", groupable: false },
+      { key: "transport", label: "Transport", groupable: true },
+      { key: "status", label: "Status", groupable: true },
+      { key: "warehouse", label: "Warehouse", groupable: true },
+      { key: "created", label: "Created", groupable: false },
+      { key: "items", label: "Items", groupable: false },
+      { key: "delete", label: "Delete", groupable: false },
     ],
     [],
   )
@@ -597,14 +597,6 @@ export default function ImportsClient({
               onToggleSort={serverTableControls.onToggleSort}
               ascendingSortLabel="1-9"
               descendingSortLabel="9-1"
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={serverTableControls.onToggleGrouping}
-              groupOptions={importGroupOptions}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-              onAddGroupBy={serverTableControls.onAddGroupBy}
-              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
-              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={orderedImportColumns}
@@ -612,6 +604,9 @@ export default function ImportsClient({
                 onToggleColumn={toggleImportColumnVisibility}
                 onMoveColumn={moveImportColumn}
                 onSetColumnOrder={setImportColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
               />
               <button
                 type="button"

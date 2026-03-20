@@ -83,12 +83,9 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     isAscendingSort,
     setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
     groupFields,
+    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -110,12 +107,12 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     tableKey: "manufacturers-main",
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "companyName", label: "Company Name", getValue: (row) => row.companyName || "No company" },
-      { key: "agentName", label: "Agent Name", getValue: (row) => row.agentName || "No agent" },
-      { key: "website", label: "Website", getValue: (row) => row.website },
-      { key: "phone", label: "Phone", getValue: (row) => row.phone },
-      { key: "email", label: "Email", getValue: (row) => row.email },
-      { key: "products", label: "Products", getValue: (row) => String(row.productsCount) },
+      { key: "companyName", label: "Company Name", getValue: (row) => row.companyName || "No company", groupable: true },
+      { key: "agentName", label: "Agent Name", getValue: (row) => row.agentName || "No agent", groupable: false },
+      { key: "website", label: "Website", getValue: (row) => row.website, groupable: false },
+      { key: "phone", label: "Phone", getValue: (row) => row.phone, groupable: false },
+      { key: "email", label: "Email", getValue: (row) => row.email, groupable: false },
+      { key: "products", label: "Products", getValue: (row) => String(row.productsCount), groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.companyName || row.agentName,
@@ -264,14 +261,6 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
               searchPlaceholder="Search manufacturers"
               isAscendingSort={isAscendingSort}
               onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-              onAddGroupBy={addGroupByKey}
-              onRemoveGroupBy={removeGroupByKeyAtIndex}
-              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -279,6 +268,9 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
                 onToggleColumn={toggleColumnVisibility}
                 onMoveColumn={moveColumn}
                 onSetColumnOrder={setColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={toggleGroupByKey}
               />
               <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
                 <Plus size={16} />

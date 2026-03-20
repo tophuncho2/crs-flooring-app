@@ -260,23 +260,23 @@ export default function InventoryClient({
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
       { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
-      { key: "importNumber", label: "Import #", getValue: (row) => row.importNumber },
-      { key: "importTag", label: "Import Tag", getValue: (row) => row.importTag },
-      { key: "status", label: "Import Status", getValue: (row) => formatImportStatus(row.importStatus) },
-      { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.importTransportType) },
-      { key: "product", label: "Product", getValue: (row) => row.productName },
-      { key: "itemNumber", label: "Item #", getValue: (row) => row.itemNumber },
-      { key: "stockCount", label: "Starting Stock", getValue: (row) => row.stockCount },
-      { key: "cutTotal", label: "Cuts Total", getValue: (row) => row.cutTotal },
-      { key: "runningBalance", label: "Running Balance", getValue: (row) => row.runningBalance },
-      { key: "section", label: "Section", getValue: (row) => row.sectionName },
-      { key: "location", label: "Location", getValue: (row) => row.locationCode },
-      { key: "warehouse", label: "Warehouse", getValue: (row) => row.importWarehouseName || row.warehouseName },
-      { key: "dyeLot", label: "Dye Lot", getValue: (row) => row.dyeLot },
-      { key: "cost", label: "Cost $", getValue: (row) => row.cost, defaultHidden: true },
-      { key: "freight", label: "Freight $", getValue: (row) => row.freight, defaultHidden: true },
-      { key: "notes", label: "Notes", getValue: (row) => row.notes, defaultHidden: true },
-      { key: "updated", label: "Updated", getValue: (row) => row.updatedAt.split("T")[0], defaultHidden: true },
+      { key: "importNumber", label: "Import #", getValue: (row) => row.importNumber, groupable: false },
+      { key: "importTag", label: "Import Tag", getValue: (row) => row.importTag, groupable: false },
+      { key: "status", label: "Import Status", getValue: (row) => formatImportStatus(row.importStatus), groupable: true },
+      { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.importTransportType), groupable: true },
+      { key: "product", label: "Product", getValue: (row) => row.productName, groupable: true },
+      { key: "itemNumber", label: "Item #", getValue: (row) => row.itemNumber, groupable: false },
+      { key: "stockCount", label: "Starting Stock", getValue: (row) => row.stockCount, groupable: false },
+      { key: "cutTotal", label: "Cuts Total", getValue: (row) => row.cutTotal, groupable: false },
+      { key: "runningBalance", label: "Running Balance", getValue: (row) => row.runningBalance, groupable: false },
+      { key: "section", label: "Section", getValue: (row) => row.sectionName, groupable: true },
+      { key: "location", label: "Location", getValue: (row) => row.locationCode, groupable: true },
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.importWarehouseName || row.warehouseName, groupable: true },
+      { key: "dyeLot", label: "Dye Lot", getValue: (row) => row.dyeLot, groupable: false },
+      { key: "cost", label: "Cost $", getValue: (row) => row.cost, defaultHidden: true, groupable: false },
+      { key: "freight", label: "Freight $", getValue: (row) => row.freight, defaultHidden: true, groupable: false },
+      { key: "notes", label: "Notes", getValue: (row) => row.notes, defaultHidden: true, groupable: false },
+      { key: "updated", label: "Updated", getValue: (row) => row.updatedAt.split("T")[0], defaultHidden: true, groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.itemNumber,
@@ -575,14 +575,6 @@ export default function InventoryClient({
               onToggleSort={serverTableControls.onToggleSort}
               ascendingSortLabel="A-Z"
               descendingSortLabel="Z-A"
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={serverTableControls.onToggleGrouping}
-              groupOptions={groupOptions}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-              onAddGroupBy={serverTableControls.onAddGroupBy}
-              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
-              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={orderedInventoryColumns}
@@ -590,6 +582,9 @@ export default function InventoryClient({
                 onToggleColumn={toggleInventoryColumnVisibility}
                 onMoveColumn={moveInventoryColumn}
                 onSetColumnOrder={setInventoryColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
               />
             </TableControlsBar>
           </TableActionsSummary>

@@ -180,9 +180,11 @@ export function useTableControls<T>({
   const setGroupByKey = (value: string | null) => {
     if (!value) {
       setGroupByKeys([])
+      setIsGroupingEnabled(false)
       return
     }
     setGroupByKeys([value])
+    setIsGroupingEnabled(true)
   }
 
   const updateGroupByKeyAtIndex = (index: number, nextKey: string) => {
@@ -204,7 +206,26 @@ export function useTableControls<T>({
   }
 
   const removeGroupByKeyAtIndex = (index: number) => {
-    setGroupByKeys((previous) => previous.filter((_, keyIndex) => keyIndex !== index))
+    const nextGroupByKeys = groupByKeys.filter((_, keyIndex) => keyIndex !== index)
+    setGroupByKeys(nextGroupByKeys)
+    setIsGroupingEnabled(nextGroupByKeys.length > 0)
+  }
+
+  const toggleGroupByKey = (nextKey: string) => {
+    if (!groupFields.some((field) => field.key === nextKey)) return
+
+    const activeGroupKeys = (isGroupingEnabled ? groupByKeys : []).filter((key, index, keys) => {
+      return Boolean(key) && keys.indexOf(key) === index && groupFields.some((field) => field.key === key)
+    })
+
+    const nextGroupByKeys = activeGroupKeys.includes(nextKey)
+      ? activeGroupKeys.filter((key) => key !== nextKey)
+      : activeGroupKeys.length >= maxGroupFields
+        ? activeGroupKeys
+        : [...activeGroupKeys, nextKey]
+
+    setGroupByKeys(nextGroupByKeys)
+    setIsGroupingEnabled(nextGroupByKeys.length > 0)
   }
 
   const hasPreviousPage = safePage > 1
@@ -245,6 +266,7 @@ export function useTableControls<T>({
     updateGroupByKeyAtIndex,
     addGroupByKey,
     removeGroupByKeyAtIndex,
+    toggleGroupByKey,
     groupFields,
     filteredRows,
     sortedRows,

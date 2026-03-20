@@ -66,12 +66,9 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
     isAscendingSort,
     setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
     groupFields,
+    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -93,8 +90,8 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
     tableKey: "unit-of-measures-main",
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "name", label: "Unit Of Measure", getValue: (row) => row.name },
-      { key: "createdAt", label: "Created", getValue: (row) => row.createdAt },
+      { key: "name", label: "Unit Of Measure", getValue: (row) => row.name, groupable: false },
+      { key: "createdAt", label: "Created", getValue: (row) => row.createdAt, groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
@@ -238,14 +235,6 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
               searchPlaceholder="Search unit of measures"
               isAscendingSort={isAscendingSort}
               onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-              onAddGroupBy={addGroupByKey}
-              onRemoveGroupBy={removeGroupByKeyAtIndex}
-              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -253,6 +242,9 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
                 onToggleColumn={toggleColumnVisibility}
                 onMoveColumn={moveColumn}
                 onSetColumnOrder={setColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={toggleGroupByKey}
               />
               <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
                 <Plus size={16} />

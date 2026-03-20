@@ -15,6 +15,7 @@ import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHead
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
 import { FormStatusNotices } from "../../shared/notices"
 
@@ -185,9 +186,10 @@ export default function PropertiesClient({
     setIsGroupingEnabled,
     groupByKeys,
     setGroupByKeys,
+    groupFields,
     filteredRows: filteredProperties,
     sortedRows: sortedProperties,
-    groupedRows: groupedProperties,
+    groupedRowTree: groupedProperties,
     page,
     pageSize,
     totalPages,
@@ -207,15 +209,15 @@ export default function PropertiesClient({
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
       { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
-      { key: "property", label: "Property", getValue: (row) => row.name },
-      { key: "street", label: "Street", getValue: (row) => row.streetAddress },
-      { key: "city", label: "City", getValue: (row) => row.city },
-      { key: "state", label: "State", getValue: (row) => row.state },
-      { key: "zip", label: "Zip", getValue: (row) => row.zip },
-      { key: "phone", label: "Phone", getValue: (row) => row.phone },
-      { key: "email", label: "Email", getValue: (row) => row.email },
-      { key: "fullAddress", label: "Full Address", getValue: (row) => row.fullAddress },
-      { key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompany?.name ?? "No management company" },
+      { key: "property", label: "Property", getValue: (row) => row.name, groupable: false },
+      { key: "street", label: "Street", getValue: (row) => row.streetAddress, groupable: false },
+      { key: "city", label: "City", getValue: (row) => row.city, groupable: true },
+      { key: "state", label: "State", getValue: (row) => row.state, groupable: true },
+      { key: "zip", label: "Zip", getValue: (row) => row.zip, groupable: false },
+      { key: "phone", label: "Phone", getValue: (row) => row.phone, groupable: false },
+      { key: "email", label: "Email", getValue: (row) => row.email, groupable: false },
+      { key: "fullAddress", label: "Full Address", getValue: (row) => row.fullAddress, groupable: false },
+      { key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompany?.name ?? "No management company", groupable: true },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
@@ -227,17 +229,7 @@ export default function PropertiesClient({
     disableClientSorting: true,
     disableClientPagination: true,
   })
-  const propertyGroupOptions = [
-    { key: "property", label: "Property" },
-    { key: "street", label: "Street" },
-    { key: "city", label: "City" },
-    { key: "state", label: "State" },
-    { key: "zip", label: "Zip" },
-    { key: "phone", label: "Phone" },
-    { key: "email", label: "Email" },
-    { key: "fullAddress", label: "Full Address" },
-    { key: "managementCompany", label: "Management Company" },
-  ]
+  const propertyGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
   const serverTableControls = useServerTableQueryControls({
     searchQuery,
     setSearchQuery,
@@ -258,6 +250,55 @@ export default function PropertiesClient({
   function setSelectedPropertyDraftField(field: keyof DraftProperty, value: string) {
     const normalizedValue = field === "state" ? normalizeAddressState(value) : value
     setSelectedPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+  }
+
+  function renderPropertyRow(row: PropertyRow) {
+    const cells: Record<string, ReactNode> = {
+      edit: (
+        <td key="edit" className="px-2 py-2">
+          <EditRowButton onClick={() => openPropertyPanel(row, "edit")} className="px-2 py-1" />
+        </td>
+      ),
+      open: (
+        <td key="open" className="px-2 py-2">
+          <OpenRowButton onClick={() => openPropertyPanel(row, "view")} className="px-2 py-1">Open</OpenRowButton>
+        </td>
+      ),
+      property: <td key="property" className="px-3 py-2">{row.name}</td>,
+      street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+      city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+      state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+      zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+      fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
+      managementCompany: <td key="managementCompany" className="px-3 py-2">{row.managementCompany?.name || "No management company"}</td>,
+      delete: (
+        <td key="delete" className="px-3 py-2">
+          <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
+            {deletingId === row.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </td>
+      ),
+    }
+
+    return (
+      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+        {visiblePropertyColumns.map((column) => cells[column.key])}
+      </tr>
+    )
+  }
+
+  function renderGroupedRows(groups: GroupedRowTree<PropertyRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow
+        key={`${group.depth}-${group.key}`}
+        label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`}
+        depth={group.depth}
+        colSpan={visiblePropertyColumns.length}
+      />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderPropertyRow(row))),
+    ])
   }
 
   function createPropertyDraft(property: PropertyRow): DraftProperty {
@@ -521,13 +562,6 @@ export default function PropertiesClient({
               searchPlaceholder="Search property or company"
               isAscendingSort={isAscendingSort}
               onToggleSort={serverTableControls.onToggleSort}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={serverTableControls.onToggleGrouping}
-              groupOptions={propertyGroupOptions}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-              onAddGroupBy={serverTableControls.onAddGroupBy}
-              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
             >
               <TableColumnSettings
                 columns={orderedPropertyColumns}
@@ -535,6 +569,9 @@ export default function PropertiesClient({
                 onToggleColumn={togglePropertyColumnVisibility}
                 onMoveColumn={movePropertyColumn}
                 onSetColumnOrder={setPropertyColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
               />
               <button
                 type="button"
@@ -565,53 +602,7 @@ export default function PropertiesClient({
               </tr>
             </TableHead>
             <tbody>
-              {(isGroupingEnabled
-                ? groupedProperties.flatMap(([groupName, groupRows]) => [
-                    { type: "group" as const, groupName },
-                    ...groupRows.map((row) => ({ type: "row" as const, row })),
-                  ])
-                : sortedProperties.map((row) => ({ type: "row" as const, row }))
-              ).map((entry) => {
-                if (entry.type === "group") {
-                  return <TableGroupRow key={`group-${entry.groupName}`} label={entry.groupName} colSpan={visiblePropertyColumns.length} />
-                }
-
-                const row = entry.row
-                const cells: Record<string, ReactNode> = {
-                  edit: (
-                    <td key="edit" className="px-2 py-2">
-                      <EditRowButton onClick={() => openPropertyPanel(row, "edit")} className="px-2 py-1" />
-                    </td>
-                  ),
-                  open: (
-                    <td key="open" className="px-2 py-2">
-                      <OpenRowButton onClick={() => openPropertyPanel(row, "view")} className="px-2 py-1">Open</OpenRowButton>
-                    </td>
-                  ),
-                  property: <td key="property" className="px-3 py-2">{row.name}</td>,
-                  street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-                  city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-                  state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-                  zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-                  phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-                  email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-                  fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-                  managementCompany: <td key="managementCompany" className="px-3 py-2">{row.managementCompany?.name || "No management company"}</td>,
-                  delete: (
-                    <td key="delete" className="px-3 py-2">
-                      <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
-                        {deletingId === row.id ? "Deleting..." : "Delete"}
-                      </DeleteRowButton>
-                    </td>
-                  ),
-                }
-
-                return (
-                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-                    {visiblePropertyColumns.map((column) => cells[column.key])}
-                  </tr>
-                )
-              })}
+              {isGroupingEnabled ? renderGroupedRows(groupedProperties) : sortedProperties.map((row) => renderPropertyRow(row))}
 
               {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visiblePropertyColumns.length} /> : null}
             </tbody>

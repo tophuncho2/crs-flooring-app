@@ -16,6 +16,7 @@ import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../s
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 
 type TemplateRow = {
@@ -133,9 +134,10 @@ export default function TemplatesClient({
     setIsGroupingEnabled,
     groupByKeys,
     setGroupByKeys,
+    groupFields,
     filteredRows: filteredTemplates,
     sortedRows: sortedTemplates,
-    groupedRows: groupedTemplates,
+    groupedRowTree: groupedTemplates,
     page,
     pageSize,
     totalPages,
@@ -155,13 +157,13 @@ export default function TemplatesClient({
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
       { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
-      { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber },
-      { key: "templateTag", label: "Template Tag", getValue: (row) => row.templateTag },
-      { key: "property", label: "Property", getValue: (row) => row.propertyName },
-      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
-      { key: "instructions", label: "Instructions", getValue: (row) => row.instructions },
-      { key: "padType", label: "Pad Type", getValue: (row) => row.padTypeLabel },
-      { key: "templateNotes", label: "Template Notes", getValue: (row) => row.templateNotes },
+      { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber, groupable: false },
+      { key: "templateTag", label: "Template Tag", getValue: (row) => row.templateTag, groupable: true },
+      { key: "property", label: "Property", getValue: (row) => row.propertyName, groupable: true },
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName, groupable: true },
+      { key: "instructions", label: "Instructions", getValue: (row) => row.instructions, groupable: false },
+      { key: "padType", label: "Pad Type", getValue: (row) => row.padTypeLabel, groupable: true },
+      { key: "templateNotes", label: "Template Notes", getValue: (row) => row.templateNotes, groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => `${row.propertyName} ${row.templateTag}`,
@@ -173,15 +175,7 @@ export default function TemplatesClient({
     disableClientSorting: true,
     disableClientPagination: true,
   })
-  const templateGroupOptions = [
-    { key: "templateNumber", label: "Template #" },
-    { key: "templateTag", label: "Template Tag" },
-    { key: "property", label: "Property" },
-    { key: "warehouse", label: "Warehouse" },
-    { key: "instructions", label: "Instructions" },
-    { key: "padType", label: "Pad Type" },
-    { key: "templateNotes", label: "Template Notes" },
-  ]
+  const templateGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
   const serverTableControls = useServerTableQueryControls({
     searchQuery,
     setSearchQuery,
@@ -219,6 +213,53 @@ export default function TemplatesClient({
   function closeTemplate() {
     setActiveTemplateSummary({ materialItems: [], serviceItems: [] })
     closeTemplatePanel()
+  }
+
+  function renderTemplateRow(row: TemplateRow) {
+    const cells: Record<string, ReactNode> = {
+      edit: (
+        <td key="edit" className="px-3 py-2">
+          <EditRowButton onClick={() => void openTemplate(row)} />
+        </td>
+      ),
+      open: (
+        <td key="open" className="px-3 py-2">
+          <OpenRowButton onClick={() => void openTemplate(row)}>Open</OpenRowButton>
+        </td>
+      ),
+      templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
+      templateTag: <td key="templateTag" className="px-3 py-2">{row.templateTag}</td>,
+      property: <td key="property" className="px-3 py-2">{row.propertyName}</td>,
+      warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
+      instructions: <td key="instructions" className="px-3 py-2">{row.instructions || "-"}</td>,
+      padType: <td key="padType" className="px-3 py-2">{row.padTypeLabel || "-"}</td>,
+      templateNotes: <td key="templateNotes" className="px-3 py-2">{row.templateNotes || "-"}</td>,
+      delete: (
+        <td key="delete" className="px-3 py-2">
+          <DeleteRowButton onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id}>
+            {deletingId === row.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </td>
+      ),
+    }
+
+    return (
+      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+        {visibleTemplateColumns.map((column) => cells[column.key])}
+      </tr>
+    )
+  }
+
+  function renderGroupedRows(groups: GroupedRowTree<TemplateRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow
+        key={`${group.depth}-${group.key}`}
+        label={`${groupFields[group.depth]?.label ?? "Group"}: ${group.label}`}
+        depth={group.depth}
+        colSpan={visibleTemplateColumns.length}
+      />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderTemplateRow(row))),
+    ])
   }
 
   async function createTemplate() {
@@ -292,13 +333,6 @@ export default function TemplatesClient({
               searchPlaceholder="Search property"
               isAscendingSort={isAscendingSort}
               onToggleSort={serverTableControls.onToggleSort}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={serverTableControls.onToggleGrouping}
-              groupOptions={templateGroupOptions}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-              onAddGroupBy={serverTableControls.onAddGroupBy}
-              onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
             >
               <TableColumnSettings
                 columns={orderedTemplateColumns}
@@ -306,6 +340,9 @@ export default function TemplatesClient({
                 onToggleColumn={toggleTemplateColumnVisibility}
                 onMoveColumn={moveTemplateColumn}
                 onSetColumnOrder={setTemplateColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
               />
               <button
                 type="button"
@@ -331,51 +368,7 @@ export default function TemplatesClient({
               </tr>
             </TableHead>
             <tbody>
-              {(isGroupingEnabled
-                ? groupedTemplates.flatMap(([propertyName, groupRows]) => [
-                    { type: "group" as const, propertyName },
-                    ...groupRows.map((row) => ({ type: "row" as const, row })),
-                  ])
-                : sortedTemplates.map((row) => ({ type: "row" as const, row }))
-              ).map((entry) => {
-                if (entry.type === "group") {
-                  return <TableGroupRow key={`group-${entry.propertyName}`} label={entry.propertyName} colSpan={visibleTemplateColumns.length} />
-                }
-
-                const row = entry.row
-                const cells: Record<string, ReactNode> = {
-                  edit: (
-                    <td key="edit" className="px-3 py-2">
-                      <EditRowButton onClick={() => void openTemplate(row)} />
-                    </td>
-                  ),
-                  open: (
-                    <td key="open" className="px-3 py-2">
-                      <OpenRowButton onClick={() => void openTemplate(row)}>Open</OpenRowButton>
-                    </td>
-                  ),
-                  templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
-                  templateTag: <td key="templateTag" className="px-3 py-2">{row.templateTag}</td>,
-                  property: <td key="property" className="px-3 py-2">{row.propertyName}</td>,
-                  warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
-                  instructions: <td key="instructions" className="px-3 py-2">{row.instructions || "-"}</td>,
-                  padType: <td key="padType" className="px-3 py-2">{row.padTypeLabel || "-"}</td>,
-                  templateNotes: <td key="templateNotes" className="px-3 py-2">{row.templateNotes || "-"}</td>,
-                  delete: (
-                    <td key="delete" className="px-3 py-2">
-                      <DeleteRowButton onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id}>
-                        {deletingId === row.id ? "Deleting..." : "Delete"}
-                      </DeleteRowButton>
-                    </td>
-                  ),
-                }
-
-                return (
-                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
-                    {visibleTemplateColumns.map((column) => cells[column.key])}
-                  </tr>
-                )
-              })}
+              {isGroupingEnabled ? renderGroupedRows(groupedTemplates) : sortedTemplates.map((row) => renderTemplateRow(row))}
 
               {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
             </tbody>

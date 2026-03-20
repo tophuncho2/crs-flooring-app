@@ -39,7 +39,7 @@ export function useConfiguredTableState<T>({
   disableClientPagination?: boolean
 }) {
   const columns = useMemo(
-    () => fields.map(({ key, label, defaultHidden }) => ({ key, label, defaultHidden })),
+    () => fields.map(({ key, label, defaultHidden, groupable }) => ({ key, label, defaultHidden, groupable })),
     [fields],
   )
   const searchFields = useMemo<SearchField<T>[]>(

@@ -97,12 +97,9 @@ export default function ServicesClient({
     isAscendingSort,
     setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    updateGroupByKeyAtIndex,
-    addGroupByKey,
-    removeGroupByKeyAtIndex,
     groupFields,
+    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -124,11 +121,11 @@ export default function ServicesClient({
     tableKey: "services-main",
     fields: [
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "name", label: "Service Name", getValue: (row) => row.name },
-      { key: "unit", label: "Unit", getValue: (row) => row.unitName },
-      { key: "cost", label: "Cost", getValue: (row) => row.baseCost },
-      { key: "notes", label: "Notes", getValue: (row) => row.notes },
-      { key: "usage", label: "Usage", getValue: (row) => String(row.usageCount) },
+      { key: "name", label: "Service Name", getValue: (row) => row.name, groupable: false },
+      { key: "unit", label: "Unit", getValue: (row) => row.unitName, groupable: true },
+      { key: "cost", label: "Cost", getValue: (row) => row.baseCost, groupable: false },
+      { key: "notes", label: "Notes", getValue: (row) => row.notes, groupable: false },
+      { key: "usage", label: "Usage", getValue: (row) => String(row.usageCount), groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
@@ -275,14 +272,6 @@ export default function ServicesClient({
               searchPlaceholder="Search services"
               isAscendingSort={isAscendingSort}
               onToggleSort={() => setIsAscendingSort((prev) => !prev)}
-              isGroupingEnabled={isGroupingEnabled}
-              onToggleGrouping={() => setIsGroupingEnabled((prev) => !prev)}
-              groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-              groupByKeys={groupByKeys}
-              onGroupByKeyAtIndexChange={updateGroupByKeyAtIndex}
-              onAddGroupBy={addGroupByKey}
-              onRemoveGroupBy={removeGroupByKeyAtIndex}
-              maxGroupFields={MAX_GROUP_FIELDS}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -290,6 +279,9 @@ export default function ServicesClient({
                 onToggleColumn={toggleColumnVisibility}
                 onMoveColumn={moveColumn}
                 onSetColumnOrder={setColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={toggleGroupByKey}
               />
               <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
                 <Plus size={16} />

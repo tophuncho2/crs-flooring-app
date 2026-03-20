@@ -224,21 +224,21 @@ export default function WorkOrdersClient({
     rows: workOrders,
     tableKey: "work-orders-main",
     fields: [
-      { key: "wo", label: "WO", getValue: (row) => row.workOrderNumber },
+      { key: "wo", label: "WO", getValue: (row) => row.workOrderNumber, groupable: false },
       { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
       { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
-      { key: "status", label: "Status", getValue: (row) => workOrderStatusText(row) },
-      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
-      { key: "property", label: "Property", getValue: (row) => row.propertyName },
-      { key: "address", label: "Address", getValue: (row) => buildWorkOrderAddress(propertyLookup.get(row.propertyId), row.customAddress) },
-      { key: "customAddress", label: "Custom Address", getValue: (row) => row.customAddress },
-      { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date") },
-      { key: "unit", label: "Unit", getValue: (row) => row.unitNumber },
-      { key: "unitType", label: "Unit Type", getValue: (row) => row.unitType },
-      { key: "vacancy", label: "Vacancy", getValue: (row) => row.vacancy ?? "" },
-      { key: "instructions", label: "Instructions", getValue: (row) => row.instructions },
-      { key: "notes", label: "Notes", getValue: (row) => row.notes },
-      { key: "items", label: "Items", getValue: (row) => String(row.itemsCount ?? 0) },
+      { key: "status", label: "Status", getValue: (row) => workOrderStatusText(row), groupable: true },
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName, groupable: true },
+      { key: "property", label: "Property", getValue: (row) => row.propertyName, groupable: true },
+      { key: "address", label: "Address", getValue: (row) => buildWorkOrderAddress(propertyLookup.get(row.propertyId), row.customAddress), groupable: false },
+      { key: "customAddress", label: "Custom Address", getValue: (row) => row.customAddress, groupable: false },
+      { key: "date", label: "Date", getValue: (row) => (row.date ? row.date.split("T")[0] : "No Date"), groupable: true },
+      { key: "unit", label: "Unit", getValue: (row) => row.unitNumber, groupable: false },
+      { key: "unitType", label: "Unit Type", getValue: (row) => row.unitType, groupable: true },
+      { key: "vacancy", label: "Vacancy", getValue: (row) => row.vacancy ?? "", groupable: true },
+      { key: "instructions", label: "Instructions", getValue: (row) => row.instructions, groupable: false },
+      { key: "notes", label: "Notes", getValue: (row) => row.notes, groupable: false },
+      { key: "items", label: "Items", getValue: (row) => String(row.itemsCount ?? 0), groupable: false },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.workOrderNumber,
@@ -510,14 +510,6 @@ export default function WorkOrdersClient({
                 onToggleSort={serverTableControls.onToggleSort}
                 ascendingSortLabel="1-9"
                 descendingSortLabel="9-1"
-                isGroupingEnabled={isGroupingEnabled}
-                onToggleGrouping={serverTableControls.onToggleGrouping}
-                groupOptions={groupFields.map((field) => ({ key: field.key, label: field.label }))}
-                groupByKeys={groupByKeys}
-                onGroupByKeyAtIndexChange={serverTableControls.onGroupByKeyAtIndexChange}
-                onAddGroupBy={serverTableControls.onAddGroupBy}
-                onRemoveGroupBy={serverTableControls.onRemoveGroupBy}
-                maxGroupFields={MAX_GROUP_FIELDS}
               >
                 <TableColumnSettings
                   columns={orderedWorkOrderColumns}
@@ -525,6 +517,9 @@ export default function WorkOrdersClient({
                   onToggleColumn={toggleWorkOrderColumnVisibility}
                   onMoveColumn={moveWorkOrderColumn}
                   onSetColumnOrder={setWorkOrderColumnOrder}
+                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                  maxGroupFields={MAX_GROUP_FIELDS}
+                  onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
                 />
                 <button
                   type="button"
