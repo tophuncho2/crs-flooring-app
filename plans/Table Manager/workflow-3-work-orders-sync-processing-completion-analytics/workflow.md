@@ -7,9 +7,9 @@ This workflow defines what starts when a user creates a work order and how that 
 
 ## User Navigation Flow
 
-1. User opens the work-orders table and creates a new work order.
-2. User fills in primary work-order information such as property, warehouse, address, vacancy, date, instructions, and notes.
-3. User opens the work order and uses the sync workflow to bring a template into the work order.
+1. User opens the work-orders table.
+2. User chooses either `Work Order` to create a blank row or `Sync Template` to create a work order from a property template.
+3. In the table-level sync flow, the user selects a property, searches that property's templates, selects one, creates the row, and the new work order opens immediately.
 4. User reviews and edits material rows, service rows, and pricing on the work order.
 5. User continues managing the work order as the live operational record.
 6. Future-state processing then sends the order into worker/automation logic.
@@ -21,10 +21,10 @@ This workflow defines what starts when a user creates a work order and how that 
 ## Current Implemented Behavior
 
 - `implemented`: work orders can be created from the work-orders table.
+- `implemented`: template-based work-order creation now starts from a dedicated table-level `Sync Template` action.
+- `implemented`: table-level template creation selects property first, filters templates by that property, creates the row, and opens it immediately.
 - `implemented`: work orders support `Edit` and `Open`.
 - `implemented`: work-order record panels exist.
-- `implemented`: a template sync modal exists for work orders.
-- `implemented`: sync preview and apply behavior exists in the current work-order flow.
 - `implemented`: work-order header, material-row, and service-row editing exists as a live operational workflow.
 - `implemented`: pricing is already part of the work-order editing surface.
 - `partially implemented`: work-order status behavior exists, but the final lifecycle is still not stabilized.
@@ -43,7 +43,7 @@ This workflow defines what starts when a user creates a work order and how that 
 
 ## Workflow Risks And Ambiguous Decisions
 
-- `future-state / pending workflow finalization`: the exact sync behavior, send timing, and allocation timing are still under active workflow design.
+- `future-state / pending workflow finalization`: the template-to-work-order entry point is now table-driven, but downstream send timing and allocation timing are still under active workflow design.
 - `future-state / pending workflow finalization`: the worker may return inventory attachments, shortage markers, files, and other output fields, but the exact payload and ownership rules are not finalized yet.
 - `future-state / pending workflow finalization`: pricing truth is expected to live on work-order material items, especially if cut-log cleanup or reassignment changes later.
 - `future-state / pending workflow finalization`: completion-to-analytics behavior is still only partially mapped.
@@ -51,7 +51,7 @@ This workflow defines what starts when a user creates a work order and how that 
 ## User-Workflow Checklist
 
 - [ ] Finalize the work-order status lifecycle and visible user states.
-- [ ] Finalize the sync workflow rules for overwrite, append, preview, and duplicate prevention.
+- [ ] Finalize the table-level template-to-work-order creation rules and any duplicate-prevention rules.
 - [ ] Implement the worker-driven send/process workflow.
 - [ ] Return allocation, shortage, and generated-file results back onto the work order and item rows.
 - [ ] Finalize how inventory attachments appear on work-order items.

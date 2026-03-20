@@ -54,6 +54,10 @@ This checklist should be updated as work is completed.
 
 # 2. Workflow Truth / Domain Completion
 
+Canonical order-processing detail now also lives in:
+- [Order Processing Manager README.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Order%20Processing%20Manager/README.md)
+- [ORDER_PROCESSING_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/Order%20Processing%20Manager/ORDER_PROCESSING_PLAN.md)
+
 - [ ] Finalize the work-order lifecycle from `DRAFT` through completion.
 - [ ] Finalize resend rules when shortages occur.
 - [ ] Finalize the order-level shortage rule and how it is represented in the DB and UI.

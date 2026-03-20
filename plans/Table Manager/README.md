@@ -24,6 +24,7 @@ Workflow folders:
 Ownership boundary:
 - `Flooring Domain Manager` owns business and operational workflow truth.
 - `Table Manager` owns user navigation and table-to-table interaction workflow truth.
+- `Order Processing Manager` owns the send/process/completion contract once a work order moves into operational processing.
 
 Update rules:
 - update these workflow docs when row actions, record panels, linked navigation, or create flows change materially

@@ -6,6 +6,7 @@ It should only contain:
 - [ASSESSMENT_TO_100_PERCENT.md](/Users/ottohull/builderswebapp/builderswebapp/plans/ASSESSMENT_TO_100_PERCENT.md)
 - [FIRST_ACTIONS_CHECKLIST.md](/Users/ottohull/builderswebapp/builderswebapp/plans/FIRST_ACTIONS_CHECKLIST.md)
 - [MASTER_PLAN.md](/Users/ottohull/builderswebapp/builderswebapp/plans/MASTER_PLAN.md)
+- [QUESTIONS.md](/Users/ottohull/builderswebapp/builderswebapp/plans/QUESTIONS.md)
 - [STRENGTHS_VS_WEAKNESSES.md](/Users/ottohull/builderswebapp/builderswebapp/plans/STRENGTHS_VS_WEAKNESSES.md)
 
 Everything else should live inside a manager folder.
@@ -96,6 +97,12 @@ Owns user navigation and table-to-table workflow truth across the app.
 Primary entry:
 - [Table Manager README](/Users/ottohull/builderswebapp/builderswebapp/plans/Table%20Manager/README.md)
 
+## [Order Processing Manager](/Users/ottohull/builderswebapp/builderswebapp/plans/Order%20Processing%20Manager)
+Owns the operational order-processing contract from send through completion and worker-readiness.
+
+Primary entry:
+- [Order Processing Manager README](/Users/ottohull/builderswebapp/builderswebapp/plans/Order%20Processing%20Manager/README.md)
+
 ---
 
 # 3. Root Update Rules
@@ -114,4 +121,5 @@ Primary entry:
 2. Workflow truth finalization for templates, work orders, shortages, and completion.
 3. Prisma and platform hardening around drift, migrations, workers, and observability.
 4. Testing expansion from narrow coverage to true release protection.
-5. UI and shell decluttering so the system scales cleanly operationally.
+5. Order-processing contract finalization before worker implementation.
+6. UI and shell decluttering so the system scales cleanly operationally.

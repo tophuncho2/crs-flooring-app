@@ -160,19 +160,34 @@ export default function WorkOrdersClient({
   const [newDraft, setNewDraft] = useState<DraftWorkOrder>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
+  const [syncPropertyId, setSyncPropertyId] = useState("")
+  const [syncTemplateSearch, setSyncTemplateSearch] = useState("")
+  const [selectedSyncTemplateId, setSelectedSyncTemplateId] = useState("")
+  const [isSyncCreateModalOpen, setIsSyncCreateModalOpen] = useState(false)
+  const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [activeWorkOrderSummary, setActiveWorkOrderSummary] = useState<{ materialItems: Array<{ quantity: string; unitPrice: string }>; serviceItems: Array<{ quantity: string; unitPrice: string }> }>({
     materialItems: [],
     serviceItems: [],
   })
-  const [isWorkOrderSyncOpen, setIsWorkOrderSyncOpen] = useState(false)
   const [workOrderRefreshNonce, setWorkOrderRefreshNonce] = useState(0)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
 
   const propertyLookup = useMemo(() => new Map(propertyOptions.map((property) => [property.id, property])), [propertyOptions])
+  const warehouseLookup = useMemo(() => new Map(warehouseOptions.map((warehouse) => [warehouse.id, warehouse.name])), [warehouseOptions])
   const activeWorkOrder = workOrders.find((row) => row.id === activeWorkOrderId) ?? null
+  const filteredSyncTemplates = useMemo(() => {
+    const normalizedSearch = syncTemplateSearch.trim().toLowerCase()
+    return templateOptions.filter((template) => {
+      if (!syncPropertyId || template.propertyId !== syncPropertyId) {
+        return false
+      }
+
+      return !normalizedSearch || template.label.toLowerCase().includes(normalizedSearch)
+    })
+  }, [syncPropertyId, syncTemplateSearch, templateOptions])
   const {
     searchQuery,
     setSearchQuery,
@@ -245,10 +260,27 @@ export default function WorkOrdersClient({
     setNewDraft((prev) => ({ ...prev, [field]: value }))
   }
 
+  function resetTemplateCreateFlow() {
+    setSyncPropertyId("")
+    setSyncTemplateSearch("")
+    setSelectedSyncTemplateId("")
+  }
+
   function formatRow(row: WorkOrderRow) {
     return {
       displayOrder: row.workOrderNumber,
       displayAddress: buildWorkOrderAddress(propertyLookup.get(row.propertyId), row.customAddress),
+    }
+  }
+
+  function hydrateWorkOrderRow(workOrder: WorkOrderRow) {
+    const property = propertyLookup.get(workOrder.propertyId)
+
+    return {
+      ...workOrder,
+      propertyName: property?.name ?? workOrder.propertyName,
+      propertyAddress: buildWorkOrderAddress(property, workOrder.customAddress),
+      warehouseName: warehouseLookup.get(workOrder.warehouseId) ?? workOrder.warehouseName,
     }
   }
 
@@ -260,7 +292,6 @@ export default function WorkOrdersClient({
 
   function closeWorkOrder() {
     setActiveWorkOrderSummary({ materialItems: [], serviceItems: [] })
-    setIsWorkOrderSyncOpen(false)
     closeWorkOrderPanel()
   }
 
@@ -279,8 +310,7 @@ export default function WorkOrdersClient({
       })
       if (!payload.workOrder) throw new Error("Failed to complete work order")
 
-      setWorkOrders((prev) => prev.map((row) => (row.id === payload.workOrder!.id ? payload.workOrder! : row)))
-      setIsWorkOrderSyncOpen(false)
+      setWorkOrders((prev) => prev.map((row) => (row.id === payload.workOrder!.id ? hydrateWorkOrderRow(payload.workOrder!) : row)))
       setWorkOrderRefreshNonce((current) => current + 1)
       setMessage("Work order marked complete")
     } catch (completeError) {
@@ -311,17 +341,11 @@ export default function WorkOrdersClient({
       })
       if (!payload.workOrder) throw new Error("Failed to create work order")
 
-      const createdWorkOrder = payload.workOrder
-      const property = propertyLookup.get(createdWorkOrder.propertyId)
+      const createdWorkOrder = hydrateWorkOrderRow(payload.workOrder)
 
       setWorkOrders((prev) => {
         return [
-          {
-            ...createdWorkOrder,
-            propertyName: property?.name ?? createdWorkOrder.propertyName,
-            propertyAddress: buildWorkOrderAddress(property, createdWorkOrder.customAddress),
-            warehouseName: warehouseOptions.find((item) => item.id === createdWorkOrder.warehouseId)?.name ?? "",
-          },
+          createdWorkOrder,
           ...prev,
         ]
       })
@@ -332,6 +356,47 @@ export default function WorkOrdersClient({
       setError(createError instanceof Error ? createError.message : "Failed to create work order")
     } finally {
       setIsSavingNew(false)
+    }
+  }
+
+  async function createWorkOrderFromTemplate() {
+    setIsCreatingFromTemplate(true)
+    setMessage("")
+    setError("")
+
+    try {
+      if (!syncPropertyId) {
+        throw new Error("Property is required")
+      }
+      if (!selectedSyncTemplateId) {
+        throw new Error("Template is required")
+      }
+
+      const payload = await requestJson<{
+        workOrder?: WorkOrderRow
+      }>("/api/flooring/work-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...defaultDraft,
+          propertyId: syncPropertyId,
+          templateId: selectedSyncTemplateId,
+        }),
+      })
+
+      if (!payload.workOrder) throw new Error("Failed to create work order from template")
+
+      const createdWorkOrder = hydrateWorkOrderRow(payload.workOrder)
+
+      setWorkOrders((prev) => [createdWorkOrder, ...prev])
+      setIsSyncCreateModalOpen(false)
+      resetTemplateCreateFlow()
+      setMessage("Work order created from template")
+      openWorkOrderPanel(createdWorkOrder.id)
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Failed to create work order from template")
+    } finally {
+      setIsCreatingFromTemplate(false)
     }
   }
 
@@ -467,6 +532,18 @@ export default function WorkOrdersClient({
                   <Plus size={16} />
                   Work Order
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessage("")
+                    setError("")
+                    resetTemplateCreateFlow()
+                    setIsSyncCreateModalOpen(true)
+                  }}
+                  className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20"
+                >
+                  Sync Template
+                </button>
               </TableControlsBar>
             </TableActionsSummary>
           </div>
@@ -515,28 +592,6 @@ export default function WorkOrdersClient({
                   {propertyOptions.map((property) => (
                     <option key={property.id} value={property.id}>{property.name}</option>
                   ))}
-                </select>
-              </FormField>
-              <FormField label="Template">
-                <select
-                  value={newDraft.templateId}
-                  onChange={(event) => {
-                    const nextTemplateId = event.target.value
-                    const selectedTemplate = templateOptions.find((template) => template.id === nextTemplateId)
-                    setNewDraft((prev) => ({
-                      ...prev,
-                      templateId: nextTemplateId,
-                      propertyId: selectedTemplate?.propertyId ?? prev.propertyId,
-                    }))
-                  }}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                >
-                  <option value="">No template</option>
-                  {templateOptions
-                    .filter((template) => !newDraft.propertyId || template.propertyId === newDraft.propertyId || template.id === newDraft.templateId)
-                    .map((template) => (
-                      <option key={template.id} value={template.id}>{template.label}</option>
-                    ))}
                 </select>
               </FormField>
               <FormField label="Warehouse">
@@ -594,7 +649,7 @@ export default function WorkOrdersClient({
             </div>
 
             <div className="rounded-lg border border-[var(--panel-border)] px-4 py-4 text-sm text-[var(--foreground)]/70">
-              Select a template to create a work order from a reusable snapshot. If no template is selected, the work order is created empty and items are added after the row is created.
+              This creates a blank work order row. Use the table-level <span className="font-semibold text-[var(--foreground)]">Sync Template</span> action when starting from a property template.
             </div>
 
             <div className="flex items-center justify-end gap-3">
@@ -609,6 +664,88 @@ export default function WorkOrdersClient({
         </ModalShell>
       )}
 
+      {isSyncCreateModalOpen && (
+        <ModalShell title="Create Work Order From Template" onClose={() => !isCreatingFromTemplate && setIsSyncCreateModalOpen(false)}>
+          <div className="space-y-6">
+            <div className="grid gap-4 lg:grid-cols-[280px,minmax(0,1fr)]">
+              <div className="space-y-4">
+                <FormField label="Property">
+                  <select
+                    value={syncPropertyId}
+                    onChange={(event) => {
+                      setSyncPropertyId(event.target.value)
+                      setSelectedSyncTemplateId("")
+                      setSyncTemplateSearch("")
+                    }}
+                    className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  >
+                    <option value="">Select Property</option>
+                    {propertyOptions.map((property) => (
+                      <option key={property.id} value={property.id}>{property.name}</option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Search Templates">
+                  <input
+                    value={syncTemplateSearch}
+                    onChange={(event) => setSyncTemplateSearch(event.target.value)}
+                    placeholder={syncPropertyId ? "Search template tag" : "Select property first"}
+                    disabled={!syncPropertyId}
+                    className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 disabled:opacity-60"
+                  />
+                </FormField>
+
+                <div className="rounded-lg border border-[var(--panel-border)] px-3 py-3 text-sm text-[var(--foreground)]/70">
+                  Select the property first, search its templates, then create the work order. The new row will be created from that template and opened immediately.
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="max-h-80 overflow-y-auto rounded-lg border border-[var(--panel-border)]">
+                  {!syncPropertyId ? (
+                    <p className="px-4 py-8 text-center text-sm text-[var(--foreground)]/70">Select a property to load templates.</p>
+                  ) : filteredSyncTemplates.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-sm text-[var(--foreground)]/70">No templates available for the selected property.</p>
+                  ) : (
+                    filteredSyncTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => setSelectedSyncTemplateId(template.id)}
+                        className={`flex w-full items-center justify-between border-t border-[var(--panel-border)] px-4 py-3 text-left first:border-t-0 ${selectedSyncTemplateId === template.id ? "bg-blue-500/10 text-blue-500" : "hover:bg-[var(--panel-hover)]"}`}
+                      >
+                        <span>{template.label}</span>
+                        <span className="text-xs uppercase tracking-[0.18em]">{selectedSyncTemplateId === template.id ? "Selected" : "Open"}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsSyncCreateModalOpen(false)}
+                    disabled={isCreatingFromTemplate}
+                    className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void createWorkOrderFromTemplate()}
+                    disabled={isCreatingFromTemplate || !syncPropertyId || !selectedSyncTemplateId}
+                    className="rounded border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm text-blue-600 hover:bg-blue-500/20 disabled:opacity-60"
+                  >
+                    {isCreatingFromTemplate ? "Creating..." : "Create And Open Work Order"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
       {activeWorkOrder ? (
         <ModalShell
           title={`Work Order ${activeWorkOrder.workOrderNumber}`}
@@ -618,11 +755,6 @@ export default function WorkOrdersClient({
           headerActions={
             <RecordOptionsMenu
               items={[
-                {
-                  label: "Sync Template",
-                  onSelect: () => setIsWorkOrderSyncOpen(true),
-                  disabled: !activeWorkOrder.propertyId || activeWorkOrder.isComplete,
-                },
                 {
                   label: "Complete",
                   onSelect: () => void markWorkOrderComplete(),
@@ -642,12 +774,9 @@ export default function WorkOrdersClient({
             propertyOptions={propertyOptions}
             warehouseOptions={warehouseOptions}
             productOptions={productOptions}
-            templateOptions={templateOptions}
             serviceOptions={serviceOptions}
             unitOptions={unitOptions}
             onClose={closeWorkOrder}
-            isSyncModalOpen={isWorkOrderSyncOpen}
-            onCloseSync={() => setIsWorkOrderSyncOpen(false)}
             refreshNonce={workOrderRefreshNonce}
             onSummaryChange={setActiveWorkOrderSummary}
             onWorkOrderSaved={(savedWorkOrder) => {
@@ -655,8 +784,7 @@ export default function WorkOrdersClient({
                 prev.map((row) =>
                   row.id === savedWorkOrder.id
                     ? {
-                        ...row,
-                        ...savedWorkOrder,
+                        ...hydrateWorkOrderRow(savedWorkOrder),
                       }
                     : row,
                 ),

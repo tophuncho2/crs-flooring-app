@@ -115,6 +115,19 @@ export const tableShellModule = {
 
 export const rowActionButtonsModule = {
   EditRowButton: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Edit</button>,
+  OpenRowButton: ({
+    onClick,
+    children,
+    disabled,
+  }: {
+    onClick: () => void
+    children?: React.ReactNode
+    disabled?: boolean
+  }) => (
+    <button onClick={onClick} disabled={disabled}>
+      {children ?? "Open"}
+    </button>
+  ),
   DeleteRowButton: ({
     onClick,
     children,
