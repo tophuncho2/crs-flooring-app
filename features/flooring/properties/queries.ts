@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { loadTemplatePanelOptions } from "@/features/flooring/shared/template-panel-options"
 import { normalizeProperty, normalizePropertyOption } from "./services"
 
 function buildPropertiesWhere(searchQuery: string): Prisma.PropertyWhereInput | undefined {
@@ -133,13 +132,12 @@ async function loadPropertiesPageData(page: number, tableState: ServerTableQuery
   const where = buildPropertiesWhere(tableState.searchQuery)
   const totalItems = await prisma.property.count({ where })
   const pagination = createServerPagination({ page, totalItems })
-  const [initialProperties, managementOptions, templatePanelOptions] = await Promise.all([
+  const [initialProperties, managementOptions] = await Promise.all([
     listProperties({ skip: pagination.skip, take: pagination.take }, tableState),
     prisma.flooringManagementCompany.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    loadTemplatePanelOptions(),
   ])
 
   return {
@@ -152,11 +150,6 @@ async function loadPropertiesPageData(page: number, tableState: ServerTableQuery
     tableState,
     initialProperties,
     managementOptions,
-    propertyOptions: initialProperties.map((property) => ({
-      id: property.id,
-      name: property.name,
-    })),
-    ...templatePanelOptions,
   }
 }
 

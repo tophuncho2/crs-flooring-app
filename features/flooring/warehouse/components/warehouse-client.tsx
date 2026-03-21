@@ -5,16 +5,17 @@ import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_LARGE_CLASS_NAME } from "@/featur
 import { DASHBOARD_PAGE_SHELL_SHORT_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/dashboard-card-title"
 import { FormStatusNotices } from "@/features/flooring/shared/notices"
 import { TableActionsSummary, TableSectionMeta } from "@/features/flooring/shared/table-shell"
+import { useCanonicalDetailNavigation } from "@/features/flooring/shared/use-canonical-detail-navigation"
 import { useWarehouseClientController } from "../use-warehouse-client-controller"
 import type { WarehouseRow } from "../types"
 import { WarehouseCreateModal } from "./warehouse-create-modal"
-import { WarehouseDetailModal } from "./warehouse-detail-modal"
 import { WarehouseTable } from "./warehouse-table"
 
 export type { WarehouseRow } from "../types"
 
 export default function WarehouseClient({ initialRows }: { initialRows: WarehouseRow[] }) {
   const controller = useWarehouseClientController(initialRows)
+  const warehouseNavigation = useCanonicalDetailNavigation("/dashboard/flooring/warehouse")
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_SHORT_CLASS_NAME}>
@@ -35,7 +36,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
           }
         />
 
-        {!controller.isCreating && !controller.activeRow ? (
+        {!controller.isCreating ? (
           <FormStatusNotices message={controller.message} error={controller.error} className="mt-4" />
         ) : null}
 
@@ -45,10 +46,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
 
         <WarehouseTable
           rows={controller.rows}
-          getDraft={controller.getDraft}
-          onOpen={controller.openWarehouse}
-          onDraftChange={controller.updateDraft}
-          onDraftBlur={controller.saveWarehouse}
+          onOpen={(row) => warehouseNavigation.openRecord(row.id)}
         />
       </div>
 
@@ -56,45 +54,20 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
         <WarehouseCreateModal
           draft={controller.createDraft}
           error={controller.error}
-          onClose={() => controller.setIsCreating(false)}
-          onFieldChange={controller.updateCreateDraft}
-          onCreate={controller.createWarehouse}
-        />
-      ) : null}
+          onClose={() => {
+            if (controller.isSaving) {
+              return
+            }
 
-      {controller.activeRow ? (
-        <WarehouseDetailModal
-          warehouse={controller.activeRow}
-          message={controller.message}
-          error={controller.error}
-          sections={controller.sections}
-          locations={controller.locations}
-          sectionDrafts={controller.sectionDrafts}
-          locationDrafts={controller.locationDrafts}
-          newSection={controller.newSection}
-          newLocation={controller.newLocation}
-          deletingSectionId={controller.deletingSectionId}
-          deletingLocationId={controller.deletingLocationId}
-          onClose={controller.closeWarehouse}
-          onNewSectionChange={controller.setNewSection}
-          onAddSection={controller.addSection}
-          onSectionDraftChange={(sectionId, value) =>
-            controller.setSectionDrafts((prev) => ({ ...prev, [sectionId]: value }))
-          }
-          onSectionBlur={controller.saveSection}
-          onDeleteSection={controller.deleteSection}
-          onNewLocationChange={(field, value) =>
-            controller.setNewLocation((prev) => ({ ...prev, [field]: value }))
-          }
-          onAddLocation={controller.addLocation}
-          onLocationDraftChange={(locationId, value) =>
-            controller.setLocationDrafts((prev) => ({
-              ...prev,
-              [locationId]: value,
-            }))
-          }
-          onLocationBlur={controller.saveLocation}
-          onDeleteLocation={controller.deleteLocation}
+            controller.setIsCreating(false)
+          }}
+          onFieldChange={controller.updateCreateDraft}
+          onCreate={async () => {
+            const createdWarehouse = await controller.createWarehouse()
+            if (createdWarehouse) {
+              warehouseNavigation.openRecord(createdWarehouse.id)
+            }
+          }}
         />
       ) : null}
     </div>

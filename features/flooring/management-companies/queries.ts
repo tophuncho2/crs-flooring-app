@@ -2,8 +2,6 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { listPropertyOptions } from "@/features/flooring/properties/queries"
-import { loadTemplatePanelOptions } from "@/features/flooring/shared/template-panel-options"
 import { normalizeManagementCompany, normalizeManagementCompanyOption } from "./services"
 
 function buildManagementCompaniesWhere(searchQuery: string): Prisma.FlooringManagementCompanyWhereInput | undefined {
@@ -136,11 +134,7 @@ async function loadManagementCompaniesPageData(page: number, tableState: ServerT
   const where = buildManagementCompaniesWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringManagementCompany.count({ where })
   const pagination = createServerPagination({ page, totalItems })
-  const [initialCompanies, propertyOptions, templatePanelOptions] = await Promise.all([
-    listManagementCompanies({ skip: pagination.skip, take: pagination.take }, tableState),
-    listPropertyOptions(),
-    loadTemplatePanelOptions(),
-  ])
+  const initialCompanies = await listManagementCompanies({ skip: pagination.skip, take: pagination.take }, tableState)
 
   return {
     pagination: {
@@ -151,11 +145,6 @@ async function loadManagementCompaniesPageData(page: number, tableState: ServerT
     },
     tableState,
     initialCompanies,
-    propertyOptions: propertyOptions.map((property) => ({
-      id: property.id,
-      name: property.name,
-    })),
-    ...templatePanelOptions,
   }
 }
 

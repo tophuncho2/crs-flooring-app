@@ -37,12 +37,6 @@ export default async function FlooringPropertiesPage({
       key={`properties-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialProperties={pageData.initialProperties}
       managementOptions={pageData.managementOptions}
-      propertyOptions={pageData.propertyOptions}
-      warehouseOptions={pageData.warehouseOptions}
-      padProductOptions={pageData.padProductOptions}
-      productOptions={pageData.productOptions}
-      serviceOptions={pageData.serviceOptions}
-      unitOptions={pageData.unitOptions}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

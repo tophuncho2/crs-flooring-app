@@ -23,9 +23,9 @@ export function RecordPanelFooter({
   isSaving = false,
   leftExtra,
 }: {
-  deleteLabel: string
-  deleteConfirmMessage: string
-  onDelete: () => void
+  deleteLabel?: string
+  deleteConfirmMessage?: string
+  onDelete?: () => void
   closeLabel?: string
   onClose: () => void
   saveLabel: string
@@ -35,6 +35,10 @@ export function RecordPanelFooter({
   leftExtra?: ReactNode
 }) {
   function handleDelete() {
+    if (!onDelete || !deleteConfirmMessage) {
+      return
+    }
+
     if (!confirmRecordDelete(deleteConfirmMessage)) {
       return
     }
@@ -46,9 +50,11 @@ export function RecordPanelFooter({
     <div className="flex justify-between gap-2">
       <div className="flex gap-2">
         {leftExtra}
-        <button type="button" onClick={handleDelete} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">
-          {deleteLabel}
-        </button>
+        {onDelete && deleteLabel ? (
+          <button type="button" onClick={handleDelete} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">
+            {deleteLabel}
+          </button>
+        ) : null}
       </div>
       <div className="flex gap-2">
         <button type="button" onClick={onClose} disabled={isSaving} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">

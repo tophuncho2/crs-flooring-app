@@ -8,13 +8,11 @@ import {
 } from "../../shared/accent-styles"
 import { CollapsibleTableSection, InlineAddRowButton } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { formatStableDate } from "../../shared/date-format"
-import { RecordMetricSummary } from "../../shared/record-metric-summary"
 import { StatusPill } from "../../shared/status-pill"
 import { IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS } from "../../shared/table-size-classes"
 import { TableColumnSettings } from "../../shared/table-column-settings"
@@ -32,7 +30,6 @@ import {
   getImportStatusFieldClass,
   getTransportTypeFieldClass,
 } from "../contracts"
-import { calculateImportSummary } from "../summary"
 
 type ImportRow = {
   id: string
@@ -215,30 +212,15 @@ export default function ImportsClient({
   const [imports, setImports] = useState(initialImports)
   const [draft, setDraft] = useState<ImportDraft>(() => createEmptyDraft())
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [activeImportId, setActiveImportId] = useState<string | null>(null)
-  const [activeImportDraft, setActiveImportDraft] = useState<ImportDraft>(() => createEmptyDraft())
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
   const [createModalError, setCreateModalError] = useState("")
   const [createValidation, setCreateValidation] = useState<CreateImportValidation>(() => validateCreateImportDraft(createEmptyDraft()))
-  const [activeImportError, setActiveImportError] = useState("")
   const importNavigation = useCanonicalDetailNavigation("/dashboard/flooring/imports")
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
-  const activeImport = useMemo(() => imports.find((row) => row.id === activeImportId) ?? null, [imports, activeImportId])
-  const activeImportSummary = useMemo(
-    () =>
-      calculateImportSummary(
-        activeImportDraft.items.map((item) => ({
-          stockCount: item.stockCount,
-          cost: item.cost,
-          freight: item.freight,
-        })),
-      ),
-    [activeImportDraft.items],
-  )
   const {
     searchQuery,
     setSearchQuery,
@@ -339,57 +321,6 @@ export default function ImportsClient({
     importNavigation.openRecord(rowId)
   }
 
-  function closeImport() {
-    setActiveImportId(null)
-  }
-
-  async function saveActiveImport() {
-    if (!activeImport) return
-    setMessage("")
-    setPageError("")
-    setActiveImportError("")
-    setIsSaving(true)
-
-    try {
-      const response = await fetch(`/api/flooring/imports/${activeImport.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(activeImportDraft),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as { import?: ImportRow; error?: string }
-      if (!response.ok || !payload.import) {
-        throw new Error(payload.error ?? "Failed to save import")
-      }
-
-      setImports((prev) => prev.map((row) => (row.id === activeImport.id ? payload.import! : row)))
-      setActiveImportDraft({
-        orderNumber: payload.import.orderNumber,
-        tag: payload.import.tag,
-        transportType: payload.import.transportType,
-        status: payload.import.status,
-        notes: payload.import.notes,
-        warehouseId: payload.import.warehouseId,
-        items: payload.import.inventories.map((item) => ({
-          clientId: crypto.randomUUID(),
-          productId: item.productId,
-          itemNumber: item.itemNumber,
-          stockCount: item.stockCount,
-          locationId: item.locationId,
-          dyeLot: item.dyeLot,
-          cost: item.cost,
-          freight: item.freight,
-          notes: item.notes,
-        })),
-      })
-      setMessage("Import saved")
-    } catch (saveError) {
-      setActiveImportError(saveError instanceof Error ? saveError.message : "Failed to save import")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   function setDraftField(field: keyof Omit<ImportDraft, "items">, value: string) {
     setDraft((prev) => {
       const next =
@@ -434,27 +365,6 @@ export default function ImportsClient({
       setCreateValidation(validateCreateImportDraft(next))
       return next
     })
-  }
-
-  function setActiveImportItemField(index: number, field: keyof ImportItemDraft, value: string) {
-    setActiveImportDraft((prev) => ({
-      ...prev,
-      items: prev.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
-    }))
-  }
-
-  function addActiveImportItemRow() {
-    setActiveImportDraft((prev) => ({
-      ...prev,
-      items: [...prev.items, applyDefaultLocationToItem(createEmptyItem(), prev.warehouseId, locationOptions)],
-    }))
-  }
-
-  function removeActiveImportItemRow(index: number) {
-    setActiveImportDraft((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, itemIndex) => itemIndex !== index),
-    }))
   }
 
   async function createImport() {
@@ -868,246 +778,6 @@ export default function ImportsClient({
                 className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
               >
                 {isSaving ? "Creating..." : "Create Import"}
-              </button>
-            </div>
-          </div>
-        </ModalShell>
-      ) : null}
-
-      {activeImport ? (
-        <ModalShell
-          title={`Import IMP-${String(activeImport.importNumber).padStart(4, "0")}`}
-          onClose={closeImport}
-          sizeClass="max-w-6xl"
-          headerMeta={
-            <RecordMetricSummary
-              variant="header"
-              metrics={[
-                { label: "Total Cost", value: activeImportSummary.totalCostLabel },
-                { label: "Material Items", value: activeImportSummary.materialItemsCount },
-              ]}
-            />
-          }
-          headerActions={
-            <RecordOptionsMenu
-              items={[
-                {
-                  label: "Go to Inventory",
-                  onSelect: () => {
-                    window.location.assign("/dashboard/flooring/inventory")
-                  },
-                },
-              ]}
-            />
-          }
-        >
-          <div className="space-y-6">
-            {message === "Import saved" ? (
-              <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">
-                Import saved
-              </p>
-            ) : null}
-            {activeImportError ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{activeImportError}</p> : null}
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <FormField label="Order Number">
-                <input
-                  value={activeImportDraft.orderNumber}
-                  onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, orderNumber: event.target.value }))}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </FormField>
-              <FormField label="Tag">
-                <input
-                  value={activeImportDraft.tag}
-                  onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, tag: event.target.value }))}
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </FormField>
-              <FormField label="Transport Type">
-                <select
-                  value={activeImportDraft.transportType}
-                  onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, transportType: event.target.value }))}
-                  className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(activeImportDraft.transportType)}`}
-                >
-                  {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Import Status">
-                <select
-                  value={activeImportDraft.status}
-                  onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, status: event.target.value }))}
-                  className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(activeImportDraft.status)}`}
-                >
-                  {IMPORT_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Import Warehouse">
-                <select
-                  value={activeImportDraft.warehouseId}
-                  onChange={(event) =>
-                    setActiveImportDraft((prev) => ({
-                      ...prev,
-                      warehouseId: event.target.value,
-                      items: prev.items.map((item) => applyDefaultLocationToItem(item, event.target.value, locationOptions)),
-                    }))
-                  }
-                  className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                >
-                  <option value="">Select Warehouse</option>
-                  {warehouseOptions.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>
-                      {warehouse.name}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Notes">
-                <textarea
-                  value={activeImportDraft.notes}
-                  onChange={(event) => setActiveImportDraft((prev) => ({ ...prev, notes: event.target.value }))}
-                  className="h-24 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2 xl:col-span-2"
-                />
-              </FormField>
-            </div>
-
-            <CollapsibleTableSection
-              title="Import Inventory Rows"
-              defaultOpen
-            >
-              <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
-              <ModalTableShell minWidthClass="min-w-[1320px]">
-                <ModalTableHead>
-                  <tr>
-                    <TableHeaderCell>Product</TableHeaderCell>
-                    <TableHeaderCell>Item #</TableHeaderCell>
-                    <TableHeaderCell>Stock</TableHeaderCell>
-                    <TableHeaderCell>Location</TableHeaderCell>
-                    <TableHeaderCell>Dye Lot</TableHeaderCell>
-                    <TableHeaderCell>Cost $</TableHeaderCell>
-                    <TableHeaderCell>Freight $</TableHeaderCell>
-                    <TableHeaderCell>Warehouse</TableHeaderCell>
-                    <TableHeaderCell>Notes</TableHeaderCell>
-                    <TableHeaderCell>Remove</TableHeaderCell>
-                  </tr>
-                </ModalTableHead>
-                <tbody>
-                  {activeImportDraft.items.map((item, index) => {
-                    const filteredLocations = activeImportDraft.warehouseId
-                      ? locationOptions.filter((location) => location.warehouseId === activeImportDraft.warehouseId)
-                      : locationOptions
-                    const selectedProduct = productLookup.get(item.productId)
-
-                    return (
-                      <tr key={item.clientId} className="border-t border-[var(--panel-border)]">
-                        <td className="px-3 py-2">
-                          <select
-                            value={item.productId}
-                            onChange={(event) => setActiveImportItemField(index, "productId", event.target.value)}
-                            className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          >
-                            <option value="">Select product</option>
-                            {productOptions.map((product) => (
-                              <option key={product.id} value={product.id}>
-                                {product.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={item.itemNumber}
-                            onChange={(event) => setActiveImportItemField(index, "itemNumber", event.target.value)}
-                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <input
-                              value={item.stockCount}
-                              onChange={(event) => setActiveImportItemField(index, "stockCount", event.target.value)}
-                              className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                            />
-                            <span className="text-xs text-[var(--foreground)]/60">{selectedProduct?.stockUnit || "unit"}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <select
-                            value={item.locationId}
-                            onChange={(event) => setActiveImportItemField(index, "locationId", event.target.value)}
-                            className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          >
-                            <option value="">Select location</option>
-                            {filteredLocations.map((location) => (
-                              <option key={location.id} value={location.id}>
-                                {location.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={item.dyeLot}
-                            onChange={(event) => setActiveImportItemField(index, "dyeLot", event.target.value)}
-                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={item.cost}
-                            onChange={(event) => setActiveImportItemField(index, "cost", event.target.value)}
-                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={item.freight}
-                            onChange={(event) => setActiveImportItemField(index, "freight", event.target.value)}
-                            className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          />
-                        </td>
-                        <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === activeImportDraft.warehouseId)?.name || "-"}</td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={item.notes}
-                            onChange={(event) => setActiveImportItemField(index, "notes", event.target.value)}
-                            className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <DeleteRowButton onClick={() => removeActiveImportItemRow(index)}>Remove</DeleteRowButton>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  <tr className="border-t border-[var(--panel-border)]">
-                    <td colSpan={10} className="px-3 py-3">
-                      <InlineAddRowButton label="Add Import Inventory Item" onClick={addActiveImportItemRow} />
-                    </td>
-                  </tr>
-                </tbody>
-              </ModalTableShell>
-            </CollapsibleTableSection>
-
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={closeImport} disabled={isSaving} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => void saveActiveImport()}
-                disabled={isSaving}
-                className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
-              >
-                {isSaving ? "Saving..." : "Save Import"}
               </button>
             </div>
           </div>

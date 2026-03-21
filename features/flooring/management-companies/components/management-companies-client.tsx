@@ -1,29 +1,19 @@
 "use client"
 
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
-import { ManagementCompanyRecordPanel } from "./management-company-record-panel"
-import { PropertyRecordPanel } from "../../properties/components/property-record-panel"
-import { TemplateRecordModal } from "../../templates/components/template-record-modal"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
-import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { ErrorNotice, FormStatusNotices, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
-import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
-import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
-import { useGuardedUrlRecordEditor } from "../../shared/use-guarded-url-record-editor"
-import { useUrlRecordPanel } from "../../shared/use-url-record-panel"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
-import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
-import { FormStatusNotices } from "../../shared/notices"
-import type { TemplatePanelRow } from "../../templates/components/template-record-panel"
 
 type ManagementCompanyRow = {
   id: string
@@ -38,62 +28,6 @@ type ManagementCompanyRow = {
   properties: { id: string; name: string; fullAddress: string }[]
 }
 
-type PropertyOption = {
-  id: string
-  name: string
-}
-
-type WarehouseOption = {
-  id: string
-  name: string
-}
-
-type PadProductOption = {
-  id: string
-  label: string
-}
-
-type ProductOption = {
-  id: string
-  label: string
-  sendUnit: string
-}
-
-type PropertyManagementCompany = {
-  id: string
-  name: string
-}
-
-type PropertyRow = {
-  id: string
-  name: string
-  streetAddress: string
-  city: string
-  state: string
-  zip: string
-  phone: string
-  email: string
-  fullAddress: string
-  managementCompany: PropertyManagementCompany | null
-  templates: Array<{
-    id: string
-    templateTag: string
-    warehouseName: string
-    itemsCount: number
-  }>
-}
-
-type TemplateRow = TemplatePanelRow
-
-type DraftTemplate = {
-  templateTag: string
-  propertyId: string
-  warehouseId: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-}
-
 type DraftCompany = {
   name: string
   streetAddress: string
@@ -102,17 +36,6 @@ type DraftCompany = {
   zip: string
   phone: string
   email: string
-}
-
-type DraftProperty = {
-  name: string
-  streetAddress: string
-  city: string
-  state: string
-  zip: string
-  phone: string
-  email: string
-  managementCompanyId: string
 }
 
 type ServerPaginationState = {
@@ -141,85 +64,23 @@ const defaultDraft: DraftCompany = {
   email: "",
 }
 
-const defaultPropertyDraft: DraftProperty = {
-  name: "",
-  streetAddress: "",
-  city: "",
-  state: "",
-  zip: "",
-  phone: "",
-  email: "",
-  managementCompanyId: "",
-}
-
-const defaultTemplateDraft: DraftTemplate = {
-  templateTag: "",
-  propertyId: "",
-  warehouseId: "",
-  instructions: "",
-  templateNotes: "",
-  padProductId: "",
-}
-
 export default function ManagementCompaniesClient({
   initialCompanies,
-  propertyOptions,
-  warehouseOptions,
-  padProductOptions,
-  productOptions,
-  serviceOptions,
-  unitOptions,
   tableState,
   pagination,
 }: {
   initialCompanies: ManagementCompanyRow[]
-  propertyOptions: PropertyOption[]
-  warehouseOptions: WarehouseOption[]
-  padProductOptions: PadProductOption[]
-  productOptions: ProductOption[]
-  serviceOptions: ServiceOption[]
-  unitOptions: UnitOption[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
-  const [propertySelectOptions, setPropertySelectOptions] = useState<PropertyOption[]>(propertyOptions)
   const [newDraft, setNewDraft] = useState<DraftCompany>(defaultDraft)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [isSavingSelectedCompany, setIsSavingSelectedCompany] = useState(false)
-  const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
-  const [isPropertyCreateOpen, setIsPropertyCreateOpen] = useState(false)
-  const [propertyDraft, setPropertyDraft] = useState<DraftProperty>(defaultPropertyDraft)
-  const [isCreatingProperty, setIsCreatingProperty] = useState(false)
-  const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null)
-  const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
-  const [isTemplateCreateOpen, setIsTemplateCreateOpen] = useState(false)
-  const [newTemplateDraft, setNewTemplateDraft] = useState<DraftTemplate>(defaultTemplateDraft)
-  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)
-  const [loadingTemplate, setLoadingTemplate] = useState(false)
-  const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
   const companyNavigation = useCanonicalDetailNavigation("/dashboard/flooring/management-companies")
-  const {
-    activeRecord: selectedCompany,
-    draft: selectedCompanyDraft,
-    setDraft: setSelectedCompanyDraft,
-    openRecord: openCompanyRecord,
-    closeRecord: closeCompanyRecord,
-  } = useGuardedUrlRecordEditor({
-    rows: companies,
-    paramKey: "company",
-    createDraft: createCompanyDraft,
-    message: "You have unsaved management company changes. Leave this company without saving?",
-  })
-  const { activeRecordId: activePropertyId, openRecord: openPropertyPanel, closeRecord: closePropertyPanel } = useUrlRecordPanel("property")
-  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
-    isDirty: activeTemplateDirty,
-    message: "You have unsaved template changes. Leave this template without saving?",
-  })
   const {
     searchQuery,
     setSearchQuery,
@@ -280,321 +141,6 @@ export default function ManagementCompaniesClient({
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {
     const normalizedValue = field === "state" && typeof value === "string" ? normalizeAddressState(value) : value
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
-  }
-
-  function setSelectedCompanyDraftField(field: keyof DraftCompany, value: string) {
-    const normalizedValue = field === "state" ? normalizeAddressState(value) : value
-    setSelectedCompanyDraft((prev) => (prev ? { ...prev, [field]: normalizedValue } : prev))
-  }
-
-  function createCompanyDraft(company: ManagementCompanyRow): DraftCompany {
-    return {
-      name: company.name,
-      streetAddress: company.streetAddress,
-      city: company.city,
-      state: company.state,
-      zip: company.zip,
-      phone: company.phone,
-      email: company.email,
-    }
-  }
-
-  function setPropertyDraftField(field: keyof DraftProperty, value: string) {
-    const normalizedValue = field === "state" ? normalizeAddressState(value) : value
-    setPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
-  }
-
-  function setNewTemplateDraftField(field: keyof DraftTemplate, value: string) {
-    setNewTemplateDraft((prev) => ({ ...prev, [field]: value }))
-  }
-
-  function openCompany(company: ManagementCompanyRow) {
-    setError("")
-    setMessage("")
-    companyNavigation.openRecord(company.id)
-  }
-
-  function closeCompanyPanel() {
-    if (activeTemplateId && !closeTemplate()) {
-      return
-    }
-    if (activePropertyId) {
-      closePropertyPanel()
-    }
-    setSelectedProperty(null)
-    closeCompanyRecord()
-  }
-
-  useEffect(() => {
-    if (!activePropertyId) {
-      setSelectedProperty(null)
-      setLoadingPropertyId(null)
-      return
-    }
-
-    let isCancelled = false
-
-    async function loadProperty() {
-      setError("")
-      setMessage("")
-      setLoadingPropertyId(activePropertyId)
-
-      try {
-        const response = await fetch(`/api/flooring/properties/${activePropertyId}`)
-        const payload = (await response.json().catch(() => ({}))) as { error?: string; property?: PropertyRow }
-        if (!response.ok || !payload.property) {
-          throw new Error(payload.error ?? "Failed to load property")
-        }
-
-        if (!isCancelled) {
-          setSelectedProperty({
-            ...payload.property,
-            streetAddress: payload.property.streetAddress ?? "",
-            city: payload.property.city ?? "",
-            state: payload.property.state ?? "",
-            zip: payload.property.zip ?? "",
-            phone: payload.property.phone ?? "",
-            email: payload.property.email ?? "",
-            templates: payload.property.templates ?? [],
-          })
-        }
-      } catch (loadError) {
-        if (!isCancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load property")
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoadingPropertyId(null)
-        }
-      }
-    }
-
-    void loadProperty()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [activePropertyId])
-
-  function openProperty(propertyId: string) {
-    setError("")
-    setMessage("")
-    if (activeTemplateId) {
-      const closedTemplate = closeTemplate()
-      if (!closedTemplate) {
-        return
-      }
-    }
-    openPropertyPanel(propertyId)
-  }
-
-  useEffect(() => {
-    if (!activeTemplateId) {
-      setActiveTemplate(null)
-      setLoadingTemplate(false)
-      return
-    }
-
-    let isCancelled = false
-
-    async function loadTemplate() {
-      setError("")
-      setMessage("")
-      setLoadingTemplate(true)
-
-      try {
-        const response = await fetch(`/api/flooring/templates/${activeTemplateId}`)
-        const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
-        if (!response.ok || !payload.template) {
-          throw new Error(payload.error ?? "Failed to load template")
-        }
-
-        if (!isCancelled) {
-          setActiveTemplate(payload.template)
-        }
-      } catch (loadError) {
-        if (!isCancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load template")
-          setActiveTemplate(null)
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoadingTemplate(false)
-        }
-      }
-    }
-
-    void loadTemplate()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [activeTemplateId])
-
-  function openTemplate(templateId: string) {
-    setError("")
-    setMessage("")
-    setActiveTemplateDirty(false)
-    openTemplatePanel(templateId)
-  }
-
-  function closeTemplate() {
-    const didClose = closeTemplatePanel()
-    if (!didClose) {
-      return false
-    }
-    setActiveTemplateDirty(false)
-    setActiveTemplate(null)
-    setIsTemplateCreateOpen(false)
-    setNewTemplateDraft(defaultTemplateDraft)
-    return true
-  }
-
-  function updateSelectedPropertyTemplateSummary(templateId: string, itemsCount: number, templateRow?: TemplateRow) {
-    setSelectedProperty((prev) => {
-      if (!prev) return prev
-      const found = prev.templates.find((template) => template.id === templateId)
-      const nextTemplate = templateRow
-        ? {
-            id: templateRow.id,
-            templateTag: templateRow.templateTag,
-            warehouseName: templateRow.warehouseName,
-            itemsCount,
-          }
-        : found
-          ? { ...found, itemsCount }
-          : null
-
-      if (!nextTemplate) return prev
-
-      return {
-        ...prev,
-        templates: found ? prev.templates.map((template) => (template.id === templateId ? nextTemplate : template)) : [nextTemplate, ...prev.templates],
-      }
-    })
-  }
-
-  async function createPropertyForCompany() {
-    if (!selectedCompany) return
-    setError("")
-    setMessage("")
-    setIsCreatingProperty(true)
-
-    try {
-      if (!propertyDraft.name.trim()) throw new Error("Property name is required")
-
-      const response = await fetch("/api/flooring/properties", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: propertyDraft.name,
-          streetAddress: propertyDraft.streetAddress,
-          city: propertyDraft.city,
-          state: propertyDraft.state,
-          postalCode: propertyDraft.zip,
-          phone: propertyDraft.phone,
-          email: propertyDraft.email,
-          managementCompanyId: selectedCompany.id,
-        }),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        property?: Omit<PropertyRow, "templates" | "zip"> & { zip?: string; templates?: PropertyRow["templates"] }
-      }
-
-      if (!response.ok || !payload.property) {
-        throw new Error(payload.error ?? "Failed to create property")
-      }
-
-      const createdProperty: PropertyRow = {
-        id: payload.property.id,
-        name: payload.property.name,
-        streetAddress: payload.property.streetAddress ?? "",
-        city: payload.property.city ?? "",
-        state: payload.property.state ?? "",
-        zip: payload.property.zip ?? "",
-        phone: payload.property.phone ?? "",
-        email: payload.property.email ?? "",
-        fullAddress: payload.property.fullAddress,
-        managementCompany: payload.property.managementCompany ?? { id: selectedCompany.id, name: selectedCompany.name },
-        templates: payload.property.templates ?? [],
-      }
-
-      setPropertySelectOptions((prev) => [{ id: createdProperty.id, name: createdProperty.name }, ...prev.filter((item) => item.id !== createdProperty.id)])
-      setCompanies((prev) =>
-        prev.map((company) =>
-          company.id === selectedCompany.id
-            ? {
-                ...company,
-                properties: [{ id: createdProperty.id, name: createdProperty.name, fullAddress: createdProperty.fullAddress }, ...company.properties],
-              }
-            : company,
-        ),
-      )
-      setSelectedProperty(createdProperty)
-      setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: selectedCompany.id })
-      setIsPropertyCreateOpen(false)
-      setMessage("Property created")
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create property")
-    } finally {
-      setIsCreatingProperty(false)
-    }
-  }
-
-  async function createTemplateForProperty() {
-    if (!selectedProperty) return
-    setError("")
-    setMessage("")
-    setIsCreatingTemplate(true)
-
-    try {
-      if (!newTemplateDraft.templateTag.trim()) throw new Error("Template tag is required")
-
-      const response = await fetch("/api/flooring/templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newTemplateDraft,
-          propertyId: selectedProperty.id,
-          warehouseId: newTemplateDraft.warehouseId || null,
-          padProductId: newTemplateDraft.padProductId || null,
-        }),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
-      if (!response.ok || !payload.template) {
-        throw new Error(payload.error ?? "Failed to create template")
-      }
-
-      const createdTemplate = payload.template
-      setSelectedProperty((prev) =>
-        prev
-          ? {
-              ...prev,
-              templates: [
-                {
-                  id: createdTemplate.id,
-                  templateTag: createdTemplate.templateTag,
-                  warehouseName: createdTemplate.warehouseName,
-                  itemsCount: 0,
-                },
-                ...prev.templates,
-              ],
-            }
-          : prev,
-      )
-      setNewTemplateDraft({ ...defaultTemplateDraft, propertyId: selectedProperty.id })
-      setIsTemplateCreateOpen(false)
-      setActiveTemplateDirty(false)
-      openTemplatePanel(createdTemplate.id)
-      setMessage("Template created")
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create template")
-    } finally {
-      setIsCreatingTemplate(false)
-    }
   }
 
   async function createCompany() {
@@ -676,98 +222,11 @@ export default function ManagementCompaniesClient({
       }
 
       setCompanies((prev) => prev.filter((company) => company.id !== id))
-      if (selectedCompany?.id === id) {
-        closeCompanyPanel()
-      }
       setMessage("Management company deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete company")
     } finally {
       setDeletingId(null)
-    }
-  }
-
-  async function saveSelectedCompany() {
-    if (!selectedCompany || !selectedCompanyDraft) return
-    setError("")
-    setMessage("")
-    setIsSavingSelectedCompany(true)
-
-    try {
-      if (!selectedCompanyDraft.name.trim()) {
-        throw new Error("Company name is required")
-      }
-
-      const response = await fetch(`/api/flooring/management-companies/${selectedCompany.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: selectedCompanyDraft.name,
-          streetAddress: selectedCompanyDraft.streetAddress,
-          city: selectedCompanyDraft.city,
-          state: selectedCompanyDraft.state,
-          zip: selectedCompanyDraft.zip,
-          phone: selectedCompanyDraft.phone,
-          email: selectedCompanyDraft.email,
-        }),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        managementCompany?: {
-          id: string
-          name: string
-          streetAddress?: string | null
-          city?: string | null
-          state?: string | null
-          zip?: string | null
-          postalCode?: string | null
-          phone?: string | null
-          email?: string | null
-          fullAddress?: string
-          properties?: ManagementCompanyRow["properties"]
-        }
-      }
-
-      if (!response.ok || !payload.managementCompany) {
-        throw new Error(payload.error ?? "Failed to save management company")
-      }
-
-      const updatedCompany: ManagementCompanyRow = {
-        id: payload.managementCompany.id,
-        name: payload.managementCompany.name,
-        streetAddress: payload.managementCompany.streetAddress ?? "",
-        city: payload.managementCompany.city ?? "",
-        state: payload.managementCompany.state ?? "",
-        zip: payload.managementCompany.zip ?? payload.managementCompany.postalCode ?? "",
-        phone: payload.managementCompany.phone ?? "",
-        email: payload.managementCompany.email ?? "",
-        fullAddress:
-          payload.managementCompany.fullAddress ??
-          buildFullAddress({
-            streetAddress: payload.managementCompany.streetAddress ?? "",
-            city: payload.managementCompany.city ?? "",
-            state: payload.managementCompany.state ?? "",
-            zip: payload.managementCompany.zip ?? payload.managementCompany.postalCode ?? "",
-          }),
-        properties: payload.managementCompany.properties ?? selectedCompany.properties,
-      }
-
-      setCompanies((prev) => prev.map((company) => (company.id === updatedCompany.id ? updatedCompany : company)))
-      setSelectedCompanyDraft(createCompanyDraft(updatedCompany))
-      setSelectedProperty((prev) =>
-        prev && prev.managementCompany?.id === updatedCompany.id
-          ? {
-              ...prev,
-              managementCompany: { id: updatedCompany.id, name: updatedCompany.name },
-            }
-          : prev,
-      )
-      setMessage("Management company saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save management company")
-    } finally {
-      setIsSavingSelectedCompany(false)
     }
   }
 
@@ -810,52 +269,52 @@ export default function ManagementCompaniesClient({
           </TableActionsSummary>
         </div>
 
-        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
-        {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
+        {!isCreateModalOpen && message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {!isCreateModalOpen && error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
         <TableShell minWidthClass="min-w-[1320px]">
-            <TableHead>
-              <tr>
-                {visibleCompanyColumns.map((column) => (
-                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-                ))}
-              </tr>
-            </TableHead>
-            <tbody>
-              {sortedCompanies.map((row) => {
-                const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
-                const cells: Record<string, ReactNode> = {
-                  company: <td key="company" className="px-3 py-2">{row.name}</td>,
-                  street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-                  city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-                  state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-                  zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-                  phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-                  email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-                  fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-                  properties: (
-                    <td key="properties" className="px-3 py-2">
-                      <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
-                    </td>
-                  ),
-                  delete: (
-                    <td key="delete" className="px-3 py-2">
-                      <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
-                        {deletingId === row.id ? "Deleting..." : "Delete"}
-                      </DeleteRowButton>
-                    </td>
-                  ),
-                }
+          <TableHead>
+            <tr>
+              {visibleCompanyColumns.map((column) => (
+                <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+              ))}
+            </tr>
+          </TableHead>
+          <tbody>
+            {sortedCompanies.map((row) => {
+              const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
+              const cells: Record<string, ReactNode> = {
+                company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
+                street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+                city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+                state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+                zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+                phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+                email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+                fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
+                properties: (
+                  <td key="properties" className="px-3 py-2">
+                    <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
+                  </td>
+                ),
+                delete: (
+                  <td key="delete" className="px-3 py-2">
+                    <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
+                      {deletingId === row.id ? "Deleting..." : "Delete"}
+                    </DeleteRowButton>
+                  </td>
+                ),
+              }
 
-                return (
-                  <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => openCompany(row)}>
-                    {visibleCompanyColumns.map((column) => cells[column.key])}
-                  </ClickableTableRow>
-                )
-              })}
+              return (
+                <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
+                  {visibleCompanyColumns.map((column) => cells[column.key])}
+                </ClickableTableRow>
+              )
+            })}
 
-              {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
-            </tbody>
+            {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
+          </tbody>
         </TableShell>
         <TablePaginationControls
           page={pagination?.page ?? page}
@@ -869,14 +328,13 @@ export default function ManagementCompaniesClient({
           previousPageHref={pagination?.previousPageHref}
           nextPageHref={pagination?.nextPageHref}
         />
-
       </section>
 
-        {isCreateModalOpen ? (
-          <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
-            <div className="space-y-6">
-              <FormStatusNotices error={error} loadingMessage={isSavingNew ? "Creating management company..." : ""} />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {isCreateModalOpen ? (
+        <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
+          <div className="space-y-6">
+            <FormStatusNotices error={error} loadingMessage={isSavingNew ? "Creating management company..." : ""} />
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <FormField label="Company Name">
                 <input value={newDraft.name} onChange={(event) => setNewDraftField("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
               </FormField>
@@ -898,11 +356,11 @@ export default function ManagementCompaniesClient({
               <FormField label="Email">
                 <input value={newDraft.email} onChange={(event) => setNewDraftField("email", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
               </FormField>
-                <FormField label="Full Address">
-                  <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
-                    {buildFullAddress(newDraft) || "Company address preview"}
-                  </div>
-                </FormField>
+              <FormField label="Full Address">
+                <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">
+                  {buildFullAddress(newDraft) || "Company address preview"}
+                </div>
+              </FormField>
             </div>
 
             <div className="flex justify-end gap-2">
@@ -915,135 +373,6 @@ export default function ManagementCompaniesClient({
             </div>
           </div>
         </ModalShell>
-      ) : null}
-
-      <RecordPanelStack
-        layers={[
-          ...(selectedCompany
-            ? [
-                {
-                  key: `company-${selectedCompany.id}`,
-                  title: selectedCompany.name,
-                  onClose: closeCompanyPanel,
-                  content: (
-                    <ManagementCompanyRecordPanel
-                      company={selectedCompany}
-                      mode="edit"
-                      draft={selectedCompanyDraft ?? undefined}
-                      message={message}
-                      error={error}
-                      isPropertyCreateOpen={isPropertyCreateOpen}
-                      propertyDraft={propertyDraft}
-                      loadingPropertyId={loadingPropertyId}
-                      isSaving={isSavingSelectedCompany}
-                      onDraftChange={(field, value) => setSelectedCompanyDraftField(field, value)}
-                      onSave={() => void saveSelectedCompany()}
-                      onDelete={() => void deleteCompany(selectedCompany.id)}
-                      onClose={closeCompanyPanel}
-                      onPropertyDraftChange={(field, value) => setPropertyDraftField(field, value)}
-                      onOpenProperty={(propertyId) => void openProperty(propertyId)}
-                      onOpenCreateProperty={() => {
-                        setError("")
-                        setMessage("")
-                        setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: selectedCompany.id })
-                        setIsPropertyCreateOpen((prev) => !prev)
-                      }}
-                      onCancelCreateProperty={() => setIsPropertyCreateOpen(false)}
-                      onCreateProperty={() => void createPropertyForCompany()}
-                      isCreatingProperty={isCreatingProperty}
-                    />
-                  ),
-                },
-              ]
-            : []),
-          ...(selectedProperty
-            ? [
-                {
-                  key: `property-${selectedProperty.id}`,
-                  title: selectedProperty.name,
-                  onClose: () => {
-                    if (activeTemplateId && !closeTemplate()) {
-                      return
-                    }
-                    closePropertyPanel()
-                  },
-                  content: (
-                    <PropertyRecordPanel
-                      property={selectedProperty}
-                      isTemplateCreateOpen={isTemplateCreateOpen}
-                      newTemplateDraft={newTemplateDraft}
-                      warehouseOptions={warehouseOptions}
-                      padProductOptions={padProductOptions}
-                      loadingTemplate={loadingTemplate}
-                      onTemplateDraftChange={(field, value) => setNewTemplateDraftField(field, value)}
-                      onOpenTemplate={(templateId) => void openTemplate(templateId)}
-                      onOpenCreateTemplate={() => {
-                        setError("")
-                        setMessage("")
-                        setNewTemplateDraft({ ...defaultTemplateDraft, propertyId: selectedProperty.id })
-                        setIsTemplateCreateOpen((prev) => !prev)
-                      }}
-                      onCancelCreateTemplate={() => setIsTemplateCreateOpen(false)}
-                      onCreateTemplate={() => void createTemplateForProperty()}
-                      isCreatingTemplate={isCreatingTemplate}
-                    />
-                  ),
-                },
-              ]
-            : []),
-        ]}
-      />
-
-      {activeTemplate ? (
-        <TemplateRecordModal
-          template={activeTemplate}
-          propertyOptions={propertySelectOptions}
-          warehouseOptions={warehouseOptions}
-          padProductOptions={padProductOptions}
-          productOptions={productOptions}
-          serviceOptions={serviceOptions}
-          unitOptions={unitOptions}
-          onClose={closeTemplate}
-          onDirtyChange={setActiveTemplateDirty}
-          onTemplateSaved={(template, previousPropertyId, itemsCount) => {
-            setActiveTemplateDirty(false)
-            setActiveTemplate(template)
-            if (!selectedProperty) {
-              return
-            }
-
-            if (selectedProperty.id === previousPropertyId && previousPropertyId !== template.propertyId) {
-              setSelectedProperty((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      templates: prev.templates.filter((row) => row.id !== template.id),
-                    }
-                  : prev,
-              )
-              return
-            }
-
-            if (selectedProperty.id === template.propertyId) {
-              updateSelectedPropertyTemplateSummary(template.id, itemsCount, template)
-            }
-          }}
-          onTemplateDeleted={(templateId) => {
-            setActiveTemplateDirty(false)
-            if (selectedProperty) {
-              setSelectedProperty((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      templates: prev.templates.filter((row) => row.id !== templateId),
-                    }
-                  : prev,
-              )
-            }
-            setActiveTemplate(null)
-          }}
-          zIndex={60}
-        />
       ) : null}
     </div>
   )

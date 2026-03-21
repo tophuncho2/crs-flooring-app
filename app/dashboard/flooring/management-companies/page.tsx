@@ -35,12 +35,6 @@ export default async function ManagementCompaniesPage({
     <ManagementCompaniesClient
       key={`management-companies-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialCompanies={pageData.initialCompanies}
-      propertyOptions={pageData.propertyOptions}
-      warehouseOptions={pageData.warehouseOptions}
-      padProductOptions={pageData.padProductOptions}
-      productOptions={pageData.productOptions}
-      serviceOptions={pageData.serviceOptions}
-      unitOptions={pageData.unitOptions}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

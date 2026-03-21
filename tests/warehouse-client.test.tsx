@@ -5,8 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import WarehouseClient, { type WarehouseRow } from "@/app/dashboard/warehouse/warehouse-client"
+import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/warehouse-detail-client"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 
 vi.mock("lucide-react", () => ({
+  ArrowLeft: () => <span>{"<"}</span>,
+  ChevronDown: () => <span>{"v"}</span>,
+  ChevronRight: () => <span>{">"}</span>,
   Plus: () => <span>+</span>,
   X: () => <span>x</span>,
 }))
@@ -43,118 +48,123 @@ describe("WarehouseClient", () => {
     vi.stubGlobal("fetch", fetchMock)
   })
 
-  it("opening a warehouse record triggers child loads for sections and locations", async () => {
+  it("routes warehouse rows into the canonical warehouse detail page", async () => {
     const user = userEvent.setup()
-
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 1 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [{ id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" }] }))
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
     await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/flooring/sections?warehouseId=wh-1")
-      expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/flooring/locations?warehouseId=wh-1")
-    })
-
-    expect((await screen.findAllByDisplayValue("Showroom")).length).toBeGreaterThan(0)
-    expect(await screen.findByDisplayValue("A1")).toBeTruthy()
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/warehouse/wh-1?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 
-  it("failed child load surfaces an error instead of clearing into a silent empty state", async () => {
+  it("navigates to the canonical warehouse detail page after creating a warehouse", async () => {
     const user = userEvent.setup()
 
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 1 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [{ id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" }] }))
-      .mockResolvedValueOnce(jsonResponse({ error: "Sections offline" }, 503))
-      .mockResolvedValueOnce(jsonResponse({ locations: [] }))
-
-    render(
-      <WarehouseClient
-        initialRows={[
-          warehouseRow(),
-          warehouseRow({ id: "wh-2", name: "Overflow Warehouse", sectionsCount: 0, locationsCount: 0 }),
-        ]}
-      />,
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          warehouse: warehouseRow({
+            id: "wh-2",
+            name: "Overflow Warehouse",
+            address: "2 Main St",
+          }),
+        },
+        201,
+      ),
     )
 
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    expect((await screen.findAllByDisplayValue("Showroom")).length).toBeGreaterThan(0)
-
-    await user.click(screen.getByRole("button", { name: "x" }))
-    await user.click(screen.getByRole("button", { name: "Open warehouse Overflow Warehouse" }))
-
-    expect(await screen.findByText("Sections offline")).toBeTruthy()
-    expect(screen.getAllByDisplayValue("Showroom").length).toBeGreaterThan(0)
-    expect(screen.getByDisplayValue("A1")).toBeTruthy()
-  })
-
-  it("adding a section increments the active warehouse sectionsCount in UI state", async () => {
-    const user = userEvent.setup()
-
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 1 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [] }))
-      .mockResolvedValueOnce(jsonResponse({ section: { id: "sec-2", name: "Storage", locationsCount: 0 } }, 201))
-
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    await screen.findAllByDisplayValue("Showroom")
+    await user.click(screen.getByRole("button", { name: /add warehouse/i }))
+    await user.type(screen.getByLabelText("Warehouse Name"), "Overflow Warehouse")
+    await user.type(screen.getByLabelText("Address"), "2 Main St")
+    await user.click(screen.getByRole("button", { name: "Create Warehouse" }))
+
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/warehouse/wh-2?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+        { scroll: false },
+      )
+    })
+  })
+})
+
+describe("WarehouseDetailClient", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    cleanup()
+    vi.clearAllMocks()
+    vi.stubGlobal("fetch", fetchMock)
+  })
+
+  it("adds a section and updates the summary counts", async () => {
+    const user = userEvent.setup()
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({ section: { id: "sec-2", name: "Storage", locationsCount: 0 } }, 201))
+
+    render(
+      <WarehouseDetailClient
+        warehouse={warehouseRow()}
+        sections={[{ id: "sec-1", name: "Showroom", locationsCount: 1 }]}
+        locations={[]}
+        backHref="/dashboard/flooring/warehouse"
+      />,
+    )
 
     await user.type(screen.getByPlaceholderText("Section name"), "Storage")
     await user.click(screen.getAllByRole("button", { name: "Add" })[0])
 
     expect((await screen.findAllByDisplayValue("Storage")).length).toBeGreaterThan(0)
-    expect(screen.getByText("2 sections / 1 locations / 0 work orders")).toBeTruthy()
+    expect(screen.getByText("2")).toBeTruthy()
   })
 
-  it("adding a location increments warehouse locationsCount and the target section locationsCount", async () => {
+  it("adds a location and updates location counts", async () => {
     const user = userEvent.setup()
 
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 0 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [] }))
-      .mockResolvedValueOnce(jsonResponse({ location: { id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" } }, 201))
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ location: { id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" } }, 201),
+    )
 
-    render(<WarehouseClient initialRows={[warehouseRow({ sectionsCount: 1, locationsCount: 0 })]} />)
-
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    await screen.findAllByDisplayValue("Showroom")
+    render(
+      <WarehouseDetailClient
+        warehouse={warehouseRow({ locationsCount: 0 })}
+        sections={[{ id: "sec-1", name: "Showroom", locationsCount: 0 }]}
+        locations={[]}
+        backHref="/dashboard/flooring/warehouse"
+      />,
+    )
 
     await user.type(screen.getByPlaceholderText("Location code"), "A1")
-    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "sec-1" } })
-    await user.click(screen.getByRole("button", { name: "Add Location" }))
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "sec-1" } })
+    await user.click(screen.getAllByRole("button", { name: "Add" })[1])
 
     expect(await screen.findByDisplayValue("A1")).toBeTruthy()
-    expect(screen.getByText("1 sections / 1 locations / 0 work orders")).toBeTruthy()
     expect(screen.getAllByText("1").length).toBeGreaterThan(0)
   })
 
-  it("moving a location from one section to another updates both affected section counts", async () => {
+  it("moving a location between sections updates both section counts", async () => {
     const user = userEvent.setup()
 
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({
-        sections: [
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ location: { id: "loc-1", locationCode: "A1", sectionId: "sec-2", sectionName: "Storage" } }),
+    )
+
+    render(
+      <WarehouseDetailClient
+        warehouse={warehouseRow({ sectionsCount: 2, locationsCount: 1 })}
+        sections={[
           { id: "sec-1", name: "Showroom", locationsCount: 1 },
           { id: "sec-2", name: "Storage", locationsCount: 0 },
-        ],
-      }))
-      .mockResolvedValueOnce(jsonResponse({
-        locations: [{ id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" }],
-      }))
-      .mockResolvedValueOnce(jsonResponse({
-        location: { id: "loc-1", locationCode: "A1", sectionId: "sec-2", sectionName: "Storage" },
-      }))
-
-    render(<WarehouseClient initialRows={[warehouseRow({ sectionsCount: 2, locationsCount: 1 })]} />)
-
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    await screen.findByDisplayValue("A1")
+        ]}
+        locations={[{ id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" }]}
+        backHref="/dashboard/flooring/warehouse"
+      />,
+    )
 
     const locationRow = screen.getByDisplayValue("A1").closest("tr")
     expect(locationRow).toBeTruthy()
@@ -173,44 +183,20 @@ describe("WarehouseClient", () => {
     expect(storageRow?.textContent).toContain("1")
   })
 
-  it("deleting a location decrements warehouse and section counts", async () => {
+  it("deleting a section removes it from the shared child-table section", async () => {
     const user = userEvent.setup()
     vi.spyOn(window, "confirm").mockReturnValue(true)
 
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 1 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [{ id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" }] }))
-      .mockResolvedValueOnce(jsonResponse({ ok: true }))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
 
-    render(<WarehouseClient initialRows={[warehouseRow()]} />)
-
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    await screen.findByDisplayValue("A1")
-
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete" })
-    await user.click(deleteButtons[1])
-
-    await waitFor(() => {
-      expect(screen.queryByDisplayValue("A1")).toBeNull()
-    })
-
-    expect(screen.getByText("1 sections / 0 locations / 0 work orders")).toBeTruthy()
-    expect(screen.getAllByText("0").length).toBeGreaterThan(0)
-  })
-
-  it("deleting a section removes it from the list after a successful delete", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 0 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [] }))
-      .mockResolvedValueOnce(jsonResponse({ ok: true }))
-
-    render(<WarehouseClient initialRows={[warehouseRow({ sectionsCount: 1, locationsCount: 0 })]} />)
-
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    await screen.findAllByDisplayValue("Showroom")
+    render(
+      <WarehouseDetailClient
+        warehouse={warehouseRow({ sectionsCount: 1, locationsCount: 0 })}
+        sections={[{ id: "sec-1", name: "Showroom", locationsCount: 0 }]}
+        locations={[]}
+        backHref="/dashboard/flooring/warehouse"
+      />,
+    )
 
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0])
 
@@ -221,37 +207,24 @@ describe("WarehouseClient", () => {
     expect(screen.getByText("No sections yet.")).toBeTruthy()
   })
 
-  it("failed section delete shows the API error", async () => {
+  it("guards back navigation when the warehouse draft is dirty", async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
+    vi.spyOn(window, "confirm").mockReturnValue(false)
 
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [{ id: "sec-1", name: "Showroom", locationsCount: 1 }] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [] }))
-      .mockResolvedValueOnce(jsonResponse({ error: "Section cannot be deleted while locations are linked to it" }, 409))
+    render(
+      <WarehouseDetailClient
+        warehouse={warehouseRow()}
+        sections={[]}
+        locations={[]}
+        backHref="/dashboard/flooring/warehouse"
+      />,
+    )
 
-    render(<WarehouseClient initialRows={[warehouseRow()]} />)
+    await user.clear(screen.getByLabelText("Warehouse Name"))
+    await user.type(screen.getByLabelText("Warehouse Name"), "Dirty Warehouse")
+    await user.click(screen.getByRole("button", { name: "Back" }))
 
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    await screen.findAllByDisplayValue("Showroom")
-    await user.click(screen.getAllByRole("button", { name: "Delete" })[0])
-
-    expect(await screen.findByText("Section cannot be deleted while locations are linked to it")).toBeTruthy()
-    expect(screen.getAllByDisplayValue("Showroom").length).toBeGreaterThan(0)
-  })
-
-  it("the top card does not render a duplicate warehouse title pattern", async () => {
-    const user = userEvent.setup()
-
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ sections: [] }))
-      .mockResolvedValueOnce(jsonResponse({ locations: [] }))
-
-    render(<WarehouseClient initialRows={[warehouseRow()]} />)
-
-    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
-    expect(await screen.findByText("Warehouse - Main Warehouse")).toBeTruthy()
-    expect(screen.getAllByText("Warehouse - Main Warehouse")).toHaveLength(1)
-    expect(screen.getAllByText("Main Warehouse")).toHaveLength(1)
+    expect(window.confirm).toHaveBeenCalled()
+    expect(navigationMocks.push).not.toHaveBeenCalled()
   })
 })

@@ -23,7 +23,7 @@ export function WarehouseCreateModal({
       <div className="space-y-4">
         <FormStatusNotices error={error} />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <RecordFormField label="Warehouse">
+          <RecordFormField label="Warehouse Name">
             <input
               value={draft.name}
               onChange={(event) => onFieldChange("name", event.target.value)}

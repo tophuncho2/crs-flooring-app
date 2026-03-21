@@ -1,52 +1,24 @@
 "use client"
 
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
-import { PropertyRecordPanel } from "./property-record-panel"
-import { TemplateRecordModal } from "../../templates/components/template-record-modal"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
-import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { ErrorNotice, FormStatusNotices, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
-import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
-import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
-import { useGuardedUrlRecordEditor } from "../../shared/use-guarded-url-record-editor"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
-import { FormStatusNotices } from "../../shared/notices"
-import type { TemplatePanelRow } from "../../templates/components/template-record-panel"
 
 type ManagementCompanyOption = {
   id: string
   name: string
-}
-
-type PropertyOption = {
-  id: string
-  name: string
-}
-
-type WarehouseOption = {
-  id: string
-  name: string
-}
-
-type PadProductOption = {
-  id: string
-  label: string
-}
-
-type ProductOption = {
-  id: string
-  label: string
-  sendUnit: string
 }
 
 type PropertyManagementCompany = {
@@ -84,8 +56,6 @@ type DraftProperty = {
   managementCompanyId: string
 }
 
-type TemplateRow = TemplatePanelRow
-
 type ServerPaginationState = {
   page: number
   pageSize: number
@@ -102,15 +72,6 @@ type ServerTableState = {
   groupByKeys: string[]
 }
 
-type DraftTemplate = {
-  templateTag: string
-  propertyId: string
-  warehouseId: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-}
-
 const defaultDraft: DraftProperty = {
   name: "",
   streetAddress: "",
@@ -122,35 +83,14 @@ const defaultDraft: DraftProperty = {
   managementCompanyId: "",
 }
 
-const defaultTemplateDraft: DraftTemplate = {
-  templateTag: "",
-  propertyId: "",
-  warehouseId: "",
-  instructions: "",
-  templateNotes: "",
-  padProductId: "",
-}
-
 export default function PropertiesClient({
   initialProperties,
   managementOptions,
-  propertyOptions,
-  warehouseOptions,
-  padProductOptions,
-  productOptions,
-  serviceOptions,
-  unitOptions,
   tableState,
   pagination,
 }: {
   initialProperties: PropertyRow[]
   managementOptions: ManagementCompanyOption[]
-  propertyOptions: PropertyOption[]
-  warehouseOptions: WarehouseOption[]
-  padProductOptions: PadProductOption[]
-  productOptions: ProductOption[]
-  serviceOptions: ServiceOption[]
-  unitOptions: UnitOption[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
@@ -161,28 +101,7 @@ export default function PropertiesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [isSavingSelectedProperty, setIsSavingSelectedProperty] = useState(false)
-  const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
-  const [loadingTemplate, setLoadingTemplate] = useState(false)
-  const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
   const propertyNavigation = useCanonicalDetailNavigation("/dashboard/flooring/properties")
-  const {
-    activeRecord: selectedProperty,
-    draft: selectedPropertyDraft,
-    setDraft: setSelectedPropertyDraft,
-    openRecord: openPropertyRecord,
-    closeRecord: closePropertyRecord,
-    confirmNavigation: confirmPropertyNavigation,
-  } = useGuardedUrlRecordEditor({
-    rows: properties,
-    paramKey: "property",
-    createDraft: createPropertyDraft,
-    message: "You have unsaved property changes. Leave this property without saving?",
-  })
-  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
-    isDirty: activeTemplateDirty,
-    message: "You have unsaved template changes. Leave this template without saving?",
-  })
   const {
     searchQuery,
     setSearchQuery,
@@ -251,172 +170,6 @@ export default function PropertiesClient({
     setNewDraft((prev) => ({ ...prev, [field]: normalizedValue }))
   }
 
-  function setSelectedPropertyDraftField(field: keyof DraftProperty, value: string) {
-    const normalizedValue = field === "state" ? normalizeAddressState(value) : value
-    setSelectedPropertyDraft((prev) => (prev ? { ...prev, [field]: normalizedValue } : prev))
-  }
-
-  function renderPropertyRow(row: PropertyRow) {
-    const cells: Record<string, ReactNode> = {
-      property: <td key="property" className="px-3 py-2">{row.name}</td>,
-      street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-      city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-      state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-      zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-      fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-      managementCompany: <td key="managementCompany" className="px-3 py-2">{row.managementCompany?.name || "No management company"}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
-          <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </td>
-      ),
-    }
-
-    return (
-      <ClickableTableRow key={row.id} ariaLabel={`Edit property ${row.name}`} onClick={() => void openPropertyPanel(row)}>
-        {visiblePropertyColumns.map((column) => cells[column.key])}
-      </ClickableTableRow>
-    )
-  }
-
-  function renderGroupedRows(groups: GroupedRowTree<PropertyRow>[]): ReactNode[] {
-    return groups.flatMap((group) => [
-      <TableGroupRow
-        key={`${group.depth}-${group.key}`}
-        label={`${group.fieldLabel}: ${group.label}`}
-        depth={group.depth}
-        colSpan={visiblePropertyColumns.length}
-      />,
-      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderPropertyRow(row))),
-    ])
-  }
-
-  function createPropertyDraft(property: PropertyRow): DraftProperty {
-    return {
-      name: property.name,
-      streetAddress: property.streetAddress,
-      city: property.city,
-      state: property.state,
-      zip: property.zip,
-      phone: property.phone,
-      email: property.email,
-      managementCompanyId: property.managementCompany?.id ?? "",
-    }
-  }
-
-  async function openPropertyPanel(property: PropertyRow) {
-    setError("")
-    setMessage("")
-    propertyNavigation.openRecord(property.id)
-  }
-
-  function updatePropertyTemplateSummary(propertyId: string, templateId: string, updater: (template: PropertyRow["templates"][number]) => PropertyRow["templates"][number] | null) {
-    setProperties((prev) =>
-      prev.map((property) => {
-        if (property.id !== propertyId) return property
-
-        const nextTemplates = property.templates
-          .map((template) => (template.id === templateId ? updater(template) : template))
-          .filter((template): template is NonNullable<typeof template> => template !== null)
-
-        return { ...property, templates: nextTemplates }
-      }),
-    )
-  }
-
-  function appendPropertyTemplateSummary(propertyId: string, template: TemplateRow, itemsCount: number) {
-    setProperties((prev) =>
-      prev.map((property) => {
-        if (property.id !== propertyId) return property
-        const existing = property.templates.find((item) => item.id === template.id)
-        const nextTemplate = {
-          id: template.id,
-          templateTag: template.templateTag,
-          warehouseName: template.warehouseName,
-          itemsCount,
-        }
-        const nextTemplates = existing
-          ? property.templates.map((item) => (item.id === template.id ? nextTemplate : item))
-          : [nextTemplate, ...property.templates]
-        return { ...property, templates: nextTemplates }
-      }),
-    )
-  }
-
-  useEffect(() => {
-    if (!activeTemplateId) {
-      setActiveTemplate(null)
-      setLoadingTemplate(false)
-      return
-    }
-
-    let isCancelled = false
-
-    async function loadTemplate() {
-      setError("")
-      setMessage("")
-      setLoadingTemplate(true)
-
-      try {
-        const response = await fetch(`/api/flooring/templates/${activeTemplateId}`)
-        const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
-
-        if (!response.ok || !payload.template) {
-          throw new Error(payload.error ?? "Failed to load template")
-        }
-
-        if (!isCancelled) {
-          setActiveTemplate(payload.template)
-        }
-      } catch (loadError) {
-        if (!isCancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load template")
-          setActiveTemplate(null)
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoadingTemplate(false)
-        }
-      }
-    }
-
-    void loadTemplate()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [activeTemplateId])
-
-  function openTemplate(templateId: string) {
-    setError("")
-    setMessage("")
-    confirmPropertyNavigation(() => {
-      setActiveTemplateDirty(false)
-      openTemplatePanel(templateId)
-    })
-  }
-
-  function closeTemplate() {
-    const didClose = closeTemplatePanel()
-    if (!didClose) {
-      return false
-    }
-    setActiveTemplateDirty(false)
-    setActiveTemplate(null)
-    return true
-  }
-
-  function closePropertyPanel() {
-    if (activeTemplateId && !closeTemplate()) {
-      return
-    }
-    closePropertyRecord()
-  }
-
   async function createProperty() {
     setError("")
     setMessage("")
@@ -480,9 +233,6 @@ export default function PropertiesClient({
       }
 
       setProperties((prev) => prev.filter((property) => property.id !== id))
-      if (selectedProperty?.id === id) {
-        closePropertyPanel()
-      }
       setMessage("Property deleted")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete property")
@@ -491,72 +241,43 @@ export default function PropertiesClient({
     }
   }
 
-  async function saveSelectedProperty() {
-    if (!selectedProperty || !selectedPropertyDraft) return
-    setError("")
-    setMessage("")
-    setIsSavingSelectedProperty(true)
-
-    try {
-      if (!selectedPropertyDraft.name.trim()) {
-        throw new Error("Property name is required")
-      }
-
-      const response = await fetch(`/api/flooring/properties/${selectedProperty.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: selectedPropertyDraft.name,
-          streetAddress: selectedPropertyDraft.streetAddress,
-          city: selectedPropertyDraft.city,
-          state: selectedPropertyDraft.state,
-          zip: selectedPropertyDraft.zip,
-          phone: selectedPropertyDraft.phone,
-          email: selectedPropertyDraft.email,
-          managementCompanyId: selectedPropertyDraft.managementCompanyId || null,
-        }),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        property?: Omit<PropertyRow, "zip" | "managementCompany" | "templates"> & {
-          zip?: string
-          postalCode?: string
-          managementCompany?: PropertyManagementCompany | null
-          templates?: PropertyRow["templates"]
-        }
-      }
-
-      if (!response.ok || !payload.property) {
-        throw new Error(payload.error ?? "Failed to save property")
-      }
-
-      const updatedProperty: PropertyRow = {
-        id: payload.property.id,
-        name: payload.property.name,
-        streetAddress: payload.property.streetAddress ?? "",
-        city: payload.property.city ?? "",
-        state: payload.property.state ?? "",
-        zip: payload.property.zip ?? payload.property.postalCode ?? "",
-        phone: payload.property.phone ?? "",
-        email: payload.property.email ?? "",
-        fullAddress: payload.property.fullAddress,
-        managementCompany:
-          payload.property.managementCompany ??
-          (selectedPropertyDraft.managementCompanyId
-            ? managementOptions.find((option) => option.id === selectedPropertyDraft.managementCompanyId) ?? null
-            : null),
-        templates: payload.property.templates ?? selectedProperty.templates,
-      }
-
-      setProperties((prev) => prev.map((property) => (property.id === updatedProperty.id ? updatedProperty : property)))
-      setSelectedPropertyDraft(createPropertyDraft(updatedProperty))
-      setMessage("Property saved")
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save property")
-    } finally {
-      setIsSavingSelectedProperty(false)
+  function renderPropertyRow(row: PropertyRow) {
+    const cells: Record<string, ReactNode> = {
+      property: <td key="property" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
+      street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+      city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+      state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+      zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+      fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
+      managementCompany: <td key="managementCompany" className="px-3 py-2">{row.managementCompany?.name || "No management company"}</td>,
+      delete: (
+        <td key="delete" className="px-3 py-2">
+          <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
+            {deletingId === row.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </td>
+      ),
     }
+
+    return (
+      <ClickableTableRow key={row.id} ariaLabel={`Edit property ${row.name}`} onClick={() => propertyNavigation.openRecord(row.id)}>
+        {visiblePropertyColumns.map((column) => cells[column.key])}
+      </ClickableTableRow>
+    )
+  }
+
+  function renderGroupedRows(groups: GroupedRowTree<PropertyRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow
+        key={`${group.depth}-${group.key}`}
+        label={`${group.fieldLabel}: ${group.label}`}
+        depth={group.depth}
+        colSpan={visiblePropertyColumns.length}
+      />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderPropertyRow(row))),
+    ])
   }
 
   return (
@@ -601,22 +322,22 @@ export default function PropertiesClient({
           </TableActionsSummary>
         </div>
 
-        {!isCreateModalOpen && !selectedProperty && !activeTemplate && message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
-        {!isCreateModalOpen && !selectedProperty && !activeTemplate && error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
+        {!isCreateModalOpen && message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
+        {!isCreateModalOpen && error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
 
         <TableShell minWidthClass="min-w-[1320px]">
-            <TableHead>
-              <tr>
-                {visiblePropertyColumns.map((column) => (
-                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-                ))}
-              </tr>
-            </TableHead>
-            <tbody>
-              {isGroupingEnabled ? renderGroupedRows(groupedProperties) : sortedProperties.map((row) => renderPropertyRow(row))}
+          <TableHead>
+            <tr>
+              {visiblePropertyColumns.map((column) => (
+                <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+              ))}
+            </tr>
+          </TableHead>
+          <tbody>
+            {isGroupingEnabled ? renderGroupedRows(groupedProperties) : sortedProperties.map((row) => renderPropertyRow(row))}
 
-              {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visiblePropertyColumns.length} /> : null}
-            </tbody>
+            {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visiblePropertyColumns.length} /> : null}
+          </tbody>
         </TableShell>
         <TablePaginationControls
           page={pagination?.page ?? page}
@@ -630,7 +351,6 @@ export default function PropertiesClient({
           previousPageHref={pagination?.previousPageHref}
           nextPageHref={pagination?.nextPageHref}
         />
-
       </section>
 
       {isCreateModalOpen ? (
@@ -684,57 +404,6 @@ export default function PropertiesClient({
             </div>
           </div>
         </ModalShell>
-      ) : null}
-
-      {selectedProperty ? (
-        <ModalShell title={selectedProperty.name} onClose={closePropertyPanel}>
-          <PropertyRecordPanel
-            property={selectedProperty}
-            mode="edit"
-            draft={selectedPropertyDraft ?? undefined}
-            managementOptions={managementOptions}
-            message={message}
-            error={error}
-            isTemplateCreateOpen={false}
-            newTemplateDraft={defaultTemplateDraft}
-            warehouseOptions={warehouseOptions}
-            padProductOptions={padProductOptions}
-            loadingTemplate={loadingTemplate}
-            isSaving={isSavingSelectedProperty}
-            onDraftChange={(field, value) => setSelectedPropertyDraftField(field, value)}
-            onSave={() => void saveSelectedProperty()}
-            onDelete={() => void deleteProperty(selectedProperty.id)}
-            onClose={closePropertyPanel}
-            onTemplateDraftChange={() => undefined}
-            onOpenTemplate={(templateId) => void openTemplate(templateId)}
-          />
-        </ModalShell>
-      ) : null}
-
-      {activeTemplate ? (
-        <TemplateRecordModal
-          template={activeTemplate}
-          propertyOptions={propertyOptions}
-          warehouseOptions={warehouseOptions}
-          padProductOptions={padProductOptions}
-          productOptions={productOptions}
-          serviceOptions={serviceOptions}
-          unitOptions={unitOptions}
-          onClose={closeTemplate}
-          onDirtyChange={setActiveTemplateDirty}
-          onTemplateSaved={(template, previousPropertyId, itemsCount) => {
-            setActiveTemplateDirty(false)
-            updatePropertyTemplateSummary(previousPropertyId, template.id, () => null)
-            appendPropertyTemplateSummary(template.propertyId, template, itemsCount)
-            setActiveTemplate(template)
-          }}
-          onTemplateDeleted={(templateId, propertyId) => {
-            setActiveTemplateDirty(false)
-            updatePropertyTemplateSummary(propertyId, templateId, () => null)
-            setActiveTemplate(null)
-          }}
-          zIndex={50}
-        />
       ) : null}
     </div>
   )
