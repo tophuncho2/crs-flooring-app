@@ -8,7 +8,7 @@ import { requestJson } from "@/features/flooring/shared/http"
 type UserRow = {
   id: string
   email: string
-  role: "BUILDER"
+  role: "OWNER" | "ADMIN" | "BUILDER"
   isVerified: boolean
   createdAt: string
   canRestrict: boolean
@@ -237,9 +237,11 @@ export default function BuilderUsersPanel() {
                           <td className="px-2 py-2">
                             <div className="flex flex-col gap-1">
                               <span className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                                BUILDER
+                                {user.role}
                               </span>
-                              {!user.isVerified && <span className="text-xs text-amber-400">PENDING APPROVAL</span>}
+                              {user.role === "BUILDER" && !user.isVerified ? (
+                                <span className="text-xs text-amber-400">PENDING APPROVAL</span>
+                              ) : null}
                             </div>
                           </td>
                           <td className="px-2 py-2">
@@ -257,7 +259,11 @@ export default function BuilderUsersPanel() {
                               <option value="verified">Verified</option>
                               <option value="restricted">Pending Approval</option>
                             </select>
-                            {user.canRestrict && <div className="mt-1 text-xs text-[var(--foreground)]/70">{statusLabel}</div>}
+                            {user.canRestrict ? (
+                              <div className="mt-1 text-xs text-[var(--foreground)]/70">{statusLabel}</div>
+                            ) : (
+                              <div className="mt-1 text-xs text-[var(--foreground)]/70">Governance role. Managed outside panel.</div>
+                            )}
                           </td>
                           <td className="px-2 py-2 text-xs text-[var(--foreground)]/80 md:text-sm">
                             {formatStableDate(user.createdAt)}

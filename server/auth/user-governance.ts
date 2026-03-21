@@ -13,7 +13,7 @@ type ManagedUserRecord = {
 export type ManagedUserRow = {
   id: string
   email: string
-  role: "BUILDER"
+  role: "OWNER" | "ADMIN" | "BUILDER"
   isVerified: boolean
   createdAt: string
   canRestrict: boolean
@@ -78,15 +78,16 @@ export function normalizeManagedUserRow(
   actor: SessionUser,
 ): ManagedUserRow {
   const canManage = canManageUsers(actor.email, actor.role)
+  const isBuilder = user.role === "BUILDER"
 
   return {
     id: user.id,
     email: user.email,
-    role: "BUILDER",
-    isVerified: user.isVerified,
+    role: user.role as "OWNER" | "ADMIN" | "BUILDER",
+    isVerified: isBuilder ? user.isVerified : true,
     createdAt: user.createdAt.toISOString(),
-    canRestrict: canManage,
+    canRestrict: canManage && isBuilder,
     canEditRole: false,
-    canDelete: canManage,
+    canDelete: canManage && isBuilder,
   }
 }

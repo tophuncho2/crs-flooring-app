@@ -16,7 +16,9 @@ export async function GET() {
 
   const users = await prisma.user.findMany({
     where: {
-      role: "BUILDER",
+      role: {
+        in: ["OWNER", "ADMIN", "BUILDER"],
+      },
     },
     orderBy: { createdAt: "desc" },
     select: {

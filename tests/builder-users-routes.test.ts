@@ -69,8 +69,22 @@ describe("builder user routes", () => {
     })
   })
 
-  it("GET returns builder rows only with builder-management capabilities", async () => {
+  it("GET returns system users while only builders remain manageable from the panel", async () => {
     userFindManyMock.mockResolvedValue([
+      {
+        id: "owner-1",
+        email: "owner@test.com",
+        role: "OWNER",
+        isVerified: true,
+        createdAt: new Date("2026-03-21T00:00:00Z"),
+      },
+      {
+        id: "admin-1",
+        email: "admin@test.com",
+        role: "ADMIN",
+        isVerified: true,
+        createdAt: new Date("2026-03-21T00:00:00Z"),
+      },
       {
         id: "builder-1",
         email: "builder@test.com",
@@ -87,6 +101,18 @@ describe("builder user routes", () => {
     expect(payload.viewerCanManageUsers).toBe(true)
     expect(payload.users).toEqual([
       expect.objectContaining({
+        id: "owner-1",
+        role: "OWNER",
+        canRestrict: false,
+        canDelete: false,
+      }),
+      expect.objectContaining({
+        id: "admin-1",
+        role: "ADMIN",
+        canRestrict: false,
+        canDelete: false,
+      }),
+      expect.objectContaining({
         id: "builder-1",
         role: "BUILDER",
         canRestrict: true,
@@ -96,7 +122,11 @@ describe("builder user routes", () => {
     ])
     expect(userFindManyMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { role: "BUILDER" },
+        where: {
+          role: {
+            in: ["OWNER", "ADMIN", "BUILDER"],
+          },
+        },
       }),
     )
   })
