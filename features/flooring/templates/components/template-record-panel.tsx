@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
-import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
+import { FormStatusNotices } from "@/features/flooring/shared/notices"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { buildRecordSummary, emptyRecordSummary } from "@/features/flooring/shared/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
-import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemOption } from "@/features/flooring/shared/material-items-editor"
-import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceOption, type UnitOption } from "@/features/flooring/shared/service-items-editor"
+import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemField, type MaterialItemFieldErrors, type MaterialItemOption, validateMaterialItemFields } from "@/features/flooring/shared/material-items-editor"
+import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceItemField, type ServiceItemFieldErrors, type ServiceOption, type UnitOption, validateServiceItemFields } from "@/features/flooring/shared/service-items-editor"
+import { clearFieldError, clearRowFieldError, getRequestFieldError, setFieldError, setRowFieldErrors, type RowFieldErrors } from "@/features/flooring/shared/record-field-errors"
+import { PrimaryRecordFieldsGrid } from "@/features/flooring/shared/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
 import { useRecordDetailController } from "@/features/flooring/shared/use-record-detail-controller"
+import { useRecordNotices } from "@/features/flooring/shared/use-record-notices"
 
 export type TemplatePanelRow = {
   id: string
@@ -96,8 +99,12 @@ export function TemplateRecordPanel({
   )
   const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>({ productId: "", quantity: "", unitPrice: "", notes: "" })
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>({ serviceId: "", name: "", unitId: "", quantity: "", unitPrice: "", notes: "" })
+  const [materialDraftErrors, setMaterialDraftErrors] = useState<MaterialItemFieldErrors>({})
+  const [materialItemErrors, setMaterialItemErrors] = useState<RowFieldErrors<MaterialItemField>>({})
+  const [serviceDraftErrors, setServiceDraftErrors] = useState<ServiceItemFieldErrors>({})
+  const [serviceItemErrors, setServiceItemErrors] = useState<RowFieldErrors<ServiceItemField>>({})
   const [savingTemplate, setSavingTemplate] = useState(false)
-  const [message, setMessage] = useState("")
+  const notices = useRecordNotices()
   const {
     record: template,
     draft,
@@ -185,6 +192,7 @@ export function TemplateRecordPanel({
     if (!template || !draft) return
     setSavingTemplate(true)
     setError("")
+    notices.clearNotices()
 
     try {
       const previousPropertyId = template.propertyId
@@ -207,10 +215,10 @@ export function TemplateRecordPanel({
           serviceItems,
         }),
       })
-      setMessage("Template saved")
+      notices.showSuccess("Template saved")
       onTemplateSavedRef.current?.(payload.template, previousPropertyId, itemCount)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save template")
+      notices.showError(saveError instanceof Error ? saveError.message : "Failed to save template")
     } finally {
       setSavingTemplate(false)
     }
@@ -219,6 +227,7 @@ export function TemplateRecordPanel({
   async function deleteTemplate() {
     if (!template) return
     setError("")
+    notices.clearNotices()
 
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/templates/${template.id}`, { method: "DELETE" })
@@ -226,16 +235,25 @@ export function TemplateRecordPanel({
       onTemplateDeleted?.(template.id, template.propertyId)
       onClose()
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template")
+      notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete template")
     }
   }
 
-  async function addMaterialItem() {
-    if (!template) return
+  async function addMaterialItem(): Promise<boolean> {
+    if (!template) return false
     setError("")
+    notices.clearNotices()
+    const validationErrors = validateMaterialItemFields(materialDraft)
+    if (Object.keys(validationErrors).length > 0) {
+      setMaterialDraftErrors(validationErrors)
+      notices.showError("Fix the highlighted material item fields before adding.")
+      return false
+    }
+
     try {
       const nextMaterialItems = await materialCollection.createItem(materialDraft)
       setMaterialDraft({ productId: "", quantity: "", unitPrice: "", notes: "" })
+      setMaterialDraftErrors({})
       syncRecord({
         ...template,
         items: nextMaterialItems,
@@ -245,18 +263,34 @@ export function TemplateRecordPanel({
           serviceItems,
         }),
       }, { syncDraft: false })
-      setMessage("Template item added")
+      notices.showSuccess("Material item added")
       onTemplateSavedRef.current?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
+      return true
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to add template item")
+      const fieldError = getRequestFieldError(saveError)
+      if (fieldError.field === "productId" || fieldError.field === "quantity") {
+        const field = fieldError.field
+        setMaterialDraftErrors(setFieldError(field, fieldError.message))
+      }
+      notices.showError(fieldError.message || "Failed to add template item")
+      return false
     }
   }
 
   async function saveMaterialItem(item: EditableMaterialItem) {
     if (!template) return
     setError("")
+    notices.clearNotices()
+    const validationErrors = validateMaterialItemFields(item)
+    if (Object.keys(validationErrors).length > 0) {
+      setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, validationErrors))
+      notices.showError("Fix the highlighted material item fields before saving.")
+      return
+    }
+
     try {
       const nextMaterialItems = await materialCollection.updateItem(item.id, item)
+      setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
       syncRecord({
         ...template,
         items: nextMaterialItems,
@@ -266,17 +300,24 @@ export function TemplateRecordPanel({
           serviceItems,
         }),
       }, { syncDraft: false })
-      setMessage("Template item saved")
+      notices.showSuccess("Material item saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save template item")
+      const fieldError = getRequestFieldError(saveError)
+      if (fieldError.field === "productId" || fieldError.field === "quantity") {
+        const field = fieldError.field
+        setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, setFieldError(field, fieldError.message)))
+      }
+      notices.showError(fieldError.message || "Failed to save template item")
     }
   }
 
   async function deleteMaterialItem(itemId: string) {
     if (!template) return
     setError("")
+    notices.clearNotices()
     try {
       const nextMaterialItems = await materialCollection.deleteItem(itemId)
+      setMaterialItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
       syncRecord({
         ...template,
         items: nextMaterialItems,
@@ -286,19 +327,28 @@ export function TemplateRecordPanel({
           serviceItems,
         }),
       }, { syncDraft: false })
-      setMessage("Template item deleted")
+      notices.showSuccess("Material item deleted")
       onTemplateSavedRef.current?.(template, template.propertyId, nextMaterialItems.length + serviceItems.length)
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template item")
+      notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete template item")
     }
   }
 
-  async function addServiceItem() {
-    if (!template) return
+  async function addServiceItem(): Promise<boolean> {
+    if (!template) return false
     setError("")
+    notices.clearNotices()
+    const validationErrors = validateServiceItemFields(serviceDraft)
+    if (Object.keys(validationErrors).length > 0) {
+      setServiceDraftErrors(validationErrors)
+      notices.showError("Fix the highlighted service item fields before adding.")
+      return false
+    }
+
     try {
       const nextServiceItems = await serviceCollection.createItem(serviceDraft)
       setServiceDraft({ serviceId: "", name: "", unitId: "", quantity: "", unitPrice: "", notes: "" })
+      setServiceDraftErrors({})
       syncRecord({
         ...template,
         items: materialItems,
@@ -308,18 +358,34 @@ export function TemplateRecordPanel({
           serviceItems: nextServiceItems,
         }),
       }, { syncDraft: false })
-      setMessage("Template service item added")
+      notices.showSuccess("Service item added")
       onTemplateSavedRef.current?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
+      return true
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to add template service item")
+      const fieldError = getRequestFieldError(saveError)
+      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity") {
+        const field = fieldError.field
+        setServiceDraftErrors(setFieldError(field, fieldError.message))
+      }
+      notices.showError(fieldError.message || "Failed to add template service item")
+      return false
     }
   }
 
   async function saveServiceItem(item: EditableServiceItem) {
     if (!template) return
     setError("")
+    notices.clearNotices()
+    const validationErrors = validateServiceItemFields(item)
+    if (Object.keys(validationErrors).length > 0) {
+      setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, validationErrors))
+      notices.showError("Fix the highlighted service item fields before saving.")
+      return
+    }
+
     try {
       const nextServiceItems = await serviceCollection.updateItem(item.id, item)
+      setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
       syncRecord({
         ...template,
         items: materialItems,
@@ -329,17 +395,24 @@ export function TemplateRecordPanel({
           serviceItems: nextServiceItems,
         }),
       }, { syncDraft: false })
-      setMessage("Template service item saved")
+      notices.showSuccess("Service item saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save template service item")
+      const fieldError = getRequestFieldError(saveError)
+      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity") {
+        const field = fieldError.field
+        setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, setFieldError(field, fieldError.message)))
+      }
+      notices.showError(fieldError.message || "Failed to save template service item")
     }
   }
 
   async function deleteServiceItem(itemId: string) {
     if (!template) return
     setError("")
+    notices.clearNotices()
     try {
       const nextServiceItems = await serviceCollection.deleteItem(itemId)
+      setServiceItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
       syncRecord({
         ...template,
         items: materialItems,
@@ -349,10 +422,10 @@ export function TemplateRecordPanel({
           serviceItems: nextServiceItems,
         }),
       }, { syncDraft: false })
-      setMessage("Template service item deleted")
+      notices.showSuccess("Service item deleted")
       onTemplateSavedRef.current?.(template, template.propertyId, materialItems.length + nextServiceItems.length)
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template service item")
+      notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete template service item")
     }
   }
 
@@ -370,11 +443,10 @@ export function TemplateRecordPanel({
 
   return (
     <div className="space-y-6">
-      {message ? <SuccessNotice>{message}</SuccessNotice> : null}
-      {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+      <FormStatusNotices message={notices.message} error={notices.error} loadingMessage={savingTemplate ? "Saving template..." : ""} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,1fr)]">
-        <div className="grid gap-4 md:grid-cols-2">
+        <PrimaryRecordFieldsGrid className="xl:grid-cols-2">
           <RecordFormField label="Property">
             <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2">
               <option value="">Select property</option>
@@ -402,16 +474,16 @@ export function TemplateRecordPanel({
               ))}
             </select>
           </RecordFormField>
-        </div>
+        </PrimaryRecordFieldsGrid>
 
-        <div className="grid gap-4">
+        <PrimaryRecordFieldsGrid className="md:grid-cols-1 xl:grid-cols-1">
           <RecordFormField label="Instructions">
             <textarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
           </RecordFormField>
           <RecordFormField label="Template Notes">
             <textarea value={draft.templateNotes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateNotes: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
           </RecordFormField>
-        </div>
+        </PrimaryRecordFieldsGrid>
       </div>
 
       <MaterialItemsEditor
@@ -424,10 +496,20 @@ export function TemplateRecordPanel({
         adding={materialCollection.adding}
         savingItemId={materialCollection.savingItemId}
         deletingItemId={materialCollection.deletingItemId}
-        onDraftChange={(field, value) => setMaterialDraft((prev) => ({ ...prev, [field]: value }))}
-        onAdd={() => void addMaterialItem()}
+        draftErrors={materialDraftErrors}
+        itemErrors={materialItemErrors}
+        onDraftChange={(field, value) => {
+          setMaterialDraft((prev) => ({ ...prev, [field]: value }))
+          if (field === "productId" || field === "quantity") {
+            setMaterialDraftErrors((previous) => clearFieldError(previous, field))
+          }
+        }}
+        onAdd={() => addMaterialItem()}
         onItemFieldChange={(itemId, field, value) => {
           setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+          if (field === "productId" || field === "quantity") {
+            setMaterialItemErrors((previous) => clearRowFieldError(previous, itemId, field))
+          }
         }}
         onSaveItem={(item) => void saveMaterialItem(item)}
         onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
@@ -444,10 +526,20 @@ export function TemplateRecordPanel({
         adding={serviceCollection.adding}
         savingItemId={serviceCollection.savingItemId}
         deletingItemId={serviceCollection.deletingItemId}
-        onDraftChange={(field, value) => setServiceDraft((prev) => ({ ...prev, [field]: value }))}
-        onAdd={() => void addServiceItem()}
+        draftErrors={serviceDraftErrors}
+        itemErrors={serviceItemErrors}
+        onDraftChange={(field, value) => {
+          setServiceDraft((prev) => ({ ...prev, [field]: value }))
+          if (field === "name" || field === "unitId" || field === "quantity") {
+            setServiceDraftErrors((previous) => clearFieldError(previous, field))
+          }
+        }}
+        onAdd={() => addServiceItem()}
         onItemFieldChange={(itemId, field, value) => {
           setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+          if (field === "name" || field === "unitId" || field === "quantity") {
+            setServiceItemErrors((previous) => clearRowFieldError(previous, itemId, field))
+          }
         }}
         onSaveItem={(item) => void saveServiceItem(item)}
         onDeleteItem={(itemId) => void deleteServiceItem(itemId)}

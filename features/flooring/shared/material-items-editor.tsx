@@ -3,6 +3,7 @@
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "./collapsible-table-section"
 import { formatLineTotal } from "./line-totals"
+import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "./table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "./table-size-classes"
 
@@ -29,6 +30,23 @@ export type MaterialItemDraft = {
   notes: string
 }
 
+export type MaterialItemField = "productId" | "quantity"
+export type MaterialItemFieldErrors = FieldErrorMap<MaterialItemField>
+
+export function validateMaterialItemFields(value: Pick<MaterialItemDraft, "productId" | "quantity">) {
+  const errors: MaterialItemFieldErrors = {}
+
+  if (!value.productId.trim()) {
+    errors.productId = "Select a product."
+  }
+
+  if (!value.quantity.trim()) {
+    errors.quantity = "Enter a quantity."
+  }
+
+  return errors
+}
+
 export function MaterialItemsEditor({
   title,
   description,
@@ -39,6 +57,8 @@ export function MaterialItemsEditor({
   adding,
   savingItemId,
   deletingItemId,
+  draftErrors = {},
+  itemErrors = {},
   onDraftChange,
   onAdd,
   onItemFieldChange,
@@ -54,8 +74,10 @@ export function MaterialItemsEditor({
   adding: boolean
   savingItemId: string | null
   deletingItemId: string | null
+  draftErrors?: MaterialItemFieldErrors
+  itemErrors?: RowFieldErrors<MaterialItemField>
   onDraftChange: (field: keyof MaterialItemDraft, value: string) => void
-  onAdd: () => void
+  onAdd: () => Promise<boolean> | boolean
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
   onSaveItem?: (item: EditableMaterialItem) => void
   onDeleteItem: (itemId: string) => void
@@ -64,8 +86,10 @@ export function MaterialItemsEditor({
   const addRow = useInlineCreateRow(false)
 
   async function handleAdd() {
-    await onAdd()
-    addRow.close()
+    const didAdd = await onAdd()
+    if (didAdd !== false) {
+      addRow.close()
+    }
   }
 
   return (
@@ -90,16 +114,30 @@ export function MaterialItemsEditor({
             </tr>
           ) : (
             items.map((item) => (
-              <tr key={item.id} className="border-t border-[var(--panel-border)]">
+              <tr key={item.id} className={`border-t border-[var(--panel-border)] ${hasFieldErrors(itemErrors[item.id]) ? "bg-rose-500/[0.04]" : ""}`}>
                 <td className="px-3 py-2">
-                  <select value={item.productId} onChange={(event) => onItemFieldChange(item.id, "productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                    {productOptions.map((product) => (
-                      <option key={product.id} value={product.id}>{product.label}</option>
-                    ))}
-                  </select>
+                  <div className="space-y-1">
+                    <select
+                      value={item.productId}
+                      onChange={(event) => onItemFieldChange(item.id, "productId", event.target.value)}
+                      className={getFieldControlClassName("w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[item.id]?.productId))}
+                    >
+                      {productOptions.map((product) => (
+                        <option key={product.id} value={product.id}>{product.label}</option>
+                      ))}
+                    </select>
+                    {itemErrors[item.id]?.productId ? <FieldErrorText>{itemErrors[item.id]?.productId}</FieldErrorText> : null}
+                  </div>
                 </td>
                 <td className="px-3 py-2">
-                  <input value={item.quantity} onChange={(event) => onItemFieldChange(item.id, "quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                  <div className="space-y-1">
+                    <input
+                      value={item.quantity}
+                      onChange={(event) => onItemFieldChange(item.id, "quantity", event.target.value)}
+                      className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[item.id]?.quantity))}
+                    />
+                    {itemErrors[item.id]?.quantity ? <FieldErrorText>{itemErrors[item.id]?.quantity}</FieldErrorText> : null}
+                  </div>
                 </td>
                 <td className="px-3 py-2">{productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "-"}</td>
                 <td className="px-3 py-2">
@@ -136,17 +174,31 @@ export function MaterialItemsEditor({
             </tr>
           ) : null}
           {addRow.isOpen ? (
-            <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20">
+            <tr className={`border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20 ${hasFieldErrors(draftErrors) ? "bg-rose-500/[0.05]" : ""}`}>
               <td className="px-3 py-2">
-                <select value={draft.productId} onChange={(event) => onDraftChange("productId", event.target.value)} className="w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1">
-                  <option value="">Select product</option>
-                  {productOptions.map((product) => (
-                    <option key={product.id} value={product.id}>{product.label}</option>
-                  ))}
-                </select>
+                <div className="space-y-1">
+                  <select
+                    value={draft.productId}
+                    onChange={(event) => onDraftChange("productId", event.target.value)}
+                    className={getFieldControlClassName("w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.productId))}
+                  >
+                    <option value="">Select product</option>
+                    {productOptions.map((product) => (
+                      <option key={product.id} value={product.id}>{product.label}</option>
+                    ))}
+                  </select>
+                  {draftErrors.productId ? <FieldErrorText>{draftErrors.productId}</FieldErrorText> : null}
+                </div>
               </td>
               <td className="px-3 py-2">
-                <input value={draft.quantity} onChange={(event) => onDraftChange("quantity", event.target.value)} className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                <div className="space-y-1">
+                  <input
+                    value={draft.quantity}
+                    onChange={(event) => onDraftChange("quantity", event.target.value)}
+                    className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
+                  />
+                  {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
+                </div>
               </td>
               <td className="px-3 py-2">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</td>
               <td className="px-3 py-2">
