@@ -1,3 +1,5 @@
+import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+
 export type FlooringHotkeyDefinition = {
   id: string
   key: string
@@ -5,6 +7,7 @@ export type FlooringHotkeyDefinition = {
   action: string
   code: string
   path?: string
+  requiredTool?: ToolSlug
   toggleTheme?: boolean
 }
 
@@ -16,14 +19,25 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Products",
     code: "KeyP",
     path: "/dashboard/flooring/products",
+    requiredTool: "products",
+  },
+  {
+    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00013",
+    key: "Categories",
+    combination: "SHIFT + Q",
+    action: "Open Categories",
+    code: "KeyQ",
+    path: "/dashboard/flooring/categories",
+    requiredTool: "products",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00002",
-    key: "Work Orders",
+    key: "Unit Of Measures",
     combination: "SHIFT + W",
-    action: "Open Work Orders",
+    action: "Open Unit Of Measures",
     code: "KeyW",
-    path: "/dashboard/flooring/work-orders",
+    path: "/dashboard/flooring/unit-of-measures",
+    requiredTool: "products",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00003",
@@ -32,6 +46,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Inventory",
     code: "KeyI",
     path: "/dashboard/flooring/inventory",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00012",
@@ -40,6 +55,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Calendar",
     code: "KeyC",
     path: "/dashboard/flooring/calendar",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00004",
@@ -48,6 +64,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Management Companies",
     code: "KeyM",
     path: "/dashboard/flooring/management-companies",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00005",
@@ -56,14 +73,25 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Templates",
     code: "KeyT",
     path: "/dashboard/flooring/templates",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00006",
-    key: "Warehouse",
+    key: "Services",
     combination: "SHIFT + S",
-    action: "Open Warehouse",
+    action: "Open Services",
     code: "KeyS",
-    path: "/dashboard/flooring/warehouse",
+    path: "/dashboard/flooring/services",
+    requiredTool: "warehouse",
+  },
+  {
+    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00014",
+    key: "Work Orders",
+    combination: "SHIFT + D",
+    action: "Open Work Orders",
+    code: "KeyD",
+    path: "/dashboard/flooring/work-orders",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00007",
@@ -72,6 +100,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Properties",
     code: "KeyR",
     path: "/dashboard/flooring/properties",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00008",
@@ -80,6 +109,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Manufacturers",
     code: "KeyV",
     path: "/dashboard/flooring/manufacturers",
+    requiredTool: "products",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00009",
@@ -88,6 +118,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Imports",
     code: "KeyO",
     path: "/dashboard/flooring/imports",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00010",
@@ -96,6 +127,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Cut Logs",
     code: "KeyU",
     path: "/dashboard/flooring/cut-logs",
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00011",
@@ -104,13 +136,5 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Toggle Theme",
     code: "Slash",
     toggleTheme: true,
-  },
-  {
-    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00013",
-    key: "Admin Panel",
-    combination: "SHIFT + Q",
-    action: "Open Admin Panel",
-    code: "KeyQ",
-    path: "/dashboard/builder",
   },
 ]

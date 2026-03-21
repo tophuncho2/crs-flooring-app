@@ -51,9 +51,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   const [hotkeys, setHotkeys] = useState<HotkeyRow[]>([])
   const [hotkeysLoading, setHotkeysLoading] = useState(false)
   const [hotkeysError, setHotkeysError] = useState("")
-  const [hotkeysMessage, setHotkeysMessage] = useState("")
-  const [hotkeyDrafts, setHotkeyDrafts] = useState<Record<string, Pick<HotkeyRow, "key" | "combination" | "action">>>({})
-  const [savingHotkeyId, setSavingHotkeyId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -107,7 +104,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
   useFlooringHotkeys({
     enabled: !isMobile,
-    hasBuilderPanelAccess,
     canOpenTool,
     onToggleTheme: () => toggleTheme(false),
   })
@@ -125,7 +121,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
       }
 
       setHotkeys(payload.hotkeys ?? [])
-      setHotkeyDrafts({})
     } catch (error) {
       setHotkeysError(error instanceof Error ? error.message : "Failed to load hotkeys")
     } finally {
@@ -135,71 +130,10 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
   const openHotkeysModal = useCallback(async () => {
     setOpen(false)
-    setHotkeysMessage("")
     setHotkeysError("")
     setHotkeysOpen(true)
     await fetchHotkeys()
   }, [fetchHotkeys])
-
-  function getDraft(hotkey: HotkeyRow) {
-    return hotkeyDrafts[hotkey.id] ?? {
-      key: hotkey.key,
-      combination: hotkey.combination,
-      action: hotkey.action,
-    }
-  }
-
-  function updateDraft(hotkeyId: string, field: "key" | "combination" | "action", value: string) {
-    setHotkeyDrafts((prev) => ({
-      ...prev,
-      [hotkeyId]: {
-        ...(prev[hotkeyId] ?? { key: "", combination: "", action: "" }),
-        [field]: value,
-      },
-    }))
-  }
-
-  async function saveHotkey(hotkey: HotkeyRow) {
-    const draft = getDraft(hotkey)
-
-    if (!draft.key.trim() || !draft.combination.trim() || !draft.action.trim()) {
-      setHotkeysError("Key, Combination, and Action are required")
-      return
-    }
-
-    setSavingHotkeyId(hotkey.id)
-    setHotkeysError("")
-    setHotkeysMessage("")
-
-    try {
-      const response = await fetch(`/api/hotkeys/${hotkey.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key: draft.key.trim(),
-          combination: draft.combination.trim(),
-          action: draft.action.trim(),
-        }),
-      })
-
-      const payload = (await response.json()) as { hotkey?: HotkeyRow; error?: string }
-      if (!response.ok || !payload.hotkey) {
-        throw new Error(payload.error ?? "Failed to save hotkey")
-      }
-
-      setHotkeys((prev) => prev.map((row) => (row.id === hotkey.id ? payload.hotkey! : row)))
-      setHotkeyDrafts((prev) => {
-        const next = { ...prev }
-        delete next[hotkey.id]
-        return next
-      })
-      setHotkeysMessage("Hotkey saved")
-    } catch (error) {
-      setHotkeysError(error instanceof Error ? error.message : "Failed to save hotkey")
-    } finally {
-      setSavingHotkeyId(null)
-    }
-  }
 
   return (
     <>
@@ -302,11 +236,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               </button>
             </div>
 
-            {hotkeysMessage && (
-              <p className="mb-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
-                {hotkeysMessage}
-              </p>
-            )}
             {hotkeysError && (
               <p className="mb-2 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">
                 {hotkeysError}
@@ -321,14 +250,13 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                     <th className="px-3 py-2">Combination</th>
                     <th className="px-3 py-2">Action</th>
                     {!isMobile && <th className="px-3 py-2">Visualization</th>}
-                    {isGovernanceUser && <th className="px-3 py-2">Save</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {hotkeysLoading ? (
                     <tr>
                       <td
-                        colSpan={isGovernanceUser ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
+                        colSpan={isMobile ? 3 : 4}
                         className="px-3 py-8 text-center text-[var(--foreground)]/70"
                       >
                         Loading hotkeys...
@@ -337,71 +265,25 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                   ) : hotkeys.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isGovernanceUser ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
+                        colSpan={isMobile ? 3 : 4}
                         className="px-3 py-8 text-center text-[var(--foreground)]/70"
                       >
                         No hotkeys configured.
                       </td>
                     </tr>
                   ) : (
-                    hotkeys.map((hotkey) => {
-                      const draft = getDraft(hotkey)
-                      const isSaving = savingHotkeyId === hotkey.id
-
-                      return (
-                        <tr key={hotkey.id} className="border-t border-[var(--panel-border)]">
+                    hotkeys.map((hotkey) => (
+                      <tr key={hotkey.id} className="border-t border-[var(--panel-border)]">
+                        <td className="px-3 py-2">{hotkey.key}</td>
+                        <td className="px-3 py-2">{hotkey.combination}</td>
+                        <td className="px-3 py-2">{hotkey.action}</td>
+                        {!isMobile && (
                           <td className="px-3 py-2">
-                            {isGovernanceUser ? (
-                              <input
-                                value={draft.key}
-                                onChange={(event) => updateDraft(hotkey.id, "key", event.target.value)}
-                                className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                              />
-                            ) : (
-                              <span>{hotkey.key}</span>
-                            )}
+                            <KeyVisualization combination={hotkey.combination} />
                           </td>
-                          <td className="px-3 py-2">
-                            {isGovernanceUser ? (
-                              <input
-                                value={draft.combination}
-                                onChange={(event) => updateDraft(hotkey.id, "combination", event.target.value)}
-                                className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                              />
-                            ) : (
-                              <span>{hotkey.combination}</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2">
-                            {isGovernanceUser ? (
-                              <input
-                                value={draft.action}
-                                onChange={(event) => updateDraft(hotkey.id, "action", event.target.value)}
-                                className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                              />
-                            ) : (
-                              <span>{hotkey.action}</span>
-                            )}
-                          </td>
-                          {!isMobile && (
-                            <td className="px-3 py-2">
-                              <KeyVisualization combination={draft.combination || hotkey.combination} />
-                            </td>
-                          )}
-                          {isGovernanceUser && (
-                            <td className="px-3 py-2">
-                              <button
-                                onClick={() => void saveHotkey(hotkey)}
-                                disabled={isSaving}
-                                className="rounded border border-[var(--panel-border)] px-3 py-1 hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                              >
-                                {isSaving ? "Saving..." : "Save"}
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      )
-                    })
+                        )}
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>

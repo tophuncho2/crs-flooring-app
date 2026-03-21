@@ -72,6 +72,7 @@ function SortableFlooringNavRow({
         <GripVertical size={14} />
       </button>
       <button
+        type="button"
         onClick={() => {
           if (canOpen) {
             onNavigate(tool.href)
@@ -85,25 +86,23 @@ function SortableFlooringNavRow({
       >
         {tool.name}
       </button>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation()
-          const nextVisibleSlugs = isVisible
-            ? visibleSlugs.filter((slug) => slug !== tool.slug)
-            : [...visibleSlugs, tool.slug]
-          onVisibleSlugsChange(nextVisibleSlugs)
-        }}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded hover:bg-[var(--panel-hover)]"
+      <label
+        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-[var(--panel-hover)]"
         aria-label={`${isVisible ? "Hide" : "Show"} ${tool.name} in header`}
+        onClick={(event) => event.stopPropagation()}
       >
         <input
           type="checkbox"
           checked={isVisible}
-          readOnly
+          onChange={() => {
+            const nextVisibleSlugs = isVisible
+              ? visibleSlugs.filter((slug) => slug !== tool.slug)
+              : [...visibleSlugs, tool.slug]
+            onVisibleSlugsChange(nextVisibleSlugs)
+          }}
           className="h-4 w-4 accent-blue-500"
         />
-      </button>
+      </label>
       {hotkeyLabel ? (
         <span className="min-w-[88px] shrink-0 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/50 px-2 py-1 text-center text-[10px] font-semibold tracking-wide text-[var(--foreground)]/70">
           {hotkeyLabel}
@@ -225,6 +224,7 @@ export default function FlooringToolsMenu({
   return (
     <div ref={menuRef} className="relative">
       <button
+        type="button"
         onClick={() => {
           if (open) {
             void closeAndSave()

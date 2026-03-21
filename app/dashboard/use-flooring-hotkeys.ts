@@ -13,12 +13,10 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export function useFlooringHotkeys({
   enabled,
-  hasBuilderPanelAccess,
   canOpenTool,
   onToggleTheme,
 }: {
   enabled: boolean
-  hasBuilderPanelAccess: boolean
   canOpenTool: (slug: ToolSlug) => boolean
   onToggleTheme: () => void
 }) {
@@ -43,20 +41,12 @@ export function useFlooringHotkeys({
 
       if (!matchedHotkey.path) return
 
-      if (matchedHotkey.code === "KeyQ") {
-        if (hasBuilderPanelAccess) {
-          router.push(matchedHotkey.path)
-        }
-        return
-      }
+      if (matchedHotkey.requiredTool && !canOpenTool(matchedHotkey.requiredTool)) return
 
-      const requiredTool: ToolSlug = matchedHotkey.code === "KeyP" ? "products" : "warehouse"
-      if (canOpenTool(requiredTool)) {
-        router.push(matchedHotkey.path)
-      }
+      router.push(matchedHotkey.path)
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canOpenTool, enabled, hasBuilderPanelAccess, onToggleTheme, router])
+  }, [canOpenTool, enabled, onToggleTheme, router])
 }

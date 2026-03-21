@@ -51,11 +51,15 @@ export async function GET() {
     },
   })
 
+  const hotkeysById = new Map(hotkeys.map((hotkey) => [hotkey.id, hotkey]))
+
   return NextResponse.json({
-    hotkeys: hotkeys.map((hotkey) => ({
-      ...hotkey,
-      createdAt: hotkey.createdAt.toISOString(),
-      updatedAt: hotkey.updatedAt.toISOString(),
-    })),
+    hotkeys: FLOORING_HOTKEYS.map((definition) => hotkeysById.get(definition.id))
+      .filter((hotkey): hotkey is NonNullable<typeof hotkeys[number]> => Boolean(hotkey))
+      .map((hotkey) => ({
+        ...hotkey,
+        createdAt: hotkey.createdAt.toISOString(),
+        updatedAt: hotkey.updatedAt.toISOString(),
+      })),
   })
 }
