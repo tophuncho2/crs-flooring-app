@@ -9,6 +9,7 @@ import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { DashboardCardTitle } from "../../shared/dashboard-card-title"
+import { formatStableDate } from "../../shared/date-format"
 import { RecordMetricSummary } from "../../shared/record-metric-summary"
 import { StatusPill } from "../../shared/status-pill"
 import { IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS } from "../../shared/table-size-classes"
@@ -556,7 +557,7 @@ export default function ImportsClient({
         </td>
       ),
       warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
-      created: <td key="created" className="px-3 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>,
+      created: <td key="created" className="px-3 py-2">{formatStableDate(row.createdAt)}</td>,
       items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
       delete: (
         <td key="delete" className="px-3 py-2">

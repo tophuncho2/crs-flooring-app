@@ -11,6 +11,7 @@
     "start": "prisma migrate deploy && node prisma/seed.js && next start",
     "postinstall": "prisma generate",
     "db:seed:users": "node prisma/seed.js",
+    "db:promote-admin": "node prisma/admin-recovery.js",
     "lint": "eslint",
     "test": "vitest run"
   },

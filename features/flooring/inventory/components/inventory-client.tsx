@@ -5,6 +5,7 @@ import { requestJson } from "@/features/flooring/shared/http"
 import { BasicRecordPanel } from "@/features/flooring/shared/basic-record-panel"
 import { CutLogsEditor, type CutLogDraft, type EditableCutLog } from "@/features/flooring/shared/cut-logs-editor"
 import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
+import { formatStableDate } from "@/features/flooring/shared/date-format"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/primary-record-panel"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/record-form"
@@ -530,7 +531,7 @@ export default function InventoryClient({
       cost: <td key="cost" className="px-3 py-2">{row.cost || "-"}</td>,
       freight: <td key="freight" className="px-3 py-2">{row.freight || "-"}</td>,
       notes: <td key="notes" className="px-3 py-2">{row.notes || "-"}</td>,
-      updated: <td key="updated" className="px-3 py-2">{new Date(row.updatedAt).toLocaleDateString()}</td>,
+      updated: <td key="updated" className="px-3 py-2">{formatStableDate(row.updatedAt)}</td>,
       delete: (
         <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteInventory(row.id, "table")} disabled={deletingInventoryId === row.id}>

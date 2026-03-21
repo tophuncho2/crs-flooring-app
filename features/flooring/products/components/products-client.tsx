@@ -11,6 +11,7 @@ import { RecordFormField as FormField, RecordModalShell as ModalShell } from "..
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { formatStableDateTime } from "../../shared/date-format"
 import { requestJson } from "../../shared/http"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
@@ -1095,7 +1096,7 @@ export default function FlooringProductsClient({
                 <tbody>
                     {activeInventoryRow.cutLogs.map((log) => (
                       <tr key={log.id} className="border-t border-[var(--panel-border)]">
-                        <td className="px-3 py-2">{new Date(log.createdAt).toLocaleString()}</td>
+                        <td className="px-3 py-2">{formatStableDateTime(log.createdAt)}</td>
                         <td className="px-3 py-2">{log.before}</td>
                         <td className="px-3 py-2">{log.cut}</td>
                         <td className="px-3 py-2">{log.after}</td>

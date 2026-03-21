@@ -1,6 +1,7 @@
 "use client"
 
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "./collapsible-table-section"
+import { formatStableDateTime } from "./date-format"
 import { DeleteRowButton, SaveRowButton } from "./row-action-buttons"
 import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "./table-shell"
 import { CUT_LOGS_TABLE_MIN_WIDTH_CLASS, CUT_LOGS_WITH_ACTIONS_TABLE_MIN_WIDTH_CLASS } from "./table-size-classes"
@@ -92,7 +93,7 @@ export function CutLogsEditor({
           ) : (
             items.map((item) => (
               <tr key={item.id} className="border-t border-[var(--panel-border)]">
-                <td className="px-3 py-2">{new Date(item.createdAt).toLocaleString()}</td>
+                <td className="px-3 py-2">{formatStableDateTime(item.createdAt)}</td>
                 <td className="px-3 py-2">{formatValue(item.before, unitLabel)}</td>
                 <td className="px-3 py-2">{formatValue(item.cut, unitLabel)}</td>
                 <td className="px-3 py-2">{formatValue(item.after, unitLabel)}</td>

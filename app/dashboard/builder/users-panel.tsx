@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
+import { formatStableDate, formatStableDateTime } from "@/features/flooring/shared/date-format"
 import { requestJson } from "@/features/flooring/shared/http"
 
 type UserRow = {
@@ -29,7 +30,7 @@ type SectionState = {
 type SectionId = keyof SectionState
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleString()
+  return formatStableDateTime(value)
 }
 
 export default function BuilderUsersPanel() {
@@ -303,7 +304,7 @@ export default function BuilderUsersPanel() {
                             {user.canRestrict && <div className="mt-1 text-xs text-[var(--foreground)]/70">{statusLabel}</div>}
                           </td>
                           <td className="px-2 py-2 text-xs text-[var(--foreground)]/80 md:text-sm">
-                            {new Date(user.createdAt).toLocaleDateString()}
+                            {formatStableDate(user.createdAt)}
                           </td>
                         </tr>
                       )

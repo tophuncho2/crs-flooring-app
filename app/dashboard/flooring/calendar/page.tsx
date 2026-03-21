@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { DashboardCardHeader } from "@/features/flooring/shared/dashboard-card-title"
+import { formatStableDate } from "@/features/flooring/shared/date-format"
 import { prisma } from "@/server/db/prisma"
 import { requireToolAccess } from "@/server/auth/session"
 
@@ -36,7 +37,7 @@ export default async function FlooringCalendarPage() {
             <div key={dateKey} className="rounded-lg border border-[var(--panel-border)]">
               <div className="border-b border-[var(--panel-border)] bg-[var(--panel-hover)] px-4 py-3">
                 <h2 className="text-base font-semibold">
-                  {dateKey === "Unscheduled" ? "Unscheduled" : new Date(`${dateKey}T00:00:00`).toLocaleDateString()}
+                  {dateKey === "Unscheduled" ? "Unscheduled" : formatStableDate(dateKey)}
                 </h2>
               </div>
               <div className="overflow-x-auto">

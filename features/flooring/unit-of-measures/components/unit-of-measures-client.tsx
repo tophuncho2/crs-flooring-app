@@ -8,6 +8,7 @@ import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { DashboardCardTitle } from "../../shared/dashboard-card-title"
+import { formatStableDateTime } from "../../shared/date-format"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -200,7 +201,7 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
         </td>
       ),
       name: <td key="name" className="px-3 py-2 font-medium">{unit.name}</td>,
-      createdAt: <td key="createdAt" className="px-3 py-2">{new Date(unit.createdAt).toLocaleString()}</td>,
+      createdAt: <td key="createdAt" className="px-3 py-2">{formatStableDateTime(unit.createdAt)}</td>,
       delete: (
         <td key="delete" className="px-3 py-2">
           <DeleteRowButton onClick={() => void deleteUnitOfMeasure(unit)} disabled={deletingId === unit.id}>

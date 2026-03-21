@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { DashboardCardHeader } from "../../shared/dashboard-card-title"
+import { formatStableDateTime } from "../../shared/date-format"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "../../shared/table-shell"
@@ -76,7 +77,7 @@ export default function CutLogsClient({ initialLogs }: { initialLogs: CutLogRow[
           <tbody>
             {logs.map((log) => (
               <tr key={log.id} className="border-t border-[var(--panel-border)]">
-                <td className="px-3 py-2">{new Date(log.createdAt).toLocaleString()}</td>
+                <td className="px-3 py-2">{formatStableDateTime(log.createdAt)}</td>
                 <td className="px-3 py-2">{log.productName}</td>
                 <td className="px-3 py-2">{log.itemNumber}</td>
                 <td className="px-3 py-2">{log.locationLabel}</td>
