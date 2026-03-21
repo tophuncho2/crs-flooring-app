@@ -8,13 +8,24 @@ When the remaining items below are complete, the app should be ready to start wo
 
 ---
 
+# Current Pre-Worker Solidification Checklist
+
+- [ ] Lock the final permissions matrix for `ADMIN` vs `BUILDER` and apply the same capability rules consistently across all protected routes.
+- [ ] Extend structured request-id logging and audit events from auth/admin/upload flows into the core flooring mutation routes.
+- [ ] Configure Railway `REDIS_URL` in staging and production so rate limiting is shared across replicas instead of process-local fallback only.
+- [ ] Finish workflow truth for work-order statuses, shortages, resend/reprocess rules, completion, and analytics timing.
+- [ ] Expand regression coverage for permissions, destructive actions, shortage/completion behavior, and workflow handoff rules.
+- [ ] Run and document a repeatable staging-to-production release checklist with app, DB, and smoke-test gates before worker rollout.
+
+---
+
 # Phase 1. Security And Access Containment
 
-- [ ] Lock down public registration so unauthenticated users cannot create privileged accounts.
+- [x] Lock down public registration so unauthenticated users cannot create privileged accounts.
 - [ ] Define the canonical permissions matrix for `ADMIN`, `BUILDER`, and any narrower operational roles.
-- [ ] Tighten builder/admin governance so account creation and verification behavior are explicit and controlled.
-- [ ] Add rate limiting to login, registration, uploads, and sensitive write endpoints.
-- [ ] Add startup env validation so missing or malformed platform secrets fail fast.
+- [x] Tighten builder/admin governance so account creation and verification behavior are explicit and controlled.
+- [x] Add rate limiting to login, registration, uploads, and sensitive write endpoints.
+- [x] Add startup env validation so missing or malformed platform secrets fail fast.
 
 ---
 
@@ -42,8 +53,8 @@ When the remaining items below are complete, the app should be ready to start wo
 # Phase 4. Test And Release Safety
 
 - [x] Add direct shared CRUD primitive tests and standardize the simple-table client harness.
-- [ ] Expand automated tests around template sync, work-order mutation flows, and destructive protections.
-- [ ] Add auth and permission coverage for protected write routes.
+- [x] Expand automated tests around template sync, work-order mutation flows, and destructive protections.
+- [x] Add auth and permission coverage for protected write routes.
 - [ ] Add regression coverage for shortage behavior, completion behavior, and analytics handoff after workflow truth is locked.
 - [ ] Run the Program Manager checklist against the current repo state and mark what is already complete versus still assumed.
 
