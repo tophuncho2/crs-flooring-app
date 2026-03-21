@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react"
 import { Search } from "lucide-react"
+import { FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME } from "./accent-styles"
 
 export default function TableControlsBar({
   searchQuery,
@@ -39,7 +40,7 @@ export default function TableControlsBar({
         className={[
           "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
           isAscendingSort
-            ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
+            ? `border-blue-500 ${FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME}`
             : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
         ].join(" ")}
       >

@@ -2,6 +2,7 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { BasicRecordPanel } from "../../shared/basic-record-panel"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
@@ -271,7 +272,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={toggleGroupByKey}
               />
-              <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
+              <button type="button" onClick={openCreate} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
                 Manufacturer
               </button>

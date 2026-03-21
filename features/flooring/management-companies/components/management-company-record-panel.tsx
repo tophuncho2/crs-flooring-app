@@ -1,5 +1,6 @@
 "use client"
 
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import { FormStatusNotices } from "@/features/flooring/shared/notices"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { getSharedFormFieldClass } from "@/features/flooring/shared/form-field-styles"
@@ -173,7 +174,7 @@ export function ManagementCompanyRecordPanel({
               <button type="button" onClick={onCancelCreateProperty} className="rounded border border-[var(--panel-border)] px-3 py-2 text-sm">
                 Cancel
               </button>
-              <button type="button" onClick={onCreateProperty} disabled={isCreatingProperty} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+              <button type="button" onClick={onCreateProperty} disabled={isCreatingProperty} className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}>
                 {isCreatingProperty ? "Creating..." : "Create Property"}
               </button>
             </div>

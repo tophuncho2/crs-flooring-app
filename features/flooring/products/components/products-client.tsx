@@ -2,6 +2,10 @@
 
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { Plus, Save, Upload, X } from "lucide-react"
+import {
+  FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME,
+  FLOORING_PRIMARY_ACTION_BUTTON_WIDE_CLASS_NAME,
+} from "../../shared/accent-styles"
 import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
@@ -628,7 +632,7 @@ export default function FlooringProductsClient({
                 <button
                   type="button"
                   onClick={openCreateProduct}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                  className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
                 >
                   <Plus size={16} />
                   Product
@@ -844,7 +848,7 @@ export default function FlooringProductsClient({
               type="button"
               onClick={saveProduct}
               disabled={isSavingProduct || isUploadingPhotos}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
+              className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
             >
               <Save size={16} />
               {isSavingProduct ? "Saving..." : "Save Product"}
@@ -1069,7 +1073,7 @@ export default function FlooringProductsClient({
                       type="button"
                       onClick={() => void addCutLog()}
                       disabled={isSavingCutLog || !canSubmitAdjustment}
-                      className="w-full rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60 md:w-auto"
+                      className={FLOORING_PRIMARY_ACTION_BUTTON_WIDE_CLASS_NAME}
                     >
                       {isSavingCutLog ? "Saving..." : canSubmitAdjustment ? "Add Cut" : "Balance at 0"}
                     </button>

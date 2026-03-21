@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "./accent-styles"
 
 export function confirmRecordDelete(message: string) {
   if (typeof window === "undefined") {
@@ -53,7 +54,7 @@ export function RecordPanelFooter({
         <button type="button" onClick={onClose} disabled={isSaving} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
           {closeLabel}
         </button>
-        <button type="button" onClick={onSave} disabled={isSaving} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+        <button type="button" onClick={onSave} disabled={isSaving} className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}>
           {isSaving ? savingLabel : saveLabel}
         </button>
       </div>

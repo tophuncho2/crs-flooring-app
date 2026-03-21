@@ -3,6 +3,7 @@
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { TemplateRecordModal } from "./template-record-modal"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -341,7 +342,7 @@ export default function TemplatesClient({
               <button
                 type="button"
                 onClick={openCreateTemplate}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
                 <Plus size={16} />
                 Template
@@ -431,7 +432,7 @@ export default function TemplatesClient({
               <button type="button" onClick={closeCreateTemplate} disabled={isSavingNew} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
                 Cancel
               </button>
-              <button type="button" onClick={() => void createTemplate()} disabled={isSavingNew} className="rounded bg-blue-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60">
+              <button type="button" onClick={() => void createTemplate()} disabled={isSavingNew} className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}>
                 {isSavingNew ? "Creating..." : "Create Template"}
               </button>
             </div>

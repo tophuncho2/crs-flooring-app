@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import type { FlooringNavItem } from "./flooring-navigation"
 import { isActiveFlooringItem, isFlooringRoute } from "./flooring-navigation"
 
@@ -37,7 +38,7 @@ export default function FlooringHeaderNav({
             <span
               key={item.slug}
               aria-current="page"
-              className="rounded-full bg-slate-500/35 px-3 py-2 text-sm font-medium text-[var(--foreground)]/60"
+              className={FLOORING_ACTIVE_NAV_TAB_CLASS_NAME}
             >
               {item.name}
             </span>

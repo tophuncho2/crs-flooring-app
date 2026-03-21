@@ -19,6 +19,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Columns3, GripVertical } from "lucide-react"
+import { FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME } from "./accent-styles"
 import type { TableColumnDefinition } from "./use-table-columns"
 
 type TableColumnSettingsProps<TColumn extends TableColumnDefinition> = {
@@ -90,7 +91,7 @@ function SortableColumnRow<TColumn extends TableColumnDefinition>({
           className={[
             "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded border text-[11px] font-semibold transition",
             groupOrder !== null
-              ? "border-blue-500 bg-blue-500 text-black hover:bg-blue-400"
+              ? `border-blue-500 ${FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME}`
               : isGroupToggleDisabled
                 ? "cursor-not-allowed border-[var(--panel-border)] text-[var(--foreground)]/35"
                 : "border-[var(--panel-border)] text-[var(--foreground)]/70 hover:bg-[var(--panel-hover)]",

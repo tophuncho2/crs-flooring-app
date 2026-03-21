@@ -3,6 +3,7 @@
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -528,7 +529,7 @@ export default function WorkOrdersClient({
                     setNewDraft(defaultDraft)
                     setIsCreateModalOpen(true)
                   }}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                  className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
                 >
                   <Plus size={16} />
                   Work Order

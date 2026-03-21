@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import { useFlooringHotkeys } from "./use-flooring-hotkeys"
 
 type Theme = "light" | "dark"
@@ -140,16 +141,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
       <div ref={menuRef} className="relative">
         <button
           onClick={() => setOpen(!open)}
-          className="
-            h-10 w-10 rounded-full
-            bg-blue-600
-            text-black
-            font-bold
-            flex items-center justify-center
-            transition-all duration-200
-            hover:bg-blue-500
-            shadow-[0_0_6px_rgba(59,130,246,0.35)]
-          "
+          className={`h-10 w-10 ${FLOORING_AVATAR_BUTTON_CLASS_NAME}`}
         >
           {firstLetter}
         </button>

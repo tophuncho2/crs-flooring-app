@@ -2,6 +2,10 @@
 
 import { type ReactNode, useMemo, useState } from "react"
 import { Plus } from "lucide-react"
+import {
+  FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME,
+  FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME,
+} from "../../shared/accent-styles"
 import { CollapsibleTableSection, InlineAddRowButton } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
@@ -612,7 +616,7 @@ export default function ImportsClient({
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400"
+                className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
                 <Plus size={16} />
                 Import
@@ -887,7 +891,7 @@ export default function ImportsClient({
                 type="button"
                 onClick={() => void createImport()}
                 disabled={isSaving}
-                className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
+                className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
               >
                 {isSaving ? "Creating..." : "Create Import"}
               </button>
@@ -1127,7 +1131,7 @@ export default function ImportsClient({
                 type="button"
                 onClick={() => void saveActiveImport()}
                 disabled={isSaving}
-                className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black disabled:opacity-60"
+                className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
               >
                 {isSaving ? "Saving..." : "Save Import"}
               </button>

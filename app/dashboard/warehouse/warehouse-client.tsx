@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Plus } from "lucide-react"
+import {
+  FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME,
+  FLOORING_PRIMARY_ACTION_BUTTON_INLINE_LARGE_CLASS_NAME,
+} from "@/features/flooring/shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_SHORT_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { DeleteRowButton, OpenRowButton } from "@/features/flooring/shared/row-action-buttons"
 import { RecordModalShell } from "@/features/flooring/shared/record-form"
@@ -388,7 +392,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
             <button
               onClick={() => setIsCreating(true)}
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400"
+              className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_LARGE_CLASS_NAME}
             >
               <Plus size={16} />
               Add Warehouse
@@ -491,7 +495,7 @@ export default function WarehouseClient({ initialRows }: { initialRows: Warehous
               <button
                 onClick={() => void createWarehouse()}
                 type="button"
-                className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black transition hover:bg-blue-400"
+                className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}
               >
                 Create Warehouse
               </button>
