@@ -1,43 +1,8 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { listInventoryLocationOptions, normalizeInventoryRow } from "@/features/flooring/inventory/api"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-
-function buildProductName(product: {
-  name: string
-  manufacturerName: string | null
-  style: string | null
-  color: string | null
-}) {
-  return product.name || [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
-}
-
-function toFixedString(value: Prisma.Decimal | number) {
-  const numeric = Number(value)
-  return numeric.toFixed(2)
-}
-
-async function listInventoryLocationOptions() {
-  const rows = await prisma.flooringLocation.findMany({
-    select: {
-      id: true,
-      warehouseId: true,
-      locationCode: true,
-      section: { select: { name: true } },
-      warehouse: { select: { name: true } },
-    },
-    orderBy: [{ warehouse: { name: "asc" } }, { locationCode: "asc" }],
-  })
-
-  return rows.map((row) => ({
-    id: row.id,
-    warehouseId: row.warehouseId,
-    locationCode: row.locationCode,
-    label: row.locationCode,
-    sectionName: row.section?.name ?? null,
-    warehouseName: row.warehouse.name,
-  }))
-}
 
 function buildInventoryWhere(searchQuery: string): Prisma.FlooringInventoryWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -168,50 +133,7 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
       totalPages: pagination.totalPages,
     },
     tableState,
-    initialInventory: inventory.map((row) => {
-      const cutTotal = row.cutLogs.reduce((total, log) => total + Number(log.cut), 0)
-      const runningBalance = Number(row.stockCount) - cutTotal
-
-      return {
-        id: row.id,
-        importEntryId: row.importEntryId ?? "",
-        importWarehouseId: row.importEntry?.warehouse?.id ?? "",
-        importNumber: row.importEntry?.importNumber ? String(row.importEntry.importNumber) : "",
-        importTag: row.importEntry?.tag ?? "",
-        importStatus: row.importEntry?.status ?? "FINAL",
-        importTransportType: row.importEntry?.transportType ?? "",
-        importWarehouseName: row.importEntry?.warehouse?.name ?? row.location?.warehouse.name ?? "",
-        productId: row.productId,
-        productName: buildProductName(row.product),
-        stockUnit: row.product.category.stockUnit?.name ?? "",
-        itemNumber: row.itemNumber,
-        dyeLot: row.dyeLot ?? "",
-        locationId: row.locationId ?? "",
-        locationCode: row.location?.locationCode ?? "",
-        warehouseId: row.location?.warehouse.id ?? "",
-        warehouseName: row.location?.warehouse.name ?? "",
-        sectionName: row.location?.section?.name ?? "",
-        stockCount: row.stockCount.toString(),
-        cutTotal: cutTotal.toFixed(2),
-        runningBalance: runningBalance.toFixed(2),
-        cost: row.cost?.toString() ?? "",
-        freight: row.freight?.toString() ?? "",
-        notes: row.notes ?? "",
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-        cutLogs: row.cutLogs.map((log) => ({
-          id: log.id,
-          inventoryId: log.inventoryId,
-          inventoryLabel: buildProductName(row.product),
-          itemNumber: row.itemNumber,
-          before: toFixedString(log.before),
-          cut: toFixedString(log.cut),
-          after: toFixedString(log.after),
-          notes: log.notes ?? "",
-          createdAt: log.createdAt.toISOString(),
-        })),
-      }
-    }),
+    initialInventory: inventory.map(normalizeInventoryRow),
     locationOptions,
   }
 }

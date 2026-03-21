@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client"
+import { createAppError } from "@/server/http/api-helpers"
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 
@@ -44,7 +45,7 @@ export async function validateInventoryLocationSelection(
   ])
 
   if (importEntryId && !importEntry) {
-    throw { message: "Import entry is invalid", field: importEntryField }
+    throw createAppError("Import entry is invalid", { field: importEntryField })
   }
 
   if (!locationId) {
@@ -52,15 +53,15 @@ export async function validateInventoryLocationSelection(
   }
 
   if (!location) {
-    throw { message: "Location is invalid", field: locationField }
+    throw createAppError("Location is invalid", { field: locationField })
   }
 
   if (!location.sectionId) {
-    throw { message: "Location must belong to a section", field: locationField }
+    throw createAppError("Location must belong to a section", { field: locationField })
   }
 
   if (importEntry?.warehouseId && location.warehouseId !== importEntry.warehouseId) {
-    throw { message: "Location does not belong to the selected import warehouse", field: locationField }
+    throw createAppError("Location does not belong to the selected import warehouse", { field: locationField })
   }
 
   return { importEntry, location }

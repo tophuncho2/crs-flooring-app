@@ -41,4 +41,29 @@ describe("validateRuntimeEnvironment", () => {
       }),
     ).toThrow("REDIS_URL must be a valid URL")
   })
+
+  it("requires REDIS_URL in staging and production", () => {
+    expect(() =>
+      validateRuntimeEnvironment({
+        ...baseEnvironment,
+        RAILWAY_ENVIRONMENT_NAME: "Staging",
+      }),
+    ).toThrow("REDIS_URL is required in staging and production")
+
+    expect(() =>
+      validateRuntimeEnvironment({
+        ...baseEnvironment,
+        RAILWAY_ENVIRONMENT_NAME: "production",
+      }),
+    ).toThrow("REDIS_URL is required in staging and production")
+  })
+
+  it("allows REDIS_URL to be omitted outside staging and production", () => {
+    expect(
+      validateRuntimeEnvironment({
+        ...baseEnvironment,
+        RAILWAY_ENVIRONMENT_NAME: "development",
+      }).REDIS_URL,
+    ).toBeUndefined()
+  })
 })

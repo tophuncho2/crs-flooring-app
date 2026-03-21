@@ -1,73 +1,63 @@
-import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { createSectionRow, listSectionRows, parseWarehouseFilter } from "@/features/flooring/warehouse/api"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { searchParams } = new URL(request.url)
-    const warehouseId = parseOptionalString(searchParams.get("warehouseId"))
-
-    const sections = await prisma.flooringSection.findMany({
-      where: warehouseId ? { warehouseId } : undefined,
-      orderBy: [{ name: "asc" }],
-      select: {
-        id: true,
-        warehouseId: true,
-        name: true,
-        _count: { select: { locations: true } },
-      },
-    })
-
-    return NextResponse.json({
-      sections: sections.map((section) => ({
-        id: section.id,
-        warehouseId: section.warehouseId,
-        name: section.name,
-        locationsCount: section._count.locations,
-      })),
-    })
+    return routeJson(access, { sections: await listSectionRows(prisma, parseWarehouseFilter(searchParams.get("warehouseId"))) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "warehouse.sections.write",
+    limit: 40,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/sections",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
-    const body = (await request.json()) as Record<string, unknown>
-    const warehouseId = parseRequiredString(body.warehouseId, "warehouseId")
-    const name = parseRequiredString(body.name, "name").trim()
-
-    const created = await prisma.flooringSection.create({
-      data: { warehouseId, name },
-      select: {
-        id: true,
-        warehouseId: true,
-        name: true,
-        _count: { select: { locations: true } },
+    const section = await createSectionRow(prisma, (await request.json()) as Record<string, unknown>)
+    logRouteMutationSuccess(access, {
+      message: "Warehouse section created",
+      action: "warehouse.sections.create",
+      route: "/api/flooring/sections",
+      entityType: "flooringSection",
+      entityId: section.id,
+      details: {
+        warehouseId: section.warehouseId,
       },
     })
 
-    return NextResponse.json(
-      {
-        section: {
-          id: created.id,
-          warehouseId: created.warehouseId,
-          name: created.name,
-          locationsCount: created._count.locations,
-        },
-      },
-      { status: 201 },
-    )
+    return routeJson(access, { section }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Warehouse section creation failed",
+        action: "warehouse.sections.create.error",
+        route: "/api/flooring/sections",
+        entityType: "flooringSection",
+      },
+      error,
+    )
+    return routeError(access, error)
   }
 }

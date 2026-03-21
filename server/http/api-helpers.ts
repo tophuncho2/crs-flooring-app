@@ -2,9 +2,29 @@ import { Prisma } from "@prisma/client"
 import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
 
 export type AppError = {
+  kind?: "app"
   message: string
   status?: number
   field?: string
+}
+
+export function createAppError(message: string, options: { status?: number; field?: string } = {}): AppError {
+  return {
+    kind: "app",
+    message,
+    status: options.status,
+    field: options.field,
+  }
+}
+
+export function isAppError(error: unknown): error is AppError {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "message" in error &&
+      typeof (error as { message: unknown }).message === "string" &&
+      ((error as { kind?: unknown }).kind === "app" || "field" in error || "status" in error),
+  )
 }
 
 function formatFieldLabel(field: string) {
@@ -18,7 +38,7 @@ function formatFieldLabel(field: string) {
 
 export function parseRequiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.trim() === "") {
-    throw { message: `${field} is required`, field } as AppError
+    throw createAppError(`${field} is required`, { field })
   }
   return value.trim()
 }
@@ -44,11 +64,11 @@ export function parseOptionalStateAbbreviation(value: unknown, field: string): s
   }
 
   if (normalized.length > 2) {
-    throw { message: `${field} must be a 2-letter state abbreviation`, field } as AppError
+    throw createAppError(`${field} must be a 2-letter state abbreviation`, { field })
   }
 
   if (parsed.replace(/[^a-zA-Z]/g, "").length > 2) {
-    throw { message: `${field} must be a 2-letter state abbreviation`, field } as AppError
+    throw createAppError(`${field} must be a 2-letter state abbreviation`, { field })
   }
 
   return normalized
@@ -56,25 +76,25 @@ export function parseOptionalStateAbbreviation(value: unknown, field: string): s
 
 export function parseBoolean(value: unknown, field: string): boolean {
   if (typeof value !== "boolean") {
-    throw { message: `${field} must be true or false`, field } as AppError
+    throw createAppError(`${field} must be true or false`, { field })
   }
   return value
 }
 
 export function parseDecimal(value: unknown, field: string, scale: number): Prisma.Decimal {
   if (value === null || value === undefined || value === "") {
-    throw { message: `${field} is required`, field } as AppError
+    throw createAppError(`${field} is required`, { field })
   }
 
   const asString = String(value).trim()
 
   if (!/^-?\d+(\.\d+)?$/.test(asString)) {
-    throw { message: `${field} must be a valid number`, field } as AppError
+    throw createAppError(`${field} must be a valid number`, { field })
   }
 
   const [, fractional = ""] = asString.split(".")
   if (fractional.length > scale) {
-    throw { message: `${field} can have at most ${scale} decimal places`, field } as AppError
+    throw createAppError(`${field} can have at most ${scale} decimal places`, { field })
   }
 
   return new Prisma.Decimal(asString)
@@ -94,18 +114,36 @@ export function parseDecimalOrDefault(
 }
 
 export function normalizePrismaError(error: unknown): { status: number; message: string } {
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof (error as { message: unknown }).message === "string" &&
-    "field" in error
-  ) {
+  if (isAppError(error)) {
     const appError = error as AppError
-
     return {
       status: typeof appError.status === "number" ? appError.status : 400,
       message: appError.message,
+    }
+  }
+
+  if (error && typeof error === "object" && "code" in error && typeof (error as { code: unknown }).code === "string") {
+    const prismaLikeError = error as {
+      code: string
+      meta?: { target?: string[] | string }
+    }
+
+    if (prismaLikeError.code === "P2002") {
+      const target = Array.isArray(prismaLikeError.meta?.target)
+        ? prismaLikeError.meta?.target
+        : typeof prismaLikeError.meta?.target === "string"
+          ? [prismaLikeError.meta.target]
+          : []
+
+      if (target.length === 1 && typeof target[0] === "string") {
+        return { status: 409, message: `${formatFieldLabel(target[0])} must be unique` }
+      }
+
+      return { status: 409, message: "Unique constraint violation" }
+    }
+
+    if (prismaLikeError.code === "P2003") {
+      return { status: 409, message: "This record is linked and cannot be modified" }
     }
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
+import { requestJson } from "@/features/flooring/shared/http"
 import { useFlooringHotkeys } from "./use-flooring-hotkeys"
 
 type Theme = "light" | "dark"
@@ -14,8 +15,6 @@ type HotkeyRow = {
   key: string
   combination: string
   action: string
-  createdAt: string
-  updatedAt: string
 }
 
 function KeyVisualization({ combination }: { combination: string }) {
@@ -114,13 +113,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
     setHotkeysError("")
 
     try {
-      const response = await fetch("/api/hotkeys")
-      const payload = (await response.json()) as { hotkeys?: HotkeyRow[]; error?: string }
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to load hotkeys")
-      }
-
+      const payload = await requestJson<{ hotkeys?: HotkeyRow[] }>("/api/hotkeys")
       setHotkeys(payload.hotkeys ?? [])
     } catch (error) {
       setHotkeysError(error instanceof Error ? error.message : "Failed to load hotkeys")

@@ -1,54 +1,22 @@
-import { prisma } from "@/server/db/prisma"
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import WarehouseClient, { type WarehouseRow } from "@/features/flooring/warehouse/components/warehouse-client"
-
-type WarehouseQueryRow = {
-  id: string
-  name: string
-  address: string | null
-  phone: string | null
-  createdAt: Date
-  updatedAt: Date
-  _count: {
-    sections: number
-    locations: number
-    workOrders: number
-  }
-}
+import WarehouseClient from "@/features/flooring/warehouse/components/warehouse-client"
+import { getWarehousePageData } from "@/features/flooring/warehouse/queries"
 
 export default async function FlooringWarehousePage() {
   await requireToolAccess("warehouse")
+  const pageData = await getWarehousePageData()
 
-  let warehouses: WarehouseQueryRow[] = []
-  try {
-    const fetched = await prisma.flooringWarehouse.findMany({
-      include: {
-        _count: {
-          select: {
-            sections: true,
-            locations: true,
-            workOrders: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    })
-    warehouses = fetched as WarehouseQueryRow[]
-  } catch {
-    warehouses = []
+  if (!pageData.ok) {
+    return (
+      <DashboardErrorState
+        title={pageData.error.title}
+        message={pageData.error.message}
+        detail={pageData.error.detail}
+        errorCode={pageData.error.code}
+      />
+    )
   }
 
-  const rows: WarehouseRow[] = warehouses.map((warehouse) => ({
-    id: warehouse.id,
-    name: warehouse.name,
-    address: warehouse.address,
-    phone: warehouse.phone,
-    sectionsCount: warehouse._count.sections,
-    locationsCount: warehouse._count.locations,
-    workOrdersCount: warehouse._count.workOrders,
-    createdAt: warehouse.createdAt.toISOString(),
-    updatedAt: warehouse.updatedAt.toISOString(),
-  }))
-
-  return <WarehouseClient initialRows={rows} />
+  return <WarehouseClient initialRows={pageData.data} />
 }

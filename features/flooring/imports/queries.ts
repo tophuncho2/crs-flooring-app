@@ -2,36 +2,8 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-
-function buildProductLabel(product: {
-  name: string
-  manufacturerName: string | null
-  style: string | null
-  color: string | null
-}) {
-  return product.name || [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
-}
-
-export async function listImportLocationOptions() {
-  const rows = await prisma.flooringLocation.findMany({
-    select: {
-      id: true,
-      warehouseId: true,
-      locationCode: true,
-      section: { select: { name: true } },
-      warehouse: { select: { name: true } },
-    },
-    orderBy: [{ warehouse: { name: "asc" } }, { locationCode: "asc" }],
-  })
-
-  return rows.map((row) => ({
-    id: row.id,
-    warehouseId: row.warehouseId,
-    locationCode: row.locationCode,
-    sectionName: row.section?.name ?? null,
-    warehouseName: row.warehouse.name,
-  }))
-}
+import { listImportLocationOptions, normalizeImportEntry } from "@/features/flooring/imports/api"
+import { buildFlooringProductDisplayName } from "@/features/flooring/shared/product-display-name"
 
 function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -136,39 +108,12 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
     },
     tableState,
     initialImports: entries.map((entry) => ({
-      id: entry.id,
-      importNumber: entry.importNumber,
-      orderNumber: entry.orderNumber ?? "",
-      tag: entry.tag ?? "",
-      transportType: entry.transportType,
-      status: entry.status,
-      notes: entry.notes ?? "",
-      warehouseId: entry.warehouseId ?? "",
-      warehouseName: entry.warehouse?.name ?? "",
+      ...normalizeImportEntry(entry),
       itemsCount: entry._count.inventories,
-      createdAt: entry.createdAt.toISOString(),
-      updatedAt: entry.updatedAt.toISOString(),
-      inventories: entry.inventories.map((item) => ({
-        id: item.id,
-        productId: item.productId,
-        productName: buildProductLabel(item.product),
-        stockUnit: item.product.category.stockUnit?.name ?? "",
-        itemNumber: item.itemNumber,
-        dyeLot: item.dyeLot ?? "",
-        stockCount: item.stockCount.toString(),
-        cost: item.cost?.toString() ?? "",
-        freight: item.freight?.toString() ?? "",
-        notes: item.notes ?? "",
-        locationId: item.locationId ?? "",
-        locationCode: item.location?.locationCode ?? "",
-        warehouseId: item.location?.warehouse.id ?? "",
-        warehouseName: item.location?.warehouse.name ?? "",
-        sectionName: item.location?.section?.name ?? "",
-      })),
     })),
     productOptions: products.map((product) => ({
       id: product.id,
-      label: buildProductLabel(product),
+      label: buildFlooringProductDisplayName(product),
       stockUnit: product.category.stockUnit?.name ?? "",
     })),
     warehouseOptions: warehouses,

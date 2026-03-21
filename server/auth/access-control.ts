@@ -1,5 +1,46 @@
 import type { Role } from "@prisma/client"
 
+export const CAPABILITIES = [
+  "system.access",
+  "governance.access",
+  "builderPanel.access",
+  "users.manage",
+  "hotkeys.view",
+  "hotkeys.manage",
+  "categories.edit",
+  "unitOfMeasures.edit",
+  "tool.admin",
+] as const
+
+export type Capability = (typeof CAPABILITIES)[number]
+
+const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
+  OWNER: new Set<Capability>([
+    "system.access",
+    "governance.access",
+    "builderPanel.access",
+    "users.manage",
+    "hotkeys.view",
+    "hotkeys.manage",
+    "categories.edit",
+    "unitOfMeasures.edit",
+    "tool.admin",
+  ]),
+  ADMIN: new Set<Capability>([
+    "system.access",
+    "governance.access",
+    "builderPanel.access",
+    "users.manage",
+    "hotkeys.view",
+    "hotkeys.manage",
+    "categories.edit",
+    "unitOfMeasures.edit",
+  ]),
+  BUILDER: new Set<Capability>(["system.access", "hotkeys.view"]),
+  CONTRACTOR: new Set<Capability>([]),
+  CUSTOMER: new Set<Capability>([]),
+}
+
 export function isBuilder(role: Role): boolean {
   return role === "BUILDER"
 }
@@ -13,15 +54,19 @@ export function isAdmin(role: Role): boolean {
 }
 
 export function hasGovernanceAccess(role: Role): boolean {
-  return isOwner(role) || isAdmin(role)
+  return hasCapability(role, "governance.access")
 }
 
 export function hasSystemAccess(role: Role): boolean {
-  return isBuilder(role) || hasGovernanceAccess(role)
+  return hasCapability(role, "system.access")
+}
+
+export function hasCapability(role: Role, capability: Capability): boolean {
+  return ROLE_CAPABILITIES[role].has(capability)
 }
 
 export function canAccessBuilderPanel(_email: string, role: Role): boolean {
-  return hasGovernanceAccess(role)
+  return hasCapability(role, "builderPanel.access")
 }
 
 export function canBypassVerification(_email: string, role: Role): boolean {
@@ -37,17 +82,17 @@ export function canEditRole(_email: string, role: Role): boolean {
 }
 
 export function canManageUsers(_email: string, role: Role): boolean {
-  return hasGovernanceAccess(role)
+  return hasCapability(role, "users.manage")
 }
 
 export function canManageHotkeys(_email: string, role: Role): boolean {
-  return hasGovernanceAccess(role)
+  return hasCapability(role, "hotkeys.manage")
 }
 
 export function canEditCategories(role: Role): boolean {
-  return hasGovernanceAccess(role)
+  return hasCapability(role, "categories.edit")
 }
 
 export function canEditUnitOfMeasures(role: Role): boolean {
-  return hasGovernanceAccess(role)
+  return hasCapability(role, "unitOfMeasures.edit")
 }

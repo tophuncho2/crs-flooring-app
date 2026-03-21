@@ -1,90 +1,64 @@
-import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { createLocationRow, listLocationRows, parseWarehouseFilter } from "@/features/flooring/warehouse/api"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { searchParams } = new URL(request.url)
-    const warehouseId = parseOptionalString(searchParams.get("warehouseId"))
-
-    const locations = await prisma.flooringLocation.findMany({
-      where: warehouseId ? { warehouseId } : undefined,
-      orderBy: [{ section: { name: "asc" } }, { locationCode: "asc" }],
-      select: {
-        id: true,
-        warehouseId: true,
-        locationCode: true,
-        sectionId: true,
-        section: { select: { name: true } },
-      },
-    })
-
-    return NextResponse.json({
-      locations: locations.map((row) => ({
-        id: row.id,
-        warehouseId: row.warehouseId,
-        locationCode: row.locationCode,
-        sectionId: row.sectionId,
-        sectionName: row.section?.name ?? null,
-      })),
-    })
+    return routeJson(access, { locations: await listLocationRows(prisma, parseWarehouseFilter(searchParams.get("warehouseId"))) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "warehouse.locations.write",
+    limit: 60,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/locations",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
-    const body = (await request.json()) as Record<string, unknown>
-    const warehouseId = parseRequiredString(body.warehouseId, "warehouseId")
-    const locationCode = parseRequiredString(body.locationCode, "locationCode").trim()
-    const sectionId = parseRequiredString(body.sectionId, "sectionId")
-    const section = await prisma.flooringSection.findUnique({
-      where: { id: sectionId },
-      select: { id: true, warehouseId: true, name: true },
-    })
-
-    if (!section || section.warehouseId !== warehouseId) {
-      return NextResponse.json({ error: "Selected section is invalid for this warehouse" }, { status: 400 })
-    }
-
-    const created = await prisma.flooringLocation.create({
-      data: {
-        warehouseId,
-        sectionId,
-        locationCode,
-      },
-      select: {
-        id: true,
-        warehouseId: true,
-        locationCode: true,
-        sectionId: true,
-        section: { select: { name: true } },
+    const location = await createLocationRow(prisma, (await request.json()) as Record<string, unknown>)
+    logRouteMutationSuccess(access, {
+      message: "Warehouse location created",
+      action: "warehouse.locations.create",
+      route: "/api/flooring/locations",
+      entityType: "flooringLocation",
+      entityId: location.id,
+      details: {
+        warehouseId: location.warehouseId,
+        sectionId: location.sectionId,
       },
     })
 
-    return NextResponse.json(
-      {
-        location: {
-          id: created.id,
-          warehouseId: created.warehouseId,
-          locationCode: created.locationCode,
-          sectionId: created.sectionId,
-          sectionName: created.section.name,
-        },
-      },
-      { status: 201 },
-    )
+    return routeJson(access, { location }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Warehouse location creation failed",
+        action: "warehouse.locations.create.error",
+        route: "/api/flooring/locations",
+        entityType: "flooringLocation",
+      },
+      error,
+    )
+    return routeError(access, error)
   }
 }

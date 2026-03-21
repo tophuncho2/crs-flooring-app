@@ -8,6 +8,7 @@ function optionalTrimmed(value: string | undefined) {
 function readRuntimeEnvironment(source: NodeJS.ProcessEnv) {
   return {
     DATABASE_URL: optionalTrimmed(source.DATABASE_URL),
+    RAILWAY_ENVIRONMENT_NAME: optionalTrimmed(source.RAILWAY_ENVIRONMENT_NAME),
     NEXTAUTH_SECRET: optionalTrimmed(source.NEXTAUTH_SECRET),
     NEXTAUTH_URL: optionalTrimmed(source.NEXTAUTH_URL),
     AWS_ACCESS_KEY_ID: optionalTrimmed(source.AWS_ACCESS_KEY_ID),
@@ -27,6 +28,7 @@ function readRuntimeEnvironment(source: NodeJS.ProcessEnv) {
 const runtimeEnvironmentSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    RAILWAY_ENVIRONMENT_NAME: z.string().min(1).optional(),
     NEXTAUTH_SECRET: z.string().min(16, "NEXTAUTH_SECRET must be at least 16 characters"),
     NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
     AWS_ACCESS_KEY_ID: z.string().min(1, "AWS_ACCESS_KEY_ID is required"),
@@ -42,6 +44,15 @@ const runtimeEnvironmentSchema = z
     SEEDED_BUILDER_PASSWORD: z.string().min(12, "SEEDED_BUILDER_PASSWORD must be at least 12 characters").optional(),
   })
   .superRefine((env, context) => {
+    const runtimeLabel = env.RAILWAY_ENVIRONMENT_NAME?.toLowerCase()
+    if ((runtimeLabel === "staging" || runtimeLabel === "production") && !env.REDIS_URL) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "REDIS_URL is required in staging and production",
+        path: ["REDIS_URL"],
+      })
+    }
+
     const seededAdminValues = [env.SEEDED_ADMIN_EMAIL, env.SEEDED_ADMIN_PASSWORD]
     if (seededAdminValues.some(Boolean) && !seededAdminValues.every(Boolean)) {
       context.addIssue({

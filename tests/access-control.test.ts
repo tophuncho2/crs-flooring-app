@@ -1,30 +1,29 @@
 import { describe, expect, it } from "vitest"
 import {
-  canAccessBuilderPanel,
   canEditCategories,
   canEditUnitOfMeasures,
-  hasGovernanceAccess,
-  hasSystemAccess,
+  canManageUsers,
+  hasCapability,
 } from "@/server/auth/access-control"
 
-describe("access-control", () => {
-  it("treats owner as the top governance role", () => {
-    expect(hasGovernanceAccess("OWNER")).toBe(true)
-    expect(hasSystemAccess("OWNER")).toBe(true)
-    expect(canAccessBuilderPanel("owner@test.com", "OWNER")).toBe(true)
-    expect(canEditCategories("OWNER")).toBe(true)
-    expect(canEditUnitOfMeasures("OWNER")).toBe(true)
+describe("access-control capability matrix", () => {
+  it("keeps owner as the top governance role", () => {
+    expect(hasCapability("OWNER", "tool.admin")).toBe(true)
+    expect(hasCapability("OWNER", "users.manage")).toBe(true)
+    expect(hasCapability("OWNER", "builderPanel.access")).toBe(true)
   })
 
-  it("keeps admins as governance users and builders as non-governance system users", () => {
-    expect(hasGovernanceAccess("ADMIN")).toBe(true)
-    expect(canAccessBuilderPanel("admin@test.com", "ADMIN")).toBe(true)
-    expect(canEditCategories("ADMIN")).toBe(true)
-    expect(canEditUnitOfMeasures("ADMIN")).toBe(true)
+  it("allows admins to govern but not act as the top platform role", () => {
+    expect(hasCapability("ADMIN", "users.manage")).toBe(true)
+    expect(hasCapability("ADMIN", "builderPanel.access")).toBe(true)
+    expect(hasCapability("ADMIN", "tool.admin")).toBe(false)
+  })
 
-    expect(hasGovernanceAccess("BUILDER")).toBe(false)
-    expect(hasSystemAccess("BUILDER")).toBe(true)
-    expect(canAccessBuilderPanel("builder@test.com", "BUILDER")).toBe(false)
+  it("keeps builders operational but non-governing", () => {
+    expect(hasCapability("BUILDER", "system.access")).toBe(true)
+    expect(hasCapability("BUILDER", "hotkeys.view")).toBe(true)
+    expect(hasCapability("BUILDER", "users.manage")).toBe(false)
+    expect(canManageUsers("builder@test.com", "BUILDER")).toBe(false)
     expect(canEditCategories("BUILDER")).toBe(false)
     expect(canEditUnitOfMeasures("BUILDER")).toBe(false)
   })

@@ -1,28 +1,59 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DELETE } from "@/app/api/flooring/imports/[id]/route"
 
-const { prismaMock, ensureBuilderOrAdminMock } = vi.hoisted(() => ({
+const routeAccess = {
+  requestId: "req-1",
+  clientIp: "127.0.0.1",
+  user: {
+    id: "builder-1",
+    email: "builder@test.com",
+    role: "BUILDER",
+    isVerified: true,
+  },
+} as const
+
+const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringImportEntry: {
       findUnique: vi.fn(),
       delete: vi.fn(),
     },
   },
-  ensureBuilderOrAdminMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
+  enforceRouteRateLimitMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: prismaMock,
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
+  enforceRouteRateLimit: enforceRouteRateLimitMock,
+  routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
+  routeError: vi.fn((_context, error) =>
+    new Response(
+      JSON.stringify({
+        error:
+          error && typeof error === "object" && "message" in error ? String(error.message) : "Unexpected server error",
+      }),
+      {
+        status:
+          error && typeof error === "object" && "status" in error && typeof error.status === "number"
+            ? error.status
+            : 400,
+      },
+    ),
+  ),
+  logRouteMutationSuccess: vi.fn(),
+  logRouteMutationFailure: vi.fn(),
 }))
 
 describe("imports routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
+    requireRouteAccessMock.mockResolvedValue(routeAccess)
+    enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 
   it("DELETE returns 404 when the import is missing", async () => {
@@ -68,6 +99,9 @@ describe("imports routes", () => {
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
     expect(prismaMock.flooringImportEntry.delete).toHaveBeenCalledWith({ where: { id: "imp-1" } })
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "warehouse" })
+    expect(requireRouteAccessMock).toHaveBeenCalledWith(expect.any(Request), {
+      capability: "system.access",
+      toolSlug: "warehouse",
+    })
   })
 })

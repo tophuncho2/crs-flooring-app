@@ -1,0 +1,49 @@
+import type { Role } from "@prisma/client"
+import { hasCapability } from "@/server/auth/access-control"
+
+export const TOOL_CATALOG = [
+  {
+    slug: "products",
+    name: "Products",
+    description: "Manage product categories and pricing.",
+    path: "/dashboard/flooring/products",
+  },
+  {
+    slug: "warehouse",
+    name: "Warehouse",
+    description: "Manage flooring warehouses, sections, and locations.",
+    path: "/dashboard/flooring/warehouse",
+  },
+] as const
+
+export type ToolSlug = (typeof TOOL_CATALOG)[number]["slug"]
+
+export type ToolCatalogItem = {
+  slug: ToolSlug
+  name: string
+  description: string
+  path: string
+}
+
+const TOOL_ACCESS_POLICY: Record<ToolSlug, ReadonlySet<Role>> = {
+  products: new Set<Role>(["OWNER", "ADMIN", "BUILDER"]),
+  warehouse: new Set<Role>(["OWNER", "ADMIN", "BUILDER"]),
+}
+
+const knownToolSlugs = new Set<string>(TOOL_CATALOG.map((tool) => tool.slug))
+
+export function isKnownToolSlug(slug: string): slug is ToolSlug {
+  return knownToolSlugs.has(slug)
+}
+
+export function hasToolAccess(role: Role, slug: ToolSlug): boolean {
+  if (!hasCapability(role, "system.access")) {
+    return false
+  }
+
+  return TOOL_ACCESS_POLICY[slug].has(role)
+}
+
+export function getToolCatalog(): ToolCatalogItem[] {
+  return [...TOOL_CATALOG]
+}
