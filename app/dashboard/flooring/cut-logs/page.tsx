@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma"
 import { requireToolAccess } from "@/server/auth/session"
 import CutLogsClient from "@/features/flooring/cut-logs/components/cut-logs-client"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME } from "@/features/flooring/shared/dashboard-card-title"
 
 function buildProductName(product: {
   name: string
@@ -57,7 +58,7 @@ export default async function FlooringCutLogsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <CutLogsClient initialLogs={logs} />
     </div>
   )

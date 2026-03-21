@@ -3,7 +3,7 @@
 import { type ChangeEvent, type ReactNode, useState } from "react"
 import { Plus, Save, Upload, X } from "lucide-react"
 import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
-import { DashboardCardHeader } from "../../shared/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
@@ -602,7 +602,7 @@ export default function FlooringProductsClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
         <DashboardCardHeader
           title="Flooring Products"

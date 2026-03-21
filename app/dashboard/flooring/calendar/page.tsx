@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { DashboardCardHeader } from "@/features/flooring/shared/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/dashboard-card-title"
 import { formatStableDate } from "@/features/flooring/shared/date-format"
 import { prisma } from "@/server/db/prisma"
 import { requireToolAccess } from "@/server/auth/session"
@@ -28,7 +28,7 @@ export default async function FlooringCalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <DashboardCardHeader title="Calendar" />
 

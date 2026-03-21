@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 
 const statusOptions = [
   "BUILDING_ORDER",
@@ -307,7 +307,7 @@ export default function WorkOrderDetailClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-2 pb-12 pt-20 text-[var(--foreground)] sm:px-3 sm:pt-24 lg:px-4">
+    <div className={DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME}>
       <div className="w-full space-y-6">
         <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
           <DashboardCardTitle>{`Work Order ${workOrder.workOrderNumber}`}</DashboardCardTitle>

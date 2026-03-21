@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/http"
 import { BasicRecordPanel } from "@/features/flooring/shared/basic-record-panel"
 import { CutLogsEditor, type CutLogDraft, type EditableCutLog } from "@/features/flooring/shared/cut-logs-editor"
-import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { formatStableDate } from "@/features/flooring/shared/date-format"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/primary-record-panel"
@@ -561,7 +561,7 @@ export default function InventoryClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_DENSE_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
 import { formatStableDate, formatStableDateTime } from "@/features/flooring/shared/date-format"
 import { requestJson } from "@/features/flooring/shared/http"
 
@@ -180,7 +180,7 @@ export default function BuilderUsersPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-1 pb-6 pt-20 text-[var(--foreground)] sm:px-2 lg:px-3">
+    <div className={DASHBOARD_PAGE_SHELL_DENSE_CLASS_NAME}>
       <div className="w-full space-y-4">
         <div className="space-y-1 px-1">
           <DashboardCardTitle>Admin Control Panel</DashboardCardTitle>

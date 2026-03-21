@@ -3,7 +3,7 @@
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
 import { TemplateRecordModal } from "./template-record-modal"
-import { DashboardCardTitle } from "../../shared/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
@@ -314,7 +314,7 @@ export default function TemplatesClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-1 pb-12 pt-20 text-[var(--foreground)] sm:px-2 sm:pt-24 lg:px-3">
+    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
