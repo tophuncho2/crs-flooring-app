@@ -38,10 +38,7 @@ export default async function WorkOrdersPage({
       initialWorkOrders={pageData.initialWorkOrders}
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
-      productOptions={pageData.productOptions}
       templateOptions={pageData.templateOptions}
-      serviceOptions={pageData.serviceOptions}
-      unitOptions={pageData.unitOptions}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

@@ -228,7 +228,7 @@ async function loadWorkOrdersPageData(page: number, tableState: ServerTableQuery
   const totalItems = await prisma.flooringWorkOrder.count({ where })
   const pagination = createServerPagination({ page, totalItems })
 
-  const [workOrders, properties, warehouses, products, templates, services, units] = await Promise.all([
+  const [workOrders, properties, warehouses, templates] = await Promise.all([
     listWorkOrders({ skip: pagination.skip, take: pagination.take }, tableState),
     prisma.property.findMany({
       orderBy: { name: "asc" },
@@ -245,16 +245,6 @@ async function loadWorkOrdersPageData(page: number, tableState: ServerTableQuery
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    prisma.flooringProduct.findMany({
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
-      select: {
-        id: true,
-        manufacturerName: true,
-        style: true,
-        color: true,
-        category: { select: { sendUnit: { select: { name: true } } } },
-      },
-    }),
     prisma.flooringTemplate.findMany({
       orderBy: [{ property: { name: "asc" } }, { templateTag: "asc" }],
       select: {
@@ -263,11 +253,6 @@ async function loadWorkOrdersPageData(page: number, tableState: ServerTableQuery
         templateTag: true,
         property: { select: { name: true } },
       },
-    }),
-    listServiceOptions(),
-    prisma.flooringUnitOfMeasure.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
     }),
   ])
 
@@ -289,18 +274,11 @@ async function loadWorkOrdersPageData(page: number, tableState: ServerTableQuery
       address: [property.streetAddress, property.city, property.state, property.postalCode].filter(Boolean).join(", "),
     })),
     warehouseOptions: warehouses,
-    productOptions: products.map((product) => ({
-      id: product.id,
-      label: buildProductName(product),
-      sendUnit: product.category.sendUnit?.name ?? "",
-    })),
     templateOptions: templates.map((template) => ({
       id: template.id,
       propertyId: template.propertyId,
       label: `${template.property.name} / ${template.templateTag}`,
     })),
-    serviceOptions: services,
-    unitOptions: units,
   }
 }
 

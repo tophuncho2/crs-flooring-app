@@ -11,47 +11,6 @@ import {
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import TemplatesClient from "@/features/flooring/templates/components/templates-client"
 
-vi.mock("@/features/flooring/templates/components/template-record-panel", () => ({
-  TemplateRecordPanel: ({
-    templateId,
-    initialTemplate,
-    onTemplateSaved,
-    onTemplateDeleted,
-  }: {
-    templateId: string
-    initialTemplate: { id: string; propertyId: string }
-    onTemplateSaved?: (template: { id: string; templateTag: string }, previousPropertyId: string, itemsCount: number) => void
-    onTemplateDeleted?: (templateId: string) => void
-  }) => (
-    <div>
-      <div>{`Panel ${templateId}`}</div>
-      <button type="button" onClick={() => onTemplateSaved?.({ ...initialTemplate, templateTag: "Saved Template" }, initialTemplate.propertyId, 0)}>
-        Mock Save Template
-      </button>
-      <button type="button" onClick={() => onTemplateDeleted?.(templateId, initialTemplate.propertyId)}>
-        Mock Delete Template
-      </button>
-    </div>
-  ),
-}))
-
-vi.mock("@/features/flooring/shared/primary-record-panel", async () => {
-  const ReactModule = await import("react")
-
-  return {
-    PRIMARY_RECORD_PANEL_WIDTH_CLASS: "max-w-7xl",
-    useGuardedPrimaryRecordPanel: () => {
-      const [activeRecordId, setActiveRecordId] = ReactModule.useState<string | null>(null)
-
-      return {
-        activeRecordId,
-        openRecord: (recordId: string) => setActiveRecordId(recordId),
-        closeRecord: () => setActiveRecordId(null),
-      }
-    },
-  }
-})
-
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({
     setSearchQuery,
@@ -124,9 +83,6 @@ describe("TemplatesClient", () => {
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         padProductOptions={[{ id: "pad-1", label: "Pad Product" }]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -160,9 +116,6 @@ describe("TemplatesClient", () => {
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[]}
         padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -183,9 +136,6 @@ describe("TemplatesClient", () => {
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[]}
         padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -209,9 +159,6 @@ describe("TemplatesClient", () => {
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[]}
         padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -234,9 +181,6 @@ describe("TemplatesClient", () => {
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[]}
         padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -258,9 +202,6 @@ describe("TemplatesClient", () => {
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[]}
         padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )

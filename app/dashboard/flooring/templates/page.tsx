@@ -40,9 +40,6 @@ export default async function TemplatesPage({
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
       padProductOptions={pageData.padProductOptions}
-      productOptions={pageData.productOptions}
-      serviceOptions={pageData.serviceOptions}
-      unitOptions={pageData.unitOptions}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

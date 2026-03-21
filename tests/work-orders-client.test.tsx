@@ -28,23 +28,6 @@ vi.mock("@/features/flooring/work-orders/components/work-order-record-panel", ()
   ),
 }))
 
-vi.mock("@/features/flooring/shared/primary-record-panel", async () => {
-  const ReactModule = await import("react")
-
-  return {
-    PRIMARY_RECORD_PANEL_WIDTH_CLASS: "max-w-7xl",
-    useGuardedPrimaryRecordPanel: () => {
-      const [activeRecordId, setActiveRecordId] = ReactModule.useState<string | null>(null)
-
-      return {
-        activeRecordId,
-        openRecord: (recordId: string) => setActiveRecordId(recordId),
-        closeRecord: () => setActiveRecordId(null),
-      }
-    },
-  }
-})
-
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({
     setSearchQuery,
@@ -180,10 +163,7 @@ describe("WorkOrdersClient", () => {
         initialWorkOrders={[]}
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        productOptions={[]}
         templateOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -224,13 +204,10 @@ describe("WorkOrdersClient", () => {
         initialWorkOrders={[]}
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        productOptions={[]}
         templateOptions={[
           { id: "tpl-1", propertyId: "prop-1", label: "Oak Apartments / Turn" },
           { id: "tpl-2", propertyId: "prop-1", label: "Oak Apartments / Full Rehab" },
         ]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -275,13 +252,10 @@ describe("WorkOrdersClient", () => {
           { id: "prop-2", name: "Pine Grove", address: "987 Elm St" },
         ]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        productOptions={[]}
         templateOptions={[
           { id: "tpl-1", propertyId: "prop-1", label: "Oak Apartments / Turn" },
           { id: "tpl-2", propertyId: "prop-2", label: "Pine Grove / Rehab" },
         ]}
-        serviceOptions={[]}
-        unitOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )

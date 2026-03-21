@@ -1,104 +1,27 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode } from "react"
 import { Plus } from "lucide-react"
-import { TemplateRecordModal } from "./template-record-modal"
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
-import { ErrorNotice, SuccessNotice } from "../../shared/notices"
+import { FormStatusNotices } from "../../shared/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
-import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
-import { requestJson } from "../../shared/http"
-import { confirmRecordDelete } from "../../shared/record-panel-footer"
-import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
-import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
-
-type TemplateRow = {
-  id: string
-  templateNumber: string
-  templateTag: string
-  propertyId: string
-  propertyName: string
-  warehouseId: string
-  warehouseName: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-  padTypeLabel: string
-  createdAt: string
-  updatedAt: string
-}
-
-type PropertyOption = {
-  id: string
-  name: string
-}
-
-type WarehouseOption = {
-  id: string
-  name: string
-}
-
-type PadProductOption = {
-  id: string
-  label: string
-}
-
-type ProductOption = {
-  id: string
-  label: string
-  sendUnit: string
-}
-
-type DraftTemplate = {
-  templateTag: string
-  propertyId: string
-  warehouseId: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-}
-
-type ServerPaginationState = {
-  page: number
-  pageSize: number
-  totalItems: number
-  totalPages: number
-  previousPageHref: string
-  nextPageHref: string
-}
-
-type ServerTableState = {
-  searchQuery: string
-  isAscendingSort: boolean
-  isGroupingEnabled: boolean
-  groupByKeys: string[]
-}
-
-const defaultDraft: DraftTemplate = {
-  templateTag: "",
-  propertyId: "",
-  warehouseId: "",
-  instructions: "",
-  templateNotes: "",
-  padProductId: "",
-}
+import type { PadProductOption, PropertyOption, ServerPaginationState, ServerTableState, TemplateRow, WarehouseOption } from "../types"
+import { useTemplatesClientController } from "../use-templates-client-controller"
+import { TemplateCreateModal } from "./template-create-modal"
 
 export default function TemplatesClient({
   initialTemplates,
   propertyOptions,
   warehouseOptions,
   padProductOptions,
-  productOptions,
-  serviceOptions,
-  unitOptions,
   tableState,
   pagination,
 }: {
@@ -106,27 +29,11 @@ export default function TemplatesClient({
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   padProductOptions: PadProductOption[]
-  productOptions: ProductOption[]
-  serviceOptions: ServiceOption[]
-  unitOptions: UnitOption[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
-  const [templates, setTemplates] = useState<TemplateRow[]>(initialTemplates)
-  const [newDraft, setNewDraft] = useState<DraftTemplate>(defaultDraft)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isSavingNew, setIsSavingNew] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
+  const controller = useTemplatesClientController(initialTemplates)
   const templateNavigation = useCanonicalDetailNavigation("/dashboard/flooring/templates")
-  const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
-  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
-    isDirty: activeTemplateDirty,
-    message: "You have unsaved template changes. Leave this template without saving?",
-  })
-
-  const activeTemplate = templates.find((template) => template.id === activeTemplateId) ?? null
   const {
     searchQuery,
     setSearchQuery,
@@ -154,7 +61,7 @@ export default function TemplatesClient({
     moveColumn: moveTemplateColumn,
     setColumnOrder: setTemplateColumnOrder,
   } = useConfiguredTableState({
-    rows: templates,
+    rows: controller.rows,
     tableKey: "templates-main",
     fields: [
       { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber, groupable: false },
@@ -188,35 +95,6 @@ export default function TemplatesClient({
     groupOptions: templateGroupOptions,
   })
 
-  function setNewDraftField(field: keyof DraftTemplate, value: string) {
-    setNewDraft((prev) => ({ ...prev, [field]: value }))
-  }
-
-  function openCreateTemplate() {
-    setMessage("")
-    setError("")
-    setNewDraft(defaultDraft)
-    setIsCreateModalOpen(true)
-  }
-
-  function closeCreateTemplate() {
-    if (isSavingNew) return
-    setIsCreateModalOpen(false)
-  }
-
-  async function openTemplate(row: TemplateRow) {
-    setMessage("")
-    setError("")
-    templateNavigation.openRecord(row.id)
-  }
-
-  function closeTemplate() {
-    const closed = closeTemplatePanel()
-    if (closed) {
-      setActiveTemplateDirty(false)
-    }
-  }
-
   function renderTemplateRow(row: TemplateRow) {
     const cells: Record<string, ReactNode> = {
       templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
@@ -228,15 +106,15 @@ export default function TemplatesClient({
       templateNotes: <td key="templateNotes" className="px-3 py-2">{row.templateNotes || "-"}</td>,
       delete: (
         <td key="delete" className="px-3 py-2">
-          <DeleteRowButton onClick={() => void deleteTemplate(row.id)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
+          <DeleteRowButton onClick={() => void controller.deleteTemplate(row.id)} disabled={controller.deletingId === row.id}>
+            {controller.deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
         </td>
       ),
     }
 
     return (
-      <ClickableTableRow key={row.id} ariaLabel={`Edit template ${row.templateNumber}`} onClick={() => void openTemplate(row)}>
+      <ClickableTableRow key={row.id} ariaLabel={`Edit template ${row.templateNumber}`} onClick={() => templateNavigation.openRecord(row.id)}>
         {visibleTemplateColumns.map((column) => cells[column.key])}
       </ClickableTableRow>
     )
@@ -252,64 +130,6 @@ export default function TemplatesClient({
       />,
       ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderTemplateRow(row))),
     ])
-  }
-
-  async function createTemplate() {
-    setError("")
-    setMessage("")
-    setIsSavingNew(true)
-
-    try {
-      if (!newDraft.propertyId) throw new Error("Property is required")
-      if (!newDraft.templateTag.trim()) throw new Error("Template tag is required")
-
-      const payload = await requestJson<{
-        template?: TemplateRow
-      }>("/api/flooring/templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newDraft,
-          warehouseId: newDraft.warehouseId || null,
-          padProductId: newDraft.padProductId || null,
-        }),
-      })
-      if (!payload.template) throw new Error("Failed to create template")
-
-      setTemplates((prev) => [payload.template!, ...prev])
-      setNewDraft(defaultDraft)
-      setIsCreateModalOpen(false)
-      templateNavigation.openRecord(payload.template.id)
-      setMessage("Template created")
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create template")
-    } finally {
-      setIsSavingNew(false)
-    }
-  }
-
-  async function deleteTemplate(id: string) {
-    if (!confirmRecordDelete("Delete this template? This cannot be undone.")) {
-      return
-    }
-    setError("")
-    setMessage("")
-    setDeletingId(id)
-
-    try {
-      await requestJson<{ ok: boolean }>(`/api/flooring/templates/${id}`, { method: "DELETE" })
-
-      setTemplates((prev) => prev.filter((template) => template.id !== id))
-      if (activeTemplateId === id) {
-        closeTemplatePanel()
-        setActiveTemplateDirty(false)
-      }
-      setMessage("Template deleted")
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete template")
-    } finally {
-      setDeletingId(null)
-    }
   }
 
   return (
@@ -339,7 +159,7 @@ export default function TemplatesClient({
               />
               <button
                 type="button"
-                onClick={openCreateTemplate}
+                onClick={controller.openCreateModal}
                 className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
                 <Plus size={16} />
@@ -349,8 +169,9 @@ export default function TemplatesClient({
           </TableActionsSummary>
         </div>
 
-        {message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
-        {error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
+        {!controller.isCreateModalOpen ? (
+          <FormStatusNotices message={controller.notices.message} error={controller.notices.error} className="mt-3" />
+        ) : null}
 
         <TableShell minWidthClass="min-w-[1260px]">
             <TableHead>
@@ -381,82 +202,23 @@ export default function TemplatesClient({
 
       </section>
 
-      {isCreateModalOpen ? (
-        <ModalShell title="New Template" onClose={closeCreateTemplate}>
-          <div className="space-y-6">
-            {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-            {error ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">{error}</p> : null}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <FormField label="Template Tag">
-                <input value={newDraft.templateTag} onChange={(event) => setNewDraftField("templateTag", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </FormField>
-              <FormField label="Property">
-                <select value={newDraft.propertyId} onChange={(event) => setNewDraftField("propertyId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">Select property</option>
-                  {propertyOptions.map((property) => (
-                    <option key={property.id} value={property.id}>{property.name}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Warehouse">
-                <select value={newDraft.warehouseId} onChange={(event) => setNewDraftField("warehouseId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">No warehouse</option>
-                  {warehouseOptions.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Pad Type">
-                <select value={newDraft.padProductId} onChange={(event) => setNewDraftField("padProductId", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">No pad type</option>
-                  {padProductOptions.map((product) => (
-                    <option key={product.id} value={product.id}>{product.label}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Instructions">
-                <textarea value={newDraft.instructions} onChange={(event) => setNewDraftField("instructions", event.target.value)} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-              </FormField>
-              <FormField label="Template Notes">
-                <textarea value={newDraft.templateNotes} onChange={(event) => setNewDraftField("templateNotes", event.target.value)} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-              </FormField>
-            </div>
-
-            <div className="rounded-lg border border-[var(--panel-border)] px-4 py-4 text-sm text-[var(--foreground)]/70">
-              Create the template first, then add template items from the opened template form.
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={closeCreateTemplate} disabled={isSavingNew} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
-                Cancel
-              </button>
-              <button type="button" onClick={() => void createTemplate()} disabled={isSavingNew} className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}>
-                {isSavingNew ? "Creating..." : "Create Template"}
-              </button>
-            </div>
-          </div>
-        </ModalShell>
-      ) : null}
-
-      {activeTemplate ? (
-        <TemplateRecordModal
-          template={activeTemplate}
+      {controller.isCreateModalOpen ? (
+        <TemplateCreateModal
+          draft={controller.createDraft}
           propertyOptions={propertyOptions}
           warehouseOptions={warehouseOptions}
           padProductOptions={padProductOptions}
-          productOptions={productOptions}
-          serviceOptions={serviceOptions}
-          unitOptions={unitOptions}
-          onClose={closeTemplate}
-          onTemplateSaved={(template) => {
-            setTemplates((prev) => prev.map((row) => (row.id === template.id ? template : row)))
-            setActiveTemplateDirty(false)
+          message={controller.notices.message}
+          error={controller.notices.error}
+          isSaving={controller.isSavingCreate}
+          onClose={controller.closeCreateModal}
+          onFieldChange={controller.updateCreateDraft}
+          onCreate={async () => {
+            const createdTemplate = await controller.createTemplate()
+            if (createdTemplate) {
+              templateNavigation.openRecord(createdTemplate.id)
+            }
           }}
-          onTemplateDeleted={(templateId) => {
-            setTemplates((prev) => prev.filter((row) => row.id !== templateId))
-            setActiveTemplateDirty(false)
-          }}
-          onDirtyChange={setActiveTemplateDirty}
         />
       ) : null}
     </div>

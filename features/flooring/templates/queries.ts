@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildProductName } from "@/features/flooring/products/services"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
@@ -191,7 +190,7 @@ async function loadTemplatesPageData(page: number, tableState: ServerTableQueryS
   const where = buildTemplatesWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringTemplate.count({ where })
   const pagination = createServerPagination({ page, totalItems })
-  const [initialTemplates, properties, warehouses, padProducts, products, services, units] = await Promise.all([
+  const [initialTemplates, properties, warehouses, padProducts] = await Promise.all([
     listTemplates({ skip: pagination.skip, take: pagination.take }, tableState),
     prisma.property.findMany({
       orderBy: { name: "asc" },
@@ -215,23 +214,6 @@ async function loadTemplatesPageData(page: number, tableState: ServerTableQueryS
         color: true,
       },
     }),
-    prisma.flooringProduct.findMany({
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
-      select: {
-        id: true,
-        manufacturerName: true,
-        style: true,
-        color: true,
-        category: {
-          select: { sendUnit: { select: { name: true } } },
-        },
-      },
-    }),
-    listServiceOptions(),
-    prisma.flooringUnitOfMeasure.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
   ])
 
   return {
@@ -249,13 +231,6 @@ async function loadTemplatesPageData(page: number, tableState: ServerTableQueryS
       id: product.id,
       label: buildPadLabel(product),
     })),
-    productOptions: products.map((product) => ({
-      id: product.id,
-      label: buildProductName(product),
-      sendUnit: product.category.sendUnit?.name ?? "",
-    })),
-    serviceOptions: services,
-    unitOptions: units,
   }
 }
 
