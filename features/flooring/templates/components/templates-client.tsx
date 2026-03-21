@@ -14,6 +14,7 @@ import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, T
 import { requestJson } from "../../shared/http"
 import { confirmRecordDelete } from "../../shared/record-panel-footer"
 import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -118,6 +119,7 @@ export default function TemplatesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const templateNavigation = useCanonicalDetailNavigation("/dashboard/flooring/templates")
   const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
   const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
     isDirty: activeTemplateDirty,
@@ -205,7 +207,7 @@ export default function TemplatesClient({
   async function openTemplate(row: TemplateRow) {
     setMessage("")
     setError("")
-    await openTemplatePanel(row.id)
+    templateNavigation.openRecord(row.id)
   }
 
   function closeTemplate() {
@@ -277,7 +279,7 @@ export default function TemplatesClient({
       setTemplates((prev) => [payload.template!, ...prev])
       setNewDraft(defaultDraft)
       setIsCreateModalOpen(false)
-      openTemplatePanel(payload.template.id)
+      templateNavigation.openRecord(payload.template.id)
       setMessage("Template created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create template")

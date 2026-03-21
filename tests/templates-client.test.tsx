@@ -8,6 +8,7 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import TemplatesClient from "@/features/flooring/templates/components/templates-client"
 
 vi.mock("@/features/flooring/templates/components/template-record-panel", () => ({
@@ -111,7 +112,7 @@ describe("TemplatesClient", () => {
     resetSimpleTableClientMocks()
   })
 
-  it("creates a template from the table modal and opens the created template row", async () => {
+  it("creates a template from the table modal and routes to the canonical detail page", async () => {
     const user = userEvent.setup()
     requestJsonMock.mockResolvedValue({
       template: templateRow({ id: "tpl-2", templateNumber: "TP-00002", templateTag: "Make Ready" }),
@@ -141,8 +142,12 @@ describe("TemplatesClient", () => {
       }))
     })
 
-    expect(await screen.findByText("TP-00002")).toBeTruthy()
-    expect(screen.getByText("Panel tpl-2")).toBeTruthy()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/templates/tpl-2?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+        { scroll: false },
+      )
+    })
   })
 
   it("create error is surfaced", async () => {
@@ -169,7 +174,7 @@ describe("TemplatesClient", () => {
     expect((await screen.findAllByText("Property is required")).length).toBeGreaterThan(0)
   })
 
-  it("clicking the template row opens the template record panel", async () => {
+  it("clicking the template row routes to the canonical detail page", async () => {
     const user = userEvent.setup()
 
     render(
@@ -186,8 +191,12 @@ describe("TemplatesClient", () => {
     )
 
     await user.click(screen.getByRole("button", { name: "Edit template TP-00001" }))
-    expect(await screen.findByText("Panel tpl-1")).toBeTruthy()
-    expect(screen.getByText("Template TP-00001")).toBeTruthy()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/templates/tpl-1?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+        { scroll: false },
+      )
+    })
   })
 
   it("table delete requires confirmation before request dispatch", async () => {

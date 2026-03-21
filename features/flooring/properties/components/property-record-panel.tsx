@@ -159,7 +159,7 @@ export function PropertyRecordPanel({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold">Templates</h3>
-            <p className="text-sm text-[var(--foreground)]/70">Open a template in a nested record panel or create a new one for this property.</p>
+            <p className="text-sm text-[var(--foreground)]/70">View a template detail page or create a new one for this property.</p>
           </div>
           {onOpenCreateTemplate ? (
             <button type="button" onClick={onOpenCreateTemplate} className="rounded border border-blue-500/40 px-3 py-2 text-sm text-blue-500 hover:bg-blue-500/10">
@@ -216,7 +216,7 @@ export function PropertyRecordPanel({
                   <p className="font-medium">{template.templateTag}</p>
                   <p className="text-sm text-[var(--foreground)]/70">{template.warehouseName || "No warehouse"} • {template.itemsCount} rows</p>
                 </div>
-                <span className="text-sm text-blue-500">{loadingTemplate ? "Loading..." : "Open"}</span>
+                <span className="text-sm text-blue-500">{loadingTemplate ? "Loading..." : "View"}</span>
               </button>
             ))
           )}

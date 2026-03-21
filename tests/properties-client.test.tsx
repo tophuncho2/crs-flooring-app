@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { resetSimpleTableClientMocks } from "./helpers/simple-table-client-mocks"
-import PropertiesClient from "@/features/flooring/properties/components/properties-client"
+import { navigationMocks } from "./helpers/next-navigation-mock"
+import { PropertyDetailClient } from "@/features/flooring/properties/components/property-detail-client"
 
 vi.mock("@/features/flooring/properties/components/property-record-panel", () => ({
   PropertyRecordPanel: ({
@@ -125,31 +126,27 @@ describe("PropertiesClient", () => {
     vi.stubGlobal("fetch", fetchMock)
   })
 
-  it("opens the same template-numbered screen shell used by the templates page", async () => {
+  it("routes linked templates from the canonical property detail page to the shared template detail route", async () => {
     const user = userEvent.setup()
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({ template: templateRow() }),
-    })
+    window.history.replaceState({}, "", "/dashboard/flooring/properties/prop-1")
 
     render(
-      <PropertiesClient
-        initialProperties={[propertyRow()]}
+      <PropertyDetailClient
+        property={propertyRow()}
         managementOptions={[]}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        backHref="/dashboard/flooring/properties"
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit property Oak Apartments" }))
     await user.click(screen.getByRole("button", { name: "Open Nested Template" }))
 
-    expect(await screen.findByText("Template TP-00001")).toBeTruthy()
-    expect(screen.getByText("Template Screen tpl-1")).toBeTruthy()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/templates/tpl-1?returnTo=%2Fdashboard%2Fflooring%2Fproperties%2Fprop-1",
+        { scroll: false },
+      )
+    })
   })
 })

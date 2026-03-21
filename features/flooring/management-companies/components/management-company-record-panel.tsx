@@ -140,7 +140,7 @@ export function ManagementCompanyRecordPanel({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold">Properties</h3>
-            <p className="text-sm text-[var(--foreground)]/70">Open a property in a nested panel or add a new property to this management company.</p>
+            <p className="text-sm text-[var(--foreground)]/70">View a property detail page or add a new property to this management company.</p>
           </div>
           <button type="button" onClick={onOpenCreateProperty} className="rounded border border-blue-500/40 px-3 py-2 text-sm text-blue-500 hover:bg-blue-500/10">
             New Property
@@ -191,7 +191,7 @@ export function ManagementCompanyRecordPanel({
                   <p className="font-medium">{property.name}</p>
                   <p className="text-sm text-[var(--foreground)]/70">{property.fullAddress || "No address"}</p>
                 </div>
-                <span className="text-sm text-blue-500">{loadingPropertyId === property.id ? "Loading..." : "Open"}</span>
+                <span className="text-sm text-blue-500">{loadingPropertyId === property.id ? "Loading..." : "View"}</span>
               </button>
             ))
           )}

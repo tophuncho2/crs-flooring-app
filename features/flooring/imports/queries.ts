@@ -129,3 +129,45 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
 export async function getImportsPageData(page: number, tableState: ServerTableQueryState) {
   return withPrismaConnectivityHandling(() => loadImportsPageData(page, tableState))
 }
+
+export async function getImportById(id: string) {
+  const entry = await prisma.flooringImportEntry.findUniqueOrThrow({
+    where: { id },
+    include: importEntryInclude(),
+  })
+
+  return {
+    ...normalizeImportEntry(entry),
+    itemsCount: entry._count.inventories,
+  }
+}
+
+function importEntryInclude() {
+  return {
+    warehouse: { select: { id: true, name: true } },
+    _count: { select: { inventories: true } },
+    inventories: {
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            manufacturerName: true,
+            style: true,
+            color: true,
+            category: { select: { stockUnit: { select: { name: true } } } },
+          },
+        },
+        location: {
+          select: {
+            id: true,
+            locationCode: true,
+            section: { select: { name: true } },
+            warehouse: { select: { id: true, name: true } },
+          },
+        },
+      },
+      orderBy: [{ createdAt: "asc" }],
+    },
+  } satisfies Prisma.FlooringImportEntryInclude
+}

@@ -15,6 +15,7 @@ import { requestJson } from "../../shared/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
+import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useRecordNotices } from "../../shared/use-record-notices"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
@@ -177,6 +178,7 @@ export default function WorkOrdersClient({
     materialItems: [],
     serviceItems: [],
   })
+  const workOrderNavigation = useCanonicalDetailNavigation("/dashboard/flooring/work-orders")
   const [activeWorkOrderDirty, setActiveWorkOrderDirty] = useState(false)
   const [workOrderRefreshNonce, setWorkOrderRefreshNonce] = useState(0)
   const tableNotices = useRecordNotices()
@@ -297,7 +299,7 @@ export default function WorkOrdersClient({
   async function openWorkOrder(row: WorkOrderRow) {
     tableNotices.clearNotices()
     panelNotices.clearNotices()
-    await openWorkOrderPanel(row.id)
+    workOrderNavigation.openRecord(row.id)
   }
 
   function closeWorkOrder() {
@@ -367,7 +369,7 @@ export default function WorkOrdersClient({
       setIsCreateModalOpen(false)
       setNewDraft(defaultDraft)
       setActiveWorkOrderDirty(false)
-      openWorkOrderPanel(createdWorkOrder.id)
+      workOrderNavigation.openRecord(createdWorkOrder.id)
       panelNotices.showSuccess("Work order created")
     } catch (createError) {
       tableNotices.showError(createError instanceof Error ? createError.message : "Failed to create work order")
@@ -409,7 +411,7 @@ export default function WorkOrdersClient({
       setIsSyncCreateModalOpen(false)
       resetTemplateCreateFlow()
       setActiveWorkOrderDirty(false)
-      openWorkOrderPanel(createdWorkOrder.id)
+      workOrderNavigation.openRecord(createdWorkOrder.id)
       panelNotices.showSuccess("Work order created from template")
     } catch (createError) {
       tableNotices.showError(createError instanceof Error ? createError.message : "Failed to create work order from template")

@@ -1,7 +1,9 @@
 "use client"
 
 import { type ReactNode, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { requestJson } from "@/features/flooring/shared/http"
+import { BasicRecordPage } from "@/features/flooring/shared/basic-record-page"
 import { BasicRecordPanel } from "@/features/flooring/shared/basic-record-panel"
 import { CutLogsEditor, type CutLogDraft, type EditableCutLog } from "@/features/flooring/shared/cut-logs-editor"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/dashboard-card-title"
@@ -14,7 +16,9 @@ import { StatusPill } from "@/features/flooring/shared/status-pill"
 import { TableColumnSettings } from "@/features/flooring/shared/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/table-controls-bar"
 import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/table-shell"
+import { useCanonicalDetailNavigation } from "@/features/flooring/shared/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "@/features/flooring/shared/use-configured-table-state"
+import { useUnsavedChangesGuard } from "@/features/flooring/shared/use-unsaved-changes-guard"
 import { useRecordNotices } from "@/features/flooring/shared/use-record-notices"
 import { useServerTableQueryControls } from "@/features/flooring/shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/use-table-controls"
@@ -171,14 +175,28 @@ export default function InventoryClient({
   locationOptions,
   tableState,
   pagination,
+  detailRecordId,
+  detailReturnHref,
 }: {
   initialInventory: InventoryRow[]
   locationOptions: LocationOption[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
+  detailRecordId?: string
+  detailReturnHref?: string
 }) {
+  const router = useRouter()
+  const isDetailPage = Boolean(detailRecordId && detailReturnHref)
+  const inventoryNavigation = useCanonicalDetailNavigation("/dashboard/flooring/inventory")
   const [rows, setRows] = useState(initialInventory)
-  const [activePanel, setActivePanel] = useState<ActivePanelState | null>(null)
+  const [activePanel, setActivePanel] = useState<ActivePanelState | null>(
+    detailRecordId
+      ? {
+          id: detailRecordId,
+          mode: "edit",
+        }
+      : null,
+  )
   const [editLocationId, setEditLocationId] = useState("")
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(emptyCutLogDraft)
   const [isSavingInventory, setIsSavingInventory] = useState(false)
@@ -222,6 +240,16 @@ export default function InventoryClient({
   const activeRunningBalance = activeRow ? parseDecimal(activeRow.runningBalance) : 0
   const draftQuantity = parseDecimal(cutLogDraft.quantityTaken)
   const cutPreviewAfter = activeRow ? toFixedString(activeRunningBalance - draftQuantity) : "0.00"
+  const isDetailDirty =
+    isDetailPage &&
+    Boolean(
+      activeRow &&
+        (editLocationId !== activeRow.locationId || cutLogDraft.quantityTaken.trim() !== "" || cutLogDraft.notes.trim() !== ""),
+    )
+  const detailGuard = useUnsavedChangesGuard({
+    isDirty: isDetailDirty,
+    message: "You have unsaved inventory changes. Leave this inventory record without saving?",
+  })
   const canSubmitCutLog =
     Boolean(activeRow) &&
     cutLogDraft.quantityTaken.trim() !== "" &&
@@ -326,6 +354,12 @@ export default function InventoryClient({
 
   function closePanel() {
     if (isPanelBusy) return
+    if (isDetailPage && detailReturnHref) {
+      detailGuard.confirmNavigation(() => {
+        router.push(detailReturnHref, { scroll: false })
+      })
+      return
+    }
     setActivePanel(null)
     resetPanelState()
   }
@@ -530,7 +564,7 @@ export default function InventoryClient({
     }
 
     return (
-      <ClickableTableRow key={row.id} ariaLabel={`Edit inventory item ${row.itemNumber}`} onClick={() => openPanel(row, "edit")}>
+      <ClickableTableRow key={row.id} ariaLabel={`Edit inventory item ${row.itemNumber}`} onClick={() => inventoryNavigation.openRecord(row.id)}>
         {visibleInventoryColumns.map((column) => cells[column.key])}
       </ClickableTableRow>
     )
@@ -548,8 +582,69 @@ export default function InventoryClient({
     ])
   }
 
+  const editableRecordContent = activeRow ? (
+    <>
+      <InventorySnapshotGrid
+        row={activeRow}
+        locationCode={activeLocationCode}
+        sectionName={activeSectionName}
+        warehouseName={activeWarehouseName}
+      />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <RecordFormField label="Location">
+          <select
+            value={editLocationId}
+            onChange={(event) => setEditLocationId(event.target.value)}
+            className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+          >
+            <option value="">Select Location</option>
+            {availableLocationOptions.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.locationCode}
+              </option>
+            ))}
+          </select>
+        </RecordFormField>
+        <RecordFormField label="Section">
+          <input
+            value={activeSectionName || ""}
+            readOnly
+            className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
+          />
+        </RecordFormField>
+        <RecordFormField label="Import Warehouse">
+          <input
+            value={activeWarehouseName || ""}
+            readOnly
+            className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
+          />
+        </RecordFormField>
+      </div>
+      <CutLogsEditor
+        items={activeRow.cutLogs}
+        draft={cutLogDraft}
+        beforePreview={toFixedString(activeRunningBalance)}
+        afterPreview={cutPreviewAfter}
+        unitLabel={activeRow.stockUnit}
+        adding={isSavingCutLog}
+        deletingItemId={deletingCutLogId}
+        onDraftChange={(field, value) => setCutLogDraft((previous) => ({ ...previous, [field]: value }))}
+        onAdd={() => addCutLog()}
+        onDeleteItem={(itemId) => void deleteCutLog(itemId)}
+        canSubmit={canSubmitCutLog}
+        submitLabel="Add"
+      />
+      {activeRunningBalance <= 0 ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+          Running balance is 0. Positive cuts cannot be added until stock is restored.
+        </p>
+      ) : null}
+    </>
+  ) : null
+
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
+      {!isDetailPage ? (
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -608,6 +703,7 @@ export default function InventoryClient({
           nextPageHref={pagination?.nextPageHref}
         />
       </section>
+      ) : null}
 
       {activePanel?.mode === "open" && activeRow ? (
         <RecordModalShell
@@ -632,7 +728,28 @@ export default function InventoryClient({
         </RecordModalShell>
       ) : null}
 
-      {activePanel?.mode === "edit" && activeRow ? (
+      {isDetailPage && activePanel?.mode === "edit" && activeRow ? (
+        <BasicRecordPage
+          title={`Inventory ${activeRow.itemNumber}`}
+          backHref={detailReturnHref!}
+          message={panelNotices.message}
+          error={panelNotices.error}
+          headerActions={<InventoryHeaderActions row={activeRow} />}
+          saveLabel="Save Inventory"
+          savingLabel="Saving..."
+          deleteLabel="Delete Inventory"
+          deleteConfirmMessage="Delete this inventory row?"
+          onSave={() => void saveInventory()}
+          onDelete={() => void deleteInventory(activeRow.id, "panel")}
+          onClose={closePanel}
+          isSaving={isPanelBusy}
+          sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
+        >
+          {editableRecordContent}
+        </BasicRecordPage>
+      ) : null}
+
+      {!isDetailPage && activePanel?.mode === "edit" && activeRow ? (
         <BasicRecordPanel
           title={`Inventory ${activeRow.itemNumber}`}
           onClose={closePanel}
@@ -648,61 +765,7 @@ export default function InventoryClient({
           isSaving={isPanelBusy}
           sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
         >
-          <InventorySnapshotGrid
-            row={activeRow}
-            locationCode={activeLocationCode}
-            sectionName={activeSectionName}
-            warehouseName={activeWarehouseName}
-          />
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <RecordFormField label="Location">
-              <select
-                value={editLocationId}
-                onChange={(event) => setEditLocationId(event.target.value)}
-                className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              >
-                <option value="">Select Location</option>
-                {availableLocationOptions.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.locationCode}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-            <RecordFormField label="Section">
-              <input
-                value={activeSectionName || ""}
-                readOnly
-                className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
-              />
-            </RecordFormField>
-            <RecordFormField label="Import Warehouse">
-              <input
-                value={activeWarehouseName || ""}
-                readOnly
-                className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
-              />
-            </RecordFormField>
-          </div>
-          <CutLogsEditor
-            items={activeRow.cutLogs}
-            draft={cutLogDraft}
-            beforePreview={toFixedString(activeRunningBalance)}
-            afterPreview={cutPreviewAfter}
-            unitLabel={activeRow.stockUnit}
-            adding={isSavingCutLog}
-            deletingItemId={deletingCutLogId}
-            onDraftChange={(field, value) => setCutLogDraft((previous) => ({ ...previous, [field]: value }))}
-            onAdd={() => addCutLog()}
-            onDeleteItem={(itemId) => void deleteCutLog(itemId)}
-            canSubmit={canSubmitCutLog}
-            submitLabel="Add"
-          />
-          {activeRunningBalance <= 0 ? (
-            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
-              Running balance is 0. Positive cuts cannot be added until stock is restored.
-            </p>
-          ) : null}
+          {editableRecordContent}
         </BasicRecordPanel>
       ) : null}
     </div>

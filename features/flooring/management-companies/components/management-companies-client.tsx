@@ -15,6 +15,7 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useGuardedUrlRecordEditor } from "../../shared/use-guarded-url-record-editor"
 import { useUrlRecordPanel } from "../../shared/use-url-record-panel"
@@ -201,6 +202,7 @@ export default function ManagementCompaniesClient({
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
   const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
+  const companyNavigation = useCanonicalDetailNavigation("/dashboard/flooring/management-companies")
   const {
     activeRecord: selectedCompany,
     draft: selectedCompanyDraft,
@@ -309,18 +311,7 @@ export default function ManagementCompaniesClient({
   function openCompany(company: ManagementCompanyRow) {
     setError("")
     setMessage("")
-    setIsPropertyCreateOpen(false)
-    setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: company.id })
-    if (activeTemplateId) {
-      const closedTemplate = closeTemplate()
-      if (!closedTemplate) {
-        return
-      }
-    }
-    if (activePropertyId) {
-      closePropertyPanel()
-    }
-    openCompanyRecord(company)
+    companyNavigation.openRecord(company.id)
   }
 
   function closeCompanyPanel() {
@@ -663,7 +654,7 @@ export default function ManagementCompaniesClient({
       setCompanies((prev) => [newCompany, ...prev])
       setNewDraft(defaultDraft)
       setIsCreateModalOpen(false)
-      setMessage("Management company created")
+      companyNavigation.openRecord(newCompany.id)
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create company")
     } finally {

@@ -18,6 +18,7 @@ import { ClickableTableRow, ModalTableHead, ModalTableShell, TableActionsSummary
 import { formatStableDateTime } from "../../shared/date-format"
 import { requestJson } from "../../shared/http"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 
@@ -236,6 +237,7 @@ export default function FlooringProductsClient({
   const [isSavingCutLog, setIsSavingCutLog] = useState(false)
   const [cutLogError, setCutLogError] = useState("")
   const [cutLogMessage, setCutLogMessage] = useState("")
+  const productNavigation = useCanonicalDetailNavigation("/dashboard/flooring/products")
 
   const selectedCategory = categories.find((category) => category.id === productForm.categoryId) ?? null
   const activeInventoryRow = inventoryRows.find((row) => row.id === activeInventoryRowId) ?? null
@@ -346,16 +348,7 @@ export default function FlooringProductsClient({
       photos: <td key="photos" className="px-3 py-2">{product.photoUrls.length}</td>,
       actions: (
         <td key="actions" className="px-3 py-2">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => void openProductInventory(product)}
-              className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]/80 hover:bg-[var(--panel-hover)]"
-            >
-              Inventory
-            </button>
-            <DeleteRowButton onClick={() => void deleteProduct(product)} />
-          </div>
+          <DeleteRowButton onClick={() => void deleteProduct(product)} />
         </td>
       ),
     }
@@ -406,10 +399,7 @@ export default function FlooringProductsClient({
 
   function openEditProduct(product: ProductRow) {
     clearNotices()
-    setEditingProduct(product)
-    setProductForm(toProductForm(product))
-    setNewBaseColor("")
-    setIsProductModalOpen(true)
+    productNavigation.openRecord(product.id)
   }
 
   function closeProductInventory() {
@@ -536,7 +526,7 @@ export default function FlooringProductsClient({
         return next.sort((a, b) => a.name.localeCompare(b.name))
       })
       setIsProductModalOpen(false)
-      setMessage(editingProduct ? "Product updated" : "Product created")
+      productNavigation.openRecord(payload.product.id)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save product")
     } finally {

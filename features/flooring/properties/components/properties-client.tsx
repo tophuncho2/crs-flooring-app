@@ -15,6 +15,7 @@ import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, T
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useGuardedUrlRecordEditor } from "../../shared/use-guarded-url-record-editor"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -164,6 +165,7 @@ export default function PropertiesClient({
   const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
   const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
+  const propertyNavigation = useCanonicalDetailNavigation("/dashboard/flooring/properties")
   const {
     activeRecord: selectedProperty,
     draft: selectedPropertyDraft,
@@ -309,13 +311,7 @@ export default function PropertiesClient({
   async function openPropertyPanel(property: PropertyRow) {
     setError("")
     setMessage("")
-    if (activeTemplateId) {
-      const closedTemplate = closeTemplate()
-      if (!closedTemplate) {
-        return
-      }
-    }
-    await openPropertyRecord(property)
+    propertyNavigation.openRecord(property.id)
   }
 
   function updatePropertyTemplateSummary(propertyId: string, templateId: string, updater: (template: PropertyRow["templates"][number]) => PropertyRow["templates"][number] | null) {
@@ -462,7 +458,7 @@ export default function PropertiesClient({
       setProperties((prev) => [createdProperty, ...prev])
       setNewDraft(defaultDraft)
       setIsCreateModalOpen(false)
-      setMessage("Property created")
+      propertyNavigation.openRecord(createdProperty.id)
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create property")
     } finally {

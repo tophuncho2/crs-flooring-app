@@ -304,6 +304,61 @@ async function loadWorkOrdersPageData(page: number, tableState: ServerTableQuery
   }
 }
 
+async function loadWorkOrderDetailPageOptions() {
+  const [properties, warehouses, products, services, units] = await Promise.all([
+    prisma.property.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        streetAddress: true,
+        city: true,
+        state: true,
+        postalCode: true,
+      },
+    }),
+    prisma.flooringWarehouse.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.flooringProduct.findMany({
+      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        manufacturerName: true,
+        style: true,
+        color: true,
+        category: { select: { sendUnit: { select: { name: true } } } },
+      },
+    }),
+    listServiceOptions(),
+    prisma.flooringUnitOfMeasure.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ])
+
+  return {
+    propertyOptions: properties.map((property) => ({
+      id: property.id,
+      name: property.name,
+      address: [property.streetAddress, property.city, property.state, property.postalCode].filter(Boolean).join(", "),
+    })),
+    warehouseOptions: warehouses,
+    productOptions: products.map((product) => ({
+      id: product.id,
+      label: buildProductName(product),
+      sendUnit: product.category.sendUnit?.name ?? "",
+    })),
+    serviceOptions: services,
+    unitOptions: units,
+  }
+}
+
 export async function getWorkOrdersPageData(page: number, tableState: ServerTableQueryState) {
   return withPrismaConnectivityHandling(() => loadWorkOrdersPageData(page, tableState))
+}
+
+export async function getWorkOrderDetailPageOptions() {
+  return withPrismaConnectivityHandling(() => loadWorkOrderDetailPageOptions())
 }

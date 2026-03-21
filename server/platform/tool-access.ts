@@ -9,6 +9,18 @@ export const TOOL_CATALOG = [
     path: "/dashboard/flooring/products",
   },
   {
+    slug: "templates",
+    name: "Templates",
+    description: "Manage property templates and linked material/service scopes.",
+    path: "/dashboard/flooring/templates",
+  },
+  {
+    slug: "properties",
+    name: "Properties",
+    description: "Manage management companies, properties, and related records.",
+    path: "/dashboard/flooring/properties",
+  },
+  {
     slug: "warehouse",
     name: "Warehouse",
     description: "Manage flooring warehouses, sections, and locations.",
@@ -27,6 +39,8 @@ export type ToolCatalogItem = {
 
 const TOOL_ACCESS_POLICY: Record<ToolSlug, ReadonlySet<Role>> = {
   products: new Set<Role>(["OWNER", "ADMIN", "BUILDER"]),
+  templates: new Set<Role>(["OWNER", "ADMIN", "BUILDER"]),
+  properties: new Set<Role>(["OWNER", "ADMIN", "BUILDER"]),
   warehouse: new Set<Role>(["OWNER", "ADMIN", "BUILDER"]),
 }
 

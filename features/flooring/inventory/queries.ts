@@ -141,3 +141,53 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
 export async function getInventoryPageData(page: number, tableState: ServerTableQueryState) {
   return withPrismaConnectivityHandling(() => loadInventoryPageData(page, tableState))
 }
+
+export async function getInventoryById(id: string) {
+  const row = await prisma.flooringInventory.findUniqueOrThrow({
+    where: { id },
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          manufacturerName: true,
+          style: true,
+          color: true,
+          category: { select: { stockUnit: { select: { name: true } } } },
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          locationCode: true,
+          section: { select: { name: true } },
+          warehouse: { select: { id: true, name: true } },
+        },
+      },
+      importEntry: {
+        select: {
+          id: true,
+          importNumber: true,
+          tag: true,
+          status: true,
+          transportType: true,
+          warehouse: { select: { id: true, name: true } },
+        },
+      },
+      cutLogs: {
+        orderBy: [{ createdAt: "desc" }],
+        select: {
+          id: true,
+          inventoryId: true,
+          before: true,
+          cut: true,
+          after: true,
+          notes: true,
+          createdAt: true,
+        },
+      },
+    },
+  })
+
+  return normalizeInventoryRow(row)
+}

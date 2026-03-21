@@ -21,6 +21,7 @@ import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
 import { ClickableTableRow, ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
+import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
 import {
@@ -223,6 +224,7 @@ export default function ImportsClient({
   const [createModalError, setCreateModalError] = useState("")
   const [createValidation, setCreateValidation] = useState<CreateImportValidation>(() => validateCreateImportDraft(createEmptyDraft()))
   const [activeImportError, setActiveImportError] = useState("")
+  const importNavigation = useCanonicalDetailNavigation("/dashboard/flooring/imports")
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
   const activeImport = useMemo(() => imports.find((row) => row.id === activeImportId) ?? null, [imports, activeImportId])
@@ -332,31 +334,9 @@ export default function ImportsClient({
   }
 
   function openImport(rowId: string) {
-    const row = imports.find((item) => item.id === rowId)
-    if (!row) return
     setMessage("")
     setPageError("")
-    setActiveImportError("")
-      setActiveImportDraft({
-        orderNumber: row.orderNumber,
-        tag: row.tag,
-        transportType: row.transportType,
-      status: row.status,
-      notes: row.notes,
-      warehouseId: row.warehouseId,
-        items: row.inventories.map((item) => ({
-          clientId: crypto.randomUUID(),
-          productId: item.productId,
-        itemNumber: item.itemNumber,
-        stockCount: item.stockCount,
-        locationId: item.locationId,
-        dyeLot: item.dyeLot,
-        cost: item.cost,
-        freight: item.freight,
-        notes: item.notes,
-      })),
-    })
-    setActiveImportId(rowId)
+    importNavigation.openRecord(rowId)
   }
 
   function closeImport() {
@@ -510,7 +490,7 @@ export default function ImportsClient({
       setDraft(emptyDraft)
       setCreateValidation(validateCreateImportDraft(emptyDraft))
       setIsModalOpen(false)
-      setMessage("Import created")
+      importNavigation.openRecord(payload.import.id)
     } catch (createError) {
       setCreateModalError(createError instanceof Error ? createError.message : "Failed to create import")
     } finally {

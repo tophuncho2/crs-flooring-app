@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
+import { ImportDetailClient } from "@/features/flooring/imports/components/import-detail-client"
 
 vi.mock("@/features/flooring/shared/use-table-columns", () => ({
   useTableColumns: () => ({
@@ -143,23 +144,18 @@ describe("ImportsClient", () => {
     expect(screen.getByText("Pending").className).toContain("bg-sky-200")
   })
 
-  it("uses header-only import number and header metrics in the record panel", async () => {
-    const user = userEvent.setup()
-
+  it("uses header-only import number and header metrics in the canonical detail page", () => {
     render(
-      <ImportsClient
-        initialImports={[importRow()]}
+      <ImportDetailClient
+        initialImport={importRow()}
         productOptions={[{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        backHref="/dashboard/flooring/imports"
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Edit import 0001" })[0]!)
-
     expect(screen.getByRole("heading", { name: "Import IMP-0001" })).toBeTruthy()
-    expect(screen.queryByLabelText("Import Number")).toBeNull()
     expect(screen.getByText("Total Cost")).toBeTruthy()
     expect(screen.getByText("$21.00")).toBeTruthy()
     expect(screen.getByText("Material Items").parentElement?.textContent).toContain("1")

@@ -98,6 +98,31 @@ export async function listProductOptions() {
   return products.map(normalizeProductOption)
 }
 
+export async function getProductById(id: string) {
+  const product = await prisma.flooringProduct.findUniqueOrThrow({
+    where: { id },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+          ...flooringCategoryUnitInclude,
+        },
+      },
+      manufacturer: {
+        select: {
+          id: true,
+          agentName: true,
+          companyName: true,
+          website: true,
+        },
+      },
+    },
+  })
+
+  return normalizeCatalogProduct(product)
+}
+
 export async function getProductsPageData(page: number, tableState: ServerTableQueryState) {
   const where = buildProductWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringProduct.count({ where })

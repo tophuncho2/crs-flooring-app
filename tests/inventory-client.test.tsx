@@ -147,18 +147,16 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Pending").className).toContain("bg-sky-200")
   })
 
-  it("opens the editor from the row click and removes the legacy cut-log table link", async () => {
-    const user = userEvent.setup()
-
+  it("uses the canonical detail page shell and removes the legacy cut-log table link", () => {
     render(
       <InventoryClient
         initialInventory={[inventoryRow()]}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        detailRecordId="inv-1"
+        detailReturnHref="/dashboard/flooring/inventory"
       />,
     )
-
-    await user.click(screen.getByRole("button", { name: "Edit inventory item 1001" }))
 
     expect(screen.getByRole("heading", { name: "Inventory 1001" })).toBeTruthy()
     expect(screen.getByText("Cut Logs")).toBeTruthy()
@@ -166,18 +164,16 @@ describe("InventoryClient", () => {
     expect(screen.getByText("Unit turn")).toBeTruthy()
   })
 
-  it("does not render the no-cut-logs empty-state copy when there are no cut logs", async () => {
-    const user = userEvent.setup()
-
+  it("does not render the no-cut-logs empty-state copy when there are no cut logs", () => {
     render(
       <InventoryClient
         initialInventory={[inventoryRow({ cutLogs: [], cutTotal: "0.00", runningBalance: "12.00" })]}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        detailRecordId="inv-1"
+        detailReturnHref="/dashboard/flooring/inventory"
       />,
     )
-
-    await user.click(screen.getByRole("button", { name: "Edit inventory item 1001" }))
 
     expect(screen.queryByText("No cut logs yet for this inventory row.")).toBeNull()
     expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
@@ -203,14 +199,14 @@ describe("InventoryClient", () => {
           { id: "loc-2", warehouseId: "wh-1", locationCode: "B2", label: "B2", sectionName: "Reserve", warehouseName: "Main Warehouse" },
         ]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        detailRecordId="inv-1"
+        detailReturnHref="/dashboard/flooring/inventory"
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit inventory item 1001" }))
-
     expect(screen.getByRole("button", { name: "Save Inventory" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Delete Inventory" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "loc-2" } })

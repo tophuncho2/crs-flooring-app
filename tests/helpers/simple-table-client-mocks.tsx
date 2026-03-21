@@ -15,9 +15,12 @@ type UrlRecordEditorInput<Row extends { id: string }> = {
 export const requestJsonMock = vi.fn()
 
 export const lucideReactModule = {
+  ArrowLeft: () => <span>&lt;-</span>,
   ChevronDown: () => <span>v</span>,
   ChevronRight: () => <span>&gt;</span>,
   Plus: () => <span>+</span>,
+  Save: () => <span>save</span>,
+  Upload: () => <span>upload</span>,
   X: () => <span>x</span>,
 }
 

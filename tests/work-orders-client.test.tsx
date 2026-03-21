@@ -8,7 +8,9 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
+import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
 
 vi.mock("@/features/flooring/work-orders/components/work-order-record-panel", () => ({
   WorkOrderRecordPanel: ({
@@ -160,9 +162,10 @@ describe("WorkOrdersClient", () => {
   beforeEach(() => {
     resetSimpleTableClientMocks()
     vi.restoreAllMocks()
+    vi.stubGlobal("confirm", vi.fn(() => true))
   })
 
-  it("creates a blank work order from the form, opens the record panel, and shows the success inside the panel", async () => {
+  it("creates a blank work order from the form and routes to the canonical detail page", async () => {
     const user = userEvent.setup()
 
     requestJsonMock.mockResolvedValue({
@@ -195,12 +198,15 @@ describe("WorkOrdersClient", () => {
       }))
     })
 
-    expect(await screen.findByText("Panel wo-3")).toBeTruthy()
-    expect(screen.getByText("Work order created")).toBeTruthy()
-    expect(screen.queryByRole("heading", { name: "New Work Order" })).toBeNull()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/work-orders/wo-3?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+        { scroll: false },
+      )
+    })
   })
 
-  it("creates a work order from the table-level sync flow and opens the created row", async () => {
+  it("creates a work order from the table-level sync flow and routes to the created detail page", async () => {
     const user = userEvent.setup()
 
     requestJsonMock.mockResolvedValue({
@@ -248,8 +254,12 @@ describe("WorkOrdersClient", () => {
       status: "BUILDING_ORDER",
     }))
 
-    expect(await screen.findByText("WO-00002")).toBeTruthy()
-    expect(screen.getByText("Panel wo-2")).toBeTruthy()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/work-orders/wo-2?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+        { scroll: false },
+      )
+    })
   })
 
   it("requires property and template selection, filters templates by property and search, and surfaces create errors", async () => {
@@ -298,23 +308,18 @@ describe("WorkOrdersClient", () => {
     expect(screen.queryByText(/^Panel /)).toBeNull()
   })
 
-  it("removes Sync Template from the record-panel options menu", async () => {
-    const user = userEvent.setup()
-
+  it("removes Sync Template from the canonical detail options menu", () => {
     render(
-      <WorkOrdersClient
-        initialWorkOrders={[workOrderRow()]}
+      <WorkOrderDetailClient
+        workOrder={workOrderRow()}
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
-        templateOptions={[{ id: "tpl-1", propertyId: "prop-1", label: "Oak Apartments / Turn" }]}
         serviceOptions={[]}
         unitOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        backHref="/dashboard/flooring/work-orders"
       />,
     )
-
-    await user.click(screen.getByRole("button", { name: "Edit work order WO-00001" }))
 
     const optionsMenu = screen.getByTestId("record-options-menu")
 
@@ -323,9 +328,8 @@ describe("WorkOrdersClient", () => {
     expect(within(optionsMenu).getByRole("button", { name: "Invoice" })).toBeTruthy()
   })
 
-  it("shows completion success inside the record panel notice area", async () => {
+  it("shows completion success inside the canonical detail notice area", async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
 
     requestJsonMock.mockResolvedValue({
       workOrder: workOrderRow({
@@ -335,19 +339,17 @@ describe("WorkOrdersClient", () => {
     })
 
     render(
-      <WorkOrdersClient
-        initialWorkOrders={[workOrderRow()]}
+      <WorkOrderDetailClient
+        workOrder={workOrderRow()}
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
-        templateOptions={[]}
         serviceOptions={[]}
         unitOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        backHref="/dashboard/flooring/work-orders"
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit work order WO-00001" }))
     await user.click(screen.getByRole("button", { name: "Complete" }))
 
     await waitFor(() => {
