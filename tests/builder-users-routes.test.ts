@@ -9,7 +9,6 @@ const {
   userCountMock,
   userUpdateMock,
   userDeleteMock,
-  userUpdateManyMock,
 } = vi.hoisted(() => ({
   ensureBuilderPanelAccessMock: vi.fn(),
   getSessionUserMock: vi.fn(),
@@ -19,7 +18,6 @@ const {
   userCountMock: vi.fn(),
   userUpdateMock: vi.fn(),
   userDeleteMock: vi.fn(),
-  userUpdateManyMock: vi.fn(),
 }))
 
 vi.mock("@/server/auth/route-auth", () => ({
@@ -47,14 +45,12 @@ vi.mock("@/server/db/prisma", () => ({
       count: userCountMock,
       update: userUpdateMock,
       delete: userDeleteMock,
-      updateMany: userUpdateManyMock,
     },
   },
 }))
 
 const { GET: GET_USERS } = await import("@/app/api/builder/users/route")
 const { DELETE: DELETE_USER, PATCH: PATCH_USER } = await import("@/app/api/builder/users/[id]/route")
-const { POST: POST_BULK } = await import("@/app/api/builder/users/bulk/route")
 
 describe("builder user routes", () => {
   beforeEach(() => {
@@ -168,27 +164,5 @@ describe("builder user routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("At least one admin must remain")
     expect(userDeleteMock).not.toHaveBeenCalled()
-  })
-
-  it("bulk restrict only applies to non-admin users", async () => {
-    userUpdateManyMock.mockResolvedValue({ count: 4 })
-
-    const response = await POST_BULK(
-      new Request("http://localhost/api/builder/users/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "restrictAll" }),
-      }),
-    )
-    const payload = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(payload.updatedCount).toBe(4)
-    expect(userUpdateManyMock).toHaveBeenCalledWith({
-      where: {
-        role: "BUILDER",
-      },
-      data: { isVerified: false },
-    })
   })
 })

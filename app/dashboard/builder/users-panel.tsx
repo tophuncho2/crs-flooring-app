@@ -44,7 +44,6 @@ export default function BuilderUsersPanel() {
   const [error, setError] = useState("")
 
   const [savingUserIds, setSavingUserIds] = useState<Set<string>>(new Set())
-  const [isBulkUpdating, setIsBulkUpdating] = useState(false)
 
   const [viewerCanManageUsers, setViewerCanManageUsers] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
@@ -161,28 +160,6 @@ export default function BuilderUsersPanel() {
         nextSet.delete(userId)
         return nextSet
       })
-    }
-  }
-
-  async function runBulkAction(action: "restrictAll" | "verifyAll") {
-    if (!viewerCanManageUsers) return
-
-    setMessage("")
-    setError("")
-    setIsBulkUpdating(true)
-
-    try {
-      await requestJson<{ success: boolean }>("/api/builder/users/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      })
-      await loadUsers()
-      setMessage(action === "restrictAll" ? "All eligible users restricted" : "All users verified")
-    } catch (bulkError) {
-      setError(bulkError instanceof Error ? bulkError.message : "Failed bulk update")
-    } finally {
-      setIsBulkUpdating(false)
     }
   }
 
@@ -314,27 +291,6 @@ export default function BuilderUsersPanel() {
               </table>
             </div>
           ) : null}
-
-          <div className="border-t border-[var(--panel-border)] px-2 py-2">
-            <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                disabled={isBulkUpdating || !viewerCanManageUsers}
-                onClick={() => runBulkAction("restrictAll")}
-                className="rounded-lg border border-rose-500/40 px-3 py-2 text-xs text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
-              >
-                Restrict All Builders
-              </button>
-              <button
-                type="button"
-                disabled={isBulkUpdating || !viewerCanManageUsers}
-                onClick={() => runBulkAction("verifyAll")}
-                className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs text-emerald-700 transition hover:bg-emerald-500/10 disabled:opacity-60"
-              >
-                Verify All
-              </button>
-            </div>
-          </div>
         </section>
 
         <section className="border border-[var(--panel-border)] bg-[var(--panel-background)]">
