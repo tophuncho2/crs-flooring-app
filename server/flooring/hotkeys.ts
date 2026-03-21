@@ -107,9 +107,9 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00013",
-    key: "Builder Panel",
+    key: "Admin Panel",
     combination: "SHIFT + Q",
-    action: "Open Builder Panel",
+    action: "Open Admin Panel",
     code: "KeyQ",
     path: "/dashboard/builder",
   },

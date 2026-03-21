@@ -13,17 +13,25 @@ export function hasSystemAccess(role: Role): boolean {
 }
 
 export function canAccessBuilderPanel(_email: string, role: Role): boolean {
-  return isBuilder(role)
+  return isAdmin(role)
 }
 
 export function canBypassVerification(_email: string, role: Role): boolean {
-  return hasSystemAccess(role)
+  return isAdmin(role)
 }
 
 export function canRestrictUser(_email: string, role: Role): boolean {
-  return hasSystemAccess(role)
+  return isAdmin(role)
 }
 
 export function canEditRole(_email: string, role: Role): boolean {
-  return hasSystemAccess(role)
+  return isAdmin(role)
+}
+
+export function canManageUsers(_email: string, role: Role): boolean {
+  return isAdmin(role)
+}
+
+export function canManageHotkeys(_email: string, role: Role): boolean {
+  return isAdmin(role)
 }

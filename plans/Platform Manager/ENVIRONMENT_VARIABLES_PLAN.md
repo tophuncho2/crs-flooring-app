@@ -137,6 +137,12 @@ Validation should check:
 - integer/number values where needed
 - environment-specific requirements
 
+Implementation update on 2026-03-21:
+- `instrumentation.ts` now validates the active web-app runtime env on startup through `server/platform/env.ts`
+- `.env.example` now documents the current app/runtime variables
+- seeded system-user env vars are validated as paired values
+- `REDIS_URL` is optional for now and activates shared Redis-backed rate limiting when configured
+
 ---
 
 # 8. Definition Of Success

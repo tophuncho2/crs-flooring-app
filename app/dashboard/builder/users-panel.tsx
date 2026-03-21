@@ -12,6 +12,7 @@ type UserRow = {
   createdAt: string
   canRestrict: boolean
   canEditRole: boolean
+  canDelete: boolean
 }
 
 type ActivityRow = {
@@ -150,7 +151,7 @@ export default function BuilderUsersPanel() {
 
       setUsers((prev) => prev.filter((user) => user.id !== userId))
       setSelectedUser(null)
-      setMessage("User deleted. They can be added back by signing up again.")
+      setMessage("User deleted. They can be added back through an account request or admin-created account.")
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete user")
     } finally {
@@ -204,9 +205,9 @@ export default function BuilderUsersPanel() {
     <div className="min-h-screen bg-[var(--background)] px-1 pb-6 pt-20 text-[var(--foreground)] sm:px-2 lg:px-3">
       <div className="w-full space-y-4">
         <div className="space-y-1 px-1">
-          <DashboardCardTitle>Builder Control Panel</DashboardCardTitle>
+          <DashboardCardTitle>Admin Control Panel</DashboardCardTitle>
           <p className="text-sm text-[var(--foreground)]/70">
-            Manage users and recent account activity.
+            Govern users, approvals, and recent account activity.
           </p>
         </div>
 
@@ -271,7 +272,7 @@ export default function BuilderUsersPanel() {
                                 <option value="ADMIN">ADMIN</option>
                                 <option value="BUILDER">BUILDER</option>
                               </select>
-                              {!user.isVerified && (
+                              {user.role !== "ADMIN" && !user.isVerified && (
                                 <span className="text-xs text-amber-400">PENDING APPROVAL</span>
                               )}
                             </div>
@@ -292,7 +293,12 @@ export default function BuilderUsersPanel() {
                               <option value="restricted">Pending Approval</option>
                             </select>
                             {!user.canRestrict && (
-                              <div className="mt-1 text-xs text-[var(--foreground)]/70">Always verified</div>
+                              <div className="mt-1 text-xs text-[var(--foreground)]/70">
+                                {user.role === "ADMIN" ? "Admins stay verified" : "Managed elsewhere"}
+                              </div>
+                            )}
+                            {!user.canEditRole && user.role === "ADMIN" && (
+                              <div className="mt-1 text-xs text-[var(--foreground)]/70">Self and last-admin changes are blocked</div>
                             )}
                             {user.canRestrict && <div className="mt-1 text-xs text-[var(--foreground)]/70">{statusLabel}</div>}
                           </td>
@@ -316,7 +322,7 @@ export default function BuilderUsersPanel() {
                 onClick={() => runBulkAction("restrictAll")}
                 className="rounded-lg border border-rose-500/40 px-3 py-2 text-xs text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60"
               >
-                Restrict All (Except Master)
+                Restrict All Builders
               </button>
               <button
                 type="button"
@@ -417,7 +423,7 @@ export default function BuilderUsersPanel() {
               </p>
               <p>
                 <span className="text-[var(--foreground)]/70">Status:</span>{" "}
-                {selectedUser.isVerified ? "Verified" : "Pending Approval"}
+                {selectedUser.role === "ADMIN" || selectedUser.isVerified ? "Verified" : "Pending Approval"}
               </p>
               <p>
                 <span className="text-[var(--foreground)]/70">Created:</span>{" "}
@@ -429,11 +435,11 @@ export default function BuilderUsersPanel() {
               <div className="mt-4 flex items-center justify-end">
                 <button
                   type="button"
-                  disabled={savingUserIds.has(selectedUser.id)}
+                  disabled={!selectedUser.canDelete || savingUserIds.has(selectedUser.id)}
                   onClick={() => void deleteUser(selectedUser.id)}
                   className="rounded-md border border-rose-500/40 px-3 py-2 text-sm text-rose-600 hover:bg-rose-500/10 disabled:opacity-60"
                 >
-                  {savingUserIds.has(selectedUser.id) ? "Deleting..." : "Delete User"}
+                  {savingUserIds.has(selectedUser.id) ? "Deleting..." : selectedUser.canDelete ? "Delete User" : "Delete Blocked"}
                 </button>
               </div>
             )}

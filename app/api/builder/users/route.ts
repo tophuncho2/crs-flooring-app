@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
+import { canManageUsers } from "@/server/auth/access-control"
+import { getSessionUser } from "@/server/auth/session"
+import { countAdminUsers, normalizeManagedUserRow } from "@/server/auth/user-governance"
 import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 
 export async function GET() {
   const authError = await ensureBuilderPanelAccess()
   if (authError) return authError
+  const actor = await getSessionUser()
 
+  if (!actor) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const adminCount = await countAdminUsers()
   const users = await prisma.user.findMany({
+    where: {
+      role: {
+        in: ["ADMIN", "BUILDER"],
+      },
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -18,12 +32,7 @@ export async function GET() {
   })
 
   return NextResponse.json({
-    viewerCanManageUsers: true,
-    users: users.map((user) => ({
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      canRestrict: true,
-      canEditRole: true,
-    })),
+    viewerCanManageUsers: canManageUsers(actor.email, actor.role),
+    users: users.map((user) => normalizeManagedUserRow(user, actor, adminCount)),
   })
 }

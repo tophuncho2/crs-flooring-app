@@ -44,7 +44,7 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
       return
     }
 
-    setNotice(payload.message ?? "Account created. Pending builder approval.")
+    setNotice(payload.message ?? "Account request created. Pending admin approval.")
   }
 
   return (
@@ -56,7 +56,7 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
 
         {restricted && (
           <p className="mb-4 rounded-md border border-rose-400/40 bg-rose-500/20 px-3 py-2 text-sm text-rose-100">
-            Your account is restricted. Contact a builder to verify access.
+            Your account is restricted. Contact an admin to verify access.
           </p>
         )}
         {notice && (

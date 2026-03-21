@@ -166,6 +166,11 @@ Highest-priority observability improvements:
 5. worker/queue visibility once workers are live
 6. shortage and send-failure event tracking
 
+Implementation update on 2026-03-21:
+- request ids are now generated for protected dashboard requests and high-risk API routes
+- structured JSON logging now exists for login attempts, registration/bootstrap, user governance actions, hotkey writes, and product-photo uploads
+- the next observability step is extending the same shared logger into the flooring domain mutation routes and wiring searchable log shipping/alerts in Railway
+
 ---
 
 # 11. Definition Of Success

@@ -58,8 +58,8 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   const menuRef = useRef<HTMLDivElement>(null)
 
   const firstLetter = email.charAt(0).toUpperCase()
-  const isBuilder = role === "BUILDER"
-  const hasBuilderPanelAccess = isBuilder
+  const isAdmin = role === "ADMIN"
+  const hasBuilderPanelAccess = isAdmin
   const canUseTools = canUseToolsProp ?? (role === "BUILDER" || role === "ADMIN")
   const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
   const canOpenTool = useCallback((slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug), [canUseTools, unlockedToolSet])
@@ -256,7 +256,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
               >
-                Builder Panel
+                Admin Panel
               </button>
             )}
 
@@ -321,14 +321,14 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                     <th className="px-3 py-2">Combination</th>
                     <th className="px-3 py-2">Action</th>
                     {!isMobile && <th className="px-3 py-2">Visualization</th>}
-                    {isBuilder && <th className="px-3 py-2">Save</th>}
+                    {isAdmin && <th className="px-3 py-2">Save</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {hotkeysLoading ? (
                     <tr>
                       <td
-                        colSpan={isBuilder ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
+                        colSpan={isAdmin ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
                         className="px-3 py-8 text-center text-[var(--foreground)]/70"
                       >
                         Loading hotkeys...
@@ -337,7 +337,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                   ) : hotkeys.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isBuilder ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
+                        colSpan={isAdmin ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
                         className="px-3 py-8 text-center text-[var(--foreground)]/70"
                       >
                         No hotkeys configured.
@@ -351,7 +351,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                       return (
                         <tr key={hotkey.id} className="border-t border-[var(--panel-border)]">
                           <td className="px-3 py-2">
-                            {isBuilder ? (
+                            {isAdmin ? (
                               <input
                                 value={draft.key}
                                 onChange={(event) => updateDraft(hotkey.id, "key", event.target.value)}
@@ -362,7 +362,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            {isBuilder ? (
+                            {isAdmin ? (
                               <input
                                 value={draft.combination}
                                 onChange={(event) => updateDraft(hotkey.id, "combination", event.target.value)}
@@ -373,7 +373,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            {isBuilder ? (
+                            {isAdmin ? (
                               <input
                                 value={draft.action}
                                 onChange={(event) => updateDraft(hotkey.id, "action", event.target.value)}
@@ -388,7 +388,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                               <KeyVisualization combination={draft.combination || hotkey.combination} />
                             </td>
                           )}
-                          {isBuilder && (
+                          {isAdmin && (
                             <td className="px-3 py-2">
                               <button
                                 onClick={() => void saveHotkey(hotkey)}

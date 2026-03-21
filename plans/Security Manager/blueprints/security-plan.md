@@ -76,6 +76,12 @@ Build a security architecture for this project that is scalable, trustworthy, sa
 - upload handling is not yet hardened enough
 - auditability of privileged actions is limited
 
+Implementation update on 2026-03-21:
+- public registration now bootstraps only the first admin and otherwise creates unverified builder requests
+- admin users now own user governance and hotkey/platform writes
+- last-admin and self-lockout protections are enforced in governed user routes
+- rate limiting now covers login, registration, uploads, and admin-governed write paths
+
 ## Implementation Phases
 
 ### Phase 1: Containment

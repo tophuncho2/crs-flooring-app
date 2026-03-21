@@ -1,37 +1,36 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import { getStorageEnvironment } from "@/server/platform/env"
 
-const {
-  AWS_ACCESS_KEY_ID,
-  AWS_DEFAULT_REGION,
-  AWS_ENDPOINT_URL,
-  AWS_S3_BUCKET_NAME,
-  AWS_SECRET_ACCESS_KEY,
-} = process.env
+let cachedS3Client: S3Client | null = null
 
-export const s3Client = new S3Client({
-  region: AWS_DEFAULT_REGION,
-  endpoint: AWS_ENDPOINT_URL,
-  forcePathStyle: true,
-  credentials: AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY
-    ? {
-        accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      }
-    : undefined,
-})
-
-function getBucketName() {
-  if (!AWS_S3_BUCKET_NAME) {
-    throw new Error("AWS_S3_BUCKET_NAME is not configured")
+function getS3Client() {
+  if (cachedS3Client) {
+    return cachedS3Client
   }
 
-  return AWS_S3_BUCKET_NAME
+  const storage = getStorageEnvironment()
+
+  cachedS3Client = new S3Client({
+    region: storage.defaultRegion,
+    endpoint: storage.endpointUrl,
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: storage.accessKeyId,
+      secretAccessKey: storage.secretAccessKey,
+    },
+  })
+
+  return cachedS3Client
+}
+
+function getBucketName() {
+  return getStorageEnvironment().bucketName
 }
 
 export async function uploadFileToBucket(buffer: Buffer, fileName: string, contentType: string) {
   const key = `uploads/${fileName}`
 
-  await s3Client.send(
+  await getS3Client().send(
     new PutObjectCommand({
       Bucket: getBucketName(),
       Key: key,
@@ -44,15 +43,13 @@ export async function uploadFileToBucket(buffer: Buffer, fileName: string, conte
 }
 
 export function buildBucketFileUrl(fileName: string) {
-  if (!AWS_ENDPOINT_URL) {
-    throw new Error("AWS_ENDPOINT_URL is not configured")
-  }
+  const storage = getStorageEnvironment()
 
-  return `${AWS_ENDPOINT_URL}/${getBucketName()}/uploads/${fileName}`
+  return `${storage.endpointUrl}/${getBucketName()}/uploads/${fileName}`
 }
 
 export async function getFileFromBucket(fileName: string) {
-  const result = await s3Client.send(
+  const result = await getS3Client().send(
     new GetObjectCommand({
       Bucket: getBucketName(),
       Key: `uploads/${fileName}`,

@@ -1,6 +1,7 @@
 import type { Role } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
+import { canBypassVerification, hasSystemAccess } from "@/server/auth/access-control"
 import { authOptions } from "@/server/auth/auth-options"
 import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-subscriptions"
 
@@ -32,6 +33,14 @@ export async function requireSessionUser(): Promise<SessionUser> {
 
   if (!user) {
     redirect("/login")
+  }
+
+  if (!hasSystemAccess(user.role)) {
+    redirect("/login")
+  }
+
+  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+    redirect("/login?restricted=1")
   }
 
   return user

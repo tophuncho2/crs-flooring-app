@@ -3,6 +3,10 @@
 
 Date:
 - 2026-03-19
+- 2026-03-21 implementation update:
+  - public registration now bootstraps only the first admin and later self-signups become unverified builder requests
+  - user governance and hotkey/platform writes are now admin-owned instead of builder-owned
+  - startup env validation, request identifiers, structured auth/admin/upload logs, and high-risk route rate limiting are now implemented
 
 This is the root assessment of how close the flooring system is to a real 100%.
 It rolls up the manager folders rather than replacing them.
@@ -38,6 +42,12 @@ Ready for the next phase when:
 - protected writes have a clearer least-privilege boundary
 - auth-sensitive endpoints are rate limited
 - platform secrets are validated at startup
+
+Current status after the 2026-03-21 hardening pass:
+- privileged account creation is now controlled
+- high-risk auth and admin write paths now have rate limiting
+- startup env validation now exists for the active app runtime contract
+- the remaining Phase 1 work is broader capability mapping, more route-by-route authz tightening, and production-side Redis/worker env ownership discipline
 
 ---
 

@@ -1,0 +1,44 @@
+import { afterEach, describe, expect, it } from "vitest"
+import { resetRuntimeEnvironmentCacheForTests, validateRuntimeEnvironment } from "@/server/platform/env"
+
+const baseEnvironment = {
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/builders",
+  NEXTAUTH_SECRET: "super-secret-value-123",
+  NEXTAUTH_URL: "https://example.com",
+  AWS_ACCESS_KEY_ID: "key",
+  AWS_DEFAULT_REGION: "us-east-1",
+  AWS_ENDPOINT_URL: "https://bucket.example.com",
+  AWS_S3_BUCKET_NAME: "builders-bucket",
+  AWS_SECRET_ACCESS_KEY: "secret",
+}
+
+describe("validateRuntimeEnvironment", () => {
+  afterEach(() => {
+    resetRuntimeEnvironmentCacheForTests()
+  })
+
+  it("accepts the current required runtime variables", () => {
+    const parsed = validateRuntimeEnvironment(baseEnvironment)
+
+    expect(parsed.DATABASE_URL).toContain("postgresql://")
+    expect(parsed.NEXTAUTH_URL).toBe("https://example.com")
+  })
+
+  it("rejects partial seeded admin configuration", () => {
+    expect(() =>
+      validateRuntimeEnvironment({
+        ...baseEnvironment,
+        SEEDED_ADMIN_EMAIL: "admin@test.com",
+      }),
+    ).toThrow("SEEDED_ADMIN_EMAIL and SEEDED_ADMIN_PASSWORD must be provided together")
+  })
+
+  it("rejects invalid redis urls when provided", () => {
+    expect(() =>
+      validateRuntimeEnvironment({
+        ...baseEnvironment,
+        REDIS_URL: "not-a-url",
+      }),
+    ).toThrow("REDIS_URL must be a valid URL")
+  })
+})
