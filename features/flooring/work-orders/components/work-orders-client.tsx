@@ -6,13 +6,13 @@ import { WorkOrderRecordPanel } from "./work-order-record-panel"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, usePrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS, useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { RecordLineSummary } from "../../shared/record-line-summary"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
@@ -177,10 +177,14 @@ export default function WorkOrdersClient({
     materialItems: [],
     serviceItems: [],
   })
+  const [activeWorkOrderDirty, setActiveWorkOrderDirty] = useState(false)
   const [workOrderRefreshNonce, setWorkOrderRefreshNonce] = useState(0)
   const tableNotices = useRecordNotices()
   const panelNotices = useRecordNotices()
-  const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = usePrimaryRecordPanel("workOrder")
+  const { activeRecordId: activeWorkOrderId, openRecord: openWorkOrderPanel, closeRecord: closeWorkOrderPanel } = useGuardedPrimaryRecordPanel("workOrder", {
+    isDirty: activeWorkOrderDirty,
+    message: "You have unsaved work order changes. Leave this work order without saving?",
+  })
 
   const propertyLookup = useMemo(() => new Map(propertyOptions.map((property) => [property.id, property])), [propertyOptions])
   const warehouseLookup = useMemo(() => new Map(warehouseOptions.map((warehouse) => [warehouse.id, warehouse.name])), [warehouseOptions])
@@ -226,8 +230,6 @@ export default function WorkOrdersClient({
     tableKey: "work-orders-main",
     fields: [
       { key: "wo", label: "WO", getValue: (row) => row.workOrderNumber, groupable: false },
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
       { key: "status", label: "Status", getValue: (row) => workOrderStatusText(row), groupable: true },
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName, groupable: true },
       { key: "property", label: "Property", getValue: (row) => row.propertyName, groupable: true },
@@ -295,13 +297,18 @@ export default function WorkOrdersClient({
   async function openWorkOrder(row: WorkOrderRow) {
     tableNotices.clearNotices()
     panelNotices.clearNotices()
-    openWorkOrderPanel(row.id)
+    await openWorkOrderPanel(row.id)
   }
 
   function closeWorkOrder() {
+    const didClose = closeWorkOrderPanel()
+    if (!didClose) {
+      return
+    }
+
+    setActiveWorkOrderDirty(false)
     setActiveWorkOrderSummary({ materialItems: [], serviceItems: [] })
     panelNotices.clearNotices()
-    closeWorkOrderPanel()
   }
 
   async function markWorkOrderComplete() {
@@ -359,6 +366,7 @@ export default function WorkOrdersClient({
       })
       setIsCreateModalOpen(false)
       setNewDraft(defaultDraft)
+      setActiveWorkOrderDirty(false)
       openWorkOrderPanel(createdWorkOrder.id)
       panelNotices.showSuccess("Work order created")
     } catch (createError) {
@@ -400,6 +408,7 @@ export default function WorkOrdersClient({
       setWorkOrders((prev) => [createdWorkOrder, ...prev])
       setIsSyncCreateModalOpen(false)
       resetTemplateCreateFlow()
+      setActiveWorkOrderDirty(false)
       openWorkOrderPanel(createdWorkOrder.id)
       panelNotices.showSuccess("Work order created from template")
     } catch (createError) {
@@ -420,6 +429,7 @@ export default function WorkOrdersClient({
 
       setWorkOrders((prev) => prev.filter((row) => row.id !== id))
       if (activeWorkOrderId === id) {
+        setActiveWorkOrderDirty(false)
         closeWorkOrderPanel()
       }
       tableNotices.showSuccess("Work order deleted")
@@ -434,16 +444,6 @@ export default function WorkOrdersClient({
     const line = formatRow(row)
     const cells: Record<string, ReactNode> = {
       wo: <td key="wo" className="px-3 py-2 font-medium text-blue-500">{line.displayOrder}</td>,
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1" />
-        </td>
-      ),
-      open: (
-        <td key="open" className="px-3 py-2">
-          <OpenRowButton onClick={() => void openWorkOrder(row)} className="px-2 py-1">Open</OpenRowButton>
-        </td>
-      ),
       status: (
         <td key="status" className="px-3 py-2">
           {row.isComplete ? (
@@ -476,9 +476,9 @@ export default function WorkOrdersClient({
     }
 
     return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+      <ClickableTableRow key={row.id} ariaLabel={`Edit work order ${row.workOrderNumber}`} onClick={() => void openWorkOrder(row)}>
         {visibleWorkOrderColumns.map((column) => cells[column.key])}
-      </tr>
+      </ClickableTableRow>
     )
   }
 
@@ -784,8 +784,10 @@ export default function WorkOrdersClient({
             onClose={closeWorkOrder}
             refreshNonce={workOrderRefreshNonce}
             onSummaryChange={setActiveWorkOrderSummary}
+            onDirtyChange={setActiveWorkOrderDirty}
             notices={panelNotices}
             onWorkOrderSaved={(savedWorkOrder) => {
+              setActiveWorkOrderDirty(false)
               setWorkOrders((prev) =>
                 prev.map((row) =>
                   row.id === savedWorkOrder.id
@@ -797,6 +799,7 @@ export default function WorkOrdersClient({
               )
             }}
             onWorkOrderDeleted={(deletedId) => {
+              setActiveWorkOrderDirty(false)
               setWorkOrders((prev) => prev.filter((row) => row.id !== deletedId))
             }}
           />

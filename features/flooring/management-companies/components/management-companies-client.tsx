@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import { Plus } from "lucide-react"
 import { ManagementCompanyRecordPanel } from "./management-company-record-panel"
 import { PropertyRecordPanel } from "../../properties/components/property-record-panel"
@@ -8,13 +8,16 @@ import { TemplateRecordModal } from "../../templates/components/template-record-
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { RecordPanelStack } from "../../shared/record-panel-stack"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { useGuardedUrlRecordEditor } from "../../shared/use-guarded-url-record-editor"
+import { useUrlRecordPanel } from "../../shared/use-url-record-panel"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
@@ -186,9 +189,6 @@ export default function ManagementCompaniesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [selectedCompany, setSelectedCompany] = useState<ManagementCompanyRow | null>(null)
-  const [selectedCompanyMode, setSelectedCompanyMode] = useState<"view" | "edit">("view")
-  const [selectedCompanyDraft, setSelectedCompanyDraft] = useState<DraftCompany>(defaultDraft)
   const [isSavingSelectedCompany, setIsSavingSelectedCompany] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
   const [isPropertyCreateOpen, setIsPropertyCreateOpen] = useState(false)
@@ -200,6 +200,24 @@ export default function ManagementCompaniesClient({
   const [newTemplateDraft, setNewTemplateDraft] = useState<DraftTemplate>(defaultTemplateDraft)
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
+  const {
+    activeRecord: selectedCompany,
+    draft: selectedCompanyDraft,
+    setDraft: setSelectedCompanyDraft,
+    openRecord: openCompanyRecord,
+    closeRecord: closeCompanyRecord,
+  } = useGuardedUrlRecordEditor({
+    rows: companies,
+    paramKey: "company",
+    createDraft: createCompanyDraft,
+    message: "You have unsaved management company changes. Leave this company without saving?",
+  })
+  const { activeRecordId: activePropertyId, openRecord: openPropertyPanel, closeRecord: closePropertyPanel } = useUrlRecordPanel("property")
+  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
+    isDirty: activeTemplateDirty,
+    message: "You have unsaved template changes. Leave this template without saving?",
+  })
   const {
     searchQuery,
     setSearchQuery,
@@ -225,8 +243,6 @@ export default function ManagementCompaniesClient({
     rows: companies,
     tableKey: "management-companies-main",
     fields: [
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
       { key: "company", label: "Company", getValue: (row) => row.name },
       { key: "street", label: "Street", getValue: (row) => row.streetAddress },
       { key: "city", label: "City", getValue: (row) => row.city },
@@ -266,7 +282,7 @@ export default function ManagementCompaniesClient({
 
   function setSelectedCompanyDraftField(field: keyof DraftCompany, value: string) {
     const normalizedValue = field === "state" ? normalizeAddressState(value) : value
-    setSelectedCompanyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+    setSelectedCompanyDraft((prev) => (prev ? { ...prev, [field]: normalizedValue } : prev))
   }
 
   function createCompanyDraft(company: ManagementCompanyRow): DraftCompany {
@@ -290,78 +306,157 @@ export default function ManagementCompaniesClient({
     setNewTemplateDraft((prev) => ({ ...prev, [field]: value }))
   }
 
-  function openCompany(company: ManagementCompanyRow, mode: "view" | "edit") {
+  function openCompany(company: ManagementCompanyRow) {
     setError("")
     setMessage("")
     setIsPropertyCreateOpen(false)
     setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: company.id })
-    setSelectedCompany(company)
-    setSelectedCompanyMode(mode)
-    setSelectedCompanyDraft(createCompanyDraft(company))
+    if (activeTemplateId) {
+      const closedTemplate = closeTemplate()
+      if (!closedTemplate) {
+        return
+      }
+    }
+    if (activePropertyId) {
+      closePropertyPanel()
+    }
+    openCompanyRecord(company)
   }
 
   function closeCompanyPanel() {
-    closeTemplate()
+    if (activeTemplateId && !closeTemplate()) {
+      return
+    }
+    if (activePropertyId) {
+      closePropertyPanel()
+    }
     setSelectedProperty(null)
-    setSelectedCompany(null)
-    setSelectedCompanyMode("view")
-    setSelectedCompanyDraft(defaultDraft)
+    closeCompanyRecord()
   }
 
-  async function openProperty(propertyId: string) {
-    setError("")
-    setMessage("")
-    setLoadingPropertyId(propertyId)
-
-    try {
-      const response = await fetch(`/api/flooring/properties/${propertyId}`)
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; property?: PropertyRow }
-      if (!response.ok || !payload.property) {
-        throw new Error(payload.error ?? "Failed to load property")
-      }
-
-      setSelectedProperty({
-        ...payload.property,
-        streetAddress: payload.property.streetAddress ?? "",
-        city: payload.property.city ?? "",
-        state: payload.property.state ?? "",
-        zip: payload.property.zip ?? "",
-        phone: payload.property.phone ?? "",
-        email: payload.property.email ?? "",
-        templates: payload.property.templates ?? [],
-      })
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load property")
-    } finally {
+  useEffect(() => {
+    if (!activePropertyId) {
+      setSelectedProperty(null)
       setLoadingPropertyId(null)
+      return
     }
-  }
 
-  async function openTemplate(templateId: string) {
+    let isCancelled = false
+
+    async function loadProperty() {
+      setError("")
+      setMessage("")
+      setLoadingPropertyId(activePropertyId)
+
+      try {
+        const response = await fetch(`/api/flooring/properties/${activePropertyId}`)
+        const payload = (await response.json().catch(() => ({}))) as { error?: string; property?: PropertyRow }
+        if (!response.ok || !payload.property) {
+          throw new Error(payload.error ?? "Failed to load property")
+        }
+
+        if (!isCancelled) {
+          setSelectedProperty({
+            ...payload.property,
+            streetAddress: payload.property.streetAddress ?? "",
+            city: payload.property.city ?? "",
+            state: payload.property.state ?? "",
+            zip: payload.property.zip ?? "",
+            phone: payload.property.phone ?? "",
+            email: payload.property.email ?? "",
+            templates: payload.property.templates ?? [],
+          })
+        }
+      } catch (loadError) {
+        if (!isCancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load property")
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingPropertyId(null)
+        }
+      }
+    }
+
+    void loadProperty()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [activePropertyId])
+
+  function openProperty(propertyId: string) {
     setError("")
     setMessage("")
-    setLoadingTemplate(true)
-
-    try {
-      const response = await fetch(`/api/flooring/templates/${templateId}`)
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
-      if (!response.ok || !payload.template) {
-        throw new Error(payload.error ?? "Failed to load template")
+    if (activeTemplateId) {
+      const closedTemplate = closeTemplate()
+      if (!closedTemplate) {
+        return
       }
-
-      setActiveTemplate(payload.template)
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load template")
-      setActiveTemplate(null)
-    } finally {
-      setLoadingTemplate(false)
     }
+    openPropertyPanel(propertyId)
+  }
+
+  useEffect(() => {
+    if (!activeTemplateId) {
+      setActiveTemplate(null)
+      setLoadingTemplate(false)
+      return
+    }
+
+    let isCancelled = false
+
+    async function loadTemplate() {
+      setError("")
+      setMessage("")
+      setLoadingTemplate(true)
+
+      try {
+        const response = await fetch(`/api/flooring/templates/${activeTemplateId}`)
+        const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
+        if (!response.ok || !payload.template) {
+          throw new Error(payload.error ?? "Failed to load template")
+        }
+
+        if (!isCancelled) {
+          setActiveTemplate(payload.template)
+        }
+      } catch (loadError) {
+        if (!isCancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load template")
+          setActiveTemplate(null)
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingTemplate(false)
+        }
+      }
+    }
+
+    void loadTemplate()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [activeTemplateId])
+
+  function openTemplate(templateId: string) {
+    setError("")
+    setMessage("")
+    setActiveTemplateDirty(false)
+    openTemplatePanel(templateId)
   }
 
   function closeTemplate() {
+    const didClose = closeTemplatePanel()
+    if (!didClose) {
+      return false
+    }
+    setActiveTemplateDirty(false)
     setActiveTemplate(null)
     setIsTemplateCreateOpen(false)
     setNewTemplateDraft(defaultTemplateDraft)
+    return true
   }
 
   function updateSelectedPropertyTemplateSummary(templateId: string, itemsCount: number, templateRow?: TemplateRow) {
@@ -446,14 +541,6 @@ export default function ManagementCompaniesClient({
             : company,
         ),
       )
-      setSelectedCompany((prev) =>
-        prev
-          ? {
-              ...prev,
-              properties: [{ id: createdProperty.id, name: createdProperty.name, fullAddress: createdProperty.fullAddress }, ...prev.properties],
-            }
-          : prev,
-      )
       setSelectedProperty(createdProperty)
       setPropertyDraft({ ...defaultPropertyDraft, managementCompanyId: selectedCompany.id })
       setIsPropertyCreateOpen(false)
@@ -509,7 +596,8 @@ export default function ManagementCompaniesClient({
       )
       setNewTemplateDraft({ ...defaultTemplateDraft, propertyId: selectedProperty.id })
       setIsTemplateCreateOpen(false)
-      setActiveTemplate(createdTemplate)
+      setActiveTemplateDirty(false)
+      openTemplatePanel(createdTemplate.id)
       setMessage("Template created")
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Failed to create template")
@@ -609,7 +697,7 @@ export default function ManagementCompaniesClient({
   }
 
   async function saveSelectedCompany() {
-    if (!selectedCompany) return
+    if (!selectedCompany || !selectedCompanyDraft) return
     setError("")
     setMessage("")
     setIsSavingSelectedCompany(true)
@@ -675,9 +763,7 @@ export default function ManagementCompaniesClient({
       }
 
       setCompanies((prev) => prev.map((company) => (company.id === updatedCompany.id ? updatedCompany : company)))
-      setSelectedCompany(updatedCompany)
       setSelectedCompanyDraft(createCompanyDraft(updatedCompany))
-      setSelectedCompanyMode("edit")
       setSelectedProperty((prev) =>
         prev && prev.managementCompany?.id === updatedCompany.id
           ? {
@@ -748,16 +834,6 @@ export default function ManagementCompaniesClient({
               {sortedCompanies.map((row) => {
                 const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
                 const cells: Record<string, ReactNode> = {
-                  edit: (
-                    <td key="edit" className="px-2 py-2">
-                      <EditRowButton onClick={() => openCompany(row, "edit")} className="px-2 py-1" />
-                    </td>
-                  ),
-                  open: (
-                    <td key="open" className="px-2 py-2">
-                      <OpenRowButton onClick={() => openCompany(row, "view")} className="px-2 py-1">Open</OpenRowButton>
-                    </td>
-                  ),
                   company: <td key="company" className="px-3 py-2">{row.name}</td>,
                   street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
                   city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
@@ -781,9 +857,9 @@ export default function ManagementCompaniesClient({
                 }
 
                 return (
-                  <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+                  <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => openCompany(row)}>
                     {visibleCompanyColumns.map((column) => cells[column.key])}
-                  </tr>
+                  </ClickableTableRow>
                 )
               })}
 
@@ -861,8 +937,8 @@ export default function ManagementCompaniesClient({
                   content: (
                     <ManagementCompanyRecordPanel
                       company={selectedCompany}
-                      mode={selectedCompanyMode}
-                      draft={selectedCompanyDraft}
+                      mode="edit"
+                      draft={selectedCompanyDraft ?? undefined}
                       message={message}
                       error={error}
                       isPropertyCreateOpen={isPropertyCreateOpen}
@@ -895,8 +971,10 @@ export default function ManagementCompaniesClient({
                   key: `property-${selectedProperty.id}`,
                   title: selectedProperty.name,
                   onClose: () => {
-                    closeTemplate()
-                    setSelectedProperty(null)
+                    if (activeTemplateId && !closeTemplate()) {
+                      return
+                    }
+                    closePropertyPanel()
                   },
                   content: (
                     <PropertyRecordPanel
@@ -935,7 +1013,9 @@ export default function ManagementCompaniesClient({
           serviceOptions={serviceOptions}
           unitOptions={unitOptions}
           onClose={closeTemplate}
+          onDirtyChange={setActiveTemplateDirty}
           onTemplateSaved={(template, previousPropertyId, itemsCount) => {
+            setActiveTemplateDirty(false)
             setActiveTemplate(template)
             if (!selectedProperty) {
               return
@@ -958,6 +1038,7 @@ export default function ManagementCompaniesClient({
             }
           }}
           onTemplateDeleted={(templateId) => {
+            setActiveTemplateDirty(false)
             if (selectedProperty) {
               setSelectedProperty((prev) =>
                 prev

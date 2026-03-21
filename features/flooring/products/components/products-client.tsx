@@ -10,11 +10,11 @@ import { CollapsibleTableSection } from "../../shared/collapsible-table-section"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "../../shared/dashboard-card-title"
 import { FormStatusNotices } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
-import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { formatStableDateTime } from "../../shared/date-format"
 import { requestJson } from "../../shared/http"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
@@ -280,7 +280,6 @@ export default function FlooringProductsClient({
     rows: products,
     tableKey: "products-main",
     fields: [
-      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
       { key: "product", label: "Product", getValue: (row) => row.name || "Pending name", groupable: false },
       { key: "category", label: "Category", getValue: (row) => row.category.name, groupable: true },
       { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName, groupable: true },
@@ -329,11 +328,6 @@ export default function FlooringProductsClient({
 
   function renderProductRow(product: ProductRow) {
     const cells: Record<string, ReactNode> = {
-      open: (
-        <td key="open" className="px-3 py-2">
-          <OpenRowButton onClick={() => void openProductInventory(product)}>Open</OpenRowButton>
-        </td>
-      ),
       product: <td key="product" className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>,
       category: <td key="category" className="px-3 py-2">{product.category.name}</td>,
       manufacturer: <td key="manufacturer" className="px-3 py-2">{product.manufacturerName || "-"}</td>,
@@ -353,7 +347,13 @@ export default function FlooringProductsClient({
       actions: (
         <td key="actions" className="px-3 py-2">
           <div className="flex gap-2">
-            <EditRowButton onClick={() => openEditProduct(product)} />
+            <button
+              type="button"
+              onClick={() => void openProductInventory(product)}
+              className="rounded border border-[var(--panel-border)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]/80 hover:bg-[var(--panel-hover)]"
+            >
+              Inventory
+            </button>
             <DeleteRowButton onClick={() => void deleteProduct(product)} />
           </div>
         </td>
@@ -361,9 +361,9 @@ export default function FlooringProductsClient({
     }
 
     return (
-      <tr key={product.id} className="border-t border-[var(--panel-border)]">
+      <ClickableTableRow key={product.id} ariaLabel={`Edit product ${product.name || product.style || product.id}`} onClick={() => openEditProduct(product)}>
         {visibleProductColumns.map((column) => cells[column.key])}
-      </tr>
+      </ClickableTableRow>
     )
   }
 

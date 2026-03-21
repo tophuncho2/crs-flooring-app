@@ -31,7 +31,7 @@ vi.mock("@/features/flooring/shared/primary-record-panel", async () => {
 
   return {
     PRIMARY_RECORD_PANEL_WIDTH_CLASS: "max-w-7xl",
-    usePrimaryRecordPanel: () => {
+    useGuardedPrimaryRecordPanel: () => {
       const [activeRecordId, setActiveRecordId] = ReactModule.useState<string | null>(null)
 
       return {
@@ -314,7 +314,7 @@ describe("WorkOrdersClient", () => {
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
+    await user.click(screen.getByRole("button", { name: "Edit work order WO-00001" }))
 
     const optionsMenu = screen.getByTestId("record-options-menu")
 
@@ -347,7 +347,7 @@ describe("WorkOrdersClient", () => {
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
+    await user.click(screen.getByRole("button", { name: "Edit work order WO-00001" }))
     await user.click(screen.getByRole("button", { name: "Complete" }))
 
     await waitFor(() => {

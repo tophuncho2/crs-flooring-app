@@ -9,7 +9,7 @@ import {
 import { CollapsibleTableSection, InlineAddRowButton } from "../../shared/collapsible-table-section"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
 import { RecordOptionsMenu } from "../../shared/record-options-menu"
-import { DeleteRowButton, EditRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { getSharedFormFieldClass } from "../../shared/form-field-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
@@ -19,7 +19,7 @@ import { StatusPill } from "../../shared/status-pill"
 import { IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS } from "../../shared/table-size-classes"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, ModalTableHead, ModalTableShell, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { useTableColumns } from "../../shared/use-table-columns"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree, useTableControls } from "../../shared/use-table-controls"
@@ -293,7 +293,6 @@ export default function ImportsClient({
   })
   const importColumns = useMemo(
     () => [
-      { key: "edit", label: "Edit", groupable: false },
       { key: "importNumber", label: "Import #", groupable: false },
       { key: "tag", label: "Tag", groupable: false },
       { key: "transport", label: "Transport", groupable: true },
@@ -543,11 +542,6 @@ export default function ImportsClient({
 
   function renderImportRow(row: ImportRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => openImport(row.id)} />
-        </td>
-      ),
       importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>,
       tag: <td key="tag" className="px-3 py-2">{row.tag || "-"}</td>,
       transport: (
@@ -573,9 +567,9 @@ export default function ImportsClient({
     }
 
     return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)]">
+      <ClickableTableRow key={row.id} ariaLabel={`Edit import ${String(row.importNumber).padStart(4, "0")}`} onClick={() => openImport(row.id)}>
         {visibleImportColumns.map((column) => cells[column.key])}
-      </tr>
+      </ClickableTableRow>
     )
   }
 

@@ -69,6 +69,7 @@ export function TemplateRecordPanel({
   onTemplateSaved,
   onTemplateDeleted,
   onSummaryChange,
+  onDirtyChange,
 }: {
   templateId: string
   initialTemplate: TemplatePanelRow
@@ -82,6 +83,7 @@ export function TemplateRecordPanel({
   onTemplateSaved?: (template: TemplatePanelRow, previousPropertyId: string, itemsCount: number) => void
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
+  onDirtyChange?: (value: boolean) => void
 }) {
   const initialTemplateDetail = useMemo<TemplateDetail>(
     () => ({
@@ -105,6 +107,7 @@ export function TemplateRecordPanel({
     setError,
     syncRecord,
     clearRecordCache,
+    isDirty,
   } = useRecordDetailController<TemplateDetail, TemplatePanelDraft>({
     scope: "template",
     id: templateId,
@@ -164,6 +167,10 @@ export function TemplateRecordPanel({
   useEffect(() => {
     onSummaryChangeRef.current?.({ materialItems, serviceItems })
   }, [materialItems, serviceItems])
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+  }, [isDirty, onDirtyChange])
 
   useEffect(() => {
     if (!template) {

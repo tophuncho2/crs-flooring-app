@@ -25,6 +25,23 @@ vi.mock("@/features/flooring/templates/components/template-record-panel", () => 
   TemplateRecordPanel: ({ templateId }: { templateId: string }) => <div>{`Template Screen ${templateId}`}</div>,
 }))
 
+vi.mock("@/features/flooring/shared/primary-record-panel", async () => {
+  const ReactModule = await import("react")
+
+  return {
+    PRIMARY_RECORD_PANEL_WIDTH_CLASS: "max-w-7xl",
+    useGuardedPrimaryRecordPanel: () => {
+      const [activeRecordId, setActiveRecordId] = ReactModule.useState<string | null>(null)
+
+      return {
+        activeRecordId,
+        openRecord: (recordId: string) => setActiveRecordId(recordId),
+        closeRecord: () => true,
+      }
+    },
+  }
+})
+
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({
     setSearchQuery,
@@ -129,7 +146,7 @@ describe("PropertiesClient", () => {
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Open" }))
+    await user.click(screen.getByRole("button", { name: "Edit property Oak Apartments" }))
     await user.click(screen.getByRole("button", { name: "Open Nested Template" }))
 
     expect(await screen.findByText("Template TP-00001")).toBeTruthy()

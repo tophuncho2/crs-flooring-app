@@ -75,19 +75,29 @@ export function useUrlRecordEditorStub<Row extends { id: string }>({
     activeRecord,
     draft,
     setDraft: setDraftState,
+    confirmNavigation: (onProceed?: () => void) => {
+      onProceed?.()
+      return true
+    },
     openRecord: (row: Row) => {
       setActiveId(row.id)
       setDraftState(createDraft(row))
+      return true
     },
     closeRecord: () => {
       setActiveId(null)
       setDraftState(null)
+      return true
     },
   }
 }
 
 export const useUrlRecordEditorModule = {
   useUrlRecordEditor: useUrlRecordEditorStub,
+}
+
+export const useGuardedUrlRecordEditorModule = {
+  useGuardedUrlRecordEditor: useUrlRecordEditorStub,
 }
 
 export const tableControlsBarModule = {
@@ -99,6 +109,21 @@ export const tableColumnSettingsModule = {
 }
 
 export const tableShellModule = {
+  ClickableTableRow: ({
+    children,
+    onClick,
+    ariaLabel,
+    className,
+  }: {
+    children: React.ReactNode
+    onClick: () => void
+    ariaLabel: string
+    className?: string
+  }) => (
+    <tr role="button" tabIndex={0} aria-label={ariaLabel} onClick={onClick} className={className}>
+      {children}
+    </tr>
+  ),
   ModalTableHead: ({ children }: { children: React.ReactNode }) => <thead>{children}</thead>,
   ModalTableShell: ({ children }: { children: React.ReactNode }) => <table>{children}</table>,
   TableActionsSummary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -157,6 +182,7 @@ vi.mock("lucide-react", () => lucideReactModule)
 vi.mock("@/features/flooring/shared/http", () => httpModule)
 vi.mock("@/features/flooring/shared/use-configured-table-state", () => useConfiguredTableStateModule)
 vi.mock("@/features/flooring/shared/use-url-record-editor", () => useUrlRecordEditorModule)
+vi.mock("@/features/flooring/shared/use-guarded-url-record-editor", () => useGuardedUrlRecordEditorModule)
 vi.mock("@/features/flooring/shared/table-controls-bar", () => tableControlsBarModule)
 vi.mock("@/features/flooring/shared/table-column-settings", () => tableColumnSettingsModule)
 vi.mock("@/features/flooring/shared/table-shell", () => tableShellModule)

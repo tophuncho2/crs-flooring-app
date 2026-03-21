@@ -39,7 +39,7 @@ vi.mock("@/features/flooring/shared/primary-record-panel", async () => {
 
   return {
     PRIMARY_RECORD_PANEL_WIDTH_CLASS: "max-w-7xl",
-    usePrimaryRecordPanel: () => {
+    useGuardedPrimaryRecordPanel: () => {
       const [activeRecordId, setActiveRecordId] = ReactModule.useState<string | null>(null)
 
       return {
@@ -169,7 +169,7 @@ describe("TemplatesClient", () => {
     expect((await screen.findAllByText("Property is required")).length).toBeGreaterThan(0)
   })
 
-  it("edit row opens the template record panel", async () => {
+  it("clicking the template row opens the template record panel", async () => {
     const user = userEvent.setup()
 
     render(
@@ -185,28 +185,7 @@ describe("TemplatesClient", () => {
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
-    expect(await screen.findByText("Panel tpl-1")).toBeTruthy()
-    expect(screen.getByText("Template TP-00001")).toBeTruthy()
-  })
-
-  it("open row opens the template record panel", async () => {
-    const user = userEvent.setup()
-
-    render(
-      <TemplatesClient
-        initialTemplates={[templateRow()]}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-        warehouseOptions={[]}
-        padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        unitOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Open" }))
+    await user.click(screen.getByRole("button", { name: "Edit template TP-00001" }))
     expect(await screen.findByText("Panel tpl-1")).toBeTruthy()
     expect(screen.getByText("Template TP-00001")).toBeTruthy()
   })

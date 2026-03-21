@@ -1,7 +1,6 @@
 "use client"
 
-import { OpenRowButton } from "@/features/flooring/shared/row-action-buttons"
-import { TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/table-shell"
+import { ClickableTableRow, TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/table-shell"
 import type { WarehouseDraft, WarehouseRow } from "../types"
 
 export function WarehouseTable({
@@ -21,7 +20,6 @@ export function WarehouseTable({
     <TableShell minWidthClass="min-w-full">
       <TableHead>
         <tr>
-          <TableHeaderCell>Open</TableHeaderCell>
           <TableHeaderCell>Warehouse</TableHeaderCell>
           <TableHeaderCell>Address</TableHeaderCell>
           <TableHeaderCell>Store Phone</TableHeaderCell>
@@ -35,13 +33,12 @@ export function WarehouseTable({
           const draft = getDraft(row)
 
           return (
-            <tr key={row.id} className="border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]">
-              <td className="px-3 py-2">
-                <OpenRowButton onClick={() => onOpen(row)}>Open</OpenRowButton>
-              </td>
+            <ClickableTableRow key={row.id} ariaLabel={`Open warehouse ${row.name}`} onClick={() => onOpen(row)} className="transition">
               <td className="px-3 py-2">
                 <input
                   value={draft.name}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
                   onChange={(event) => onDraftChange(row.id, "name", event.target.value)}
                   onBlur={() => void onDraftBlur(row)}
                   className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
@@ -50,6 +47,8 @@ export function WarehouseTable({
               <td className="px-3 py-2">
                 <input
                   value={draft.address}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
                   onChange={(event) => onDraftChange(row.id, "address", event.target.value)}
                   onBlur={() => void onDraftBlur(row)}
                   className="w-[34rem] rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
@@ -58,6 +57,8 @@ export function WarehouseTable({
               <td className="px-3 py-2">
                 <input
                   value={draft.phone}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
                   onChange={(event) => onDraftChange(row.id, "phone", event.target.value)}
                   onBlur={() => void onDraftBlur(row)}
                   className="w-40 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
@@ -66,7 +67,7 @@ export function WarehouseTable({
               <td className="px-3 py-2">{row.sectionsCount}</td>
               <td className="px-3 py-2">{row.locationsCount}</td>
               <td className="px-3 py-2">{row.workOrdersCount}</td>
-            </tr>
+            </ClickableTableRow>
           )
         })}
       </tbody>

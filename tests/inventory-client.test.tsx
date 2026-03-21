@@ -133,7 +133,7 @@ describe("InventoryClient", () => {
     vi.stubGlobal("confirm", vi.fn(() => true))
   })
 
-  it("renders shared row actions and colored import pills in the table", () => {
+  it("renders clickable rows and colored import pills in the table", () => {
     render(
       <InventoryClient
         initialInventory={[inventoryRow()]}
@@ -142,13 +142,12 @@ describe("InventoryClient", () => {
       />,
     )
 
-    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(1)
-    expect(screen.getAllByRole("button", { name: "Open" })).toHaveLength(1)
+    expect(screen.getByRole("button", { name: "Edit inventory item 1001" })).toBeTruthy()
     expect(screen.getByText("Purchase Order").className).toContain("bg-violet-200")
     expect(screen.getByText("Pending").className).toContain("bg-sky-200")
   })
 
-  it("opens the read-only panel from the open button and removes the legacy cut-log table link", async () => {
+  it("opens the editor from the row click and removes the legacy cut-log table link", async () => {
     const user = userEvent.setup()
 
     render(
@@ -159,7 +158,7 @@ describe("InventoryClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0]!)
+    await user.click(screen.getByRole("button", { name: "Edit inventory item 1001" }))
 
     expect(screen.getByRole("heading", { name: "Inventory 1001" })).toBeTruthy()
     expect(screen.getByText("Cut Logs")).toBeTruthy()
@@ -178,7 +177,7 @@ describe("InventoryClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Edit" })[0]!)
+    await user.click(screen.getByRole("button", { name: "Edit inventory item 1001" }))
 
     expect(screen.queryByText("No cut logs yet for this inventory row.")).toBeNull()
     expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
@@ -207,7 +206,7 @@ describe("InventoryClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Edit" })[0]!)
+    await user.click(screen.getByRole("button", { name: "Edit inventory item 1001" }))
 
     expect(screen.getByRole("button", { name: "Save Inventory" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Delete Inventory" })).toBeTruthy()

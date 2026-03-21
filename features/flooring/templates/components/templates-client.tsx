@@ -6,14 +6,14 @@ import { TemplateRecordModal } from "./template-record-modal"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import { requestJson } from "../../shared/http"
 import { confirmRecordDelete } from "../../shared/record-panel-footer"
-import { usePrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
@@ -118,7 +118,11 @@ export default function TemplatesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = usePrimaryRecordPanel("template")
+  const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
+  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
+    isDirty: activeTemplateDirty,
+    message: "You have unsaved template changes. Leave this template without saving?",
+  })
 
   const activeTemplate = templates.find((template) => template.id === activeTemplateId) ?? null
   const {
@@ -151,8 +155,6 @@ export default function TemplatesClient({
     rows: templates,
     tableKey: "templates-main",
     fields: [
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
       { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber, groupable: false },
       { key: "templateTag", label: "Template Tag", getValue: (row) => row.templateTag, groupable: true },
       { key: "property", label: "Property", getValue: (row) => row.propertyName, groupable: true },
@@ -203,25 +205,18 @@ export default function TemplatesClient({
   async function openTemplate(row: TemplateRow) {
     setMessage("")
     setError("")
-    openTemplatePanel(row.id)
+    await openTemplatePanel(row.id)
   }
 
   function closeTemplate() {
-    closeTemplatePanel()
+    const closed = closeTemplatePanel()
+    if (closed) {
+      setActiveTemplateDirty(false)
+    }
   }
 
   function renderTemplateRow(row: TemplateRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => void openTemplate(row)} />
-        </td>
-      ),
-      open: (
-        <td key="open" className="px-3 py-2">
-          <OpenRowButton onClick={() => void openTemplate(row)}>Open</OpenRowButton>
-        </td>
-      ),
       templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
       templateTag: <td key="templateTag" className="px-3 py-2">{row.templateTag}</td>,
       property: <td key="property" className="px-3 py-2">{row.propertyName}</td>,
@@ -239,9 +234,9 @@ export default function TemplatesClient({
     }
 
     return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+      <ClickableTableRow key={row.id} ariaLabel={`Edit template ${row.templateNumber}`} onClick={() => void openTemplate(row)}>
         {visibleTemplateColumns.map((column) => cells[column.key])}
-      </tr>
+      </ClickableTableRow>
     )
   }
 
@@ -305,6 +300,7 @@ export default function TemplatesClient({
       setTemplates((prev) => prev.filter((template) => template.id !== id))
       if (activeTemplateId === id) {
         closeTemplatePanel()
+        setActiveTemplateDirty(false)
       }
       setMessage("Template deleted")
     } catch (deleteError) {
@@ -452,10 +448,13 @@ export default function TemplatesClient({
           onClose={closeTemplate}
           onTemplateSaved={(template) => {
             setTemplates((prev) => prev.map((row) => (row.id === template.id ? template : row)))
+            setActiveTemplateDirty(false)
           }}
           onTemplateDeleted={(templateId) => {
             setTemplates((prev) => prev.filter((row) => row.id !== templateId))
+            setActiveTemplateDirty(false)
           }}
+          onDirtyChange={setActiveTemplateDirty}
         />
       ) : null}
     </div>

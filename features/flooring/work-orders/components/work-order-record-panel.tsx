@@ -132,6 +132,7 @@ export function WorkOrderRecordPanel({
   onWorkOrderSaved,
   onWorkOrderDeleted,
   onSummaryChange,
+  onDirtyChange,
   notices,
 }: {
   workOrderId: string
@@ -146,6 +147,7 @@ export function WorkOrderRecordPanel({
   onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary"> & { itemsCount: number }) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
+  onDirtyChange?: (value: boolean) => void
   notices?: RecordNotices
 }) {
   const initialWorkOrderDetail = useMemo<WorkOrderDetail>(
@@ -170,6 +172,7 @@ export function WorkOrderRecordPanel({
     loading,
     error,
     setError,
+    isDirty,
     publishRecord,
     refreshRecord,
     clearRecordCache,
@@ -229,6 +232,10 @@ export function WorkOrderRecordPanel({
   useEffect(() => {
     onSummaryChangeRef.current?.({ materialItems, serviceItems })
   }, [materialItems, serviceItems])
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+  }, [isDirty, onDirtyChange])
 
   const publishWorkOrder = useCallback((nextWorkOrder: WorkOrderDetail) => {
     publishRecord(nextWorkOrder)

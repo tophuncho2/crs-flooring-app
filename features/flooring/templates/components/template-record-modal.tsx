@@ -20,6 +20,7 @@ export function TemplateRecordModal({
   onTemplateSaved,
   onTemplateDeleted,
   zIndex,
+  onDirtyChange,
 }: {
   template: TemplatePanelRow
   propertyOptions: Array<{ id: string; name: string }>
@@ -32,6 +33,7 @@ export function TemplateRecordModal({
   onTemplateSaved?: (template: TemplatePanelRow, previousPropertyId: string, itemsCount: number) => void
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
   zIndex?: number
+  onDirtyChange?: (value: boolean) => void
 }) {
   const [summary, setSummary] = useState<{
     materialItems: EditableMaterialItem[]
@@ -62,6 +64,7 @@ export function TemplateRecordModal({
         onSummaryChange={setSummary}
         onTemplateSaved={onTemplateSaved}
         onTemplateDeleted={onTemplateDeleted}
+        onDirtyChange={onDirtyChange}
       />
     </RecordModalShell>
   )

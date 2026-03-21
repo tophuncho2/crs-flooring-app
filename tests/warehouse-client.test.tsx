@@ -52,7 +52,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/flooring/sections?warehouseId=wh-1")
@@ -81,11 +81,11 @@ describe("WarehouseClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     expect((await screen.findAllByDisplayValue("Showroom")).length).toBeGreaterThan(0)
 
     await user.click(screen.getByRole("button", { name: "x" }))
-    await user.click(screen.getAllByRole("button", { name: "Open" })[1])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Overflow Warehouse" }))
 
     expect(await screen.findByText("Sections offline")).toBeTruthy()
     expect(screen.getAllByDisplayValue("Showroom").length).toBeGreaterThan(0)
@@ -102,7 +102,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     await screen.findAllByDisplayValue("Showroom")
 
     await user.type(screen.getByPlaceholderText("Section name"), "Storage")
@@ -122,7 +122,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow({ sectionsCount: 1, locationsCount: 0 })]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     await screen.findAllByDisplayValue("Showroom")
 
     await user.type(screen.getByPlaceholderText("Location code"), "A1")
@@ -153,7 +153,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow({ sectionsCount: 2, locationsCount: 1 })]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     await screen.findByDisplayValue("A1")
 
     const locationRow = screen.getByDisplayValue("A1").closest("tr")
@@ -184,7 +184,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     await screen.findByDisplayValue("A1")
 
     const deleteButtons = screen.getAllByRole("button", { name: "Delete" })
@@ -209,7 +209,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow({ sectionsCount: 1, locationsCount: 0 })]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     await screen.findAllByDisplayValue("Showroom")
 
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0])
@@ -232,7 +232,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     await screen.findAllByDisplayValue("Showroom")
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0])
 
@@ -249,7 +249,7 @@ describe("WarehouseClient", () => {
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
-    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
+    await user.click(screen.getByRole("button", { name: "Open warehouse Main Warehouse" }))
     expect(await screen.findByText("Warehouse - Main Warehouse")).toBeTruthy()
     expect(screen.getAllByText("Warehouse - Main Warehouse")).toHaveLength(1)
     expect(screen.getAllByText("Main Warehouse")).toHaveLength(1)

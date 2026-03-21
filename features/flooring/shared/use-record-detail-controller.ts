@@ -1,12 +1,24 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { requestJson } from "./http"
 import { clearCachedRecordDetail, getCachedRecordDetail, setCachedRecordDetail } from "./record-detail-cache"
 
 type CachedRecord = {
   id: string
   updatedAt: string
+}
+
+function hasDraftChanges<TRecord extends CachedRecord, TDraft>(
+  record: TRecord | null,
+  draft: TDraft | null,
+  toDraft: (record: TRecord) => TDraft,
+) {
+  if (!record || !draft) {
+    return false
+  }
+
+  return JSON.stringify(draft) !== JSON.stringify(toDraft(record))
 }
 
 export function useRecordDetailController<TRecord extends CachedRecord, TDraft>({
@@ -95,6 +107,8 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
     clearCachedRecordDetail(scope, id)
   }, [id, scope])
 
+  const isDirty = useMemo(() => hasDraftChanges(record, draft, toDraft), [draft, record, toDraft])
+
   return {
     cachedRecord,
     record,
@@ -108,5 +122,6 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
     syncRecord,
     refreshRecord,
     clearRecordCache,
+    isDirty,
   }
 }

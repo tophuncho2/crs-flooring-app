@@ -9,11 +9,11 @@ import { formatStableDate } from "@/features/flooring/shared/date-format"
 import { ErrorNotice, SuccessNotice } from "@/features/flooring/shared/notices"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/primary-record-panel"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/record-form"
-import { DeleteRowButton, EditRowButton, OpenRowButton } from "@/features/flooring/shared/row-action-buttons"
+import { DeleteRowButton } from "@/features/flooring/shared/row-action-buttons"
 import { StatusPill } from "@/features/flooring/shared/status-pill"
 import { TableColumnSettings } from "@/features/flooring/shared/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/use-configured-table-state"
 import { useRecordNotices } from "@/features/flooring/shared/use-record-notices"
 import { useServerTableQueryControls } from "@/features/flooring/shared/use-server-table-query-controls"
@@ -259,8 +259,6 @@ export default function InventoryClient({
     rows,
     tableKey: "inventory-main",
     fields: [
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
       { key: "importNumber", label: "Import #", getValue: (row) => row.importNumber, groupable: false },
       { key: "importTag", label: "Import Tag", getValue: (row) => row.importTag, groupable: false },
       { key: "status", label: "Import Status", getValue: (row) => formatImportStatus(row.importStatus), groupable: true },
@@ -497,16 +495,6 @@ export default function InventoryClient({
 
   function renderInventoryRow(row: InventoryRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => openPanel(row, "edit")} />
-        </td>
-      ),
-      open: (
-        <td key="open" className="px-3 py-2">
-          <OpenRowButton onClick={() => openPanel(row, "open")} />
-        </td>
-      ),
       importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">{formatImportNumber(row.importNumber)}</td>,
       importTag: <td key="importTag" className="px-3 py-2">{row.importTag || "-"}</td>,
       status: (
@@ -542,9 +530,9 @@ export default function InventoryClient({
     }
 
     return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)]">
+      <ClickableTableRow key={row.id} ariaLabel={`Edit inventory item ${row.itemNumber}`} onClick={() => openPanel(row, "edit")}>
         {visibleInventoryColumns.map((column) => cells[column.key])}
-      </tr>
+      </ClickableTableRow>
     )
   }
 

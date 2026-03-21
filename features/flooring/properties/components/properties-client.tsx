@@ -1,19 +1,21 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import { Plus } from "lucide-react"
 import { PropertyRecordPanel } from "./property-record-panel"
 import { TemplateRecordModal } from "../../templates/components/template-record-modal"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
 import { ErrorNotice, SuccessNotice } from "../../shared/notices"
-import { DeleteRowButton, EditRowButton, OpenRowButton } from "../../shared/row-action-buttons"
+import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/record-form"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
 import type { ServiceOption, UnitOption } from "../../shared/service-items-editor"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
+import { useGuardedPrimaryRecordPanel } from "../../shared/primary-record-panel"
+import { useGuardedUrlRecordEditor } from "../../shared/use-guarded-url-record-editor"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "../../shared/address-helpers"
@@ -158,12 +160,27 @@ export default function PropertiesClient({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null)
-  const [selectedPropertyMode, setSelectedPropertyMode] = useState<"view" | "edit">("view")
-  const [selectedPropertyDraft, setSelectedPropertyDraft] = useState<DraftProperty>(defaultDraft)
   const [isSavingSelectedProperty, setIsSavingSelectedProperty] = useState(false)
   const [activeTemplate, setActiveTemplate] = useState<TemplateRow | null>(null)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [activeTemplateDirty, setActiveTemplateDirty] = useState(false)
+  const {
+    activeRecord: selectedProperty,
+    draft: selectedPropertyDraft,
+    setDraft: setSelectedPropertyDraft,
+    openRecord: openPropertyRecord,
+    closeRecord: closePropertyRecord,
+    confirmNavigation: confirmPropertyNavigation,
+  } = useGuardedUrlRecordEditor({
+    rows: properties,
+    paramKey: "property",
+    createDraft: createPropertyDraft,
+    message: "You have unsaved property changes. Leave this property without saving?",
+  })
+  const { activeRecordId: activeTemplateId, openRecord: openTemplatePanel, closeRecord: closeTemplatePanel } = useGuardedPrimaryRecordPanel("template", {
+    isDirty: activeTemplateDirty,
+    message: "You have unsaved template changes. Leave this template without saving?",
+  })
   const {
     searchQuery,
     setSearchQuery,
@@ -194,8 +211,6 @@ export default function PropertiesClient({
     rows: properties,
     tableKey: "properties-main",
     fields: [
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
-      { key: "open", label: "Open", getValue: () => "", searchable: false, groupable: false },
       { key: "property", label: "Property", getValue: (row) => row.name, groupable: false },
       { key: "street", label: "Street", getValue: (row) => row.streetAddress, groupable: false },
       { key: "city", label: "City", getValue: (row) => row.city, groupable: true },
@@ -236,21 +251,11 @@ export default function PropertiesClient({
 
   function setSelectedPropertyDraftField(field: keyof DraftProperty, value: string) {
     const normalizedValue = field === "state" ? normalizeAddressState(value) : value
-    setSelectedPropertyDraft((prev) => ({ ...prev, [field]: normalizedValue }))
+    setSelectedPropertyDraft((prev) => (prev ? { ...prev, [field]: normalizedValue } : prev))
   }
 
   function renderPropertyRow(row: PropertyRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-2 py-2">
-          <EditRowButton onClick={() => openPropertyPanel(row, "edit")} className="px-2 py-1" />
-        </td>
-      ),
-      open: (
-        <td key="open" className="px-2 py-2">
-          <OpenRowButton onClick={() => openPropertyPanel(row, "view")} className="px-2 py-1">Open</OpenRowButton>
-        </td>
-      ),
       property: <td key="property" className="px-3 py-2">{row.name}</td>,
       street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
       city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
@@ -270,9 +275,9 @@ export default function PropertiesClient({
     }
 
     return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">
+      <ClickableTableRow key={row.id} ariaLabel={`Edit property ${row.name}`} onClick={() => void openPropertyPanel(row)}>
         {visiblePropertyColumns.map((column) => cells[column.key])}
-      </tr>
+      </ClickableTableRow>
     )
   }
 
@@ -301,17 +306,19 @@ export default function PropertiesClient({
     }
   }
 
-  function openPropertyPanel(property: PropertyRow, mode: "view" | "edit") {
+  async function openPropertyPanel(property: PropertyRow) {
     setError("")
     setMessage("")
-    setSelectedProperty(property)
-    setSelectedPropertyMode(mode)
-    setSelectedPropertyDraft(createPropertyDraft(property))
+    if (activeTemplateId) {
+      const closedTemplate = closeTemplate()
+      if (!closedTemplate) {
+        return
+      }
+    }
+    await openPropertyRecord(property)
   }
 
   function updatePropertyTemplateSummary(propertyId: string, templateId: string, updater: (template: PropertyRow["templates"][number]) => PropertyRow["templates"][number] | null) {
-    let nextSelectedProperty: PropertyRow | null = null
-
     setProperties((prev) =>
       prev.map((property) => {
         if (property.id !== propertyId) return property
@@ -320,20 +327,12 @@ export default function PropertiesClient({
           .map((template) => (template.id === templateId ? updater(template) : template))
           .filter((template): template is NonNullable<typeof template> => template !== null)
 
-        const nextProperty = { ...property, templates: nextTemplates }
-        if (selectedProperty?.id === propertyId) nextSelectedProperty = nextProperty
-        return nextProperty
+        return { ...property, templates: nextTemplates }
       }),
     )
-
-    if (nextSelectedProperty) {
-      setSelectedProperty(nextSelectedProperty)
-    }
   }
 
   function appendPropertyTemplateSummary(propertyId: string, template: TemplateRow, itemsCount: number) {
-    let nextSelectedProperty: PropertyRow | null = null
-
     setProperties((prev) =>
       prev.map((property) => {
         if (property.id !== propertyId) return property
@@ -347,48 +346,79 @@ export default function PropertiesClient({
         const nextTemplates = existing
           ? property.templates.map((item) => (item.id === template.id ? nextTemplate : item))
           : [nextTemplate, ...property.templates]
-        const nextProperty = { ...property, templates: nextTemplates }
-        if (selectedProperty?.id === propertyId) nextSelectedProperty = nextProperty
-        return nextProperty
+        return { ...property, templates: nextTemplates }
       }),
     )
-
-    if (nextSelectedProperty) {
-      setSelectedProperty(nextSelectedProperty)
-    }
   }
 
-  async function openTemplate(templateId: string) {
+  useEffect(() => {
+    if (!activeTemplateId) {
+      setActiveTemplate(null)
+      setLoadingTemplate(false)
+      return
+    }
+
+    let isCancelled = false
+
+    async function loadTemplate() {
+      setError("")
+      setMessage("")
+      setLoadingTemplate(true)
+
+      try {
+        const response = await fetch(`/api/flooring/templates/${activeTemplateId}`)
+        const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
+
+        if (!response.ok || !payload.template) {
+          throw new Error(payload.error ?? "Failed to load template")
+        }
+
+        if (!isCancelled) {
+          setActiveTemplate(payload.template)
+        }
+      } catch (loadError) {
+        if (!isCancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load template")
+          setActiveTemplate(null)
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingTemplate(false)
+        }
+      }
+    }
+
+    void loadTemplate()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [activeTemplateId])
+
+  function openTemplate(templateId: string) {
     setError("")
     setMessage("")
-    setLoadingTemplate(true)
-
-    try {
-      const response = await fetch(`/api/flooring/templates/${templateId}`)
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; template?: TemplateRow }
-
-      if (!response.ok || !payload.template) {
-        throw new Error(payload.error ?? "Failed to load template")
-      }
-
-      setActiveTemplate(payload.template)
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load template")
-      setActiveTemplate(null)
-    } finally {
-      setLoadingTemplate(false)
-    }
+    confirmPropertyNavigation(() => {
+      setActiveTemplateDirty(false)
+      openTemplatePanel(templateId)
+    })
   }
 
   function closeTemplate() {
+    const didClose = closeTemplatePanel()
+    if (!didClose) {
+      return false
+    }
+    setActiveTemplateDirty(false)
     setActiveTemplate(null)
+    return true
   }
 
   function closePropertyPanel() {
-    closeTemplate()
-    setSelectedProperty(null)
-    setSelectedPropertyMode("view")
-    setSelectedPropertyDraft(defaultDraft)
+    if (activeTemplateId && !closeTemplate()) {
+      return
+    }
+    closePropertyRecord()
   }
 
   async function createProperty() {
@@ -466,7 +496,7 @@ export default function PropertiesClient({
   }
 
   async function saveSelectedProperty() {
-    if (!selectedProperty) return
+    if (!selectedProperty || !selectedPropertyDraft) return
     setError("")
     setMessage("")
     setIsSavingSelectedProperty(true)
@@ -524,9 +554,7 @@ export default function PropertiesClient({
       }
 
       setProperties((prev) => prev.map((property) => (property.id === updatedProperty.id ? updatedProperty : property)))
-      setSelectedProperty(updatedProperty)
       setSelectedPropertyDraft(createPropertyDraft(updatedProperty))
-      setSelectedPropertyMode("edit")
       setMessage("Property saved")
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save property")
@@ -666,8 +694,8 @@ export default function PropertiesClient({
         <ModalShell title={selectedProperty.name} onClose={closePropertyPanel}>
           <PropertyRecordPanel
             property={selectedProperty}
-            mode={selectedPropertyMode}
-            draft={selectedPropertyDraft}
+            mode="edit"
+            draft={selectedPropertyDraft ?? undefined}
             managementOptions={managementOptions}
             message={message}
             error={error}
@@ -697,12 +725,15 @@ export default function PropertiesClient({
           serviceOptions={serviceOptions}
           unitOptions={unitOptions}
           onClose={closeTemplate}
+          onDirtyChange={setActiveTemplateDirty}
           onTemplateSaved={(template, previousPropertyId, itemsCount) => {
+            setActiveTemplateDirty(false)
             updatePropertyTemplateSummary(previousPropertyId, template.id, () => null)
             appendPropertyTemplateSummary(template.propertyId, template, itemsCount)
             setActiveTemplate(template)
           }}
           onTemplateDeleted={(templateId, propertyId) => {
+            setActiveTemplateDirty(false)
             updatePropertyTemplateSummary(propertyId, templateId, () => null)
             setActiveTemplate(null)
           }}

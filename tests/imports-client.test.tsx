@@ -9,7 +9,6 @@ import ImportsClient from "@/features/flooring/imports/components/imports-client
 vi.mock("@/features/flooring/shared/use-table-columns", () => ({
   useTableColumns: () => ({
     allColumns: [
-      { key: "edit", label: "Edit" },
       { key: "importNumber", label: "Import #" },
       { key: "tag", label: "Tag" },
       { key: "transport", label: "Transport" },
@@ -20,7 +19,6 @@ vi.mock("@/features/flooring/shared/use-table-columns", () => ({
       { key: "delete", label: "Delete" },
     ],
     visibleColumns: [
-      { key: "edit", label: "Edit" },
       { key: "importNumber", label: "Import #" },
       { key: "tag", label: "Tag" },
       { key: "transport", label: "Transport" },
@@ -158,7 +156,7 @@ describe("ImportsClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Edit" })[0]!)
+    await user.click(screen.getAllByRole("button", { name: "Edit import 0001" })[0]!)
 
     expect(screen.getByRole("heading", { name: "Import IMP-0001" })).toBeTruthy()
     expect(screen.queryByLabelText("Import Number")).toBeNull()

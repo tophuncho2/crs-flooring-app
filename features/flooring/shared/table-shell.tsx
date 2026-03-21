@@ -119,6 +119,39 @@ export function TableActionsSummary({
   )
 }
 
+export function ClickableTableRow({
+  children,
+  onClick,
+  className,
+  ariaLabel,
+}: {
+  children: ReactNode
+  onClick: () => void
+  className?: string
+  ariaLabel: string
+}) {
+  return (
+    <tr
+      tabIndex={0}
+      role="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onClick()
+        }
+      }}
+      className={joinClasses(
+        "cursor-pointer border-t border-[var(--panel-border)] transition hover:bg-[var(--panel-hover)]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50",
+        className,
+      )}
+    >
+      {children}
+    </tr>
+  )
+}
+
 export function TablePaginationControls({
   page,
   totalPages,
