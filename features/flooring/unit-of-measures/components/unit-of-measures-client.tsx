@@ -39,7 +39,13 @@ function toForm(unit: UnitOfMeasureRow): UnitOfMeasureForm {
   return { name: unit.name }
 }
 
-export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initialUnitOfMeasures: UnitOfMeasureRow[] }) {
+export default function UnitOfMeasuresClient({
+  canManage,
+  initialUnitOfMeasures,
+}: {
+  canManage: boolean
+  initialUnitOfMeasures: UnitOfMeasureRow[]
+}) {
   const [unitOfMeasures, setUnitOfMeasures] = useState(initialUnitOfMeasures)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isSavingNew, setIsSavingNew] = useState(false)
@@ -89,10 +95,10 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
     rows: unitOfMeasures,
     tableKey: "unit-of-measures-main",
     fields: [
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      ...(canManage ? [{ key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false } as const] : []),
       { key: "name", label: "Unit Of Measure", getValue: (row) => row.name, groupable: false },
       { key: "createdAt", label: "Created", getValue: (row) => row.createdAt, groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+      ...(canManage ? [{ key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false } as const] : []),
     ],
     sortField: (row) => row.name,
   })
@@ -195,20 +201,28 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
 
   function renderRow(unit: UnitOfMeasureRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => openEdit(unit)} />
-        </td>
-      ),
+      ...(canManage
+        ? {
+            edit: (
+              <td key="edit" className="px-3 py-2">
+                <EditRowButton onClick={() => openEdit(unit)} />
+              </td>
+            ),
+          }
+        : {}),
       name: <td key="name" className="px-3 py-2 font-medium">{unit.name}</td>,
       createdAt: <td key="createdAt" className="px-3 py-2">{formatStableDateTime(unit.createdAt)}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
-          <DeleteRowButton onClick={() => void deleteUnitOfMeasure(unit)} disabled={deletingId === unit.id}>
-            {deletingId === unit.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </td>
-      ),
+      ...(canManage
+        ? {
+            delete: (
+              <td key="delete" className="px-3 py-2">
+                <DeleteRowButton onClick={() => void deleteUnitOfMeasure(unit)} disabled={deletingId === unit.id}>
+                  {deletingId === unit.id ? "Deleting..." : "Delete"}
+                </DeleteRowButton>
+              </td>
+            ),
+          }
+        : {}),
     }
 
     return <tr key={unit.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">{visibleColumns.map((column) => cells[column.key])}</tr>
@@ -246,10 +260,12 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={toggleGroupByKey}
               />
-              <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
-                <Plus size={16} />
-                Unit Of Measure
-              </button>
+              {canManage ? (
+                <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
+                  <Plus size={16} />
+                  Unit Of Measure
+                </button>
+              ) : null}
             </TableControlsBar>
           </TableActionsSummary>
         </div>
@@ -282,7 +298,7 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
         />
       </div>
 
-      {isCreateOpen && unitForm ? (
+      {canManage && isCreateOpen && unitForm ? (
         <BasicRecordPanel
           title="New Unit Of Measure"
           onClose={() => !isSavingNew && setIsCreateOpen(false)}
@@ -307,7 +323,7 @@ export default function UnitOfMeasuresClient({ initialUnitOfMeasures }: { initia
         </BasicRecordPanel>
       ) : null}
 
-      {selectedUnit && unitForm ? (
+      {canManage && selectedUnit && unitForm ? (
         <BasicRecordPanel
           title={`Unit Of Measure ${selectedUnit.name}`}
           onClose={closeUnitRecord}

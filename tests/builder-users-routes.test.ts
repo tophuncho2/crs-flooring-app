@@ -6,7 +6,6 @@ const {
   consumeRateLimitMock,
   userFindManyMock,
   userFindUniqueMock,
-  userCountMock,
   userUpdateMock,
   userDeleteMock,
 } = vi.hoisted(() => ({
@@ -15,7 +14,6 @@ const {
   consumeRateLimitMock: vi.fn(),
   userFindManyMock: vi.fn(),
   userFindUniqueMock: vi.fn(),
-  userCountMock: vi.fn(),
   userUpdateMock: vi.fn(),
   userDeleteMock: vi.fn(),
 }))
@@ -42,7 +40,6 @@ vi.mock("@/server/db/prisma", () => ({
     user: {
       findMany: userFindManyMock,
       findUnique: userFindUniqueMock,
-      count: userCountMock,
       update: userUpdateMock,
       delete: userDeleteMock,
     },
@@ -72,16 +69,8 @@ describe("builder user routes", () => {
     })
   })
 
-  it("GET returns normalized user capabilities with last-admin protections", async () => {
-    userCountMock.mockResolvedValue(1)
+  it("GET returns builder rows only with builder-management capabilities", async () => {
     userFindManyMock.mockResolvedValue([
-      {
-        id: "admin-1",
-        email: "admin@test.com",
-        role: "ADMIN",
-        isVerified: true,
-        createdAt: new Date("2026-03-21T00:00:00Z"),
-      },
       {
         id: "builder-1",
         email: "builder@test.com",
@@ -98,22 +87,21 @@ describe("builder user routes", () => {
     expect(payload.viewerCanManageUsers).toBe(true)
     expect(payload.users).toEqual([
       expect.objectContaining({
-        id: "admin-1",
-        canRestrict: false,
-        canEditRole: false,
-        canDelete: false,
-      }),
-      expect.objectContaining({
         id: "builder-1",
+        role: "BUILDER",
         canRestrict: true,
-        canEditRole: true,
+        canEditRole: false,
         canDelete: true,
       }),
     ])
+    expect(userFindManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { role: "BUILDER" },
+      }),
+    )
   })
 
-  it("PATCH blocks removing your own admin access", async () => {
-    userCountMock.mockResolvedValue(1)
+  it("PATCH blocks governing admin accounts from the builder panel", async () => {
     userFindUniqueMock.mockResolvedValue({
       id: "admin-1",
       email: "admin@test.com",
@@ -126,25 +114,85 @@ describe("builder user routes", () => {
       new Request("http://localhost/api/builder/users/admin-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "BUILDER" }),
+        body: JSON.stringify({ isVerified: false }),
       }),
       { params: Promise.resolve({ id: "admin-1" }) },
     )
     const payload = await response.json()
 
-    expect(response.status).toBe(400)
-    expect(payload.error).toBe("You cannot remove your own admin access")
+    expect(response.status).toBe(409)
+    expect(payload.error).toBe("Only builder accounts can be governed from this panel")
     expect(userUpdateMock).not.toHaveBeenCalled()
   })
 
-  it("DELETE blocks removing the last admin", async () => {
-    getSessionUserMock.mockResolvedValue({
-      id: "admin-2",
-      email: "other-admin@test.com",
-      role: "ADMIN",
-      isVerified: true,
+  it("PATCH updates builder verification", async () => {
+    userFindUniqueMock.mockResolvedValue({
+      id: "builder-1",
+      email: "builder@test.com",
+      role: "BUILDER",
+      isVerified: false,
+      createdAt: new Date("2026-03-21T00:00:00Z"),
     })
-    userCountMock.mockResolvedValue(1)
+    userUpdateMock.mockResolvedValue({
+      id: "builder-1",
+      email: "builder@test.com",
+      role: "BUILDER",
+      isVerified: true,
+      createdAt: new Date("2026-03-21T00:00:00Z"),
+    })
+
+    const response = await PATCH_USER(
+      new Request("http://localhost/api/builder/users/builder-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isVerified: true }),
+      }),
+      { params: Promise.resolve({ id: "builder-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload.user).toEqual(
+      expect.objectContaining({
+        id: "builder-1",
+        role: "BUILDER",
+        isVerified: true,
+        canEditRole: false,
+      }),
+    )
+    expect(userUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "builder-1" },
+        data: { isVerified: true },
+      }),
+    )
+  })
+
+  it("PATCH rejects role changes even for builder targets", async () => {
+    userFindUniqueMock.mockResolvedValue({
+      id: "builder-1",
+      email: "builder@test.com",
+      role: "BUILDER",
+      isVerified: false,
+      createdAt: new Date("2026-03-21T00:00:00Z"),
+    })
+
+    const response = await PATCH_USER(
+      new Request("http://localhost/api/builder/users/builder-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "ADMIN" }),
+      }),
+      { params: Promise.resolve({ id: "builder-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("Builder roles cannot be edited from this panel")
+    expect(userUpdateMock).not.toHaveBeenCalled()
+  })
+
+  it("DELETE blocks deleting admin accounts from the builder panel", async () => {
     userFindUniqueMock.mockResolvedValue({
       id: "admin-1",
       email: "admin@test.com",
@@ -162,7 +210,7 @@ describe("builder user routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("At least one admin must remain")
+    expect(payload.error).toBe("Only builder accounts can be governed from this panel")
     expect(userDeleteMock).not.toHaveBeenCalled()
   })
 })

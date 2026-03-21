@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client"
 import { GET, POST } from "@/app/api/flooring/categories/route"
 import { DELETE, PATCH } from "@/app/api/flooring/categories/[id]/route"
 
-const { prismaMock, ensureBuilderOrAdminMock } = vi.hoisted(() => ({
+const { prismaMock, ensureBuilderOrAdminMock, ensureGovernanceUserMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringCategory: {
       findMany: vi.fn(),
@@ -16,6 +16,7 @@ const { prismaMock, ensureBuilderOrAdminMock } = vi.hoisted(() => ({
     },
   },
   ensureBuilderOrAdminMock: vi.fn(),
+  ensureGovernanceUserMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -24,6 +25,7 @@ vi.mock("@/server/db/prisma", () => ({
 
 vi.mock("@/server/auth/route-auth", () => ({
   ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+  ensureGovernanceUser: ensureGovernanceUserMock,
 }))
 
 function categoryRecord(
@@ -57,6 +59,7 @@ describe("categories routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ensureBuilderOrAdminMock.mockResolvedValue(null)
+    ensureGovernanceUserMock.mockResolvedValue(null)
   })
 
   it("GET returns normalized category rows", async () => {
@@ -126,7 +129,7 @@ describe("categories routes", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("name is required")
     expect(prismaMock.flooringCategory.create).not.toHaveBeenCalled()
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "products" })
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("POST accepts optional unit ids as empty or null and returns normalized payload", async () => {
@@ -186,6 +189,7 @@ describe("categories routes", () => {
       serviceUnitId: "",
       productCount: 0,
     })
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("PATCH requires name", async () => {
@@ -242,7 +246,7 @@ describe("categories routes", () => {
       serviceUnitId: "u-service",
       productCount: 2,
     })
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "products" })
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE succeeds on the happy path and does not affect unit-of-measure records", async () => {
@@ -255,7 +259,7 @@ describe("categories routes", () => {
     expect(payload).toEqual({ success: true })
     expect(prismaMock.flooringCategory.delete).toHaveBeenCalledWith({ where: { id: "cat-1" } })
     expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "products" })
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("normalizes category unique conflicts", async () => {

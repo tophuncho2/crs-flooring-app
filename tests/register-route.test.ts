@@ -83,9 +83,9 @@ describe("register route", () => {
     userFindUniqueMock.mockResolvedValue(null)
   })
 
-  it("bootstraps the first account as a verified admin", async () => {
+  it("bootstraps the first account as a verified owner", async () => {
     userCountMock.mockResolvedValue(0)
-    userCreateMock.mockResolvedValue({ id: "user-1", role: "ADMIN", isVerified: true })
+    userCreateMock.mockResolvedValue({ id: "user-1", role: "OWNER", isVerified: true })
 
     const response = await POST(
       new Request("http://localhost/api/auth/register", {
@@ -100,12 +100,12 @@ describe("register route", () => {
     expect(userCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          role: "ADMIN",
+          role: "OWNER",
           isVerified: true,
         }),
       }),
     )
-    expect(payload.message).toBe("Initial admin account created.")
+    expect(payload.message).toBe("Initial owner account created.")
   })
 
   it("creates an unverified builder request for public signups after bootstrap", async () => {
@@ -130,7 +130,7 @@ describe("register route", () => {
         }),
       }),
     )
-    expect(payload.message).toBe("Account request created. Pending admin approval.")
+    expect(payload.message).toBe("Account request created. Pending approval.")
   })
 
   it("lets an admin create a verified builder account", async () => {
@@ -167,6 +167,33 @@ describe("register route", () => {
       }),
     )
     expect(payload.message).toBe("Builder account created.")
+  })
+
+  it("does not allow governance users to create elevated roles through the web route", async () => {
+    getSessionUserMock.mockResolvedValue({
+      id: "owner-1",
+      email: "owner@test.com",
+      role: "OWNER",
+      isVerified: true,
+    })
+    userCountMock.mockResolvedValue(2)
+
+    const response = await POST(
+      new Request("http://localhost/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "new-admin@test.com",
+          password: "password123",
+          role: "ADMIN",
+        }),
+      }),
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("Only builder accounts can be created from this route")
+    expect(userCreateMock).not.toHaveBeenCalled()
   })
 
   it("returns 409 when the account already exists", async () => {

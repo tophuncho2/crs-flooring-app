@@ -12,6 +12,7 @@
     "postinstall": "prisma generate",
     "db:seed:users": "node prisma/seed.js",
     "db:promote-admin": "node prisma/admin-recovery.js",
+    "db:upsert-owner": "node prisma/owner-recovery.js",
     "lint": "eslint",
     "test": "vitest run"
   },

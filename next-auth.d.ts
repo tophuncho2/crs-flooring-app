@@ -4,14 +4,14 @@ declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
       id: string
-      role: "CONTRACTOR" | "CUSTOMER" | "ADMIN" | "BUILDER"
+      role: "CONTRACTOR" | "CUSTOMER" | "OWNER" | "ADMIN" | "BUILDER"
       isVerified: boolean
     }
   }
 
   interface User {
     id: string
-    role: "CONTRACTOR" | "CUSTOMER" | "ADMIN" | "BUILDER"
+    role: "CONTRACTOR" | "CUSTOMER" | "OWNER" | "ADMIN" | "BUILDER"
     isVerified: boolean
   }
 }
@@ -19,7 +19,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id?: string
-    role?: "CONTRACTOR" | "CUSTOMER" | "ADMIN" | "BUILDER"
+    role?: "CONTRACTOR" | "CUSTOMER" | "OWNER" | "ADMIN" | "BUILDER"
     isVerified?: boolean
   }
 }

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt"
 import { prisma } from "@/server/db/prisma"
-import { isAdmin } from "@/server/auth/access-control"
+import { hasGovernanceAccess } from "@/server/auth/access-control"
 import { getSessionUser } from "@/server/auth/session"
 import { logEvent } from "@/server/platform/logger"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
@@ -9,7 +9,7 @@ import { getClientIp, getRequestId, jsonWithRequestId } from "@/server/platform/
 type RegisterBody = {
   email?: string
   password?: string
-  role?: "ADMIN" | "BUILDER"
+  role?: string
   isVerified?: boolean
 }
 
@@ -26,13 +26,13 @@ export async function POST(request: Request) {
     const email = typeof body.email === "string" ? normalizeEmail(body.email) : ""
     const password = typeof body.password === "string" ? body.password : ""
     const actor = await getSessionUser()
-    const viewerIsAdmin = Boolean(actor && isAdmin(actor.role))
+    const viewerCanGovern = Boolean(actor && hasGovernanceAccess(actor.role))
 
     const rateLimit = await consumeRateLimit({
       request,
-      scope: viewerIsAdmin ? "users.create" : "auth.register",
+      scope: viewerCanGovern ? "users.create" : "auth.register",
       identifier: email,
-      limit: viewerIsAdmin ? 20 : 5,
+      limit: viewerCanGovern ? 20 : 5,
       windowMs: 15 * 60 * 1000,
       route: "/api/auth/register",
       userId: actor?.id,
@@ -56,27 +56,19 @@ export async function POST(request: Request) {
       return jsonWithRequestId({ error: "Account already exists" }, requestId, { status: 409 })
     }
 
-    const hashed = await bcrypt.hash(password, 10)
-    const adminCount = await prisma.user.count({
-      where: {
-        role: "ADMIN",
-      },
-    })
-    const isBootstrap = adminCount === 0
+    if (viewerCanGovern && body.role && body.role !== "BUILDER") {
+      return jsonWithRequestId({ error: "Only builder accounts can be created from this route" }, requestId, { status: 400 })
+    }
 
-    const role: "ADMIN" | "BUILDER" = viewerIsAdmin
-      ? body.role === "ADMIN"
-        ? "ADMIN"
-        : "BUILDER"
-      : isBootstrap
-        ? "ADMIN"
-        : "BUILDER"
-    const isVerified = viewerIsAdmin
-      ? role === "ADMIN"
-        ? true
-        : typeof body.isVerified === "boolean"
-          ? body.isVerified
-          : true
+    const hashed = await bcrypt.hash(password, 10)
+    const userCount = await prisma.user.count()
+    const isBootstrap = userCount === 0
+
+    const role: "OWNER" | "BUILDER" = isBootstrap ? "OWNER" : "BUILDER"
+    const isVerified = viewerCanGovern
+      ? typeof body.isVerified === "boolean"
+        ? body.isVerified
+        : true
       : isBootstrap
         ? true
         : false
@@ -93,7 +85,7 @@ export async function POST(request: Request) {
 
     logEvent({
       message: "Account created",
-      action: viewerIsAdmin ? "users.create" : isBootstrap ? "auth.bootstrap" : "auth.register",
+      action: viewerCanGovern ? "users.create" : isBootstrap ? "auth.bootstrap" : "auth.register",
       route: "/api/auth/register",
       requestId,
       userId: actor?.id,
@@ -108,15 +100,13 @@ export async function POST(request: Request) {
       },
     })
 
-    const message = viewerIsAdmin
-      ? createdUser.role === "ADMIN"
-        ? "Admin account created."
-        : createdUser.isVerified
-          ? "Builder account created."
-          : "Builder account created and left pending approval."
+    const message = viewerCanGovern
+      ? createdUser.isVerified
+        ? "Builder account created."
+        : "Builder account created and left pending approval."
       : isBootstrap
-        ? "Initial admin account created."
-        : "Account request created. Pending admin approval."
+        ? "Initial owner account created."
+        : "Account request created. Pending approval."
 
     return jsonWithRequestId(
       {

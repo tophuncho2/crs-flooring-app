@@ -25,7 +25,7 @@ export default function HeaderControls({
   initialVisibleFlooringSlugs,
   initialOrderedFlooringSlugs,
 }: HeaderControlsProps) {
-  const hasBuilderPanelAccess = role === "ADMIN"
+  const hasBuilderPanelAccess = role === "ADMIN" || role === "OWNER"
   const navigation = useFlooringNavigationState({
     canUseTools,
     hasBuilderPanelAccess,

@@ -4,7 +4,6 @@ import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
 import {
   assertGovernedUserDelete,
   assertGovernedUserUpdate,
-  countAdminUsers,
   normalizeManagedUserRow,
   resolveGovernedVerification,
 } from "@/server/auth/user-governance"
@@ -43,7 +42,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const body = (await request.json()) as {
-    role?: "ADMIN" | "BUILDER"
+    role?: unknown
     isVerified?: boolean
   }
 
@@ -53,18 +52,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (!existingUser) {
     return jsonWithRequestId({ error: "User not found" }, requestId, { status: 404 })
   }
-  if (existingUser.role !== "ADMIN" && existingUser.role !== "BUILDER") {
-    return jsonWithRequestId({ error: "Only system users can be governed from this panel" }, requestId, { status: 409 })
+  if (existingUser.role !== "BUILDER") {
+    return jsonWithRequestId({ error: "Only builder accounts can be governed from this panel" }, requestId, { status: 409 })
   }
 
-  if ("role" in body && body.role && body.role !== "ADMIN" && body.role !== "BUILDER") {
-    return jsonWithRequestId({ error: "Role must be ADMIN or BUILDER" }, requestId, { status: 400 })
+  if ("role" in body) {
+    return jsonWithRequestId({ error: "Builder roles cannot be edited from this panel" }, requestId, { status: 400 })
   }
 
-  const adminCount = await countAdminUsers()
-  const nextRole: "ADMIN" | "BUILDER" = body.role ?? existingUser.role
   const nextIsVerifiedInput = resolveGovernedVerification(
-    nextRole,
+    existingUser.role,
     typeof body.isVerified === "boolean" ? body.isVerified : undefined,
     existingUser.isVerified,
   )
@@ -73,8 +70,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     assertGovernedUserUpdate({
       actor,
       target: existingUser,
-      nextRole,
-      adminCount,
     })
   } catch (error) {
     const message = error && typeof error === "object" && "message" in error ? String(error.message) : "Forbidden"
@@ -85,7 +80,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const updated = await prisma.user.update({
     where: { id },
     data: {
-      role: nextRole,
       isVerified: nextIsVerifiedInput,
     },
     select: {
@@ -108,15 +102,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     entityType: "user",
     entityId: updated.id,
     details: {
-      nextRole,
       nextIsVerified: nextIsVerifiedInput,
     },
   })
-  const nextAdminCount = nextRole === existingUser.role ? adminCount : await countAdminUsers()
 
   return jsonWithRequestId(
     {
-      user: normalizeManagedUserRow(updated, actor, nextAdminCount),
+      user: normalizeManagedUserRow(updated, actor),
     },
     requestId,
   )
@@ -155,16 +147,14 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   if (!existingUser) {
     return jsonWithRequestId({ error: "User not found" }, requestId, { status: 404 })
   }
-  if (existingUser.role !== "ADMIN" && existingUser.role !== "BUILDER") {
-    return jsonWithRequestId({ error: "Only system users can be governed from this panel" }, requestId, { status: 409 })
+  if (existingUser.role !== "BUILDER") {
+    return jsonWithRequestId({ error: "Only builder accounts can be governed from this panel" }, requestId, { status: 409 })
   }
 
-  const adminCount = await countAdminUsers()
   try {
     assertGovernedUserDelete({
       actor,
       target: existingUser,
-      adminCount,
     })
   } catch (error) {
     const message = error && typeof error === "object" && "message" in error ? String(error.message) : "Forbidden"

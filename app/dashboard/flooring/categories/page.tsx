@@ -1,3 +1,4 @@
+import { canEditCategories } from "@/server/auth/access-control"
 import { flooringCategoryUnitInclude, normalizeCategoryUnitValues, normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
 import { prisma } from "@/server/db/prisma"
 import { requireToolAccess } from "@/server/auth/session"
@@ -21,7 +22,7 @@ type CategoryRow = {
 }
 
 export default async function FlooringCategoriesPage() {
-  await requireToolAccess("products")
+  const user = await requireToolAccess("products")
 
   const [categories, unitOfMeasures] = await Promise.all([
     prisma.flooringCategory.findMany({
@@ -48,6 +49,7 @@ export default async function FlooringCategoriesPage() {
 
   return (
     <CategoriesClient
+      canManage={canEditCategories(user.role)}
       initialCategories={initialCategories}
       unitOfMeasureOptions={unitOfMeasures.map(normalizeUnitOfMeasureOption)}
     />

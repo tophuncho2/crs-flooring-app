@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
 import { parseRequiredString } from "@/server/http/api-helpers"
 import { getSessionUser } from "@/server/auth/session"
-import { ensureAdminOnly } from "@/server/auth/route-auth"
+import { ensureGovernanceUser } from "@/server/auth/route-auth"
 import { logEvent } from "@/server/platform/logger"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
 import { getClientIp, getRequestId, withRequestId } from "@/server/platform/request-context"
@@ -14,7 +14,7 @@ type RouteContext = {
 export async function PATCH(request: Request, { params }: RouteContext) {
   const requestId = getRequestId(request)
   const clientIp = getClientIp(request)
-  const authError = await ensureAdminOnly()
+  const authError = await ensureGovernanceUser()
   if (authError) return authError
   const actor = await getSessionUser()
 

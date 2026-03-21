@@ -51,8 +51,12 @@ async function promoteUserToAdmin({
     throw new Error(`No user found for ${normalizedEmail}`)
   }
 
-  if (existingUser.role === "ADMIN" && existingUser.isVerified) {
-    logger.log(`User ${normalizedEmail} is already a verified admin.`)
+  if ((existingUser.role === "ADMIN" || existingUser.role === "OWNER") && existingUser.isVerified) {
+    logger.log(
+      existingUser.role === "OWNER"
+        ? `User ${normalizedEmail} is already a verified owner.`
+        : `User ${normalizedEmail} is already a verified admin.`,
+    )
 
     return {
       id: existingUser.id,

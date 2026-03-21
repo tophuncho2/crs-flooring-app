@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
 import { prisma } from "@/server/db/prisma"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { ensureBuilderOrAdmin, ensureGovernanceUser } from "@/server/auth/route-auth"
 
 function normalizeCategory(category: {
   id: string
@@ -47,7 +47,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
+  const authError = await ensureGovernanceUser()
   if (authError) return authError
 
   try {

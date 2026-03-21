@@ -53,7 +53,7 @@ describe("CategoriesClient", () => {
   it("create flow validates category name before posting", async () => {
     const user = userEvent.setup()
 
-    render(<CategoriesClient initialCategories={[]} unitOfMeasureOptions={[]} />)
+    render(<CategoriesClient canManage initialCategories={[]} unitOfMeasureOptions={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Category$/ }))
     await user.click(screen.getByRole("button", { name: "Create Category" }))
@@ -70,6 +70,7 @@ describe("CategoriesClient", () => {
 
     render(
       <CategoriesClient
+        canManage
         initialCategories={[]}
         unitOfMeasureOptions={[
           { id: "u-send", name: "SY", createdAt: "2026-03-19T00:00:00.000Z" },
@@ -106,7 +107,7 @@ describe("CategoriesClient", () => {
     const user = userEvent.setup()
     requestJsonMock.mockRejectedValue(new Error("Name must be unique"))
 
-    render(<CategoriesClient initialCategories={[]} unitOfMeasureOptions={[]} />)
+    render(<CategoriesClient canManage initialCategories={[]} unitOfMeasureOptions={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Category$/ }))
     await user.type(screen.getByLabelText("Category Name"), "Carpet")
@@ -123,6 +124,7 @@ describe("CategoriesClient", () => {
 
     render(
       <CategoriesClient
+        canManage
         initialCategories={[categoryRow()]}
         unitOfMeasureOptions={[
           { id: "u-send", name: "SY", createdAt: "2026-03-19T00:00:00.000Z" },
@@ -162,7 +164,7 @@ describe("CategoriesClient", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock.mockResolvedValue({ success: true })
 
-    render(<CategoriesClient initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
+    render(<CategoriesClient canManage initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
 
     expect(screen.getByText("Carpet")).toBeTruthy()
     await user.click(screen.getByRole("button", { name: "Delete" }))
@@ -178,11 +180,20 @@ describe("CategoriesClient", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock.mockRejectedValue(new Error("This record is linked and cannot be modified"))
 
-    render(<CategoriesClient initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
+    render(<CategoriesClient canManage initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
 
     await user.click(screen.getByRole("button", { name: "Delete" }))
 
     expect(await screen.findByText("This record is linked and cannot be modified")).toBeTruthy()
+    expect(screen.getByText("Carpet")).toBeTruthy()
+  })
+
+  it("read-only mode hides create and row mutation controls", () => {
+    render(<CategoriesClient canManage={false} initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
+
+    expect(screen.queryByRole("button", { name: /\+?Category$/ })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull()
     expect(screen.getByText("Carpet")).toBeTruthy()
   })
 })

@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client"
 import { GET, POST } from "@/app/api/builder/unit-of-measures/route"
 import { DELETE, PATCH } from "@/app/api/builder/unit-of-measures/[id]/route"
 
-const { prismaMock, ensureBuilderPanelAccessMock } = vi.hoisted(() => ({
+const { prismaMock, ensureBuilderOrAdminMock, ensureGovernanceUserMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringUnitOfMeasure: {
       findMany: vi.fn(),
@@ -16,7 +16,8 @@ const { prismaMock, ensureBuilderPanelAccessMock } = vi.hoisted(() => ({
       delete: vi.fn(),
     },
   },
-  ensureBuilderPanelAccessMock: vi.fn(),
+  ensureBuilderOrAdminMock: vi.fn(),
+  ensureGovernanceUserMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -24,7 +25,8 @@ vi.mock("@/server/db/prisma", () => ({
 }))
 
 vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderPanelAccess: ensureBuilderPanelAccessMock,
+  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+  ensureGovernanceUser: ensureGovernanceUserMock,
 }))
 
 function unitRecord(
@@ -45,7 +47,8 @@ function unitRecord(
 describe("unit-of-measures routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderPanelAccessMock.mockResolvedValue(null)
+    ensureBuilderOrAdminMock.mockResolvedValue(null)
+    ensureGovernanceUserMock.mockResolvedValue(null)
   })
 
   it("GET returns normalized rows", async () => {
@@ -62,7 +65,7 @@ describe("unit-of-measures routes", () => {
       { id: "u-1", name: "Square Feet", createdAt: "2026-03-19T00:00:00.000Z" },
       { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z" },
     ])
-    expect(ensureBuilderPanelAccessMock).toHaveBeenCalled()
+    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "products" })
   })
 
   it("POST requires name", async () => {
@@ -78,7 +81,7 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("name is required")
     expect(prismaMock.flooringUnitOfMeasure.create).not.toHaveBeenCalled()
-    expect(ensureBuilderPanelAccessMock).toHaveBeenCalled()
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("POST returns normalized payload", async () => {
@@ -99,6 +102,7 @@ describe("unit-of-measures routes", () => {
       name: "Square Feet",
       createdAt: "2026-03-19T00:00:00.000Z",
     })
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("PATCH requires name", async () => {
@@ -136,7 +140,7 @@ describe("unit-of-measures routes", () => {
       name: "Hour",
       createdAt: "2026-03-19T00:00:00.000Z",
     })
-    expect(ensureBuilderPanelAccessMock).toHaveBeenCalled()
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE succeeds on happy path only when there is no linkage", async () => {
@@ -163,6 +167,7 @@ describe("unit-of-measures routes", () => {
     expect(payload).toEqual({ success: true })
     expect(prismaMock.flooringUnitOfMeasure.delete).toHaveBeenCalledWith({ where: { id: "u-1" } })
     expect(prismaMock.flooringCategory.delete).not.toHaveBeenCalled()
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE is blocked when linked to categories", async () => {
@@ -188,6 +193,7 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This unit of measure is linked to categories and cannot be deleted")
     expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE is blocked when linked to a representative service relation", async () => {
@@ -213,6 +219,7 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This unit of measure is linked and cannot be deleted")
     expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
+    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("normalizes unit name conflicts", async () => {

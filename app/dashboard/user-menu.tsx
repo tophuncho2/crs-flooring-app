@@ -58,9 +58,9 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   const menuRef = useRef<HTMLDivElement>(null)
 
   const firstLetter = email.charAt(0).toUpperCase()
-  const isAdmin = role === "ADMIN"
-  const hasBuilderPanelAccess = isAdmin
-  const canUseTools = canUseToolsProp ?? (role === "BUILDER" || role === "ADMIN")
+  const isGovernanceUser = role === "ADMIN" || role === "OWNER"
+  const hasBuilderPanelAccess = isGovernanceUser
+  const canUseTools = canUseToolsProp ?? (role === "BUILDER" || isGovernanceUser)
   const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
   const canOpenTool = useCallback((slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug), [canUseTools, unlockedToolSet])
 
@@ -321,14 +321,14 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                     <th className="px-3 py-2">Combination</th>
                     <th className="px-3 py-2">Action</th>
                     {!isMobile && <th className="px-3 py-2">Visualization</th>}
-                    {isAdmin && <th className="px-3 py-2">Save</th>}
+                    {isGovernanceUser && <th className="px-3 py-2">Save</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {hotkeysLoading ? (
                     <tr>
                       <td
-                        colSpan={isAdmin ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
+                        colSpan={isGovernanceUser ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
                         className="px-3 py-8 text-center text-[var(--foreground)]/70"
                       >
                         Loading hotkeys...
@@ -337,7 +337,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                   ) : hotkeys.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isAdmin ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
+                        colSpan={isGovernanceUser ? (isMobile ? 4 : 5) : (isMobile ? 3 : 4)}
                         className="px-3 py-8 text-center text-[var(--foreground)]/70"
                       >
                         No hotkeys configured.
@@ -351,7 +351,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                       return (
                         <tr key={hotkey.id} className="border-t border-[var(--panel-border)]">
                           <td className="px-3 py-2">
-                            {isAdmin ? (
+                            {isGovernanceUser ? (
                               <input
                                 value={draft.key}
                                 onChange={(event) => updateDraft(hotkey.id, "key", event.target.value)}
@@ -362,7 +362,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            {isAdmin ? (
+                            {isGovernanceUser ? (
                               <input
                                 value={draft.combination}
                                 onChange={(event) => updateDraft(hotkey.id, "combination", event.target.value)}
@@ -373,7 +373,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            {isAdmin ? (
+                            {isGovernanceUser ? (
                               <input
                                 value={draft.action}
                                 onChange={(event) => updateDraft(hotkey.id, "action", event.target.value)}
@@ -388,7 +388,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
                               <KeyVisualization combination={draft.combination || hotkey.combination} />
                             </td>
                           )}
-                          {isAdmin && (
+                          {isGovernanceUser && (
                             <td className="px-3 py-2">
                               <button
                                 onClick={() => void saveHotkey(hotkey)}

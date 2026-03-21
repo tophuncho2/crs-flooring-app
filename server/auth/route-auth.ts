@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import {
   canAccessBuilderPanel,
   canBypassVerification,
+  canManageHotkeys,
   hasSystemAccess,
 } from "@/server/auth/access-control"
 import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-subscriptions"
@@ -73,6 +74,19 @@ export async function ensureAdminOnly() {
   }
 
   if (user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  return null
+}
+
+export async function ensureGovernanceUser() {
+  const user = await getSessionUser()
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (!canManageHotkeys(user.email, user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

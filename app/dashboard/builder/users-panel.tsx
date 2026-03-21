@@ -8,7 +8,7 @@ import { requestJson } from "@/features/flooring/shared/http"
 type UserRow = {
   id: string
   email: string
-  role: "ADMIN" | "BUILDER"
+  role: "BUILDER"
   isVerified: boolean
   createdAt: string
   canRestrict: boolean
@@ -110,7 +110,7 @@ export default function BuilderUsersPanel() {
     return () => window.clearInterval(timer)
   }, [activityLoaded, activityRows.length, sectionsOpen.activity])
 
-  async function updateUser(userId: string, next: Partial<Pick<UserRow, "role" | "isVerified">>) {
+  async function updateUser(userId: string, next: Partial<Pick<UserRow, "isVerified">>) {
     if (!viewerCanManageUsers) return
 
     setMessage("")
@@ -185,7 +185,7 @@ export default function BuilderUsersPanel() {
         <div className="space-y-1 px-1">
           <DashboardCardTitle>Admin Control Panel</DashboardCardTitle>
           <p className="text-sm text-[var(--foreground)]/70">
-            Govern users, approvals, and recent account activity.
+            Govern builder approvals and review recent account activity.
           </p>
         </div>
 
@@ -236,23 +236,10 @@ export default function BuilderUsersPanel() {
                           </td>
                           <td className="px-2 py-2">
                             <div className="flex flex-col gap-1">
-                              <select
-                                value={user.role}
-                                disabled={!viewerCanManageUsers || !user.canEditRole || isSaving}
-                                onClick={(event) => event.stopPropagation()}
-                                onChange={(event) =>
-                                  void updateUser(user.id, {
-                                    role: event.target.value as UserRow["role"],
-                                  })
-                                }
-                                className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1 disabled:opacity-60"
-                              >
-                                <option value="ADMIN">ADMIN</option>
-                                <option value="BUILDER">BUILDER</option>
-                              </select>
-                              {user.role !== "ADMIN" && !user.isVerified && (
-                                <span className="text-xs text-amber-400">PENDING APPROVAL</span>
-                              )}
+                              <span className="rounded-md border border-[var(--panel-border)] bg-transparent px-2 py-1">
+                                BUILDER
+                              </span>
+                              {!user.isVerified && <span className="text-xs text-amber-400">PENDING APPROVAL</span>}
                             </div>
                           </td>
                           <td className="px-2 py-2">
@@ -270,14 +257,6 @@ export default function BuilderUsersPanel() {
                               <option value="verified">Verified</option>
                               <option value="restricted">Pending Approval</option>
                             </select>
-                            {!user.canRestrict && (
-                              <div className="mt-1 text-xs text-[var(--foreground)]/70">
-                                {user.role === "ADMIN" ? "Admins stay verified" : "Managed elsewhere"}
-                              </div>
-                            )}
-                            {!user.canEditRole && user.role === "ADMIN" && (
-                              <div className="mt-1 text-xs text-[var(--foreground)]/70">Self and last-admin changes are blocked</div>
-                            )}
                             {user.canRestrict && <div className="mt-1 text-xs text-[var(--foreground)]/70">{statusLabel}</div>}
                           </td>
                           <td className="px-2 py-2 text-xs text-[var(--foreground)]/80 md:text-sm">
@@ -380,7 +359,7 @@ export default function BuilderUsersPanel() {
               </p>
               <p>
                 <span className="text-[var(--foreground)]/70">Status:</span>{" "}
-                {selectedUser.role === "ADMIN" || selectedUser.isVerified ? "Verified" : "Pending Approval"}
+                {selectedUser.isVerified ? "Verified" : "Pending Approval"}
               </p>
               <p>
                 <span className="text-[var(--foreground)]/70">Created:</span>{" "}

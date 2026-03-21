@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { normalizePrismaError, parseRequiredString } from "@/server/http/api-helpers"
 import { normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
 import { prisma } from "@/server/db/prisma"
-import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
+import { ensureBuilderOrAdmin, ensureGovernanceUser } from "@/server/auth/route-auth"
 
 export async function GET() {
-  const authError = await ensureBuilderPanelAccess()
+  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
   if (authError) return authError
 
   try {
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderPanelAccess()
+  const authError = await ensureGovernanceUser()
   if (authError) return authError
 
   try {

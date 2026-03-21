@@ -91,9 +91,11 @@ function UnitSelect({
 }
 
 export default function CategoriesClient({
+  canManage,
   initialCategories,
   unitOfMeasureOptions,
 }: {
+  canManage: boolean
   initialCategories: CategoryRow[]
   unitOfMeasureOptions: UnitOfMeasureOption[]
 }) {
@@ -146,7 +148,7 @@ export default function CategoriesClient({
     rows: categories,
     tableKey: "categories-main",
     fields: [
-      { key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false },
+      ...(canManage ? [{ key: "edit", label: "Edit", getValue: () => "", searchable: false, groupable: false } as const] : []),
       { key: "name", label: "Category", getValue: (row) => row.name, groupable: false },
       { key: "sendUnit", label: "Send Unit", getValue: (row) => row.sendUnit, groupable: true },
       { key: "stockUnit", label: "Stock Unit", getValue: (row) => row.stockUnit, groupable: true },
@@ -154,7 +156,7 @@ export default function CategoriesClient({
       { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row) => row.itemCoverageUnit, groupable: true },
       { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit, groupable: true },
       { key: "products", label: "Products", getValue: (row) => String(row.productCount), groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
+      ...(canManage ? [{ key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false } as const] : []),
     ],
     sortField: (row) => row.name,
     defaultGroupKeys: ["sendUnit"],
@@ -256,11 +258,15 @@ export default function CategoriesClient({
 
   function renderRow(category: CategoryRow) {
     const cells: Record<string, ReactNode> = {
-      edit: (
-        <td key="edit" className="px-3 py-2">
-          <EditRowButton onClick={() => openEditCategory(category)} />
-        </td>
-      ),
+      ...(canManage
+        ? {
+            edit: (
+              <td key="edit" className="px-3 py-2">
+                <EditRowButton onClick={() => openEditCategory(category)} />
+              </td>
+            ),
+          }
+        : {}),
       name: <td key="name" className="px-3 py-2 font-medium">{category.name}</td>,
       sendUnit: <td key="sendUnit" className="px-3 py-2">{category.sendUnit || "-"}</td>,
       stockUnit: <td key="stockUnit" className="px-3 py-2">{category.stockUnit || "-"}</td>,
@@ -268,13 +274,17 @@ export default function CategoriesClient({
       itemCoverageUnit: <td key="itemCoverageUnit" className="px-3 py-2">{category.itemCoverageUnit || "-"}</td>,
       serviceUnit: <td key="serviceUnit" className="px-3 py-2">{category.serviceUnit || "-"}</td>,
       products: <td key="products" className="px-3 py-2">{category.productCount}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
-          <DeleteRowButton onClick={() => void deleteCategory(category)} disabled={deletingId === category.id}>
-            {deletingId === category.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </td>
-      ),
+      ...(canManage
+        ? {
+            delete: (
+              <td key="delete" className="px-3 py-2">
+                <DeleteRowButton onClick={() => void deleteCategory(category)} disabled={deletingId === category.id}>
+                  {deletingId === category.id ? "Deleting..." : "Delete"}
+                </DeleteRowButton>
+              </td>
+            ),
+          }
+        : {}),
     }
 
     return <tr key={category.id} className="border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]/40">{visibleColumns.map((column) => cells[column.key])}</tr>
@@ -312,10 +322,12 @@ export default function CategoriesClient({
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={toggleGroupByKey}
               />
-              <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
-                <Plus size={16} />
-                Category
-              </button>
+              {canManage ? (
+                <button type="button" onClick={openCreateCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-black hover:bg-blue-400">
+                  <Plus size={16} />
+                  Category
+                </button>
+              ) : null}
             </TableControlsBar>
           </TableActionsSummary>
         </div>
@@ -348,7 +360,7 @@ export default function CategoriesClient({
         />
       </div>
 
-      {isCreateOpen && categoryForm ? (
+      {canManage && isCreateOpen && categoryForm ? (
         <BasicRecordPanel
           title="New Category"
           onClose={() => !isSavingNew && setIsCreateOpen(false)}
@@ -384,7 +396,7 @@ export default function CategoriesClient({
         </BasicRecordPanel>
       ) : null}
 
-      {selectedCategory && categoryForm ? (
+      {canManage && selectedCategory && categoryForm ? (
         <BasicRecordPanel
           title={`Category ${selectedCategory.name}`}
           onClose={closeCategoryRecord}

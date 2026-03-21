@@ -31,7 +31,7 @@ describe("UnitOfMeasuresClient", () => {
   it("create flow blocks empty name with the current client-side validation message", async () => {
     const user = userEvent.setup()
 
-    render(<UnitOfMeasuresClient initialUnitOfMeasures={[]} />)
+    render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Unit Of Measure$/ }))
     await user.click(screen.getByRole("button", { name: "Create Unit Of Measure" }))
@@ -46,7 +46,7 @@ describe("UnitOfMeasuresClient", () => {
       unitOfMeasure: unitRow({ id: "u-2", name: "Hour" }),
     })
 
-    render(<UnitOfMeasuresClient initialUnitOfMeasures={[]} />)
+    render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Unit Of Measure$/ }))
     await user.type(screen.getByLabelText("Unit Of Measure"), "Hour")
@@ -66,7 +66,7 @@ describe("UnitOfMeasuresClient", () => {
   it("edit flow validates and PATCHes the expected payload", async () => {
     const user = userEvent.setup()
 
-    render(<UnitOfMeasuresClient initialUnitOfMeasures={[unitRow()]} />)
+    render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[unitRow()]} />)
 
     await user.click(screen.getByRole("button", { name: "Edit" }))
     const panelInput = screen.getAllByLabelText("Unit Of Measure")[0]
@@ -99,7 +99,7 @@ describe("UnitOfMeasuresClient", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock.mockResolvedValue({ success: true })
 
-    render(<UnitOfMeasuresClient initialUnitOfMeasures={[unitRow()]} />)
+    render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[unitRow()]} />)
 
     await user.click(screen.getByRole("button", { name: "Delete" }))
 
@@ -114,11 +114,20 @@ describe("UnitOfMeasuresClient", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock.mockRejectedValue(new Error("This unit of measure is linked to categories and cannot be deleted"))
 
-    render(<UnitOfMeasuresClient initialUnitOfMeasures={[unitRow()]} />)
+    render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[unitRow()]} />)
 
     await user.click(screen.getByRole("button", { name: "Delete" }))
 
     expect(await screen.findByText("This unit of measure is linked to categories and cannot be deleted")).toBeTruthy()
+    expect(screen.getByText("Square Feet")).toBeTruthy()
+  })
+
+  it("read-only mode hides create and row mutation controls", () => {
+    render(<UnitOfMeasuresClient canManage={false} initialUnitOfMeasures={[unitRow()]} />)
+
+    expect(screen.queryByRole("button", { name: /\+?Unit Of Measure$/ })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull()
     expect(screen.getByText("Square Feet")).toBeTruthy()
   })
 })
