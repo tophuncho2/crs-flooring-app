@@ -207,12 +207,9 @@ describe("TemplateRecordPanel", () => {
   it("adding, saving, and deleting material items keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
     requestJsonMock
+      .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" } })
+      .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "3", unitPrice: "4.00", notes: "" } })
       .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([{ id: "item-1" }]))
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([{ id: "item-1" }]))
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([]))
 
     renderPanel()
     await user.click(screen.getByRole("button", { name: "Add Material" }))
@@ -226,12 +223,9 @@ describe("TemplateRecordPanel", () => {
   it("adding, saving, and deleting service items keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
     requestJsonMock
+      .mockResolvedValueOnce({ item: { id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "1", unitPrice: "9.00", notes: "" } })
+      .mockResolvedValueOnce({ item: { id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "2", unitPrice: "9.00", notes: "" } })
       .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([{ id: "svc-1" }]))
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([{ id: "svc-1" }]))
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([]))
 
     renderPanel()
     await user.click(screen.getByRole("button", { name: "Add Service" }))
@@ -245,8 +239,7 @@ describe("TemplateRecordPanel", () => {
   it("child-row delete failures surface errors and do not close the panel", async () => {
     const user = userEvent.setup()
     requestJsonMock
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce(listPayload([{ id: "item-1" }]))
+      .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" } })
       .mockRejectedValueOnce(new Error("Failed to delete template item"))
 
     renderPanel()

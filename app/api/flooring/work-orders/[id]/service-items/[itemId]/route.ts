@@ -1,6 +1,11 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 import { deleteWorkOrderServiceItem, updateWorkOrderServiceItem } from "@/features/flooring/work-orders/mutations"
 import { validateUpdateWorkOrderServiceItemInput } from "@/features/flooring/work-orders/validators"
 
@@ -9,30 +14,83 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "workOrders.serviceItems.write",
+    limit: 80,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/work-orders/[id]/service-items/[itemId]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  const { itemId } = await params
 
   try {
-    const { itemId } = await params
     const body = (await request.json()) as Record<string, unknown>
     const item = await updateWorkOrderServiceItem(itemId, validateUpdateWorkOrderServiceItemInput(body))
-    return NextResponse.json({ item })
+    logRouteMutationSuccess(access, {
+      message: "Work order service item updated",
+      action: "workOrders.serviceItems.update",
+      route: "/api/flooring/work-orders/[id]/service-items/[itemId]",
+      entityType: "flooringWorkOrderServiceItem",
+      entityId: item.id,
+      details: { serviceId: item.serviceId ?? null, unitId: item.unitId },
+    })
+    return routeJson(access, { item })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Work order service item update failed",
+        action: "workOrders.serviceItems.update.error",
+        route: "/api/flooring/work-orders/[id]/service-items/[itemId]",
+        entityType: "flooringWorkOrderServiceItem",
+        entityId: itemId,
+      },
+      error,
+    )
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "workOrders.serviceItems.delete",
+    limit: 50,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/work-orders/[id]/service-items/[itemId]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  const { itemId } = await params
 
   try {
-    const { itemId } = await params
     await deleteWorkOrderServiceItem(itemId)
-    return NextResponse.json({ ok: true })
+    logRouteMutationSuccess(access, {
+      message: "Work order service item deleted",
+      action: "workOrders.serviceItems.delete",
+      route: "/api/flooring/work-orders/[id]/service-items/[itemId]",
+      entityType: "flooringWorkOrderServiceItem",
+      entityId: itemId,
+    })
+    return routeJson(access, { ok: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Work order service item deletion failed",
+        action: "workOrders.serviceItems.delete.error",
+        route: "/api/flooring/work-orders/[id]/service-items/[itemId]",
+        entityType: "flooringWorkOrderServiceItem",
+        entityId: itemId,
+      },
+      error,
+    )
+    return routeError(access, error)
   }
 }

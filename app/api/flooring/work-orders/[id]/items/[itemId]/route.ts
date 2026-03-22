@@ -1,6 +1,13 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { Prisma } from "@prisma/client"
+import { createAppError } from "@/server/http/api-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 import { deleteWorkOrderItem, updateWorkOrderItem } from "@/features/flooring/work-orders/mutations"
 import { validateUpdateWorkOrderMaterialItemInput } from "@/features/flooring/work-orders/validators"
 
@@ -9,30 +16,90 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "workOrders.items.write",
+    limit: 80,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/work-orders/[id]/items/[itemId]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  const { itemId } = await params
 
   try {
-    const { itemId } = await params
     const body = (await request.json()) as Record<string, unknown>
     const item = await updateWorkOrderItem(itemId, validateUpdateWorkOrderMaterialItemInput(body))
-    return NextResponse.json({ item })
+    logRouteMutationSuccess(access, {
+      message: "Work order material item updated",
+      action: "workOrders.items.update",
+      route: "/api/flooring/work-orders/[id]/items/[itemId]",
+      entityType: "flooringWorkOrderItem",
+      entityId: item.id,
+      details: { productId: item.productId, linkedInventoryId: item.linkedInventoryId ?? null },
+    })
+    return routeJson(access, { item })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    let normalizedError = error
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      normalizedError = createAppError("That inventory row is already linked to another work order item", { status: 409, field: "linkedInventoryId" })
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      normalizedError = createAppError("The selected product or work order does not exist", { status: 404, field: "productId" })
+    }
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Work order material item update failed",
+        action: "workOrders.items.update.error",
+        route: "/api/flooring/work-orders/[id]/items/[itemId]",
+        entityType: "flooringWorkOrderItem",
+        entityId: itemId,
+      },
+      normalizedError,
+    )
+    return routeError(access, normalizedError)
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "workOrders.items.delete",
+    limit: 50,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/work-orders/[id]/items/[itemId]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  const { itemId } = await params
 
   try {
-    const { itemId } = await params
     await deleteWorkOrderItem(itemId)
-    return NextResponse.json({ ok: true })
+    logRouteMutationSuccess(access, {
+      message: "Work order material item deleted",
+      action: "workOrders.items.delete",
+      route: "/api/flooring/work-orders/[id]/items/[itemId]",
+      entityType: "flooringWorkOrderItem",
+      entityId: itemId,
+    })
+    return routeJson(access, { ok: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Work order material item deletion failed",
+        action: "workOrders.items.delete.error",
+        route: "/api/flooring/work-orders/[id]/items/[itemId]",
+        entityType: "flooringWorkOrderItem",
+        entityId: itemId,
+      },
+      error,
+    )
+    return routeError(access, error)
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { requestJson } from "./http"
 
 type UseChildCollectionConfig<TItem, TCreateInput, TUpdateInput> = {
@@ -12,6 +12,9 @@ type UseChildCollectionConfig<TItem, TCreateInput, TUpdateInput> = {
   serializeCreate: (input: TCreateInput) => unknown
   serializeUpdate: (input: TUpdateInput) => unknown
   skipReloadAfterMutation?: boolean
+  getItemId?: (item: TItem) => string
+  pickCreatedItem?: (payload: Record<string, unknown>) => TItem
+  pickUpdatedItem?: (payload: Record<string, unknown>) => TItem
   onAfterMutation?: () => Promise<void>
 }
 
@@ -24,36 +27,64 @@ export function useChildCollection<TItem, TCreateInput, TUpdateInput>({
   serializeCreate,
   serializeUpdate,
   skipReloadAfterMutation = false,
+  getItemId,
+  pickCreatedItem,
+  pickUpdatedItem,
   onAfterMutation,
 }: UseChildCollectionConfig<TItem, TCreateInput, TUpdateInput>) {
-  const [items, setItems] = useState<TItem[]>([])
+  const [items, setItemsState] = useState<TItem[]>([])
+  const itemsRef = useRef<TItem[]>([])
   const [loading, setLoading] = useState(false)
   const [adding, setAdding] = useState(false)
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
+
+  const replaceItems = useCallback((nextItems: TItem[]) => {
+    itemsRef.current = nextItems
+    setItemsState(nextItems)
+    return nextItems
+  }, [])
+
+  const setItems = useCallback(
+    (value: TItem[] | ((previous: TItem[]) => TItem[])) => {
+      const nextItems = typeof value === "function" ? (value as (previous: TItem[]) => TItem[])(itemsRef.current) : value
+      replaceItems(nextItems)
+    },
+    [replaceItems],
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const payload = (await requestJson<Record<string, unknown>>(listUrl)) as Record<string, unknown>
       const nextItems = mapItems(payload)
-      setItems(nextItems)
+      replaceItems(nextItems)
       return nextItems
     } finally {
       setLoading(false)
     }
-  }, [listUrl, mapItems])
+  }, [listUrl, mapItems, replaceItems])
 
   const createItem = useCallback(
     async (input: TCreateInput) => {
       setAdding(true)
       try {
-        await requestJson(createUrl, {
+        const payload = await requestJson<Record<string, unknown>>(createUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(serializeCreate(input)),
         })
-        const nextItems = skipReloadAfterMutation ? items : await load()
+        let nextItems = itemsRef.current
+
+        if (skipReloadAfterMutation && pickCreatedItem) {
+          const createdItem = pickCreatedItem(payload)
+          nextItems = replaceItems([...itemsRef.current, createdItem])
+        } else if (skipReloadAfterMutation) {
+          nextItems = itemsRef.current
+        } else {
+          nextItems = await load()
+        }
+
         if (onAfterMutation) {
           await onAfterMutation()
         }
@@ -62,19 +93,29 @@ export function useChildCollection<TItem, TCreateInput, TUpdateInput>({
         setAdding(false)
       }
     },
-    [createUrl, items, load, onAfterMutation, serializeCreate, skipReloadAfterMutation],
+    [createUrl, load, onAfterMutation, pickCreatedItem, replaceItems, serializeCreate, skipReloadAfterMutation],
   )
 
   const updateItem = useCallback(
     async (itemId: string, input: TUpdateInput) => {
       setSavingItemId(itemId)
       try {
-        await requestJson(updateUrl(itemId), {
+        const payload = await requestJson<Record<string, unknown>>(updateUrl(itemId), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(serializeUpdate(input)),
         })
-        const nextItems = skipReloadAfterMutation ? items : await load()
+        let nextItems = itemsRef.current
+
+        if (skipReloadAfterMutation && pickUpdatedItem && getItemId) {
+          const updatedItem = pickUpdatedItem(payload)
+          nextItems = replaceItems(itemsRef.current.map((item) => (getItemId(item) === itemId ? updatedItem : item)))
+        } else if (skipReloadAfterMutation) {
+          nextItems = itemsRef.current
+        } else {
+          nextItems = await load()
+        }
+
         if (onAfterMutation) {
           await onAfterMutation()
         }
@@ -83,7 +124,7 @@ export function useChildCollection<TItem, TCreateInput, TUpdateInput>({
         setSavingItemId(null)
       }
     },
-    [items, load, onAfterMutation, serializeUpdate, skipReloadAfterMutation, updateUrl],
+    [getItemId, load, onAfterMutation, pickUpdatedItem, replaceItems, serializeUpdate, skipReloadAfterMutation, updateUrl],
   )
 
   const deleteItem = useCallback(
@@ -91,7 +132,16 @@ export function useChildCollection<TItem, TCreateInput, TUpdateInput>({
       setDeletingItemId(itemId)
       try {
         await requestJson(deleteUrl(itemId), { method: "DELETE" })
-        const nextItems = skipReloadAfterMutation ? items : await load()
+        let nextItems = itemsRef.current
+
+        if (skipReloadAfterMutation && getItemId) {
+          nextItems = replaceItems(itemsRef.current.filter((item) => getItemId(item) !== itemId))
+        } else if (skipReloadAfterMutation) {
+          nextItems = itemsRef.current
+        } else {
+          nextItems = await load()
+        }
+
         if (onAfterMutation) {
           await onAfterMutation()
         }
@@ -100,7 +150,7 @@ export function useChildCollection<TItem, TCreateInput, TUpdateInput>({
         setDeletingItemId(null)
       }
     },
-    [deleteUrl, items, load, onAfterMutation, skipReloadAfterMutation],
+    [deleteUrl, getItemId, load, onAfterMutation, replaceItems, skipReloadAfterMutation],
   )
 
   return {

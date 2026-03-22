@@ -197,6 +197,9 @@ export function WorkOrderRecordPanel({
     updateUrl: (itemId) => `/api/flooring/work-orders/${workOrderId}/items/${itemId}`,
     deleteUrl: (itemId) => `/api/flooring/work-orders/${workOrderId}/items/${itemId}`,
     mapItems: (payload) => (payload.items as EditableMaterialItem[] | undefined) ?? [],
+    getItemId: (item) => item.id,
+    pickCreatedItem: (payload) => payload.item as EditableMaterialItem,
+    pickUpdatedItem: (payload) => payload.item as EditableMaterialItem,
     serializeCreate: (input) => input,
     serializeUpdate: (item) => ({
       productId: item.productId,
@@ -212,6 +215,9 @@ export function WorkOrderRecordPanel({
     updateUrl: (itemId) => `/api/flooring/work-orders/${workOrderId}/service-items/${itemId}`,
     deleteUrl: (itemId) => `/api/flooring/work-orders/${workOrderId}/service-items/${itemId}`,
     mapItems: (payload) => (payload.items as EditableServiceItem[] | undefined) ?? [],
+    getItemId: (item) => item.id,
+    pickCreatedItem: (payload) => payload.item as EditableServiceItem,
+    pickUpdatedItem: (payload) => payload.item as EditableServiceItem,
     serializeCreate: (input) => input,
     serializeUpdate: (item) => item,
     skipReloadAfterMutation: true,
@@ -261,6 +267,25 @@ export function WorkOrderRecordPanel({
     } finally {
     }
   }, [publishWorkOrder, refreshRecord, setMaterialItems, setServiceItems])
+
+  const syncChildCollections = useCallback((nextMaterialItems: EditableMaterialItem[], nextServiceItems: EditableServiceItem[]) => {
+    if (!workOrder) {
+      return
+    }
+
+    const nextWorkOrder: WorkOrderDetail = {
+      ...workOrder,
+      hasShortage: workOrder.hasShortage,
+      items: nextMaterialItems,
+      serviceItems: nextServiceItems,
+      summary: buildRecordSummary({
+        materialItems: nextMaterialItems,
+        serviceItems: nextServiceItems,
+      }),
+    }
+
+    publishWorkOrder(nextWorkOrder)
+  }, [publishWorkOrder, workOrder])
 
   useEffect(() => {
     if (!workOrder) {
@@ -327,10 +352,10 @@ export function WorkOrderRecordPanel({
     }
 
     try {
-      await materialCollection.createItem(materialDraft)
+      const nextMaterialItems = await materialCollection.createItem(materialDraft)
       setMaterialDraft(defaultMaterialDraft)
       setMaterialDraftErrors({})
-      await refreshWorkOrderDetail()
+      syncChildCollections(nextMaterialItems, serviceItems)
       showSuccess("Material item added")
       return true
     } catch (saveError) {
@@ -356,9 +381,9 @@ export function WorkOrderRecordPanel({
     }
 
     try {
-      await materialCollection.updateItem(item.id, item)
+      const nextMaterialItems = await materialCollection.updateItem(item.id, item)
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      await refreshWorkOrderDetail()
+      syncChildCollections(nextMaterialItems, serviceItems)
       showSuccess("Material item saved")
     } catch (saveError) {
       const fieldError = getRequestFieldError(saveError)
@@ -375,9 +400,9 @@ export function WorkOrderRecordPanel({
     setError("")
     clearNotices()
     try {
-      await materialCollection.deleteItem(itemId)
+      const nextMaterialItems = await materialCollection.deleteItem(itemId)
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      await refreshWorkOrderDetail()
+      syncChildCollections(nextMaterialItems, serviceItems)
       showSuccess("Material item deleted")
     } catch (deleteError) {
       showError(deleteError instanceof Error ? deleteError.message : "Failed to delete material item")
@@ -396,10 +421,10 @@ export function WorkOrderRecordPanel({
     }
 
     try {
-      await serviceCollection.createItem(serviceDraft)
+      const nextServiceItems = await serviceCollection.createItem(serviceDraft)
       setServiceDraft(defaultServiceDraft)
       setServiceDraftErrors({})
-      await refreshWorkOrderDetail()
+      syncChildCollections(materialItems, nextServiceItems)
       showSuccess("Service item added")
       return true
     } catch (saveError) {
@@ -425,9 +450,9 @@ export function WorkOrderRecordPanel({
     }
 
     try {
-      await serviceCollection.updateItem(item.id, item)
+      const nextServiceItems = await serviceCollection.updateItem(item.id, item)
       setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      await refreshWorkOrderDetail()
+      syncChildCollections(materialItems, nextServiceItems)
       showSuccess("Service item saved")
     } catch (saveError) {
       const fieldError = getRequestFieldError(saveError)
@@ -444,9 +469,9 @@ export function WorkOrderRecordPanel({
     setError("")
     clearNotices()
     try {
-      await serviceCollection.deleteItem(itemId)
+      const nextServiceItems = await serviceCollection.deleteItem(itemId)
       setServiceItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      await refreshWorkOrderDetail()
+      syncChildCollections(materialItems, nextServiceItems)
       showSuccess("Service item deleted")
     } catch (deleteError) {
       showError(deleteError instanceof Error ? deleteError.message : "Failed to delete service item")

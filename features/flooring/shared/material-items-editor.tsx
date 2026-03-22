@@ -42,6 +42,8 @@ export function validateMaterialItemFields(value: Pick<MaterialItemDraft, "produ
 
   if (!value.quantity.trim()) {
     errors.quantity = "Enter a quantity."
+  } else if (Number(value.quantity) <= 0) {
+    errors.quantity = "Enter a quantity greater than 0."
   }
 
   return errors

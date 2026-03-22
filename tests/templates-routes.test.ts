@@ -8,6 +8,10 @@ import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/ap
 
 const {
   ensureBuilderOrAdminMock,
+  requireRouteAccessMock,
+  enforceRouteRateLimitMock,
+  logRouteMutationSuccessMock,
+  logRouteMutationFailureMock,
   listTemplatesMock,
   createTemplateMock,
   getTemplateByIdMock,
@@ -23,6 +27,10 @@ const {
   deleteTemplateServiceItemMock,
 } = vi.hoisted(() => ({
   ensureBuilderOrAdminMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
+  enforceRouteRateLimitMock: vi.fn(),
+  logRouteMutationSuccessMock: vi.fn(),
+  logRouteMutationFailureMock: vi.fn(),
   listTemplatesMock: vi.fn(),
   createTemplateMock: vi.fn(),
   getTemplateByIdMock: vi.fn(),
@@ -40,6 +48,33 @@ const {
 
 vi.mock("@/server/auth/route-auth", () => ({
   ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+}))
+
+vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
+  enforceRouteRateLimit: enforceRouteRateLimitMock,
+  logRouteMutationSuccess: logRouteMutationSuccessMock,
+  logRouteMutationFailure: logRouteMutationFailureMock,
+  routeJson: (_access: unknown, body: unknown, init?: ResponseInit) => Response.json(body, init),
+  routeError: (_access: unknown, error: unknown) => {
+    const maybeError = error as { message?: unknown; status?: unknown; field?: unknown; kind?: unknown }
+    const payload: Record<string, unknown> = {
+      error: typeof maybeError.message === "string" ? maybeError.message : "Unexpected server error",
+    }
+
+    if (typeof maybeError.field === "string") {
+      payload.field = maybeError.field
+    }
+
+    return Response.json(payload, {
+      status:
+        typeof maybeError.status === "number"
+          ? maybeError.status
+          : maybeError.kind === "app" || typeof maybeError.field === "string"
+            ? 400
+            : 500,
+    })
+  },
 }))
 
 vi.mock("@/features/flooring/templates/queries", () => ({
@@ -85,6 +120,12 @@ describe("template routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ensureBuilderOrAdminMock.mockResolvedValue(null)
+    requireRouteAccessMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: { id: "user-1", email: "owner@test.com" },
+    })
+    enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 
   it("GET /api/flooring/templates returns normalized template rows", async () => {
@@ -274,5 +315,37 @@ describe("template routes", () => {
     })
     expect((await deleteResponse.json()).ok).toBe(true)
     expect(deleteTemplateServiceItemMock).toHaveBeenCalledWith("svc-item-1")
+  })
+
+  it("child item routes return field metadata for invalid quantities", async () => {
+    const response = await POST_ITEM(
+      new Request("http://localhost/api/flooring/templates/tpl-1/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: "prod-1", quantity: "0" }),
+      }),
+      { params: Promise.resolve({ id: "tpl-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("quantity must be greater than 0")
+    expect(payload.field).toBe("quantity")
+  })
+
+  it("child service-item routes require a custom name when no saved service is selected", async () => {
+    const response = await POST_SERVICE_ITEM(
+      new Request("http://localhost/api/flooring/templates/tpl-1/service-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unitId: "unit-1", quantity: "1" }),
+      }),
+      { params: Promise.resolve({ id: "tpl-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("name is required when no saved service is selected")
+    expect(payload.field).toBe("name")
   })
 })

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/features/flooring/shared/child-item-validation"
 
 export type TemplateMaterialItemInput = {
   productId: string
@@ -33,21 +34,30 @@ export type UpdateTemplateMaterialItemInput = Partial<TemplateMaterialItemInput>
 export type UpdateTemplateServiceItemInput = Partial<TemplateServiceItemInput>
 
 export function validateTemplateMaterialItemInput(body: Record<string, unknown>): TemplateMaterialItemInput {
+  const quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  const unitPrice = body.unitPrice === undefined ? null : requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
+
   return {
     productId: parseRequiredString(body.productId, "productId"),
-    quantity: parseDecimal(body.quantity, "quantity", 2),
-    unitPrice: body.unitPrice === undefined ? null : parseDecimal(body.unitPrice, "unitPrice", 2),
+    quantity,
+    unitPrice,
     notes: parseOptionalString(body.notes),
   }
 }
 
 export function validateTemplateServiceItemInput(body: Record<string, unknown>): TemplateServiceItemInput {
+  const serviceId = parseOptionalString(body.serviceId)
+  const name = parseOptionalString(body.name)
+  const quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  const unitPrice = body.unitPrice === undefined ? null : requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
+  requireServiceNameWhenCustom(serviceId, name)
+
   return {
-    serviceId: parseOptionalString(body.serviceId),
-    name: parseOptionalString(body.name),
+    serviceId,
+    name,
     unitId: parseRequiredString(body.unitId, "unitId"),
-    quantity: parseDecimal(body.quantity, "quantity", 2),
-    unitPrice: body.unitPrice === undefined ? null : parseDecimal(body.unitPrice, "unitPrice", 2),
+    quantity,
+    unitPrice,
     notes: parseOptionalString(body.notes),
   }
 }
@@ -56,8 +66,8 @@ export function validateUpdateTemplateMaterialItemInput(body: Record<string, unk
   const input: UpdateTemplateMaterialItemInput = {}
 
   if ("productId" in body) input.productId = parseRequiredString(body.productId, "productId")
-  if ("quantity" in body) input.quantity = parseDecimal(body.quantity, "quantity", 2)
-  if ("unitPrice" in body) input.unitPrice = parseDecimal(body.unitPrice, "unitPrice", 2)
+  if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  if ("unitPrice" in body) input.unitPrice = requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
 
   return input
@@ -69,9 +79,12 @@ export function validateUpdateTemplateServiceItemInput(body: Record<string, unkn
   if ("serviceId" in body) input.serviceId = parseOptionalString(body.serviceId)
   if ("name" in body) input.name = parseOptionalString(body.name)
   if ("unitId" in body) input.unitId = parseRequiredString(body.unitId, "unitId")
-  if ("quantity" in body) input.quantity = parseDecimal(body.quantity, "quantity", 2)
-  if ("unitPrice" in body) input.unitPrice = parseDecimal(body.unitPrice, "unitPrice", 2)
+  if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  if ("unitPrice" in body) input.unitPrice = requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
+  if ("serviceId" in body && input.serviceId === null) {
+    requireServiceNameWhenCustom(input.serviceId, input.name ?? null)
+  }
 
   return input
 }

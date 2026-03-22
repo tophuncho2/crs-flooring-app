@@ -56,6 +56,8 @@ export function validateServiceItemFields(value: Pick<ServiceItemDraft, "service
 
   if (!value.quantity.trim()) {
     errors.quantity = "Enter a quantity."
+  } else if (Number(value.quantity) <= 0) {
+    errors.quantity = "Enter a quantity greater than 0."
   }
 
   return errors

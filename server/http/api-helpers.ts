@@ -113,12 +113,13 @@ export function parseDecimalOrDefault(
   return parseDecimal(value, field, scale)
 }
 
-export function normalizePrismaError(error: unknown): { status: number; message: string } {
+export function normalizePrismaError(error: unknown): { status: number; message: string; field?: string } {
   if (isAppError(error)) {
     const appError = error as AppError
     return {
       status: typeof appError.status === "number" ? appError.status : 400,
       message: appError.message,
+      field: typeof appError.field === "string" ? appError.field : undefined,
     }
   }
 
@@ -136,7 +137,7 @@ export function normalizePrismaError(error: unknown): { status: number; message:
           : []
 
       if (target.length === 1 && typeof target[0] === "string") {
-        return { status: 409, message: `${formatFieldLabel(target[0])} must be unique` }
+        return { status: 409, message: `${formatFieldLabel(target[0])} must be unique`, field: target[0] }
       }
 
       return { status: 409, message: "Unique constraint violation" }
@@ -156,7 +157,7 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     if (error.code === "P2002") {
       const target = Array.isArray(error.meta?.target) ? error.meta.target : []
       if (target.length === 1 && typeof target[0] === "string") {
-        return { status: 409, message: `${formatFieldLabel(target[0])} must be unique` }
+        return { status: 409, message: `${formatFieldLabel(target[0])} must be unique`, field: target[0] }
       }
 
       return { status: 409, message: "Unique constraint violation" }

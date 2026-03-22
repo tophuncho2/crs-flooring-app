@@ -1,5 +1,6 @@
 import { FlooringVacancyStatus, FlooringWorkOrderStatus, Prisma } from "@prisma/client"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/features/flooring/shared/child-item-validation"
 import { vacancyStatuses, workOrderStatuses } from "./services"
 
 export type WorkOrderMaterialItemInput = {
@@ -116,11 +117,14 @@ function asRecord(value: unknown, field: string) {
 }
 
 export function validateWorkOrderMaterialItemInput(body: Record<string, unknown>): WorkOrderMaterialItemInput {
+  const quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  const unitPrice = body.unitPrice === undefined ? null : requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
+
   return {
     productId: parseRequiredString(body.productId, "productId"),
     linkedInventoryId: parseOptionalString(body.linkedInventoryId),
-    quantity: parseDecimal(body.quantity, "quantity", 2),
-    unitPrice: body.unitPrice === undefined ? null : parseDecimal(body.unitPrice, "unitPrice", 2),
+    quantity,
+    unitPrice,
     notes: parseOptionalString(body.notes),
     changeOrderStatus:
       String(body.changeOrderStatus ?? "SUFFICIENT")
@@ -132,12 +136,18 @@ export function validateWorkOrderMaterialItemInput(body: Record<string, unknown>
 }
 
 export function validateWorkOrderServiceItemInput(body: Record<string, unknown>): WorkOrderServiceItemInput {
+  const serviceId = parseOptionalString(body.serviceId)
+  const name = parseOptionalString(body.name)
+  const quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  const unitPrice = body.unitPrice === undefined ? null : requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
+  requireServiceNameWhenCustom(serviceId, name)
+
   return {
-    serviceId: parseOptionalString(body.serviceId),
-    name: parseOptionalString(body.name),
+    serviceId,
+    name,
     unitId: parseRequiredString(body.unitId, "unitId"),
-    quantity: parseDecimal(body.quantity, "quantity", 2),
-    unitPrice: body.unitPrice === undefined ? null : parseDecimal(body.unitPrice, "unitPrice", 2),
+    quantity,
+    unitPrice,
     notes: parseOptionalString(body.notes),
   }
 }
@@ -147,8 +157,8 @@ export function validateUpdateWorkOrderMaterialItemInput(body: Record<string, un
 
   if ("productId" in body) input.productId = parseRequiredString(body.productId, "productId")
   if ("linkedInventoryId" in body) input.linkedInventoryId = parseOptionalString(body.linkedInventoryId)
-  if ("quantity" in body) input.quantity = parseDecimal(body.quantity, "quantity", 2)
-  if ("unitPrice" in body) input.unitPrice = parseDecimal(body.unitPrice, "unitPrice", 2)
+  if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  if ("unitPrice" in body) input.unitPrice = requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
   if ("changeOrderStatus" in body) {
     input.changeOrderStatus =
@@ -168,9 +178,12 @@ export function validateUpdateWorkOrderServiceItemInput(body: Record<string, unk
   if ("serviceId" in body) input.serviceId = parseOptionalString(body.serviceId)
   if ("name" in body) input.name = parseOptionalString(body.name)
   if ("unitId" in body) input.unitId = parseRequiredString(body.unitId, "unitId")
-  if ("quantity" in body) input.quantity = parseDecimal(body.quantity, "quantity", 2)
-  if ("unitPrice" in body) input.unitPrice = parseDecimal(body.unitPrice, "unitPrice", 2)
+  if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  if ("unitPrice" in body) input.unitPrice = requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
+  if ("serviceId" in body && input.serviceId === null) {
+    requireServiceNameWhenCustom(input.serviceId, input.name ?? null)
+  }
 
   return input
 }

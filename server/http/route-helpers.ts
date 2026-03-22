@@ -66,7 +66,11 @@ export function routeJson(context: AuthorizedRouteContext, body: unknown, init?:
 
 export function routeError(context: Pick<AuthorizedRouteContext, "requestId">, error: unknown) {
   const normalized = normalizePrismaError(error)
-  return jsonWithRequestId({ error: normalized.message }, context.requestId, { status: normalized.status })
+  return jsonWithRequestId(
+    normalized.field ? { error: normalized.message, field: normalized.field } : { error: normalized.message },
+    context.requestId,
+    { status: normalized.status },
+  )
 }
 
 export function logRouteMutationSuccess(

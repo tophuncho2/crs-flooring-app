@@ -131,6 +131,9 @@ export function TemplateRecordPanel({
     deleteUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
     mapItems: (payload) =>
       ((payload.items as Array<{ id: string; productId: string; productName: string; sendUnit: string; quantity: string; unitPrice: string; notes: string }> | undefined) ?? []),
+    getItemId: (item) => item.id,
+    pickCreatedItem: (payload) => payload.item as TemplateMaterialItem,
+    pickUpdatedItem: (payload) => payload.item as TemplateMaterialItem,
     serializeCreate: (input) => ({
       productId: input.productId,
       quantity: input.quantity,
@@ -143,6 +146,7 @@ export function TemplateRecordPanel({
       unitPrice: item.unitPrice,
       notes: item.notes,
     }),
+    skipReloadAfterMutation: true,
   })
   const serviceCollection = useChildCollection<TemplateServiceItem, ServiceItemDraft, EditableServiceItem>({
     listUrl: `/api/flooring/templates/${templateId}/service-items`,
@@ -150,8 +154,12 @@ export function TemplateRecordPanel({
     updateUrl: (itemId) => `/api/flooring/templates/${templateId}/service-items/${itemId}`,
     deleteUrl: (itemId) => `/api/flooring/templates/${templateId}/service-items/${itemId}`,
     mapItems: (payload) => (payload.items as TemplateServiceItem[] | undefined) ?? [],
+    getItemId: (item) => item.id,
+    pickCreatedItem: (payload) => payload.item as TemplateServiceItem,
+    pickUpdatedItem: (payload) => payload.item as TemplateServiceItem,
     serializeCreate: (input) => input,
     serializeUpdate: (item) => item,
+    skipReloadAfterMutation: true,
   })
 
   const setMaterialItems = materialCollection.setItems

@@ -1,6 +1,11 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 import { createTemplateItem } from "@/features/flooring/templates/mutations"
 import { listTemplateItems } from "@/features/flooring/templates/queries"
 import { validateTemplateMaterialItemInput } from "@/features/flooring/templates/validators"
@@ -9,30 +14,56 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
-    return NextResponse.json({ items: await listTemplateItems(id) })
+    return routeJson(access, { items: await listTemplateItems(id) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "templates.items.write",
+    limit: 80,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/templates/[id]/items",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  const { id } = await params
 
   try {
-    const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
     const item = await createTemplateItem(id, validateTemplateMaterialItemInput(body))
-    return NextResponse.json({ item }, { status: 201 })
+    logRouteMutationSuccess(access, {
+      message: "Template material item created",
+      action: "templates.items.create",
+      route: "/api/flooring/templates/[id]/items",
+      entityType: "flooringTemplateItem",
+      entityId: item.id,
+      details: { templateId: id, productId: item.productId },
+    })
+    return routeJson(access, { item }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Template material item creation failed",
+        action: "templates.items.create.error",
+        route: "/api/flooring/templates/[id]/items",
+        entityType: "flooringTemplateItem",
+        details: { templateId: id },
+      },
+      error,
+    )
+    return routeError(access, error)
   }
 }

@@ -30,6 +30,7 @@ function deferred<T>() {
 function renderCollectionHook(options?: {
   skipReloadAfterMutation?: boolean
   onAfterMutation?: () => Promise<void>
+  localReconcile?: boolean
 }) {
   return renderHook(() =>
     useChildCollection<Item, { name: string }, { name: string }>({
@@ -38,6 +39,9 @@ function renderCollectionHook(options?: {
       updateUrl: (itemId) => `/api/items/${itemId}`,
       deleteUrl: (itemId) => `/api/items/${itemId}`,
       mapItems: (payload) => (payload.items as Item[]) ?? [],
+      getItemId: options?.localReconcile ? (item) => item.id : undefined,
+      pickCreatedItem: options?.localReconcile ? (payload) => payload.item as Item : undefined,
+      pickUpdatedItem: options?.localReconcile ? (payload) => payload.item as Item : undefined,
       serializeCreate: (input) => input,
       serializeUpdate: (input) => input,
       skipReloadAfterMutation: options?.skipReloadAfterMutation,
@@ -144,8 +148,66 @@ describe("useChildCollection", () => {
     expect(result.current.items).toEqual([{ id: "item-1", name: "Updated" }])
   })
 
-  it("deletes an item without reloading when skipReloadAfterMutation is enabled", async () => {
-    const { result } = renderCollectionHook({ skipReloadAfterMutation: true })
+  it("creates an item locally without reloading when local reconciliation is enabled", async () => {
+    const { result } = renderCollectionHook({ skipReloadAfterMutation: true, localReconcile: true })
+
+    act(() => {
+      result.current.setItems([{ id: "item-1", name: "Seed" }])
+    })
+
+    requestJsonMock.mockResolvedValueOnce({
+      item: { id: "item-2", name: "Two" },
+    })
+
+    await act(async () => {
+      await expect(result.current.createItem({ name: "Two" })).resolves.toEqual([
+        { id: "item-1", name: "Seed" },
+        { id: "item-2", name: "Two" },
+      ])
+    })
+
+    expect(requestJsonMock).toHaveBeenCalledTimes(1)
+    expect(requestJsonMock).toHaveBeenCalledWith("/api/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Two" }),
+    })
+    await waitFor(() => {
+      expect(result.current.items).toEqual([
+        { id: "item-1", name: "Seed" },
+        { id: "item-2", name: "Two" },
+      ])
+    })
+  })
+
+  it("updates an item locally without reloading when local reconciliation is enabled", async () => {
+    const { result } = renderCollectionHook({ skipReloadAfterMutation: true, localReconcile: true })
+
+    act(() => {
+      result.current.setItems([{ id: "item-1", name: "Seed" }])
+    })
+
+    requestJsonMock.mockResolvedValueOnce({
+      item: { id: "item-1", name: "Updated" },
+    })
+
+    await act(async () => {
+      await expect(result.current.updateItem("item-1", { name: "Updated" })).resolves.toEqual([{ id: "item-1", name: "Updated" }])
+    })
+
+    expect(requestJsonMock).toHaveBeenCalledTimes(1)
+    expect(requestJsonMock).toHaveBeenCalledWith("/api/items/item-1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Updated" }),
+    })
+    await waitFor(() => {
+      expect(result.current.items).toEqual([{ id: "item-1", name: "Updated" }])
+    })
+  })
+
+  it("deletes an item locally without reloading when skipReloadAfterMutation is enabled", async () => {
+    const { result } = renderCollectionHook({ skipReloadAfterMutation: true, localReconcile: true })
 
     act(() => {
       result.current.setItems([{ id: "item-1", name: "Seed" }])
@@ -164,14 +226,14 @@ describe("useChildCollection", () => {
     deleteRequest.resolve({ ok: true })
 
     await act(async () => {
-      await expect(deletePromise).resolves.toEqual([{ id: "item-1", name: "Seed" }])
+      await expect(deletePromise).resolves.toEqual([])
     })
 
     expect(requestJsonMock).toHaveBeenCalledTimes(1)
     expect(requestJsonMock).toHaveBeenCalledWith("/api/items/item-1", { method: "DELETE" })
     expect(result.current.deletingItemId).toBeNull()
     await waitFor(() => {
-      expect(result.current.items).toEqual([{ id: "item-1", name: "Seed" }])
+      expect(result.current.items).toEqual([])
     })
   })
 })

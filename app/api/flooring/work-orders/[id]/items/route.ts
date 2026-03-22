@@ -1,7 +1,13 @@
-import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { createAppError } from "@/server/http/api-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 import { createWorkOrderItem } from "@/features/flooring/work-orders/mutations"
 import { listWorkOrderItems } from "@/features/flooring/work-orders/queries"
 import { validateWorkOrderMaterialItemInput } from "@/features/flooring/work-orders/validators"
@@ -10,37 +16,63 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
-    return NextResponse.json({ items: await listWorkOrderItems(id) })
+    return routeJson(access, { items: await listWorkOrderItems(id) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "workOrders.items.write",
+    limit: 80,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/work-orders/[id]/items",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  const { id } = await params
 
   try {
-    const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
     const item = await createWorkOrderItem(id, validateWorkOrderMaterialItemInput(body))
-    return NextResponse.json({ item }, { status: 201 })
+    logRouteMutationSuccess(access, {
+      message: "Work order material item created",
+      action: "workOrders.items.create",
+      route: "/api/flooring/work-orders/[id]/items",
+      entityType: "flooringWorkOrderItem",
+      entityId: item.id,
+      details: { workOrderId: id, productId: item.productId, linkedInventoryId: item.linkedInventoryId ?? null },
+    })
+    return routeJson(access, { item }, { status: 201 })
   } catch (error) {
+    let normalizedError = error
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return NextResponse.json({ error: "That inventory row is already linked to another work order item" }, { status: 409 })
+      normalizedError = createAppError("That inventory row is already linked to another work order item", { status: 409, field: "linkedInventoryId" })
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      return NextResponse.json({ error: "The selected product or work order does not exist" }, { status: 404 })
+      normalizedError = createAppError("The selected product or work order does not exist", { status: 404, field: "productId" })
     }
-
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Work order material item creation failed",
+        action: "workOrders.items.create.error",
+        route: "/api/flooring/work-orders/[id]/items",
+        entityType: "flooringWorkOrderItem",
+        details: { workOrderId: id },
+      },
+      normalizedError,
+    )
+    return routeError(access, normalizedError)
   }
 }
