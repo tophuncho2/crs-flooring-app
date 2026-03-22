@@ -1,4 +1,5 @@
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import { TEMPLATES_TOOL_SLUG, WORK_ORDERS_TOOL_SLUG } from "@/features/flooring/shared/access/domain-tools"
 
 export type FlooringNavItem = {
   slug: string
@@ -15,7 +16,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-cut-logs", name: "Cut Logs", href: "/dashboard/flooring/cut-logs", requiredTool: "warehouse" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/flooring/inventory", requiredTool: "warehouse" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/flooring/imports", requiredTool: "warehouse" },
-  { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/flooring/work-orders", requiredTool: "warehouse" },
+  { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/flooring/work-orders", requiredTool: WORK_ORDERS_TOOL_SLUG },
   { slug: "flooring-properties", name: "Properties", href: "/dashboard/flooring/properties", requiredTool: "warehouse" },
   {
     slug: "flooring-management-companies",
@@ -24,7 +25,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     requiredTool: "warehouse",
   },
   { slug: "flooring-services", name: "Services", href: "/dashboard/flooring/services", requiredTool: "warehouse" },
-  { slug: "flooring-templates", name: "Templates", href: "/dashboard/flooring/templates", requiredTool: "warehouse" },
+  { slug: "flooring-templates", name: "Templates", href: "/dashboard/flooring/templates", requiredTool: TEMPLATES_TOOL_SLUG },
   { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/flooring/manufacturers", requiredTool: "products" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/flooring/unit-of-measures", requiredTool: "products" },
 ]

@@ -1,5 +1,5 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireTemplatesAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getTemplatesPageData } from "@/features/flooring/templates/queries"
 import TemplatesClient from "@/features/flooring/templates/components/templates-client"
@@ -9,7 +9,7 @@ export default async function TemplatesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireTemplatesAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({

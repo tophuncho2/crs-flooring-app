@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { buildProductName } from "@/features/flooring/products/services"
+import { loadTemplateRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
 function buildTemplatesWhere(searchQuery: string): Prisma.FlooringTemplateWhereInput | undefined {
@@ -236,4 +237,43 @@ async function loadTemplatesPageData(page: number, tableState: ServerTableQueryS
 
 export async function getTemplatesPageData(page: number, tableState: ServerTableQueryState) {
   return withPrismaConnectivityHandling(() => loadTemplatesPageData(page, tableState))
+}
+
+export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  template: Awaited<ReturnType<typeof getTemplateById>>
+  propertyOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["propertyOptions"]
+  warehouseOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["warehouseOptions"]
+  padProductOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["padProductOptions"]
+  productOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["productOptions"]
+  serviceOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["serviceOptions"]
+  unitOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["unitOptions"]
+}>> {
+  try {
+    const [template, options] = await Promise.all([
+      getTemplateById(id),
+      loadTemplateRecordDetailOptions(),
+    ])
+
+    return {
+      ok: true,
+      data: {
+        template,
+        ...options,
+      },
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "TEMPLATE_DETAIL",
+        title: "Template Unavailable",
+        message: "The app could not load this template.",
+        detail: "Try refreshing the page. If this keeps happening, check the database connection and record availability.",
+      }),
+    }
+  }
 }

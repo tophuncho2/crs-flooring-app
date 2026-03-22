@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { authorizeWorkOrdersRoute } from "@/features/flooring/shared/access/templates-work-orders"
 import { createWorkOrder } from "@/features/flooring/work-orders/mutations"
 import { listWorkOrders } from "@/features/flooring/work-orders/queries"
 import { validateCreateWorkOrderInput } from "@/features/flooring/work-orders/validators"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeWorkOrdersRoute(request)
+  if (access instanceof Response) return access
 
   try {
-    return NextResponse.json({
+    return routeJson(access, {
       workOrders: await listWorkOrders(undefined, {
         searchQuery: "",
         isAscendingSort: true,
@@ -19,21 +18,19 @@ export async function GET() {
       }),
     })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeWorkOrdersRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
     const workOrder = await createWorkOrder(validateCreateWorkOrderInput(body))
-    return NextResponse.json({ workOrder }, { status: 201 })
+    return routeJson(access, { workOrder }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

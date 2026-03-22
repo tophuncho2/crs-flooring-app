@@ -1,7 +1,8 @@
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
-import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
-import { getWorkOrderById, getWorkOrderDetailPageOptions } from "@/features/flooring/work-orders/queries"
+import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
+import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templates-work-orders"
+import { getWorkOrderDetailPageData } from "@/features/flooring/work-orders/queries"
 import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
 
 export default async function WorkOrderDetailPage({
@@ -11,33 +12,40 @@ export default async function WorkOrderDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireWorkOrdersAccess()
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const result = await getWorkOrderDetailPageData(id)
 
-  try {
-    const [workOrder, pageData] = await Promise.all([
-      getWorkOrderById(id),
-      getWorkOrderDetailPageOptions(),
-    ])
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
 
-    if (!pageData.ok) {
-      throw new Error("Failed to load work order detail options")
+    if (!("error" in result)) {
+      notFound()
     }
 
     return (
-      <WorkOrderDetailClient
-        workOrder={workOrder}
-        productOptions={pageData.data.productOptions}
-        propertyOptions={pageData.data.propertyOptions}
-        warehouseOptions={pageData.data.warehouseOptions}
-        serviceOptions={pageData.data.serviceOptions}
-        unitOptions={pageData.data.unitOptions}
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/work-orders")}
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
       />
     )
-  } catch {
-    notFound()
   }
+
+  return (
+    <WorkOrderDetailClient
+      workOrder={result.data.workOrder}
+      productOptions={result.data.productOptions}
+      propertyOptions={result.data.propertyOptions}
+      warehouseOptions={result.data.warehouseOptions}
+      serviceOptions={result.data.serviceOptions}
+      unitOptions={result.data.unitOptions}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/work-orders")}
+    />
+  )
 }

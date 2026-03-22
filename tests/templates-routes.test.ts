@@ -7,8 +7,7 @@ import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/f
 import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/app/api/flooring/templates/[id]/service-items/[itemId]/route"
 
 const {
-  ensureBuilderOrAdminMock,
-  requireRouteAccessMock,
+  authorizeTemplatesRouteMock,
   enforceRouteRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
@@ -26,8 +25,7 @@ const {
   updateTemplateServiceItemMock,
   deleteTemplateServiceItemMock,
 } = vi.hoisted(() => ({
-  ensureBuilderOrAdminMock: vi.fn(),
-  requireRouteAccessMock: vi.fn(),
+  authorizeTemplatesRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
@@ -46,12 +44,11 @@ const {
   deleteTemplateServiceItemMock: vi.fn(),
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
+  authorizeTemplatesRoute: authorizeTemplatesRouteMock,
 }))
 
 vi.mock("@/server/http/route-helpers", () => ({
-  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   logRouteMutationSuccess: logRouteMutationSuccessMock,
   logRouteMutationFailure: logRouteMutationFailureMock,
@@ -119,8 +116,7 @@ function templateRow(overrides: Partial<Record<string, unknown>> = {}) {
 describe("template routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
-    requireRouteAccessMock.mockResolvedValue({
+    authorizeTemplatesRouteMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
       user: { id: "user-1", email: "owner@test.com" },
@@ -136,7 +132,7 @@ describe("template routes", () => {
 
     expect(response.status).toBe(200)
     expect(payload.templates).toEqual([templateRow()])
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "warehouse" })
+    expect(authorizeTemplatesRouteMock).toHaveBeenCalledTimes(1)
   })
 
   it("POST requires propertyId and templateTag", async () => {
@@ -222,7 +218,7 @@ describe("template routes", () => {
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
     expect(deleteTemplateMock).toHaveBeenCalledWith("tpl-1")
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "warehouse" })
+    expect(authorizeTemplatesRouteMock).toHaveBeenCalledTimes(1)
   })
 
   it("normalizes template validation and business-rule errors", async () => {

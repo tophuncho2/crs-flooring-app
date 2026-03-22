@@ -1,15 +1,10 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { confirmRecordDelete } from "./table/confirm-delete"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "./accent-styles"
 
-export function confirmRecordDelete(message: string) {
-  if (typeof window === "undefined") {
-    return false
-  }
-
-  return window.confirm(message)
-}
+export { confirmRecordDelete } from "./table/confirm-delete"
 
 export function RecordPanelFooter({
   deleteLabel,

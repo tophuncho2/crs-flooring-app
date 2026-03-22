@@ -142,6 +142,7 @@ describe("TemplateRecordPanel", () => {
   beforeEach(() => {
     cleanup()
     vi.clearAllMocks()
+    vi.stubGlobal("confirm", vi.fn(() => true))
   })
 
   it("record-panel save flow PATCHes expected payload", async () => {
@@ -206,6 +207,7 @@ describe("TemplateRecordPanel", () => {
 
   it("adding, saving, and deleting material items keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock
       .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" } })
       .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "3", unitPrice: "4.00", notes: "" } })
@@ -222,6 +224,7 @@ describe("TemplateRecordPanel", () => {
 
   it("adding, saving, and deleting service items keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock
       .mockResolvedValueOnce({ item: { id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "1", unitPrice: "9.00", notes: "" } })
       .mockResolvedValueOnce({ item: { id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "2", unitPrice: "9.00", notes: "" } })
@@ -238,6 +241,7 @@ describe("TemplateRecordPanel", () => {
 
   it("child-row delete failures surface errors and do not close the panel", async () => {
     const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
     requestJsonMock
       .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" } })
       .mockRejectedValueOnce(new Error("Failed to delete template item"))

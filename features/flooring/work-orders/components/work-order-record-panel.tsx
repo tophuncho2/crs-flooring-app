@@ -1,18 +1,29 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { requestJson } from "@/features/flooring/shared/http"
+import { requestJson } from "@/features/flooring/shared/transport/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
 import { FormStatusNotices } from "@/features/flooring/shared/notices"
-import { MaterialItemsEditor, type EditableMaterialItem, type MaterialItemDraft, type MaterialItemField, type MaterialItemFieldErrors, type MaterialItemOption, validateMaterialItemFields } from "@/features/flooring/shared/material-items-editor"
+import {
+  MaterialItemsEditor,
+  type EditableMaterialItem,
+  type MaterialItemDraft,
+  type MaterialItemOption,
+} from "@/features/flooring/shared/record-items/material-items-editor"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { buildRecordSummary, emptyRecordSummary } from "@/features/flooring/shared/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
-import { ServiceItemsEditor, type EditableServiceItem, type ServiceItemDraft, type ServiceItemField, type ServiceItemFieldErrors, type ServiceOption, type UnitOption, validateServiceItemFields } from "@/features/flooring/shared/service-items-editor"
-import { clearFieldError, clearRowFieldError, getRequestFieldError, setFieldError, setRowFieldErrors, type RowFieldErrors } from "@/features/flooring/shared/record-field-errors"
-import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/record-primary-fields"
-import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
-import { useRecordDetailController } from "@/features/flooring/shared/use-record-detail-controller"
+import {
+  ServiceItemsEditor,
+  type EditableServiceItem,
+  type ServiceItemDraft,
+  type ServiceOption,
+  type UnitOption,
+} from "@/features/flooring/shared/record-items/service-items-editor"
+import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/record-items/record-primary-fields"
+import { useChildCollection } from "@/features/flooring/shared/record-items/use-child-collection"
+import { useRecordLineItemsController } from "@/features/flooring/shared/record-items/use-record-line-items-controller"
+import { useRecordDetailController } from "@/features/flooring/shared/record-page/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/use-record-notices"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 
@@ -162,12 +173,6 @@ export function WorkOrderRecordPanel({
     }),
     [initialWorkOrder],
   )
-  const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>(defaultMaterialDraft)
-  const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>(defaultServiceDraft)
-  const [materialDraftErrors, setMaterialDraftErrors] = useState<MaterialItemFieldErrors>({})
-  const [materialItemErrors, setMaterialItemErrors] = useState<RowFieldErrors<MaterialItemField>>({})
-  const [serviceDraftErrors, setServiceDraftErrors] = useState<ServiceItemFieldErrors>({})
-  const [serviceItemErrors, setServiceItemErrors] = useState<RowFieldErrors<ServiceItemField>>({})
   const [savingWorkOrder, setSavingWorkOrder] = useState(false)
   const localNotices = useRecordNotices()
   const noticeController = notices ?? localNotices
@@ -223,11 +228,6 @@ export function WorkOrderRecordPanel({
     skipReloadAfterMutation: true,
   })
 
-  const setMaterialItems = materialCollection.setItems
-  const setServiceItems = serviceCollection.setItems
-  const materialItems = materialCollection.items
-  const serviceItems = serviceCollection.items
-
   const onSummaryChangeRef = useRef(onSummaryChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
   const hasMountedRefreshRef = useRef(false)
@@ -242,59 +242,63 @@ export function WorkOrderRecordPanel({
   }, [onWorkOrderSaved])
 
   useEffect(() => {
-    onSummaryChangeRef.current?.({ materialItems, serviceItems })
-  }, [materialItems, serviceItems])
-
-  useEffect(() => {
     onDirtyChange?.(isDirty)
   }, [isDirty, onDirtyChange])
 
-  const publishWorkOrder = useCallback((nextWorkOrder: WorkOrderDetail) => {
-    publishRecord(nextWorkOrder)
-    onWorkOrderSavedRef.current?.({
-      ...nextWorkOrder,
-      itemsCount: nextWorkOrder.items.length + nextWorkOrder.serviceItems.length,
-    })
-  }, [publishRecord])
+  const publishWorkOrder = useCallback(
+    (nextWorkOrder: WorkOrderDetail) => {
+      publishRecord(nextWorkOrder)
+      onWorkOrderSavedRef.current?.({
+        ...nextWorkOrder,
+        itemsCount: nextWorkOrder.items.length + nextWorkOrder.serviceItems.length,
+      })
+    },
+    [publishRecord],
+  )
 
   const refreshWorkOrderDetail = useCallback(async () => {
     try {
       const nextWorkOrder = await refreshRecord()
       publishWorkOrder(nextWorkOrder)
-      setMaterialItems(nextWorkOrder.items ?? [])
-      setServiceItems(nextWorkOrder.serviceItems ?? [])
       return nextWorkOrder
     } finally {
     }
-  }, [publishWorkOrder, refreshRecord, setMaterialItems, setServiceItems])
+  }, [publishWorkOrder, refreshRecord])
 
-  const syncChildCollections = useCallback((nextMaterialItems: EditableMaterialItem[], nextServiceItems: EditableServiceItem[]) => {
-    if (!workOrder) {
-      return
-    }
+  const lineItems = useRecordLineItemsController<WorkOrderDetail, EditableMaterialItem, EditableServiceItem>({
+    record: workOrder,
+    notices: noticeController,
+    clearParentError: () => setError(""),
+    materialCollection,
+    serviceCollection,
+    initialMaterialDraft: defaultMaterialDraft,
+    initialServiceDraft: defaultServiceDraft,
+    getCollectionsFromRecord: (record) => ({
+      materialItems: record.items ?? [],
+      serviceItems: record.serviceItems ?? [],
+    }),
+    onCollectionsChanged: ({ record, materialItems, serviceItems }) => {
+      const nextWorkOrder: WorkOrderDetail = {
+        ...record,
+        hasShortage: record.hasShortage,
+        items: materialItems,
+        serviceItems,
+        summary: buildRecordSummary({
+          materialItems,
+          serviceItems,
+        }),
+      }
 
-    const nextWorkOrder: WorkOrderDetail = {
-      ...workOrder,
-      hasShortage: workOrder.hasShortage,
-      items: nextMaterialItems,
-      serviceItems: nextServiceItems,
-      summary: buildRecordSummary({
-        materialItems: nextMaterialItems,
-        serviceItems: nextServiceItems,
-      }),
-    }
-
-    publishWorkOrder(nextWorkOrder)
-  }, [publishWorkOrder, workOrder])
+      publishWorkOrder(nextWorkOrder)
+    },
+  })
 
   useEffect(() => {
-    if (!workOrder) {
-      return
-    }
-
-    setMaterialItems(workOrder.items ?? [])
-    setServiceItems(workOrder.serviceItems ?? [])
-  }, [setMaterialItems, setServiceItems, workOrder])
+    onSummaryChangeRef.current?.({
+      materialItems: lineItems.materialItems,
+      serviceItems: lineItems.serviceItems,
+    })
+  }, [lineItems.materialItems, lineItems.serviceItems])
 
   useEffect(() => {
     if (!hasMountedRefreshRef.current) {
@@ -337,144 +341,6 @@ export function WorkOrderRecordPanel({
       onClose()
     } catch (deleteError) {
       showError(deleteError instanceof Error ? deleteError.message : "Failed to delete work order")
-    }
-  }
-
-  async function addMaterialItem(): Promise<boolean> {
-    if (!workOrder) return false
-    setError("")
-    clearNotices()
-    const validationErrors = validateMaterialItemFields(materialDraft)
-    if (Object.keys(validationErrors).length > 0) {
-      setMaterialDraftErrors(validationErrors)
-      showError("Fix the highlighted material item fields before adding.")
-      return false
-    }
-
-    try {
-      const nextMaterialItems = await materialCollection.createItem(materialDraft)
-      setMaterialDraft(defaultMaterialDraft)
-      setMaterialDraftErrors({})
-      syncChildCollections(nextMaterialItems, serviceItems)
-      showSuccess("Material item added")
-      return true
-    } catch (saveError) {
-      const fieldError = getRequestFieldError(saveError)
-      if (fieldError.field === "productId" || fieldError.field === "quantity") {
-        const field = fieldError.field
-        setMaterialDraftErrors(setFieldError(field, fieldError.message))
-      }
-      showError(fieldError.message || "Failed to add material item")
-      return false
-    }
-  }
-
-  async function saveMaterialItem(item: EditableMaterialItem) {
-    if (!workOrder) return
-    setError("")
-    clearNotices()
-    const validationErrors = validateMaterialItemFields(item)
-    if (Object.keys(validationErrors).length > 0) {
-      setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, validationErrors))
-      showError("Fix the highlighted material item fields before saving.")
-      return
-    }
-
-    try {
-      const nextMaterialItems = await materialCollection.updateItem(item.id, item)
-      setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      syncChildCollections(nextMaterialItems, serviceItems)
-      showSuccess("Material item saved")
-    } catch (saveError) {
-      const fieldError = getRequestFieldError(saveError)
-      if (fieldError.field === "productId" || fieldError.field === "quantity") {
-        const field = fieldError.field
-        setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, setFieldError(field, fieldError.message)))
-      }
-      showError(fieldError.message || "Failed to save material item")
-    }
-  }
-
-  async function deleteMaterialItem(itemId: string) {
-    if (!workOrder) return
-    setError("")
-    clearNotices()
-    try {
-      const nextMaterialItems = await materialCollection.deleteItem(itemId)
-      setMaterialItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      syncChildCollections(nextMaterialItems, serviceItems)
-      showSuccess("Material item deleted")
-    } catch (deleteError) {
-      showError(deleteError instanceof Error ? deleteError.message : "Failed to delete material item")
-    }
-  }
-
-  async function addServiceItem(): Promise<boolean> {
-    if (!workOrder) return false
-    setError("")
-    clearNotices()
-    const validationErrors = validateServiceItemFields(serviceDraft)
-    if (Object.keys(validationErrors).length > 0) {
-      setServiceDraftErrors(validationErrors)
-      showError("Fix the highlighted service item fields before adding.")
-      return false
-    }
-
-    try {
-      const nextServiceItems = await serviceCollection.createItem(serviceDraft)
-      setServiceDraft(defaultServiceDraft)
-      setServiceDraftErrors({})
-      syncChildCollections(materialItems, nextServiceItems)
-      showSuccess("Service item added")
-      return true
-    } catch (saveError) {
-      const fieldError = getRequestFieldError(saveError)
-      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity") {
-        const field = fieldError.field
-        setServiceDraftErrors(setFieldError(field, fieldError.message))
-      }
-      showError(fieldError.message || "Failed to add service item")
-      return false
-    }
-  }
-
-  async function saveServiceItem(item: EditableServiceItem) {
-    if (!workOrder) return
-    setError("")
-    clearNotices()
-    const validationErrors = validateServiceItemFields(item)
-    if (Object.keys(validationErrors).length > 0) {
-      setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, validationErrors))
-      showError("Fix the highlighted service item fields before saving.")
-      return
-    }
-
-    try {
-      const nextServiceItems = await serviceCollection.updateItem(item.id, item)
-      setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      syncChildCollections(materialItems, nextServiceItems)
-      showSuccess("Service item saved")
-    } catch (saveError) {
-      const fieldError = getRequestFieldError(saveError)
-      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity") {
-        const field = fieldError.field
-        setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, setFieldError(field, fieldError.message)))
-      }
-      showError(fieldError.message || "Failed to save service item")
-    }
-  }
-
-  async function deleteServiceItem(itemId: string) {
-    if (!workOrder) return
-    setError("")
-    clearNotices()
-    try {
-      const nextServiceItems = await serviceCollection.deleteItem(itemId)
-      setServiceItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      syncChildCollections(materialItems, nextServiceItems)
-      showSuccess("Service item deleted")
-    } catch (deleteError) {
-      showError(deleteError instanceof Error ? deleteError.message : "Failed to delete service item")
     }
   }
 
@@ -563,60 +429,40 @@ export function WorkOrderRecordPanel({
       <MaterialItemsEditor
         title="Material Items"
         description="Editable material lines for this work order."
-        items={materialItems}
-        draft={materialDraft}
+        items={lineItems.materialItems}
+        draft={lineItems.materialDraft}
         productOptions={productOptions}
-        loading={loading || materialCollection.loading}
-        adding={materialCollection.adding}
-        savingItemId={materialCollection.savingItemId}
-        deletingItemId={materialCollection.deletingItemId}
-        draftErrors={materialDraftErrors}
-        itemErrors={materialItemErrors}
-        onDraftChange={(field, value) => {
-          setMaterialDraft((prev) => ({ ...prev, [field]: value }))
-          if (field === "productId" || field === "quantity") {
-            setMaterialDraftErrors((previous) => clearFieldError(previous, field))
-          }
-        }}
-        onAdd={() => addMaterialItem()}
-        onItemFieldChange={(itemId, field, value) => {
-          setMaterialItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-          if (field === "productId" || field === "quantity") {
-            setMaterialItemErrors((previous) => clearRowFieldError(previous, itemId, field))
-          }
-        }}
-        onSaveItem={(item) => void saveMaterialItem(item)}
-        onDeleteItem={(itemId) => void deleteMaterialItem(itemId)}
+        loading={loading || lineItems.materialCollection.loading}
+        adding={lineItems.materialCollection.adding}
+        savingItemId={lineItems.materialCollection.savingItemId}
+        deletingItemId={lineItems.materialCollection.deletingItemId}
+        draftErrors={lineItems.materialDraftErrors}
+        itemErrors={lineItems.materialItemErrors}
+        onDraftChange={lineItems.handleMaterialDraftChange}
+        onAdd={() => lineItems.addMaterialItem()}
+        onItemFieldChange={lineItems.handleMaterialItemFieldChange}
+        onSaveItem={(item) => void lineItems.saveMaterialItem(item)}
+        onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
       />
 
       <ServiceItemsEditor
         title="Service Items"
         description="Editable service lines for this work order."
-        items={serviceItems}
-        draft={serviceDraft}
+        items={lineItems.serviceItems}
+        draft={lineItems.serviceDraft}
         serviceOptions={serviceOptions}
         unitOptions={unitOptions}
-        loading={loading || serviceCollection.loading}
-        adding={serviceCollection.adding}
-        savingItemId={serviceCollection.savingItemId}
-        deletingItemId={serviceCollection.deletingItemId}
-        draftErrors={serviceDraftErrors}
-        itemErrors={serviceItemErrors}
-        onDraftChange={(field, value) => {
-          setServiceDraft((prev) => ({ ...prev, [field]: value }))
-          if (field === "name" || field === "unitId" || field === "quantity") {
-            setServiceDraftErrors((previous) => clearFieldError(previous, field))
-          }
-        }}
-        onAdd={() => addServiceItem()}
-        onItemFieldChange={(itemId, field, value) => {
-          setServiceItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
-          if (field === "name" || field === "unitId" || field === "quantity") {
-            setServiceItemErrors((previous) => clearRowFieldError(previous, itemId, field))
-          }
-        }}
-        onSaveItem={(item) => void saveServiceItem(item)}
-        onDeleteItem={(itemId) => void deleteServiceItem(itemId)}
+        loading={loading || lineItems.serviceCollection.loading}
+        adding={lineItems.serviceCollection.adding}
+        savingItemId={lineItems.serviceCollection.savingItemId}
+        deletingItemId={lineItems.serviceCollection.deletingItemId}
+        draftErrors={lineItems.serviceDraftErrors}
+        itemErrors={lineItems.serviceItemErrors}
+        onDraftChange={lineItems.handleServiceDraftChange}
+        onAdd={() => lineItems.addServiceItem()}
+        onItemFieldChange={lineItems.handleServiceItemFieldChange}
+        onSaveItem={(item) => void lineItems.saveServiceItem(item)}
+        onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
       />
 
       <RecordPanelFooter

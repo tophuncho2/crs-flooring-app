@@ -1,13 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { POST } from "@/app/api/flooring/work-orders/[id]/sync-template/route"
 
-const { ensureBuilderOrAdminMock, syncTemplateToWorkOrderMock } = vi.hoisted(() => ({
-  ensureBuilderOrAdminMock: vi.fn(),
+const {
+  authorizeWorkOrdersRouteMock,
+  enforceRouteRateLimitMock,
+  logRouteMutationSuccessMock,
+  logRouteMutationFailureMock,
+  syncTemplateToWorkOrderMock,
+} = vi.hoisted(() => ({
+  authorizeWorkOrdersRouteMock: vi.fn(),
+  enforceRouteRateLimitMock: vi.fn(),
+  logRouteMutationSuccessMock: vi.fn(),
+  logRouteMutationFailureMock: vi.fn(),
   syncTemplateToWorkOrderMock: vi.fn(),
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
+  authorizeWorkOrdersRoute: authorizeWorkOrdersRouteMock,
+}))
+
+vi.mock("@/server/http/route-helpers", () => ({
+  enforceRouteRateLimit: enforceRouteRateLimitMock,
+  logRouteMutationSuccess: logRouteMutationSuccessMock,
+  logRouteMutationFailure: logRouteMutationFailureMock,
+  routeJson: (_access: unknown, body: unknown, init?: ResponseInit) => Response.json(body, init),
+  routeError: (_access: unknown, error: unknown) => {
+    const maybeError = error as { message?: unknown; status?: unknown; field?: unknown; kind?: unknown }
+    const payload: Record<string, unknown> = {
+      error: typeof maybeError.message === "string" ? maybeError.message : "Unexpected server error",
+    }
+
+    if (typeof maybeError.field === "string") {
+      payload.field = maybeError.field
+    }
+
+    return Response.json(payload, {
+      status:
+        typeof maybeError.status === "number"
+          ? maybeError.status
+          : maybeError.kind === "app" || typeof maybeError.field === "string"
+            ? 400
+            : 500,
+    })
+  },
 }))
 
 vi.mock("@/features/flooring/work-orders/domain/syncTemplate", () => ({
@@ -17,7 +52,12 @@ vi.mock("@/features/flooring/work-orders/domain/syncTemplate", () => ({
 describe("template sync route", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
+    authorizeWorkOrdersRouteMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: { id: "user-1", email: "owner@test.com" },
+    })
+    enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 
   it("uses warehouse auth and passes validated sync input to the domain", async () => {
@@ -48,7 +88,7 @@ describe("template sync route", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "warehouse" })
+    expect(authorizeWorkOrdersRouteMock).toHaveBeenCalledTimes(1)
     expect(syncTemplateToWorkOrderMock).toHaveBeenCalledWith("wo-1", {
       templateId: "tpl-1",
       mode: "append",

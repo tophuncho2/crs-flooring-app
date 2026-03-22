@@ -1,9 +1,8 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { listServiceOptions } from "@/features/flooring/services/queries"
-import { buildProductName } from "@/features/flooring/products/services"
+import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
 function buildWorkOrderWhere(searchQuery: string): Prisma.FlooringWorkOrderWhereInput | undefined {
@@ -282,61 +281,48 @@ async function loadWorkOrdersPageData(page: number, tableState: ServerTableQuery
   }
 }
 
-async function loadWorkOrderDetailPageOptions() {
-  const [properties, warehouses, products, services, units] = await Promise.all([
-    prisma.property.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        streetAddress: true,
-        city: true,
-        state: true,
-        postalCode: true,
-      },
-    }),
-    prisma.flooringWarehouse.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.flooringProduct.findMany({
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
-      select: {
-        id: true,
-        manufacturerName: true,
-        style: true,
-        color: true,
-        category: { select: { sendUnit: { select: { name: true } } } },
-      },
-    }),
-    listServiceOptions(),
-    prisma.flooringUnitOfMeasure.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-  ])
-
-  return {
-    propertyOptions: properties.map((property) => ({
-      id: property.id,
-      name: property.name,
-      address: [property.streetAddress, property.city, property.state, property.postalCode].filter(Boolean).join(", "),
-    })),
-    warehouseOptions: warehouses,
-    productOptions: products.map((product) => ({
-      id: product.id,
-      label: buildProductName(product),
-      sendUnit: product.category.sendUnit?.name ?? "",
-    })),
-    serviceOptions: services,
-    unitOptions: units,
-  }
-}
-
 export async function getWorkOrdersPageData(page: number, tableState: ServerTableQueryState) {
   return withPrismaConnectivityHandling(() => loadWorkOrdersPageData(page, tableState))
 }
 
 export async function getWorkOrderDetailPageOptions() {
-  return withPrismaConnectivityHandling(() => loadWorkOrderDetailPageOptions())
+  return withPrismaConnectivityHandling(() => loadSharedRecordDetailOptions())
+}
+
+export async function getWorkOrderDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  workOrder: Awaited<ReturnType<typeof getWorkOrderById>>
+  propertyOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["propertyOptions"]
+  warehouseOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["warehouseOptions"]
+  productOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["productOptions"]
+  serviceOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["serviceOptions"]
+  unitOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["unitOptions"]
+}>> {
+  try {
+    const [workOrder, options] = await Promise.all([
+      getWorkOrderById(id),
+      loadSharedRecordDetailOptions(),
+    ])
+
+    return {
+      ok: true,
+      data: {
+        workOrder,
+        ...options,
+      },
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "WORK_ORDER_DETAIL",
+        title: "Work Order Unavailable",
+        message: "The app could not load this work order.",
+        detail: "Try refreshing the page. If this keeps happening, check the database connection and record availability.",
+      }),
+    }
+  }
 }

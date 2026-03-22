@@ -1,9 +1,8 @@
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
-import { requireToolAccess } from "@/server/auth/session"
-import { getTemplateById } from "@/features/flooring/templates/queries"
-import { loadTemplatePanelOptions } from "@/features/flooring/shared/template-panel-options"
-import { prisma } from "@/server/db/prisma"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
+import { getTemplateDetailPageData } from "@/features/flooring/templates/queries"
+import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
+import { requireTemplatesAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { TemplateDetailClient } from "@/features/flooring/templates/components/template-detail-client"
 
 export default async function TemplateDetailPage({
@@ -13,33 +12,40 @@ export default async function TemplateDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("templates")
+  await requireTemplatesAccess()
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const result = await getTemplateDetailPageData(id)
 
-  try {
-    const [template, propertyOptions, templatePanelOptions] = await Promise.all([
-      getTemplateById(id),
-      prisma.property.findMany({
-        orderBy: { name: "asc" },
-        select: { id: true, name: true },
-      }),
-      loadTemplatePanelOptions(),
-    ])
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
+
+    if (!("error" in result)) {
+      notFound()
+    }
 
     return (
-      <TemplateDetailClient
-        template={template}
-        propertyOptions={propertyOptions}
-        warehouseOptions={templatePanelOptions.warehouseOptions}
-        padProductOptions={templatePanelOptions.padProductOptions}
-        productOptions={templatePanelOptions.productOptions}
-        serviceOptions={templatePanelOptions.serviceOptions}
-        unitOptions={templatePanelOptions.unitOptions}
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/templates")}
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
       />
     )
-  } catch {
-    notFound()
   }
+
+  return (
+    <TemplateDetailClient
+      template={result.data.template}
+      propertyOptions={result.data.propertyOptions}
+      warehouseOptions={result.data.warehouseOptions}
+      padProductOptions={result.data.padProductOptions}
+      productOptions={result.data.productOptions}
+      serviceOptions={result.data.serviceOptions}
+      unitOptions={result.data.unitOptions}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/templates")}
+    />
+  )
 }

@@ -7,9 +7,21 @@ export type PrismaConnectivityIssue = {
   detail: string
 }
 
+export type PrismaPageLoadIssue = PrismaConnectivityIssue | {
+  code: string
+  title: string
+  message: string
+  detail: string
+}
+
 export type PrismaPageDataResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: PrismaConnectivityIssue }
+
+export type PrismaDetailPageResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; notFound: true }
+  | { ok: false; error: PrismaPageLoadIssue }
 
 export function getPrismaConnectivityIssue(error: unknown): PrismaConnectivityIssue | null {
   if (error instanceof Prisma.PrismaClientInitializationError) {
@@ -46,6 +58,35 @@ export function getPrismaConnectivityIssue(error: unknown): PrismaConnectivityIs
   }
 
   return null
+}
+
+export function isPrismaNotFoundError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025"
+}
+
+export function createPrismaPageLoadIssue(
+  error: unknown,
+  fallback: {
+    code: string
+    title: string
+    message: string
+    detail: string
+  },
+): PrismaPageLoadIssue {
+  const connectivityIssue = getPrismaConnectivityIssue(error)
+
+  if (connectivityIssue) {
+    return connectivityIssue
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return {
+      ...fallback,
+      detail: error.message,
+    }
+  }
+
+  return fallback
 }
 
 export async function withPrismaConnectivityHandling<T>(loader: () => Promise<T>): Promise<PrismaPageDataResult<T>> {

@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { authorizeTemplatesRoute } from "@/features/flooring/shared/access/templates-work-orders"
 import { createTemplate } from "@/features/flooring/templates/mutations"
 import { listTemplates } from "@/features/flooring/templates/queries"
 import { validateCreateTemplateInput } from "@/features/flooring/templates/validators"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeTemplatesRoute(request)
+  if (access instanceof Response) return access
 
   try {
-    return NextResponse.json({
+    return routeJson(access, {
       templates: await listTemplates(undefined, {
         searchQuery: "",
         isAscendingSort: true,
@@ -19,21 +18,19 @@ export async function GET() {
       }),
     })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeTemplatesRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
     const template = await createTemplate(validateCreateTemplateInput(body))
-    return NextResponse.json({ template }, { status: 201 })
+    return routeJson(access, { template }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

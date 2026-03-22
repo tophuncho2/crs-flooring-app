@@ -1,5 +1,5 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getWorkOrdersPageData } from "@/features/flooring/work-orders/queries"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
@@ -9,7 +9,7 @@ export default async function WorkOrdersPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireWorkOrdersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({

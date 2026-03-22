@@ -14,6 +14,18 @@ type UrlRecordEditorInput<Row extends { id: string }> = {
 
 export const requestJsonMock = vi.fn()
 
+export class MockRequestJsonError extends Error {
+  status: number
+  payload: Record<string, unknown>
+
+  constructor(message: string, options?: { status?: number; payload?: Record<string, unknown> }) {
+    super(message)
+    this.name = "RequestJsonError"
+    this.status = options?.status ?? 400
+    this.payload = options?.payload ?? {}
+  }
+}
+
 export const lucideReactModule = {
   ArrowLeft: () => <span>&lt;-</span>,
   ChevronDown: () => <span>v</span>,
@@ -26,6 +38,7 @@ export const lucideReactModule = {
 
 export const httpModule = {
   requestJson: requestJsonMock,
+  RequestJsonError: MockRequestJsonError,
 }
 
 export function useConfiguredTableStateStub({ rows, fields }: TableStateInput) {

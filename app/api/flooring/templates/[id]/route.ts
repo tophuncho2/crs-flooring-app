@@ -1,52 +1,48 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { authorizeTemplatesRoute } from "@/features/flooring/shared/access/templates-work-orders"
 import { deleteTemplate, updateTemplate } from "@/features/flooring/templates/mutations"
 import { getTemplateById } from "@/features/flooring/templates/queries"
 import { validateUpdateTemplateInput } from "@/features/flooring/templates/validators"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await authorizeTemplatesRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
-    return NextResponse.json({ template: await getTemplateById(id) })
+    return routeJson(access, { template: await getTemplateById(id) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeTemplatesRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
     const template = await updateTemplate(id, validateUpdateTemplateInput(body))
-    return NextResponse.json({ template })
+    return routeJson(access, { template })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await authorizeTemplatesRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
     await deleteTemplate(id)
-    return NextResponse.json({ ok: true })
+    return routeJson(access, { ok: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

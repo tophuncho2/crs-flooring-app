@@ -1,4 +1,5 @@
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import { TEMPLATES_TOOL_SLUG, WORK_ORDERS_TOOL_SLUG } from "@/features/flooring/shared/access/domain-tools"
 
 export type FlooringHotkeyDefinition = {
   id: string
@@ -46,7 +47,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Inventory",
     code: "KeyI",
     path: "/dashboard/flooring/inventory",
-    requiredTool: "warehouse",
+    requiredTool: TEMPLATES_TOOL_SLUG,
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00012",
@@ -55,7 +56,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Calendar",
     code: "KeyC",
     path: "/dashboard/flooring/calendar",
-    requiredTool: "warehouse",
+    requiredTool: WORK_ORDERS_TOOL_SLUG,
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00004",

@@ -1,8 +1,8 @@
+import { authorizeTemplatesRoute } from "@/features/flooring/shared/access/templates-work-orders"
 import {
   enforceRouteRateLimit,
   logRouteMutationFailure,
   logRouteMutationSuccess,
-  requireRouteAccess,
   routeError,
   routeJson,
 } from "@/server/http/route-helpers"
@@ -14,7 +14,7 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeTemplatesRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -56,7 +56,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeTemplatesRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {

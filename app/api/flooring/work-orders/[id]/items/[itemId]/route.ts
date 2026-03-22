@@ -1,10 +1,10 @@
 import { Prisma } from "@prisma/client"
+import { authorizeWorkOrdersRoute } from "@/features/flooring/shared/access/templates-work-orders"
 import { createAppError } from "@/server/http/api-helpers"
 import {
   enforceRouteRateLimit,
   logRouteMutationFailure,
   logRouteMutationSuccess,
-  requireRouteAccess,
   routeError,
   routeJson,
 } from "@/server/http/route-helpers"
@@ -16,7 +16,7 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWorkOrdersRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -65,7 +65,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWorkOrdersRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {

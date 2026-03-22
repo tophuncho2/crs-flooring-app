@@ -5,7 +5,7 @@ import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/f
 import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/app/api/flooring/work-orders/[id]/service-items/[itemId]/route"
 
 const {
-  requireRouteAccessMock,
+  authorizeWorkOrdersRouteMock,
   enforceRouteRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
@@ -18,7 +18,7 @@ const {
   updateWorkOrderServiceItemMock,
   deleteWorkOrderServiceItemMock,
 } = vi.hoisted(() => ({
-  requireRouteAccessMock: vi.fn(),
+  authorizeWorkOrdersRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
@@ -32,8 +32,11 @@ const {
   deleteWorkOrderServiceItemMock: vi.fn(),
 }))
 
+vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
+  authorizeWorkOrdersRoute: authorizeWorkOrdersRouteMock,
+}))
+
 vi.mock("@/server/http/route-helpers", () => ({
-  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   logRouteMutationSuccess: logRouteMutationSuccessMock,
   logRouteMutationFailure: logRouteMutationFailureMock,
@@ -76,7 +79,7 @@ vi.mock("@/features/flooring/work-orders/mutations", () => ({
 describe("work-order child routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    requireRouteAccessMock.mockResolvedValue({
+    authorizeWorkOrdersRouteMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
       user: { id: "user-1", email: "owner@test.com" },
