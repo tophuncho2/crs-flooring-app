@@ -5,6 +5,14 @@ import { createManufacturer } from "@/features/flooring/manufacturers/mutations"
 import { listManufacturers } from "@/features/flooring/manufacturers/queries"
 import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
 
+function normalizeManufacturerResponse(
+  manufacturer:
+    | ReturnType<typeof normalizeManufacturer>
+    | Parameters<typeof normalizeManufacturer>[0],
+) {
+  return "productsCount" in manufacturer ? manufacturer : normalizeManufacturer(manufacturer)
+}
+
 export async function GET() {
   const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
   if (authError) return authError
@@ -12,7 +20,7 @@ export async function GET() {
   try {
     const manufacturers = await listManufacturers()
 
-    return NextResponse.json({ manufacturers: manufacturers.map(normalizeManufacturer) })
+    return NextResponse.json({ manufacturers: manufacturers.map(normalizeManufacturerResponse) })
   } catch (error) {
     const normalized = normalizePrismaError(error)
     return NextResponse.json({ error: normalized.message }, { status: normalized.status })

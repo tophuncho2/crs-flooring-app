@@ -8,7 +8,9 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import UnitOfMeasuresClient from "@/features/flooring/unit-of-measures/components/unit-of-measures-client"
+import { UnitOfMeasureDetailClient } from "@/features/flooring/unit-of-measures/components/detail/unit-of-measure-detail-client"
 
 function unitRow(overrides: Partial<{
   id: string
@@ -63,13 +65,28 @@ describe("UnitOfMeasuresClient", () => {
     expect(screen.getByText("Unit of measure created")).toBeTruthy()
   })
 
-  it("edit flow validates and PATCHes the expected payload", async () => {
+  it("row click routes to the canonical detail page", async () => {
     const user = userEvent.setup()
 
     render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[unitRow()]} />)
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
-    const panelInput = screen.getAllByLabelText("Unit Of Measure")[0]
+    await user.click(screen.getByRole("button", { name: "Open unit of measure Square Feet" }))
+
+    expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/flooring/unit-of-measures/u-1"), { scroll: false })
+  })
+
+  it("detail save validates and PATCHes the expected payload", async () => {
+    const user = userEvent.setup()
+
+    render(
+      <UnitOfMeasureDetailClient
+        unitOfMeasure={unitRow()}
+        canManage
+        backHref="/dashboard/flooring/unit-of-measures"
+      />,
+    )
+
+    const panelInput = screen.getByLabelText("Unit Of Measure")
     await user.clear(panelInput)
     await user.click(screen.getByRole("button", { name: "Save Unit Of Measure" }))
 

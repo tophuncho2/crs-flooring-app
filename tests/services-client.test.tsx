@@ -8,7 +8,9 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import ServicesClient from "@/features/flooring/services/components/services-client"
+import { ServiceDetailClient } from "@/features/flooring/services/components/detail/service-detail-client"
 
 function serviceRow(overrides: Partial<{
   id: string
@@ -84,7 +86,7 @@ describe("ServicesClient", () => {
     expect(screen.getByText("Service created")).toBeTruthy()
   })
 
-  it("edit flow validates and PATCHes the expected payload", async () => {
+  it("row click routes to the canonical detail page", async () => {
     const user = userEvent.setup()
 
     render(
@@ -97,9 +99,26 @@ describe("ServicesClient", () => {
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
+    await user.click(screen.getByRole("button", { name: "Open service Install" }))
 
-    const nameInput = screen.getAllByLabelText("Service Name")[0]
+    expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/flooring/services/svc-1"), { scroll: false })
+  })
+
+  it("detail save validates and PATCHes the expected payload", async () => {
+    const user = userEvent.setup()
+
+    render(
+      <ServiceDetailClient
+        service={serviceRow()}
+        unitOptions={[
+          { id: "unit-1", name: "Square Feet" },
+          { id: "unit-2", name: "Room" },
+        ]}
+        backHref="/dashboard/flooring/services"
+      />,
+    )
+
+    const nameInput = screen.getByLabelText("Service Name")
     await user.clear(nameInput)
     await user.click(screen.getByRole("button", { name: "Save Service" }))
 
@@ -111,11 +130,11 @@ describe("ServicesClient", () => {
     })
 
     await user.type(nameInput, "Repair")
-    fireEvent.change(screen.getAllByLabelText("Service Unit")[0], { target: { value: "unit-2" } })
-    const costInput = screen.getAllByLabelText("Cost")[0]
+    fireEvent.change(screen.getByLabelText("Service Unit"), { target: { value: "unit-2" } })
+    const costInput = screen.getByLabelText("Cost")
     await user.clear(costInput)
     await user.type(costInput, "12.00")
-    await user.type(screen.getAllByLabelText("Notes")[0], "Rush")
+    await user.type(screen.getByLabelText("Notes"), "Rush")
     await user.click(screen.getByRole("button", { name: "Save Service" }))
 
     await waitFor(() => {

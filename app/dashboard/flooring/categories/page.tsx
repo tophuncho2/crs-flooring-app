@@ -1,11 +1,11 @@
 import { canEditCategories } from "@/server/auth/access-control"
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
-import CategoriesClient from "@/features/flooring/categories/components/categories-client"
-import { getCategoriesPageData } from "@/features/flooring/categories/queries"
+import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
+import CategoriesClient from "@/features/flooring/categories/components/list/categories-client"
+import { getCategoriesPageData } from "@/features/flooring/categories/data/queries"
 
 export default async function FlooringCategoriesPage() {
-  const user = await requireToolAccess("products")
+  const user = await requireCategoriesAccess()
   const pageData = await getCategoriesPageData()
 
   if (!pageData.ok) {

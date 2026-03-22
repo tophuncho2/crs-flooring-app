@@ -8,7 +8,9 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import CategoriesClient from "@/features/flooring/categories/components/categories-client"
+import { CategoryDetailClient } from "@/features/flooring/categories/components/detail/category-detail-client"
 
 function categoryRow(overrides: Partial<{
   id: string
@@ -113,14 +115,11 @@ describe("CategoriesClient", () => {
     await user.type(screen.getByLabelText("Category Name"), "Carpet")
     await user.click(screen.getByRole("button", { name: "Create Category" }))
 
-    expect(await screen.findAllByText("Name must be unique")).toHaveLength(2)
+    expect(await screen.findByText("Name must be unique")).toBeTruthy()
   })
 
-  it("edit flow opens the record and PATCHes the expected payload", async () => {
+  it("row click routes to the canonical detail page", async () => {
     const user = userEvent.setup()
-    requestJsonMock.mockResolvedValue({
-      category: categoryRow({ name: "Updated Carpet", stockUnitId: "u-stock", stockUnit: "Roll" }),
-    })
 
     render(
       <CategoriesClient
@@ -134,8 +133,31 @@ describe("CategoriesClient", () => {
       />,
     )
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
-    const nameInput = screen.getAllByLabelText("Category Name")[0]
+    await user.click(screen.getByRole("button", { name: "Open category Carpet" }))
+
+    expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/flooring/categories/cat-1"), { scroll: false })
+  })
+
+  it("detail save PATCHes the expected payload", async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockResolvedValue({
+      category: categoryRow({ name: "Updated Carpet", stockUnitId: "u-stock", stockUnit: "Roll" }),
+    })
+
+    render(
+      <CategoryDetailClient
+        category={categoryRow()}
+        canManage
+        unitOfMeasureOptions={[
+          { id: "u-send", name: "SY", createdAt: "2026-03-19T00:00:00.000Z" },
+          { id: "u-stock", name: "Roll", createdAt: "2026-03-19T00:00:00.000Z" },
+          { id: "u-item", name: "SF", createdAt: "2026-03-19T00:00:00.000Z" },
+        ]}
+        backHref="/dashboard/flooring/categories"
+      />,
+    )
+
+    const nameInput = screen.getByLabelText("Category Name")
     await user.clear(nameInput)
     await user.type(nameInput, "Updated Carpet")
     fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "u-stock" } })

@@ -2,11 +2,11 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { requestJson } from "@/features/flooring/shared/http"
-import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/flooring/shared/detail-routes"
-import { RecordDetailPageShell } from "@/features/flooring/shared/record-detail-page-shell"
-import { useUnsavedChangesGuard } from "@/features/flooring/shared/use-unsaved-changes-guard"
-import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/address-helpers"
+import { requestJson } from "@/features/flooring/shared/transport/http"
+import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/flooring/shared/record-page/detail-routes"
+import { RecordDetailPageShell } from "@/features/flooring/shared/record-page/record-detail-page-shell"
+import { useUnsavedChangesGuard } from "@/features/flooring/shared/record-page/use-unsaved-changes-guard"
+import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/utils/address-helpers"
 import { PropertyRecordPanel } from "./property-record-panel"
 
 type PropertyManagementCompany = {

@@ -8,7 +8,9 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import ManufacturersClient from "@/features/flooring/manufacturers/components/manufacturers-client"
+import { ManufacturerDetailClient } from "@/features/flooring/manufacturers/components/detail/manufacturer-detail-client"
 
 function manufacturerRow(overrides: Partial<{
   id: string
@@ -82,19 +84,33 @@ describe("ManufacturersClient", () => {
     expect(screen.getByText("Manufacturer created")).toBeTruthy()
   })
 
-  it("edit flow PATCHes the expected payload", async () => {
+  it("row click routes to the canonical detail page", async () => {
+    const user = userEvent.setup()
+
+    render(<ManufacturersClient initialManufacturers={[manufacturerRow()]} />)
+
+    await user.click(screen.getByRole("button", { name: "Open manufacturer Acme Flooring" }))
+
+    expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/flooring/manufacturers/mfg-1"), { scroll: false })
+  })
+
+  it("detail save PATCHes the expected payload", async () => {
     const user = userEvent.setup()
     requestJsonMock.mockResolvedValue({
       manufacturer: manufacturerRow({ companyName: "Updated Mill", email: "sales@example.com" }),
     })
 
-    render(<ManufacturersClient initialManufacturers={[manufacturerRow()]} />)
+    render(
+      <ManufacturerDetailClient
+        manufacturer={manufacturerRow()}
+        backHref="/dashboard/flooring/manufacturers"
+      />,
+    )
 
-    await user.click(screen.getByRole("button", { name: "Edit" }))
-    const companyInput = screen.getAllByLabelText("Company Name")[0]
+    const companyInput = screen.getByLabelText("Company Name")
     await user.clear(companyInput)
     await user.type(companyInput, "Updated Mill")
-    await user.type(screen.getAllByLabelText("Email")[0], "sales@example.com")
+    await user.type(screen.getByLabelText("Email"), "sales@example.com")
     await user.click(screen.getByRole("button", { name: "Save Manufacturer" }))
 
     await waitFor(() => {

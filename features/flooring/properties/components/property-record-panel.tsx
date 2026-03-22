@@ -1,10 +1,10 @@
 "use client"
 
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
-import { FormStatusNotices } from "@/features/flooring/shared/notices"
-import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { getSharedFormFieldClass } from "@/features/flooring/shared/form-field-styles"
-import { RecordFormField } from "@/features/flooring/shared/record-form"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/display/accent-styles"
+import { FormStatusNotices } from "@/features/flooring/shared/feedback/notices"
+import { RecordPanelFooter } from "@/features/flooring/shared/forms/record-panel-footer"
+import { getSharedFormFieldClass } from "@/features/flooring/shared/forms/form-field-styles"
+import { RecordFormField } from "@/features/flooring/shared/forms/record-form"
 
 type PropertyRow = {
   id: string
