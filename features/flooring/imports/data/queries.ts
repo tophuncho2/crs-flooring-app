@@ -90,7 +90,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
       include: {
         category: { select: { stockUnit: { select: { name: true } } } },
       },
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
     }),
     prisma.flooringWarehouse.findMany({
       orderBy: { name: "asc" },

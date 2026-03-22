@@ -1,4 +1,4 @@
-import { buildProductName } from "@/features/flooring/products/services"
+import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import type { LineTotalInput } from "@/features/flooring/shared/line-totals"
 import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
 
@@ -8,11 +8,12 @@ export type PricingLine = {
 }
 
 export function buildPadLabel(product: {
-  manufacturerName: string | null
+  name?: string | null
+  categoryName?: string | null
   style: string | null
   color: string | null
 }) {
-  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Pad Product"
+  return buildPadProductDisplayName(product)
 }
 
 export function calculateTemplateTotal(input: {
@@ -48,7 +49,7 @@ export function normalizeTemplate(template: {
   propertyId: string
   property: { id: string; name: string }
   warehouse: { id: string; name: string } | null
-  padProduct: { id: string; manufacturerName: string | null; style: string | null; color: string | null } | null
+  padProduct: { id: string; name: string; style: string | null; color: string | null } | null
   createdAt: Date
   updatedAt: Date
   _count?: { items: number; serviceItems: number }
@@ -89,7 +90,7 @@ export function normalizeTemplateItem(item: {
   notes: string | null
   createdAt: Date
   product: {
-    manufacturerName: string | null
+    name: string
     style: string | null
     color: string | null
     category: { sendUnit: { name: string } | null }
@@ -98,7 +99,7 @@ export function normalizeTemplateItem(item: {
   return {
     id: item.id,
     productId: item.productId,
-    productName: buildProductName(item.product),
+    productName: buildFlooringProductDisplayName(item.product),
     sendUnit: item.product.category.sendUnit?.name ?? "",
     quantity: item.quantity.toString(),
     unitPrice: item.unitPrice.toString(),

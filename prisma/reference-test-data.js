@@ -267,8 +267,8 @@ function padNumber(value) {
   return String(value).padStart(2, "0")
 }
 
-function buildProductName({ manufacturerName, style, color }) {
-  return [manufacturerName, style, color].filter(Boolean).join(" - ") || "Flooring Product"
+function buildProductName({ categoryName, style, color }) {
+  return [categoryName, style, color].filter(Boolean).join(" - ") || "Flooring Product"
 }
 
 function buildReferenceTestData({
@@ -357,7 +357,7 @@ function buildReferenceTestData({
 
       return {
         name: buildProductName({
-          manufacturerName: manufacturer.companyName,
+          categoryName: category.name,
           style: product.style,
           color: product.color,
         }),

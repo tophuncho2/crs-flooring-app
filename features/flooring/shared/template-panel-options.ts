@@ -1,13 +1,13 @@
 import { prisma } from "@/server/db/prisma"
 import { listServiceOptions } from "@/features/flooring/services/queries"
-import { buildProductName } from "@/features/flooring/products/services"
+import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
 function buildPadLabel(product: {
-  manufacturerName: string | null
+  name: string
   style: string | null
   color: string | null
 }) {
-  return buildProductName(product).replace("Flooring Product", "Pad Product")
+  return buildPadProductDisplayName(product)
 }
 
 export async function loadTemplatePanelOptions() {
@@ -22,19 +22,19 @@ export async function loadTemplatePanelOptions() {
           name: "Pad",
         },
       },
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
       select: {
         id: true,
-        manufacturerName: true,
+        name: true,
         style: true,
         color: true,
       },
     }),
     prisma.flooringProduct.findMany({
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
       select: {
         id: true,
-        manufacturerName: true,
+        name: true,
         style: true,
         color: true,
         category: {
@@ -57,7 +57,7 @@ export async function loadTemplatePanelOptions() {
     })),
     productOptions: products.map((product) => ({
       id: product.id,
-      label: buildProductName(product),
+      label: buildFlooringProductDisplayName(product),
       sendUnit: product.category.sendUnit?.name ?? "",
     })),
     serviceOptions: services,

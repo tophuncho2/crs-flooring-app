@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed:users": "node prisma/seed.js",
     "db:seed:reference-test-data": "node prisma/reference-test-data.js",
+    "db:backfill:product-names": "node prisma/backfill-product-names.js",
     "deploy:prepare": "npm run db:migrate && npm run db:seed:users",
     "db:promote-admin": "node prisma/admin-recovery.js",
     "db:upsert-owner": "node prisma/owner-recovery.js",

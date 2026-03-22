@@ -18,7 +18,7 @@ const templateInclude = {
   padProduct: {
     select: {
       id: true,
-      manufacturerName: true,
+      name: true,
       style: true,
       color: true,
     },
@@ -172,7 +172,7 @@ export async function createTemplateItem(templateId: string, input: TemplateMate
     include: {
       product: {
         select: {
-          manufacturerName: true,
+          name: true,
           style: true,
           color: true,
           category: { select: { sendUnit: { select: { name: true } } } },
@@ -196,7 +196,7 @@ export async function updateTemplateItem(itemId: string, input: Partial<Template
     include: {
       product: {
         select: {
-          manufacturerName: true,
+          name: true,
           style: true,
           color: true,
           category: { select: { sendUnit: { select: { name: true } } } },

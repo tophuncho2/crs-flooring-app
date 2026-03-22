@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma"
 import { flooringCategoryUnitInclude } from "@/server/flooring/unit-measures"
-import { buildProductName, normalizeCatalogProduct } from "../domain/services"
+import { createAppError } from "@/server/http/api-helpers"
+import { buildStoredProductName, normalizeCatalogProduct } from "../domain/services"
 import type { CreateProductInput, UpdateProductInput } from "../domain/validators"
 
 async function resolveManufacturerName(manufacturerId: string | null | undefined) {
@@ -16,12 +17,31 @@ async function resolveManufacturerName(manufacturerId: string | null | undefined
   return manufacturer?.companyName ?? manufacturer?.agentName ?? null
 }
 
+async function resolveCategoryName(categoryId: string) {
+  const category = await prisma.flooringCategory.findUnique({
+    where: { id: categoryId },
+    select: { name: true },
+  })
+
+  if (!category) {
+    throw createAppError("Selected category was not found", {
+      field: "categoryId",
+      status: 400,
+    })
+  }
+
+  return category.name
+}
+
 export async function createProduct(input: CreateProductInput) {
-  const manufacturerName = await resolveManufacturerName(input.manufacturerId)
+  const [manufacturerName, categoryName] = await Promise.all([
+    resolveManufacturerName(input.manufacturerId),
+    resolveCategoryName(input.categoryId),
+  ])
   const product = await prisma.flooringProduct.create({
     data: {
-      name: buildProductName({
-        manufacturerName,
+      name: buildStoredProductName({
+        categoryName,
         style: input.style,
         color: input.color,
       }),
@@ -65,14 +85,24 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
   const existing = await prisma.flooringProduct.findUniqueOrThrow({
     where: { id },
     select: {
+      categoryId: true,
+      category: {
+        select: { name: true },
+      },
       manufacturerName: true,
       style: true,
       color: true,
     },
   })
 
-  const manufacturerName =
-    "manufacturerId" in input ? await resolveManufacturerName(input.manufacturerId) : existing.manufacturerName
+  const nextCategoryId = input.categoryId ?? existing.categoryId
+
+  const [manufacturerName, categoryName] = await Promise.all([
+    "manufacturerId" in input ? resolveManufacturerName(input.manufacturerId) : Promise.resolve(existing.manufacturerName),
+    nextCategoryId === existing.categoryId
+      ? Promise.resolve(existing.category.name)
+      : resolveCategoryName(nextCategoryId),
+  ])
 
   const product = await prisma.flooringProduct.update({
     where: { id },
@@ -90,8 +120,8 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
       coveragePerUnit: input.coveragePerUnit,
       photoUrls: input.photoUrls,
       notes: input.notes,
-      name: buildProductName({
-        manufacturerName,
+      name: buildStoredProductName({
+        categoryName,
         style: input.style ?? existing.style,
         color: input.color ?? existing.color,
       }),

@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { buildProductName } from "@/features/flooring/products/services"
+import { buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import { loadTemplateRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
@@ -60,7 +60,7 @@ export async function listTemplates(
       padProduct: {
         select: {
           id: true,
-          manufacturerName: true,
+          name: true,
           style: true,
           color: true,
         },
@@ -90,7 +90,7 @@ export async function getTemplateById(id: string) {
       padProduct: {
         select: {
           id: true,
-          manufacturerName: true,
+          name: true,
           style: true,
           color: true,
         },
@@ -103,7 +103,7 @@ export async function getTemplateById(id: string) {
         include: {
           product: {
             select: {
-              manufacturerName: true,
+              name: true,
               style: true,
               color: true,
               category: { select: { sendUnit: { select: { name: true } } } },
@@ -149,7 +149,7 @@ export async function listTemplateItems(templateId: string) {
     include: {
       product: {
         select: {
-          manufacturerName: true,
+          name: true,
           style: true,
           color: true,
           category: { select: { sendUnit: { select: { name: true } } } },
@@ -180,11 +180,12 @@ export async function listTemplateServiceItems(templateId: string) {
 }
 
 function buildPadLabel(product: {
-  manufacturerName: string | null
+  name?: string | null
+  categoryName?: string | null
   style: string | null
   color: string | null
 }) {
-  return buildProductName(product).replace("Flooring Product", "Pad Product")
+  return buildPadProductDisplayName(product)
 }
 
 async function loadTemplatesPageData(page: number, tableState: ServerTableQueryState) {
@@ -207,10 +208,10 @@ async function loadTemplatesPageData(page: number, tableState: ServerTableQueryS
           name: "Pad",
         },
       },
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
       select: {
         id: true,
-        manufacturerName: true,
+        name: true,
         style: true,
         color: true,
       },

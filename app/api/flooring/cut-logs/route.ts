@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { normalizePrismaError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
 function normalizeCutLog(log: {
   id: string
@@ -27,9 +28,7 @@ function normalizeCutLog(log: {
     id: log.id,
     inventoryId: log.inventoryId,
     inventoryLabel:
-      log.inventory.product.name ||
-      [log.inventory.product.manufacturerName, log.inventory.product.style, log.inventory.product.color].filter(Boolean).join(" - ") ||
-      "Flooring Product",
+      buildFlooringProductDisplayName(log.inventory.product),
     itemNumber: log.inventory.itemNumber,
     before: log.before.toString(),
     cut: log.cut.toString(),

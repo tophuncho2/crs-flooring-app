@@ -1,4 +1,4 @@
-import { buildProductName } from "@/features/flooring/products/services"
+import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import type { LineTotalInput } from "@/features/flooring/shared/line-totals"
 import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
 import type { PricingLine } from "@/features/flooring/templates/services"
@@ -118,7 +118,7 @@ export function normalizeWorkOrderItem(item: {
   linkedInventoryId: string | null
   changeOrderStatus: "SUFFICIENT" | "SHORTAGE" | null
   product: {
-    manufacturerName: string | null
+    name: string
     style: string | null
     color: string | null
     category: { sendUnit: { name: string } | null }
@@ -132,7 +132,7 @@ export function normalizeWorkOrderItem(item: {
   return {
     id: item.id,
     productId: item.productId,
-    productName: buildProductName(item.product),
+    productName: buildFlooringProductDisplayName(item.product),
     sendUnit: item.product.category.sendUnit?.name ?? "",
     quantity: item.quantity.toString(),
     unitPrice: item.unitPrice.toString(),

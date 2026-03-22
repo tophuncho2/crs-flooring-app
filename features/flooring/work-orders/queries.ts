@@ -117,7 +117,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
         include: {
           product: {
             select: {
-              manufacturerName: true,
+              name: true,
               style: true,
               color: true,
               category: {
@@ -186,7 +186,7 @@ export async function listWorkOrderItems(workOrderId: string) {
     include: {
       product: {
         select: {
-          manufacturerName: true,
+          name: true,
           style: true,
           color: true,
           category: { select: { sendUnit: { select: { name: true } } } },

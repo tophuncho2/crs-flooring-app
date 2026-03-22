@@ -86,10 +86,10 @@ export async function listCatalogProducts(
 
 export async function listProductOptions() {
   const products = await prisma.flooringProduct.findMany({
-    orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+    orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
     select: {
       id: true,
-      manufacturerName: true,
+      name: true,
       style: true,
       color: true,
     },

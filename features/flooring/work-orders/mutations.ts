@@ -239,7 +239,7 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
       include: {
         product: {
           select: {
-            manufacturerName: true,
+            name: true,
             style: true,
             color: true,
             category: { select: { sendUnit: { select: { name: true } } } },
@@ -281,7 +281,7 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
       include: {
         product: {
           select: {
-            manufacturerName: true,
+            name: true,
             style: true,
             color: true,
             category: { select: { sendUnit: { select: { name: true } } } },

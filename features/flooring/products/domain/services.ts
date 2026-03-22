@@ -1,12 +1,22 @@
 import { Prisma } from "@prisma/client"
 import { normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
+import { buildFlooringProductDisplayName, buildStoredFlooringProductName } from "@/features/flooring/shared/domain/product-display-name"
 
 export function buildProductName(product: {
-  manufacturerName: string | null
+  name?: string | null
+  categoryName?: string | null
   style: string | null
   color: string | null
 }) {
-  return [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
+  return buildFlooringProductDisplayName(product)
+}
+
+export function buildStoredProductName(product: {
+  categoryName: string | null
+  style: string | null
+  color: string | null
+}) {
+  return buildStoredFlooringProductName(product)
 }
 
 export function normalizeCatalogProduct(product: {
@@ -72,7 +82,8 @@ export function normalizeCatalogProduct(product: {
 
 export function normalizeProductOption(product: {
   id: string
-  manufacturerName: string | null
+  name: string
+  categoryName?: string | null
   style: string | null
   color: string | null
 }) {

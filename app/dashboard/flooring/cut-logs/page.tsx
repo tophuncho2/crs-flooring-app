@@ -2,15 +2,7 @@ import { prisma } from "@/server/db/prisma"
 import { requireToolAccess } from "@/server/auth/session"
 import CutLogsClient from "@/features/flooring/cut-logs/components/cut-logs-client"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME } from "@/features/flooring/shared/dashboard-card-title"
-
-function buildProductName(product: {
-  name: string
-  manufacturerName: string | null
-  style: string | null
-  color: string | null
-}) {
-  return product.name || [product.manufacturerName, product.style, product.color].filter(Boolean).join(" - ") || "Flooring Product"
-}
+import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
 export default async function FlooringCutLogsPage() {
   await requireToolAccess("warehouse")
@@ -47,7 +39,7 @@ export default async function FlooringCutLogsPage() {
       id: log.id,
       inventoryId: log.inventory.id,
       createdAt: log.createdAt.toISOString(),
-      productName: buildProductName(log.inventory.product),
+      productName: buildFlooringProductDisplayName(log.inventory.product),
       itemNumber: log.inventory.itemNumber,
       locationLabel: log.inventory.location ? `${log.inventory.location.warehouse.name} / ${log.inventory.location.locationCode}` : "No location",
       before: Number(log.before).toFixed(2),

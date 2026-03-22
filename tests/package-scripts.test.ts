@@ -11,5 +11,6 @@ describe("package scripts", () => {
     expect(packageJson.scripts.start).toBe("next start")
     expect(packageJson.scripts["db:migrate"]).toBe("prisma migrate deploy")
     expect(packageJson.scripts["deploy:prepare"]).toBe("npm run db:migrate && npm run db:seed:users")
+    expect(packageJson.scripts["db:backfill:product-names"]).toBe("node prisma/backfill-product-names.js")
   })
 })

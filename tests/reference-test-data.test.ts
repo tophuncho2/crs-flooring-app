@@ -52,6 +52,7 @@ describe("buildReferenceTestData", () => {
     expect(data.warehouses[0]?.name).toBe("QA North Warehouse")
     expect(data.imports[0]?.tag).toBe("QA Import 01")
     expect(data.templates[0]?.templateTag).toBe("QA Template 01")
+    expect(data.products[0]?.name.startsWith(`${data.products[0]?.categoryName} - `)).toBe(true)
   })
 })
 

@@ -1,16 +1,16 @@
 import { prisma } from "@/server/db/prisma"
 import { listServiceOptions } from "@/features/flooring/services/queries"
-import { buildProductName } from "@/features/flooring/products/services"
+import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
 type PadProductOptionSource = {
   id: string
-  manufacturerName: string | null
+  name: string
   style: string | null
   color: string | null
 }
 
 function buildPadLabel(product: PadProductOptionSource) {
-  return buildProductName(product).replace("Flooring Product", "Pad Product")
+  return buildPadProductDisplayName(product)
 }
 
 export async function loadSharedRecordDetailOptions() {
@@ -31,10 +31,10 @@ export async function loadSharedRecordDetailOptions() {
       select: { id: true, name: true },
     }),
     prisma.flooringProduct.findMany({
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
       select: {
         id: true,
-        manufacturerName: true,
+        name: true,
         style: true,
         color: true,
         category: { select: { sendUnit: { select: { name: true } } } },
@@ -56,7 +56,7 @@ export async function loadSharedRecordDetailOptions() {
     warehouseOptions: warehouses,
     productOptions: products.map((product) => ({
       id: product.id,
-      label: buildProductName(product),
+      label: buildFlooringProductDisplayName(product),
       sendUnit: product.category.sendUnit?.name ?? "",
     })),
     serviceOptions: services,
@@ -73,10 +73,10 @@ export async function loadTemplateRecordDetailOptions() {
           name: "Pad",
         },
       },
-      orderBy: [{ manufacturerName: "asc" }, { style: "asc" }, { color: "asc" }],
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
       select: {
         id: true,
-        manufacturerName: true,
+        name: true,
         style: true,
         color: true,
       },
