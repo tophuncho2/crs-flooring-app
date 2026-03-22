@@ -2,7 +2,7 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getInventoryPageData } from "@/features/flooring/inventory/queries"
-import InventoryClient from "@/features/flooring/inventory/components/inventory-client"
+import InventoryClient from "@/features/flooring/inventory/components/list/inventory-client"
 
 export default async function FlooringInventoryPage({
   searchParams,
@@ -35,7 +35,6 @@ export default async function FlooringInventoryPage({
     <InventoryClient
       key={`inventory-${result.data.pagination.page}-${result.data.tableState.searchQuery}-${result.data.tableState.isAscendingSort}-${result.data.tableState.isGroupingEnabled}-${result.data.tableState.groupByKeys.join(",")}`}
       initialInventory={result.data.initialInventory}
-      locationOptions={result.data.locationOptions}
       tableState={result.data.tableState}
       pagination={{
         ...result.data.pagination,

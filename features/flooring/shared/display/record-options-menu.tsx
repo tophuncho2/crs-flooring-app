@@ -1,1 +1,1 @@
-export * from "../record-options-menu"
+export * from "../ui/display/record-options-menu"

@@ -8,7 +8,9 @@ import {
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import InventoryClient from "@/features/flooring/inventory/components/inventory-client"
+import { InventoryDetailClient } from "@/features/flooring/inventory/components/detail/inventory-detail-client"
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({
@@ -133,28 +135,34 @@ describe("InventoryClient", () => {
     vi.stubGlobal("confirm", vi.fn(() => true))
   })
 
-  it("renders clickable rows and colored import pills in the table", () => {
+  it("renders clickable rows, colored import pills, and routes to the canonical detail page", async () => {
+    const user = userEvent.setup()
+
     render(
       <InventoryClient
         initialInventory={[inventoryRow()]}
-        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
 
-    expect(screen.getByRole("button", { name: "Edit inventory item 1001" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Open inventory item 1001" })).toBeTruthy()
     expect(screen.getByText("Purchase Order").className).toContain("bg-violet-200")
     expect(screen.getByText("Pending").className).toContain("bg-sky-200")
+
+    await user.click(screen.getByRole("button", { name: "Open inventory item 1001" }))
+
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/inventory/inv-1?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 
   it("uses the canonical detail page shell and removes the legacy cut-log table link", () => {
     render(
-      <InventoryClient
-        initialInventory={[inventoryRow()]}
+      <InventoryDetailClient
+        initialRecord={inventoryRow()}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        detailRecordId="inv-1"
-        detailReturnHref="/dashboard/flooring/inventory"
+        backHref="/dashboard/flooring/inventory"
       />,
     )
 
@@ -166,12 +174,10 @@ describe("InventoryClient", () => {
 
   it("does not render the no-cut-logs empty-state copy when there are no cut logs", () => {
     render(
-      <InventoryClient
-        initialInventory={[inventoryRow({ cutLogs: [], cutTotal: "0.00", runningBalance: "12.00" })]}
+      <InventoryDetailClient
+        initialRecord={inventoryRow({ cutLogs: [], cutTotal: "0.00", runningBalance: "12.00" })}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        detailRecordId="inv-1"
-        detailReturnHref="/dashboard/flooring/inventory"
+        backHref="/dashboard/flooring/inventory"
       />,
     )
 
@@ -192,21 +198,19 @@ describe("InventoryClient", () => {
     })
 
     render(
-      <InventoryClient
-        initialInventory={[inventoryRow()]}
+      <InventoryDetailClient
+        initialRecord={inventoryRow()}
         locationOptions={[
           { id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" },
           { id: "loc-2", warehouseId: "wh-1", locationCode: "B2", label: "B2", sectionName: "Reserve", warehouseName: "Main Warehouse" },
         ]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        detailRecordId="inv-1"
-        detailReturnHref="/dashboard/flooring/inventory"
+        backHref="/dashboard/flooring/inventory"
       />,
     )
 
     expect(screen.getByRole("button", { name: "Save Inventory" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Delete Inventory" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: /Back/ })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "loc-2" } })

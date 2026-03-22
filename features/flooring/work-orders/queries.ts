@@ -5,6 +5,8 @@ import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
+type WorkOrderDbClient = Prisma.TransactionClient | typeof prisma
+
 function buildWorkOrderWhere(searchQuery: string): Prisma.FlooringWorkOrderWhereInput | undefined {
   if (!searchQuery) return undefined
 
@@ -95,8 +97,8 @@ export async function listWorkOrders(
   )
 }
 
-export async function getWorkOrderById(id: string) {
-  const workOrder = await prisma.flooringWorkOrder.findUniqueOrThrow({
+export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: string) {
+  const workOrder = await db.flooringWorkOrder.findUniqueOrThrow({
     where: { id },
     include: {
       property: {
@@ -172,6 +174,10 @@ export async function getWorkOrderById(id: string) {
       }
     })(),
   }
+}
+
+export async function getWorkOrderById(id: string) {
+  return getWorkOrderByIdWithClient(prisma, id)
 }
 
 export async function listWorkOrderItems(workOrderId: string) {

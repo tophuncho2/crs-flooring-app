@@ -1,1 +1,1 @@
-export * from "../use-canonical-detail-navigation"
+export * from "../controllers/navigation/use-canonical-detail-navigation"

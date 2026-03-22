@@ -1,1 +1,1 @@
-export * from "../accent-styles"
+export * from "../ui/display/accent-styles"

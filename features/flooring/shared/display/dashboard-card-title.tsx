@@ -1,1 +1,1 @@
-export * from "../dashboard-card-title"
+export * from "../ui/display/dashboard-card-title"

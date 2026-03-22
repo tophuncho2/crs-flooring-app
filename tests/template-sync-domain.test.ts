@@ -3,11 +3,12 @@ import { Prisma } from "@prisma/client"
 import { TEMPLATE_SYNC_POLICY } from "@/features/flooring/work-orders/contracts"
 import { syncTemplateToWorkOrder } from "@/features/flooring/work-orders/domain/syncTemplate"
 
-const { prismaMock, getWorkOrderByIdMock } = vi.hoisted(() => ({
+const { prismaMock, getWorkOrderByIdMock, getWorkOrderByIdWithClientMock } = vi.hoisted(() => ({
   prismaMock: {
     $transaction: vi.fn(),
   },
   getWorkOrderByIdMock: vi.fn(),
+  getWorkOrderByIdWithClientMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -16,6 +17,7 @@ vi.mock("@/server/db/prisma", () => ({
 
 vi.mock("@/features/flooring/work-orders/queries", () => ({
   getWorkOrderById: getWorkOrderByIdMock,
+  getWorkOrderByIdWithClient: getWorkOrderByIdWithClientMock,
 }))
 
 function decimal(value: string) {
@@ -36,19 +38,20 @@ function buildTx(overrides: Partial<Record<string, unknown>> = {}) {
       }),
       update: vi.fn().mockResolvedValue({}),
     },
-    flooringTemplate: {
-      findUniqueOrThrow: vi.fn().mockResolvedValue({
-        propertyId: "prop-1",
-        warehouseId: "wh-1",
-        instructions: "Template instructions",
-        items: [
-          { productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
-        ],
-        serviceItems: [
-          { serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
-        ],
-      }),
-    },
+      flooringTemplate: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "tpl-1",
+          propertyId: "prop-1",
+          warehouseId: "wh-1",
+          instructions: "Template instructions",
+          items: [
+            { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
+          ],
+          serviceItems: [
+            { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+          ],
+        }),
+      },
     flooringWorkOrderItem: {
       findMany: vi.fn().mockResolvedValue([]),
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -67,6 +70,7 @@ describe("template sync domain", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getWorkOrderByIdMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
+    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
   })
 
   it("blocks sync for completed work orders", async () => {
@@ -122,6 +126,7 @@ describe("template sync domain", () => {
     const tx = buildTx({
       flooringTemplate: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "tpl-2",
           propertyId: "prop-2",
           warehouseId: "wh-1",
           instructions: "Template instructions",
@@ -150,14 +155,14 @@ describe("template sync domain", () => {
     const tx = buildTx({
       flooringWorkOrderItem: {
         findMany: vi.fn().mockResolvedValue([
-          { productId: "prod-old", quantity: decimal("1"), unitPrice: decimal("2.00"), notes: "old" },
+          { id: "wo-item-1", sourceTemplateItemId: "tpl-item-old", productId: "prod-old", quantity: decimal("1"), unitPrice: decimal("2.00"), notes: "old", changeOrderStatus: "SUFFICIENT" },
         ]),
         createMany: vi.fn(),
         deleteMany: vi.fn(),
       },
       flooringWorkOrderServiceItem: {
         findMany: vi.fn().mockResolvedValue([
-          { serviceId: "svc-old", name: "Old Service", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("3.00"), notes: null },
+          { id: "wo-svc-1", sourceTemplateServiceItemId: "tpl-svc-old", serviceId: "svc-old", name: "Old Service", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("3.00"), notes: null },
         ]),
         createMany: vi.fn(),
         deleteMany: vi.fn(),
@@ -204,29 +209,30 @@ describe("template sync domain", () => {
     const tx = buildTx({
       flooringTemplate: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
           instructions: "Template instructions",
           items: [
-            { productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
-            { productId: "prod-2", quantity: decimal("1"), unitPrice: decimal("6.00"), notes: "extra" },
+            { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
+            { id: "tpl-item-2", productId: "prod-2", quantity: decimal("1"), unitPrice: decimal("6.00"), notes: "extra" },
           ],
           serviceItems: [
-            { serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
-            { serviceId: "svc-2", name: "Demo", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("5.00"), notes: null },
+            { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+            { id: "tpl-svc-2", serviceId: "svc-2", name: "Demo", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("5.00"), notes: null },
           ],
         }),
       },
       flooringWorkOrderItem: {
         findMany: vi.fn().mockResolvedValue([
-          { productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
+          { id: "wo-item-1", sourceTemplateItemId: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null, changeOrderStatus: "SUFFICIENT" },
         ]),
         createMany: vi.fn(),
         deleteMany: vi.fn(),
       },
       flooringWorkOrderServiceItem: {
         findMany: vi.fn().mockResolvedValue([
-          { serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+          { id: "wo-svc-1", sourceTemplateServiceItemId: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
         ]),
         createMany: vi.fn(),
         deleteMany: vi.fn(),
@@ -252,17 +258,19 @@ describe("template sync domain", () => {
     const tx = buildTx({
       flooringWorkOrderItem: {
         findMany: vi.fn().mockResolvedValue([
-          { productId: "prod-old", quantity: decimal("1"), unitPrice: decimal("2.00"), notes: "old" },
+          { id: "wo-item-1", sourceTemplateItemId: "tpl-item-old", productId: "prod-old", quantity: decimal("1"), unitPrice: decimal("2.00"), notes: "old", changeOrderStatus: "SUFFICIENT" },
         ]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn(),
       },
       flooringWorkOrderServiceItem: {
         findMany: vi.fn().mockResolvedValue([
-          { serviceId: "svc-old", name: "Old Service", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("3.00"), notes: null },
+          { id: "wo-svc-1", sourceTemplateServiceItemId: "tpl-svc-old", serviceId: "svc-old", name: "Old Service", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("3.00"), notes: null },
         ]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn(),
       },
     })
 
@@ -275,12 +283,13 @@ describe("template sync domain", () => {
       expectedUpdatedAt: null,
     })
 
-    expect(tx.flooringWorkOrderItem.deleteMany).toHaveBeenCalledWith({ where: { workOrderId: "wo-1" } })
-    expect(tx.flooringWorkOrderServiceItem.deleteMany).toHaveBeenCalledWith({ where: { workOrderId: "wo-1" } })
+    expect(tx.flooringWorkOrderItem.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["wo-item-1"] } } })
+    expect(tx.flooringWorkOrderServiceItem.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["wo-svc-1"] } } })
     expect(tx.flooringWorkOrderItem.createMany).toHaveBeenCalledWith({
       data: [
         {
           workOrderId: "wo-1",
+          sourceTemplateItemId: "tpl-item-1",
           productId: "prod-1",
           quantity: decimal("2"),
           unitPrice: decimal("4.00"),
@@ -293,6 +302,7 @@ describe("template sync domain", () => {
       data: [
         {
           workOrderId: "wo-1",
+          sourceTemplateServiceItemId: "tpl-svc-1",
           serviceId: "svc-1",
           name: "Install",
           unitId: "unit-1",
@@ -304,11 +314,11 @@ describe("template sync domain", () => {
     })
     expect(tx.flooringWorkOrder.update).toHaveBeenCalledWith({
       where: { id: "wo-1" },
-      data: {
+      data: expect.objectContaining({
         templateId: "tpl-1",
         warehouseId: "wh-1",
         instructions: "Template instructions",
-      },
+      }),
     })
     expect(result.workOrder).toEqual({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
     expect(result.rowsToDelete).toEqual({ materialItems: 1, serviceItems: 1 })
@@ -319,32 +329,35 @@ describe("template sync domain", () => {
     const tx = buildTx({
       flooringTemplate: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
           instructions: "Template instructions",
           items: [
-            { productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
-            { productId: "prod-2", quantity: decimal("1"), unitPrice: decimal("6.00"), notes: "extra" },
+            { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
+            { id: "tpl-item-2", productId: "prod-2", quantity: decimal("1"), unitPrice: decimal("6.00"), notes: "extra" },
           ],
           serviceItems: [
-            { serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
-            { serviceId: "svc-2", name: "Demo", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("5.00"), notes: null },
+            { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+            { id: "tpl-svc-2", serviceId: "svc-2", name: "Demo", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("5.00"), notes: null },
           ],
         }),
       },
       flooringWorkOrderItem: {
         findMany: vi.fn().mockResolvedValue([
-          { productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
+          { id: "wo-item-1", sourceTemplateItemId: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null, changeOrderStatus: "SUFFICIENT" },
         ]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn(),
+        update: vi.fn(),
       },
       flooringWorkOrderServiceItem: {
         findMany: vi.fn().mockResolvedValue([
-          { serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+          { id: "wo-svc-1", sourceTemplateServiceItemId: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
         ]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn(),
+        update: vi.fn(),
       },
     })
 
@@ -363,6 +376,7 @@ describe("template sync domain", () => {
       data: [
         {
           workOrderId: "wo-1",
+          sourceTemplateItemId: "tpl-item-2",
           productId: "prod-2",
           quantity: decimal("1"),
           unitPrice: decimal("6.00"),
@@ -375,6 +389,7 @@ describe("template sync domain", () => {
       data: [
         {
           workOrderId: "wo-1",
+          sourceTemplateServiceItemId: "tpl-svc-2",
           serviceId: "svc-2",
           name: "Demo",
           unitId: "unit-1",

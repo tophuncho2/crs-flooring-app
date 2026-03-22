@@ -1,9 +1,1 @@
-"use client"
-
-export function getClientErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message
-  }
-
-  return fallback
-}
+export * from "./transport/client-errors"

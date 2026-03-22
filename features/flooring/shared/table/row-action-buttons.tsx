@@ -1,1 +1,1 @@
-export * from "../row-action-buttons"
+export * from "../ui/table/row-action-buttons"

@@ -30,7 +30,10 @@ export const lucideReactModule = {
   ArrowLeft: () => <span>&lt;-</span>,
   ChevronDown: () => <span>v</span>,
   ChevronRight: () => <span>&gt;</span>,
+  Columns3: () => <span>cols</span>,
+  GripVertical: () => <span>drag</span>,
   Plus: () => <span>+</span>,
+  Search: () => <span>search</span>,
   Save: () => <span>save</span>,
   Upload: () => <span>upload</span>,
   X: () => <span>x</span>,
@@ -196,6 +199,7 @@ export function resetSimpleTableClientMocks() {
 
 vi.mock("lucide-react", () => lucideReactModule)
 vi.mock("@/features/flooring/shared/http", () => httpModule)
+vi.mock("@/features/flooring/shared/transport/http", () => httpModule)
 vi.mock("@/features/flooring/shared/use-configured-table-state", () => useConfiguredTableStateModule)
 vi.mock("@/features/flooring/shared/use-url-record-editor", () => useUrlRecordEditorModule)
 vi.mock("@/features/flooring/shared/use-guarded-url-record-editor", () => useGuardedUrlRecordEditorModule)

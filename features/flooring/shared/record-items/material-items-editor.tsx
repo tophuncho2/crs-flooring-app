@@ -1,1 +1,1 @@
-export * from "../material-items-editor"
+export * from "../ui/record-items/material-items-editor"

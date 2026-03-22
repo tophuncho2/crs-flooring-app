@@ -1,1 +1,1 @@
-export * from "../child-item-validation"
+export * from "../domain/child-item-validation"

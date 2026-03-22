@@ -1,1 +1,1 @@
-export * from "../record-panel-footer"
+export * from "../ui/forms/record-panel-footer"

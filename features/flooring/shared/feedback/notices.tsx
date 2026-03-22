@@ -1,1 +1,1 @@
-export * from "../notices"
+export * from "../ui/feedback/notices"

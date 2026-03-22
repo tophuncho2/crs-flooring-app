@@ -1,1 +1,1 @@
-export * from "../record-form"
+export * from "../ui/forms/record-form"

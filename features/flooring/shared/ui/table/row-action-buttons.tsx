@@ -1,0 +1,71 @@
+"use client"
+
+import { type MouseEvent, type ReactNode } from "react"
+
+function joinClasses(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(" ")
+}
+
+type SharedButtonProps = {
+  children?: ReactNode
+  onClick: () => void
+  disabled?: boolean
+  className?: string
+}
+
+function handleClick(event: MouseEvent<HTMLButtonElement>, onClick: () => void) {
+  event.stopPropagation()
+  onClick()
+}
+
+export function EditRowButton({ children = "Edit", onClick, disabled, className }: SharedButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => handleClick(event, onClick)}
+      disabled={disabled}
+      className={joinClasses(
+        "rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)] disabled:opacity-60",
+        className,
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function OpenRowButton({ children = "Open", ...props }: SharedButtonProps) {
+  return <EditRowButton {...props}>{children}</EditRowButton>
+}
+
+export function SaveRowButton({ children = "Save", onClick, disabled, className }: SharedButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => handleClick(event, onClick)}
+      disabled={disabled}
+      className={joinClasses(
+        "rounded border border-[var(--panel-border)] px-3 py-1 text-xs hover:bg-[var(--panel-hover)] disabled:opacity-60",
+        className,
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function DeleteRowButton({ children = "Delete", onClick, disabled, className }: SharedButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => handleClick(event, onClick)}
+      disabled={disabled}
+      className={joinClasses(
+        "rounded border border-rose-500/40 px-3 py-1 text-xs text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-60",
+        className,
+      )}
+    >
+      {children}
+    </button>
+  )
+}

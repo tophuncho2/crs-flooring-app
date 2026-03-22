@@ -17,26 +17,38 @@ vi.mock("@/features/flooring/shared/record-summary", () => ({
   emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
 }))
 
-vi.mock("@/features/flooring/shared/material-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/flooring/shared/material-items-editor")>()
+vi.mock("@/features/flooring/shared/ui/record-items/material-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/material-items-editor")>()
 
   return {
     ...actual,
     validateMaterialItemFields: vi.fn(() => ({})),
     MaterialItemsEditor: ({
       items,
+      onDraftChange,
       onAdd,
       onSaveItem,
       onDeleteItem,
     }: {
       items: Array<{ id: string }>
+      onDraftChange: (field: "productId" | "quantity" | "unitPrice" | "notes", value: string) => void
       onAdd: () => void
       onSaveItem: (item: { id: string; productId: string; quantity: string; unitPrice: string; notes: string }) => void
       onDeleteItem: (itemId: string) => void
     }) => (
       <div>
         <div>{`Material count ${items.length}`}</div>
-        <button type="button" onClick={onAdd}>Add Material</button>
+        <button
+          type="button"
+          onClick={() => {
+            onDraftChange("productId", "prod-1")
+            onDraftChange("quantity", "2")
+            onDraftChange("unitPrice", "4.00")
+            void Promise.resolve().then(() => onAdd())
+          }}
+        >
+          Add Material
+        </button>
         <button type="button" onClick={() => onSaveItem({ id: items[0]?.id ?? "item-1", productId: "prod-1", quantity: "3", unitPrice: "4.00", notes: "" })}>Save Material</button>
         <button type="button" onClick={() => onDeleteItem(items[0]?.id ?? "item-1")}>Delete Material</button>
       </div>
@@ -44,26 +56,40 @@ vi.mock("@/features/flooring/shared/material-items-editor", async (importOrigina
   }
 })
 
-vi.mock("@/features/flooring/shared/service-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/flooring/shared/service-items-editor")>()
+vi.mock("@/features/flooring/shared/ui/record-items/service-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/service-items-editor")>()
 
   return {
     ...actual,
     validateServiceItemFields: vi.fn(() => ({})),
     ServiceItemsEditor: ({
       items,
+      onDraftChange,
       onAdd,
       onSaveItem,
       onDeleteItem,
     }: {
       items: Array<{ id: string }>
+      onDraftChange: (field: "serviceId" | "name" | "unitId" | "quantity" | "unitPrice" | "notes", value: string) => void
       onAdd: () => void
       onSaveItem: (item: { id: string; serviceId: string; name: string; unitId: string; quantity: string; unitPrice: string; notes: string }) => void
       onDeleteItem: (itemId: string) => void
     }) => (
       <div>
         <div>{`Service count ${items.length}`}</div>
-        <button type="button" onClick={onAdd}>Add Service</button>
+        <button
+          type="button"
+          onClick={() => {
+            onDraftChange("serviceId", "svc-1")
+            onDraftChange("name", "Install")
+            onDraftChange("unitId", "unit-1")
+            onDraftChange("quantity", "1")
+            onDraftChange("unitPrice", "9.00")
+            void Promise.resolve().then(() => onAdd())
+          }}
+        >
+          Add Service
+        </button>
         <button type="button" onClick={() => onSaveItem({ id: items[0]?.id ?? "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: "2", unitPrice: "9.00", notes: "" })}>Save Service</button>
         <button type="button" onClick={() => onDeleteItem(items[0]?.id ?? "svc-1")}>Delete Service</button>
       </div>
@@ -71,7 +97,7 @@ vi.mock("@/features/flooring/shared/service-items-editor", async (importOriginal
   }
 })
 
-vi.mock("@/features/flooring/shared/use-record-detail-controller", async () => {
+vi.mock("@/features/flooring/shared/record-page/use-record-detail-controller", async () => {
   const ReactModule = await import("react")
 
   return {

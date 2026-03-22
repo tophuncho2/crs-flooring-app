@@ -1,1 +1,1 @@
-export * from "../use-record-detail-controller"
+export * from "../controllers/record-page/use-record-detail-controller"

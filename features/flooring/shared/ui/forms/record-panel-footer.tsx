@@ -1,0 +1,64 @@
+"use client"
+
+import type { ReactNode } from "react"
+import { confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
+
+export { confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
+
+export function RecordPanelFooter({
+  deleteLabel,
+  deleteConfirmMessage,
+  onDelete,
+  closeLabel = "Close",
+  onClose,
+  saveLabel,
+  savingLabel,
+  onSave,
+  isSaving = false,
+  leftExtra,
+}: {
+  deleteLabel?: string
+  deleteConfirmMessage?: string
+  onDelete?: () => void
+  closeLabel?: string
+  onClose: () => void
+  saveLabel: string
+  savingLabel: string
+  onSave: () => void
+  isSaving?: boolean
+  leftExtra?: ReactNode
+}) {
+  function handleDelete() {
+    if (!onDelete || !deleteConfirmMessage) {
+      return
+    }
+
+    if (!confirmRecordDelete(deleteConfirmMessage)) {
+      return
+    }
+
+    onDelete()
+  }
+
+  return (
+    <div className="flex justify-between gap-2">
+      <div className="flex gap-2">
+        {leftExtra}
+        {onDelete && deleteLabel ? (
+          <button type="button" onClick={handleDelete} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">
+            {deleteLabel}
+          </button>
+        ) : null}
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={onClose} disabled={isSaving} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
+          {closeLabel}
+        </button>
+        <button type="button" onClick={onSave} disabled={isSaving} className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}>
+          {isSaving ? savingLabel : saveLabel}
+        </button>
+      </div>
+    </div>
+  )
+}

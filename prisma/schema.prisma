@@ -427,6 +427,9 @@ model FlooringWorkOrder {
   notes           String?
   googleDriveSlip String?
   googleDocUrl    String?
+  templateSyncedAt DateTime?
+  templateSyncMode String?
+  templateSnapshotHash String?
   createdAt       DateTime                       @default(now())
   updatedAt       DateTime                       @updatedAt
   items           FlooringWorkOrderItem[]
@@ -452,6 +455,7 @@ model FlooringWorkOrderItem {
   workOrder         FlooringWorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   productId         String
   product           FlooringProduct            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sourceTemplateItemId String?
   linkedInventoryId String?                    @unique
   linkedInventory   FlooringInventory?         @relation(fields: [linkedInventoryId], references: [id], onDelete: SetNull)
   quantity          Decimal                    @db.Decimal(10, 2)
@@ -465,6 +469,7 @@ model FlooringWorkOrderItem {
   @@index([workOrderId, createdAt])
   @@index([productId])
   @@index([linkedInventoryId])
+  @@index([sourceTemplateItemId])
   @@map("flooring_work_order_item")
 }
 
@@ -472,6 +477,7 @@ model FlooringWorkOrderServiceItem {
   id          String                @id @default(uuid())
   workOrderId String
   workOrder   FlooringWorkOrder     @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  sourceTemplateServiceItemId String?
   serviceId   String?
   service     FlooringService?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   name        String
@@ -486,6 +492,7 @@ model FlooringWorkOrderServiceItem {
   @@index([workOrderId, createdAt])
   @@index([serviceId])
   @@index([unitId])
+  @@index([sourceTemplateServiceItemId])
   @@map("flooring_work_order_service_item")
 }
 

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation"
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
-import InventoryClient from "@/features/flooring/inventory/components/inventory-client"
-import { getInventoryById } from "@/features/flooring/inventory/queries"
-import { listInventoryLocationOptions } from "@/features/flooring/inventory/api"
+import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { InventoryDetailClient } from "@/features/flooring/inventory/components/detail/inventory-detail-client"
+import { getInventoryDetailPageData } from "@/features/flooring/inventory/queries"
 
 export default async function InventoryDetailPage({
   params,
@@ -16,28 +16,31 @@ export default async function InventoryDetailPage({
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const result = await getInventoryDetailPageData(id)
 
-  try {
-    const [inventory, locationOptions] = await Promise.all([
-      getInventoryById(id),
-      listInventoryLocationOptions(),
-    ])
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
+    if (!("error" in result)) {
+      notFound()
+    }
 
     return (
-      <InventoryClient
-        initialInventory={[inventory]}
-        locationOptions={locationOptions}
-        tableState={{
-          searchQuery: "",
-          isAscendingSort: false,
-          isGroupingEnabled: false,
-          groupByKeys: [],
-        }}
-        detailRecordId={inventory.id}
-        detailReturnHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/inventory")}
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
       />
     )
-  } catch {
-    notFound()
   }
+
+  return (
+    <InventoryDetailClient
+      initialRecord={result.data.inventory}
+      locationOptions={result.data.locationOptions}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/inventory")}
+    />
+  )
 }

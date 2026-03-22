@@ -1,1 +1,1 @@
-export * from "../table-shell"
+export * from "../ui/table/table-shell"

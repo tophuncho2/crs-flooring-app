@@ -1,1 +1,1 @@
-export * from "../status-pill"
+export * from "../ui/feedback/status-pill"

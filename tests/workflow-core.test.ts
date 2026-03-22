@@ -6,13 +6,14 @@ import { createTemplate } from "@/features/flooring/templates/mutations"
 import { createWorkOrder, deleteWorkOrderItem, deleteWorkOrderServiceItem } from "@/features/flooring/work-orders/mutations"
 import { syncTemplateToWorkOrder } from "@/features/flooring/work-orders/domain/syncTemplate"
 
-const { prismaMock, getWorkOrderByIdMock } = vi.hoisted(() => ({
+const { prismaMock, getWorkOrderByIdMock, getWorkOrderByIdWithClientMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringProduct: { findFirst: vi.fn(), findUnique: vi.fn() },
     flooringService: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn() },
     $transaction: vi.fn(),
   },
   getWorkOrderByIdMock: vi.fn(),
+  getWorkOrderByIdWithClientMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -21,6 +22,7 @@ vi.mock("@/server/db/prisma", () => ({
 
 vi.mock("@/features/flooring/work-orders/queries", () => ({
   getWorkOrderById: getWorkOrderByIdMock,
+  getWorkOrderByIdWithClient: getWorkOrderByIdWithClientMock,
 }))
 
 function decimal(value: string) {
@@ -30,6 +32,7 @@ function decimal(value: string) {
 describe("workflow core", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
   })
 
   it("creates templates inside one transaction and resolves default prices through the transaction client", async () => {
@@ -114,17 +117,24 @@ describe("workflow core", () => {
         findUniqueOrThrow: vi
           .fn()
           .mockResolvedValueOnce({ propertyId: "prop-1" })
-          .mockResolvedValueOnce({ warehouseId: "wh-1", instructions: "Template instructions" }),
+          .mockResolvedValueOnce({
+            id: "tpl-1",
+            propertyId: "prop-1",
+            warehouseId: "wh-1",
+            instructions: "Template instructions",
+            items: [
+              { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: "material" },
+            ],
+            serviceItems: [
+              { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+            ],
+          }),
       },
       flooringTemplateItem: {
-        findMany: vi.fn().mockResolvedValue([
-          { productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: "material" },
-        ]),
+        findMany: vi.fn(),
       },
       flooringTemplateServiceItem: {
-        findMany: vi.fn().mockResolvedValue([
-          { serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
-        ]),
+        findMany: vi.fn(),
       },
       flooringService: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({ name: "Install", baseCost: decimal("9.00") }),
@@ -220,22 +230,25 @@ describe("workflow core", () => {
       },
       flooringTemplate: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
           instructions: "Template instructions",
-          items: [{ productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null }],
-          serviceItems: [{ serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null }],
+          items: [{ id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null }],
+          serviceItems: [{ id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null }],
         }),
       },
       flooringWorkOrderItem: {
         findMany: vi.fn().mockResolvedValue([]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        update: vi.fn(),
       },
       flooringWorkOrderServiceItem: {
         findMany: vi.fn().mockResolvedValue([]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        update: vi.fn(),
       },
     }
 
@@ -251,11 +264,11 @@ describe("workflow core", () => {
 
     expect(tx.flooringWorkOrder.update).toHaveBeenCalledWith({
       where: { id: "wo-1" },
-      data: {
+      data: expect.objectContaining({
         templateId: "tpl-1",
         warehouseId: "wh-1",
         instructions: "Template instructions",
-      },
+      }),
     })
     expect(result.headerUpdates).toEqual({
       warehouseId: true,

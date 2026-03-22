@@ -1,1 +1,1 @@
-export * from "../record-summary-grid"
+export * from "../ui/display/record-summary-grid"

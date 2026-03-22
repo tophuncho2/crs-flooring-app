@@ -1,1 +1,1 @@
-export * from "../use-configured-table-state"
+export * from "../controllers/table/use-configured-table-state"

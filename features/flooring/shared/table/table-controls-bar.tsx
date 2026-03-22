@@ -1,1 +1,1 @@
-export { default } from "../table-controls-bar"
+export { default } from "../ui/table/table-controls-bar"

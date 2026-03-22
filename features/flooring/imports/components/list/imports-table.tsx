@@ -1,0 +1,145 @@
+"use client"
+
+import type { ReactNode } from "react"
+import { formatStableDate } from "@/features/flooring/shared/domain/date-format"
+import { StatusPill } from "@/features/flooring/shared/ui/feedback/status-pill"
+import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import {
+  ClickableTableRow,
+  TableEmptyRow,
+  TableGroupRow,
+  TableHead,
+  TableHeaderCell,
+  TablePaginationControls,
+  TableShell,
+} from "@/features/flooring/shared/ui/table/table-shell"
+import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import type { ImportRow } from "@/features/flooring/imports/controllers/use-imports-list-controller"
+import {
+  formatImportStatus,
+  formatTransportType,
+  getImportStatusFieldClass,
+  getTransportTypeFieldClass,
+} from "@/features/flooring/imports/contracts"
+
+export function ImportsTable({
+  rows,
+  groupedRows,
+  isGroupingEnabled,
+  visibleColumnKeys,
+  visibleColumns,
+  pagination,
+  page,
+  totalPages,
+  pageSize,
+  totalItems,
+  hasPreviousPage,
+  hasNextPage,
+  onPreviousPage,
+  onNextPage,
+  deletingImportId,
+  onDeleteImport,
+  onOpenImport,
+}: {
+  rows: ImportRow[]
+  groupedRows: GroupedRowTree<ImportRow>[]
+  isGroupingEnabled: boolean
+  visibleColumnKeys: string[]
+  visibleColumns: Array<{ key: string; label: string }>
+  pagination?: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+    previousPageHref: string
+    nextPageHref: string
+  }
+  page: number
+  totalPages: number
+  pageSize: number
+  totalItems: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  onPreviousPage: () => void
+  onNextPage: () => void
+  deletingImportId: string | null
+  onDeleteImport: (id: string) => void
+  onOpenImport: (id: string) => void
+}) {
+  function renderRow(row: ImportRow) {
+    const cells: Record<string, ReactNode> = {
+      importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>,
+      tag: <td key="tag" className="px-3 py-2">{row.tag || "-"}</td>,
+      transport: (
+        <td key="transport" className="px-3 py-2">
+          <StatusPill label={formatTransportType(row.transportType)} toneClassName={getTransportTypeFieldClass(row.transportType)} />
+        </td>
+      ),
+      status: (
+        <td key="status" className="px-3 py-2">
+          <StatusPill label={formatImportStatus(row.status)} toneClassName={getImportStatusFieldClass(row.status)} />
+        </td>
+      ),
+      warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
+      created: <td key="created" className="px-3 py-2">{formatStableDate(row.createdAt)}</td>,
+      items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
+      delete: (
+        <td key="delete" className="px-3 py-2">
+          <DeleteRowButton
+            onClick={() => onDeleteImport(row.id)}
+            disabled={deletingImportId === row.id}
+          >
+            {deletingImportId === row.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </td>
+      ),
+    }
+
+    return (
+      <ClickableTableRow
+        key={row.id}
+        ariaLabel={`Open import ${String(row.importNumber).padStart(4, "0")}`}
+        onClick={() => onOpenImport(row.id)}
+      >
+        {visibleColumnKeys.map((columnKey) => cells[columnKey])}
+      </ClickableTableRow>
+    )
+  }
+
+  function renderGroupedRows(groups: GroupedRowTree<ImportRow>[]): ReactNode[] {
+    return groups.flatMap((group) => [
+      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleColumnKeys.length} />,
+      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
+    ])
+  }
+
+  return (
+    <>
+      <TableShell minWidthClass="min-w-[980px]">
+        <TableHead>
+          <tr>
+            {visibleColumns.map((column) => (
+              <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+            ))}
+          </tr>
+        </TableHead>
+        <tbody>
+          {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
+          {rows.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleColumnKeys.length} /> : null}
+        </tbody>
+      </TableShell>
+      <TablePaginationControls
+        page={pagination?.page ?? page}
+        totalPages={pagination?.totalPages ?? totalPages}
+        pageSize={pagination?.pageSize ?? pageSize}
+        totalItems={pagination?.totalItems ?? totalItems}
+        hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+        hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+        onPreviousPage={pagination ? undefined : onPreviousPage}
+        onNextPage={pagination ? undefined : onNextPage}
+        previousPageHref={pagination?.previousPageHref}
+        nextPageHref={pagination?.nextPageHref}
+      />
+    </>
+  )
+}

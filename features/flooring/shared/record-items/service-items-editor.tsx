@@ -1,1 +1,1 @@
-export * from "../service-items-editor"
+export * from "../ui/record-items/service-items-editor"

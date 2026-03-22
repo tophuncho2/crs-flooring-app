@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { snapshotTemplateLinesToWorkOrderLines } from "@/features/flooring/templates/services"
+import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
 import type {
   CreateWorkOrderInput,
@@ -80,64 +80,12 @@ async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput, tx: P
   }
 }
 
-async function snapshotTemplate(templateId: string, tx: Prisma.TransactionClient) {
-  const [header, items, serviceItems] = await Promise.all([
-    tx.flooringTemplate.findUniqueOrThrow({
-      where: { id: templateId },
-      select: {
-        warehouseId: true,
-        instructions: true,
-      },
-    }),
-    tx.flooringTemplateItem.findMany({
-      where: { templateId },
-      select: {
-        productId: true,
-        quantity: true,
-        unitPrice: true,
-        notes: true,
-      },
-    }),
-    tx.flooringTemplateServiceItem.findMany({
-      where: { templateId },
-      select: {
-        serviceId: true,
-        name: true,
-        unitId: true,
-        quantity: true,
-        unitPrice: true,
-        notes: true,
-      },
-    }),
-  ])
-
-  return {
-    warehouseId: header.warehouseId,
-    instructions: header.instructions,
-    items: items.map((item) => ({
-      productId: item.productId,
-      quantity: Number(item.quantity),
-      unitPrice: Number(item.unitPrice),
-      notes: item.notes,
-      changeOrderStatus: "SUFFICIENT" as const,
-    })),
-    serviceItems: snapshotTemplateLinesToWorkOrderLines(
-      serviceItems.map((item) => ({
-        serviceId: item.serviceId,
-        name: item.name,
-        unitId: item.unitId,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-        notes: item.notes,
-      })),
-    ),
-  }
-}
-
 export async function createWorkOrder(input: CreateWorkOrderInput) {
   const workOrder = await prisma.$transaction(async (tx) => {
     const propertyId = await resolveWorkOrderProperty(input, tx)
-    const templateSnapshot = input.templateId ? await snapshotTemplate(input.templateId, tx) : null
+    const templateSnapshot = input.templateId ? await loadTemplateSnapshot(input.templateId, tx) : null
+    const useTemplateMaterialItems = Boolean(templateSnapshot && input.items.length === 0)
+    const useTemplateServiceItems = Boolean(templateSnapshot && input.serviceItems.length === 0)
     const workOrder = await tx.flooringWorkOrder.create({
       data: {
         propertyId,
@@ -155,28 +103,29 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         notes: input.notes,
         googleDriveSlip: input.googleDriveSlip,
         googleDocUrl: input.googleDocUrl,
+        templateSyncedAt: templateSnapshot ? new Date() : null,
+        templateSyncMode: templateSnapshot ? "overwrite" : null,
+        templateSnapshotHash: templateSnapshot?.hash ?? null,
       },
       include: workOrderInclude,
     })
 
-    const materialSourceItems =
-      templateSnapshot && input.items.length === 0
-        ? templateSnapshot.items.map((item) => ({
-            productId: item.productId,
-            linkedInventoryId: null,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            notes: item.notes,
-            changeOrderStatus: item.changeOrderStatus,
-          }))
-        : input.items
+    if (templateSnapshot && (useTemplateMaterialItems || useTemplateServiceItems)) {
+      await applyTemplateSnapshotToNewWorkOrder({
+        tx,
+        workOrderId: workOrder.id,
+        snapshot: templateSnapshot,
+        includeMaterialItems: useTemplateMaterialItems,
+        includeServiceItems: useTemplateServiceItems,
+      })
+    }
 
     const materialItems = await Promise.all(
-      materialSourceItems.map(async (item) => ({
+      input.items.map(async (item) => ({
         productId: item.productId,
         linkedInventoryId: item.linkedInventoryId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice ?? (await resolveMaterialUnitPrice(item as WorkOrderMaterialItemInput, tx)),
+        unitPrice: item.unitPrice ?? (await resolveMaterialUnitPrice(item, tx)),
         notes: item.notes,
         changeOrderStatus: item.changeOrderStatus,
       })),
@@ -186,17 +135,17 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
       await tx.flooringWorkOrderItem.create({
         data: {
           workOrderId: workOrder.id,
+          linkedInventoryId: item.linkedInventoryId,
           productId: item.productId,
-          linkedInventoryId: "linkedInventoryId" in item ? item.linkedInventoryId : null,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           notes: item.notes,
-          changeOrderStatus: "changeOrderStatus" in item ? item.changeOrderStatus : "SUFFICIENT",
+          changeOrderStatus: item.changeOrderStatus,
         },
       })
     }
 
-    const serviceSourceItems = templateSnapshot && input.serviceItems.length === 0 ? templateSnapshot.serviceItems : input.serviceItems
+    const serviceSourceItems = useTemplateServiceItems ? [] : input.serviceItems
 
     const serviceItems = await Promise.all(
       serviceSourceItems.map(async (item) => {

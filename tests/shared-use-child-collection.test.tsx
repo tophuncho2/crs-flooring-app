@@ -11,6 +11,10 @@ vi.mock("@/features/flooring/shared/http", () => ({
   requestJson: requestJsonMock,
 }))
 
+vi.mock("@/features/flooring/shared/transport/http", () => ({
+  requestJson: requestJsonMock,
+}))
+
 import { useChildCollection } from "@/features/flooring/shared/use-child-collection"
 
 type Item = { id: string; name: string }

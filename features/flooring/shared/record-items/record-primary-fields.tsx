@@ -1,1 +1,1 @@
-export * from "../record-primary-fields"
+export * from "../ui/record-items/record-primary-fields"

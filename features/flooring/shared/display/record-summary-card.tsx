@@ -1,1 +1,1 @@
-export * from "../record-summary-card"
+export * from "../ui/display/record-summary-card"

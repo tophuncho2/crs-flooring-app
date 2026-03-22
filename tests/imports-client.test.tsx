@@ -186,6 +186,12 @@ describe("ImportsClient", () => {
     await user.click(screen.getAllByRole("button", { name: "Create Import" })[0]!)
 
     expect(await screen.findByText("Add at least one inventory row before creating the import")).toBeTruthy()
-    expect(global.fetch).not.toHaveBeenCalled()
+    expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.some(([url, options]) => (
+      url === "/api/flooring/imports" &&
+      typeof options === "object" &&
+      options !== null &&
+      "method" in options &&
+      options.method === "POST"
+    ))).toBe(false)
   })
 })

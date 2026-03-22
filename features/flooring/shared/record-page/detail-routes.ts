@@ -1,1 +1,1 @@
-export * from "../detail-routes"
+export * from "../controllers/record-page/detail-routes"

@@ -1,1 +1,1 @@
-export * from "../record-line-summary"
+export * from "../ui/display/record-line-summary"

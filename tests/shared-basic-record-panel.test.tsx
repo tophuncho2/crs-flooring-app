@@ -8,7 +8,7 @@ const { recordPanelFooterSpy } = vi.hoisted(() => ({
   recordPanelFooterSpy: vi.fn(),
 }))
 
-vi.mock("@/features/flooring/shared/record-form", () => ({
+vi.mock("@/features/flooring/shared/ui/forms/record-form", () => ({
   RecordModalShell: ({
     title,
     onClose,
@@ -33,7 +33,7 @@ vi.mock("@/features/flooring/shared/record-form", () => ({
   ),
 }))
 
-vi.mock("@/features/flooring/shared/record-panel-footer", () => ({
+vi.mock("@/features/flooring/shared/ui/forms/record-panel-footer", () => ({
   RecordPanelFooter: (props: {
     deleteLabel: string
     deleteConfirmMessage: string

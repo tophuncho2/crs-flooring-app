@@ -1,1 +1,1 @@
-export * from "../use-table-controls"
+export * from "../controllers/table/use-table-controls"

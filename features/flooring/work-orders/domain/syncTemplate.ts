@@ -1,167 +1,19 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
+import {
+  applyTemplateSync,
+  loadTemplateSnapshot,
+  previewTemplateSync,
+  type TemplateSyncPreview,
+} from "@/features/flooring/templates/domain/template-snapshot"
+import { getWorkOrderByIdWithClient } from "@/features/flooring/work-orders/queries"
 import { TEMPLATE_SYNC_POLICY } from "@/features/flooring/work-orders/contracts"
 import type { SyncTemplateToWorkOrderInput } from "@/features/flooring/work-orders/validators"
-
-type MaterialSnapshotRow = {
-  productId: string
-  quantity: Prisma.Decimal
-  unitPrice: Prisma.Decimal
-  notes: string | null
-  changeOrderStatus: "SUFFICIENT"
-}
-
-type ServiceSnapshotRow = {
-  serviceId: string | null
-  name: string
-  unitId: string
-  quantity: Prisma.Decimal
-  unitPrice: Prisma.Decimal
-  notes: string | null
-}
-
-type SyncPreview = {
-  headerUpdates: {
-    warehouseId: boolean
-    instructions: boolean
-    templateId: boolean
-  }
-  rowsToCreate: {
-    materialItems: number
-    serviceItems: number
-  }
-  rowsToDelete: {
-    materialItems: number
-    serviceItems: number
-  }
-  counts: {
-    materialItems: number
-    serviceItems: number
-  }
-}
-
-export type SyncTemplateToWorkOrderResult = SyncPreview & {
+export type SyncTemplateToWorkOrderResult = TemplateSyncPreview & {
   mode: "overwrite" | "append"
   dryRun: boolean
   policy: typeof TEMPLATE_SYNC_POLICY
-  workOrder: Awaited<ReturnType<typeof getWorkOrderById>> | null
-}
-
-function materialKey(row: {
-  productId: string
-  quantity: { toString(): string }
-  unitPrice: { toString(): string }
-  notes: string | null
-}) {
-  return [row.productId, row.quantity.toString(), row.unitPrice.toString(), row.notes ?? ""].join("::")
-}
-
-function serviceKey(row: {
-  serviceId: string | null
-  name: string
-  unitId: string
-  quantity: { toString(): string }
-  unitPrice: { toString(): string }
-  notes: string | null
-}) {
-  return [row.serviceId ?? "", row.name, row.unitId, row.quantity.toString(), row.unitPrice.toString(), row.notes ?? ""].join("::")
-}
-
-async function buildTemplateSyncSnapshot(templateId: string, tx: Prisma.TransactionClient) {
-  const template = await tx.flooringTemplate.findUniqueOrThrow({
-    where: { id: templateId },
-    select: {
-      propertyId: true,
-      warehouseId: true,
-      instructions: true,
-      items: {
-        select: {
-          productId: true,
-          quantity: true,
-          unitPrice: true,
-          notes: true,
-        },
-      },
-      serviceItems: {
-        select: {
-          serviceId: true,
-          name: true,
-          unitId: true,
-          quantity: true,
-          unitPrice: true,
-          notes: true,
-        },
-      },
-    },
-  })
-
-  return {
-    propertyId: template.propertyId,
-    warehouseId: template.warehouseId,
-    instructions: template.instructions,
-    items: template.items.map<MaterialSnapshotRow>((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      notes: item.notes,
-      changeOrderStatus: "SUFFICIENT",
-    })),
-    serviceItems: template.serviceItems.map<ServiceSnapshotRow>((item) => ({
-      serviceId: item.serviceId,
-      name: item.name,
-      unitId: item.unitId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      notes: item.notes,
-    })),
-  }
-}
-
-function buildSyncPreview(args: {
-  mode: "overwrite" | "append"
-  existingWorkOrder: {
-    templateId: string | null
-    warehouseId: string | null
-    instructions: string | null
-  }
-  existingMaterialItems: Array<{ productId: string; quantity: Prisma.Decimal; unitPrice: Prisma.Decimal; notes: string | null }>
-  existingServiceItems: Array<{ serviceId: string | null; name: string; unitId: string; quantity: Prisma.Decimal; unitPrice: Prisma.Decimal; notes: string | null }>
-  templateSnapshot: Awaited<ReturnType<typeof buildTemplateSyncSnapshot>>
-}) {
-  const existingMaterialKeys = new Set(args.existingMaterialItems.map(materialKey))
-  const existingServiceKeys = new Set(args.existingServiceItems.map(serviceKey))
-
-  const materialItemsToCreate =
-    args.mode === "overwrite"
-      ? args.templateSnapshot.items
-      : args.templateSnapshot.items.filter((item) => !existingMaterialKeys.has(materialKey(item)))
-  const serviceItemsToCreate =
-    args.mode === "overwrite"
-      ? args.templateSnapshot.serviceItems
-      : args.templateSnapshot.serviceItems.filter((item) => !existingServiceKeys.has(serviceKey(item)))
-
-  return {
-    headerUpdates: {
-      warehouseId: args.existingWorkOrder.warehouseId !== args.templateSnapshot.warehouseId,
-      instructions: (args.existingWorkOrder.instructions ?? "") !== (args.templateSnapshot.instructions ?? ""),
-      templateId: true,
-    },
-    rowsToCreate: {
-      materialItems: materialItemsToCreate.length,
-      serviceItems: serviceItemsToCreate.length,
-    },
-    rowsToDelete: {
-      materialItems: args.mode === "overwrite" ? args.existingMaterialItems.length : 0,
-      serviceItems: args.mode === "overwrite" ? args.existingServiceItems.length : 0,
-    },
-    counts: {
-      materialItems: args.mode === "overwrite" ? args.templateSnapshot.items.length : args.existingMaterialItems.length + materialItemsToCreate.length,
-      serviceItems: args.mode === "overwrite" ? args.templateSnapshot.serviceItems.length : args.existingServiceItems.length + serviceItemsToCreate.length,
-    },
-    materialItemsToCreate,
-    serviceItemsToCreate,
-  }
+  workOrder: Awaited<ReturnType<typeof getWorkOrderByIdWithClient>> | null
 }
 
 export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTemplateToWorkOrderInput): Promise<SyncTemplateToWorkOrderResult> {
@@ -188,19 +40,24 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
     }
 
     const [templateSnapshot, existingMaterialItems, existingServiceItems] = await Promise.all([
-      buildTemplateSyncSnapshot(input.templateId, tx),
+      loadTemplateSnapshot(input.templateId, tx),
       tx.flooringWorkOrderItem.findMany({
         where: { workOrderId },
         select: {
+          id: true,
+          sourceTemplateItemId: true,
           productId: true,
           quantity: true,
           unitPrice: true,
           notes: true,
+          changeOrderStatus: true,
         },
       }),
       tx.flooringWorkOrderServiceItem.findMany({
         where: { workOrderId },
         select: {
+          id: true,
+          sourceTemplateServiceItemId: true,
           serviceId: true,
           name: true,
           unitId: true,
@@ -215,7 +72,7 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       throw { message: "Template property must match the selected work order property", field: "templateId" }
     }
 
-    const preview = buildSyncPreview({
+    const preview = previewTemplateSync({
       mode: input.mode,
       existingWorkOrder: {
         templateId: existingWorkOrder.templateId,
@@ -224,7 +81,7 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       },
       existingMaterialItems,
       existingServiceItems,
-      templateSnapshot,
+      snapshot: templateSnapshot,
     })
 
     if (input.dryRun) {
@@ -240,52 +97,25 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       }
     }
 
-    if (input.mode === "overwrite") {
-      await tx.flooringWorkOrderItem.deleteMany({ where: { workOrderId } })
-      await tx.flooringWorkOrderServiceItem.deleteMany({ where: { workOrderId } })
-    }
-
-    if (preview.materialItemsToCreate.length > 0) {
-      await tx.flooringWorkOrderItem.createMany({
-        data: preview.materialItemsToCreate.map((item) => ({
-          workOrderId,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: item.notes,
-          changeOrderStatus: item.changeOrderStatus,
-        })),
-      })
-    }
-
-    if (preview.serviceItemsToCreate.length > 0) {
-      await tx.flooringWorkOrderServiceItem.createMany({
-        data: preview.serviceItemsToCreate.map((item) => ({
-          workOrderId,
-          serviceId: item.serviceId,
-          name: item.name,
-          unitId: item.unitId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: item.notes,
-        })),
-      })
-    }
-
-    await tx.flooringWorkOrder.update({
-      where: { id: workOrderId },
-      data: {
-        templateId: input.templateId,
-        warehouseId: templateSnapshot.warehouseId,
-        instructions: templateSnapshot.instructions,
+    await applyTemplateSync({
+      tx,
+      workOrderId,
+      mode: input.mode,
+      existingWorkOrder: {
+        templateId: existingWorkOrder.templateId,
+        warehouseId: existingWorkOrder.warehouseId,
+        instructions: existingWorkOrder.instructions,
       },
+      existingMaterialItems,
+      existingServiceItems,
+      snapshot: templateSnapshot,
     })
 
     return {
       mode: input.mode,
       dryRun: false,
       policy: TEMPLATE_SYNC_POLICY,
-      workOrder: await getWorkOrderById(workOrderId),
+      workOrder: await getWorkOrderByIdWithClient(tx, workOrderId),
       headerUpdates: preview.headerUpdates,
       rowsToCreate: preview.rowsToCreate,
       rowsToDelete: preview.rowsToDelete,

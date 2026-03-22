@@ -1,1 +1,1 @@
-export * from "../record-detail-page-shell"
+export * from "../ui/record-page/record-detail-page-shell"
