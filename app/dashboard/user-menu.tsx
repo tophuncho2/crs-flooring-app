@@ -8,8 +8,6 @@ import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/features/flooring/shared/ac
 import { requestJson } from "@/features/flooring/shared/http"
 import { useFlooringHotkeys } from "./use-flooring-hotkeys"
 
-type Theme = "light" | "dark"
-
 type HotkeyRow = {
   id: string
   key: string
@@ -86,18 +84,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
     return () => window.removeEventListener("resize", evaluateMobile)
   }, [])
 
-  function toggleTheme(closeMenu = true) {
-    const activeTheme = document.documentElement.dataset.theme
-    const fallbackTheme: Theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    const currentTheme: Theme = activeTheme === "dark" || activeTheme === "light" ? activeTheme : fallbackTheme
-    const nextTheme: Theme = currentTheme === "dark" ? "light" : "dark"
-    document.documentElement.dataset.theme = nextTheme
-    localStorage.setItem("theme", nextTheme)
-    if (closeMenu) {
-      setOpen(false)
-    }
-  }
-
   async function handleLogout() {
     await signOut({ callbackUrl: "/login" })
   }
@@ -105,7 +91,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   useFlooringHotkeys({
     enabled: !isMobile,
     canOpenTool,
-    onToggleTheme: () => toggleTheme(false),
   })
 
   const fetchHotkeys = useCallback(async () => {
@@ -185,14 +170,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
             >
               Hotkeys
             </button>
-
-            <button
-              onClick={() => toggleTheme()}
-              className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-            >
-              Toggle Theme
-            </button>
-
             <button
               onClick={() => void handleLogout()}
               className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"

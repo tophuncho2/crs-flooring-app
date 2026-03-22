@@ -35,10 +35,11 @@ describe("FLOORING_HOTKEYS", () => {
     )
   })
 
-  it("removes the warehouse and admin panel shortcuts", () => {
+  it("removes the warehouse, admin panel, and theme shortcuts", () => {
     const labels = FLOORING_HOTKEYS.map((hotkey) => hotkey.key)
 
     expect(labels).not.toContain("Warehouse")
     expect(labels).not.toContain("Admin Panel")
+    expect(labels).not.toContain("Theme")
   })
 })

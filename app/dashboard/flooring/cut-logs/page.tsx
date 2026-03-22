@@ -22,7 +22,6 @@ export default async function FlooringCutLogsPage() {
           product: {
             select: {
               name: true,
-              manufacturerName: true,
               style: true,
               color: true,
             },

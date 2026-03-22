@@ -118,7 +118,6 @@ function importEntryInclude() {
           select: {
             id: true,
             name: true,
-            manufacturerName: true,
             style: true,
             color: true,
             category: { select: { stockUnit: { select: { name: true } } } },
@@ -151,7 +150,6 @@ export function normalizeImportInventory(row: {
   product: {
     id: string
     name: string
-    manufacturerName: string | null
     style: string | null
     color: string | null
     category: { stockUnit: { name: string } | null }

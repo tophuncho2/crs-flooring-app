@@ -14,11 +14,9 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export function useFlooringHotkeys({
   enabled,
   canOpenTool,
-  onToggleTheme,
 }: {
   enabled: boolean
   canOpenTool: (slug: ToolSlug) => boolean
-  onToggleTheme: () => void
 }) {
   const router = useRouter()
 
@@ -34,11 +32,6 @@ export function useFlooringHotkeys({
 
       event.preventDefault()
 
-      if (matchedHotkey.toggleTheme) {
-        onToggleTheme()
-        return
-      }
-
       if (!matchedHotkey.path) return
 
       if (matchedHotkey.requiredTool && !canOpenTool(matchedHotkey.requiredTool)) return
@@ -48,5 +41,5 @@ export function useFlooringHotkeys({
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [canOpenTool, enabled, onToggleTheme, router])
+  }, [canOpenTool, enabled, router])
 }

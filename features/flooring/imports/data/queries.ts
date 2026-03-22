@@ -63,7 +63,6 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
               select: {
                 id: true,
                 name: true,
-                manufacturerName: true,
                 style: true,
                 color: true,
                 category: { select: { stockUnit: { select: { name: true } } } },
@@ -152,7 +151,6 @@ function importEntryInclude() {
           select: {
             id: true,
             name: true,
-            manufacturerName: true,
             style: true,
             color: true,
             category: { select: { stockUnit: { select: { name: true } } } },

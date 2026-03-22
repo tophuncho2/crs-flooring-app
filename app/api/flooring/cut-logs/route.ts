@@ -18,7 +18,6 @@ function normalizeCutLog(log: {
     itemNumber: string
     product: {
       name: string
-      manufacturerName: string | null
       style: string | null
       color: string | null
     }
@@ -56,7 +55,6 @@ export async function GET(request: Request) {
             product: {
               select: {
                 name: true,
-                manufacturerName: true,
                 style: true,
                 color: true,
               },
@@ -127,7 +125,6 @@ export async function POST(request: Request) {
             product: {
               select: {
                 name: true,
-                manufacturerName: true,
                 style: true,
                 color: true,
               },

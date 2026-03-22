@@ -9,7 +9,6 @@ export type FlooringHotkeyDefinition = {
   code: string
   path?: string
   requiredTool?: ToolSlug
-  toggleTheme?: boolean
 }
 
 export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
@@ -129,13 +128,5 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     code: "KeyU",
     path: "/dashboard/flooring/cut-logs",
     requiredTool: "warehouse",
-  },
-  {
-    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00011",
-    key: "Theme",
-    combination: "SHIFT + /",
-    action: "Toggle Theme",
-    code: "Slash",
-    toggleTheme: true,
   },
 ]

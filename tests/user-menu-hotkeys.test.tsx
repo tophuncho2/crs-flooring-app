@@ -72,6 +72,7 @@ describe("UserMenu hotkeys modal", () => {
     render(<UserMenu email="admin@test.com" role="OWNER" canUseTools unlockedToolSlugs={["products", "warehouse"]} />)
 
     fireEvent.click(screen.getByRole("button", { name: "A" }))
+    expect(screen.queryByRole("button", { name: "Toggle Theme" })).toBeNull()
     fireEvent.click(screen.getByRole("button", { name: "Hotkeys" }))
 
     await waitFor(() => {

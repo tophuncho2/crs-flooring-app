@@ -12,31 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (() => {
-                const savedTheme = localStorage.getItem("theme");
-                if (savedTheme === "light" || savedTheme === "dark") {
-                  document.documentElement.dataset.theme = savedTheme;
-                } else {
-                  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                  document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
-                }
-
-                const savedColorTheme = localStorage.getItem("colorTheme");
-                if (savedColorTheme && /^[1-9]$/.test(savedColorTheme)) {
-                  document.documentElement.dataset.colorTheme = savedColorTheme;
-                } else {
-                  document.documentElement.dataset.colorTheme = "1";
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
+    <html lang="en">
       <body
         className="antialiased"
       >
