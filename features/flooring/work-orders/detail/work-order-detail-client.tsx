@@ -3,49 +3,15 @@
 import { useCallback, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/primary-record-panel"
-import { RecordLineSummary } from "@/features/flooring/shared/record-line-summary"
 import { RecordOptionsMenu } from "@/features/flooring/shared/record-options-menu"
 import { RecordDetailPageShell } from "@/features/flooring/shared/record-page/record-detail-page-shell"
 import { useRecordPageController } from "@/features/flooring/shared/record-page/use-record-page-controller"
 import { WorkOrderRecordPanel } from "../components/work-order-record-panel"
 import type { MaterialItemOption } from "@/features/flooring/shared/record-items/material-items-editor"
 import type { ServiceOption, UnitOption } from "@/features/flooring/shared/record-items/service-items-editor"
-
-type PropertyOption = {
-  id: string
-  name: string
-  address: string
-}
-
-type WarehouseOption = {
-  id: string
-  name: string
-}
-
-type WorkOrderDetail = {
-  id: string
-  workOrderNumber: string
-  propertyId: string
-  templateId: string
-  propertyName: string
-  propertyAddress: string
-  warehouseId: string
-  warehouseName: string
-  status: string
-  isComplete: boolean
-  vacancy: "VACANT" | "OCCUPIED" | null
-  date: string | null
-  unitText: string
-  unitNumber: string
-  unitType: string
-  customAddress: string
-  instructions: string
-  notes: string
-  workOrderImageUrl: string
-  createdAt: string
-  updatedAt: string
-  hasShortage?: boolean
-}
+import { WorkOrderExpenseSummaryHeader } from "../components/work-order-expense-summary"
+import { normalizeWorkOrderExpenseSummary } from "../domain/expense-summary"
+import type { PropertyOption, SalesRepContactOption, WarehouseOption, WorkOrderDetail } from "../types"
 
 export default function WorkOrderDetailClient({
   workOrder: initialWorkOrder,
@@ -53,6 +19,7 @@ export default function WorkOrderDetailClient({
   propertyOptions,
   warehouseOptions,
   serviceOptions,
+  salesRepOptions,
   unitOptions,
   backHref,
 }: {
@@ -61,6 +28,7 @@ export default function WorkOrderDetailClient({
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   serviceOptions: ServiceOption[]
+  salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
   backHref: string
 }) {
@@ -69,6 +37,14 @@ export default function WorkOrderDetailClient({
     dirtyMessage: "You have unsaved work order changes. Leave this work order without saving?",
   })
   const [workOrder, setWorkOrder] = useState(initialWorkOrder)
+  const [expenseSummary, setExpenseSummary] = useState(
+    initialWorkOrder.expenseSummary ??
+      normalizeWorkOrderExpenseSummary({
+        items: initialWorkOrder.items ?? [],
+        serviceItems: initialWorkOrder.serviceItems ?? [],
+        salesReps: initialWorkOrder.salesReps ?? [],
+      }),
+  )
   const [refreshNonce, setRefreshNonce] = useState(0)
 
   const closePage = useCallback(() => {
@@ -96,6 +72,9 @@ export default function WorkOrderDetailClient({
         ...previous,
         ...payload.workOrder,
       }))
+      if (payload.workOrder.expenseSummary) {
+        setExpenseSummary(payload.workOrder.expenseSummary)
+      }
       setRefreshNonce((current) => current + 1)
       page.notices.showSuccess("Work order marked complete")
     } catch (completeError) {
@@ -108,7 +87,7 @@ export default function WorkOrderDetailClient({
       title={`Work Order ${workOrder.workOrderNumber}`}
       backHref={backHref}
       onBack={closePage}
-      headerMeta={<RecordLineSummary materialItems={page.summary.materialItems} serviceItems={page.summary.serviceItems} variant="header" />}
+      headerMeta={<WorkOrderExpenseSummaryHeader summary={expenseSummary} />}
       headerActions={
         <RecordOptionsMenu
           items={[
@@ -133,10 +112,11 @@ export default function WorkOrderDetailClient({
         warehouseOptions={warehouseOptions}
         productOptions={productOptions}
         serviceOptions={serviceOptions}
+        salesRepOptions={salesRepOptions}
         unitOptions={unitOptions}
         onClose={closePage}
         refreshNonce={refreshNonce}
-        onSummaryChange={page.setSummary}
+        onExpenseSummaryChange={setExpenseSummary}
         onDirtyChange={page.setIsDirty}
         notices={page.notices}
         onWorkOrderSaved={(savedWorkOrder) => {
@@ -145,6 +125,7 @@ export default function WorkOrderDetailClient({
             ...previous,
             ...savedWorkOrder,
           }))
+          setExpenseSummary(savedWorkOrder.expenseSummary)
         }}
         onWorkOrderDeleted={() => {
           page.redirectToBack()

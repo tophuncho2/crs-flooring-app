@@ -11,7 +11,7 @@ import {
   type MaterialItemOption,
 } from "@/features/flooring/shared/record-items/material-items-editor"
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { buildRecordSummary, emptyRecordSummary } from "@/features/flooring/shared/record-summary"
+import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
 import {
   ServiceItemsEditor,
@@ -20,68 +20,16 @@ import {
   type ServiceOption,
   type UnitOption,
 } from "@/features/flooring/shared/record-items/service-items-editor"
+import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
 import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/record-items/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/record-items/use-record-line-items-controller"
+import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useRecordDetailController } from "@/features/flooring/shared/record-page/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/use-record-notices"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
-
-type PropertyOption = {
-  id: string
-  name: string
-  address: string
-}
-
-type WarehouseOption = {
-  id: string
-  name: string
-}
-
-type WorkOrderDetail = {
-  id: string
-  workOrderNumber: string
-  propertyId: string
-  templateId: string
-  propertyName: string
-  propertyAddress: string
-  warehouseId: string
-  warehouseName: string
-  status: string
-  isComplete: boolean
-  vacancy: "VACANT" | "OCCUPIED" | null
-  date: string | null
-  unitText: string
-  unitNumber: string
-  unitType: string
-  customAddress: string
-  instructions: string
-  notes: string
-  workOrderImageUrl: string
-  createdAt: string
-  updatedAt: string
-  hasShortage?: boolean
-  items: EditableMaterialItem[]
-  serviceItems: EditableServiceItem[]
-  summary: ReturnType<typeof buildRecordSummary>
-}
-
-type WorkOrderDraft = {
-  propertyId: string
-  templateId: string
-  warehouseId: string
-  status: string
-  isComplete: boolean
-  vacancy: "VACANT" | "OCCUPIED" | ""
-  date: string
-  unitText: string
-  unitNumber: string
-  unitType: string
-  customAddress: string
-  instructions: string
-  notes: string
-  workOrderImageUrl: string
-}
+import { normalizeWorkOrderExpenseSummary } from "@/features/flooring/work-orders/domain/expense-summary"
+import type { DraftWorkOrder, PropertyOption, SalesRepContactOption, WorkOrderDetail, WorkOrderExpenseSummary, WarehouseOption } from "@/features/flooring/work-orders/types"
 
 const defaultMaterialDraft: MaterialItemDraft = {
   productId: "",
@@ -99,9 +47,14 @@ const defaultServiceDraft: ServiceItemDraft = {
   notes: "",
 }
 
+const defaultSalesRepDraft: SalesRepDraft = {
+  contactId: "",
+  percent: "",
+}
+
 const vacancyOptions: Array<"VACANT" | "OCCUPIED"> = ["VACANT", "OCCUPIED"]
 
-function toDraft(workOrder: WorkOrderDetail): WorkOrderDraft {
+function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
   return {
     propertyId: workOrder.propertyId,
     templateId: workOrder.templateId,
@@ -124,7 +77,7 @@ function statusLabel(value: string) {
   return getWorkOrderStatusLabel({ status: value, isComplete: false })
 }
 
-function selectedAddress(propertyOptions: PropertyOption[], draft: WorkOrderDraft, fallbackAddress: string) {
+function selectedAddress(propertyOptions: PropertyOption[], draft: DraftWorkOrder, fallbackAddress: string) {
   if (draft.customAddress.trim()) {
     return draft.customAddress
   }
@@ -139,40 +92,33 @@ export function WorkOrderRecordPanel({
   warehouseOptions,
   productOptions,
   serviceOptions,
+  salesRepOptions,
   unitOptions,
   onClose,
   refreshNonce = 0,
   onWorkOrderSaved,
   onWorkOrderDeleted,
-  onSummaryChange,
+  onExpenseSummaryChange,
   onDirtyChange,
   notices,
 }: {
   workOrderId: string
-  initialWorkOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary">
+  initialWorkOrder: WorkOrderDetail
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   productOptions: MaterialItemOption[]
   serviceOptions: ServiceOption[]
+  salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
   onClose: () => void
   refreshNonce?: number
-  onWorkOrderSaved?: (workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "summary"> & { itemsCount: number }) => void
+  onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
-  onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
+  onExpenseSummaryChange?: (summary: WorkOrderExpenseSummary) => void
   onDirtyChange?: (value: boolean) => void
   notices?: RecordNotices
 }) {
-  const initialWorkOrderDetail = useMemo<WorkOrderDetail>(
-    () => ({
-      ...initialWorkOrder,
-      templateId: initialWorkOrder.templateId ?? "",
-      items: [],
-      serviceItems: [],
-      summary: emptyRecordSummary(),
-    }),
-    [initialWorkOrder],
-  )
+  const initialWorkOrderDetail = useMemo<WorkOrderDetail>(() => initialWorkOrder, [initialWorkOrder])
   const [savingWorkOrder, setSavingWorkOrder] = useState(false)
   const localNotices = useRecordNotices()
   const noticeController = notices ?? localNotices
@@ -187,7 +133,7 @@ export function WorkOrderRecordPanel({
     publishRecord,
     refreshRecord,
     clearRecordCache,
-  } = useRecordDetailController<WorkOrderDetail, WorkOrderDraft>({
+  } = useRecordDetailController<WorkOrderDetail, DraftWorkOrder>({
     scope: "workOrder",
     id: workOrderId,
     initialRecord: initialWorkOrderDetail,
@@ -227,15 +173,31 @@ export function WorkOrderRecordPanel({
     serializeUpdate: (item) => item,
     skipReloadAfterMutation: true,
   })
+  const salesRepCollection = useChildCollection({
+    listUrl: `/api/flooring/work-orders/${workOrderId}/sales-reps`,
+    createUrl: `/api/flooring/work-orders/${workOrderId}/sales-reps`,
+    updateUrl: (repId: string) => `/api/flooring/work-orders/${workOrderId}/sales-reps/${repId}`,
+    deleteUrl: (repId: string) => `/api/flooring/work-orders/${workOrderId}/sales-reps/${repId}`,
+    mapItems: (payload) => (payload.items as WorkOrderDetail["salesReps"] | undefined) ?? [],
+    getItemId: (item) => item.id,
+    pickCreatedItem: (payload) => payload.item as WorkOrderDetail["salesReps"][number],
+    pickUpdatedItem: (payload) => payload.item as WorkOrderDetail["salesReps"][number],
+    serializeCreate: (input: SalesRepDraft) => input,
+    serializeUpdate: (item: WorkOrderDetail["salesReps"][number]) => ({
+      contactId: item.contactId,
+      percent: item.percent,
+    }),
+    skipReloadAfterMutation: true,
+  })
 
-  const onSummaryChangeRef = useRef(onSummaryChange)
+  const onExpenseSummaryChangeRef = useRef(onExpenseSummaryChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
   const hasMountedRefreshRef = useRef(false)
   const { message, error: noticeError, showSuccess, showError, clearNotices } = noticeController
 
   useEffect(() => {
-    onSummaryChangeRef.current = onSummaryChange
-  }, [onSummaryChange])
+    onExpenseSummaryChangeRef.current = onExpenseSummaryChange
+  }, [onExpenseSummaryChange])
 
   useEffect(() => {
     onWorkOrderSavedRef.current = onWorkOrderSaved
@@ -248,10 +210,7 @@ export function WorkOrderRecordPanel({
   const publishWorkOrder = useCallback(
     (nextWorkOrder: WorkOrderDetail) => {
       publishRecord(nextWorkOrder)
-      onWorkOrderSavedRef.current?.({
-        ...nextWorkOrder,
-        itemsCount: nextWorkOrder.items.length + nextWorkOrder.serviceItems.length,
-      })
+      onWorkOrderSavedRef.current?.(nextWorkOrder)
     },
     [publishRecord],
   )
@@ -260,10 +219,33 @@ export function WorkOrderRecordPanel({
     try {
       const nextWorkOrder = await refreshRecord()
       publishWorkOrder(nextWorkOrder)
+      onExpenseSummaryChangeRef.current?.(nextWorkOrder.expenseSummary)
       return nextWorkOrder
     } finally {
     }
   }, [publishWorkOrder, refreshRecord])
+
+  const salesRepLines = useRecordSalesRepsController({
+    record: workOrder,
+    notices: noticeController,
+    clearParentError: () => setError(""),
+    salesRepCollection,
+    initialDraft: defaultSalesRepDraft,
+    getItemsFromRecord: (record: WorkOrderDetail) => record.salesReps ?? [],
+    onItemsChanged: ({ record, salesReps }) => {
+      const nextWorkOrder: WorkOrderDetail = {
+        ...record,
+        salesReps,
+        expenseSummary: normalizeWorkOrderExpenseSummary({
+          items: materialCollection.items,
+          serviceItems: serviceCollection.items,
+          salesReps,
+        }),
+      }
+
+      publishWorkOrder(nextWorkOrder)
+    },
+  })
 
   const lineItems = useRecordLineItemsController<WorkOrderDetail, EditableMaterialItem, EditableServiceItem>({
     record: workOrder,
@@ -283,9 +265,15 @@ export function WorkOrderRecordPanel({
         hasShortage: record.hasShortage,
         items: materialItems,
         serviceItems,
+        salesReps: salesRepCollection.items,
         summary: buildRecordSummary({
           materialItems,
           serviceItems,
+        }),
+        expenseSummary: normalizeWorkOrderExpenseSummary({
+          items: materialItems,
+          serviceItems,
+          salesReps: salesRepCollection.items,
         }),
       }
 
@@ -294,11 +282,14 @@ export function WorkOrderRecordPanel({
   })
 
   useEffect(() => {
-    onSummaryChangeRef.current?.({
-      materialItems: lineItems.materialItems,
-      serviceItems: lineItems.serviceItems,
-    })
-  }, [lineItems.materialItems, lineItems.serviceItems])
+    onExpenseSummaryChangeRef.current?.(
+      normalizeWorkOrderExpenseSummary({
+        items: lineItems.materialItems,
+        serviceItems: lineItems.serviceItems,
+        salesReps: salesRepLines.salesReps,
+      }),
+    )
+  }, [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps])
 
   useEffect(() => {
     if (!hasMountedRefreshRef.current) {
@@ -316,7 +307,7 @@ export function WorkOrderRecordPanel({
     clearNotices()
 
     try {
-      await requestJson<{ workOrder: Omit<WorkOrderDetail, "items" | "serviceItems"> }>(`/api/flooring/work-orders/${workOrder.id}`, {
+      await requestJson<{ workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "salesReps" | "summary" | "expenseSummary"> }>(`/api/flooring/work-orders/${workOrder.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft),
@@ -356,6 +347,12 @@ export function WorkOrderRecordPanel({
     return <CenteredErrorState title="Error" message="Work order could not be loaded." onDismiss={onClose} />
   }
 
+  const currentExpenseSummary = normalizeWorkOrderExpenseSummary({
+    items: lineItems.materialItems,
+    serviceItems: lineItems.serviceItems,
+    salesReps: salesRepLines.salesReps,
+  })
+
   return (
     <div className="space-y-6">
       <FormStatusNotices message={message} error={noticeError} loadingMessage={savingWorkOrder ? "Saving work order..." : ""} />
@@ -391,7 +388,7 @@ export function WorkOrderRecordPanel({
           </select>
         </RecordFormField>
         <RecordFormField label="Vacancy">
-          <select value={draft.vacancy} onChange={(event) => setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as WorkOrderDraft["vacancy"] } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+          <select value={draft.vacancy} onChange={(event) => setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as DraftWorkOrder["vacancy"] } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
             <option value="">Select vacancy</option>
             {vacancyOptions.map((vacancy) => (
               <option key={vacancy} value={vacancy}>{vacancy}</option>
@@ -463,6 +460,26 @@ export function WorkOrderRecordPanel({
         onItemFieldChange={lineItems.handleServiceItemFieldChange}
         onSaveItem={(item) => void lineItems.saveServiceItem(item)}
         onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
+      />
+
+      <SalesRepItemsEditor
+        title="Sales Reps"
+        description="Sales rep assignments and payout percentages for this work order."
+        items={salesRepLines.salesReps}
+        draft={salesRepLines.draft}
+        salesRepOptions={salesRepOptions}
+        customerCost={currentExpenseSummary.customerCost}
+        loading={loading || salesRepLines.salesRepCollection.loading}
+        adding={salesRepLines.salesRepCollection.adding}
+        savingItemId={salesRepLines.salesRepCollection.savingItemId}
+        deletingItemId={salesRepLines.salesRepCollection.deletingItemId}
+        draftErrors={salesRepLines.draftErrors}
+        itemErrors={salesRepLines.itemErrors}
+        onDraftChange={salesRepLines.handleDraftChange}
+        onAdd={() => salesRepLines.addItem()}
+        onItemFieldChange={salesRepLines.handleItemFieldChange}
+        onSaveItem={(item) => void salesRepLines.saveItem(item)}
+        onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
       />
 
       <RecordPanelFooter

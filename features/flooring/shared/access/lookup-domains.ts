@@ -3,6 +3,7 @@ import { requireToolAccess } from "@/server/auth/session"
 import { requireRouteAccess } from "@/server/http/route-helpers"
 
 export const CATEGORIES_TOOL_SLUG = "products" as const
+export const CONTACTS_TOOL_SLUG = "warehouse" as const
 export const MANUFACTURERS_TOOL_SLUG = "products" as const
 export const UNIT_OF_MEASURES_TOOL_SLUG = "products" as const
 export const SERVICES_TOOL_SLUG = "warehouse" as const
@@ -14,6 +15,10 @@ type RouteAccessOptions = {
 
 export async function requireCategoriesAccess() {
   return requireToolAccess(CATEGORIES_TOOL_SLUG)
+}
+
+export async function requireContactsAccess() {
+  return requireToolAccess(CONTACTS_TOOL_SLUG)
 }
 
 export async function requireManufacturersAccess() {
@@ -32,6 +37,14 @@ export async function authorizeCategoriesRoute(request: Request, options: RouteA
   return requireRouteAccess(request, {
     capability: options.capability ?? "system.access",
     toolSlug: CATEGORIES_TOOL_SLUG,
+    allowUnverified: options.allowUnverified,
+  })
+}
+
+export async function authorizeContactsRoute(request: Request, options: RouteAccessOptions = {}) {
+  return requireRouteAccess(request, {
+    capability: options.capability ?? "system.access",
+    toolSlug: CONTACTS_TOOL_SLUG,
     allowUnverified: options.allowUnverified,
   })
 }

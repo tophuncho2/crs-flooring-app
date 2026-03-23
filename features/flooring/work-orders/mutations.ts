@@ -1,12 +1,16 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
+import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
+import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import type {
   CreateWorkOrderInput,
   UpdateWorkOrderInput,
   WorkOrderMaterialItemInput,
+  WorkOrderSalesRepInput,
   WorkOrderServiceItemInput,
+  UpdateWorkOrderSalesRepInput,
 } from "./validators"
 
 const workOrderInclude = {
@@ -77,6 +81,46 @@ async function resolveServiceNameAndPrice(item: WorkOrderServiceItemInput, tx: P
   return {
     name: item.name ?? service.name,
     unitPrice: item.unitPrice ?? service.baseCost,
+  }
+}
+
+async function resolveSalesRepContact(input: { contactId: string }, tx: Prisma.TransactionClient | typeof prisma) {
+  const contact = await tx.flooringContact.findUniqueOrThrow({
+    where: { id: input.contactId },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+    },
+  })
+
+  if (contact.type !== "SALES_REP") {
+    throw createAppError("Selected contact must be a Sales Rep", { field: "contactId" })
+  }
+
+  return contact
+}
+
+async function ensureUniqueWorkOrderSalesRep(
+  workOrderId: string,
+  contactId: string,
+  tx: Prisma.TransactionClient,
+  excludeRepId?: string,
+) {
+  const existing = await tx.flooringWorkOrderSalesRep.findFirst({
+    where: {
+      workOrderId,
+      contactId,
+      ...(excludeRepId ? { id: { not: excludeRepId } } : {}),
+    },
+    select: { id: true },
+  })
+
+  if (existing) {
+    throw createAppError("This sales rep is already assigned to the work order", {
+      status: 409,
+      field: "contactId",
+    })
   }
 }
 
@@ -217,6 +261,7 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
 
 export async function deleteWorkOrder(id: string) {
   await prisma.$transaction(async (tx) => {
+    await tx.flooringWorkOrderSalesRep.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderServiceItem.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderItem.deleteMany({ where: { workOrderId: id } })
     await tx.flooringAnalytics.deleteMany({ where: { workOrderId: id } })
@@ -381,5 +426,78 @@ export async function updateWorkOrderServiceItem(itemId: string, input: Partial<
 export async function deleteWorkOrderServiceItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.flooringWorkOrderServiceItem.delete({ where: { id: itemId } })
+  })
+}
+
+export async function createWorkOrderSalesRep(workOrderId: string, input: WorkOrderSalesRepInput) {
+  const created = await prisma.$transaction(async (tx) => {
+    const contact = await resolveSalesRepContact(input, tx)
+    await ensureUniqueWorkOrderSalesRep(workOrderId, contact.id, tx)
+
+    const item = await tx.flooringWorkOrderSalesRep.create({
+      data: {
+        workOrderId,
+        contactId: contact.id,
+        percent: input.percent,
+      },
+      include: {
+        contact: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    })
+
+    return item
+  })
+
+  return normalizeWorkOrderSalesRep(created)
+}
+
+export async function updateWorkOrderSalesRep(repId: string, input: UpdateWorkOrderSalesRepInput) {
+  const updated = await prisma.$transaction(async (tx) => {
+    const current = await tx.flooringWorkOrderSalesRep.findUniqueOrThrow({
+      where: { id: repId },
+      select: {
+        workOrderId: true,
+      },
+    })
+    const contact = input.contactId ? await resolveSalesRepContact({ contactId: input.contactId }, tx) : null
+    if (contact) {
+      await ensureUniqueWorkOrderSalesRep(current.workOrderId, contact.id, tx, repId)
+    }
+
+    const item = await tx.flooringWorkOrderSalesRep.update({
+      where: { id: repId },
+      data: {
+        contactId: input.contactId,
+        percent: input.percent,
+      },
+      include: {
+        contact: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    })
+
+    return contact
+      ? {
+          ...item,
+          contact: {
+            name: contact.name,
+          },
+        }
+      : item
+  })
+
+  return normalizeWorkOrderSalesRep(updated)
+}
+
+export async function deleteWorkOrderSalesRep(repId: string) {
+  await prisma.$transaction(async (tx) => {
+    await tx.flooringWorkOrderSalesRep.delete({ where: { id: repId } })
   })
 }

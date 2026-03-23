@@ -21,6 +21,11 @@ export type WorkOrderServiceItemInput = {
   notes: string | null
 }
 
+export type WorkOrderSalesRepInput = {
+  contactId: string
+  percent: Prisma.Decimal
+}
+
 export type CreateWorkOrderInput = {
   propertyId: string | null
   templateId: string | null
@@ -46,6 +51,7 @@ export type UpdateWorkOrderInput = Partial<Omit<CreateWorkOrderInput, "items" | 
 }
 export type UpdateWorkOrderMaterialItemInput = Partial<WorkOrderMaterialItemInput>
 export type UpdateWorkOrderServiceItemInput = Partial<WorkOrderServiceItemInput>
+export type UpdateWorkOrderSalesRepInput = Partial<WorkOrderSalesRepInput>
 export type SyncTemplateToWorkOrderInput = {
   templateId: string
   mode: "overwrite" | "append"
@@ -152,6 +158,21 @@ export function validateWorkOrderServiceItemInput(body: Record<string, unknown>)
   }
 }
 
+function requirePercentInRange(value: Prisma.Decimal, field: string) {
+  if (value.lessThan(0) || value.greaterThan(100)) {
+    throw { message: `${field} must be between 0 and 100`, field }
+  }
+
+  return value
+}
+
+export function validateWorkOrderSalesRepInput(body: Record<string, unknown>): WorkOrderSalesRepInput {
+  return {
+    contactId: parseRequiredString(body.contactId, "contactId"),
+    percent: requirePercentInRange(parseDecimal(body.percent, "percent", 2), "percent"),
+  }
+}
+
 export function validateUpdateWorkOrderMaterialItemInput(body: Record<string, unknown>): UpdateWorkOrderMaterialItemInput {
   const input: UpdateWorkOrderMaterialItemInput = {}
 
@@ -184,6 +205,15 @@ export function validateUpdateWorkOrderServiceItemInput(body: Record<string, unk
   if ("serviceId" in body && input.serviceId === null) {
     requireServiceNameWhenCustom(input.serviceId, input.name ?? null)
   }
+
+  return input
+}
+
+export function validateUpdateWorkOrderSalesRepInput(body: Record<string, unknown>): UpdateWorkOrderSalesRepInput {
+  const input: UpdateWorkOrderSalesRepInput = {}
+
+  if ("contactId" in body) input.contactId = parseRequiredString(body.contactId, "contactId")
+  if ("percent" in body) input.percent = requirePercentInRange(parseDecimal(body.percent, "percent", 2), "percent")
 
   return input
 }

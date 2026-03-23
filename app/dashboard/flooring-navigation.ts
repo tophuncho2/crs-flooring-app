@@ -24,6 +24,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     href: "/dashboard/flooring/management-companies",
     requiredTool: "warehouse",
   },
+  { slug: "flooring-contacts", name: "Contacts", href: "/dashboard/flooring/contacts", requiredTool: "warehouse" },
   { slug: "flooring-services", name: "Services", href: "/dashboard/flooring/services", requiredTool: "warehouse" },
   { slug: "flooring-templates", name: "Templates", href: "/dashboard/flooring/templates", requiredTool: TEMPLATES_TOOL_SLUG },
   { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/flooring/manufacturers", requiredTool: "products" },

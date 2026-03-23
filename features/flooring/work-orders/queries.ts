@@ -3,7 +3,8 @@ import { prisma } from "@/server/db/prisma"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
-import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
+import { listSalesRepContactOptions } from "@/features/flooring/contacts/data/queries"
+import { normalizeWorkOrder, normalizeWorkOrderExpenseTotals, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
 type WorkOrderDbClient = Prisma.TransactionClient | typeof prisma
 
@@ -152,6 +153,16 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
           },
         },
       },
+      salesReps: {
+        orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }],
+        include: {
+          contact: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
     },
   })
 
@@ -159,6 +170,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
     ...(() => {
       const normalizedItems = workOrder.items.map(normalizeWorkOrderItem)
       const normalizedServiceItems = workOrder.serviceItems.map(normalizeWorkOrderServiceItem)
+      const normalizedSalesReps = workOrder.salesReps.map(normalizeWorkOrderSalesRep)
 
       return {
         ...normalizeWorkOrder({
@@ -167,9 +179,15 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
         }),
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
+        salesReps: normalizedSalesReps,
         summary: normalizeWorkOrderSummary({
           items: normalizedItems,
           serviceItems: normalizedServiceItems,
+        }),
+        expenseSummary: normalizeWorkOrderExpenseTotals({
+          items: normalizedItems,
+          serviceItems: normalizedServiceItems,
+          salesReps: normalizedSalesReps,
         }),
       }
     })(),
@@ -226,6 +244,22 @@ export async function listWorkOrderServiceItems(workOrderId: string) {
   })
 
   return items.map(normalizeWorkOrderServiceItem)
+}
+
+export async function listWorkOrderSalesReps(workOrderId: string) {
+  const items = await prisma.flooringWorkOrderSalesRep.findMany({
+    where: { workOrderId },
+    include: {
+      contact: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }],
+  })
+
+  return items.map(normalizeWorkOrderSalesRep)
 }
 
 async function loadWorkOrdersPageData(page: number, tableState: ServerTableQueryState) {
@@ -302,11 +336,13 @@ export async function getWorkOrderDetailPageData(id: string): Promise<PrismaDeta
   productOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["productOptions"]
   serviceOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["serviceOptions"]
   unitOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["unitOptions"]
+  salesRepOptions: Awaited<ReturnType<typeof listSalesRepContactOptions>>
 }>> {
   try {
-    const [workOrder, options] = await Promise.all([
+    const [workOrder, options, salesRepOptions] = await Promise.all([
       getWorkOrderById(id),
       loadSharedRecordDetailOptions(),
+      listSalesRepContactOptions(),
     ])
 
     return {
@@ -314,6 +350,7 @@ export async function getWorkOrderDetailPageData(id: string): Promise<PrismaDeta
       data: {
         workOrder,
         ...options,
+        salesRepOptions,
       },
     }
   } catch (error) {

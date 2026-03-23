@@ -1,7 +1,9 @@
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
-import type { LineTotalInput } from "@/features/flooring/shared/line-totals"
-import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
+import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
+import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import type { PricingLine } from "@/features/flooring/templates/services"
+import { normalizeWorkOrderExpenseSummary } from "./domain/expense-summary"
+import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import {
   TEMPLATE_SYNC_POLICY,
   VACANCY_OPTIONS,
@@ -109,6 +111,18 @@ export function normalizeWorkOrderSummary(input: {
   })
 }
 
+export function normalizeWorkOrderExpenseTotals(input: {
+  items: LineTotalInput[]
+  serviceItems: LineTotalInput[]
+  salesReps: Array<{ percent: string | number }>
+}) {
+  return normalizeWorkOrderExpenseSummary({
+    items: input.items,
+    serviceItems: input.serviceItems,
+    salesReps: input.salesReps,
+  })
+}
+
 export function normalizeWorkOrderItem(item: {
   id: string
   productId: string
@@ -165,3 +179,5 @@ export function normalizeWorkOrderServiceItem(item: {
     notes: item.notes ?? "",
   }
 }
+
+export { normalizeWorkOrderSalesRep }

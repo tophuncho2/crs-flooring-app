@@ -1,3 +1,8 @@
+import type { EditableMaterialItem } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
+import type { WorkOrderExpenseSummary } from "./domain/expense-summary"
+import type { EditableWorkOrderSalesRep, SalesRepContactOption, WorkOrderSalesRepDraft } from "./domain/sales-reps"
+
 export type WorkOrderRow = {
   id: string
   workOrderNumber: string
@@ -59,6 +64,21 @@ export type DraftWorkOrder = {
   workOrderImageUrl: string
 }
 
+export type WorkOrderDetail = Omit<WorkOrderRow, "itemsCount"> & {
+  items: EditableMaterialItem[]
+  serviceItems: EditableServiceItem[]
+  salesReps: EditableWorkOrderSalesRep[]
+  summary: {
+    materialItemsCount: number
+    serviceItemsCount: number
+    totalItemsCount: number
+    materialTotal: number
+    serviceTotal: number
+    grandTotal: number
+  }
+  expenseSummary: WorkOrderExpenseSummary
+}
+
 export type ServerPaginationState = {
   page: number
   pageSize: number
@@ -74,3 +94,5 @@ export type ServerTableState = {
   isGroupingEnabled: boolean
   groupByKeys: string[]
 }
+
+export type { EditableWorkOrderSalesRep, SalesRepContactOption, WorkOrderExpenseSummary, WorkOrderSalesRepDraft }

@@ -3,6 +3,8 @@ import { GET as GET_ITEMS, POST as POST_ITEM } from "@/app/api/flooring/work-ord
 import { DELETE as DELETE_ITEM, PATCH as PATCH_ITEM } from "@/app/api/flooring/work-orders/[id]/items/[itemId]/route"
 import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/flooring/work-orders/[id]/service-items/route"
 import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/app/api/flooring/work-orders/[id]/service-items/[itemId]/route"
+import { GET as GET_SALES_REPS, POST as POST_SALES_REP } from "@/app/api/flooring/work-orders/[id]/sales-reps/route"
+import { DELETE as DELETE_SALES_REP, PATCH as PATCH_SALES_REP } from "@/app/api/flooring/work-orders/[id]/sales-reps/[repId]/route"
 
 const {
   authorizeWorkOrdersRouteMock,
@@ -17,6 +19,10 @@ const {
   createWorkOrderServiceItemMock,
   updateWorkOrderServiceItemMock,
   deleteWorkOrderServiceItemMock,
+  listWorkOrderSalesRepsMock,
+  createWorkOrderSalesRepMock,
+  updateWorkOrderSalesRepMock,
+  deleteWorkOrderSalesRepMock,
 } = vi.hoisted(() => ({
   authorizeWorkOrdersRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
@@ -30,6 +36,10 @@ const {
   createWorkOrderServiceItemMock: vi.fn(),
   updateWorkOrderServiceItemMock: vi.fn(),
   deleteWorkOrderServiceItemMock: vi.fn(),
+  listWorkOrderSalesRepsMock: vi.fn(),
+  createWorkOrderSalesRepMock: vi.fn(),
+  updateWorkOrderSalesRepMock: vi.fn(),
+  deleteWorkOrderSalesRepMock: vi.fn(),
 }))
 
 vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
@@ -65,6 +75,7 @@ vi.mock("@/server/http/route-helpers", () => ({
 vi.mock("@/features/flooring/work-orders/queries", () => ({
   listWorkOrderItems: listWorkOrderItemsMock,
   listWorkOrderServiceItems: listWorkOrderServiceItemsMock,
+  listWorkOrderSalesReps: listWorkOrderSalesRepsMock,
 }))
 
 vi.mock("@/features/flooring/work-orders/mutations", () => ({
@@ -74,6 +85,9 @@ vi.mock("@/features/flooring/work-orders/mutations", () => ({
   createWorkOrderServiceItem: createWorkOrderServiceItemMock,
   updateWorkOrderServiceItem: updateWorkOrderServiceItemMock,
   deleteWorkOrderServiceItem: deleteWorkOrderServiceItemMock,
+  createWorkOrderSalesRep: createWorkOrderSalesRepMock,
+  updateWorkOrderSalesRep: updateWorkOrderSalesRepMock,
+  deleteWorkOrderSalesRep: deleteWorkOrderSalesRepMock,
 }))
 
 describe("work-order child routes", () => {
@@ -193,5 +207,82 @@ describe("work-order child routes", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("name is required when no saved service is selected")
     expect(payload.field).toBe("name")
+  })
+
+  it("child sales-rep routes list, create, patch, and delete rep rows", async () => {
+    listWorkOrderSalesRepsMock.mockResolvedValue([
+      { id: "rep-1", contactId: "contact-1", contactName: "Jane Rep", percent: "10" },
+    ])
+    createWorkOrderSalesRepMock.mockResolvedValue({ id: "rep-2", contactId: "contact-1", contactName: "Jane Rep", percent: "12.5" })
+    updateWorkOrderSalesRepMock.mockResolvedValue({ id: "rep-1", contactId: "contact-1", contactName: "Jane Rep", percent: "15" })
+
+    const listResponse = await GET_SALES_REPS(new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps"), {
+      params: Promise.resolve({ id: "wo-1" }),
+    })
+    expect((await listResponse.json()).items).toHaveLength(1)
+
+    const createResponse = await POST_SALES_REP(
+      new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId: "contact-1", percent: "12.5" }),
+      }),
+      { params: Promise.resolve({ id: "wo-1" }) },
+    )
+    expect(createResponse.status).toBe(201)
+    expect(createWorkOrderSalesRepMock).toHaveBeenCalledWith("wo-1", expect.objectContaining({ contactId: "contact-1" }))
+
+    const patchResponse = await PATCH_SALES_REP(
+      new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps/rep-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ percent: "15" }),
+      }),
+      { params: Promise.resolve({ id: "wo-1", repId: "rep-1" }) },
+    )
+    expect((await patchResponse.json()).item).toEqual(expect.objectContaining({ id: "rep-1", percent: "15" }))
+
+    const deleteResponse = await DELETE_SALES_REP(new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps/rep-1"), {
+      params: Promise.resolve({ id: "wo-1", repId: "rep-1" }),
+    })
+    expect((await deleteResponse.json()).ok).toBe(true)
+    expect(deleteWorkOrderSalesRepMock).toHaveBeenCalledWith("rep-1")
+  })
+
+  it("sales-rep routes return field metadata for invalid percent and duplicate-contact errors", async () => {
+    const invalidPercentResponse = await POST_SALES_REP(
+      new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId: "contact-1", percent: "120" }),
+      }),
+      { params: Promise.resolve({ id: "wo-1" }) },
+    )
+    const invalidPercentPayload = await invalidPercentResponse.json()
+
+    expect(invalidPercentResponse.status).toBe(400)
+    expect(invalidPercentPayload.error).toBe("percent must be between 0 and 100")
+    expect(invalidPercentPayload.field).toBe("percent")
+
+    createWorkOrderSalesRepMock.mockRejectedValueOnce({
+      kind: "app",
+      status: 409,
+      field: "contactId",
+      message: "This sales rep is already assigned to the work order",
+    })
+
+    const duplicateResponse = await POST_SALES_REP(
+      new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId: "contact-1", percent: "10" }),
+      }),
+      { params: Promise.resolve({ id: "wo-1" }) },
+    )
+    const duplicatePayload = await duplicateResponse.json()
+
+    expect(duplicateResponse.status).toBe(409)
+    expect(duplicatePayload.error).toBe("This sales rep is already assigned to the work order")
+    expect(duplicatePayload.field).toBe("contactId")
   })
 })

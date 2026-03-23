@@ -44,6 +44,7 @@ export default async function WorkOrderDetailPage({
       propertyOptions={result.data.propertyOptions}
       warehouseOptions={result.data.warehouseOptions}
       serviceOptions={result.data.serviceOptions}
+      salesRepOptions={result.data.salesRepOptions}
       unitOptions={result.data.unitOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/work-orders")}
     />
