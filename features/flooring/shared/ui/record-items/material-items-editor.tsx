@@ -2,7 +2,7 @@
 
 import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
+import { formatCurrencyValue, formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
@@ -72,6 +72,7 @@ export function MaterialItemsEditor({
   deletingItemId,
   draftErrors = {},
   itemErrors = {},
+  totalAmount,
   onDraftChange,
   onAdd,
   onItemFieldChange,
@@ -89,6 +90,7 @@ export function MaterialItemsEditor({
   deletingItemId: string | null
   draftErrors?: MaterialItemFieldErrors
   itemErrors?: RowFieldErrors<MaterialItemField>
+  totalAmount?: number
   onDraftChange: (field: keyof MaterialItemDraft, value: string) => void
   onAdd: () => Promise<boolean> | boolean
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
@@ -106,7 +108,11 @@ export function MaterialItemsEditor({
   }
 
   return (
-    <CollapsibleTableSection title={title} description={description}>
+    <CollapsibleTableSection
+      title={title}
+      description={description}
+      titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
+    >
       <ModalTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
         <ModalTableHead>
           <tr>

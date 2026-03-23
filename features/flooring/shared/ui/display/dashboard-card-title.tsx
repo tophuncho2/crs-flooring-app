@@ -19,7 +19,7 @@ export const DASHBOARD_PAGE_SHELL_SHORT_CLASS_NAME = joinClasses(
   DASHBOARD_PAGE_TOP_PADDING_CLASS_NAME,
 )
 export const DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME = joinClasses(
-  "min-h-screen bg-[var(--background)] px-2 pb-12 text-[var(--foreground)] sm:px-3 lg:px-4",
+  "min-h-screen bg-[var(--background)] px-3 pb-12 text-[var(--foreground)] sm:px-6",
   DASHBOARD_PAGE_TOP_PADDING_CLASS_NAME,
 )
 

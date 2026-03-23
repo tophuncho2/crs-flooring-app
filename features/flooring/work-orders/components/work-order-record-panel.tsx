@@ -428,6 +428,7 @@ export function WorkOrderRecordPanel({
         items={lineItems.materialItems}
         draft={lineItems.materialDraft}
         productOptions={productOptions}
+        totalAmount={currentExpenseSummary.materialTotal}
         loading={loading || lineItems.materialCollection.loading}
         adding={lineItems.materialCollection.adding}
         savingItemId={lineItems.materialCollection.savingItemId}
@@ -448,6 +449,7 @@ export function WorkOrderRecordPanel({
         draft={lineItems.serviceDraft}
         serviceOptions={serviceOptions}
         unitOptions={unitOptions}
+        totalAmount={currentExpenseSummary.serviceTotal}
         loading={loading || lineItems.serviceCollection.loading}
         adding={lineItems.serviceCollection.adding}
         savingItemId={lineItems.serviceCollection.savingItemId}
@@ -468,6 +470,7 @@ export function WorkOrderRecordPanel({
         draft={salesRepLines.draft}
         salesRepOptions={salesRepOptions}
         customerCost={currentExpenseSummary.customerCost}
+        totalAmount={currentExpenseSummary.salesRepExpense}
         loading={loading || salesRepLines.salesRepCollection.loading}
         adding={salesRepLines.salesRepCollection.adding}
         savingItemId={salesRepLines.salesRepCollection.savingItemId}

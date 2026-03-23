@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 
 import React from "react"
-import { describe, expect, it, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { ServiceItemsEditor, type ServiceItemDraft } from "@/features/flooring/shared/service-items-editor"
+
+afterEach(() => {
+  cleanup()
+})
 
 function ServiceItemsHarness({
   draftErrors = {},
@@ -30,6 +34,7 @@ function ServiceItemsHarness({
       draft={draft}
       serviceOptions={[{ id: "svc-1", name: "Removal", baseCost: "10.00", unitId: "unit-1", unitName: "EA" }]}
       unitOptions={[{ id: "unit-1", name: "EA" }]}
+      totalAmount={87.25}
       loading={false}
       adding={false}
       savingItemId={null}
@@ -69,6 +74,12 @@ describe("ServiceItemsEditor", () => {
     expect(screen.getByText("Enter a service name or select a service.")).toBeTruthy()
     expect(screen.getByText("Select a unit.")).toBeTruthy()
     expect(screen.getByText("Enter a quantity.")).toBeTruthy()
+  })
+
+  it("renders the table total next to the shared section title", () => {
+    render(<ServiceItemsHarness />)
+
+    expect(screen.getByText("$87.25")).toBeTruthy()
   })
 
   it("limits quantity and unit price inputs to two decimals while typing", async () => {

@@ -3,7 +3,7 @@
 import { useUrlRecordPanel } from "@/features/flooring/shared/use-url-record-panel"
 import { useGuardedUrlRecordPanel } from "@/features/flooring/shared/use-guarded-url-record-panel"
 
-export const PRIMARY_RECORD_PANEL_WIDTH_CLASS = "max-w-[92rem]"
+export const PRIMARY_RECORD_PANEL_WIDTH_CLASS = "max-w-none"
 
 const PRIMARY_RECORD_PANEL_KEYS = {
   template: "template",

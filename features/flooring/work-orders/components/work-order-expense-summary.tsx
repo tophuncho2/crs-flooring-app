@@ -19,14 +19,10 @@ export function WorkOrderExpenseSummaryHeader({
   const safeSummary = summary ?? EMPTY_EXPENSE_SUMMARY
 
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       <div>
         <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Customer Cost</p>
         <p className="mt-1 text-base font-semibold">{formatCurrencyValue(safeSummary.customerCost)}</p>
-      </div>
-      <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Sales Rep Expense</p>
-        <p className="mt-1 text-base font-semibold">{formatCurrencyValue(safeSummary.salesRepExpense)}</p>
       </div>
       <div>
         <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Expenses</p>

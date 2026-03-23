@@ -49,10 +49,12 @@ export function InlineAddRowButton({
 
 export function CollapsibleTableSection({
   title,
+  description,
   defaultOpen = true,
   children,
   className,
   actions,
+  titleMeta,
 }: {
   title: string
   description?: string
@@ -60,14 +62,19 @@ export function CollapsibleTableSection({
   children: ReactNode
   className?: string
   actions?: ReactNode
+  titleMeta?: ReactNode
 }) {
   const { isOpen, toggle } = useCollapsibleSection(defaultOpen)
 
   return (
     <section className={joinClasses("space-y-3", className)}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold">{title}</h3>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h3 className="text-base font-semibold">{title}</h3>
+            {titleMeta ? <div className="text-sm font-medium text-[var(--foreground)]/70">{titleMeta}</div> : null}
+          </div>
+          {description ? <p className="mt-1 text-sm text-[var(--foreground)]/65">{description}</p> : null}
         </div>
         <div className="mt-0.5 flex items-center gap-2">
           {actions}

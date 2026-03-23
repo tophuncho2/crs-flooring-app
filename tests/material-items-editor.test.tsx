@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 
 import React from "react"
-import { describe, expect, it, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MaterialItemsEditor, type MaterialItemDraft } from "@/features/flooring/shared/material-items-editor"
+
+afterEach(() => {
+  cleanup()
+})
 
 function MaterialItemsHarness({
   draftErrors = {},
@@ -27,6 +31,7 @@ function MaterialItemsHarness({
       items={[]}
       draft={draft}
       productOptions={[{ id: "prod-1", label: "Test Product", sendUnit: "SY" }]}
+      totalAmount={125.5}
       loading={false}
       adding={false}
       savingItemId={null}
@@ -65,6 +70,12 @@ describe("MaterialItemsEditor", () => {
 
     expect(screen.getByText("Select a product.")).toBeTruthy()
     expect(screen.getByText("Enter a quantity.")).toBeTruthy()
+  })
+
+  it("renders the table total next to the shared section title", () => {
+    render(<MaterialItemsHarness />)
+
+    expect(screen.getByText("$125.50")).toBeTruthy()
   })
 
   it("limits quantity and unit price inputs to two decimals while typing", async () => {

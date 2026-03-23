@@ -64,6 +64,7 @@ export function SalesRepItemsEditor({
   draft,
   salesRepOptions,
   customerCost,
+  totalAmount,
   loading,
   adding,
   savingItemId,
@@ -82,6 +83,7 @@ export function SalesRepItemsEditor({
   draft: SalesRepDraft
   salesRepOptions: SalesRepOption[]
   customerCost: number
+  totalAmount?: number
   loading: boolean
   adding: boolean
   savingItemId: string | null
@@ -104,7 +106,11 @@ export function SalesRepItemsEditor({
   }
 
   return (
-    <CollapsibleTableSection title={title} description={description}>
+    <CollapsibleTableSection
+      title={title}
+      description={description}
+      titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
+    >
       <ModalTableShell minWidthClass={SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS}>
         <ModalTableHead>
           <tr>
