@@ -157,9 +157,12 @@ describe("ImportsClient", () => {
 
     expect(screen.getByRole("heading", { name: "Import IMP-0001" })).toBeTruthy()
     expect(screen.getByText("Total Cost")).toBeTruthy()
-    expect(screen.getByText("$21.00")).toBeTruthy()
+    expect(screen.getAllByText("$21.00")).toHaveLength(2)
     expect(screen.getByText("Material Items").parentElement?.textContent).toContain("1")
     expect(screen.getByRole("button", { name: "Add Import Inventory Item" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Import" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Delete Import" })).toBeTruthy()
     expect(screen.queryByRole("button", { name: "Add Item" })).toBeNull()
   })
 

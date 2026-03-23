@@ -1,9 +1,11 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { useState } from "react"
 
 export default function LoginForm({ restricted }: { restricted: boolean }) {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isCreating, setIsCreating] = useState(false)
@@ -22,7 +24,8 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
     })
 
     if (result?.ok) {
-      window.location.href = "/dashboard/flooring/inventory"
+      router.replace("/dashboard/flooring/inventory")
+      router.refresh()
     } else {
       setError("Invalid credentials or account not approved")
     }

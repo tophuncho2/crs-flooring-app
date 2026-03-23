@@ -63,7 +63,7 @@ vi.mock("@/features/flooring/shared/record-line-summary", () => ({
   RecordLineSummary: () => null,
 }))
 
-vi.mock("@/features/flooring/shared/record-options-menu", () => ({
+vi.mock("@/features/flooring/shared/ui/display/record-options-menu", () => ({
   RecordOptionsMenu: ({
     items,
   }: {

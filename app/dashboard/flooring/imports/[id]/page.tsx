@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
-import { getImportById, getImportsPageData } from "@/features/flooring/imports/queries"
-import { ImportDetailClient } from "@/features/flooring/imports/components/import-detail-client"
+import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { getImportById, getImportsPageData } from "@/features/flooring/imports/data/queries"
+import { ImportDetailClient } from "@/features/flooring/imports/components/detail/import-detail-client"
 
 export default async function ImportDetailPage({
   params,

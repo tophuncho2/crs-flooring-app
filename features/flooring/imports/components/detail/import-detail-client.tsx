@@ -1,18 +1,21 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CollapsibleTableSection, InlineAddRowButton } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
-import { ErrorNotice } from "@/features/flooring/shared/ui/feedback/notices"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordOptionsMenu } from "@/features/flooring/shared/ui/display/record-options-menu"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { RecordFormField as FormField } from "@/features/flooring/shared/ui/forms/record-form"
+import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
 import { RecordMetricSummary } from "@/features/flooring/shared/ui/display/record-metric-summary"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
-import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
+import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { useUnsavedChangesGuard } from "@/features/flooring/shared/controllers/record-page/use-unsaved-changes-guard"
+import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
+import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
 import {
   IMPORT_STATUS_OPTIONS,
   IMPORT_TRANSPORT_TYPE_OPTIONS,
@@ -147,108 +150,123 @@ export function ImportDetailClient({
   backHref: string
 }) {
   const router = useRouter()
-  const [record, setRecord] = useState(initialImport)
-  const [draft, setDraft] = useState<ImportDraft>(() => createImportDraft(initialImport))
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
-  const isDirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(createImportDraft(record)), [draft, record])
-  const guard = useUnsavedChangesGuard({
-    isDirty,
-    message: "You have unsaved import changes. Leave this import without saving?",
+  const page = useRecordPageController({
+    backHref,
+    dirtyMessage: "You have unsaved import changes. Leave this import without saving?",
   })
+  const {
+    record,
+    draft,
+    setDraft,
+    error,
+    setError,
+    syncRecord,
+    clearRecordCache,
+    isDirty,
+  } = useRecordDetailController<ImportRow, ImportDraft>({
+    scope: "import",
+    id: initialImport.id,
+    initialRecord: initialImport,
+    toDraft: createImportDraft,
+    url: `/api/flooring/imports/${initialImport.id}`,
+    payloadKey: "import",
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const currentRecord = record ?? initialImport
+  const currentDraft = draft ?? createImportDraft(currentRecord)
 
   const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
   const summary = useMemo(
     () =>
       calculateImportSummary(
-        draft.items.map((item) => ({
+        currentDraft.items.map((item) => ({
           stockCount: item.stockCount,
           cost: item.cost,
           freight: item.freight,
         })),
       ),
-    [draft.items],
+    [currentDraft.items],
   )
 
   const closePage = useCallback(() => {
-    guard.confirmNavigation(() => {
-      router.push(backHref, { scroll: false })
-    })
-  }, [backHref, guard, router])
+    page.closePage()
+  }, [page])
+
+  useEffect(() => {
+    page.setIsDirty(isDirty)
+  }, [isDirty, page.setIsDirty])
 
   function setDraftField(field: keyof ImportDraft, value: string) {
-    setDraft((prev) => ({ ...prev, [field]: value }))
+    setDraft((prev) => ({ ...(prev ?? currentDraft), [field]: value }))
   }
 
   function setItemField(index: number, field: keyof ImportItemDraft, value: string) {
     setDraft((prev) => ({
-      ...prev,
-      items: prev.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
+      ...(prev ?? currentDraft),
+      items: (prev?.items ?? currentDraft.items).map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
     }))
   }
 
   function addItemRow() {
-    setDraft((prev) => ({ ...prev, items: [...prev.items, createItemDraft()] }))
+    setDraft((prev) => ({
+      ...(prev ?? currentDraft),
+      items: [...(prev?.items ?? currentDraft.items), createItemDraft()],
+    }))
   }
 
   function removeItemRow(index: number) {
     setDraft((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, itemIndex) => itemIndex !== index),
+      ...(prev ?? currentDraft),
+      items: (prev?.items ?? currentDraft.items).filter((_, itemIndex) => itemIndex !== index),
     }))
   }
 
   async function saveImport() {
-    setMessage("")
+    page.notices.clearNotices()
     setError("")
     setIsSaving(true)
 
     try {
-      const payload = await requestJson<{ import?: ImportRow }>(`/api/flooring/imports/${record.id}`, {
+      const payload = await requestJson<{ import?: ImportRow }>(`/api/flooring/imports/${currentRecord.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(currentDraft),
       })
 
       if (!payload.import) {
         throw new Error("Failed to save import")
       }
 
-      setRecord(payload.import)
-      setDraft(createImportDraft(payload.import))
-      setMessage("Import saved")
+      syncRecord(payload.import)
+      page.notices.showSuccess("Import saved")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save import")
+      page.notices.showError(saveError instanceof Error ? saveError.message : "Failed to save import")
     } finally {
       setIsSaving(false)
     }
   }
 
   async function deleteImport() {
-    if (!confirmRecordDelete(buildDeleteConfirmationMessage("import"))) {
-      return
-    }
-
-    setMessage("")
+    page.notices.clearNotices()
     setError("")
     setIsSaving(true)
 
     try {
-      await requestJson<{ ok: boolean }>(`/api/flooring/imports/${record.id}`, { method: "DELETE" })
-      router.push(backHref, { scroll: false })
+      await requestJson<{ ok: boolean }>(`/api/flooring/imports/${currentRecord.id}`, { method: "DELETE" })
+      clearRecordCache()
+      page.redirectToBack()
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete import")
+      page.notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete import")
       setIsSaving(false)
     }
   }
 
   return (
     <RecordDetailPageShell
-      title={`Import IMP-${String(record.importNumber).padStart(4, "0")}`}
+      title={`Import IMP-${String(currentRecord.importNumber).padStart(4, "0")}`}
       backHref={backHref}
       onBack={closePage}
-      sizeClass="max-w-6xl"
+      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
       headerMeta={
         <RecordMetricSummary
           variant="header"
@@ -264,7 +282,7 @@ export function ImportDetailClient({
             {
               label: "Go to Inventory",
               onSelect: () => {
-                guard.confirmNavigation(() => {
+                page.confirmNavigation(() => {
                   router.push("/dashboard/flooring/inventory", { scroll: false })
                 })
               },
@@ -274,29 +292,28 @@ export function ImportDetailClient({
       }
     >
       <div className="space-y-6">
-        {message ? <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600">{message}</p> : null}
-        {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+        <FormStatusNotices message={page.notices.message} error={page.notices.error || error} />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <FormField label="Order Number">
             <input
-              value={draft.orderNumber}
+              value={currentDraft.orderNumber}
               onChange={(event) => setDraftField("orderNumber", event.target.value)}
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </FormField>
           <FormField label="Tag">
             <input
-              value={draft.tag}
+              value={currentDraft.tag}
               onChange={(event) => setDraftField("tag", event.target.value)}
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </FormField>
           <FormField label="Transport Type">
             <select
-              value={draft.transportType}
+              value={currentDraft.transportType}
               onChange={(event) => setDraftField("transportType", event.target.value)}
-              className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(draft.transportType)}`}
+              className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(currentDraft.transportType)}`}
             >
               {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -307,9 +324,9 @@ export function ImportDetailClient({
           </FormField>
           <FormField label="Import Status">
             <select
-              value={draft.status}
+              value={currentDraft.status}
               onChange={(event) => setDraftField("status", event.target.value)}
-              className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(draft.status)}`}
+              className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(currentDraft.status)}`}
             >
               {IMPORT_STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -320,12 +337,12 @@ export function ImportDetailClient({
           </FormField>
           <FormField label="Import Warehouse">
             <select
-              value={draft.warehouseId}
+              value={currentDraft.warehouseId}
               onChange={(event) =>
                 setDraft((prev) => ({
-                  ...prev,
+                  ...(prev ?? currentDraft),
                   warehouseId: event.target.value,
-                  items: prev.items.map((item) => applyDefaultLocationToItem(item, event.target.value, locationOptions)),
+                  items: (prev?.items ?? currentDraft.items).map((item) => applyDefaultLocationToItem(item, event.target.value, locationOptions)),
                 }))
               }
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
@@ -340,14 +357,14 @@ export function ImportDetailClient({
           </FormField>
           <FormField label="Notes">
             <textarea
-              value={draft.notes}
+              value={currentDraft.notes}
               onChange={(event) => setDraftField("notes", event.target.value)}
               className="h-24 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2 xl:col-span-2"
             />
           </FormField>
         </div>
 
-        <CollapsibleTableSection title="Import Inventory Rows" defaultOpen>
+        <CollapsibleTableSection title="Import Inventory Rows" titleMeta={summary.totalCostLabel} defaultOpen>
           <ModalTableShell minWidthClass="min-w-[1320px]">
             <ModalTableHead>
               <tr>
@@ -364,9 +381,9 @@ export function ImportDetailClient({
               </tr>
             </ModalTableHead>
             <tbody>
-              {draft.items.map((item, index) => {
-                const filteredLocations = draft.warehouseId
-                  ? locationOptions.filter((location) => location.warehouseId === draft.warehouseId)
+              {currentDraft.items.map((item, index) => {
+                const filteredLocations = currentDraft.warehouseId
+                  ? locationOptions.filter((location) => location.warehouseId === currentDraft.warehouseId)
                   : locationOptions
                 const selectedProduct = productLookup.get(item.productId)
 
@@ -438,7 +455,7 @@ export function ImportDetailClient({
                         className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                       />
                     </td>
-                    <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === draft.warehouseId)?.name || "-"}</td>
+                    <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === currentDraft.warehouseId)?.name || "-"}</td>
                     <td className="px-3 py-2">
                       <input
                         value={item.notes}
@@ -461,27 +478,16 @@ export function ImportDetailClient({
           </ModalTableShell>
         </CollapsibleTableSection>
 
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={closePage} disabled={isSaving} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => void saveImport()}
-            disabled={isSaving}
-            className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20"
-          >
-            {isSaving ? "Saving..." : "Save Import"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void deleteImport()}
-            disabled={isSaving}
-            className="rounded-lg border border-rose-500/40 px-3 py-2 text-sm text-rose-600 hover:bg-rose-500/10"
-          >
-            Delete Import
-          </button>
-        </div>
+        <RecordPanelFooter
+          deleteLabel="Delete Import"
+          deleteConfirmMessage={buildDeleteConfirmationMessage("import")}
+          onDelete={() => void deleteImport()}
+          onClose={closePage}
+          saveLabel="Save Import"
+          savingLabel="Saving..."
+          onSave={() => void saveImport()}
+          isSaving={isSaving}
+        />
       </div>
     </RecordDetailPageShell>
   )

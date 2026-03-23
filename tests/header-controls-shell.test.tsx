@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen } from "@testing-library/react"
 import { renderToString } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 import HeaderControlsShell from "../app/dashboard/header-controls-shell"
@@ -11,7 +11,7 @@ vi.mock("../app/dashboard/header-controls", () => ({
 }))
 
 describe("HeaderControlsShell", () => {
-  it("renders an empty server shell and mounts header controls on the client", async () => {
+  it("renders header controls consistently on the server and client", () => {
     const serverMarkup = renderToString(
       <HeaderControlsShell
         email="admin@test.com"
@@ -23,7 +23,7 @@ describe("HeaderControlsShell", () => {
       />,
     )
 
-    expect(serverMarkup).not.toContain("data-testid=\"header-controls\"")
+    expect(serverMarkup).toContain("data-testid=\"header-controls\"")
 
     render(
       <HeaderControlsShell
@@ -36,8 +36,6 @@ describe("HeaderControlsShell", () => {
       />,
     )
 
-    await waitFor(() => {
-      expect(screen.queryByTestId("header-controls")).not.toBeNull()
-    })
+    expect(screen.getByTestId("header-controls")).toBeTruthy()
   })
 })
