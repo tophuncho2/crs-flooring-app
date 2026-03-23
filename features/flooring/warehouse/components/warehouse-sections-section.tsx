@@ -30,7 +30,6 @@ export function WarehouseSectionsSection({
   return (
     <RecordChildTableSection
       title="Sections"
-      description="Group locations under reusable warehouse sections."
       actions={
         <div className="flex items-center gap-2">
           <input

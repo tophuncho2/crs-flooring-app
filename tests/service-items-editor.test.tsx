@@ -29,7 +29,6 @@ function ServiceItemsHarness({
   return (
     <ServiceItemsEditor
       title="Service Items"
-      description="Service rows"
       items={[]}
       draft={draft}
       serviceOptions={[{ id: "svc-1", name: "Removal", baseCost: "10.00", unitId: "unit-1", unitName: "EA" }]}

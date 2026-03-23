@@ -353,7 +353,6 @@ export function TemplateRecordPanel({
 
       <MaterialItemsEditor
         title="Material Items"
-        description="Products and quantities included in this template."
         items={lineItems.materialItems}
         draft={lineItems.materialDraft}
         productOptions={productOptions}
@@ -372,7 +371,6 @@ export function TemplateRecordPanel({
 
       <ServiceItemsEditor
         title="Service Items"
-        description="Service rows included in this template."
         items={lineItems.serviceItems}
         draft={lineItems.serviceDraft}
         serviceOptions={serviceOptions}

@@ -27,7 +27,6 @@ function MaterialItemsHarness({
   return (
     <MaterialItemsEditor
       title="Material Items"
-      description="Material rows"
       items={[]}
       draft={draft}
       productOptions={[{ id: "prod-1", label: "Test Product", sendUnit: "SY" }]}

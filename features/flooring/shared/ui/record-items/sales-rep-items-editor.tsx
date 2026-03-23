@@ -59,7 +59,6 @@ export function validateSalesRepFields(value: Pick<SalesRepDraft, "contactId" | 
 
 export function SalesRepItemsEditor({
   title,
-  description,
   items,
   draft,
   salesRepOptions,
@@ -78,7 +77,6 @@ export function SalesRepItemsEditor({
   onDeleteItem,
 }: {
   title: string
-  description: string
   items: EditableSalesRepItem[]
   draft: SalesRepDraft
   salesRepOptions: SalesRepOption[]
@@ -108,7 +106,6 @@ export function SalesRepItemsEditor({
   return (
     <CollapsibleTableSection
       title={title}
-      description={description}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
     >
       <ModalTableShell minWidthClass={SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS}>

@@ -32,7 +32,6 @@ export function WarehouseLocationsSection({
   return (
     <RecordChildTableSection
       title="Locations"
-      description="Assign codes to physical warehouse locations and map them to sections."
       actions={
         <div className="grid gap-2 sm:grid-cols-[minmax(0,12rem)_minmax(0,14rem)_auto]">
           <input

@@ -62,7 +62,6 @@ export function validateMaterialItemFields(value: Pick<MaterialItemDraft, "produ
 
 export function MaterialItemsEditor({
   title,
-  description,
   items,
   draft,
   productOptions,
@@ -80,7 +79,6 @@ export function MaterialItemsEditor({
   onDeleteItem,
 }: {
   title: string
-  description: string
   items: EditableMaterialItem[]
   draft: MaterialItemDraft
   productOptions: MaterialItemOption[]
@@ -110,7 +108,6 @@ export function MaterialItemsEditor({
   return (
     <CollapsibleTableSection
       title={title}
-      description={description}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
     >
       <ModalTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>

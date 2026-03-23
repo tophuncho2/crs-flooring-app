@@ -348,7 +348,6 @@ export function ImportDetailClient({
         </div>
 
         <CollapsibleTableSection title="Import Inventory Rows" defaultOpen>
-          <p className="text-sm text-[var(--foreground)]/70">Rows created with this import header.</p>
           <ModalTableShell minWidthClass="min-w-[1320px]">
             <ModalTableHead>
               <tr>

@@ -18,7 +18,6 @@ function SalesRepItemsHarness() {
   return (
     <SalesRepItemsEditor
       title="Sales Reps"
-      description="Rep rows"
       items={[]}
       draft={draft}
       salesRepOptions={[{ id: "contact-1", name: "Jordan Case" }]}

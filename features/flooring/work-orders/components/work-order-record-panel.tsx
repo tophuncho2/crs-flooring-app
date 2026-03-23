@@ -424,7 +424,6 @@ export function WorkOrderRecordPanel({
 
       <MaterialItemsEditor
         title="Material Items"
-        description="Editable material lines for this work order."
         items={lineItems.materialItems}
         draft={lineItems.materialDraft}
         productOptions={productOptions}
@@ -444,7 +443,6 @@ export function WorkOrderRecordPanel({
 
       <ServiceItemsEditor
         title="Service Items"
-        description="Editable service lines for this work order."
         items={lineItems.serviceItems}
         draft={lineItems.serviceDraft}
         serviceOptions={serviceOptions}
@@ -465,7 +463,6 @@ export function WorkOrderRecordPanel({
 
       <SalesRepItemsEditor
         title="Sales Reps"
-        description="Sales rep assignments and payout percentages for this work order."
         items={salesRepLines.salesReps}
         draft={salesRepLines.draft}
         salesRepOptions={salesRepOptions}

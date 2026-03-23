@@ -6,14 +6,12 @@ import { ModalTableHead, ModalTableShell } from "@/features/flooring/shared/ui/t
 
 export function RecordChildTableSection({
   title,
-  description,
   actions,
   minWidthClass = "min-w-full",
   defaultOpen = true,
   children,
 }: {
   title: string
-  description?: ReactNode
   actions?: ReactNode
   minWidthClass?: string
   defaultOpen?: boolean
@@ -21,7 +19,6 @@ export function RecordChildTableSection({
 }) {
   return (
     <CollapsibleTableSection title={title} actions={actions} defaultOpen={defaultOpen}>
-      {description ? <div className="text-sm text-[var(--foreground)]/70">{description}</div> : null}
       <ModalTableShell minWidthClass={minWidthClass}>{children}</ModalTableShell>
     </CollapsibleTableSection>
   )

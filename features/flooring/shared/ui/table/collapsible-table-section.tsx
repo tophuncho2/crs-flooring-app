@@ -49,7 +49,6 @@ export function InlineAddRowButton({
 
 export function CollapsibleTableSection({
   title,
-  description,
   defaultOpen = true,
   children,
   className,
@@ -57,7 +56,6 @@ export function CollapsibleTableSection({
   titleMeta,
 }: {
   title: string
-  description?: string
   defaultOpen?: boolean
   children: ReactNode
   className?: string
@@ -74,7 +72,6 @@ export function CollapsibleTableSection({
             <h3 className="text-base font-semibold">{title}</h3>
             {titleMeta ? <div className="text-sm font-medium text-[var(--foreground)]/70">{titleMeta}</div> : null}
           </div>
-          {description ? <p className="mt-1 text-sm text-[var(--foreground)]/65">{description}</p> : null}
         </div>
         <div className="mt-0.5 flex items-center gap-2">
           {actions}

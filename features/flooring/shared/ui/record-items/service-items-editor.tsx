@@ -76,7 +76,6 @@ export function validateServiceItemFields(value: Pick<ServiceItemDraft, "service
 
 export function ServiceItemsEditor({
   title,
-  description,
   items,
   draft,
   serviceOptions,
@@ -95,7 +94,6 @@ export function ServiceItemsEditor({
   onDeleteItem,
 }: {
   title: string
-  description: string
   items: EditableServiceItem[]
   draft: ServiceItemDraft
   serviceOptions: ServiceOption[]
@@ -126,7 +124,6 @@ export function ServiceItemsEditor({
   return (
     <CollapsibleTableSection
       title={title}
-      description={description}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
     >
       <ModalTableShell minWidthClass={SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS}>

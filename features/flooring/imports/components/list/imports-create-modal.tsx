@@ -151,9 +151,6 @@ export function ImportsCreateModal({
         </div>
 
         <CollapsibleTableSection title="Inventory Table" defaultOpen>
-          <p className="text-sm text-[var(--foreground)]/70">
-            Pending inventory created here will stay out of live inventory until the import is final.
-          </p>
           <ModalTableShell minWidthClass={IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS}>
             <ModalTableHead>
               <tr>
