@@ -145,7 +145,7 @@ export function useRecordLineItemsController<
 
   function handleMaterialDraftChange(field: keyof MaterialItemDraft, value: string) {
     setMaterialDraft((previous) => ({ ...previous, [field]: value }))
-    if (field === "productId" || field === "quantity") {
+    if (field === "productId" || field === "quantity" || field === "unitPrice") {
       setMaterialDraftErrors((previous) => clearFieldError(previous, field))
     }
   }
@@ -155,7 +155,7 @@ export function useRecordLineItemsController<
       previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
     )
 
-    if (field === "productId" || field === "quantity") {
+    if (field === "productId" || field === "quantity" || field === "unitPrice") {
       setMaterialItemErrors((previous) => clearRowFieldError(previous, itemId, field))
     }
   }
@@ -182,7 +182,7 @@ export function useRecordLineItemsController<
       return true
     } catch (error) {
       const fieldError = getRequestFieldError(error)
-      if (fieldError.field === "productId" || fieldError.field === "quantity") {
+      if (fieldError.field === "productId" || fieldError.field === "quantity" || fieldError.field === "unitPrice") {
         const field = fieldError.field
         setMaterialDraftErrors(setFieldError(field, fieldError.message))
       }
@@ -211,7 +211,7 @@ export function useRecordLineItemsController<
       notices.showSuccess("Material item saved")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
-      if (fieldError.field === "productId" || fieldError.field === "quantity") {
+      if (fieldError.field === "productId" || fieldError.field === "quantity" || fieldError.field === "unitPrice") {
         const field = fieldError.field
         setMaterialItemErrors((previous) =>
           setRowFieldErrors(previous, item.id, setFieldError(field, fieldError.message)),
@@ -244,7 +244,7 @@ export function useRecordLineItemsController<
 
   function handleServiceDraftChange(field: keyof ServiceItemDraft, value: string) {
     setServiceDraft((previous) => ({ ...previous, [field]: value }))
-    if (field === "name" || field === "unitId" || field === "quantity") {
+    if (field === "name" || field === "unitId" || field === "quantity" || field === "unitPrice") {
       setServiceDraftErrors((previous) => clearFieldError(previous, field))
     }
   }
@@ -254,7 +254,7 @@ export function useRecordLineItemsController<
       previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
     )
 
-    if (field === "name" || field === "unitId" || field === "quantity") {
+    if (field === "name" || field === "unitId" || field === "quantity" || field === "unitPrice") {
       setServiceItemErrors((previous) => clearRowFieldError(previous, itemId, field))
     }
   }
@@ -281,7 +281,7 @@ export function useRecordLineItemsController<
       return true
     } catch (error) {
       const fieldError = getRequestFieldError(error)
-      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity") {
+      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity" || fieldError.field === "unitPrice") {
         const field = fieldError.field
         setServiceDraftErrors(setFieldError(field, fieldError.message))
       }
@@ -310,7 +310,7 @@ export function useRecordLineItemsController<
       notices.showSuccess("Service item saved")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
-      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity") {
+      if (fieldError.field === "name" || fieldError.field === "unitId" || fieldError.field === "quantity" || fieldError.field === "unitPrice") {
         const field = fieldError.field
         setServiceItemErrors((previous) =>
           setRowFieldErrors(previous, item.id, setFieldError(field, fieldError.message)),

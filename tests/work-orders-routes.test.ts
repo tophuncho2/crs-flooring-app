@@ -193,6 +193,22 @@ describe("work-order child routes", () => {
     expect(payload.field).toBe("quantity")
   })
 
+  it("material item routes reject unit prices with more than two decimals", async () => {
+    const response = await POST_ITEM(
+      new Request("http://localhost/api/flooring/work-orders/wo-1/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: "prod-1", quantity: "1", unitPrice: "4.999" }),
+      }),
+      { params: Promise.resolve({ id: "wo-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("unitPrice can have at most 2 decimal places")
+    expect(payload.field).toBe("unitPrice")
+  })
+
   it("service item routes require a custom name when no saved service is selected", async () => {
     const response = await POST_SERVICE_ITEM(
       new Request("http://localhost/api/flooring/work-orders/wo-1/service-items", {
@@ -207,6 +223,22 @@ describe("work-order child routes", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("name is required when no saved service is selected")
     expect(payload.field).toBe("name")
+  })
+
+  it("service item routes reject quantities with more than two decimals", async () => {
+    const response = await POST_SERVICE_ITEM(
+      new Request("http://localhost/api/flooring/work-orders/wo-1/service-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceId: "svc-1", unitId: "unit-1", quantity: "1.999", unitPrice: "9.00" }),
+      }),
+      { params: Promise.resolve({ id: "wo-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("quantity can have at most 2 decimal places")
+    expect(payload.field).toBe("quantity")
   })
 
   it("child sales-rep routes list, create, patch, and delete rep rows", async () => {

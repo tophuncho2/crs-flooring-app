@@ -3,6 +3,7 @@
 import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
+import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
@@ -30,10 +31,10 @@ export type MaterialItemDraft = {
   notes: string
 }
 
-export type MaterialItemField = "productId" | "quantity"
+export type MaterialItemField = "productId" | "quantity" | "unitPrice"
 export type MaterialItemFieldErrors = FieldErrorMap<MaterialItemField>
 
-export function validateMaterialItemFields(value: Pick<MaterialItemDraft, "productId" | "quantity">) {
+export function validateMaterialItemFields(value: Pick<MaterialItemDraft, "productId" | "quantity" | "unitPrice">) {
   const errors: MaterialItemFieldErrors = {}
 
   if (!value.productId.trim()) {
@@ -42,8 +43,18 @@ export function validateMaterialItemFields(value: Pick<MaterialItemDraft, "produ
 
   if (!value.quantity.trim()) {
     errors.quantity = "Enter a quantity."
+  } else if (!isEditableDecimalInput(value.quantity, 2) || !Number.isFinite(Number(value.quantity))) {
+    errors.quantity = "Enter a valid quantity with up to 2 decimals."
   } else if (Number(value.quantity) <= 0) {
     errors.quantity = "Enter a quantity greater than 0."
+  }
+
+  if (value.unitPrice.trim()) {
+    if (!isEditableDecimalInput(value.unitPrice, 2) || !Number.isFinite(Number(value.unitPrice))) {
+      errors.unitPrice = "Enter a valid unit price with up to 2 decimals."
+    } else if (Number(value.unitPrice) < 0) {
+      errors.unitPrice = "Enter a unit price that is 0 or greater."
+    }
   }
 
   return errors
@@ -135,7 +146,9 @@ export function MaterialItemsEditor({
                   <div className="space-y-1">
                     <input
                       value={item.quantity}
-                      onChange={(event) => onItemFieldChange(item.id, "quantity", event.target.value)}
+                      inputMode="decimal"
+                      spellCheck={false}
+                      onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
                       className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[item.id]?.quantity))}
                     />
                     {itemErrors[item.id]?.quantity ? <FieldErrorText>{itemErrors[item.id]?.quantity}</FieldErrorText> : null}
@@ -143,11 +156,12 @@ export function MaterialItemsEditor({
                 </td>
                 <td className="px-3 py-2">{productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "-"}</td>
                 <td className="px-3 py-2">
-                  <div className="flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1">
+                  <div className={getFieldControlClassName("flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(itemErrors[item.id]?.unitPrice))}>
                     <span className="text-[var(--foreground)]/60">$</span>
-                    <input value={item.unitPrice} onChange={(event) => onItemFieldChange(item.id, "unitPrice", event.target.value)} className="w-20 bg-transparent outline-none" />
+                    <input value={item.unitPrice} inputMode="decimal" spellCheck={false} onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))} className="w-20 bg-transparent outline-none" />
                     <span className="text-xs text-[var(--foreground)]/50">/ {productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "unit"}</span>
                   </div>
+                  {itemErrors[item.id]?.unitPrice ? <FieldErrorText>{itemErrors[item.id]?.unitPrice}</FieldErrorText> : null}
                 </td>
                 <td className="px-3 py-2 font-medium">{formatLineTotal(item)}</td>
                 <td className="px-3 py-2">
@@ -196,7 +210,9 @@ export function MaterialItemsEditor({
                 <div className="space-y-1">
                   <input
                     value={draft.quantity}
-                    onChange={(event) => onDraftChange("quantity", event.target.value)}
+                    inputMode="decimal"
+                    spellCheck={false}
+                    onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
                     className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
                   />
                   {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
@@ -204,11 +220,12 @@ export function MaterialItemsEditor({
               </td>
               <td className="px-3 py-2">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</td>
               <td className="px-3 py-2">
-                <div className="flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1">
+                <div className={getFieldControlClassName("flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(draftErrors.unitPrice))}>
                   <span className="text-[var(--foreground)]/60">$</span>
-                  <input value={draft.unitPrice} onChange={(event) => onDraftChange("unitPrice", event.target.value)} className="w-20 bg-transparent outline-none" />
+                  <input value={draft.unitPrice} inputMode="decimal" spellCheck={false} onChange={(event) => onDraftChange("unitPrice", normalizeEditableDecimalInput(event.target.value))} className="w-20 bg-transparent outline-none" />
                   <span className="text-xs text-[var(--foreground)]/50">/ {productOptions.find((product) => product.id === draft.productId)?.sendUnit || "unit"}</span>
                 </div>
+                {draftErrors.unitPrice ? <FieldErrorText>{draftErrors.unitPrice}</FieldErrorText> : null}
               </td>
               <td className="px-3 py-2 font-medium">{formatLineTotal(draft)}</td>
               <td className="px-3 py-2">

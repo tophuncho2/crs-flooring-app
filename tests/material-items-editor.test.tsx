@@ -10,7 +10,7 @@ function MaterialItemsHarness({
   draftErrors = {},
   onAdd = async () => false,
 }: {
-  draftErrors?: { productId?: string; quantity?: string }
+  draftErrors?: { productId?: string; quantity?: string; unitPrice?: string }
   onAdd?: () => Promise<boolean>
 }) {
   const [draft, setDraft] = React.useState<MaterialItemDraft>({
@@ -65,5 +65,22 @@ describe("MaterialItemsEditor", () => {
 
     expect(screen.getByText("Select a product.")).toBeTruthy()
     expect(screen.getByText("Enter a quantity.")).toBeTruthy()
+  })
+
+  it("limits quantity and unit price inputs to two decimals while typing", async () => {
+    const user = userEvent.setup()
+
+    render(<MaterialItemsHarness />)
+
+    await user.click(screen.getByRole("button", { name: "Add Material Items" }))
+
+    const textboxes = screen.getAllByRole("textbox")
+    const quantityInput = textboxes[0] as HTMLInputElement
+    await user.type(quantityInput, "12.345")
+    expect(quantityInput.value).toBe("12.34")
+
+    const unitPriceInput = textboxes[1] as HTMLInputElement
+    await user.type(unitPriceInput, "45.678")
+    expect(unitPriceInput.value).toBe("45.67")
   })
 })

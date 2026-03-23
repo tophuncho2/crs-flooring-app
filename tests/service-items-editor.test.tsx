@@ -10,7 +10,7 @@ function ServiceItemsHarness({
   draftErrors = {},
   onAdd = async () => false,
 }: {
-  draftErrors?: { name?: string; unitId?: string; quantity?: string }
+  draftErrors?: { name?: string; unitId?: string; quantity?: string; unitPrice?: string }
   onAdd?: () => Promise<boolean>
 }) {
   const [draft, setDraft] = React.useState<ServiceItemDraft>({
@@ -69,5 +69,23 @@ describe("ServiceItemsEditor", () => {
     expect(screen.getByText("Enter a service name or select a service.")).toBeTruthy()
     expect(screen.getByText("Select a unit.")).toBeTruthy()
     expect(screen.getByText("Enter a quantity.")).toBeTruthy()
+  })
+
+  it("limits quantity and unit price inputs to two decimals while typing", async () => {
+    const user = userEvent.setup()
+
+    render(<ServiceItemsHarness />)
+
+    await user.click(screen.getByRole("button", { name: "Add Service Items" }))
+
+    const textboxes = screen.getAllByRole("textbox")
+    const quantityInput = textboxes[1] as HTMLInputElement
+    const unitPriceInput = textboxes[2] as HTMLInputElement
+
+    await user.type(quantityInput, "3.456")
+    expect(quantityInput.value).toBe("3.45")
+
+    await user.type(unitPriceInput, "17.899")
+    expect(unitPriceInput.value).toBe("17.89")
   })
 })

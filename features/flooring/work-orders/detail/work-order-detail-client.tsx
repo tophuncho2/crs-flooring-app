@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { startTransition, useCallback, useDeferredValue, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/primary-record-panel"
 import { RecordOptionsMenu } from "@/features/flooring/shared/record-options-menu"
@@ -45,6 +45,7 @@ export default function WorkOrderDetailClient({
         salesReps: initialWorkOrder.salesReps ?? [],
       }),
   )
+  const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [refreshNonce, setRefreshNonce] = useState(0)
 
   const closePage = useCallback(() => {
@@ -87,7 +88,7 @@ export default function WorkOrderDetailClient({
       title={`Work Order ${workOrder.workOrderNumber}`}
       backHref={backHref}
       onBack={closePage}
-      headerMeta={<WorkOrderExpenseSummaryHeader summary={expenseSummary} />}
+      headerMeta={<WorkOrderExpenseSummaryHeader summary={deferredExpenseSummary} />}
       headerActions={
         <RecordOptionsMenu
           items={[
@@ -116,7 +117,11 @@ export default function WorkOrderDetailClient({
         unitOptions={unitOptions}
         onClose={closePage}
         refreshNonce={refreshNonce}
-        onExpenseSummaryChange={setExpenseSummary}
+        onExpenseSummaryChange={(nextSummary) => {
+          startTransition(() => {
+            setExpenseSummary(nextSummary)
+          })
+        }}
         onDirtyChange={page.setIsDirty}
         notices={page.notices}
         onWorkOrderSaved={(savedWorkOrder) => {
