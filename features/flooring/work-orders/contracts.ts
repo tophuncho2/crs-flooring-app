@@ -34,7 +34,6 @@ export const TEMPLATE_SYNC_POLICY = {
     vacancy: "work_order_only",
     scheduledFor: "work_order_only",
     unitLabel: "work_order_only",
-    unitNumber: "work_order_only",
     unitType: "work_order_only",
     customAddress: "work_order_only",
     notes: "work_order_only",

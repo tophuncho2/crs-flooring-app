@@ -10,7 +10,7 @@
 - `templateId`: set on successful create-from-template and successful sync.
 - `warehouseId`: snapshot from the template on create-from-template and sync.
 - `instructions`: snapshot from the template on create-from-template and sync.
-- `status`, `isComplete`, `vacancy`, `scheduledFor`, `unitLabel`, `unitNumber`, `unitType`, `customAddress`, `notes`, `googleDriveSlip`, `googleDocUrl`: remain work-order-owned.
+- `status`, `isComplete`, `vacancy`, `scheduledFor`, `unitLabel`, `unitType`, `customAddress`, `notes`, `googleDriveSlip`, `googleDocUrl`: remain work-order-owned.
 - `materialItems` and `serviceItems`: copied from the template.
 - `overwrite` sync: replace existing work-order rows.
 - `append` sync: add only missing snapshot rows.

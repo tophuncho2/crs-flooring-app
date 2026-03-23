@@ -100,7 +100,6 @@ type WorkOrderRow = {
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
-  unitNumber: string
   unitType: string
   customAddress: string
   instructions: string
@@ -128,7 +127,6 @@ function workOrderRow(overrides: Partial<WorkOrderRow> = {}): WorkOrderRow {
     vacancy: null,
     date: null,
     unitText: "",
-    unitNumber: "",
     unitType: "",
     customAddress: "",
     instructions: "",

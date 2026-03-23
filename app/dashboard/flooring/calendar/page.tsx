@@ -60,7 +60,7 @@ export default async function FlooringCalendarPage() {
                         <td className="px-3 py-2">{order.warehouse?.name ?? "-"}</td>
                         <td className="px-3 py-2">{order.status.replace(/_/g, " ")}</td>
                         <td className="px-3 py-2">
-                          {[order.unitLabel, order.unitNumber, order.unitType].filter(Boolean).join(" ") || "-"}
+                          {[order.unitLabel, order.unitType].filter(Boolean).join(" ") || "-"}
                         </td>
                         <td className="px-3 py-2">
                           <Link href={`/dashboard/flooring/work-orders/${order.id}`} className="text-blue-500 hover:underline">

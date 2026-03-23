@@ -19,7 +19,6 @@ export type WorkOrderRow = {
   vacancy: "VACANT" | "OCCUPIED" | null
   date: string | null
   unitText: string
-  unitNumber: string
   unitType: string
   customAddress: string
   instructions: string
@@ -56,7 +55,6 @@ export type DraftWorkOrder = {
   vacancy: "VACANT" | "OCCUPIED" | ""
   date: string
   unitText: string
-  unitNumber: string
   unitType: string
   customAddress: string
   instructions: string

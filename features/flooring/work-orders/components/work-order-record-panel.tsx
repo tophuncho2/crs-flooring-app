@@ -13,6 +13,7 @@ import {
 import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
 import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/record-form"
+import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
 import {
   ServiceItemsEditor,
   type EditableServiceItem,
@@ -64,7 +65,6 @@ function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
     vacancy: workOrder.vacancy ?? "",
     date: workOrder.date ? workOrder.date.split("T")[0] : "",
     unitText: workOrder.unitText,
-    unitNumber: workOrder.unitNumber,
     unitType: workOrder.unitType,
     customAddress: workOrder.customAddress,
     instructions: workOrder.instructions,
@@ -412,15 +412,14 @@ export function WorkOrderRecordPanel({
         <RecordFormField label="Unit Label">
           <input value={draft.unitText} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
         </RecordFormField>
-        <RecordFormField label="Unit Number">
-          <input value={draft.unitNumber} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitNumber: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Instructions">
-          <textarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
-        </RecordFormField>
         <RecordFormField label="Notes">
-          <textarea value={draft.notes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2" />
+          <AutoGrowTextarea value={draft.notes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
         </RecordFormField>
+        <div className="md:col-span-2 xl:col-span-4">
+          <RecordFormField label="Instructions">
+            <AutoGrowTextarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          </RecordFormField>
+        </div>
       </PrimaryRecordFieldsGrid>
 
       <MaterialItemsEditor

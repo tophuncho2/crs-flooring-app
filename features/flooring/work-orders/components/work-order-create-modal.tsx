@@ -3,6 +3,7 @@
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import { FormStatusNotices } from "@/features/flooring/shared/notices"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/record-form"
+import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
 import type { DraftWorkOrder, PropertyOption, WarehouseOption } from "../types"
 import { VACANCY_OPTIONS, WORK_ORDER_STATUS_OPTIONS, getVacancyFieldClass, getWorkOrderStatusFieldClass, getWorkOrderStatusLabel } from "../contracts"
 
@@ -124,30 +125,22 @@ export function WorkOrderCreateModal({
               className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </RecordFormField>
-          <RecordFormField label="Unit Number">
-            <input
-              value={draft.unitNumber}
-              onChange={(event) => onFieldChange("unitNumber", event.target.value)}
+          <RecordFormField label="Notes">
+            <AutoGrowTextarea
+              value={draft.notes}
+              onChange={(event) => onFieldChange("notes", event.target.value)}
               className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </RecordFormField>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <RecordFormField label="Instructions">
-            <textarea
-              value={draft.instructions}
-              onChange={(event) => onFieldChange("instructions", event.target.value)}
-              className="h-28 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </RecordFormField>
-          <RecordFormField label="Notes">
-            <textarea
-              value={draft.notes}
-              onChange={(event) => onFieldChange("notes", event.target.value)}
-              className="h-28 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </RecordFormField>
+          <div className="md:col-span-2 xl:col-span-4">
+            <RecordFormField label="Instructions">
+              <AutoGrowTextarea
+                value={draft.instructions}
+                onChange={(event) => onFieldChange("instructions", event.target.value)}
+                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+              />
+            </RecordFormField>
+          </div>
         </div>
 
         <div className="rounded-lg border border-[var(--panel-border)] px-4 py-4 text-sm text-[var(--foreground)]/70">

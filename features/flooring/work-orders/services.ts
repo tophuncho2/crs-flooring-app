@@ -54,7 +54,6 @@ export function normalizeWorkOrder(workOrder: {
   vacancy: "VACANT" | "OCCUPIED" | null
   scheduledFor: Date | null
   unitLabel: string | null
-  unitNumber: number | null
   unitType: string | null
   customAddress: string | null
   instructions: string | null
@@ -88,7 +87,6 @@ export function normalizeWorkOrder(workOrder: {
     vacancy: workOrder.vacancy,
     date: workOrder.scheduledFor?.toISOString() ?? null,
     unitText: workOrder.unitLabel ?? "",
-    unitNumber: workOrder.unitNumber === null ? "" : String(workOrder.unitNumber),
     unitType: workOrder.unitType ?? "",
     customAddress: workOrder.customAddress ?? "",
     instructions: workOrder.instructions ?? "",

@@ -35,7 +35,6 @@ export type CreateWorkOrderInput = {
   vacancy: FlooringVacancyStatus | null
   scheduledFor: Date | null
   unitLabel: string | null
-  unitNumber: number | null
   unitType: string | null
   customAddress: string | null
   instructions: string | null
@@ -101,17 +100,6 @@ function parseOptionalDate(value: unknown, field: string) {
   }
 
   return parsed
-}
-
-function parseOptionalInt(value: unknown, field: string) {
-  if (value === undefined || value === null || String(value).trim() === "") return null
-
-  const raw = String(value).trim()
-  if (!/^-?\\d+$/.test(raw)) {
-    throw { message: `${field} must be a whole number`, field }
-  }
-
-  return Number(raw)
 }
 
 function asRecord(value: unknown, field: string) {
@@ -228,7 +216,6 @@ export function validateCreateWorkOrderInput(body: Record<string, unknown>): Cre
     vacancy: parseOptionalEnumValue(body.vacancy, "vacancy"),
     scheduledFor: parseOptionalDate(body.date, "date"),
     unitLabel: parseOptionalString(body.unitText),
-    unitNumber: parseOptionalInt(body.unitNumber, "unitNumber"),
     unitType: parseOptionalString(body.unitType),
     customAddress: parseOptionalString(body.customAddress),
     instructions: parseOptionalString(body.instructions),
@@ -253,7 +240,6 @@ export function validateUpdateWorkOrderInput(body: Record<string, unknown>): Upd
   if ("vacancy" in body) input.vacancy = parseOptionalEnumValue(body.vacancy, "vacancy")
   if ("date" in body) input.scheduledFor = parseOptionalDate(body.date, "date")
   if ("unitText" in body) input.unitLabel = parseOptionalString(body.unitText)
-  if ("unitNumber" in body) input.unitNumber = parseOptionalInt(body.unitNumber, "unitNumber")
   if ("unitType" in body) input.unitType = parseOptionalString(body.unitType)
   if ("customAddress" in body) input.customAddress = parseOptionalString(body.customAddress)
   if ("instructions" in body) input.instructions = parseOptionalString(body.instructions)
