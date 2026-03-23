@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { listImportLocationOptions, normalizeImportEntry } from "@/features/flooring/imports/api"
+import { getImportEntryById, listImportLocationOptions, normalizeImportEntry } from "@/features/flooring/imports/api"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
 function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
@@ -130,42 +130,5 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
 }
 
 export async function getImportById(id: string) {
-  const entry = await prisma.flooringImportEntry.findUniqueOrThrow({
-    where: { id },
-    include: importEntryInclude(),
-  })
-
-  return {
-    ...normalizeImportEntry(entry),
-    itemsCount: entry._count.inventories,
-  }
-}
-
-function importEntryInclude() {
-  return {
-    warehouse: { select: { id: true, name: true } },
-    _count: { select: { inventories: true } },
-    inventories: {
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            style: true,
-            color: true,
-            category: { select: { stockUnit: { select: { name: true } } } },
-          },
-        },
-        location: {
-          select: {
-            id: true,
-            locationCode: true,
-            section: { select: { name: true } },
-            warehouse: { select: { id: true, name: true } },
-          },
-        },
-      },
-      orderBy: [{ createdAt: "asc" }],
-    },
-  } satisfies Prisma.FlooringImportEntryInclude
+  return getImportEntryById(id, prisma)
 }

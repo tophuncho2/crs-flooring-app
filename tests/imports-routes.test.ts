@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { DELETE } from "@/app/api/flooring/imports/[id]/route"
+import { DELETE, GET } from "@/app/api/flooring/imports/[id]/route"
 
 const routeAccess = {
   requestId: "req-1",
@@ -15,6 +15,7 @@ const routeAccess = {
 const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringImportEntry: {
+      findUniqueOrThrow: vi.fn(),
       findUnique: vi.fn(),
       delete: vi.fn(),
     },
@@ -67,6 +68,45 @@ describe("imports routes", () => {
     expect(response.status).toBe(404)
     expect(payload.error).toBe("Import not found")
     expect(prismaMock.flooringImportEntry.delete).not.toHaveBeenCalled()
+  })
+
+  it("GET returns the normalized import detail payload", async () => {
+    prismaMock.flooringImportEntry.findUniqueOrThrow.mockResolvedValue({
+      id: "imp-1",
+      importNumber: 1,
+      orderNumber: "PO-1",
+      tag: "Spring Load",
+      transportType: "PURCHASE_ORDER",
+      status: "PENDING",
+      notes: "Dock notes",
+      warehouseId: "wh-1",
+      warehouse: { id: "wh-1", name: "Main Warehouse" },
+      createdAt: new Date("2026-03-23T00:00:00.000Z"),
+      updatedAt: new Date("2026-03-23T00:00:00.000Z"),
+      _count: { inventories: 0 },
+      inventories: [],
+    })
+
+    const response = await GET(new Request("http://localhost/api/flooring/imports/imp-1"), {
+      params: Promise.resolve({ id: "imp-1" }),
+    })
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload.import).toEqual(
+      expect.objectContaining({
+        id: "imp-1",
+        importNumber: 1,
+        orderNumber: "PO-1",
+        tag: "Spring Load",
+        warehouseName: "Main Warehouse",
+        itemsCount: 0,
+      }),
+    )
+    expect(requireRouteAccessMock).toHaveBeenCalledWith(expect.any(Request), {
+      capability: "system.access",
+      toolSlug: "warehouse",
+    })
   })
 
   it("DELETE returns 409 when the import still has inventory rows", async () => {

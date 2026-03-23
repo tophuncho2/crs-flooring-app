@@ -224,6 +224,15 @@ export async function listImportEntries(db: DbClient = prisma) {
   return entries.map(normalizeImportEntry)
 }
 
+export async function getImportEntryById(id: string, db: DbClient = prisma) {
+  const entry = await db.flooringImportEntry.findUniqueOrThrow({
+    where: { id },
+    include: importEntryInclude(),
+  })
+
+  return normalizeImportEntry(entry)
+}
+
 export async function createImportEntry(db: RootDbClient, body: Record<string, unknown>) {
   const parsedItems = parseImportItems(Array.isArray(body.items) ? body.items : [])
 

@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma"
 import {
+  getImportEntryById,
   normalizeImportEntry,
   removeImportEntryIfEmpty,
   updateImportEntry,
@@ -15,6 +16,18 @@ import {
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  try {
+    const { id } = await context.params
+    return routeJson(access, { import: await getImportEntryById(id, prisma) })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
