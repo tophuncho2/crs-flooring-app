@@ -2,64 +2,40 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
-import { FormStatusNotices } from "@/features/flooring/shared/notices"
-import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { buildRecordSummary, emptyRecordSummary } from "@/features/flooring/shared/record-summary"
-import { RecordFormField } from "@/features/flooring/shared/record-form"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/ui/feedback/feedback-states"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
+import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
+import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import {
   MaterialItemsEditor,
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemOption,
-} from "@/features/flooring/shared/record-items/material-items-editor"
+} from "@/features/flooring/shared/ui/record-items/material-items-editor"
 import {
   ServiceItemsEditor,
   type EditableServiceItem,
   type ServiceItemDraft,
   type ServiceOption,
   type UnitOption,
-} from "@/features/flooring/shared/record-items/service-items-editor"
-import { PrimaryRecordFieldsGrid } from "@/features/flooring/shared/record-items/record-primary-fields"
-import { useChildCollection } from "@/features/flooring/shared/record-items/use-child-collection"
-import { useRecordLineItemsController } from "@/features/flooring/shared/record-items/use-record-line-items-controller"
-import { useRecordDetailController } from "@/features/flooring/shared/record-page/use-record-detail-controller"
-import { useRecordNotices } from "@/features/flooring/shared/use-record-notices"
-
-export type TemplatePanelRow = {
-  id: string
-  templateNumber: string
-  templateTag: string
-  propertyId: string
-  propertyName: string
-  warehouseId: string
-  warehouseName: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-  padTypeLabel: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type TemplatePanelDraft = {
-  templateTag: string
-  propertyId: string
-  warehouseId: string
-  instructions: string
-  templateNotes: string
-  padProductId: string
-}
+} from "@/features/flooring/shared/ui/record-items/service-items-editor"
+import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
+import { PrimaryRecordFieldsGrid } from "@/features/flooring/shared/ui/record-items/record-primary-fields"
+import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
+import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
+import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
+import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
+import { useRecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import { normalizeTemplateExpenseSummary } from "@/features/flooring/templates/domain/expense-summary"
+import type { EditableTemplateSalesRep } from "@/features/flooring/templates/domain/sales-reps"
+import type { DraftTemplate, SalesRepContactOption, TemplateDetail, TemplateRow } from "@/features/flooring/templates/types"
 
 type TemplateMaterialItem = EditableMaterialItem
 type TemplateServiceItem = EditableServiceItem
-type TemplateDetail = TemplatePanelRow & {
-  items: TemplateMaterialItem[]
-  serviceItems: TemplateServiceItem[]
-  summary: ReturnType<typeof buildRecordSummary>
-}
 
-function toTemplateDraft(template: TemplatePanelRow): TemplatePanelDraft {
+function toTemplateDraft(template: TemplateDetail): DraftTemplate {
   return {
     templateTag: template.templateTag,
     propertyId: template.propertyId,
@@ -86,6 +62,11 @@ const defaultServiceDraft: ServiceItemDraft = {
   notes: "",
 }
 
+const defaultSalesRepDraft: SalesRepDraft = {
+  contactId: "",
+  percent: "",
+}
+
 export function TemplateRecordPanel({
   templateId,
   initialTemplate,
@@ -94,6 +75,7 @@ export function TemplateRecordPanel({
   padProductOptions,
   productOptions,
   serviceOptions,
+  salesRepOptions,
   unitOptions,
   onClose,
   onTemplateSaved,
@@ -102,28 +84,21 @@ export function TemplateRecordPanel({
   onDirtyChange,
 }: {
   templateId: string
-  initialTemplate: TemplatePanelRow
+  initialTemplate: TemplateDetail
   propertyOptions: Array<{ id: string; name: string }>
   warehouseOptions: Array<{ id: string; name: string }>
   padProductOptions: Array<{ id: string; label: string }>
   productOptions: MaterialItemOption[]
   serviceOptions: ServiceOption[]
+  salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
   onClose: () => void
-  onTemplateSaved?: (template: TemplatePanelRow, previousPropertyId: string, itemsCount: number) => void
+  onTemplateSaved?: (template: TemplateRow, previousPropertyId: string, itemsCount: number) => void
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
   onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
   onDirtyChange?: (value: boolean) => void
 }) {
-  const initialTemplateDetail = useMemo<TemplateDetail>(
-    () => ({
-      ...initialTemplate,
-      items: [],
-      serviceItems: [],
-      summary: emptyRecordSummary(),
-    }),
-    [initialTemplate],
-  )
+  const initialTemplateDetail = useMemo<TemplateDetail>(() => initialTemplate, [initialTemplate])
   const [savingTemplate, setSavingTemplate] = useState(false)
   const notices = useRecordNotices()
   const {
@@ -136,7 +111,7 @@ export function TemplateRecordPanel({
     syncRecord,
     clearRecordCache,
     isDirty,
-  } = useRecordDetailController<TemplateDetail, TemplatePanelDraft>({
+  } = useRecordDetailController<TemplateDetail, DraftTemplate>({
     scope: "template",
     id: templateId,
     initialRecord: initialTemplateDetail,
@@ -182,6 +157,22 @@ export function TemplateRecordPanel({
     serializeUpdate: (item) => item,
     skipReloadAfterMutation: true,
   })
+  const salesRepCollection = useChildCollection<EditableTemplateSalesRep, SalesRepDraft, EditableTemplateSalesRep>({
+    listUrl: `/api/flooring/templates/${templateId}/sales-reps`,
+    createUrl: `/api/flooring/templates/${templateId}/sales-reps`,
+    updateUrl: (repId) => `/api/flooring/templates/${templateId}/sales-reps/${repId}`,
+    deleteUrl: (repId) => `/api/flooring/templates/${templateId}/sales-reps/${repId}`,
+    mapItems: (payload) => (payload.items as EditableTemplateSalesRep[] | undefined) ?? [],
+    getItemId: (item) => item.id,
+    pickCreatedItem: (payload) => payload.item as EditableTemplateSalesRep,
+    pickUpdatedItem: (payload) => payload.item as EditableTemplateSalesRep,
+    serializeCreate: (input) => input,
+    serializeUpdate: (item) => ({
+      contactId: item.contactId,
+      percent: item.percent,
+    }),
+    skipReloadAfterMutation: true,
+  })
 
   const onSummaryChangeRef = useRef(onSummaryChange)
   const onTemplateSavedRef = useRef(onTemplateSaved)
@@ -204,9 +195,15 @@ export function TemplateRecordPanel({
           ...record,
           items: materialItems,
           serviceItems,
+          salesReps: salesRepCollection.items,
           summary: buildRecordSummary({
             materialItems,
             serviceItems,
+          }),
+          expenseSummary: normalizeTemplateExpenseSummary({
+            items: materialItems,
+            serviceItems,
+            salesReps: salesRepCollection.items,
           }),
         },
         { syncDraft: false },
@@ -215,6 +212,33 @@ export function TemplateRecordPanel({
       if (action !== "save") {
         onTemplateSavedRef.current?.(record, record.propertyId, materialItems.length + serviceItems.length)
       }
+    },
+  })
+
+  const salesRepLines = useRecordSalesRepsController({
+    record: template,
+    notices,
+    clearParentError: () => setError(""),
+    salesRepCollection,
+    initialDraft: defaultSalesRepDraft,
+    getItemsFromRecord: (record: TemplateDetail) => record.salesReps ?? [],
+    onItemsChanged: ({ record, salesReps }) => {
+      syncRecord(
+        {
+          ...record,
+          salesReps,
+          summary: buildRecordSummary({
+            materialItems: lineItems.materialItems,
+            serviceItems: lineItems.serviceItems,
+          }),
+          expenseSummary: normalizeTemplateExpenseSummary({
+            items: lineItems.materialItems,
+            serviceItems: lineItems.serviceItems,
+            salesReps,
+          }),
+        },
+        { syncDraft: false },
+      )
     },
   })
 
@@ -235,14 +259,29 @@ export function TemplateRecordPanel({
   }, [isDirty, onDirtyChange])
 
   const itemCount = lineItems.materialItems.length + lineItems.serviceItems.length
+  const currentExpenseSummary = normalizeTemplateExpenseSummary({
+    items: lineItems.materialItems,
+    serviceItems: lineItems.serviceItems,
+    salesReps: salesRepLines.salesReps,
+  })
 
   const syncTemplateCollections = useCallback(
-    (nextMaterialItems: TemplateMaterialItem[], nextServiceItems: TemplateServiceItem[]) => ({
+    (
+      nextMaterialItems: TemplateMaterialItem[],
+      nextServiceItems: TemplateServiceItem[],
+      nextSalesReps: EditableTemplateSalesRep[],
+    ) => ({
       items: nextMaterialItems,
       serviceItems: nextServiceItems,
+      salesReps: nextSalesReps,
       summary: buildRecordSummary({
         materialItems: nextMaterialItems,
         serviceItems: nextServiceItems,
+      }),
+      expenseSummary: normalizeTemplateExpenseSummary({
+        items: nextMaterialItems,
+        serviceItems: nextServiceItems,
+        salesReps: nextSalesReps,
       }),
     }),
     [],
@@ -256,7 +295,7 @@ export function TemplateRecordPanel({
 
     try {
       const previousPropertyId = template.propertyId
-      const payload = await requestJson<{ template: TemplatePanelRow }>(`/api/flooring/templates/${template.id}`, {
+      const payload = await requestJson<{ template: TemplateRow }>(`/api/flooring/templates/${template.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -268,7 +307,7 @@ export function TemplateRecordPanel({
 
       syncRecord({
         ...payload.template,
-        ...syncTemplateCollections(lineItems.materialItems, lineItems.serviceItems),
+        ...syncTemplateCollections(lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps),
       })
       notices.showSuccess("Template saved")
       onTemplateSavedRef.current?.(payload.template, previousPropertyId, itemCount)
@@ -343,10 +382,18 @@ export function TemplateRecordPanel({
 
         <PrimaryRecordFieldsGrid className="md:grid-cols-1 xl:grid-cols-1">
           <RecordFormField label="Instructions">
-            <textarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            <AutoGrowTextarea
+              value={draft.instructions}
+              onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))}
+              className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
           </RecordFormField>
           <RecordFormField label="Template Notes">
-            <textarea value={draft.templateNotes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateNotes: event.target.value } : prev))} className="h-24 rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+            <AutoGrowTextarea
+              value={draft.templateNotes}
+              onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateNotes: event.target.value } : prev))}
+              className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
           </RecordFormField>
         </PrimaryRecordFieldsGrid>
       </div>
@@ -356,6 +403,7 @@ export function TemplateRecordPanel({
         items={lineItems.materialItems}
         draft={lineItems.materialDraft}
         productOptions={productOptions}
+        totalAmount={currentExpenseSummary.materialTotal}
         loading={loading || lineItems.materialCollection.loading}
         adding={lineItems.materialCollection.adding}
         savingItemId={lineItems.materialCollection.savingItemId}
@@ -375,6 +423,7 @@ export function TemplateRecordPanel({
         draft={lineItems.serviceDraft}
         serviceOptions={serviceOptions}
         unitOptions={unitOptions}
+        totalAmount={currentExpenseSummary.serviceTotal}
         loading={loading || lineItems.serviceCollection.loading}
         adding={lineItems.serviceCollection.adding}
         savingItemId={lineItems.serviceCollection.savingItemId}
@@ -386,6 +435,26 @@ export function TemplateRecordPanel({
         onItemFieldChange={lineItems.handleServiceItemFieldChange}
         onSaveItem={(item) => void lineItems.saveServiceItem(item)}
         onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
+      />
+
+      <SalesRepItemsEditor
+        title="Sales Reps"
+        items={salesRepLines.salesReps}
+        draft={salesRepLines.draft}
+        salesRepOptions={salesRepOptions}
+        customerCost={currentExpenseSummary.customerCost}
+        totalAmount={currentExpenseSummary.salesRepExpense}
+        loading={loading || salesRepLines.salesRepCollection.loading}
+        adding={salesRepLines.salesRepCollection.adding}
+        savingItemId={salesRepLines.salesRepCollection.savingItemId}
+        deletingItemId={salesRepLines.salesRepCollection.deletingItemId}
+        draftErrors={salesRepLines.draftErrors}
+        itemErrors={salesRepLines.itemErrors}
+        onDraftChange={salesRepLines.handleDraftChange}
+        onAdd={() => salesRepLines.addItem()}
+        onItemFieldChange={salesRepLines.handleItemFieldChange}
+        onSaveItem={(item) => void salesRepLines.saveItem(item)}
+        onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
       />
 
       <RecordPanelFooter

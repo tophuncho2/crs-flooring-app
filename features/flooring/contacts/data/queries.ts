@@ -14,6 +14,7 @@ async function loadContacts() {
     include: {
       _count: {
         select: {
+          templateSalesReps: true,
           workOrderSalesReps: true,
         },
       },
@@ -50,6 +51,7 @@ export async function getContactById(id: string): Promise<ContactDetail> {
     include: {
       _count: {
         select: {
+          templateSalesReps: true,
           workOrderSalesReps: true,
         },
       },

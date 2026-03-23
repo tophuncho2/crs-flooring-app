@@ -5,6 +5,8 @@ import { GET as GET_ITEMS, POST as POST_ITEM } from "@/app/api/flooring/template
 import { DELETE as DELETE_ITEM, PATCH as PATCH_ITEM } from "@/app/api/flooring/templates/[id]/items/[itemId]/route"
 import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/flooring/templates/[id]/service-items/route"
 import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/app/api/flooring/templates/[id]/service-items/[itemId]/route"
+import { GET as GET_SALES_REPS, POST as POST_SALES_REP } from "@/app/api/flooring/templates/[id]/sales-reps/route"
+import { DELETE as DELETE_SALES_REP, PATCH as PATCH_SALES_REP } from "@/app/api/flooring/templates/[id]/sales-reps/[repId]/route"
 
 const {
   authorizeTemplatesRouteMock,
@@ -24,6 +26,10 @@ const {
   createTemplateServiceItemMock,
   updateTemplateServiceItemMock,
   deleteTemplateServiceItemMock,
+  listTemplateSalesRepsMock,
+  createTemplateSalesRepMock,
+  updateTemplateSalesRepMock,
+  deleteTemplateSalesRepMock,
 } = vi.hoisted(() => ({
   authorizeTemplatesRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
@@ -42,6 +48,10 @@ const {
   createTemplateServiceItemMock: vi.fn(),
   updateTemplateServiceItemMock: vi.fn(),
   deleteTemplateServiceItemMock: vi.fn(),
+  listTemplateSalesRepsMock: vi.fn(),
+  createTemplateSalesRepMock: vi.fn(),
+  updateTemplateSalesRepMock: vi.fn(),
+  deleteTemplateSalesRepMock: vi.fn(),
 }))
 
 vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
@@ -79,6 +89,7 @@ vi.mock("@/features/flooring/templates/queries", () => ({
   getTemplateById: getTemplateByIdMock,
   listTemplateItems: listTemplateItemsMock,
   listTemplateServiceItems: listTemplateServiceItemsMock,
+  listTemplateSalesReps: listTemplateSalesRepsMock,
 }))
 
 vi.mock("@/features/flooring/templates/mutations", () => ({
@@ -91,6 +102,9 @@ vi.mock("@/features/flooring/templates/mutations", () => ({
   createTemplateServiceItem: createTemplateServiceItemMock,
   updateTemplateServiceItem: updateTemplateServiceItemMock,
   deleteTemplateServiceItem: deleteTemplateServiceItemMock,
+  createTemplateSalesRep: createTemplateSalesRepMock,
+  updateTemplateSalesRep: updateTemplateSalesRepMock,
+  deleteTemplateSalesRep: deleteTemplateSalesRepMock,
 }))
 
 function templateRow(overrides: Partial<Record<string, unknown>> = {}) {
@@ -343,5 +357,68 @@ describe("template routes", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("name is required when no saved service is selected")
     expect(payload.field).toBe("name")
+  })
+
+  it("child sales-rep routes list, create, patch, and delete sales reps", async () => {
+    listTemplateSalesRepsMock.mockResolvedValue([
+      { id: "rep-1", contactId: "contact-1", contactName: "Jordan Case", percent: "10.00", createdAt: "2026-03-23T00:00:00.000Z" },
+    ])
+    createTemplateSalesRepMock.mockResolvedValue({ id: "rep-2", contactId: "contact-1", contactName: "Jordan Case", percent: "12.50" })
+    updateTemplateSalesRepMock.mockResolvedValue({ id: "rep-1", contactId: "contact-1", contactName: "Jordan Case", percent: "15.00" })
+
+    const listResponse = await GET_SALES_REPS(new Request("http://localhost/api/flooring/templates/tpl-1/sales-reps"), {
+      params: Promise.resolve({ id: "tpl-1" }),
+    })
+    expect((await listResponse.json()).items).toHaveLength(1)
+
+    const createResponse = await POST_SALES_REP(
+      new Request("http://localhost/api/flooring/templates/tpl-1/sales-reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId: "contact-1", percent: "12.50" }),
+      }),
+      { params: Promise.resolve({ id: "tpl-1" }) },
+    )
+    expect(createResponse.status).toBe(201)
+    expect(createTemplateSalesRepMock).toHaveBeenCalledWith("tpl-1", expect.objectContaining({ contactId: "contact-1" }))
+
+    const patchResponse = await PATCH_SALES_REP(
+      new Request("http://localhost/api/flooring/templates/tpl-1/sales-reps/rep-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ percent: "15.00" }),
+      }),
+      { params: Promise.resolve({ id: "tpl-1", repId: "rep-1" }) },
+    )
+    expect((await patchResponse.json()).item).toEqual({
+      id: "rep-1",
+      contactId: "contact-1",
+      contactName: "Jordan Case",
+      percent: "15.00",
+    })
+
+    const deleteResponse = await DELETE_SALES_REP(new Request("http://localhost/api/flooring/templates/tpl-1/sales-reps/rep-1"), {
+      params: Promise.resolve({ id: "tpl-1", repId: "rep-1" }),
+    })
+    expect((await deleteResponse.json()).ok).toBe(true)
+    expect(deleteTemplateSalesRepMock).toHaveBeenCalledWith("rep-1")
+  })
+
+  it("child sales-rep routes return field metadata for duplicate contacts", async () => {
+    createTemplateSalesRepMock.mockRejectedValue({ message: "This sales rep is already assigned to the template", field: "contactId", status: 409 })
+
+    const response = await POST_SALES_REP(
+      new Request("http://localhost/api/flooring/templates/tpl-1/sales-reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId: "contact-1", percent: "10.00" }),
+      }),
+      { params: Promise.resolve({ id: "tpl-1" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(payload.error).toBe("This sales rep is already assigned to the template")
+    expect(payload.field).toBe("contactId")
   })
 })

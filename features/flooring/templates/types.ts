@@ -1,3 +1,9 @@
+import type { EditableMaterialItem } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
+import type { SalesRepContactOption } from "@/features/flooring/shared/domain/record-sales-reps"
+import type { EditableTemplateSalesRep } from "./domain/sales-reps"
+import type { TemplateExpenseSummary } from "./domain/expense-summary"
+
 export type TemplateRow = {
   id: string
   templateNumber: string
@@ -13,6 +19,21 @@ export type TemplateRow = {
   itemsCount?: number
   createdAt: string
   updatedAt: string
+}
+
+export type TemplateDetail = TemplateRow & {
+  items: EditableMaterialItem[]
+  serviceItems: EditableServiceItem[]
+  salesReps: EditableTemplateSalesRep[]
+  summary: {
+    materialItemsCount: number
+    serviceItemsCount: number
+    totalItemsCount: number
+    materialTotal: number
+    serviceTotal: number
+    grandTotal: number
+  }
+  expenseSummary: TemplateExpenseSummary
 }
 
 export type PropertyOption = {
@@ -38,6 +59,8 @@ export type DraftTemplate = {
   templateNotes: string
   padProductId: string
 }
+
+export type { EditableTemplateSalesRep, SalesRepContactOption, TemplateExpenseSummary }
 
 export type ServerPaginationState = {
   page: number

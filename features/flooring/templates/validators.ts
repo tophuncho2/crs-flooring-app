@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/features/flooring/shared/child-item-validation"
+import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/features/flooring/shared/domain/child-item-validation"
 
 export type TemplateMaterialItemInput = {
   productId: string
@@ -18,6 +18,11 @@ export type TemplateServiceItemInput = {
   notes: string | null
 }
 
+export type TemplateSalesRepInput = {
+  contactId: string
+  percent: Prisma.Decimal
+}
+
 export type CreateTemplateInput = {
   propertyId: string
   templateTag: string
@@ -32,6 +37,7 @@ export type CreateTemplateInput = {
 export type UpdateTemplateInput = Partial<Omit<CreateTemplateInput, "items" | "serviceItems">>
 export type UpdateTemplateMaterialItemInput = Partial<TemplateMaterialItemInput>
 export type UpdateTemplateServiceItemInput = Partial<TemplateServiceItemInput>
+export type UpdateTemplateSalesRepInput = Partial<TemplateSalesRepInput>
 
 export function validateTemplateMaterialItemInput(body: Record<string, unknown>): TemplateMaterialItemInput {
   const quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
@@ -85,6 +91,30 @@ export function validateUpdateTemplateServiceItemInput(body: Record<string, unkn
   if ("serviceId" in body && input.serviceId === null) {
     requireServiceNameWhenCustom(input.serviceId, input.name ?? null)
   }
+
+  return input
+}
+
+function requirePercentInRange(value: Prisma.Decimal, field: string) {
+  if (value.lessThan(0) || value.greaterThan(100)) {
+    throw { message: `${field} must be between 0 and 100`, field }
+  }
+
+  return value
+}
+
+export function validateTemplateSalesRepInput(body: Record<string, unknown>): TemplateSalesRepInput {
+  return {
+    contactId: parseRequiredString(body.contactId, "contactId"),
+    percent: requirePercentInRange(parseDecimal(body.percent, "percent", 2), "percent"),
+  }
+}
+
+export function validateUpdateTemplateSalesRepInput(body: Record<string, unknown>): UpdateTemplateSalesRepInput {
+  const input: UpdateTemplateSalesRepInput = {}
+
+  if ("contactId" in body) input.contactId = parseRequiredString(body.contactId, "contactId")
+  if ("percent" in body) input.percent = requirePercentInRange(parseDecimal(body.percent, "percent", 2), "percent")
 
   return input
 }

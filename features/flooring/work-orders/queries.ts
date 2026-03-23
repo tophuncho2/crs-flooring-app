@@ -3,7 +3,6 @@ import { prisma } from "@/server/db/prisma"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
-import { listSalesRepContactOptions } from "@/features/flooring/contacts/data/queries"
 import { normalizeWorkOrder, normalizeWorkOrderExpenseTotals, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
 type WorkOrderDbClient = Prisma.TransactionClient | typeof prisma
@@ -337,13 +336,12 @@ export async function getWorkOrderDetailPageData(id: string): Promise<PrismaDeta
   productOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["productOptions"]
   serviceOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["serviceOptions"]
   unitOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["unitOptions"]
-  salesRepOptions: Awaited<ReturnType<typeof listSalesRepContactOptions>>
+  salesRepOptions: Awaited<ReturnType<typeof loadSharedRecordDetailOptions>>["salesRepOptions"]
 }>> {
   try {
-    const [workOrder, options, salesRepOptions] = await Promise.all([
+    const [workOrder, options] = await Promise.all([
       getWorkOrderById(id),
       loadSharedRecordDetailOptions(),
-      listSalesRepContactOptions(),
     ])
 
     return {
@@ -351,7 +349,6 @@ export async function getWorkOrderDetailPageData(id: string): Promise<PrismaDeta
       data: {
         workOrder,
         ...options,
-        salesRepOptions,
       },
     }
   } catch (error) {

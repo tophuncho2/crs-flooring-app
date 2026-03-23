@@ -44,6 +44,7 @@ export default async function TemplateDetailPage({
       padProductOptions={result.data.padProductOptions}
       productOptions={result.data.productOptions}
       serviceOptions={result.data.serviceOptions}
+      salesRepOptions={result.data.salesRepOptions}
       unitOptions={result.data.unitOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/templates")}
     />

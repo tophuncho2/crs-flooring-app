@@ -7,12 +7,12 @@ import userEvent from "@testing-library/user-event"
 import { requestJsonMock } from "./helpers/simple-table-client-mocks"
 import { TemplateRecordPanel } from "@/features/flooring/templates/components/template-record-panel"
 
-vi.mock("@/features/flooring/shared/feedback-states", () => ({
+vi.mock("@/features/flooring/shared/ui/feedback/feedback-states", () => ({
   CenteredErrorState: ({ message }: { message: string }) => <div>{message}</div>,
   CenteredLoadingState: ({ label }: { label: string }) => <div>{label}</div>,
 }))
 
-vi.mock("@/features/flooring/shared/record-summary", () => ({
+vi.mock("@/features/flooring/shared/domain/record-summary", () => ({
   buildRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
   emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
 }))
@@ -97,7 +97,109 @@ vi.mock("@/features/flooring/shared/ui/record-items/service-items-editor", async
   }
 })
 
-vi.mock("@/features/flooring/shared/record-page/use-record-detail-controller", async () => {
+vi.mock("@/features/flooring/shared/ui/record-items/sales-rep-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/sales-rep-items-editor")>()
+
+  return {
+    ...actual,
+    SalesRepItemsEditor: ({
+      items,
+      onDraftChange,
+      onAdd,
+      onSaveItem,
+      onDeleteItem,
+    }: {
+      items: Array<{ id: string }>
+      onDraftChange: (field: "contactId" | "percent", value: string) => void
+      onAdd: () => void
+      onSaveItem: (item: { id: string; contactId: string; contactName: string; percent: string }) => void
+      onDeleteItem: (itemId: string) => void
+    }) => (
+      <div>
+        <div>{`Sales rep count ${items.length}`}</div>
+        <button
+          type="button"
+          onClick={() => {
+            onDraftChange("contactId", "contact-1")
+            onDraftChange("percent", "10.00")
+            setTimeout(() => {
+              void onAdd()
+            }, 0)
+          }}
+        >
+          Add Sales Rep
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onSaveItem({
+              id: items[0]?.id ?? "rep-1",
+              contactId: "contact-1",
+              contactName: "Jordan Case",
+              percent: "12.50",
+            })
+          }
+        >
+          Save Sales Rep
+        </button>
+        <button type="button" onClick={() => onDeleteItem(items[0]?.id ?? "rep-1")}>Delete Sales Rep</button>
+      </div>
+    ),
+  }
+})
+
+vi.mock("@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller", async () => {
+  const ReactModule = await import("react")
+
+  return {
+    useRecordSalesRepsController: () => {
+      const [salesReps, setSalesReps] = ReactModule.useState<Array<{ id: string; contactId: string; contactName: string; percent: string }>>([])
+      const [draft, setDraft] = ReactModule.useState({ contactId: "", percent: "" })
+
+      return {
+        draft,
+        draftErrors: {},
+        itemErrors: {},
+        salesReps,
+        salesRepCollection: {
+          loading: false,
+          adding: false,
+          savingItemId: null,
+          deletingItemId: null,
+        },
+        handleDraftChange: (field: "contactId" | "percent", value: string) => {
+          setDraft((previous) => ({ ...previous, [field]: value }))
+        },
+        handleItemFieldChange: (itemId: string, field: "contactId" | "contactName" | "percent", value: string) => {
+          setSalesReps((previous) =>
+            previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
+          )
+        },
+        addItem: async () => {
+          setSalesReps((previous) => [
+            ...previous,
+            {
+              id: `rep-${previous.length + 1}`,
+              contactId: draft.contactId || "contact-1",
+              contactName: "Jordan Case",
+              percent: draft.percent || "10.00",
+            },
+          ])
+          setDraft({ contactId: "", percent: "" })
+          return true
+        },
+        saveItem: async (item: { id: string; contactId: string; contactName: string; percent: string }) => {
+          setSalesReps((previous) => previous.map((current) => (current.id === item.id ? item : current)))
+        },
+        deleteItem: async (itemId: string) => {
+          setSalesReps((previous) => previous.filter((item) => item.id !== itemId))
+        },
+      }
+    },
+  }
+})
+
+vi.mock("@/features/flooring/shared/controllers/record-page/use-record-detail-controller", async () => {
   const ReactModule = await import("react")
 
   return {
@@ -118,6 +220,7 @@ vi.mock("@/features/flooring/shared/record-page/use-record-detail-controller", a
           if (options?.syncDraft !== false) setDraft(toDraft(nextRecord))
         },
         clearRecordCache: vi.fn(),
+        isDirty: false,
       }
     },
   }
@@ -140,6 +243,24 @@ function templateRow() {
     templateNotes: "",
     padProductId: "",
     padTypeLabel: "",
+    items: [],
+    serviceItems: [],
+    salesReps: [],
+    summary: {
+      materialItemsCount: 0,
+      serviceItemsCount: 0,
+      totalItemsCount: 0,
+      materialTotal: 0,
+      serviceTotal: 0,
+      grandTotal: 0,
+    },
+    expenseSummary: {
+      materialTotal: 0,
+      serviceTotal: 0,
+      customerCost: 0,
+      salesRepExpense: 0,
+      expenses: 0,
+    },
     createdAt: "2026-03-19T00:00:00.000Z",
     updatedAt: "2026-03-19T00:00:00.000Z",
   }
@@ -155,6 +276,7 @@ function renderPanel() {
       padProductOptions={[{ id: "pad-1", label: "Pad Product" }]}
       productOptions={[{ id: "prod-1", label: "Pad", sendUnit: "SF" }]}
       serviceOptions={[{ id: "svc-1", name: "Install", baseCost: "9.00", unitId: "unit-1", unitName: "SF" }]}
+      salesRepOptions={[{ id: "contact-1", name: "Jordan Case" }]}
       unitOptions={[{ id: "unit-1", name: "SF" }]}
       onClose={vi.fn()}
       onTemplateSaved={vi.fn()}
@@ -205,6 +327,7 @@ describe("TemplateRecordPanel", () => {
         padProductOptions={[]}
         productOptions={[]}
         serviceOptions={[]}
+        salesRepOptions={[]}
         unitOptions={[]}
         onClose={onClose}
         onTemplateDeleted={onTemplateDeleted}
@@ -265,18 +388,16 @@ describe("TemplateRecordPanel", () => {
     expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
   })
 
-  it("child-row delete failures surface errors and do not close the panel", async () => {
+  it("adding, saving, and deleting sales reps keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
     vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock
-      .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" } })
-      .mockRejectedValueOnce(new Error("Failed to delete template item"))
 
     renderPanel()
-    await user.click(screen.getByRole("button", { name: "Add Material" }))
-    await user.click(screen.getByRole("button", { name: "Delete Material" }))
-
-    expect(await screen.findByText("Failed to delete template item")).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: "Add Sales Rep" }))
+    expect(await screen.findByText("Sales rep count 1")).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: "Save Sales Rep" }))
+    await user.click(screen.getByRole("button", { name: "Delete Sales Rep" }))
+    expect(await screen.findByText("Sales rep count 0")).toBeTruthy()
     expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
   })
 })

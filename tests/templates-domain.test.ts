@@ -21,6 +21,9 @@ const { prismaMock } = vi.hoisted(() => ({
       findUniqueOrThrow: vi.fn(),
       delete: vi.fn(),
     },
+    flooringTemplateSalesRep: {
+      deleteMany: vi.fn(),
+    },
     flooringTemplateItem: {
       create: vi.fn(),
       deleteMany: vi.fn(),
@@ -48,9 +51,10 @@ describe("template mutations", () => {
     vi.clearAllMocks()
   })
 
-  it("deleteTemplate deletes service items, then material items, then the template itself", async () => {
+  it("deleteTemplate deletes sales reps, then service items, then material items, then the template itself", async () => {
     const order: string[] = []
     const tx = {
+      flooringTemplateSalesRep: { deleteMany: vi.fn().mockImplementation(async () => { order.push("salesReps") }) },
       flooringTemplateServiceItem: { deleteMany: vi.fn().mockImplementation(async () => { order.push("serviceItems") }) },
       flooringTemplateItem: { deleteMany: vi.fn().mockImplementation(async () => { order.push("items") }) },
       flooringTemplate: { delete: vi.fn().mockImplementation(async () => { order.push("template") }) },
@@ -60,7 +64,7 @@ describe("template mutations", () => {
 
     await deleteTemplate("tpl-1")
 
-    expect(order).toEqual(["serviceItems", "items", "template"])
+    expect(order).toEqual(["salesReps", "serviceItems", "items", "template"])
   })
 
   it("createTemplate resolves default material pricing when unitPrice is omitted", async () => {

@@ -237,11 +237,12 @@ model FlooringService {
 }
 
 model FlooringContact {
-  id                String                    @id @default(uuid())
-  name              String
-  type              FlooringContactType
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime                  @updatedAt
+  id                 String                    @id @default(uuid())
+  name               String
+  type               FlooringContactType
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  templateSalesReps  FlooringTemplateSalesRep[]
   workOrderSalesReps FlooringWorkOrderSalesRep[]
 
   @@index([name])
@@ -331,6 +332,7 @@ model FlooringTemplate {
   updatedAt      DateTime                      @updatedAt
   items          FlooringTemplateItem[]
   serviceItems   FlooringTemplateServiceItem[]
+  salesReps      FlooringTemplateSalesRep[]
   workOrders     FlooringWorkOrder[]
 
   @@index([templateNumber])
@@ -378,6 +380,22 @@ model FlooringTemplateServiceItem {
   @@index([serviceId])
   @@index([unitId])
   @@map("flooring_template_service_item")
+}
+
+model FlooringTemplateSalesRep {
+  id         String            @id @default(uuid())
+  templateId String
+  template   FlooringTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    FlooringContact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  percent    Decimal           @db.Decimal(5, 2)
+  createdAt  DateTime          @default(now())
+
+  @@unique([templateId, contactId])
+  @@index([templateId])
+  @@index([contactId])
+  @@index([templateId, createdAt])
+  @@map("flooring_template_sales_rep")
 }
 
 model FlooringWarehouse {

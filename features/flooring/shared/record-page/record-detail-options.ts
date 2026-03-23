@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma"
+import { listSalesRepContactOptions } from "@/features/flooring/contacts/data/queries"
 import { listServiceOptions } from "@/features/flooring/services/queries"
 import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
@@ -14,7 +15,7 @@ function buildPadLabel(product: PadProductOptionSource) {
 }
 
 export async function loadSharedRecordDetailOptions() {
-  const [properties, warehouses, products, services, units] = await Promise.all([
+  const [properties, warehouses, products, services, units, salesRepOptions] = await Promise.all([
     prisma.property.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -45,6 +46,7 @@ export async function loadSharedRecordDetailOptions() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    listSalesRepContactOptions(),
   ])
 
   return {
@@ -61,6 +63,7 @@ export async function loadSharedRecordDetailOptions() {
     })),
     serviceOptions: services,
     unitOptions: units,
+    salesRepOptions,
   }
 }
 

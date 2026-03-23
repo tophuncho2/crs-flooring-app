@@ -7,21 +7,21 @@ import {
 } from "@/features/flooring/shared/domain/record-expense-summary"
 import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
 
-export type WorkOrderExpenseSummary = RecordExpenseSummary
+export type TemplateExpenseSummary = RecordExpenseSummary
 
-export function calculateWorkOrderSalesRepExpense(customerCost: number, salesReps: SalesRepPercentInput[]) {
+export function calculateTemplateSalesRepExpense(customerCost: number, salesReps: SalesRepPercentInput[]) {
   return calculateRecordSalesRepExpense(customerCost, salesReps)
 }
 
-export function calculateWorkOrderExpenseSummary(input: {
+export function calculateTemplateExpenseSummary(input: {
   items: LineTotalInput[]
   serviceItems: LineTotalInput[]
   salesReps: SalesRepPercentInput[]
-}): WorkOrderExpenseSummary {
+}): TemplateExpenseSummary {
   return calculateRecordExpenseSummary(input)
 }
 
-export function normalizeWorkOrderExpenseSummary(input: {
+export function normalizeTemplateExpenseSummary(input: {
   items: LineTotalInput[]
   serviceItems: LineTotalInput[]
   salesReps: SalesRepPercentInput[]

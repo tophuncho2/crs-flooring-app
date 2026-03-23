@@ -12,6 +12,7 @@ export function normalizeContactRow(contact: {
   createdAt: Date
   updatedAt: Date
   _count?: {
+    templateSalesReps: number
     workOrderSalesReps: number
   }
 }): ContactRow {
@@ -20,7 +21,7 @@ export function normalizeContactRow(contact: {
     name: contact.name,
     type: contact.type,
     typeLabel: getContactTypeLabel(contact.type),
-    assignmentsCount: contact._count?.workOrderSalesReps ?? 0,
+    assignmentsCount: (contact._count?.templateSalesReps ?? 0) + (contact._count?.workOrderSalesReps ?? 0),
     createdAt: contact.createdAt.toISOString(),
     updatedAt: contact.updatedAt.toISOString(),
   }

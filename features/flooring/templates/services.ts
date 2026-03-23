@@ -1,6 +1,8 @@
 import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
-import type { LineTotalInput } from "@/features/flooring/shared/line-totals"
-import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
+import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
+import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
+import { normalizeTemplateExpenseSummary } from "./domain/expense-summary"
+import { normalizeTemplateSalesRep } from "./domain/sales-reps"
 
 export type PricingLine = {
   quantity: number
@@ -82,6 +84,18 @@ export function normalizeTemplateSummary(input: {
   })
 }
 
+export function normalizeTemplateExpenseTotals(input: {
+  items: LineTotalInput[]
+  serviceItems: LineTotalInput[]
+  salesReps: Array<{ percent: string | number }>
+}) {
+  return normalizeTemplateExpenseSummary({
+    items: input.items,
+    serviceItems: input.serviceItems,
+    salesReps: input.salesReps,
+  })
+}
+
 export function normalizeTemplateItem(item: {
   id: string
   productId: string
@@ -130,3 +144,5 @@ export function normalizeTemplateServiceItem(item: {
     createdAt: item.createdAt.toISOString(),
   }
 }
+
+export { normalizeTemplateSalesRep }

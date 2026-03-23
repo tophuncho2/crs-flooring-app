@@ -1,11 +1,15 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem } from "./services"
+import { createAppError } from "@/server/http/api-helpers"
+import { normalizeTemplateSalesRep } from "./domain/sales-reps"
 import type {
   CreateTemplateInput,
   TemplateMaterialItemInput,
+  TemplateSalesRepInput,
   TemplateServiceItemInput,
   UpdateTemplateInput,
+  UpdateTemplateSalesRepInput,
 } from "./validators"
 
 const templateInclude = {
@@ -88,6 +92,46 @@ async function resolveServiceNameAndPrice(
   }
 }
 
+async function resolveSalesRepContact(input: { contactId: string }, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  const contact = await tx.flooringContact.findUniqueOrThrow({
+    where: { id: input.contactId },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+    },
+  })
+
+  if (contact.type !== "SALES_REP") {
+    throw createAppError("Selected contact must be a Sales Rep", { field: "contactId" })
+  }
+
+  return contact
+}
+
+async function ensureUniqueTemplateSalesRep(
+  templateId: string,
+  contactId: string,
+  tx: Prisma.TransactionClient,
+  excludeRepId?: string,
+) {
+  const existing = await tx.flooringTemplateSalesRep.findFirst({
+    where: {
+      templateId,
+      contactId,
+      ...(excludeRepId ? { id: { not: excludeRepId } } : {}),
+    },
+    select: { id: true },
+  })
+
+  if (existing) {
+    throw createAppError("This sales rep is already assigned to the template", {
+      status: 409,
+      field: "contactId",
+    })
+  }
+}
+
 export async function createTemplate(input: CreateTemplateInput) {
   const template = await prisma.$transaction(async (tx) => {
     const padProductId = await ensurePadProduct(input.padProductId, tx)
@@ -154,6 +198,7 @@ export async function updateTemplate(id: string, input: UpdateTemplateInput) {
 
 export async function deleteTemplate(id: string) {
   await prisma.$transaction(async (tx) => {
+    await tx.flooringTemplateSalesRep.deleteMany({ where: { templateId: id } })
     await tx.flooringTemplateServiceItem.deleteMany({ where: { templateId: id } })
     await tx.flooringTemplateItem.deleteMany({ where: { templateId: id } })
     await tx.flooringTemplate.delete({ where: { id } })
@@ -270,4 +315,77 @@ export async function updateTemplateServiceItem(itemId: string, input: Partial<T
 
 export async function deleteTemplateServiceItem(itemId: string) {
   await prisma.flooringTemplateServiceItem.delete({ where: { id: itemId } })
+}
+
+export async function createTemplateSalesRep(templateId: string, input: TemplateSalesRepInput) {
+  const created = await prisma.$transaction(async (tx) => {
+    const contact = await resolveSalesRepContact(input, tx)
+    await ensureUniqueTemplateSalesRep(templateId, contact.id, tx)
+
+    const item = await tx.flooringTemplateSalesRep.create({
+      data: {
+        templateId,
+        contactId: contact.id,
+        percent: input.percent,
+      },
+      include: {
+        contact: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    })
+
+    return item
+  })
+
+  return normalizeTemplateSalesRep(created)
+}
+
+export async function updateTemplateSalesRep(repId: string, input: UpdateTemplateSalesRepInput) {
+  const updated = await prisma.$transaction(async (tx) => {
+    const current = await tx.flooringTemplateSalesRep.findUniqueOrThrow({
+      where: { id: repId },
+      select: {
+        templateId: true,
+      },
+    })
+    const contact = input.contactId ? await resolveSalesRepContact({ contactId: input.contactId }, tx) : null
+    if (contact) {
+      await ensureUniqueTemplateSalesRep(current.templateId, contact.id, tx, repId)
+    }
+
+    const item = await tx.flooringTemplateSalesRep.update({
+      where: { id: repId },
+      data: {
+        contactId: input.contactId,
+        percent: input.percent,
+      },
+      include: {
+        contact: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    })
+
+    return contact
+      ? {
+          ...item,
+          contact: {
+            name: contact.name,
+          },
+        }
+      : item
+  })
+
+  return normalizeTemplateSalesRep(updated)
+}
+
+export async function deleteTemplateSalesRep(repId: string) {
+  await prisma.$transaction(async (tx) => {
+    await tx.flooringTemplateSalesRep.delete({ where: { id: repId } })
+  })
 }

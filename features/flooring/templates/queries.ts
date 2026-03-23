@@ -4,7 +4,7 @@ import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivit
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import { loadTemplateRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
-import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
+import { normalizeTemplate, normalizeTemplateExpenseTotals, normalizeTemplateItem, normalizeTemplateSalesRep, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
 function buildTemplatesWhere(searchQuery: string): Prisma.FlooringTemplateWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -122,6 +122,16 @@ export async function getTemplateById(id: string) {
           },
         },
       },
+      salesReps: {
+        orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }],
+        include: {
+          contact: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
     },
   })
 
@@ -129,14 +139,21 @@ export async function getTemplateById(id: string) {
     ...(() => {
       const normalizedItems = template.items.map(normalizeTemplateItem)
       const normalizedServiceItems = template.serviceItems.map(normalizeTemplateServiceItem)
+      const normalizedSalesReps = template.salesReps.map(normalizeTemplateSalesRep)
 
       return {
         ...normalizeTemplate(template),
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
+        salesReps: normalizedSalesReps,
         summary: normalizeTemplateSummary({
           items: normalizedItems,
           serviceItems: normalizedServiceItems,
+        }),
+        expenseSummary: normalizeTemplateExpenseTotals({
+          items: normalizedItems,
+          serviceItems: normalizedServiceItems,
+          salesReps: normalizedSalesReps,
         }),
       }
     })(),
@@ -177,6 +194,22 @@ export async function listTemplateServiceItems(templateId: string) {
   })
 
   return items.map(normalizeTemplateServiceItem)
+}
+
+export async function listTemplateSalesReps(templateId: string) {
+  const items = await prisma.flooringTemplateSalesRep.findMany({
+    where: { templateId },
+    include: {
+      contact: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }],
+  })
+
+  return items.map(normalizeTemplateSalesRep)
 }
 
 function buildPadLabel(product: {
@@ -248,6 +281,7 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
   productOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["productOptions"]
   serviceOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["serviceOptions"]
   unitOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["unitOptions"]
+  salesRepOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["salesRepOptions"]
 }>> {
   try {
     const [template, options] = await Promise.all([

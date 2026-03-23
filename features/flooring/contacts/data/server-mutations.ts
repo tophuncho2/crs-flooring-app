@@ -15,6 +15,7 @@ export async function createContact(input: {
     include: {
       _count: {
         select: {
+          templateSalesReps: true,
           workOrderSalesReps: true,
         },
       },
@@ -40,6 +41,7 @@ export async function updateContact(
     include: {
       _count: {
         select: {
+          templateSalesReps: true,
           workOrderSalesReps: true,
         },
       },
@@ -50,12 +52,17 @@ export async function updateContact(
 }
 
 export async function deleteContact(id: string) {
-  const linkedAssignments = await prisma.flooringWorkOrderSalesRep.count({
-    where: { contactId: id },
-  })
+  const [linkedTemplateAssignments, linkedWorkOrderAssignments] = await Promise.all([
+    prisma.flooringTemplateSalesRep.count({
+      where: { contactId: id },
+    }),
+    prisma.flooringWorkOrderSalesRep.count({
+      where: { contactId: id },
+    }),
+  ])
 
-  if (linkedAssignments > 0) {
-    throw createAppError("This contact is linked to work orders and cannot be deleted", { status: 409 })
+  if (linkedTemplateAssignments > 0 || linkedWorkOrderAssignments > 0) {
+    throw createAppError("This contact is linked to templates or work orders and cannot be deleted", { status: 409 })
   }
 
   await prisma.flooringContact.delete({

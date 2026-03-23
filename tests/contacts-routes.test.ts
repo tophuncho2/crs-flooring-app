@@ -183,7 +183,7 @@ describe("contacts routes", () => {
     deleteContactMock.mockRejectedValue({
       kind: "app",
       status: 409,
-      message: "This contact is linked to work orders and cannot be deleted",
+      message: "This contact is linked to templates or work orders and cannot be deleted",
     })
 
     const response = await DELETE(new Request("http://localhost/api/flooring/contacts/contact-1"), {
@@ -192,6 +192,6 @@ describe("contacts routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("This contact is linked to work orders and cannot be deleted")
+    expect(payload.error).toBe("This contact is linked to templates or work orders and cannot be deleted")
   })
 })

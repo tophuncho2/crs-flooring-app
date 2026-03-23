@@ -3,6 +3,8 @@
 import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
+import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
+import { calculateRecordSalesRepLineAmount } from "@/features/flooring/shared/domain/record-sales-reps"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
@@ -27,13 +29,8 @@ export type SalesRepDraft = {
 export type SalesRepField = "contactId" | "percent"
 export type SalesRepFieldErrors = FieldErrorMap<SalesRepField>
 
-function toNumber(value: string) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 export function calculateSalesRepAmount(customerCost: number, percent: string) {
-  return customerCost * (toNumber(percent) / 100)
+  return calculateRecordSalesRepLineAmount(customerCost, { percent })
 }
 
 export function validateSalesRepFields(value: Pick<SalesRepDraft, "contactId" | "percent">) {
@@ -47,8 +44,8 @@ export function validateSalesRepFields(value: Pick<SalesRepDraft, "contactId" | 
     errors.percent = "Enter a percent."
   } else {
     const percent = Number(value.percent)
-    if (!Number.isFinite(percent)) {
-      errors.percent = "Enter a valid percent."
+    if (!isEditableDecimalInput(value.percent, 2) || !Number.isFinite(percent)) {
+      errors.percent = "Enter a valid percent with up to 2 decimals."
     } else if (percent < 0 || percent > 100) {
       errors.percent = "Percent must be between 0 and 100."
     }
@@ -149,7 +146,13 @@ export function SalesRepItemsEditor({
                 <td className="px-3 py-2">
                   <div className="space-y-1">
                     <div className={getFieldControlClassName("flex w-28 items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(itemErrors[item.id]?.percent))}>
-                      <input value={item.percent} onChange={(event) => onItemFieldChange(item.id, "percent", event.target.value)} className="w-full bg-transparent outline-none" />
+                      <input
+                        value={item.percent}
+                        inputMode="decimal"
+                        spellCheck={false}
+                        onChange={(event) => onItemFieldChange(item.id, "percent", normalizeEditableDecimalInput(event.target.value))}
+                        className="w-full bg-transparent outline-none"
+                      />
                       <span className="text-[var(--foreground)]/60">%</span>
                     </div>
                     {itemErrors[item.id]?.percent ? <FieldErrorText>{itemErrors[item.id]?.percent}</FieldErrorText> : null}
@@ -196,7 +199,13 @@ export function SalesRepItemsEditor({
               <td className="px-3 py-2">
                 <div className="space-y-1">
                   <div className={getFieldControlClassName("flex w-28 items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(draftErrors.percent))}>
-                    <input value={draft.percent} onChange={(event) => onDraftChange("percent", event.target.value)} className="w-full bg-transparent outline-none" />
+                    <input
+                      value={draft.percent}
+                      inputMode="decimal"
+                      spellCheck={false}
+                      onChange={(event) => onDraftChange("percent", normalizeEditableDecimalInput(event.target.value))}
+                      className="w-full bg-transparent outline-none"
+                    />
                     <span className="text-[var(--foreground)]/60">%</span>
                   </div>
                   {draftErrors.percent ? <FieldErrorText>{draftErrors.percent}</FieldErrorText> : null}
