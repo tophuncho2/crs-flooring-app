@@ -1,31 +1,15 @@
-import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
-import { prisma } from "@/server/db/prisma"
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { deleteCategory, updateCategory } from "@/features/flooring/categories/data/queries"
 import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
-}
-
-function normalizeCategory(category: {
-  id: string
-  name: string
-  sendUnit: { id: string; name: string } | null
-  stockUnit: { id: string; name: string } | null
-  coverageAvailableUnit: { id: string; name: string } | null
-  itemCoverageUnit: { id: string; name: string } | null
-  serviceUnit: { id: string; name: string } | null
-  createdAt: Date
-  _count?: { products: number }
-}) {
-  return {
-    id: category.id,
-    name: category.name,
-    ...normalizeCategoryUnitValues(category),
-    productCount: category._count?.products ?? 0,
-    createdAt: category.createdAt.toISOString(),
-  }
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -43,26 +27,28 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const category = await prisma.flooringCategory.update({
-      where: { id },
-      data: {
-        name: parseRequiredString(body.name, "name"),
-        sendUnitId: parseOptionalString(body.sendUnitId),
-        stockUnitId: parseOptionalString(body.stockUnitId),
-        coverageAvailableUnitId: parseOptionalString(body.coverageAvailableUnitId),
-        itemCoverageUnitId: parseOptionalString(body.itemCoverageUnitId),
-        serviceUnitId: parseOptionalString(body.serviceUnitId),
-      },
-      include: {
-        ...flooringCategoryUnitInclude,
-        _count: {
-          select: { products: true },
-        },
-      },
+    const category = await updateCategory(id, body)
+    logRouteMutationSuccess(access, {
+      message: "Category updated",
+      action: "categories.update",
+      route: "/api/flooring/categories/[id]",
+      entityType: "flooringCategory",
+      entityId: id,
     })
 
-    return routeJson(access, { category: normalizeCategory(category) })
+    return routeJson(access, { category })
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Category update failed",
+        action: "categories.update.error",
+        route: "/api/flooring/categories/[id]",
+        entityType: "flooringCategory",
+        entityId: (await context.params).id,
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }
@@ -81,9 +67,27 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    await prisma.flooringCategory.delete({ where: { id } })
-    return routeJson(access, { success: true })
+    const result = await deleteCategory(id)
+    logRouteMutationSuccess(access, {
+      message: "Category deleted",
+      action: "categories.delete",
+      route: "/api/flooring/categories/[id]",
+      entityType: "flooringCategory",
+      entityId: id,
+    })
+    return routeJson(access, result)
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Category deletion failed",
+        action: "categories.delete.error",
+        route: "/api/flooring/categories/[id]",
+        entityType: "flooringCategory",
+        entityId: (await context.params).id,
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }

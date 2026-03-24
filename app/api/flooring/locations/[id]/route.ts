@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import { deleteLocationRow, updateLocationRow } from "@/features/flooring/warehouse/api"
 import {
   enforceRouteRateLimit,
@@ -25,7 +24,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params
-    const location = await updateLocationRow(prisma, id, (await request.json()) as Record<string, unknown>)
+    const location = await updateLocationRow(undefined, id, (await request.json()) as Record<string, unknown>)
     logRouteMutationSuccess(access, {
       message: "Warehouse location updated",
       action: "warehouse.locations.update",
@@ -69,7 +68,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params
-    const result = await deleteLocationRow(prisma, id)
+    const result = await deleteLocationRow(undefined, id)
     logRouteMutationSuccess(access, {
       message: "Warehouse location deleted",
       action: "warehouse.locations.delete",

@@ -1,5 +1,5 @@
 import { authorizeServicesRoute } from "@/features/flooring/shared/access/lookup-domains"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { createService } from "@/features/flooring/services/mutations"
 import { listServices } from "@/features/flooring/services/queries"
 import { normalizeServiceRow } from "@/features/flooring/services/services"

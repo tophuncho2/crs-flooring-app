@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
@@ -136,7 +136,7 @@ export function ImportDetailClient({
   backHref: string
 }) {
   const router = useRouter()
-  const page = useRecordPageController({
+  const { closePage, confirmNavigation, notices, redirectToBack, setIsDirty } = useRecordPageController({
     backHref,
     dirtyMessage: "You have unsaved import changes. Leave this import without saving?",
   })
@@ -161,7 +161,6 @@ export function ImportDetailClient({
   const currentRecord = record ?? initialImport
   const currentDraft = draft ?? createImportDraft(currentRecord)
 
-  const productLookup = useMemo(() => new Map(productOptions.map((product) => [product.id, product])), [productOptions])
   const summary = useMemo(
     () =>
       calculateImportSummary(
@@ -170,17 +169,13 @@ export function ImportDetailClient({
           cost: item.cost,
           freight: item.freight,
         })),
-      ),
+    ),
     [currentDraft.items],
   )
 
-  const closePage = useCallback(() => {
-    page.closePage()
-  }, [page])
-
   useEffect(() => {
-    page.setIsDirty(isDirty)
-  }, [isDirty, page.setIsDirty])
+    setIsDirty(isDirty)
+  }, [isDirty, setIsDirty])
 
   function setDraftField(field: keyof ImportDraft, value: string) {
     setDraft((prev) => ({ ...(prev ?? currentDraft), [field]: value }))
@@ -208,7 +203,7 @@ export function ImportDetailClient({
   }
 
   async function saveImport() {
-    page.notices.clearNotices()
+    notices.clearNotices()
     setError("")
     setIsSaving(true)
 
@@ -224,25 +219,25 @@ export function ImportDetailClient({
       }
 
       syncRecord(payload.import)
-      page.notices.showSuccess("Import saved")
+      notices.showSuccess("Import saved")
     } catch (saveError) {
-      page.notices.showError(saveError instanceof Error ? saveError.message : "Failed to save import")
+      notices.showError(saveError instanceof Error ? saveError.message : "Failed to save import")
     } finally {
       setIsSaving(false)
     }
   }
 
   async function deleteImport() {
-    page.notices.clearNotices()
+    notices.clearNotices()
     setError("")
     setIsSaving(true)
 
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/imports/${currentRecord.id}`, { method: "DELETE" })
       clearRecordCache()
-      page.redirectToBack()
+      redirectToBack()
     } catch (deleteError) {
-      page.notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete import")
+      notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete import")
       setIsSaving(false)
     }
   }
@@ -268,7 +263,7 @@ export function ImportDetailClient({
             {
               label: "Go to Inventory",
               onSelect: () => {
-                page.confirmNavigation(() => {
+                confirmNavigation(() => {
                   router.push("/dashboard/flooring/inventory", { scroll: false })
                 })
               },
@@ -278,7 +273,7 @@ export function ImportDetailClient({
       }
     >
       <div className="space-y-6">
-        <FormStatusNotices message={page.notices.message} error={page.notices.error || error} />
+        <FormStatusNotices message={notices.message} error={notices.error || error} />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <FormField label="Order Number">

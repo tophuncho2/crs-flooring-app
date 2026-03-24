@@ -61,7 +61,7 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
 
   const normalizedInitialPreferences = useMemo(
     () => (initialPreferences ? normalizePayload(initialPreferences) : null),
-    [initialPreferences, preferenceCacheKey],
+    [initialPreferences],
   )
 
   const [hiddenColumnKeys, setHiddenColumnKeys] = useState<string[]>(normalizedInitialPreferences?.hiddenColumnKeys ?? defaultHiddenKeys)

@@ -226,10 +226,6 @@ vi.mock("@/features/flooring/shared/controllers/record-page/use-record-detail-co
   }
 })
 
-function listPayload(items: unknown[]) {
-  return { items }
-}
-
 function templateRow() {
   return {
     id: "tpl-1",

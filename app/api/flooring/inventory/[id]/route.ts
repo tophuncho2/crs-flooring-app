@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import { deleteInventoryRow, updateInventoryRow } from "@/features/flooring/inventory/api"
 import { getInventoryById } from "@/features/flooring/inventory/data/queries"
 import {
@@ -41,7 +40,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const inventory = await updateInventoryRow(prisma, id, body)
+    const inventory = await updateInventoryRow(undefined, id, body)
     logRouteMutationSuccess(access, {
       message: "Inventory updated",
       action: "inventory.update",
@@ -85,7 +84,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    await deleteInventoryRow(prisma, id)
+    await deleteInventoryRow(undefined, id)
     logRouteMutationSuccess(access, {
       message: "Inventory deleted",
       action: "inventory.delete",

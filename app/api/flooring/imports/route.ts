@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import { listImportEntries } from "@/features/flooring/imports/api"
 import { createImportEntryUseCase } from "@/features/flooring/imports/application/import-entry"
 import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
@@ -14,7 +13,7 @@ export async function GET(request: Request) {
   if (access instanceof Response) return access
 
   try {
-    return routeJson(access, { imports: await listImportEntries(prisma) })
+    return routeJson(access, { imports: await listImportEntries() })
   } catch (error) {
     return routeError(access, error)
   }

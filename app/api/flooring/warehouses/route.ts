@@ -1,59 +1,19 @@
-import { prisma } from "@/server/db/prisma"
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { createWarehouseRow, listWarehouseRows } from "@/features/flooring/warehouse/api"
 import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
-
-function normalizeWarehouseRow(warehouse: {
-  id: string
-  name: string
-  address: string | null
-  phone: string | null
-  createdAt: Date
-  updatedAt: Date
-  _count: {
-    sections: number
-    locations: number
-    workOrders: number
-  }
-}) {
-  return {
-    id: warehouse.id,
-    name: warehouse.name,
-    address: warehouse.address,
-    phone: warehouse.phone,
-    sectionsCount: warehouse._count.sections,
-    locationsCount: warehouse._count.locations,
-    workOrdersCount: warehouse._count.workOrders,
-    createdAt: warehouse.createdAt.toISOString(),
-    updatedAt: warehouse.updatedAt.toISOString(),
-  }
-}
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
   const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
   try {
-    const warehouses = await prisma.flooringWarehouse.findMany({
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        phone: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            sections: true,
-            locations: true,
-            workOrders: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    })
-
-    return routeJson(access, { warehouses: warehouses.map(normalizeWarehouseRow) })
+    return routeJson(access, { warehouses: await listWarehouseRows() })
   } catch (error) {
     return routeError(access, error)
   }
@@ -72,33 +32,27 @@ export async function POST(request: Request) {
   if (rateLimitResponse) return rateLimitResponse
 
   try {
-    const body = (await request.json()) as Record<string, unknown>
-
-    const warehouse = await prisma.flooringWarehouse.create({
-      data: {
-        name: parseRequiredString(body.name, "name"),
-        address: parseOptionalString(body.address),
-        phone: parseOptionalString(body.phone),
-      },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        phone: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            sections: true,
-            locations: true,
-            workOrders: true,
-          },
-        },
-      },
+    const warehouse = await createWarehouseRow((await request.json()) as Record<string, unknown>)
+    logRouteMutationSuccess(access, {
+      message: "Warehouse created",
+      action: "warehouses.create",
+      route: "/api/flooring/warehouses",
+      entityType: "flooringWarehouse",
+      entityId: warehouse.id,
     })
 
-    return routeJson(access, { warehouse: normalizeWarehouseRow(warehouse) }, { status: 201 })
+    return routeJson(access, { warehouse }, { status: 201 })
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Warehouse creation failed",
+        action: "warehouses.create.error",
+        route: "/api/flooring/warehouses",
+        entityType: "flooringWarehouse",
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }

@@ -3,7 +3,7 @@ import type { SyncInventoryJob } from "@/server/queues/jobs/sync-inventory"
 
 export function runInventorySyncUseCase(job: SyncInventoryJob) {
   return runUseCase(async () => ({
-    status: "pending-worker-integration" as const,
+    status: "sync-runtime-not-enabled" as const,
     workOrderId: job.workOrderId ?? null,
     importEntryId: job.importEntryId ?? null,
     reason: job.reason ?? "manual",

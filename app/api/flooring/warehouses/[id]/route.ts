@@ -1,35 +1,14 @@
-import { prisma } from "@/server/db/prisma"
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { updateWarehouseRow } from "@/features/flooring/warehouse/api"
 import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 type RouteContext = { params: Promise<{ id: string }> }
-
-function normalizeWarehouseRow(warehouse: {
-  id: string
-  name: string
-  address: string | null
-  phone: string | null
-  createdAt: Date
-  updatedAt: Date
-  _count: {
-    sections: number
-    locations: number
-    workOrders: number
-  }
-}) {
-  return {
-    id: warehouse.id,
-    name: warehouse.name,
-    address: warehouse.address,
-    phone: warehouse.phone,
-    sectionsCount: warehouse._count.sections,
-    locationsCount: warehouse._count.locations,
-    workOrdersCount: warehouse._count.workOrders,
-    createdAt: warehouse.createdAt.toISOString(),
-    updatedAt: warehouse.updatedAt.toISOString(),
-  }
-}
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await authorizeWarehouseRoute(request)
@@ -45,35 +24,28 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params
-    const body = (await request.json()) as Record<string, unknown>
-    const data: { name?: string; address?: string | null; phone?: string | null } = {}
-
-    if ("name" in body) data.name = parseRequiredString(body.name, "name")
-    if ("address" in body) data.address = parseOptionalString(body.address)
-    if ("phone" in body) data.phone = parseOptionalString(body.phone)
-
-    const warehouse = await prisma.flooringWarehouse.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        phone: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            sections: true,
-            locations: true,
-            workOrders: true,
-          },
-        },
-      },
+    const warehouse = await updateWarehouseRow(id, (await request.json()) as Record<string, unknown>)
+    logRouteMutationSuccess(access, {
+      message: "Warehouse updated",
+      action: "warehouses.update",
+      route: "/api/flooring/warehouses/[id]",
+      entityType: "flooringWarehouse",
+      entityId: warehouse.id,
     })
 
-    return routeJson(access, { warehouse: normalizeWarehouseRow(warehouse) })
+    return routeJson(access, { warehouse })
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Warehouse update failed",
+        action: "warehouses.update.error",
+        route: "/api/flooring/warehouses/[id]",
+        entityType: "flooringWarehouse",
+        entityId: (await params).id,
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }

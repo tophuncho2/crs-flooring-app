@@ -22,7 +22,7 @@ export function InventoryDetailClient({
   locationOptions: LocationOption[]
   backHref: string
 }) {
-  const page = useRecordPageController({
+  const { closePage, notices, redirectToBack, setIsDirty } = useRecordPageController({
     backHref,
     dirtyMessage: "You have unsaved inventory changes. Leave this inventory record without saving?",
   })
@@ -51,24 +51,24 @@ export function InventoryDetailClient({
   } = useInventoryRecordController({
     initialRecord,
     locationOptions,
-    notices: page.notices,
-    onDeleted: page.redirectToBack,
+    notices,
+    onDeleted: redirectToBack,
   })
 
   useEffect(() => {
-    page.setIsDirty(isDirty)
-  }, [isDirty, page.setIsDirty])
+    setIsDirty(isDirty)
+  }, [isDirty, setIsDirty])
 
   return (
     <RecordDetailPageShell
       title={`Inventory ${record.itemNumber}`}
       backHref={backHref}
-      onBack={page.closePage}
+      onBack={closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
       headerActions={<InventoryHeaderActions row={record} />}
     >
       <div className="space-y-6">
-        <FormStatusNotices message={page.notices.message} error={page.notices.error} />
+        <FormStatusNotices message={notices.message} error={notices.error} />
 
         <InventorySnapshotGrid summary={inventorySummary} />
 
@@ -128,7 +128,7 @@ export function InventoryDetailClient({
           deleteLabel="Delete Inventory"
           deleteConfirmMessage="Delete this inventory row?"
           onDelete={() => void deleteInventory()}
-          onClose={page.closePage}
+          onClose={closePage}
           saveLabel="Save Inventory"
           savingLabel="Saving..."
           onSave={() => void saveInventory()}

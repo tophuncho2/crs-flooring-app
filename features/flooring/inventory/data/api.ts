@@ -179,7 +179,7 @@ export async function listInventoryRows(db: DbClient = prisma, productId?: strin
   return inventory.map(normalizeInventoryRow)
 }
 
-export async function createInventoryRow(db: DbClient, body: Record<string, unknown>) {
+export async function createInventoryRow(db: DbClient = prisma, body: Record<string, unknown>) {
   const data = parseInventoryMutationBody(body)
   await validateInventoryLocationSelection(db, {
     importEntryId: data.importEntryId,
@@ -194,7 +194,7 @@ export async function createInventoryRow(db: DbClient, body: Record<string, unkn
   return normalizeInventoryRow(inventory)
 }
 
-export async function updateInventoryRow(db: DbClient, id: string, body: Record<string, unknown>) {
+export async function updateInventoryRow(db: DbClient = prisma, id: string, body: Record<string, unknown>) {
   const data = parseInventoryMutationBody(body)
   await validateInventoryLocationSelection(db, {
     importEntryId: data.importEntryId,
@@ -210,7 +210,7 @@ export async function updateInventoryRow(db: DbClient, id: string, body: Record<
   return normalizeInventoryRow(inventory)
 }
 
-export async function deleteInventoryRow(db: DbClient, id: string) {
+export async function deleteInventoryRow(db: DbClient = prisma, id: string) {
   await db.flooringInventory.delete({ where: { id } })
 }
 

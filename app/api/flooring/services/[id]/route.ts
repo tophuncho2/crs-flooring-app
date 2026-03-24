@@ -1,5 +1,5 @@
 import { authorizeServicesRoute } from "@/features/flooring/shared/access/lookup-domains"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { deleteService, updateService } from "@/features/flooring/services/mutations"
 import { normalizeServiceRow } from "@/features/flooring/services/services"
 import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"

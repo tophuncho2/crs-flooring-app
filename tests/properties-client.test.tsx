@@ -100,24 +100,6 @@ function propertyRow() {
   }
 }
 
-function templateRow() {
-  return {
-    id: "tpl-1",
-    templateNumber: "TP-00001",
-    templateTag: "Turn",
-    propertyId: "prop-1",
-    propertyName: "Oak Apartments",
-    warehouseId: "wh-1",
-    warehouseName: "Main Warehouse",
-    instructions: "",
-    templateNotes: "",
-    padProductId: "",
-    padTypeLabel: "",
-    createdAt: "2026-03-19T00:00:00.000Z",
-    updatedAt: "2026-03-19T00:00:00.000Z",
-  }
-}
-
 describe("PropertiesClient", () => {
   beforeEach(() => {
     cleanup()

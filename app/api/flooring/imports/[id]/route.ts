@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import {
   getImportEntryById,
 } from "@/features/flooring/imports/api"
@@ -21,7 +20,7 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    return routeJson(access, { import: await getImportEntryById(id, prisma) })
+    return routeJson(access, { import: await getImportEntryById(id) })
   } catch (error) {
     return routeError(access, error)
   }

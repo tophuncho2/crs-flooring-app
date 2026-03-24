@@ -16,9 +16,11 @@ export default withAuth(function proxy(request: NextRequest) {
   response.headers.set(REQUEST_ID_HEADER, requestId)
   return response
 }, {
+  // Keep auth middleware scoped to dashboard routes only.
+  // Public auth endpoints and browser security headers are handled elsewhere.
   pages: {
-    signIn: "/login"
-  }
+    signIn: "/login",
+  },
 })
 
 export const config = { matcher: ["/dashboard/:path*"] }

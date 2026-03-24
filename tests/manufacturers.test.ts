@@ -7,25 +7,24 @@ import { GET, POST } from "@/app/api/flooring/manufacturers/route"
 import { DELETE, PATCH } from "@/app/api/flooring/manufacturers/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { prismaMock, createManufacturerMock, updateManufacturerMock, listManufacturersMock, requireRouteAccessMock, enforceRouteRateLimitMock } = vi.hoisted(() => ({
-  prismaMock: {
-    flooringManufacturer: {
-      create: vi.fn(),
-      delete: vi.fn(),
-    },
-    flooringProduct: {
-      count: vi.fn(),
-    },
-  },
+const {
+  createManufacturerMock,
+  updateManufacturerMock,
+  deleteManufacturerMock,
+  listManufacturersMock,
+  requireRouteAccessMock,
+  enforceRouteRateLimitMock,
+  logRouteMutationSuccessMock,
+  logRouteMutationFailureMock,
+} = vi.hoisted(() => ({
   createManufacturerMock: vi.fn(),
   updateManufacturerMock: vi.fn(),
+  deleteManufacturerMock: vi.fn(),
   listManufacturersMock: vi.fn(),
   requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
-}))
-
-vi.mock("@/server/db/prisma", () => ({
-  prisma: prismaMock,
+  logRouteMutationSuccessMock: vi.fn(),
+  logRouteMutationFailureMock: vi.fn(),
 }))
 
 const routeAccess = {
@@ -45,19 +44,15 @@ vi.mock("@/server/http/route-helpers", () => ({
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
   routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
+  logRouteMutationSuccess: logRouteMutationSuccessMock,
+  logRouteMutationFailure: logRouteMutationFailureMock,
 }))
 
-vi.mock("@/features/flooring/manufacturers/mutations", async () => {
-  const actual = await vi.importActual<typeof import("@/features/flooring/manufacturers/mutations")>(
-    "@/features/flooring/manufacturers/mutations",
-  )
-
-  return {
-    ...actual,
-    createManufacturer: createManufacturerMock,
-    updateManufacturer: updateManufacturerMock,
-  }
-})
+vi.mock("@/features/flooring/manufacturers/mutations", () => ({
+  createManufacturer: createManufacturerMock,
+  updateManufacturer: updateManufacturerMock,
+  deleteManufacturer: deleteManufacturerMock,
+}))
 
 vi.mock("@/features/flooring/manufacturers/queries", () => ({
   listManufacturers: listManufacturersMock,
@@ -96,12 +91,13 @@ describe("manufacturers", () => {
   })
 
   it("manufacturer POST route accepts missing agentName and returns normalized payload", async () => {
-    createManufacturerMock.mockResolvedValue(
+    const normalizedManufacturer = normalizeManufacturer(
       manufacturerRecord({
         companyName: "Acme Flooring",
         agentName: null,
       }),
     )
+    createManufacturerMock.mockResolvedValue(normalizedManufacturer)
 
     const response = await POST(
       new Request("http://localhost/api/flooring/manufacturers", {
@@ -126,30 +122,21 @@ describe("manufacturers", () => {
       phone: null,
       email: null,
     })
-    expect(payload.manufacturer).toEqual(
-      normalizeManufacturer(
-        manufacturerRecord({
-          companyName: "Acme Flooring",
-          agentName: null,
-        }),
-      ),
-    )
+    expect(payload.manufacturer).toEqual(normalizedManufacturer)
   })
 
   it("manufacturer GET route returns normalized payload", async () => {
-    listManufacturersMock.mockResolvedValue([
+    const normalizedManufacturers = [
       manufacturerRecord(),
       manufacturerRecord({ id: "mfg-2", companyName: "Zen Floors", _count: { products: 3 } }),
-    ])
+    ].map(normalizeManufacturer)
+    listManufacturersMock.mockResolvedValue(normalizedManufacturers)
 
     const response = await GET(new Request("http://localhost/api/flooring/manufacturers"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload.manufacturers).toEqual([
-      normalizeManufacturer(manufacturerRecord()),
-      normalizeManufacturer(manufacturerRecord({ id: "mfg-2", companyName: "Zen Floors", _count: { products: 3 } })),
-    ])
+    expect(payload.manufacturers).toEqual(normalizedManufacturers)
     expect(requireRouteAccessMock).toHaveBeenCalled()
   })
 
@@ -203,7 +190,7 @@ describe("manufacturers", () => {
   })
 
   it("PATCH route updates a manufacturer and returns normalized payload", async () => {
-    updateManufacturerMock.mockResolvedValue(
+    const normalizedManufacturer = normalizeManufacturer(
       manufacturerRecord({
         companyName: "Acme Flooring",
         agentName: "Jamie Agent",
@@ -212,6 +199,7 @@ describe("manufacturers", () => {
         email: "jamie@example.com",
       }),
     )
+    updateManufacturerMock.mockResolvedValue(normalizedManufacturer)
 
     const response = await PATCH(
       new Request("http://localhost/api/flooring/manufacturers/mfg-1", {
@@ -237,17 +225,7 @@ describe("manufacturers", () => {
       phone: "555-1111",
       email: "jamie@example.com",
     })
-    expect(payload.manufacturer).toEqual(
-      normalizeManufacturer(
-        manufacturerRecord({
-          companyName: "Acme Flooring",
-          agentName: "Jamie Agent",
-          website: "https://example.com",
-          phone: "555-1111",
-          email: "jamie@example.com",
-        }),
-      ),
-    )
+    expect(payload.manufacturer).toEqual(normalizedManufacturer)
   })
 
   it("PATCH requires companyName", async () => {
@@ -330,7 +308,11 @@ describe("manufacturers", () => {
   })
 
   it("prevents deleting a manufacturer that still has linked products", async () => {
-    prismaMock.flooringProduct.count.mockResolvedValue(2)
+    deleteManufacturerMock.mockRejectedValue({
+      kind: "app",
+      message: "This manufacturer has linked products and cannot be deleted",
+      status: 409,
+    })
 
     const response = await DELETE(new Request("http://localhost/api/flooring/manufacturers/mfg-1"), {
       params: Promise.resolve({ id: "mfg-1" }),
@@ -340,11 +322,11 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This manufacturer has linked products and cannot be deleted")
-    expect(prismaMock.flooringManufacturer.delete).not.toHaveBeenCalled()
+    expect(deleteManufacturerMock).toHaveBeenCalledWith("mfg-1")
   })
 
   it("deletes a manufacturer when there are no linked products", async () => {
-    prismaMock.flooringProduct.count.mockResolvedValue(0)
+    deleteManufacturerMock.mockResolvedValue({ ok: true })
 
     const response = await DELETE(new Request("http://localhost/api/flooring/manufacturers/mfg-1"), {
       params: Promise.resolve({ id: "mfg-1" }),
@@ -354,6 +336,6 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(prismaMock.flooringManufacturer.delete).toHaveBeenCalledWith({ where: { id: "mfg-1" } })
+    expect(deleteManufacturerMock).toHaveBeenCalledWith("mfg-1")
   })
 })

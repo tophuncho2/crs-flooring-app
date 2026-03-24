@@ -46,7 +46,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Inventory",
     code: "KeyI",
     path: "/dashboard/flooring/inventory",
-    requiredTool: TEMPLATES_TOOL_SLUG,
+    requiredTool: "warehouse",
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00004",
@@ -64,7 +64,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Templates",
     code: "KeyT",
     path: "/dashboard/flooring/templates",
-    requiredTool: "warehouse",
+    requiredTool: TEMPLATES_TOOL_SLUG,
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00006",
@@ -82,7 +82,7 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     action: "Open Work Orders",
     code: "KeyD",
     path: "/dashboard/flooring/work-orders",
-    requiredTool: "warehouse",
+    requiredTool: WORK_ORDERS_TOOL_SLUG,
   },
   {
     id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00007",

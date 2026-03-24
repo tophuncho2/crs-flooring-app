@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import { createInventoryRow, listInventoryRows } from "@/features/flooring/inventory/api"
 import {
   enforceRouteRateLimit,
@@ -16,7 +15,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get("productId")?.trim() ?? ""
-    return routeJson(access, { inventory: await listInventoryRows(prisma, productId || undefined) })
+    return routeJson(access, { inventory: await listInventoryRows(undefined, productId || undefined) })
   } catch (error) {
     return routeError(access, error)
   }
@@ -36,7 +35,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const inventory = await createInventoryRow(prisma, body)
+    const inventory = await createInventoryRow(undefined, body)
     logRouteMutationSuccess(access, {
       message: "Inventory created",
       action: "inventory.create",

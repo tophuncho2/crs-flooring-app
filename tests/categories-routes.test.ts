@@ -4,7 +4,7 @@ import { GET, POST } from "@/app/api/flooring/categories/route"
 import { DELETE, PATCH } from "@/app/api/flooring/categories/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock } = vi.hoisted(() => ({
+const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock, logRouteMutationSuccessMock, logRouteMutationFailureMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringCategory: {
       findMany: vi.fn(),
@@ -18,6 +18,8 @@ const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock } = vi.hoi
   },
   requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
+  logRouteMutationSuccessMock: vi.fn(),
+  logRouteMutationFailureMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -41,6 +43,8 @@ vi.mock("@/server/http/route-helpers", () => ({
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
   routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
+  logRouteMutationSuccess: logRouteMutationSuccessMock,
+  logRouteMutationFailure: logRouteMutationFailureMock,
 }))
 
 function categoryRecord(

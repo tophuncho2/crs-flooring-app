@@ -1,17 +1,14 @@
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { createManufacturer } from "@/features/flooring/manufacturers/mutations"
 import { listManufacturers } from "@/features/flooring/manufacturers/queries"
-import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
 import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
-
-function normalizeManufacturerResponse(
-  manufacturer:
-    | ReturnType<typeof normalizeManufacturer>
-    | Parameters<typeof normalizeManufacturer>[0],
-) {
-  return "productsCount" in manufacturer ? manufacturer : normalizeManufacturer(manufacturer)
-}
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
   const access = await authorizeManufacturersRoute(request)
@@ -20,7 +17,7 @@ export async function GET(request: Request) {
   try {
     const manufacturers = await listManufacturers()
 
-    return routeJson(access, { manufacturers: manufacturers.map(normalizeManufacturerResponse) })
+    return routeJson(access, { manufacturers })
   } catch (error) {
     return routeError(access, error)
   }
@@ -49,9 +46,26 @@ export async function POST(request: Request) {
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),
     })
+    logRouteMutationSuccess(access, {
+      message: "Manufacturer created",
+      action: "manufacturers.create",
+      route: "/api/flooring/manufacturers",
+      entityType: "flooringManufacturer",
+      entityId: manufacturer.id,
+    })
 
-    return routeJson(access, { manufacturer: normalizeManufacturer(manufacturer) }, { status: 201 })
+    return routeJson(access, { manufacturer }, { status: 201 })
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Manufacturer creation failed",
+        action: "manufacturers.create.error",
+        route: "/api/flooring/manufacturers",
+        entityType: "flooringManufacturer",
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }

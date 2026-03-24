@@ -77,6 +77,8 @@ export function useRecordLineItemsController<
   }
   onCollectionsChanged: (args: PublishLineItemsArgs<TRecord, TMaterialItem, TServiceItem>) => void
 }) {
+  const { items: materialItems, setItems: setMaterialItems } = materialCollection
+  const { items: serviceItems, setItems: setServiceItems } = serviceCollection
   const [materialDraft, setMaterialDraft] = useState<MaterialItemDraft>(initialMaterialDraft)
   const [serviceDraft, setServiceDraft] = useState<ServiceItemDraft>(initialServiceDraft)
   const [materialDraftErrors, setMaterialDraftErrors] = useState<MaterialItemFieldErrors>({})
@@ -94,12 +96,12 @@ export function useRecordLineItemsController<
   }, [record])
 
   useEffect(() => {
-    materialItemsRef.current = materialCollection.items
-  }, [materialCollection.items])
+    materialItemsRef.current = materialItems
+  }, [materialItems])
 
   useEffect(() => {
-    serviceItemsRef.current = serviceCollection.items
-  }, [serviceCollection.items])
+    serviceItemsRef.current = serviceItems
+  }, [serviceItems])
 
   useEffect(() => {
     onCollectionsChangedRef.current = onCollectionsChanged
@@ -111,9 +113,9 @@ export function useRecordLineItemsController<
     }
 
     const { materialItems, serviceItems } = getCollectionsFromRecord(record)
-    materialCollection.setItems(materialItems ?? [])
-    serviceCollection.setItems(serviceItems ?? [])
-  }, [getCollectionsFromRecord, materialCollection.setItems, record, serviceCollection.setItems])
+    setMaterialItems(materialItems ?? [])
+    setServiceItems(serviceItems ?? [])
+  }, [getCollectionsFromRecord, record, setMaterialItems, setServiceItems])
 
   const publishCollections = useCallback(
     (

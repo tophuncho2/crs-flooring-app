@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GET as GET_TEMPLATES, POST as POST_TEMPLATES } from "@/app/api/flooring/templates/route"
-import { DELETE as DELETE_TEMPLATE, GET as GET_TEMPLATE, PATCH as PATCH_TEMPLATE } from "@/app/api/flooring/templates/[id]/route"
+import { DELETE as DELETE_TEMPLATE, PATCH as PATCH_TEMPLATE } from "@/app/api/flooring/templates/[id]/route"
 import { GET as GET_ITEMS, POST as POST_ITEM } from "@/app/api/flooring/templates/[id]/items/route"
 import { DELETE as DELETE_ITEM, PATCH as PATCH_ITEM } from "@/app/api/flooring/templates/[id]/items/[itemId]/route"
 import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/flooring/templates/[id]/service-items/route"

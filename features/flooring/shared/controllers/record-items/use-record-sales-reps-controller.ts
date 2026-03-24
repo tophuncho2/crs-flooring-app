@@ -48,6 +48,7 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   getItemsFromRecord: (record: TRecord) => TSalesRep[]
   onItemsChanged: (args: { record: TRecord; salesReps: TSalesRep[]; action: "add" | "save" | "delete" }) => void
 }) {
+  const { items: salesRepItems, setItems: setSalesRepItems } = salesRepCollection
   const [draft, setDraft] = useState<SalesRepDraft>(initialDraft)
   const [draftErrors, setDraftErrors] = useState<SalesRepFieldErrors>({})
   const [itemErrors, setItemErrors] = useState<RowFieldErrors<SalesRepField>>({})
@@ -60,8 +61,8 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   }, [record])
 
   useEffect(() => {
-    itemsRef.current = salesRepCollection.items
-  }, [salesRepCollection.items])
+    itemsRef.current = salesRepItems
+  }, [salesRepItems])
 
   useEffect(() => {
     onItemsChangedRef.current = onItemsChanged
@@ -72,8 +73,8 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
       return
     }
 
-    salesRepCollection.setItems(getItemsFromRecord(record))
-  }, [getItemsFromRecord, record, salesRepCollection.setItems])
+    setSalesRepItems(getItemsFromRecord(record))
+  }, [getItemsFromRecord, record, setSalesRepItems])
 
   function clearMutationState() {
     clearParentError()

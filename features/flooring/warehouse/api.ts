@@ -4,6 +4,86 @@ import { createAppError, parseOptionalString, parseRequiredString } from "@/serv
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 
+const warehouseSelect = {
+  id: true,
+  name: true,
+  address: true,
+  phone: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      sections: true,
+      locations: true,
+      workOrders: true,
+    },
+  },
+} as const
+
+export function normalizeWarehouseRow(warehouse: {
+  id: string
+  name: string
+  address: string | null
+  phone: string | null
+  createdAt: Date
+  updatedAt: Date
+  _count: {
+    sections: number
+    locations: number
+    workOrders: number
+  }
+}) {
+  return {
+    id: warehouse.id,
+    name: warehouse.name,
+    address: warehouse.address,
+    phone: warehouse.phone,
+    sectionsCount: warehouse._count.sections,
+    locationsCount: warehouse._count.locations,
+    workOrdersCount: warehouse._count.workOrders,
+    createdAt: warehouse.createdAt.toISOString(),
+    updatedAt: warehouse.updatedAt.toISOString(),
+  }
+}
+
+export async function listWarehouseRows(db: DbClient = prisma) {
+  const warehouses = await db.flooringWarehouse.findMany({
+    select: warehouseSelect,
+    orderBy: { createdAt: "desc" },
+  })
+
+  return warehouses.map(normalizeWarehouseRow)
+}
+
+export async function createWarehouseRow(body: Record<string, unknown>, db: DbClient = prisma) {
+  const warehouse = await db.flooringWarehouse.create({
+    data: {
+      name: parseRequiredString(body.name, "name"),
+      address: parseOptionalString(body.address),
+      phone: parseOptionalString(body.phone),
+    },
+    select: warehouseSelect,
+  })
+
+  return normalizeWarehouseRow(warehouse)
+}
+
+export async function updateWarehouseRow(id: string, body: Record<string, unknown>, db: DbClient = prisma) {
+  const data: { name?: string; address?: string | null; phone?: string | null } = {}
+
+  if ("name" in body) data.name = parseRequiredString(body.name, "name")
+  if ("address" in body) data.address = parseOptionalString(body.address)
+  if ("phone" in body) data.phone = parseOptionalString(body.phone)
+
+  const warehouse = await db.flooringWarehouse.update({
+    where: { id },
+    data,
+    select: warehouseSelect,
+  })
+
+  return normalizeWarehouseRow(warehouse)
+}
+
 export function normalizeSectionRow(section: {
   id: string
   warehouseId: string
@@ -49,7 +129,7 @@ export async function listSectionRows(db: DbClient = prisma, warehouseId?: strin
   return sections.map(normalizeSectionRow)
 }
 
-export async function createSectionRow(db: DbClient, body: Record<string, unknown>) {
+export async function createSectionRow(db: DbClient = prisma, body: Record<string, unknown>) {
   const created = await db.flooringSection.create({
     data: {
       warehouseId: parseRequiredString(body.warehouseId, "warehouseId"),
@@ -66,7 +146,7 @@ export async function createSectionRow(db: DbClient, body: Record<string, unknow
   return normalizeSectionRow(created)
 }
 
-export async function updateSectionRow(db: DbClient, id: string, body: Record<string, unknown>) {
+export async function updateSectionRow(db: DbClient = prisma, id: string, body: Record<string, unknown>) {
   const updated = await db.flooringSection.update({
     where: { id },
     data: {
@@ -83,7 +163,7 @@ export async function updateSectionRow(db: DbClient, id: string, body: Record<st
   return normalizeSectionRow(updated)
 }
 
-export async function deleteSectionRow(db: DbClient, id: string) {
+export async function deleteSectionRow(db: DbClient = prisma, id: string) {
   const section = await db.flooringSection.findUnique({
     where: { id },
     select: {
@@ -137,7 +217,7 @@ async function ensureWarehouseSectionMatch(db: DbClient, warehouseId: string, se
   }
 }
 
-export async function createLocationRow(db: DbClient, body: Record<string, unknown>) {
+export async function createLocationRow(db: DbClient = prisma, body: Record<string, unknown>) {
   const warehouseId = parseRequiredString(body.warehouseId, "warehouseId")
   const locationCode = parseRequiredString(body.locationCode, "locationCode").trim()
   const sectionId = parseRequiredString(body.sectionId, "sectionId")
@@ -162,7 +242,7 @@ export async function createLocationRow(db: DbClient, body: Record<string, unkno
   return normalizeLocationRow(created)
 }
 
-export async function updateLocationRow(db: DbClient, id: string, body: Record<string, unknown>) {
+export async function updateLocationRow(db: DbClient = prisma, id: string, body: Record<string, unknown>) {
   const hasLocationCode = "locationCode" in body
   const hasSectionId = "sectionId" in body
   const locationCode = hasLocationCode ? parseRequiredString(body.locationCode, "locationCode").trim() : undefined
@@ -199,7 +279,7 @@ export async function updateLocationRow(db: DbClient, id: string, body: Record<s
   return normalizeLocationRow(updated)
 }
 
-export async function deleteLocationRow(db: DbClient, id: string) {
+export async function deleteLocationRow(db: DbClient = prisma, id: string) {
   const location = await db.flooringLocation.findUnique({
     where: { id },
     select: {

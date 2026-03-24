@@ -23,25 +23,25 @@ export function PropertyDetailClient({
   backHref: string
 }) {
   const router = useRouter()
-  const page = useRecordPageController({
+  const { closePage, confirmNavigation, notices, redirectToBack, setIsDirty } = useRecordPageController({
     backHref,
     dirtyMessage: "You have unsaved property changes. Leave this property without saving?",
   })
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
   const controller = usePropertyRecordController({
     initialProperty,
-    notices: page.notices,
-    onDeleted: page.redirectToBack,
+    notices,
+    onDeleted: redirectToBack,
   })
 
   useEffect(() => {
-    page.setIsDirty(controller.isDirty)
-  }, [controller.isDirty, page.setIsDirty])
+    setIsDirty(controller.isDirty)
+  }, [controller.isDirty, setIsDirty])
 
   function navigateToTemplate(templateId: string) {
     const currentPath = buildCurrentPath(window.location.pathname, new URLSearchParams(window.location.search))
     setLoadingTemplateId(templateId)
-    page.confirmNavigation(() => {
+    confirmNavigation(() => {
       router.push(buildCanonicalDetailHref("/dashboard/flooring/templates", templateId, currentPath), { scroll: false })
     })
   }
@@ -57,14 +57,14 @@ export function PropertyDetailClient({
     <RecordDetailPageShell
       title={controller.property.name}
       backHref={backHref}
-      onBack={page.closePage}
+      onBack={closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <PropertyRecordPanel
         property={controller.property}
         draft={controller.draft}
         managementOptions={managementOptions}
-        notices={page.notices}
+        notices={notices}
         loading={controller.loading}
         loadError={controller.error}
         isTemplateCreateOpen={controller.isTemplateCreateOpen}
@@ -76,7 +76,7 @@ export function PropertyDetailClient({
         onDraftChange={controller.setDraftField}
         onSave={() => void controller.saveProperty()}
         onDelete={() => void controller.deleteProperty()}
-        onClose={page.closePage}
+        onClose={closePage}
         onTemplateDraftChange={controller.setTemplateDraftField}
         onOpenTemplate={navigateToTemplate}
         onOpenCreateTemplate={controller.toggleCreateTemplate}

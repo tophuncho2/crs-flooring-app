@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import { createLocationRow, listLocationRows, parseWarehouseFilter } from "@/features/flooring/warehouse/api"
 import {
   enforceRouteRateLimit,
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    return routeJson(access, { locations: await listLocationRows(prisma, parseWarehouseFilter(searchParams.get("warehouseId"))) })
+    return routeJson(access, { locations: await listLocationRows(undefined, parseWarehouseFilter(searchParams.get("warehouseId"))) })
   } catch (error) {
     return routeError(access, error)
   }
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
   if (rateLimitResponse) return rateLimitResponse
 
   try {
-    const location = await createLocationRow(prisma, (await request.json()) as Record<string, unknown>)
+    const location = await createLocationRow(undefined, (await request.json()) as Record<string, unknown>)
     logRouteMutationSuccess(access, {
       message: "Warehouse location created",
       action: "warehouse.locations.create",

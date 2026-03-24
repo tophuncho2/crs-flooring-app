@@ -20,25 +20,25 @@ export function ManagementCompanyDetailClient({
   backHref: string
 }) {
   const router = useRouter()
-  const page = useRecordPageController({
+  const { closePage, confirmNavigation, notices, redirectToBack, setIsDirty } = useRecordPageController({
     backHref,
     dirtyMessage: "You have unsaved management company changes. Leave this company without saving?",
   })
   const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null)
   const controller = useManagementCompanyRecordController({
     initialCompany,
-    notices: page.notices,
-    onDeleted: page.redirectToBack,
+    notices,
+    onDeleted: redirectToBack,
   })
 
   useEffect(() => {
-    page.setIsDirty(controller.isDirty)
-  }, [controller.isDirty, page.setIsDirty])
+    setIsDirty(controller.isDirty)
+  }, [controller.isDirty, setIsDirty])
 
   function navigateToProperty(propertyId: string) {
     const currentPath = buildCurrentPath(window.location.pathname, new URLSearchParams(window.location.search))
     setLoadingPropertyId(propertyId)
-    page.confirmNavigation(() => {
+    confirmNavigation(() => {
       router.push(buildCanonicalDetailHref("/dashboard/flooring/properties", propertyId, currentPath), { scroll: false })
     })
   }
@@ -54,13 +54,13 @@ export function ManagementCompanyDetailClient({
     <RecordDetailPageShell
       title={controller.company.name}
       backHref={backHref}
-      onBack={page.closePage}
+      onBack={closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <ManagementCompanyRecordPanel
         company={controller.company}
         draft={controller.draft}
-        notices={page.notices}
+        notices={notices}
         loading={controller.loading}
         loadError={controller.error}
         isPropertyCreateOpen={controller.isPropertyCreateOpen}
@@ -70,7 +70,7 @@ export function ManagementCompanyDetailClient({
         onDraftChange={controller.setDraftField}
         onSave={() => void controller.saveCompany()}
         onDelete={() => void controller.deleteCompany()}
-        onClose={page.closePage}
+        onClose={closePage}
         onPropertyDraftChange={controller.setPropertyDraftField}
         onOpenProperty={navigateToProperty}
         onOpenCreateProperty={controller.toggleCreateProperty}

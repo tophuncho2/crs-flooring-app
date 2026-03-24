@@ -24,10 +24,20 @@ This document marks which invariants are enforced by the database and which are 
 - Cut-log deletion must delete the target row and rebalance the remaining rows in one transaction.
 - Template deletion must remove sales reps, service items, material items, and the template in one transaction.
 
-## Worker-ready use cases
+## Layered call flow for touched routes
+
+- API routes under `app/api/flooring/*` should orchestrate only: auth, rate limiting, request parsing, response shaping, and mutation telemetry.
+- Application use cases remain responsible for multi-step workflow orchestration such as import create/update and template sync.
+- Domain modules remain responsible for pure business rules and invariants such as template sync behavior and product-display naming.
+- Feature `data/` modules are the Prisma boundary for touched workflows such as categories, management companies, imports, inventory, manufacturers, and shared record-detail option loading.
+- Shared transport/UI modules should consume application or data loaders and should not import Prisma directly.
+
+## Synchronous execution and future worker hooks
 
 - `runImportIngestUseCase`
 - `runTemplateSyncUseCase`
 - `runInventorySyncUseCase`
 
-These use cases are the intended entrypoints for future queue workers. Queue consumers should call application use cases only and should not call Prisma directly.
+These use cases are currently synchronous application entrypoints. The current production architecture does not run a queue or worker service.
+
+If background workers are introduced later, these functions are the intended entrypoints for queue consumers. Future queue consumers should call application use cases only and should not call Prisma directly.

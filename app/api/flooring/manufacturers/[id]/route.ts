@@ -1,9 +1,13 @@
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { prisma } from "@/server/db/prisma"
-import { updateManufacturer } from "@/features/flooring/manufacturers/mutations"
-import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
+import { deleteManufacturer, updateManufacturer } from "@/features/flooring/manufacturers/mutations"
 import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -33,9 +37,27 @@ export async function PATCH(request: Request, context: RouteContext) {
       phone: parseOptionalString(body.phone),
       email: parseOptionalString(body.email),
     })
+    logRouteMutationSuccess(access, {
+      message: "Manufacturer updated",
+      action: "manufacturers.update",
+      route: "/api/flooring/manufacturers/[id]",
+      entityType: "flooringManufacturer",
+      entityId: id,
+    })
 
-    return routeJson(access, { manufacturer: normalizeManufacturer(manufacturer) })
+    return routeJson(access, { manufacturer })
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Manufacturer update failed",
+        action: "manufacturers.update.error",
+        route: "/api/flooring/manufacturers/[id]",
+        entityType: "flooringManufacturer",
+        entityId: (await context.params).id,
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }
@@ -54,21 +76,27 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    const linkedProducts = await prisma.flooringProduct.count({
-      where: { manufacturerId: id },
+    const result = await deleteManufacturer(id)
+    logRouteMutationSuccess(access, {
+      message: "Manufacturer deleted",
+      action: "manufacturers.delete",
+      route: "/api/flooring/manufacturers/[id]",
+      entityType: "flooringManufacturer",
+      entityId: id,
     })
-
-    if (linkedProducts > 0) {
-      return routeJson(
-        access,
-        { error: "This manufacturer has linked products and cannot be deleted" },
-        { status: 409 },
-      )
-    }
-
-    await prisma.flooringManufacturer.delete({ where: { id } })
-    return routeJson(access, { ok: true })
+    return routeJson(access, result)
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Manufacturer deletion failed",
+        action: "manufacturers.delete.error",
+        route: "/api/flooring/manufacturers/[id]",
+        entityType: "flooringManufacturer",
+        entityId: (await context.params).id,
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }

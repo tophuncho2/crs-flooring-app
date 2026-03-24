@@ -25,7 +25,7 @@ export function WarehouseDetailClient({
   locations: LocationRow[]
   backHref: string
 }) {
-  const page = useRecordPageController({
+  const { closePage, setIsDirty } = useRecordPageController({
     backHref,
     dirtyMessage: "You have unsaved warehouse changes. Leave this warehouse without saving?",
   })
@@ -36,14 +36,14 @@ export function WarehouseDetailClient({
   })
 
   useEffect(() => {
-    page.setIsDirty(controller.isDirty)
-  }, [controller.isDirty, page.setIsDirty])
+    setIsDirty(controller.isDirty)
+  }, [controller.isDirty, setIsDirty])
 
   return (
     <RecordDetailPageShell
       title={`Warehouse ${controller.warehouse.name}`}
       backHref={backHref}
-      onBack={page.closePage}
+      onBack={closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <div className="space-y-6">
@@ -121,7 +121,7 @@ export function WarehouseDetailClient({
         </div>
 
         <RecordPanelFooter
-          onClose={page.closePage}
+          onClose={closePage}
           closeLabel="Back"
           onSave={() => void controller.saveWarehouse()}
           saveLabel="Save Warehouse"

@@ -77,7 +77,7 @@ export function canRestrictUser(_email: string, role: Role): boolean {
   return hasGovernanceAccess(role)
 }
 
-export function canEditRole(_email: string, role: Role): boolean {
+export function canEditRole(): boolean {
   return false
 }
 

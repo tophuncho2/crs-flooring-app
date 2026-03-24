@@ -20,6 +20,9 @@ function normalizeEmail(value: string): string {
 }
 
 export async function POST(request: Request) {
+  // Intentional route-policy exception:
+  // this endpoint supports the public bootstrap/request flow and cannot require an
+  // already-authenticated session before enforcing its own policy checks.
   const requestId = getRequestId(request)
   const clientIp = getClientIp(request)
 
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
     }
 
     const hashed = await bcrypt.hash(password, 10)
-    const role: "BUILDER" = "BUILDER"
+    const role = "BUILDER" as const
     const isVerified = viewerCanGovern
       ? typeof body.isVerified === "boolean"
         ? body.isVerified

@@ -9,6 +9,13 @@ import {
   type HeaderCarrier,
 } from "@/server/platform/request-context"
 
+// Failure policy:
+// - Prefer Redis-backed counters when REDIS_URL is configured and healthy.
+// - If Redis is missing, unavailable, or throws during a request, fail open to the
+//   process-local fixed-window store for that request.
+// - Redis client state is invalidated after command failures so the next request
+//   attempts a fresh connection instead of reusing a poisoned client.
+
 type RateLimitOptions = {
   request?: HeaderCarrier
   scope: string
@@ -42,6 +49,7 @@ declare global {
 
 const memoryCounters = new Map<string, MemoryCounter>()
 let hasWarnedMissingRedis = false
+const RATE_LIMIT_MODULE_ROUTE = "server/platform/rate-limit"
 
 function incrementInMemoryCounter(key: string, windowMs: number) {
   const now = Date.now()
@@ -70,7 +78,7 @@ async function connectRedisClient() {
         level: "warn",
         message: "REDIS_URL is not configured; falling back to process-local rate limiting",
         action: "rateLimit.redis.missing",
-        route: "server/platform/rate-limit",
+        route: RATE_LIMIT_MODULE_ROUTE,
       })
     }
 
@@ -90,8 +98,18 @@ async function connectRedisClient() {
         level: "warn",
         message: "Redis rate-limit client emitted an error",
         action: "rateLimit.redis.error",
-        route: "server/platform/rate-limit",
+        route: RATE_LIMIT_MODULE_ROUTE,
         error,
+      })
+    })
+
+    client.on("end", () => {
+      global.rateLimitRedisClientPromise = undefined
+      logEvent({
+        level: "warn",
+        message: "Redis rate-limit client closed; the next request will reconnect",
+        action: "rateLimit.redis.closed",
+        route: RATE_LIMIT_MODULE_ROUTE,
       })
     })
 
@@ -102,7 +120,7 @@ async function connectRedisClient() {
       level: "warn",
       message: "Failed to connect Redis rate-limit client; using process-local fallback",
       action: "rateLimit.redis.connectFailed",
-      route: "server/platform/rate-limit",
+      route: RATE_LIMIT_MODULE_ROUTE,
       error,
     })
     return null
@@ -117,19 +135,54 @@ function getRedisClientPromise() {
   return global.rateLimitRedisClientPromise
 }
 
-async function incrementCounter(key: string, windowMs: number) {
+async function invalidateRedisClient() {
+  const currentClientPromise = global.rateLimitRedisClientPromise
+  global.rateLimitRedisClientPromise = undefined
+
+  if (!currentClientPromise) {
+    return
+  }
+
+  try {
+    const client = await currentClientPromise
+    if (client?.isOpen) {
+      await client.disconnect()
+    }
+  } catch {
+    // The command path already logs the original Redis failure.
+  }
+}
+
+async function incrementCounter(scope: string, key: string, windowMs: number) {
   const redisClient = await getRedisClientPromise()
 
   if (!redisClient) {
     return incrementInMemoryCounter(key, windowMs)
   }
 
-  const count = await redisClient.incr(key)
-  if (count === 1) {
-    await redisClient.pExpire(key, windowMs)
-  }
+  try {
+    const count = await redisClient.incr(key)
+    if (count === 1) {
+      await redisClient.pExpire(key, windowMs)
+    }
 
-  return count
+    return count
+  } catch (error) {
+    await invalidateRedisClient()
+    logEvent({
+      level: "warn",
+      message: "Redis rate-limit operation failed; using process-local fallback for this request",
+      action: "rateLimit.redis.commandFailed",
+      route: RATE_LIMIT_MODULE_ROUTE,
+      error,
+      details: {
+        scope,
+        windowMs,
+      },
+    })
+
+    return incrementInMemoryCounter(key, windowMs)
+  }
 }
 
 export async function consumeRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
@@ -138,7 +191,7 @@ export async function consumeRateLimit(options: RateLimitOptions): Promise<RateL
   const identifier = options.identifier?.trim() || clientIp
   const { prefix } = getRateLimitEnvironment()
   const key = `${prefix}:${options.scope}:${identifier}`
-  const count = await incrementCounter(key, options.windowMs)
+  const count = await incrementCounter(options.scope, key, options.windowMs)
   const retryAfterSeconds = Math.max(1, Math.ceil(options.windowMs / 1000))
 
   if (count > options.limit) {

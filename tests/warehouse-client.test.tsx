@@ -148,8 +148,6 @@ describe("WarehouseDetailClient", () => {
   })
 
   it("moving a location between sections updates both section counts", async () => {
-    const user = userEvent.setup()
-
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ location: { id: "loc-1", locationCode: "A1", sectionId: "sec-2", sectionName: "Storage" } }),
     )

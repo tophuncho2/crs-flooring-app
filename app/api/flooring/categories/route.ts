@@ -1,45 +1,19 @@
-import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
-import { prisma } from "@/server/db/prisma"
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { createCategory, listCategories } from "@/features/flooring/categories/data/queries"
 import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
-
-function normalizeCategory(category: {
-  id: string
-  name: string
-  sendUnit: { id: string; name: string } | null
-  stockUnit: { id: string; name: string } | null
-  coverageAvailableUnit: { id: string; name: string } | null
-  itemCoverageUnit: { id: string; name: string } | null
-  serviceUnit: { id: string; name: string } | null
-  createdAt: Date
-  _count?: { products: number }
-}) {
-  return {
-    id: category.id,
-    name: category.name,
-    ...normalizeCategoryUnitValues(category),
-    productCount: category._count?.products ?? 0,
-    createdAt: category.createdAt.toISOString(),
-  }
-}
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
   const access = await authorizeCategoriesRoute(request)
   if (access instanceof Response) return access
 
   try {
-    const categories = await prisma.flooringCategory.findMany({
-      include: {
-        ...flooringCategoryUnitInclude,
-        _count: {
-          select: { products: true },
-        },
-      },
-      orderBy: { name: "asc" },
-    })
-
-    return routeJson(access, { categories: categories.map(normalizeCategory) })
+    return routeJson(access, { categories: await listCategories() })
   } catch (error) {
     return routeError(access, error)
   }
@@ -59,25 +33,27 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const category = await prisma.flooringCategory.create({
-      data: {
-        name: parseRequiredString(body.name, "name"),
-        sendUnitId: parseOptionalString(body.sendUnitId),
-        stockUnitId: parseOptionalString(body.stockUnitId),
-        coverageAvailableUnitId: parseOptionalString(body.coverageAvailableUnitId),
-        itemCoverageUnitId: parseOptionalString(body.itemCoverageUnitId),
-        serviceUnitId: parseOptionalString(body.serviceUnitId),
-      },
-      include: {
-        ...flooringCategoryUnitInclude,
-        _count: {
-          select: { products: true },
-        },
-      },
+    const category = await createCategory(body)
+    logRouteMutationSuccess(access, {
+      message: "Category created",
+      action: "categories.create",
+      route: "/api/flooring/categories",
+      entityType: "flooringCategory",
+      entityId: category.id,
     })
 
-    return routeJson(access, { category: normalizeCategory(category) }, { status: 201 })
+    return routeJson(access, { category }, { status: 201 })
   } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Category creation failed",
+        action: "categories.create.error",
+        route: "/api/flooring/categories",
+        entityType: "flooringCategory",
+      },
+      error,
+    )
     return routeError(access, error)
   }
 }

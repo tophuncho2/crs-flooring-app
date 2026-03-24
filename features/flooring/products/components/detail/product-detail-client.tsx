@@ -149,7 +149,7 @@ export function ProductDetailClient({
   inventoryRows: InventoryRow[]
   backHref: string
 }) {
-  const page = useRecordPageController({
+  const { closePage, notices, redirectToBack, setIsDirty } = useRecordPageController({
     backHref,
     dirtyMessage: "You have unsaved product changes. Leave this product without saving?",
   })
@@ -172,17 +172,17 @@ export function ProductDetailClient({
   ).sort((a, b) => a.localeCompare(b))
 
   useEffect(() => {
-    page.setIsDirty(isDirty)
-  }, [isDirty, page.setIsDirty])
+    setIsDirty(isDirty)
+  }, [isDirty, setIsDirty])
 
   async function saveProduct() {
-    page.notices.clearNotices()
+    notices.clearNotices()
     if (!productForm.categoryId) {
-      page.notices.showError("Category is required")
+      notices.showError("Category is required")
       return
     }
     if (productForm.coveragePerUnit.trim() && !isValidDecimal(productForm.coveragePerUnit)) {
-      page.notices.showError("Coverage per unit must be numeric with up to 4 decimals")
+      notices.showError("Coverage per unit must be numeric with up to 4 decimals")
       return
     }
 
@@ -200,23 +200,23 @@ export function ProductDetailClient({
 
       setProduct(payload.product)
       setProductForm(toProductForm(payload.product))
-      page.notices.showSuccess("Product updated")
+      notices.showSuccess("Product updated")
     } catch (saveError) {
-      page.notices.showError(saveError instanceof Error ? saveError.message : "Failed to save product")
+      notices.showError(saveError instanceof Error ? saveError.message : "Failed to save product")
     } finally {
       setIsSaving(false)
     }
   }
 
   async function deleteProduct() {
-    page.notices.clearNotices()
+    notices.clearNotices()
     setIsSaving(true)
 
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/products/${product.id}`, { method: "DELETE" })
-      page.redirectToBack()
+      redirectToBack()
     } catch (deleteError) {
-      page.notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete product")
+      notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete product")
       setIsSaving(false)
     }
   }
@@ -225,7 +225,7 @@ export function ProductDetailClient({
     const files = event.target.files
     if (!files || files.length === 0) return
 
-    page.notices.clearNotices()
+    notices.clearNotices()
     setIsUploadingPhotos(true)
 
     try {
@@ -245,9 +245,9 @@ export function ProductDetailClient({
         ...prev,
         photoUrls: Array.from(new Set([...prev.photoUrls, ...uploadedUrls])),
       }))
-      page.notices.showSuccess(`${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"} uploaded`)
+      notices.showSuccess(`${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"} uploaded`)
     } catch (uploadError) {
-      page.notices.showError(uploadError instanceof Error ? uploadError.message : "Failed to upload photos")
+      notices.showError(uploadError instanceof Error ? uploadError.message : "Failed to upload photos")
     } finally {
       setIsUploadingPhotos(false)
       event.target.value = ""
@@ -270,11 +270,11 @@ export function ProductDetailClient({
   }
 
   return (
-    <RecordDetailPageShell title={product.name || "Product"} backHref={backHref} onBack={page.closePage} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
+    <RecordDetailPageShell title={product.name || "Product"} backHref={backHref} onBack={closePage} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
       <div className="space-y-6">
         <FormStatusNotices
-          message={page.notices.message}
-          error={page.notices.error}
+          message={notices.message}
+          error={notices.error}
           loadingMessage={isSaving ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : ""}
         />
 
@@ -424,7 +424,7 @@ export function ProductDetailClient({
           deleteLabel="Delete Product"
           deleteConfirmMessage={buildDeleteConfirmationMessage("product")}
           onDelete={() => void deleteProduct()}
-          onClose={page.closePage}
+          onClose={closePage}
           saveLabel="Save Product"
           savingLabel="Saving..."
           onSave={() => void saveProduct()}
