@@ -1,9 +1,7 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useRecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
-import { useUnsavedChangesGuard } from "@/features/flooring/shared/controllers/record-page/use-unsaved-changes-guard"
+import { useMemo, useState } from "react"
+import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import type { CutLogDraft } from "@/features/flooring/shared/ui/record-items/cut-logs-editor"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
@@ -21,14 +19,14 @@ const EMPTY_CUT_LOG_DRAFT: CutLogDraft = {
 export function useInventoryRecordController({
   initialRecord,
   locationOptions,
-  backHref,
+  notices,
+  onDeleted,
 }: {
   initialRecord: InventoryRow
   locationOptions: LocationOption[]
-  backHref: string
+  notices: RecordNotices
+  onDeleted: () => void
 }) {
-  const router = useRouter()
-  const notices = useRecordNotices()
   const [record, setRecord] = useState(initialRecord)
   const [editLocationId, setEditLocationId] = useState(initialRecord.locationId)
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(EMPTY_CUT_LOG_DRAFT)
@@ -59,10 +57,6 @@ export function useInventoryRecordController({
   const cutPreviewAfter = toInventoryFixedString(activeRunningBalance - draftQuantity)
   const isDirty =
     editLocationId !== record.locationId || cutLogDraft.quantityTaken.trim() !== "" || cutLogDraft.notes.trim() !== ""
-  const guard = useUnsavedChangesGuard({
-    isDirty,
-    message: "You have unsaved inventory changes. Leave this inventory record without saving?",
-  })
 
   const canSubmitCutLog =
     cutLogDraft.quantityTaken.trim() !== "" &&
@@ -71,13 +65,6 @@ export function useInventoryRecordController({
     !(draftQuantity > activeRunningBalance)
 
   const isBusy = isSavingInventory || isSavingCutLog || isDeletingInventory || deletingCutLogId !== null
-
-  const closeDetail = useCallback(() => {
-    if (isBusy) return
-    guard.confirmNavigation(() => {
-      router.push(backHref, { scroll: false })
-    })
-  }, [backHref, guard, isBusy, router])
 
   function setCutLogDraftField(field: keyof CutLogDraft, value: string) {
     setCutLogDraft((previous) => ({ ...previous, [field]: value }))
@@ -128,7 +115,7 @@ export function useInventoryRecordController({
 
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/inventory/${record.id}`, { method: "DELETE" })
-      router.push(backHref, { scroll: false })
+      onDeleted()
     } catch (error) {
       notices.showError(error instanceof Error ? error.message : "Failed to delete inventory")
       setIsDeletingInventory(false)
@@ -213,6 +200,7 @@ export function useInventoryRecordController({
   return {
     record,
     notices,
+    isDirty,
     editLocationId,
     setEditLocationId,
     cutLogDraft,
@@ -229,7 +217,6 @@ export function useInventoryRecordController({
     activeRunningBalance,
     cutPreviewAfter,
     canSubmitCutLog,
-    closeDetail,
     saveInventory,
     deleteInventory,
     addCutLog,

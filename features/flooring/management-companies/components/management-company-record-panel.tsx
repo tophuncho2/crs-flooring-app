@@ -1,41 +1,21 @@
 "use client"
 
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/display/accent-styles"
-import { FormStatusNotices } from "@/features/flooring/shared/feedback/notices"
-import { RecordPanelFooter } from "@/features/flooring/shared/forms/record-panel-footer"
-import { getSharedFormFieldClass } from "@/features/flooring/shared/forms/form-field-styles"
-import { RecordFormField } from "@/features/flooring/shared/forms/record-form"
-
-type DraftProperty = {
-  name: string
-  streetAddress: string
-  city: string
-  state: string
-  zip: string
-  phone: string
-  email: string
-  managementCompanyId: string
-}
-
-type ManagementCompanyRow = {
-  id: string
-  name: string
-  streetAddress: string
-  city: string
-  state: string
-  zip: string
-  phone: string
-  email: string
-  fullAddress: string
-  properties: { id: string; name: string; fullAddress: string }[]
-}
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/ui/feedback/feedback-states"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { getSharedFormFieldClass } from "@/features/flooring/shared/ui/forms/form-field-styles"
+import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
+import { LinkedRecordsSection } from "@/features/flooring/shared/ui/record-page/linked-records-section"
+import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import type { ManagementCompanyDetailRecord, ManagementCompanyPropertyDraft } from "../controllers/use-management-company-record-controller"
 
 export function ManagementCompanyRecordPanel({
   company,
-  mode = "view",
   draft,
-  message = "",
-  error = "",
+  notices,
+  loading = false,
+  loadError = "",
   isPropertyCreateOpen,
   propertyDraft,
   loadingPropertyId,
@@ -51,9 +31,8 @@ export function ManagementCompanyRecordPanel({
   onCreateProperty,
   isCreatingProperty = false,
 }: {
-  company: ManagementCompanyRow
-  mode?: "view" | "edit"
-  draft?: {
+  company: ManagementCompanyDetailRecord | null
+  draft: {
     name: string
     streetAddress: string
     city: string
@@ -62,93 +41,91 @@ export function ManagementCompanyRecordPanel({
     phone: string
     email: string
   }
-  message?: string
-  error?: string
+  notices: RecordNotices
+  loading?: boolean
+  loadError?: string
   isPropertyCreateOpen: boolean
-  propertyDraft: DraftProperty
+  propertyDraft: ManagementCompanyPropertyDraft
   loadingPropertyId: string | null
   isSaving?: boolean
-  onDraftChange?: (field: "name" | "streetAddress" | "city" | "state" | "zip" | "phone" | "email", value: string) => void
-  onSave?: () => void
-  onDelete?: () => void
-  onClose?: () => void
-  onPropertyDraftChange: (field: keyof DraftProperty, value: string) => void
+  onDraftChange: (field: "name" | "streetAddress" | "city" | "state" | "zip" | "phone" | "email", value: string) => void
+  onSave: () => void
+  onDelete: () => void
+  onClose: () => void
+  onPropertyDraftChange: (field: keyof ManagementCompanyPropertyDraft, value: string) => void
   onOpenProperty: (propertyId: string) => void
   onOpenCreateProperty: () => void
   onCancelCreateProperty: () => void
   onCreateProperty: () => void
   isCreatingProperty?: boolean
 }) {
-  const isEditing = mode === "edit" && draft && onDraftChange && onSave && onDelete && onClose
-  const fullAddress = isEditing
-    ? [draft.streetAddress, draft.city, draft.state, draft.zip].filter(Boolean).join(", ")
-    : company.fullAddress
+  if (loading && !company) {
+    return <CenteredLoadingState label="Loading management company..." />
+  }
+
+  if (loadError && !company) {
+    return <CenteredErrorState title="Error" message={loadError} onDismiss={onClose} />
+  }
+
+  if (!company) {
+    return <CenteredErrorState title="Error" message="Management company could not be loaded." onDismiss={onClose} />
+  }
+
+  const fullAddress = [draft.streetAddress, draft.city, draft.state, draft.zip].filter(Boolean).join(", ")
 
   return (
     <div className="space-y-6">
       <FormStatusNotices
-        message={message}
-        error={error}
-        loadingMessage={isSaving ? "Saving management company..." : ""}
+        message={notices.message}
+        error={notices.error}
+        loadingMessage={isSaving ? "Saving management company..." : isCreatingProperty ? "Creating property..." : ""}
       />
 
-      {isEditing ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <RecordFormField label="Company Name">
-            <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: draft.name.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="Street Address">
-            <input value={draft.streetAddress} onChange={(event) => onDraftChange("streetAddress", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.streetAddress.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="City">
-            <input value={draft.city} onChange={(event) => onDraftChange("city", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.city.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="State">
-            <input value={draft.state} onChange={(event) => onDraftChange("state", event.target.value)} maxLength={2} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.state.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="Zip">
-            <input value={draft.zip} onChange={(event) => onDraftChange("zip", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.zip.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="Phone">
-            <input value={draft.phone} onChange={(event) => onDraftChange("phone", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.phone.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="Email">
-            <input value={draft.email} onChange={(event) => onDraftChange("email", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.email.trim() === "" })}`} />
-          </RecordFormField>
-          <RecordFormField label="Full Address">
-            <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">{fullAddress || "Company address preview"}</div>
-          </RecordFormField>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Address</p>
-            <p className="mt-1 font-medium">{company.fullAddress || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Phone</p>
-            <p className="mt-1 font-medium">{company.phone || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Email</p>
-            <p className="mt-1 font-medium">{company.email || "-"}</p>
-          </div>
-        </div>
-      )}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <RecordFormField label="Company Name">
+          <input value={draft.name} onChange={(event) => onDraftChange("name", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: true, isEmpty: draft.name.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="Street Address">
+          <input value={draft.streetAddress} onChange={(event) => onDraftChange("streetAddress", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.streetAddress.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="City">
+          <input value={draft.city} onChange={(event) => onDraftChange("city", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.city.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="State">
+          <input value={draft.state} onChange={(event) => onDraftChange("state", event.target.value)} maxLength={2} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.state.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="Zip">
+          <input value={draft.zip} onChange={(event) => onDraftChange("zip", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.zip.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="Phone">
+          <input value={draft.phone} onChange={(event) => onDraftChange("phone", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.phone.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="Email">
+          <input value={draft.email} onChange={(event) => onDraftChange("email", event.target.value)} className={`rounded border px-3 py-2 ${getSharedFormFieldClass({ isRequired: false, isEmpty: draft.email.trim() === "" })}`} />
+        </RecordFormField>
+        <RecordFormField label="Full Address">
+          <div className="min-h-11 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/30 px-3 py-2 text-sm">{fullAddress || "Company address preview"}</div>
+        </RecordFormField>
+      </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold">Properties</h3>
-            <p className="text-sm text-[var(--foreground)]/70">View a property detail page or add a new property to this management company.</p>
-          </div>
+      <LinkedRecordsSection
+        title="Properties"
+        rows={company.properties.map((property) => ({
+          id: property.id,
+          title: property.name,
+          secondary: property.fullAddress || "No address",
+        }))}
+        emptyMessage="No properties linked to this management company yet."
+        onOpenRow={onOpenProperty}
+        loadingRowId={loadingPropertyId}
+        actions={
           <button type="button" onClick={onOpenCreateProperty} className="rounded border border-blue-500/40 px-3 py-2 text-sm text-blue-500 hover:bg-blue-500/10">
             New Property
           </button>
-        </div>
-
-        {isPropertyCreateOpen ? (
-          <div className="grid gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--subpanel-background)] p-4 md:grid-cols-2">
+        }
+        inlineCreate={
+          isPropertyCreateOpen ? (
+            <div className="grid gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--subpanel-background)] p-4 md:grid-cols-2">
             <RecordFormField label="Property Name">
               <input value={propertyDraft.name} onChange={(event) => onPropertyDraftChange("name", event.target.value)} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
             </RecordFormField>
@@ -179,37 +156,20 @@ export function ManagementCompanyRecordPanel({
               </button>
             </div>
           </div>
-        ) : null}
+          ) : null
+        }
+      />
 
-        <div className="rounded-xl border border-[var(--panel-border)]">
-          {company.properties.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-[var(--foreground)]/70">No properties linked to this management company yet.</p>
-          ) : (
-            company.properties.map((property) => (
-              <button key={property.id} type="button" onClick={() => onOpenProperty(property.id)} className="flex w-full items-center justify-between border-t border-[var(--panel-border)] px-4 py-3 text-left first:border-t-0 hover:bg-[var(--panel-hover)]">
-                <div>
-                  <p className="font-medium">{property.name}</p>
-                  <p className="text-sm text-[var(--foreground)]/70">{property.fullAddress || "No address"}</p>
-                </div>
-                <span className="text-sm text-blue-500">{loadingPropertyId === property.id ? "Loading..." : "View"}</span>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
-      {isEditing ? (
-        <RecordPanelFooter
-          deleteLabel="Delete Company"
-          deleteConfirmMessage={`Delete ${company.name}?`}
-          onDelete={onDelete}
-          onClose={onClose}
-          saveLabel="Save Company"
-          savingLabel="Saving..."
-          onSave={onSave}
-          isSaving={isSaving}
-        />
-      ) : null}
+      <RecordPanelFooter
+        deleteLabel="Delete Company"
+        deleteConfirmMessage={`Delete ${company.name}?`}
+        onDelete={onDelete}
+        onClose={onClose}
+        saveLabel="Save Company"
+        savingLabel="Saving..."
+        onSave={onSave}
+        isSaving={isSaving}
+      />
     </div>
   )
 }

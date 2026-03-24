@@ -9,6 +9,7 @@ export function normalizePropertyAddress(value: {
 
 export function normalizeProperty(property: {
   id: string
+  updatedAt: Date | string
   name: string
   streetAddress: string | null
   city: string | null
@@ -26,6 +27,7 @@ export function normalizeProperty(property: {
 }) {
   return {
     id: property.id,
+    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
     name: property.name,
     streetAddress: property.streetAddress ?? "",
     city: property.city ?? "",
@@ -47,6 +49,7 @@ export function normalizeProperty(property: {
 export function normalizePropertyOption(property: {
   id: string
   name: string
+  updatedAt?: Date | string
   streetAddress: string | null
   city: string | null
   state: string | null

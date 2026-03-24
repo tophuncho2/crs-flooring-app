@@ -4,6 +4,7 @@ import type { CreatePropertyInput, UpdatePropertyInput } from "./validators"
 
 const propertySelect = {
   id: true,
+  updatedAt: true,
   name: true,
   streetAddress: true,
   city: true,

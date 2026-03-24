@@ -1,10 +1,9 @@
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
-import { loadTemplatePanelOptions } from "@/features/flooring/shared/template-panel-options"
-import { getPropertyById } from "@/features/flooring/properties/queries"
-import { prisma } from "@/server/db/prisma"
-import { PropertyDetailClient } from "@/features/flooring/properties/components/property-detail-client"
+import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { getPropertyDetailPageData } from "@/features/flooring/properties/data/queries"
+import { PropertyDetailClient } from "@/features/flooring/properties/components/detail/property-detail-client"
 
 export default async function PropertyDetailPage({
   params,
@@ -13,31 +12,37 @@ export default async function PropertyDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("properties")
+  await requireToolAccess("warehouse")
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const result = await getPropertyDetailPageData(id)
 
-  try {
-    const [property, managementOptions, templatePanelOptions] = await Promise.all([
-      getPropertyById(id),
-      prisma.flooringManagementCompany.findMany({
-        orderBy: { name: "asc" },
-        select: { id: true, name: true },
-      }),
-      loadTemplatePanelOptions(),
-    ])
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
+    if (!("error" in result)) {
+      notFound()
+    }
 
     return (
-      <PropertyDetailClient
-        property={property}
-        managementOptions={managementOptions}
-        warehouseOptions={templatePanelOptions.warehouseOptions}
-        padProductOptions={templatePanelOptions.padProductOptions}
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/properties")}
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
       />
     )
-  } catch {
-    notFound()
   }
+
+  return (
+    <PropertyDetailClient
+      property={result.data.property}
+      managementOptions={result.data.managementOptions}
+      warehouseOptions={result.data.warehouseOptions}
+      padProductOptions={result.data.padProductOptions}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/properties")}
+    />
+  )
 }

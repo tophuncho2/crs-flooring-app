@@ -1,9 +1,11 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { flooringCategoryUnitInclude } from "@/server/flooring/unit-measures"
 import { normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
 import { listManufacturers } from "@/features/flooring/manufacturers/queries"
+import { listInventoryRows } from "@/features/flooring/inventory/data/api"
 import { normalizeCatalogProduct, normalizeProductOption } from "../domain/services"
 
 function buildProductWhere(searchQuery: string): Prisma.FlooringProductWhereInput | undefined {
@@ -162,5 +164,74 @@ export async function getProductsPageData(page: number, tableState: ServerTableQ
       email: manufacturer.email ?? "",
     })),
     initialProducts: products,
+  }
+}
+
+async function loadProductDetailOptions(productId: string) {
+  const [categories, manufacturers, inventoryRows] = await Promise.all([
+    prisma.flooringCategory.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        ...flooringCategoryUnitInclude,
+      },
+    }),
+    listManufacturers(),
+    listInventoryRows(prisma, productId),
+  ])
+
+  return {
+    categoryOptions: categories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      ...normalizeCategoryUnitValues(category),
+    })),
+    manufacturerOptions: manufacturers.map((manufacturer) => ({
+      id: manufacturer.id,
+      name: manufacturer.companyName,
+      website: manufacturer.website ?? "",
+      phone: manufacturer.phone ?? "",
+      email: manufacturer.email ?? "",
+    })),
+    inventoryRows,
+  }
+}
+
+export async function getProductDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  product: Awaited<ReturnType<typeof getProductById>>
+  categoryOptions: Awaited<ReturnType<typeof loadProductDetailOptions>>["categoryOptions"]
+  manufacturerOptions: Awaited<ReturnType<typeof loadProductDetailOptions>>["manufacturerOptions"]
+  inventoryRows: Awaited<ReturnType<typeof loadProductDetailOptions>>["inventoryRows"]
+}>> {
+  try {
+    const [product, options] = await Promise.all([
+      getProductById(id),
+      loadProductDetailOptions(id),
+    ])
+
+    return {
+      ok: true,
+      data: {
+        product,
+        categoryOptions: options.categoryOptions,
+        manufacturerOptions: options.manufacturerOptions,
+        inventoryRows: options.inventoryRows,
+      },
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "PRODUCT_DETAIL_LOAD_FAILED",
+        title: "Product Unavailable",
+        message: "The app could not load this product.",
+        detail: "The product record or its supporting options could not be loaded.",
+      }),
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { getImportEntryById, listImportLocationOptions, normalizeImportEntry } from "@/features/flooring/imports/api"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
@@ -131,4 +131,73 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
 
 export async function getImportById(id: string) {
   return getImportEntryById(id, prisma)
+}
+
+async function loadImportDetailOptions() {
+  const [products, warehouses, locations] = await Promise.all([
+    prisma.flooringProduct.findMany({
+      include: {
+        category: { select: { stockUnit: { select: { name: true } } } },
+      },
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
+    }),
+    prisma.flooringWarehouse.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    listImportLocationOptions(),
+  ])
+
+  return {
+    productOptions: products.map((product) => ({
+      id: product.id,
+      label: buildFlooringProductDisplayName(product),
+      stockUnit: product.category.stockUnit?.name ?? "",
+    })),
+    warehouseOptions: warehouses,
+    locationOptions: locations.map((location) => ({
+      id: location.id,
+      warehouseId: location.warehouseId,
+      locationCode: location.locationCode,
+      label: location.locationCode,
+    })),
+  }
+}
+
+export async function getImportDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  entry: Awaited<ReturnType<typeof getImportById>>
+  productOptions: Awaited<ReturnType<typeof loadImportDetailOptions>>["productOptions"]
+  warehouseOptions: Awaited<ReturnType<typeof loadImportDetailOptions>>["warehouseOptions"]
+  locationOptions: Awaited<ReturnType<typeof loadImportDetailOptions>>["locationOptions"]
+}>> {
+  try {
+    const [entry, options] = await Promise.all([
+      getImportById(id),
+      loadImportDetailOptions(),
+    ])
+
+    return {
+      ok: true,
+      data: {
+        entry,
+        productOptions: options.productOptions,
+        warehouseOptions: options.warehouseOptions,
+        locationOptions: options.locationOptions,
+      },
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "IMPORT_DETAIL_LOAD_FAILED",
+        title: "Import Unavailable",
+        message: "The app could not load this import.",
+        detail: "The import record or its supporting options could not be loaded.",
+      }),
+    }
+  }
 }

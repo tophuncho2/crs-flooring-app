@@ -1,7 +1,8 @@
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
-import { getImportById, getImportsPageData } from "@/features/flooring/imports/data/queries"
+import { getImportDetailPageData } from "@/features/flooring/imports/data/queries"
 import { ImportDetailClient } from "@/features/flooring/imports/components/detail/import-detail-client"
 
 export default async function ImportDetailPage({
@@ -15,32 +16,33 @@ export default async function ImportDetailPage({
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const result = await getImportDetailPageData(id)
 
-  try {
-    const [entry, pageData] = await Promise.all([
-      getImportById(id),
-      getImportsPageData(1, {
-        searchQuery: "",
-        isAscendingSort: false,
-        isGroupingEnabled: false,
-        groupByKeys: [],
-      }),
-    ])
-
-    if (!pageData.ok) {
-      throw new Error("Failed to load import detail options")
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
+    if (!("error" in result)) {
+      notFound()
     }
 
     return (
-      <ImportDetailClient
-        initialImport={entry}
-        productOptions={pageData.data.productOptions}
-        warehouseOptions={pageData.data.warehouseOptions}
-        locationOptions={pageData.data.locationOptions}
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/imports")}
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
       />
     )
-  } catch {
-    notFound()
   }
+
+  return (
+    <ImportDetailClient
+      initialImport={result.data.entry}
+      productOptions={result.data.productOptions}
+      warehouseOptions={result.data.warehouseOptions}
+      locationOptions={result.data.locationOptions}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/imports")}
+    />
+  )
 }

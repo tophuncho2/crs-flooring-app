@@ -9,6 +9,7 @@ function normalizeAddress(value: {
 
 export function normalizeManagementCompany(company: {
   id: string
+  updatedAt: Date | string
   name: string
   streetAddress: string | null
   city: string | null
@@ -27,6 +28,7 @@ export function normalizeManagementCompany(company: {
 }) {
   return {
     id: company.id,
+    updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
     name: company.name,
     streetAddress: company.streetAddress ?? "",
     city: company.city ?? "",

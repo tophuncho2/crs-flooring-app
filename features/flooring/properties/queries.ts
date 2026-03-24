@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { normalizeProperty, normalizePropertyOption } from "./services"
 
@@ -56,6 +57,7 @@ export async function listProperties(
     orderBy: buildPropertiesOrderBy(tableState),
     select: {
       id: true,
+      updatedAt: true,
       name: true,
       streetAddress: true,
       city: true,
@@ -87,6 +89,7 @@ export async function listPropertyOptions() {
     orderBy: { name: "asc" },
     select: {
       id: true,
+      updatedAt: true,
       name: true,
       streetAddress: true,
       city: true,
@@ -103,6 +106,7 @@ export async function getPropertyById(id: string) {
     where: { id },
     select: {
       id: true,
+      updatedAt: true,
       name: true,
       streetAddress: true,
       city: true,
@@ -126,6 +130,80 @@ export async function getPropertyById(id: string) {
   })
 
   return normalizeProperty(property)
+}
+
+async function loadPropertyDetailOptions() {
+  const [managementOptions, warehouses, padProducts] = await Promise.all([
+    prisma.flooringManagementCompany.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.flooringWarehouse.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.flooringProduct.findMany({
+      where: {
+        category: {
+          name: "Pad",
+        },
+      },
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        style: true,
+        color: true,
+      },
+    }),
+  ])
+
+  return {
+    managementOptions,
+    warehouseOptions: warehouses,
+    padProductOptions: padProducts.map((product) => ({
+      id: product.id,
+      label: buildPadProductDisplayName(product),
+    })),
+  }
+}
+
+export async function getPropertyDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  property: Awaited<ReturnType<typeof getPropertyById>>
+  managementOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["managementOptions"]
+  warehouseOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["warehouseOptions"]
+  padProductOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["padProductOptions"]
+}>> {
+  try {
+    const [property, options] = await Promise.all([
+      getPropertyById(id),
+      loadPropertyDetailOptions(),
+    ])
+
+    return {
+      ok: true,
+      data: {
+        property,
+        managementOptions: options.managementOptions,
+        warehouseOptions: options.warehouseOptions,
+        padProductOptions: options.padProductOptions,
+      },
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "PROPERTY_DETAIL_LOAD_FAILED",
+        title: "Property Unavailable",
+        message: "The app could not load this property.",
+        detail: "The property record or its supporting options could not be loaded.",
+      }),
+    }
+  }
 }
 
 async function loadPropertiesPageData(page: number, tableState: ServerTableQueryState) {

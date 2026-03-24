@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
+import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/controllers/record-page/record-detail-options"
 import { normalizeWorkOrder, normalizeWorkOrderExpenseTotals, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
 type WorkOrderDbClient = Prisma.TransactionClient | typeof prisma

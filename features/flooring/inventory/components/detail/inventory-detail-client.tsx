@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
@@ -20,9 +22,13 @@ export function InventoryDetailClient({
   locationOptions: LocationOption[]
   backHref: string
 }) {
+  const page = useRecordPageController({
+    backHref,
+    dirtyMessage: "You have unsaved inventory changes. Leave this inventory record without saving?",
+  })
   const {
     record,
-    notices,
+    isDirty,
     editLocationId,
     setEditLocationId,
     cutLogDraft,
@@ -33,7 +39,6 @@ export function InventoryDetailClient({
     availableLocationOptions,
     activeWarehouseName,
     activeSectionName,
-    closeDetail,
     saveInventory,
     deleteInventory,
     addCutLog,
@@ -46,19 +51,24 @@ export function InventoryDetailClient({
   } = useInventoryRecordController({
     initialRecord,
     locationOptions,
-    backHref,
+    notices: page.notices,
+    onDeleted: page.redirectToBack,
   })
+
+  useEffect(() => {
+    page.setIsDirty(isDirty)
+  }, [isDirty, page.setIsDirty])
 
   return (
     <RecordDetailPageShell
       title={`Inventory ${record.itemNumber}`}
       backHref={backHref}
-      onBack={closeDetail}
+      onBack={page.closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
       headerActions={<InventoryHeaderActions row={record} />}
     >
       <div className="space-y-6">
-        <FormStatusNotices message={notices.message} error={notices.error} />
+        <FormStatusNotices message={page.notices.message} error={page.notices.error} />
 
         <InventorySnapshotGrid summary={inventorySummary} />
 
@@ -118,7 +128,7 @@ export function InventoryDetailClient({
           deleteLabel="Delete Inventory"
           deleteConfirmMessage="Delete this inventory row?"
           onDelete={() => void deleteInventory()}
-          onClose={closeDetail}
+          onClose={page.closePage}
           saveLabel="Save Inventory"
           savingLabel="Saving..."
           onSave={() => void saveInventory()}

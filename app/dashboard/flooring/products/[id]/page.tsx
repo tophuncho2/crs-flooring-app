@@ -1,9 +1,9 @@
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
-import { listInventoryRows } from "@/features/flooring/inventory/api"
 import { ProductDetailClient } from "@/features/flooring/products/components/detail/product-detail-client"
-import { getProductById, getProductsPageData } from "@/features/flooring/products/data/queries"
+import { getProductDetailPageData } from "@/features/flooring/products/data/queries"
 
 export default async function ProductDetailPage({
   params,
@@ -16,29 +16,33 @@ export default async function ProductDetailPage({
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const result = await getProductDetailPageData(id)
 
-  try {
-    const [product, pageData, inventoryRows] = await Promise.all([
-      getProductById(id),
-      getProductsPageData(1, {
-        searchQuery: "",
-        isAscendingSort: false,
-        isGroupingEnabled: false,
-        groupByKeys: [],
-      }),
-      listInventoryRows(undefined, id),
-    ])
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
+    if (!("error" in result)) {
+      notFound()
+    }
 
     return (
-      <ProductDetailClient
-        initialProduct={product}
-        categoryOptions={pageData.categoryOptions}
-        manufacturerOptions={pageData.manufacturerOptions}
-        inventoryRows={inventoryRows}
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/products")}
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
       />
     )
-  } catch {
-    notFound()
   }
+
+  return (
+    <ProductDetailClient
+      initialProduct={result.data.product}
+      categoryOptions={result.data.categoryOptions}
+      manufacturerOptions={result.data.manufacturerOptions}
+      inventoryRows={result.data.inventoryRows}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/products")}
+    />
+  )
 }

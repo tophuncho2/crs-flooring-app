@@ -10,9 +10,41 @@ const { ensureBuilderOrAdminMock, createManagementCompanyMock, deleteManagementC
   deleteManagementCompanyMock: vi.fn(),
 }))
 
+const routeAccess = {
+  requestId: "req-1",
+  user: {
+    id: "user-1",
+    email: "builder@example.com",
+    role: "BUILDER",
+    isVerified: true,
+    tools: [],
+  },
+  clientIp: null,
+} as const
+
 vi.mock("@/server/auth/route-auth", () => ({
   ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
 }))
+
+vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: vi.fn(async () => routeAccess),
+  routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
+  routeError: vi.fn((_context, error) =>
+    new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500 }),
+  ),
+}))
+
+vi.mock("@/features/flooring/management-companies/data/mutations", async () => {
+  const actual = await vi.importActual<typeof import("@/features/flooring/management-companies/data/mutations")>(
+    "@/features/flooring/management-companies/data/mutations",
+  )
+
+  return {
+    ...actual,
+    createManagementCompany: createManagementCompanyMock,
+    deleteManagementCompany: deleteManagementCompanyMock,
+  }
+})
 
 vi.mock("@/features/flooring/management-companies/mutations", async () => {
   const actual = await vi.importActual<typeof import("@/features/flooring/management-companies/mutations")>(

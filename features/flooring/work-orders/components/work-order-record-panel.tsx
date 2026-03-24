@@ -2,17 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/feedback-states"
-import { FormStatusNotices } from "@/features/flooring/shared/notices"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/ui/feedback/feedback-states"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import {
   MaterialItemsEditor,
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemOption,
-} from "@/features/flooring/shared/record-items/material-items-editor"
-import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { buildRecordSummary } from "@/features/flooring/shared/record-summary"
-import { RecordFormField } from "@/features/flooring/shared/record-form"
+} from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
+import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
 import {
   ServiceItemsEditor,
@@ -20,14 +20,14 @@ import {
   type ServiceItemDraft,
   type ServiceOption,
   type UnitOption,
-} from "@/features/flooring/shared/record-items/service-items-editor"
+} from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
-import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/record-items/record-primary-fields"
-import { useChildCollection } from "@/features/flooring/shared/record-items/use-child-collection"
-import { useRecordLineItemsController } from "@/features/flooring/shared/record-items/use-record-line-items-controller"
+import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/ui/record-items/record-primary-fields"
+import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
+import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
-import { useRecordDetailController } from "@/features/flooring/shared/record-page/use-record-detail-controller"
-import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/use-record-notices"
+import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
+import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 import { normalizeWorkOrderExpenseSummary } from "@/features/flooring/work-orders/domain/expense-summary"
 import type { DraftWorkOrder, PropertyOption, SalesRepContactOption, WorkOrderDetail, WorkOrderExpenseSummary, WarehouseOption } from "@/features/flooring/work-orders/types"

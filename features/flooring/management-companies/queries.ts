@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { normalizeManagementCompany, normalizeManagementCompanyOption } from "./services"
 
@@ -67,6 +67,7 @@ export async function listManagementCompanies(
     orderBy: buildManagementCompaniesOrderBy(tableState),
     select: {
       id: true,
+      updatedAt: true,
       name: true,
       streetAddress: true,
       city: true,
@@ -106,6 +107,7 @@ export async function getManagementCompanyById(id: string) {
     where: { id },
     select: {
       id: true,
+      updatedAt: true,
       name: true,
       streetAddress: true,
       city: true,
@@ -128,6 +130,33 @@ export async function getManagementCompanyById(id: string) {
   })
 
   return normalizeManagementCompany(company)
+}
+
+export async function getManagementCompanyDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  company: Awaited<ReturnType<typeof getManagementCompanyById>>
+}>> {
+  try {
+    return {
+      ok: true,
+      data: {
+        company: await getManagementCompanyById(id),
+      },
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "MANAGEMENT_COMPANY_DETAIL_LOAD_FAILED",
+        title: "Management Company Unavailable",
+        message: "The app could not load this management company.",
+        detail: "The management company record could not be loaded.",
+      }),
+    }
+  }
 }
 
 async function loadManagementCompaniesPageData(page: number, tableState: ServerTableQueryState) {

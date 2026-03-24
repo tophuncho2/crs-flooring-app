@@ -2,15 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CollapsibleTableSection, InlineAddRowButton } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordOptionsMenu } from "@/features/flooring/shared/ui/display/record-options-menu"
-import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { RecordFormField as FormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
 import { RecordMetricSummary } from "@/features/flooring/shared/ui/display/record-metric-summary"
-import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { requestJson } from "@/features/flooring/shared/transport/http"
@@ -23,6 +20,7 @@ import {
   getTransportTypeFieldClass,
 } from "@/features/flooring/imports/contracts"
 import { calculateImportSummary } from "@/features/flooring/imports/domain/summary"
+import { ImportInventoryRowsSection, type ImportItemDraft } from "./import-inventory-rows-section"
 
 type ImportRow = {
   id: string
@@ -72,18 +70,6 @@ type LocationOption = {
   warehouseId: string
   locationCode: string
   label: string
-}
-
-type ImportItemDraft = {
-  clientId: string
-  productId: string
-  itemNumber: string
-  stockCount: string
-  locationId: string
-  dyeLot: string
-  cost: string
-  freight: string
-  notes: string
 }
 
 type ImportDraft = {
@@ -364,119 +350,17 @@ export function ImportDetailClient({
           </FormField>
         </div>
 
-        <CollapsibleTableSection title="Import Inventory Rows" titleMeta={summary.totalCostLabel} defaultOpen>
-          <ModalTableShell minWidthClass="min-w-[1320px]">
-            <ModalTableHead>
-              <tr>
-                <TableHeaderCell>Product</TableHeaderCell>
-                <TableHeaderCell>Item #</TableHeaderCell>
-                <TableHeaderCell>Stock</TableHeaderCell>
-                <TableHeaderCell>Location</TableHeaderCell>
-                <TableHeaderCell>Dye Lot</TableHeaderCell>
-                <TableHeaderCell>Cost $</TableHeaderCell>
-                <TableHeaderCell>Freight $</TableHeaderCell>
-                <TableHeaderCell>Warehouse</TableHeaderCell>
-                <TableHeaderCell>Notes</TableHeaderCell>
-                <TableHeaderCell>Remove</TableHeaderCell>
-              </tr>
-            </ModalTableHead>
-            <tbody>
-              {currentDraft.items.map((item, index) => {
-                const filteredLocations = currentDraft.warehouseId
-                  ? locationOptions.filter((location) => location.warehouseId === currentDraft.warehouseId)
-                  : locationOptions
-                const selectedProduct = productLookup.get(item.productId)
-
-                return (
-                  <tr key={item.clientId} className="border-t border-[var(--panel-border)]">
-                    <td className="px-3 py-2">
-                      <select
-                        value={item.productId}
-                        onChange={(event) => setItemField(index, "productId", event.target.value)}
-                        className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        <option value="">Select product</option>
-                        {productOptions.map((product) => (
-                          <option key={product.id} value={product.id}>
-                            {product.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={item.itemNumber}
-                        onChange={(event) => setItemField(index, "itemNumber", event.target.value)}
-                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={item.stockCount}
-                          onChange={(event) => setItemField(index, "stockCount", event.target.value)}
-                          className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                        />
-                        <span className="text-xs text-[var(--foreground)]/60">{selectedProduct?.stockUnit || "unit"}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={item.locationId}
-                        onChange={(event) => setItemField(index, "locationId", event.target.value)}
-                        className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      >
-                        <option value="">Select location</option>
-                        {filteredLocations.map((location) => (
-                          <option key={location.id} value={location.id}>
-                            {location.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={item.dyeLot}
-                        onChange={(event) => setItemField(index, "dyeLot", event.target.value)}
-                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={item.cost}
-                        onChange={(event) => setItemField(index, "cost", event.target.value)}
-                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={item.freight}
-                        onChange={(event) => setItemField(index, "freight", event.target.value)}
-                        className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">{warehouseOptions.find((warehouse) => warehouse.id === currentDraft.warehouseId)?.name || "-"}</td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={item.notes}
-                        onChange={(event) => setItemField(index, "notes", event.target.value)}
-                        className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <DeleteRowButton onClick={() => removeItemRow(index)}>Remove</DeleteRowButton>
-                    </td>
-                  </tr>
-                )
-              })}
-              <tr className="border-t border-[var(--panel-border)]">
-                <td colSpan={10} className="px-3 py-3">
-                  <InlineAddRowButton label="Add Import Inventory Item" onClick={addItemRow} />
-                </td>
-              </tr>
-            </tbody>
-          </ModalTableShell>
-        </CollapsibleTableSection>
+        <ImportInventoryRowsSection
+          items={currentDraft.items}
+          productOptions={productOptions}
+          warehouseOptions={warehouseOptions}
+          locationOptions={locationOptions}
+          warehouseId={currentDraft.warehouseId}
+          totalCostLabel={summary.totalCostLabel}
+          onItemFieldChange={setItemField}
+          onAddItemRow={addItemRow}
+          onRemoveItemRow={removeItemRow}
+        />
 
         <RecordPanelFooter
           deleteLabel="Delete Import"

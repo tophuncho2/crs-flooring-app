@@ -4,6 +4,7 @@ import type { CreateManagementCompanyInput, UpdateManagementCompanyInput } from 
 
 const managementCompanySelect = {
   id: true,
+  updatedAt: true,
   name: true,
   streetAddress: true,
   city: true,

@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma"
 import { deleteInventoryRow, updateInventoryRow } from "@/features/flooring/inventory/api"
+import { getInventoryById } from "@/features/flooring/inventory/data/queries"
 import {
   enforceRouteRateLimit,
   logRouteMutationFailure,
@@ -11,6 +12,18 @@ import {
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  try {
+    const { id } = await context.params
+    return routeJson(access, { inventory: await getInventoryById(id) })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 export async function PATCH(request: Request, context: RouteContext) {

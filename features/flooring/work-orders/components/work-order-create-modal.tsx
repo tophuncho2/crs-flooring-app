@@ -1,8 +1,8 @@
 "use client"
 
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
-import { FormStatusNotices } from "@/features/flooring/shared/notices"
-import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/record-form"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/ui/forms/record-form"
 import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
 import type { DraftWorkOrder, PropertyOption, WarehouseOption } from "../types"
 import { VACANCY_OPTIONS, WORK_ORDER_STATUS_OPTIONS, getVacancyFieldClass, getWorkOrderStatusFieldClass, getWorkOrderStatusLabel } from "../contracts"

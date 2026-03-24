@@ -3,7 +3,7 @@ import { prisma } from "@/server/db/prisma"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
-import { loadTemplateRecordDetailOptions } from "@/features/flooring/shared/record-page/record-detail-options"
+import { loadTemplateRecordDetailOptions } from "@/features/flooring/shared/controllers/record-page/record-detail-options"
 import { normalizeTemplate, normalizeTemplateExpenseTotals, normalizeTemplateItem, normalizeTemplateSalesRep, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 
 function buildTemplatesWhere(searchQuery: string): Prisma.FlooringTemplateWhereInput | undefined {

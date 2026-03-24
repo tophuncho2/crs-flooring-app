@@ -1,52 +1,47 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
-import { deleteProperty, updateProperty } from "@/features/flooring/properties/mutations"
-import { getPropertyById } from "@/features/flooring/properties/queries"
-import { validateUpdatePropertyInput } from "@/features/flooring/properties/validators"
+import { deleteProperty, updateProperty } from "@/features/flooring/properties/data/mutations"
+import { getPropertyById } from "@/features/flooring/properties/data/queries"
+import { validateUpdatePropertyInput } from "@/features/flooring/properties/domain/validators"
+import { requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
-    return NextResponse.json({ property: await getPropertyById(id) })
+    return routeJson(access, { property: await getPropertyById(id) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
     const property = await updateProperty(id, validateUpdatePropertyInput(body))
-    return NextResponse.json({ property })
+    return routeJson(access, { property })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
     await deleteProperty(id)
-    return NextResponse.json({ ok: true })
+    return routeJson(access, { ok: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
