@@ -145,6 +145,10 @@ export function normalizeInventoryRow(row: {
 }
 
 function parseInventoryDetailMutationBody(body: Record<string, unknown>) {
+  return parseInventoryEditableMutationFields(body)
+}
+
+function parseInventoryEditableMutationFields(body: Record<string, unknown>) {
   const costValue = body.cost
   const freightValue = body.freight
 
@@ -162,22 +166,11 @@ function parseInventoryDetailMutationBody(body: Record<string, unknown>) {
 }
 
 function parseInventoryMutationBody(body: Record<string, unknown>) {
-  const costValue = body.cost
-  const freightValue = body.freight
-
   return {
+    ...parseInventoryEditableMutationFields(body),
     importEntryId: parseOptionalString(body.importEntryId),
     productId: parseRequiredString(body.productId, "productId"),
-    locationId: parseOptionalString(body.locationId),
-    itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
-    dyeLot: parseOptionalString(body.dyeLot),
     stockCount: parseDecimal(body.stockCount, "stockCount", 2),
-    cost: costValue === "" || costValue === null || costValue === undefined ? null : parseDecimal(costValue, "cost", 2),
-    freight:
-      freightValue === "" || freightValue === null || freightValue === undefined
-        ? null
-        : parseDecimal(freightValue, "freight", 2),
-    notes: parseOptionalString(body.notes),
   }
 }
 

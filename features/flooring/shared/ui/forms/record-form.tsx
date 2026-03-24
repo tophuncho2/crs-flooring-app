@@ -3,6 +3,15 @@
 import type { ReactNode } from "react"
 import { X } from "lucide-react"
 
+export const RECORD_FIELD_CONTROL_CLASS_NAME = "w-full rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+export const RECORD_TEXTAREA_CONTROL_CLASS_NAME = `${RECORD_FIELD_CONTROL_CLASS_NAME} min-h-[42px] resize-y`
+export const RECORD_PREFIXED_CONTROL_CONTAINER_CLASS_NAME =
+  "flex w-full overflow-hidden rounded-lg border border-[var(--panel-border)] bg-transparent"
+export const RECORD_PREFIX_CONTROL_CLASS_NAME =
+  "inline-flex shrink-0 items-center border-r border-[var(--panel-border)] px-3 text-[var(--foreground)]/70"
+export const RECORD_PREFIXED_CONTROL_INPUT_CLASS_NAME = "min-w-0 flex-1 bg-transparent px-3 py-2 outline-none"
+export const RECORD_CURRENCY_PREFIX = "$"
+
 export function RecordModalShell({
   title,
   onClose,
