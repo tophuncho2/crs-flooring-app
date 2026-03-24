@@ -11,6 +11,8 @@ import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
 
 const ALWAYS_VISIBLE_FLOORING_SLUGS = new Set(["flooring-services"])
 
+export const dynamic = "force-dynamic"
+
 export default async function DashboardLayout({
   children,
 }: {
