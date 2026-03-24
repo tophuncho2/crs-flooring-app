@@ -8,7 +8,6 @@ import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-c
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
 import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import {
@@ -76,14 +75,9 @@ export default function FlooringProductsClient({
 
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    setGroupByKeys,
-    groupFields,
     filteredRows: filteredProducts,
     sortedRows: sortedProducts,
     groupedRowTree,
@@ -100,6 +94,9 @@ export default function FlooringProductsClient({
     toggleColumnVisibility: toggleProductColumnVisibility,
     moveColumn: moveProductColumn,
     setColumnOrder: setProductColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: products,
     tableKey: "products-main",
@@ -124,27 +121,16 @@ export default function FlooringProductsClient({
       { key: "actions", label: "Actions", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
+    sortFieldKey: "product",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    urlSyncMode: "router",
     initialPreferences: initialTablePreferences,
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
-  })
-
-  const productGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled,
-    setIsGroupingEnabled,
-    groupByKeys,
-    setGroupByKeys,
-    groupOptions: productGroupOptions,
   })
 
   return (
@@ -154,23 +140,23 @@ export default function FlooringProductsClient({
           title="Flooring Products"
           actions={(
             <TableActionsSummary count={filteredProducts.length}>
-              <TableControlsBar
-                searchQuery={searchQuery}
-                onSearchQueryChange={serverTableControls.onSearchQueryChange}
-                searchPlaceholder="Search product name"
-                isAscendingSort={isAscendingSort}
-                onToggleSort={serverTableControls.onToggleSort}
-              >
-                <TableColumnSettings
-                  columns={orderedProductColumns}
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
+              searchPlaceholder="Search product name"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={onToggleSort}
+            >
+              <TableColumnSettings
+                columns={orderedProductColumns}
                   hiddenColumnKeys={hiddenProductColumnKeys}
                   onToggleColumn={toggleProductColumnVisibility}
                   onMoveColumn={moveProductColumn}
-                  onSetColumnOrder={setProductColumnOrder}
-                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                  maxGroupFields={MAX_GROUP_FIELDS}
-                  onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
-                />
+                onSetColumnOrder={setProductColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={onToggleGroupedColumn}
+              />
                 <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                   <Plus size={16} />
                   Product

@@ -1,6 +1,6 @@
 import { requireToolAccess } from "@/server/auth/session"
-import { getUserTablePreference } from "@/server/account/table-preferences"
-import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { getManagementCompaniesPageData } from "@/features/flooring/management-companies/queries"
 import ManagementCompaniesClient from "@/features/flooring/management-companies/components/management-companies-client"
@@ -13,14 +13,15 @@ export default async function ManagementCompaniesPage({
   const user = await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "management-companies-main")
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    allowedGroupKeys: ["company", "street", "city", "state", "zip", "phone", "email", "fullAddress"],
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : [],
+    allowedGroupKeys: ["company", "street", "city", "state", "zip", "phone", "email", "fullAddress", "properties"],
   })
-  const [result, initialTablePreferences] = await Promise.all([
-    getManagementCompaniesPageData(page, tableState),
-    getUserTablePreference(user.id, "management-companies-main"),
-  ])
+  const result = await getManagementCompaniesPageData(page, tableState)
 
   if (!result.ok) {
     return (
@@ -43,8 +44,8 @@ export default async function ManagementCompaniesPage({
       initialTablePreferences={initialTablePreferences}
       pagination={{
         ...pageData.pagination,
-        previousPageHref: buildPageHref("/dashboard/flooring/management-companies", pageData.pagination.page - 1),
-        nextPageHref: buildPageHref("/dashboard/flooring/management-companies", pageData.pagination.page + 1),
+        previousPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/management-companies", pageData.pagination.page - 1, resolvedSearchParams),
+        nextPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/management-companies", pageData.pagination.page + 1, resolvedSearchParams),
       }}
     />
   )

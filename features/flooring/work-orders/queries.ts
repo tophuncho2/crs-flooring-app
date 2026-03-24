@@ -4,9 +4,10 @@ import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivit
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/transport/record-detail-options"
 import {
-  ALL_WORK_ORDER_STATUS_FILTER,
-  ALL_WORK_ORDER_WAREHOUSE_FILTER,
   type WorkOrderPageFilterState,
+  type WorkOrderStatusFilter,
+  parseWorkOrderWarehouseFilter,
+  parseWorkOrderStatusFilter,
 } from "./domain/filters"
 import { normalizeWorkOrder, normalizeWorkOrderExpenseTotals, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
@@ -33,23 +34,29 @@ function buildWorkOrderWhere(searchQuery: string): Prisma.FlooringWorkOrderWhere
   }
 }
 
-function buildWorkOrderStatusWhere(status: WorkOrderPageFilterState["status"]): Prisma.FlooringWorkOrderWhereInput | undefined {
-  if (status === ALL_WORK_ORDER_STATUS_FILTER) {
+function buildWorkOrderStatusWhere(statuses: WorkOrderPageFilterState["status"]): Prisma.FlooringWorkOrderWhereInput | undefined {
+  const normalizedStatuses = parseWorkOrderStatusFilter(statuses) as WorkOrderStatusFilter[]
+  if (normalizedStatuses.length === 0) {
     return undefined
   }
 
   return {
-    status,
+    status: {
+      in: normalizedStatuses,
+    },
   }
 }
 
-function buildWorkOrderWarehouseWhere(warehouseId: string): Prisma.FlooringWorkOrderWhereInput | undefined {
-  if (!warehouseId || warehouseId === ALL_WORK_ORDER_WAREHOUSE_FILTER) {
+function buildWorkOrderWarehouseWhere(warehouseIds: string[] | string): Prisma.FlooringWorkOrderWhereInput | undefined {
+  const normalizedWarehouseIds = parseWorkOrderWarehouseFilter(warehouseIds)
+  if (normalizedWarehouseIds.length === 0) {
     return undefined
   }
 
   return {
-    warehouseId,
+    warehouseId: {
+      in: normalizedWarehouseIds,
+    },
   }
 }
 

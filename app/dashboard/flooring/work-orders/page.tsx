@@ -21,10 +21,10 @@ export default async function WorkOrdersPage({
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isAscendingSort : true,
-    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isGroupingEnabled : false,
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
     allowedGroupKeys: ["status", "warehouse", "property", "date", "unitType", "vacancy"],
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.groupByKeys : ["warehouse"],
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["warehouse"],
   })
   const filterState: WorkOrderServerFilterState = parseServerTableFilterState({
     searchParams: resolvedSearchParams,

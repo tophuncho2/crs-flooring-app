@@ -1,5 +1,4 @@
 import type { TableFilterDefinition } from "@/features/flooring/shared/controllers/table/table-filter-state"
-import { ALL_IMPORT_STATUS_FILTER, ALL_IMPORT_WAREHOUSE_FILTER } from "@/features/flooring/imports/domain/filters"
 
 export function createImportsPageFilterDefinitions(warehouseOptions: Array<{ id: string; name: string }>): TableFilterDefinition[] {
   return [
@@ -7,9 +6,9 @@ export function createImportsPageFilterDefinitions(warehouseOptions: Array<{ id:
       key: "status",
       param: "status",
       type: "tabs",
-      defaultValue: ALL_IMPORT_STATUS_FILTER,
+      label: "Status",
+      clearLabel: "All",
       options: [
-        { value: ALL_IMPORT_STATUS_FILTER, label: "All" },
         { value: "PENDING", label: "Pending" },
         { value: "FINAL", label: "Final" },
       ],
@@ -19,9 +18,8 @@ export function createImportsPageFilterDefinitions(warehouseOptions: Array<{ id:
       param: "warehouse",
       type: "select",
       label: "Warehouse",
-      defaultValue: ALL_IMPORT_WAREHOUSE_FILTER,
+      clearLabel: "All Warehouses",
       options: [
-        { value: ALL_IMPORT_WAREHOUSE_FILTER, label: "All Warehouses" },
         ...warehouseOptions.map((warehouse) => ({
           value: warehouse.id,
           label: warehouse.name,

@@ -16,8 +16,8 @@ export async function GET(request: Request) {
         isGroupingEnabled: false,
         groupByKeys: [],
       }, {
-        status: "all",
-        warehouseId: "all",
+        status: [],
+        warehouseId: [],
       }),
     })
   } catch (error) {

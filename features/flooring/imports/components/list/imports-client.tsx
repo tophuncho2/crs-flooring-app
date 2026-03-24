@@ -9,8 +9,6 @@ import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls
 import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { usePageTableFilters } from "@/features/flooring/shared/controllers/table/use-page-table-filters"
-import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import {
@@ -88,14 +86,9 @@ export default function ImportsClient({
 
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    setGroupByKeys,
-    groupFields,
     filteredRows: filteredImports,
     sortedRows: sortedImports,
     groupedRowTree,
@@ -112,7 +105,10 @@ export default function ImportsClient({
     toggleColumnVisibility: toggleImportColumnVisibility,
     moveColumn: moveImportColumn,
     setColumnOrder: setImportColumnOrder,
-    persistViewPreferences,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
+    filterGroups,
   } = useConfiguredTableState({
     rows: imports,
     tableKey: "imports-main",
@@ -127,41 +123,18 @@ export default function ImportsClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => String(row.importNumber),
+    sortFieldKey: "importNumber",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    filterDefinitions: createImportsPageFilterDefinitions(filterWarehouseOptions),
+    initialFilters: filterState,
+    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
     initialPreferences: initialTablePreferences,
-  })
-  const importFilterDefinitions = createImportsPageFilterDefinitions(filterWarehouseOptions)
-  const importFilters = usePageTableFilters({
-    definitions: importFilterDefinitions,
-    initialFilters: filterState,
-    onPersistState: persistViewPreferences,
-    getCurrentViewState: () => ({
-      isAscendingSort,
-      isGroupingEnabled,
-      groupByKeys,
-      allowedGroupKeys: groupFields.map((field) => field.key),
-    }),
-  })
-  const importGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled,
-    setIsGroupingEnabled,
-    groupByKeys,
-    setGroupByKeys,
-    groupOptions: importGroupOptions,
-    filters: importFilters.filters,
-    allowedFilterValues: importFilters.allowedFilterValues,
-    onPersistState: persistViewPreferences,
   })
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
@@ -172,14 +145,14 @@ export default function ImportsClient({
             <TableActionsSummary count={filteredImports.length}>
               <TableControlsBar
                 searchQuery={searchQuery}
-                onSearchQueryChange={serverTableControls.onSearchQueryChange}
+                onSearchQueryChange={onSearchQueryChange}
                 searchPlaceholder="Search import # or tag"
                 isAscendingSort={isAscendingSort}
-                onToggleSort={serverTableControls.onToggleSort}
+                onToggleSort={onToggleSort}
                 ascendingSortLabel="1-9"
                 descendingSortLabel="9-1"
               >
-                <TableFilterControls groups={importFilters.filterGroups} />
+                <TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />
                 <TableColumnSettings
                   columns={orderedImportColumns}
                   hiddenColumnKeys={hiddenImportColumnKeys}
@@ -188,7 +161,7 @@ export default function ImportsClient({
                   onSetColumnOrder={setImportColumnOrder}
                   groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                   maxGroupFields={MAX_GROUP_FIELDS}
-                  onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
+                  onToggleGroupedColumn={onToggleGroupedColumn}
                 />
                 <button
                   type="button"

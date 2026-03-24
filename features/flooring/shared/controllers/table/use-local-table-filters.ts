@@ -13,40 +13,41 @@ export function useLocalTableFilters({
 }) {
   const [filters, setFilters] = useState(() => createInitialTableFilterState(definitions, initialFilters))
 
-  const onFilterChange = useCallback((key: string, value: string) => {
+  const onToggleFilterValue = useCallback((key: string, value: string) => {
     setFilters((current) => ({
       ...current,
-      [key]: value,
+      [key]: current[key]?.includes(value)
+        ? current[key].filter((entry) => entry !== value)
+        : [...(current[key] ?? []), value],
+    }))
+  }, [])
+
+  const onClearFilter = useCallback((key: string) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: [],
     }))
   }, [])
 
   const filterGroups = useMemo<TableFilterGroup[]>(
     () =>
-      definitions.map((definition) => (
-        definition.type === "tabs"
-          ? {
-              key: definition.key,
-              type: "tabs" as const,
-              ...(definition.label ? { label: definition.label } : {}),
-              value: filters[definition.key] ?? definition.defaultValue,
-              options: definition.options,
-              onChange: (value: string) => onFilterChange(definition.key, value),
-            }
-          : {
-              key: definition.key,
-              type: "select" as const,
-              label: definition.label ?? definition.key,
-              value: filters[definition.key] ?? definition.defaultValue,
-              options: definition.options,
-              onChange: (value: string) => onFilterChange(definition.key, value),
-            }
-      )),
-    [definitions, filters, onFilterChange],
+      definitions.map((definition) => ({
+        key: definition.key,
+        type: definition.type,
+        label: definition.label,
+        clearLabel: definition.clearLabel,
+        selectedValues: filters[definition.key] ?? [],
+        options: definition.options,
+        onToggleValue: (value: string) => onToggleFilterValue(definition.key, value),
+        onClear: () => onClearFilter(definition.key),
+      })),
+    [definitions, filters, onClearFilter, onToggleFilterValue],
   )
 
   return {
     filters,
     filterGroups,
-    onFilterChange,
+    onToggleFilterValue,
+    onClearFilter,
   }
 }

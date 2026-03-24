@@ -21,9 +21,9 @@ export default async function FlooringImportsPage({
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isAscendingSort : true,
-    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isGroupingEnabled : true,
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.groupByKeys : ["warehouse"],
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : true,
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["warehouse"],
     allowedGroupKeys: ["transport", "status", "warehouse"],
   })
   const filterState: ImportPageFilterState = parseServerTableFilterState({

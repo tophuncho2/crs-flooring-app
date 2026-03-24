@@ -3,14 +3,25 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import CategoriesClient from "@/features/flooring/categories/components/list/categories-client"
 import { getCategoriesPageData } from "@/features/flooring/categories/data/queries"
-import { getUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { parseServerTableQueryState } from "@/server/pagination"
 
-export default async function FlooringCategoriesPage() {
+export default async function FlooringCategoriesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const user = await requireCategoriesAccess()
-  const [pageData, initialTablePreferences] = await Promise.all([
-    getCategoriesPageData(),
-    getUserTablePreference(user.id, "categories-main"),
-  ])
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "categories-main")
+  const tableState = parseServerTableQueryState({
+    searchParams: resolvedSearchParams,
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["sendUnit"],
+    allowedGroupKeys: ["sendUnit", "stockUnit", "coverageAvailableUnit", "itemCoverageUnit", "serviceUnit"],
+  })
+  const pageData = await getCategoriesPageData()
 
   if (!pageData.ok) {
     return (
@@ -29,6 +40,7 @@ export default async function FlooringCategoriesPage() {
       initialCategories={pageData.data.initialCategories}
       unitOfMeasureOptions={pageData.data.unitOfMeasureOptions}
       initialTablePreferences={initialTablePreferences}
+      tableState={tableState}
     />
   )
 }

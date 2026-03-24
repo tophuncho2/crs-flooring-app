@@ -5,7 +5,6 @@ import { Plus } from "lucide-react"
 import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
@@ -104,14 +103,9 @@ export default function PropertiesClient({
   const propertyNavigation = useCanonicalDetailNavigation("/dashboard/flooring/properties")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    setGroupByKeys,
-    groupFields,
     filteredRows: filteredProperties,
     sortedRows: sortedProperties,
     groupedRowTree: groupedProperties,
@@ -128,6 +122,9 @@ export default function PropertiesClient({
     toggleColumnVisibility: togglePropertyColumnVisibility,
     moveColumn: movePropertyColumn,
     setColumnOrder: setPropertyColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: properties,
     tableKey: "properties-main",
@@ -144,26 +141,16 @@ export default function PropertiesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
+    sortFieldKey: "property",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
     initialPreferences: initialTablePreferences,
+    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
-  })
-  const propertyGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled,
-    setIsGroupingEnabled,
-    groupByKeys,
-    setGroupByKeys,
-    groupOptions: propertyGroupOptions,
   })
 
   function setNewDraftField(field: keyof DraftProperty, value: string | string[]) {
@@ -280,10 +267,10 @@ export default function PropertiesClient({
           <TableActionsSummary count={filteredProperties.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={serverTableControls.onSearchQueryChange}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search property or company"
               isAscendingSort={isAscendingSort}
-              onToggleSort={serverTableControls.onToggleSort}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={orderedPropertyColumns}
@@ -293,7 +280,7 @@ export default function PropertiesClient({
                 onSetColumnOrder={setPropertyColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               <button
                 type="button"

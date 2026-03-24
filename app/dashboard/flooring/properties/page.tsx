@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { getUserTablePreference } from "@/server/account/table-preferences"
-import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getPropertiesPageData } from "@/features/flooring/properties/queries"
 import PropertiesClient from "@/features/flooring/properties/components/properties-client"
 
@@ -13,15 +13,15 @@ export default async function FlooringPropertiesPage({
   const user = await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "properties-main")
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
     allowedGroupKeys: ["city", "state", "managementCompany"],
-    defaultGroupKeys: ["managementCompany"],
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["managementCompany"],
   })
-  const [result, initialTablePreferences] = await Promise.all([
-    getPropertiesPageData(page, tableState),
-    getUserTablePreference(user.id, "properties-main"),
-  ])
+  const result = await getPropertiesPageData(page, tableState)
 
   if (!result.ok) {
     return (
@@ -45,8 +45,8 @@ export default async function FlooringPropertiesPage({
       initialTablePreferences={initialTablePreferences}
       pagination={{
         ...pageData.pagination,
-        previousPageHref: buildPageHref("/dashboard/flooring/properties", pageData.pagination.page - 1),
-        nextPageHref: buildPageHref("/dashboard/flooring/properties", pageData.pagination.page + 1),
+        previousPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/properties", pageData.pagination.page - 1, resolvedSearchParams),
+        nextPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/properties", pageData.pagination.page + 1, resolvedSearchParams),
       }}
     />
   )

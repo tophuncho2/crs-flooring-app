@@ -142,7 +142,7 @@ describe("ImportsClient", () => {
       <ImportsClient
         initialImports={[importRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: [], warehouseId: [] }}
         filterWarehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
       />,
     )
@@ -187,7 +187,7 @@ describe("ImportsClient", () => {
       <ImportsClient
         initialImports={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: [], warehouseId: [] }}
         filterWarehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
       />,
     )

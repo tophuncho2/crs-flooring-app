@@ -210,12 +210,13 @@ describe("ProductDetailClient", () => {
     }
     const inventoryTable = within(inventorySection).getAllByRole("table")[0]!
 
-    await user.click(within(inventorySection).getAllByRole("button", { name: "Pending" })[0]!)
+    await user.click(within(inventorySection).getByRole("button", { name: "Filter" }))
+    await user.click(within(inventorySection).getByRole("button", { name: "Pending" }))
     expect(within(inventoryTable).getByText("A100")).toBeTruthy()
     expect(within(inventoryTable).queryByText("B200")).toBeNull()
 
     await user.click(within(inventorySection).getAllByRole("button", { name: "All" })[0]!)
-    fireEvent.change(within(inventorySection).getByLabelText("Warehouse"), { target: { value: "wh-2" } })
+    await user.click(within(inventorySection).getByRole("button", { name: "Overflow Warehouse" }))
     expect(within(inventoryTable).queryByText("A100")).toBeNull()
     expect(within(inventoryTable).getByText("B200")).toBeTruthy()
   })

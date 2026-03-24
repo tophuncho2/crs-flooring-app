@@ -146,7 +146,7 @@ describe("InventoryClient", () => {
       <InventoryClient
         initialInventory={[inventoryRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all", categoryId: "all", productId: "all" }}
+        filterState={{ status: [], warehouseId: [], categoryId: [], productId: [] }}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         categoryOptions={[{ id: "cat-1", name: "Hard Surface" }]}
         productOptions={[{ id: "prod-1", label: "Oak Plank" }]}
@@ -286,7 +286,7 @@ describe("InventoryClient", () => {
       <InventoryClient
         initialInventory={[inventoryRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all", categoryId: "all", productId: "all" }}
+        filterState={{ status: [], warehouseId: [], categoryId: [], productId: [] }}
         warehouseOptions={[
           { id: "wh-1", name: "Main Warehouse" },
           { id: "wh-2", name: "Overflow Warehouse" },
@@ -296,10 +296,11 @@ describe("InventoryClient", () => {
       />,
     )
 
+    await user.click(screen.getByRole("button", { name: "Filter" }))
     await user.click(screen.getByRole("button", { name: "Pending" }))
     expect(navigationMocks.replace).toHaveBeenCalledWith("/dashboard/flooring/test?status=pending", { scroll: false })
 
-    fireEvent.change(screen.getByLabelText("Warehouse"), { target: { value: "wh-2" } })
+    await user.click(screen.getByRole("button", { name: "Overflow Warehouse" }))
     expect(navigationMocks.replace).toHaveBeenLastCalledWith(
       "/dashboard/flooring/test?status=pending&warehouse=wh-2",
       { scroll: false },

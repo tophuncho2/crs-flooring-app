@@ -70,16 +70,24 @@ describe("account routes", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({
-      hiddenColumnKeys: ["cost"],
-      columnOrderKeys: ["name", "cost"],
-      isAscendingSort: false,
-      isGroupingEnabled: true,
-      groupByKeys: ["warehouse"],
-      filters: { status: "pending" },
+      sort: {
+        key: "",
+        direction: "desc",
+      },
+      filters: { status: ["pending"] },
+      columnVisibility: {
+        name: true,
+        cost: false,
+      },
+      columnOrder: ["name", "cost"],
+      grouping: {
+        enabled: true,
+        keys: ["warehouse"],
+      },
     })
   })
 
-  it("PATCH /api/account/table-preferences/[tableKey] filters unknown columns before persisting", async () => {
+  it("PATCH /api/account/table-preferences/[tableKey] rejects invalid column keys", async () => {
     userTablePreferenceFindUniqueMock.mockResolvedValue({
       hiddenColumnKeys: [],
       columnOrderKeys: [],
@@ -102,8 +110,13 @@ describe("account routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          hiddenColumnKeys: ["cost", "cost", "bad"],
-          columnOrderKeys: ["qty", "bad", "name"],
+          state: {
+            columnVisibility: {
+              cost: false,
+              bad: false,
+            },
+            columnOrder: ["qty", "bad", "name"],
+          },
           allowedColumnKeys: ["name", "qty", "cost"],
         }),
       }),
@@ -111,23 +124,9 @@ describe("account routes", () => {
     )
     const payload = await response.json()
 
-    expect(response.status).toBe(200)
-    expect(userTablePreferenceUpsertMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        update: expect.objectContaining({
-          hiddenColumnKeys: ["cost"],
-          columnOrderKeys: ["qty", "name", "cost"],
-        }),
-      }),
-    )
-    expect(payload).toEqual({
-      hiddenColumnKeys: ["cost"],
-      columnOrderKeys: ["name", "qty", "cost"],
-      isAscendingSort: true,
-      isGroupingEnabled: false,
-      groupByKeys: [],
-      filters: {},
-    })
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("Invalid request body")
+    expect(userTablePreferenceUpsertMock).not.toHaveBeenCalled()
   })
 
   it("PATCH /api/account/table-preferences/[tableKey] merges valid sort, grouping, and filters into the existing preference", async () => {
@@ -137,7 +136,7 @@ describe("account routes", () => {
       isAscendingSort: true,
       isGroupingEnabled: false,
       groupByKeys: [],
-      filtersJson: { status: "all", warehouseId: "all" },
+      filtersJson: null,
     })
     userTablePreferenceUpsertMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
@@ -145,7 +144,7 @@ describe("account routes", () => {
       isAscendingSort: false,
       isGroupingEnabled: true,
       groupByKeys: ["warehouse"],
-      filtersJson: { status: "pending", warehouseId: "wh-1" },
+      filtersJson: { status: ["pending"], warehouseId: ["wh-1"] },
     })
 
     const response = await PATCH_TABLE_PREFERENCE(
@@ -153,18 +152,31 @@ describe("account routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          isAscendingSort: false,
-          isGroupingEnabled: true,
-          groupByKeys: ["warehouse", "bad"],
-          filters: {
-            status: "pending",
-            warehouseId: "wh-1",
-            unknown: "bad",
+          state: {
+            columnVisibility: {
+              name: true,
+              cost: false,
+            },
+            columnOrder: ["name", "cost"],
+            sort: {
+              key: "itemNumber",
+              direction: "desc",
+            },
+            grouping: {
+              enabled: true,
+              keys: ["warehouse"],
+            },
+            filters: {
+              status: ["pending"],
+              warehouseId: ["wh-1"],
+            },
           },
+          allowedColumnKeys: ["name", "cost"],
+          allowedSortKeys: ["itemNumber"],
           allowedGroupKeys: ["warehouse", "status"],
           allowedFilterValues: {
-            status: ["all", "pending", "final"],
-            warehouseId: ["all", "wh-1"],
+            status: ["pending", "final"],
+            warehouseId: ["wh-1"],
           },
         }),
       }),
@@ -181,17 +193,28 @@ describe("account routes", () => {
           isAscendingSort: false,
           isGroupingEnabled: true,
           groupByKeys: ["warehouse"],
-          filtersJson: { status: "pending", warehouseId: "wh-1" },
+          filtersJson: { status: ["pending"], warehouseId: ["wh-1"] },
         }),
       }),
     )
     expect(payload).toEqual({
-      hiddenColumnKeys: ["cost"],
-      columnOrderKeys: ["name", "cost"],
-      isAscendingSort: false,
-      isGroupingEnabled: true,
-      groupByKeys: ["warehouse"],
-      filters: { status: "pending", warehouseId: "wh-1" },
+      sort: {
+        key: "itemNumber",
+        direction: "desc",
+      },
+      filters: {
+        status: ["pending"],
+        warehouseId: ["wh-1"],
+      },
+      columnVisibility: {
+        name: true,
+        cost: false,
+      },
+      columnOrder: ["name", "cost"],
+      grouping: {
+        enabled: true,
+        keys: ["warehouse"],
+      },
     })
   })
 
@@ -218,12 +241,20 @@ describe("account routes", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({
-      hiddenColumnKeys: ["cost"],
-      columnOrderKeys: ["name", "cost"],
-      isAscendingSort: true,
-      isGroupingEnabled: false,
-      groupByKeys: [],
+      sort: {
+        key: "",
+        direction: "asc",
+      },
       filters: {},
+      columnVisibility: {
+        name: true,
+        cost: false,
+      },
+      columnOrder: ["name", "cost"],
+      grouping: {
+        enabled: false,
+        keys: [],
+      },
     })
     expect(userTablePreferenceFindUniqueMock).toHaveBeenCalledTimes(2)
   })
@@ -263,13 +294,23 @@ describe("account routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          hiddenColumnKeys: ["cost", "bad"],
-          columnOrderKeys: ["qty", "bad", "name"],
-          isAscendingSort: false,
-          filters: { status: "pending" },
+          state: {
+            columnVisibility: {
+              qty: true,
+              name: true,
+              cost: false,
+            },
+            columnOrder: ["qty", "name", "cost"],
+            sort: {
+              key: "name",
+              direction: "desc",
+            },
+            filters: { status: ["pending"] },
+          },
           allowedColumnKeys: ["name", "qty", "cost"],
+          allowedSortKeys: ["name"],
           allowedFilterValues: {
-            status: ["all", "pending"],
+            status: ["pending"],
           },
         }),
       }),
@@ -293,12 +334,21 @@ describe("account routes", () => {
       }),
     )
     expect(payload).toEqual({
-      hiddenColumnKeys: ["cost"],
-      columnOrderKeys: ["qty", "name", "cost"],
-      isAscendingSort: true,
-      isGroupingEnabled: false,
-      groupByKeys: [],
+      sort: {
+        key: "name",
+        direction: "desc",
+      },
       filters: {},
+      columnVisibility: {
+        qty: true,
+        name: true,
+        cost: false,
+      },
+      columnOrder: ["qty", "name", "cost"],
+      grouping: {
+        enabled: false,
+        keys: [],
+      },
     })
   })
 

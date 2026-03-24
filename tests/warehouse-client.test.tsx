@@ -9,11 +9,14 @@ import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/
 import { navigationMocks } from "./helpers/next-navigation-mock"
 
 vi.mock("lucide-react", () => ({
-  ArrowLeft: () => <span>{"<"}</span>,
-  ChevronDown: () => <span>{"v"}</span>,
-  ChevronRight: () => <span>{">"}</span>,
-  Plus: () => <span>+</span>,
-  X: () => <span>x</span>,
+  ArrowLeft: () => <span aria-hidden="true">{"<"}</span>,
+  ChevronDown: () => <span aria-hidden="true">{"v"}</span>,
+  ChevronRight: () => <span aria-hidden="true">{">"}</span>,
+  Columns3: () => <span aria-hidden="true">cols</span>,
+  Filter: () => <span aria-hidden="true">filter</span>,
+  Plus: () => <span aria-hidden="true">+</span>,
+  Search: () => <span aria-hidden="true">search</span>,
+  X: () => <span aria-hidden="true">x</span>,
 }))
 
 function jsonResponse(body: unknown, status = 200) {

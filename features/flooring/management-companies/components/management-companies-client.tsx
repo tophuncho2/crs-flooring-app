@@ -5,7 +5,7 @@ import { Plus } from "lucide-react"
 import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
@@ -15,6 +15,7 @@ import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
 import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 
 type ManagementCompanyRow = {
@@ -88,12 +89,12 @@ export default function ManagementCompaniesClient({
   const companyNavigation = useCanonicalDetailNavigation("/dashboard/flooring/management-companies")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
-    setGroupByKeys,
+    isGroupingEnabled,
+    groupByKeys,
     filteredRows: filteredCompanies,
     sortedRows: sortedCompanies,
+    groupedRowTree: groupedCompanies,
     page,
     pageSize,
     totalPages,
@@ -107,6 +108,9 @@ export default function ManagementCompaniesClient({
     toggleColumnVisibility: toggleCompanyColumnVisibility,
     moveColumn: moveCompanyColumn,
     setColumnOrder: setCompanyColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: companies,
     tableKey: "management-companies-main",
@@ -123,25 +127,16 @@ export default function ManagementCompaniesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
+    sortFieldKey: "company",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
     initialPreferences: initialTablePreferences,
+    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
-  })
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled: false,
-    setIsGroupingEnabled: () => undefined,
-    groupByKeys: [],
-    setGroupByKeys,
-    groupOptions: [],
   })
 
   function setNewDraftField(field: keyof DraftCompany, value: string | string[]) {
@@ -235,10 +230,10 @@ export default function ManagementCompaniesClient({
           <TableActionsSummary count={filteredCompanies.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={serverTableControls.onSearchQueryChange}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search company or property"
               isAscendingSort={isAscendingSort}
-              onToggleSort={serverTableControls.onToggleSort}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={orderedCompanyColumns}
@@ -246,6 +241,9 @@ export default function ManagementCompaniesClient({
                 onToggleColumn={toggleCompanyColumnVisibility}
                 onMoveColumn={moveCompanyColumn}
                 onSetColumnOrder={setCompanyColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               <button
                 type="button"
@@ -276,41 +274,81 @@ export default function ManagementCompaniesClient({
             </tr>
           </TableHead>
           <tbody>
-            {sortedCompanies.map((row) => {
-              const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
-              const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
-              const cells: Record<string, ReactNode> = {
-                company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
-                street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-                city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-                state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-                zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-                phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-                email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-                fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-                properties: (
-                  <td key="properties" className="px-3 py-2">
-                    <p className="text-xs text-[var(--foreground)]/70">
-                      {linkedProperties}
-                      {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
-                    </p>
-                  </td>
-                ),
-                delete: (
-                  <td key="delete" className="px-3 py-2">
-                    <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
-                      {deletingId === row.id ? "Deleting..." : "Delete"}
-                    </DeleteRowButton>
-                  </td>
-                ),
-              }
+            {isGroupingEnabled
+              ? renderGroupedTableRows({
+                  groups: groupedCompanies as GroupedRowTree<ManagementCompanyRow>[],
+                  colSpan: visibleCompanyColumns.length,
+                  renderRow: (row) => {
+                    const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
+                    const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
+                    const cells: Record<string, ReactNode> = {
+                      company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
+                      street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+                      city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+                      state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+                      zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+                      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+                      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+                      fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
+                      properties: (
+                        <td key="properties" className="px-3 py-2">
+                          <p className="text-xs text-[var(--foreground)]/70">
+                            {linkedProperties}
+                            {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
+                          </p>
+                        </td>
+                      ),
+                      delete: (
+                        <td key="delete" className="px-3 py-2">
+                          <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
+                            {deletingId === row.id ? "Deleting..." : "Delete"}
+                          </DeleteRowButton>
+                        </td>
+                      ),
+                    }
 
-              return (
-                <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
-                  {visibleCompanyColumns.map((column) => cells[column.key])}
-                </ClickableTableRow>
-              )
-            })}
+                    return (
+                      <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
+                        {visibleCompanyColumns.map((column) => cells[column.key])}
+                      </ClickableTableRow>
+                    )
+                  },
+                })
+              : sortedCompanies.map((row) => {
+                  const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
+                  const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
+                  const cells: Record<string, ReactNode> = {
+                    company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
+                    street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
+                    city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
+                    state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
+                    zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
+                    phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
+                    email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
+                    fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
+                    properties: (
+                      <td key="properties" className="px-3 py-2">
+                        <p className="text-xs text-[var(--foreground)]/70">
+                          {linkedProperties}
+                          {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
+                        </p>
+                      </td>
+                    ),
+                    delete: (
+                      <td key="delete" className="px-3 py-2">
+                        <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
+                          {deletingId === row.id ? "Deleting..." : "Delete"}
+                        </DeleteRowButton>
+                      </td>
+                    ),
+                  }
+
+                  return (
+                    <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
+                      {visibleCompanyColumns.map((column) => cells[column.key])}
+                    </ClickableTableRow>
+                  )
+                })}
 
             {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
           </tbody>

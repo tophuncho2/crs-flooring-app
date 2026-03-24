@@ -23,21 +23,25 @@ export default function UnitOfMeasuresClient({
   canManage,
   initialUnitOfMeasures,
   initialTablePreferences,
+  tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
   canManage: boolean
   initialUnitOfMeasures: UnitOfMeasureRow[]
   initialTablePreferences?: TablePreferencePayload | null
+  tableState: {
+    searchQuery: string
+    isAscendingSort: boolean
+    isGroupingEnabled: boolean
+    groupByKeys: string[]
+  }
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/unit-of-measures")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
     groupByKeys,
-    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -54,6 +58,9 @@ export default function UnitOfMeasuresClient({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "unit-of-measures-main",
@@ -63,7 +70,12 @@ export default function UnitOfMeasuresClient({
       ...(canManage ? [{ key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false } as const] : []),
     ],
     sortField: (row) => row.name,
-    defaultGroupKeys: ["name"],
+    sortFieldKey: "name",
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    urlSyncMode: "history",
     initialPreferences: initialTablePreferences,
   })
 
@@ -77,10 +89,10 @@ export default function UnitOfMeasuresClient({
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search unit of measure"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((previous) => !previous)}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -90,7 +102,7 @@ export default function UnitOfMeasuresClient({
                 onSetColumnOrder={setColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={toggleGroupByKey}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               {canManage ? (
                 <button

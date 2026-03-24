@@ -7,8 +7,6 @@ import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls
 import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { usePageTableFilters } from "@/features/flooring/shared/controllers/table/use-page-table-filters"
-import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useInventoryListController } from "@/features/flooring/inventory/controllers/use-inventory-list-controller"
@@ -59,14 +57,9 @@ export default function InventoryClient({
 
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    setGroupByKeys,
-    groupFields,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -83,7 +76,10 @@ export default function InventoryClient({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
-    persistViewPreferences,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
+    filterGroups,
   } = useConfiguredTableState({
     rows,
     tableKey: "inventory-main",
@@ -108,45 +104,22 @@ export default function InventoryClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.itemNumber,
+    sortFieldKey: "itemNumber",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
     initialPreferences: initialTablePreferences,
+    filterDefinitions: createInventoryPageFilterDefinitions({
+      warehouseOptions,
+      categoryOptions,
+      productOptions,
+    }),
+    initialFilters: filterState,
+    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
-  })
-  const filterDefinitions = createInventoryPageFilterDefinitions({
-    warehouseOptions,
-    categoryOptions,
-    productOptions,
-  })
-  const inventoryFilters = usePageTableFilters({
-    definitions: filterDefinitions,
-    initialFilters: filterState,
-    onPersistState: persistViewPreferences,
-    getCurrentViewState: () => ({
-      isAscendingSort,
-      isGroupingEnabled,
-      groupByKeys,
-      allowedGroupKeys: groupFields.map((field) => field.key),
-    }),
-  })
-
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled,
-    setIsGroupingEnabled,
-    groupByKeys,
-    setGroupByKeys,
-    groupOptions: groupFields.map((field) => ({ key: field.key, label: field.label })),
-    filters: inventoryFilters.filters,
-    allowedFilterValues: inventoryFilters.allowedFilterValues,
-    onPersistState: persistViewPreferences,
   })
 
   return (
@@ -158,15 +131,15 @@ export default function InventoryClient({
             <TableActionsSummary count={filteredRows.length}>
               <TableControlsBar
                 searchQuery={searchQuery}
-                onSearchQueryChange={serverTableControls.onSearchQueryChange}
+                onSearchQueryChange={onSearchQueryChange}
                 searchPlaceholder="Search product, item #, import, section, or location"
                 isAscendingSort={isAscendingSort}
-                onToggleSort={serverTableControls.onToggleSort}
+                onToggleSort={onToggleSort}
                 ascendingSortLabel="A-Z"
                 descendingSortLabel="Z-A"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <TableFilterControls groups={inventoryFilters.filterGroups} />
+                  <TableFilterControls groups={filterGroups} panelKey="inventory-main-filters" />
                   <TableColumnSettings
                     columns={allColumns}
                     hiddenColumnKeys={hiddenColumnKeys}
@@ -175,7 +148,7 @@ export default function InventoryClient({
                     onSetColumnOrder={setColumnOrder}
                     groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                     maxGroupFields={MAX_GROUP_FIELDS}
-                    onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
+                    onToggleGroupedColumn={onToggleGroupedColumn}
                   />
                 </div>
               </TableControlsBar>

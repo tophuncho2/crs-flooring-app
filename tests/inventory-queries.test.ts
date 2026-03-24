@@ -64,7 +64,7 @@ describe("getInventoryPageData", () => {
     await getInventoryPageData(
       2,
       { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
-      { status: "pending", warehouseId: "wh-1", categoryId: "all", productId: "all" },
+      { status: ["pending"], warehouseId: ["wh-1"], categoryId: [], productId: [] },
     )
 
     expect(prismaMock.flooringInventory.count).toHaveBeenCalledWith({
@@ -82,9 +82,29 @@ describe("getInventoryPageData", () => {
               {
                 importEntry: {
                   is: {
-                    warehouseId: "wh-1",
+                    warehouseId: {
+                      in: ["wh-1"],
+                    },
                   },
                 },
+              },
+              {
+                AND: [
+                  {
+                    importEntry: {
+                      is: null,
+                    },
+                  },
+                  {
+                    location: {
+                      is: {
+                        warehouseId: {
+                          in: ["wh-1"],
+                        },
+                      },
+                    },
+                  },
+                ],
               },
             ]),
           },
@@ -97,7 +117,7 @@ describe("getInventoryPageData", () => {
     const result = await getInventoryPageData(
       1,
       { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
-      { status: "final", warehouseId: "all", categoryId: "all", productId: "all" },
+      { status: ["final"], warehouseId: [], categoryId: [], productId: [] },
     )
 
     expect(prismaMock.flooringInventory.count).toHaveBeenCalledWith({
@@ -119,10 +139,10 @@ describe("getInventoryPageData", () => {
       },
     })
     expect(result.data.filterState).toEqual({
-      status: "final",
-      warehouseId: "all",
-      categoryId: "all",
-      productId: "all",
+      status: ["final"],
+      warehouseId: [],
+      categoryId: [],
+      productId: [],
     })
   })
 
@@ -130,7 +150,7 @@ describe("getInventoryPageData", () => {
     await getInventoryPageData(
       1,
       { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
-      { status: "all", warehouseId: "all", categoryId: "cat-1", productId: "prod-1" },
+      { status: [], warehouseId: [], categoryId: ["cat-1"], productId: ["prod-1"] },
     )
 
     expect(prismaMock.flooringInventory.count).toHaveBeenCalledWith({
@@ -138,11 +158,15 @@ describe("getInventoryPageData", () => {
         AND: expect.arrayContaining([
           {
             product: {
-              categoryId: "cat-1",
+              categoryId: {
+                in: ["cat-1"],
+              },
             },
           },
           {
-            productId: "prod-1",
+            productId: {
+              in: ["prod-1"],
+            },
           },
         ]),
       },

@@ -2,14 +2,25 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireManufacturersAccess } from "@/features/flooring/shared/access/lookup-domains"
 import ManufacturersClient from "@/features/flooring/manufacturers/components/list/manufacturers-client"
 import { getManufacturersPageData } from "@/features/flooring/manufacturers/data/queries"
-import { getUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { parseServerTableQueryState } from "@/server/pagination"
 
-export default async function ManufacturersPage() {
+export default async function ManufacturersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const user = await requireManufacturersAccess()
-  const [result, initialTablePreferences] = await Promise.all([
-    getManufacturersPageData(),
-    getUserTablePreference(user.id, "manufacturers-main"),
-  ])
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "manufacturers-main")
+  const tableState = parseServerTableQueryState({
+    searchParams: resolvedSearchParams,
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["companyName"],
+    allowedGroupKeys: ["companyName"],
+  })
+  const result = await getManufacturersPageData()
 
   if (!result.ok) {
     return (
@@ -26,6 +37,7 @@ export default async function ManufacturersPage() {
     <ManufacturersClient
       initialManufacturers={result.data}
       initialTablePreferences={initialTablePreferences}
+      tableState={tableState}
     />
   )
 }

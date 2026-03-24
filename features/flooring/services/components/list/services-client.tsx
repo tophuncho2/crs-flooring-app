@@ -20,21 +20,25 @@ export default function ServicesClient({
   initialServices,
   unitOptions,
   initialTablePreferences,
+  tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
   initialServices: ServiceRow[]
   unitOptions: UnitOption[]
   initialTablePreferences?: TablePreferencePayload | null
+  tableState: {
+    searchQuery: string
+    isAscendingSort: boolean
+    isGroupingEnabled: boolean
+    groupByKeys: string[]
+  }
 }) {
   const controller = useServicesListController(initialServices)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/services")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
     groupByKeys,
-    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -51,6 +55,9 @@ export default function ServicesClient({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "services-main",
@@ -63,7 +70,12 @@ export default function ServicesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
-    defaultGroupKeys: ["unit"],
+    sortFieldKey: "name",
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    urlSyncMode: "history",
     initialPreferences: initialTablePreferences,
   })
 
@@ -77,10 +89,10 @@ export default function ServicesClient({
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search service"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((previous) => !previous)}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -90,7 +102,7 @@ export default function ServicesClient({
                 onSetColumnOrder={setColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={toggleGroupByKey}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />

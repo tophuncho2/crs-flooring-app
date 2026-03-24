@@ -4,6 +4,8 @@ import { useMemo } from "react"
 import {
   filterInventoryRows,
   getEffectiveInventoryWarehouseId,
+  parseInventoryStatusFilter,
+  parseInventoryWarehouseFilter,
 } from "@/features/flooring/inventory/domain/filters"
 import { createInventoryChildFilterDefinitions } from "@/features/flooring/inventory/table-filters"
 import { calculateProductInventorySummary } from "@/features/flooring/products/domain/inventory-summary"
@@ -60,8 +62,8 @@ export function ProductInventoryRowsSection({
   })
   const filteredRows = useMemo(
     () => filterInventoryRows(inventoryRows, {
-      status: childFilters.filters.status === "pending" ? "pending" : childFilters.filters.status === "final" ? "final" : "all",
-      warehouseId: childFilters.filters.warehouseId ?? "all",
+      status: parseInventoryStatusFilter(childFilters.filters.status ?? []),
+      warehouseId: parseInventoryWarehouseFilter(childFilters.filters.warehouseId ?? []),
     }),
     [childFilters.filters.status, childFilters.filters.warehouseId, inventoryRows],
   )

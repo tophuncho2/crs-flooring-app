@@ -1,10 +1,4 @@
 import type { TableFilterDefinition } from "@/features/flooring/shared/controllers/table/table-filter-state"
-import {
-  ALL_INVENTORY_CATEGORY_FILTER,
-  ALL_INVENTORY_PRODUCT_FILTER,
-  ALL_INVENTORY_STATUS_FILTER,
-  ALL_INVENTORY_WAREHOUSE_FILTER,
-} from "@/features/flooring/inventory/domain/filters"
 import type {
   InventoryCategoryOption,
   InventoryProductOption,
@@ -25,9 +19,9 @@ export function createInventoryPageFilterDefinitions({
       key: "status",
       param: "status",
       type: "tabs",
-      defaultValue: ALL_INVENTORY_STATUS_FILTER,
+      label: "Status",
+      clearLabel: "All",
       options: [
-        { value: ALL_INVENTORY_STATUS_FILTER, label: "All" },
         { value: "pending", label: "Pending" },
         { value: "final", label: "Final" },
       ],
@@ -37,9 +31,8 @@ export function createInventoryPageFilterDefinitions({
       param: "warehouse",
       type: "select",
       label: "Warehouse",
-      defaultValue: ALL_INVENTORY_WAREHOUSE_FILTER,
+      clearLabel: "All Warehouses",
       options: [
-        { value: ALL_INVENTORY_WAREHOUSE_FILTER, label: "All Warehouses" },
         ...warehouseOptions.map((warehouse) => ({
           value: warehouse.id,
           label: warehouse.name,
@@ -51,9 +44,8 @@ export function createInventoryPageFilterDefinitions({
       param: "category",
       type: "select",
       label: "Category",
-      defaultValue: ALL_INVENTORY_CATEGORY_FILTER,
+      clearLabel: "All Categories",
       options: [
-        { value: ALL_INVENTORY_CATEGORY_FILTER, label: "All Categories" },
         ...categoryOptions.map((category) => ({
           value: category.id,
           label: category.name,
@@ -65,9 +57,8 @@ export function createInventoryPageFilterDefinitions({
       param: "product",
       type: "select",
       label: "Product",
-      defaultValue: ALL_INVENTORY_PRODUCT_FILTER,
+      clearLabel: "All Products",
       options: [
-        { value: ALL_INVENTORY_PRODUCT_FILTER, label: "All Products" },
         ...productOptions.map((product) => ({
           value: product.id,
           label: product.label,

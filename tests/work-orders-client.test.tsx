@@ -163,7 +163,7 @@ describe("WorkOrdersClient", () => {
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         templateOptions={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: [], warehouseId: [] }}
       />,
     )
 
@@ -208,7 +208,7 @@ describe("WorkOrdersClient", () => {
           { id: "tpl-2", propertyId: "prop-1", label: "Oak Apartments / Full Rehab" },
         ]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: [], warehouseId: [] }}
       />,
     )
 
@@ -257,7 +257,7 @@ describe("WorkOrdersClient", () => {
           { id: "tpl-2", propertyId: "prop-2", label: "Pine Grove / Rehab" },
         ]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: [], warehouseId: [] }}
       />,
     )
 

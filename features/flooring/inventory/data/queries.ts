@@ -9,13 +9,21 @@ import {
 import { listInventoryLocationOptions, normalizeInventoryRow } from "./api"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import {
-  ALL_INVENTORY_CATEGORY_FILTER,
-  ALL_INVENTORY_PRODUCT_FILTER,
-  ALL_INVENTORY_STATUS_FILTER,
-  ALL_INVENTORY_WAREHOUSE_FILTER,
   type InventoryPageFilterState,
 } from "@/features/flooring/inventory/domain/filters"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
+
+function coerceFilterArray(value: string[] | string | undefined) {
+  if (Array.isArray(value)) {
+    return value.filter((entry) => entry.length > 0 && entry !== "all")
+  }
+
+  if (typeof value === "string" && value.length > 0 && value !== "all") {
+    return [value]
+  }
+
+  return []
+}
 
 function buildInventorySearchWhere(searchQuery: string): Prisma.FlooringInventoryWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -52,12 +60,16 @@ function buildInventorySearchWhere(searchQuery: string): Prisma.FlooringInventor
   }
 }
 
-function buildInventoryStatusWhere(status: InventoryPageFilterState["status"]): Prisma.FlooringInventoryWhereInput | undefined {
-  if (status === ALL_INVENTORY_STATUS_FILTER) {
+function buildInventoryStatusWhere(statuses: InventoryPageFilterState["status"]): Prisma.FlooringInventoryWhereInput | undefined {
+  const normalizedStatuses = coerceFilterArray(statuses)
+  const includesPending = normalizedStatuses.includes("pending")
+  const includesFinal = normalizedStatuses.includes("final")
+
+  if (normalizedStatuses.length === 0 || (includesPending && includesFinal)) {
     return undefined
   }
 
-  if (status === "pending") {
+  if (includesPending) {
     return {
       importEntry: {
         is: {
@@ -85,8 +97,9 @@ function buildInventoryStatusWhere(status: InventoryPageFilterState["status"]): 
   }
 }
 
-function buildInventoryWarehouseWhere(warehouseId: string): Prisma.FlooringInventoryWhereInput | undefined {
-  if (!warehouseId || warehouseId === ALL_INVENTORY_WAREHOUSE_FILTER) {
+function buildInventoryWarehouseWhere(warehouseIds: string[] | string): Prisma.FlooringInventoryWhereInput | undefined {
+  const normalizedWarehouseIds = coerceFilterArray(warehouseIds)
+  if (normalizedWarehouseIds.length === 0) {
     return undefined
   }
 
@@ -95,7 +108,9 @@ function buildInventoryWarehouseWhere(warehouseId: string): Prisma.FlooringInven
       {
         importEntry: {
           is: {
-            warehouseId,
+            warehouseId: {
+              in: normalizedWarehouseIds,
+            },
           },
         },
       },
@@ -109,7 +124,9 @@ function buildInventoryWarehouseWhere(warehouseId: string): Prisma.FlooringInven
           {
             location: {
               is: {
-                warehouseId,
+                warehouseId: {
+                  in: normalizedWarehouseIds,
+                },
               },
             },
           },
@@ -119,25 +136,31 @@ function buildInventoryWarehouseWhere(warehouseId: string): Prisma.FlooringInven
   }
 }
 
-function buildInventoryCategoryWhere(categoryId: string): Prisma.FlooringInventoryWhereInput | undefined {
-  if (!categoryId || categoryId === ALL_INVENTORY_CATEGORY_FILTER) {
+function buildInventoryCategoryWhere(categoryIds: string[] | string): Prisma.FlooringInventoryWhereInput | undefined {
+  const normalizedCategoryIds = coerceFilterArray(categoryIds)
+  if (normalizedCategoryIds.length === 0) {
     return undefined
   }
 
   return {
     product: {
-      categoryId,
+      categoryId: {
+        in: normalizedCategoryIds,
+      },
     },
   }
 }
 
-function buildInventoryProductWhere(productId: string): Prisma.FlooringInventoryWhereInput | undefined {
-  if (!productId || productId === ALL_INVENTORY_PRODUCT_FILTER) {
+function buildInventoryProductWhere(productIds: string[] | string): Prisma.FlooringInventoryWhereInput | undefined {
+  const normalizedProductIds = coerceFilterArray(productIds)
+  if (normalizedProductIds.length === 0) {
     return undefined
   }
 
   return {
-    productId,
+    productId: {
+      in: normalizedProductIds,
+    },
   }
 }
 

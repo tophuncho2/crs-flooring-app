@@ -1,3 +1,5 @@
+import type { TableFilterPreferenceMap } from "./table-preferences"
+
 export type TableFilterOption = {
   value: string
   label: string
@@ -7,21 +9,37 @@ export type TableFilterDefinition = {
   key: string
   param: string
   type: "tabs" | "select"
-  label?: string
-  defaultValue: string
+  label: string
+  clearLabel?: string
   options: TableFilterOption[]
 }
 
-export type TableFilterState = Record<string, string>
+export type TableFilterState = TableFilterPreferenceMap
+
+function coerceRequestedFilterValues(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string")
+  }
+
+  if (typeof value === "string") {
+    return [value]
+  }
+
+  return []
+}
 
 export function createInitialTableFilterState(definitions: TableFilterDefinition[], initialFilters?: TableFilterState) {
   return Object.fromEntries(
     definitions.map((definition) => {
       const allowedValues = new Set(definition.options.map((option) => option.value))
-      const requestedValue = initialFilters?.[definition.key]
+      const requestedValues = coerceRequestedFilterValues(initialFilters?.[definition.key])
       return [
         definition.key,
-        requestedValue && allowedValues.has(requestedValue) ? requestedValue : definition.defaultValue,
+        Array.from(
+          new Set(
+            requestedValues.filter((value): value is string => typeof value === "string" && allowedValues.has(value)),
+          ),
+        ),
       ]
     }),
   )
@@ -31,6 +49,10 @@ export function buildAllowedFilterValues(definitions: TableFilterDefinition[]) {
   return Object.fromEntries(
     definitions.map((definition) => [definition.key, definition.options.map((option) => option.value)]),
   )
+}
+
+export function normalizeTableFilterValues(values: string[]) {
+  return Array.from(new Set(values.filter((value) => value.trim().length > 0)))
 }
 
 export function buildFilterSearchParams(
@@ -43,12 +65,11 @@ export function buildFilterSearchParams(
   nextSearchParams.delete("page")
 
   for (const definition of definitions) {
-    const value = nextFilters[definition.key] ?? definition.defaultValue
+    nextSearchParams.delete(definition.param)
+    const values = nextFilters[definition.key] ?? []
 
-    if (value === definition.defaultValue) {
-      nextSearchParams.delete(definition.param)
-    } else {
-      nextSearchParams.set(definition.param, value)
+    for (const value of values) {
+      nextSearchParams.append(definition.param, value)
     }
   }
 
@@ -66,20 +87,27 @@ export function parseServerTableFilterState<TFilterState extends TableFilterStat
 }): TFilterState {
   return Object.fromEntries(
     definitions.map((definition) => {
-      const rawValue = Array.isArray(searchParams?.[definition.param]) ? searchParams?.[definition.param]?.[0] : searchParams?.[definition.param]
-      const requestedValue = typeof rawValue === "string" ? rawValue.trim() : ""
-      const preferredValue = preferenceFilters[definition.key] ?? ""
       const allowedValues = new Set(definition.options.map((option) => option.value))
+      const rawSearchParam = searchParams?.[definition.param]
+      const rawValues: string[] = Array.isArray(rawSearchParam)
+        ? rawSearchParam
+        : typeof rawSearchParam === "string"
+          ? [rawSearchParam]
+          : []
+      const requestedValues = normalizeTableFilterValues(rawValues.map((value) => value.trim()))
+        .filter((value) => allowedValues.has(value))
+      const preferredValues = normalizeTableFilterValues(coerceRequestedFilterValues(preferenceFilters[definition.key]))
+        .filter((value) => allowedValues.has(value))
 
-      if (requestedValue && allowedValues.has(requestedValue)) {
-        return [definition.key, requestedValue]
+      if (requestedValues.length > 0) {
+        return [definition.key, requestedValues]
       }
 
-      if (preferredValue && allowedValues.has(preferredValue)) {
-        return [definition.key, preferredValue]
+      if (preferredValues.length > 0) {
+        return [definition.key, preferredValues]
       }
 
-      return [definition.key, definition.defaultValue]
+      return [definition.key, []]
     }),
   ) as TFilterState
 }

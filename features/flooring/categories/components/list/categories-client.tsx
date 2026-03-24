@@ -21,22 +21,26 @@ export default function CategoriesClient({
   initialCategories,
   unitOfMeasureOptions,
   initialTablePreferences,
+  tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
   canManage: boolean
   initialCategories: CategoryRow[]
   unitOfMeasureOptions: UnitOfMeasureOption[]
   initialTablePreferences?: TablePreferencePayload | null
+  tableState: {
+    searchQuery: string
+    isAscendingSort: boolean
+    isGroupingEnabled: boolean
+    groupByKeys: string[]
+  }
 }) {
   const controller = useCategoriesListController(initialCategories)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/categories")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
     groupByKeys,
-    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -53,6 +57,9 @@ export default function CategoriesClient({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "categories-main",
@@ -67,7 +74,12 @@ export default function CategoriesClient({
       ...(canManage ? [{ key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false } as const] : []),
     ],
     sortField: (row) => row.name,
-    defaultGroupKeys: ["sendUnit"],
+    sortFieldKey: "name",
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    urlSyncMode: "history",
     initialPreferences: initialTablePreferences,
   })
 
@@ -81,10 +93,10 @@ export default function CategoriesClient({
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search category"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((previous) => !previous)}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -94,7 +106,7 @@ export default function CategoriesClient({
                 onSetColumnOrder={setColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={toggleGroupByKey}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               {canManage ? (
                 <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>

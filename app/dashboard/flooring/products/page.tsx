@@ -1,6 +1,6 @@
 import { requireToolAccess } from "@/server/auth/session"
-import { getUserTablePreference } from "@/server/account/table-preferences"
-import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import FlooringProductsClient from "@/features/flooring/products/components/products-client"
 import { getProductsPageData } from "@/features/flooring/products/queries"
 
@@ -12,15 +12,15 @@ export default async function FlooringProductsPage({
   const user = await requireToolAccess("products")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "products-main")
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
     allowedGroupKeys: ["category", "manufacturer", "style", "color", "baseColor"],
-    defaultGroupKeys: ["category"],
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["category"],
   })
-  const [pageData, initialTablePreferences] = await Promise.all([
-    getProductsPageData(page, tableState),
-    getUserTablePreference(user.id, "products-main"),
-  ])
+  const pageData = await getProductsPageData(page, tableState)
 
   return (
     <FlooringProductsClient
@@ -29,8 +29,8 @@ export default async function FlooringProductsPage({
       initialTablePreferences={initialTablePreferences}
       pagination={{
         ...pageData.pagination,
-        previousPageHref: buildPageHref("/dashboard/flooring/products", pageData.pagination.page - 1),
-        nextPageHref: buildPageHref("/dashboard/flooring/products", pageData.pagination.page + 1),
+        previousPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/products", pageData.pagination.page - 1, resolvedSearchParams),
+        nextPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/products", pageData.pagination.page + 1, resolvedSearchParams),
       }}
     />
   )

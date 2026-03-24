@@ -6,10 +6,20 @@ import { withLoaderTiming } from "@/features/flooring/shared/application/loader-
 import { getImportEntryById, listImportLocationOptions, normalizeImportEntry } from "@/features/flooring/imports/api"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import {
-  ALL_IMPORT_STATUS_FILTER,
-  ALL_IMPORT_WAREHOUSE_FILTER,
   type ImportPageFilterState,
 } from "@/features/flooring/imports/domain/filters"
+
+function coerceFilterArray(value: string[] | string | undefined) {
+  if (Array.isArray(value)) {
+    return value.filter((entry) => entry.length > 0 && entry !== "all")
+  }
+
+  if (typeof value === "string" && value.length > 0 && value !== "all") {
+    return [value]
+  }
+
+  return []
+}
 
 function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -31,23 +41,29 @@ function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhere
   }
 }
 
-function buildImportsStatusWhere(status: ImportPageFilterState["status"]): Prisma.FlooringImportEntryWhereInput | undefined {
-  if (status === ALL_IMPORT_STATUS_FILTER) {
+function buildImportsStatusWhere(statuses: ImportPageFilterState["status"]): Prisma.FlooringImportEntryWhereInput | undefined {
+  const normalizedStatuses = coerceFilterArray(statuses)
+  if (normalizedStatuses.length === 0) {
     return undefined
   }
 
   return {
-    status,
+    status: {
+      in: normalizedStatuses,
+    },
   }
 }
 
-function buildImportsWarehouseWhere(warehouseId: string): Prisma.FlooringImportEntryWhereInput | undefined {
-  if (!warehouseId || warehouseId === ALL_IMPORT_WAREHOUSE_FILTER) {
+function buildImportsWarehouseWhere(warehouseIds: string[] | string): Prisma.FlooringImportEntryWhereInput | undefined {
+  const normalizedWarehouseIds = coerceFilterArray(warehouseIds)
+  if (normalizedWarehouseIds.length === 0) {
     return undefined
   }
 
   return {
-    warehouseId,
+    warehouseId: {
+      in: normalizedWarehouseIds,
+    },
   }
 }
 

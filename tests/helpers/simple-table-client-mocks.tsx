@@ -27,16 +27,17 @@ export class MockRequestJsonError extends Error {
 }
 
 export const lucideReactModule = {
-  ArrowLeft: () => <span>&lt;-</span>,
-  ChevronDown: () => <span>v</span>,
-  ChevronRight: () => <span>&gt;</span>,
-  Columns3: () => <span>cols</span>,
-  GripVertical: () => <span>drag</span>,
-  Plus: () => <span>+</span>,
-  Search: () => <span>search</span>,
-  Save: () => <span>save</span>,
-  Upload: () => <span>upload</span>,
-  X: () => <span>x</span>,
+  ArrowLeft: () => <span aria-hidden="true">&lt;-</span>,
+  ChevronDown: () => <span aria-hidden="true">v</span>,
+  ChevronRight: () => <span aria-hidden="true">&gt;</span>,
+  Columns3: () => <span aria-hidden="true">cols</span>,
+  Filter: () => <span aria-hidden="true">filter</span>,
+  GripVertical: () => <span aria-hidden="true">drag</span>,
+  Plus: () => <span aria-hidden="true">+</span>,
+  Search: () => <span aria-hidden="true">search</span>,
+  Save: () => <span aria-hidden="true">save</span>,
+  Upload: () => <span aria-hidden="true">upload</span>,
+  X: () => <span aria-hidden="true">x</span>,
 }
 
 export const httpModule = {

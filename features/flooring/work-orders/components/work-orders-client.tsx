@@ -13,8 +13,6 @@ import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, Table
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { usePageTableFilters } from "@/features/flooring/shared/controllers/table/use-page-table-filters"
-import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { getWorkOrderStatusFieldClass, getWorkOrderStatusLabel } from "../contracts"
@@ -63,14 +61,9 @@ export default function WorkOrdersClient({
   const workOrderNavigation = useCanonicalDetailNavigation("/dashboard/flooring/work-orders")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    setGroupByKeys,
-    groupFields,
     filteredRows: filteredWorkOrders,
     sortedRows: sortedWorkOrders,
     groupedRowTree: groupedWorkOrders,
@@ -87,7 +80,10 @@ export default function WorkOrdersClient({
     toggleColumnVisibility: toggleWorkOrderColumnVisibility,
     moveColumn: moveWorkOrderColumn,
     setColumnOrder: setWorkOrderColumnOrder,
-    persistViewPreferences,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
+    filterGroups,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "work-orders-main",
@@ -108,40 +104,18 @@ export default function WorkOrdersClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.workOrderNumber,
+    sortFieldKey: "wo",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    filterDefinitions: createWorkOrdersPageFilterDefinitions(warehouseOptions),
+    initialFilters: filterState,
+    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
     initialPreferences: initialTablePreferences,
-  })
-  const workOrderFilterDefinitions = createWorkOrdersPageFilterDefinitions(warehouseOptions)
-  const workOrderFilters = usePageTableFilters({
-    definitions: workOrderFilterDefinitions,
-    initialFilters: filterState,
-    onPersistState: persistViewPreferences,
-    getCurrentViewState: () => ({
-      isAscendingSort,
-      isGroupingEnabled,
-      groupByKeys,
-      allowedGroupKeys: groupFields.map((field) => field.key),
-    }),
-  })
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled,
-    setIsGroupingEnabled,
-    groupByKeys,
-    setGroupByKeys,
-    groupOptions: groupFields.map((field) => ({ key: field.key, label: field.label })),
-    filters: workOrderFilters.filters,
-    allowedFilterValues: workOrderFilters.allowedFilterValues,
-    onPersistState: persistViewPreferences,
   })
 
   function renderWorkOrderRow(row: WorkOrderRow) {
@@ -198,14 +172,14 @@ export default function WorkOrdersClient({
             <TableActionsSummary count={filteredWorkOrders.length}>
               <TableControlsBar
                 searchQuery={searchQuery}
-                onSearchQueryChange={serverTableControls.onSearchQueryChange}
+                onSearchQueryChange={onSearchQueryChange}
                 searchPlaceholder="Search property"
                 isAscendingSort={isAscendingSort}
-                onToggleSort={serverTableControls.onToggleSort}
+                onToggleSort={onToggleSort}
                 ascendingSortLabel="1-9"
                 descendingSortLabel="9-1"
               >
-                <TableFilterControls groups={workOrderFilters.filterGroups} />
+                <TableFilterControls groups={filterGroups} panelKey="work-orders-main-filters" />
                 <TableColumnSettings
                   columns={orderedWorkOrderColumns}
                   hiddenColumnKeys={hiddenWorkOrderColumnKeys}
@@ -214,7 +188,7 @@ export default function WorkOrdersClient({
                   onSetColumnOrder={setWorkOrderColumnOrder}
                   groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                   maxGroupFields={MAX_GROUP_FIELDS}
-                  onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
+                  onToggleGroupedColumn={onToggleGroupedColumn}
                 />
                 <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                   <Plus size={16} />

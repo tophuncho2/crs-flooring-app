@@ -8,10 +8,10 @@ import { FormStatusNotices } from "../../shared/ui/feedback/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import { renderGroupedTableRows } from "../../shared/ui/table/render-grouped-table-rows"
 import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
-import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
 import type { TablePreferencePayload } from "../../shared/controllers/table/table-preferences"
 import type { PadProductOption, PropertyOption, ServerPaginationState, ServerTableState, TemplateRow, WarehouseOption } from "../types"
@@ -39,14 +39,9 @@ export default function TemplatesClient({
   const templateNavigation = useCanonicalDetailNavigation("/dashboard/flooring/templates")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
-    setIsGroupingEnabled,
     groupByKeys,
-    setGroupByKeys,
-    groupFields,
     filteredRows: filteredTemplates,
     sortedRows: sortedTemplates,
     groupedRowTree: groupedTemplates,
@@ -63,6 +58,9 @@ export default function TemplatesClient({
     toggleColumnVisibility: toggleTemplateColumnVisibility,
     moveColumn: moveTemplateColumn,
     setColumnOrder: setTemplateColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "templates-main",
@@ -77,26 +75,16 @@ export default function TemplatesClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => `${row.propertyName} ${row.templateTag}`,
+    sortFieldKey: "templateTag",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
     initialPreferences: initialTablePreferences,
-  })
-  const templateGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
-  const serverTableControls = useServerTableQueryControls({
-    searchQuery,
-    setSearchQuery,
-    isAscendingSort,
-    setIsAscendingSort,
-    isGroupingEnabled,
-    setIsGroupingEnabled,
-    groupByKeys,
-    setGroupByKeys,
-    groupOptions: templateGroupOptions,
   })
 
   function renderTemplateRow(row: TemplateRow) {
@@ -124,18 +112,6 @@ export default function TemplatesClient({
     )
   }
 
-  function renderGroupedRows(groups: GroupedRowTree<TemplateRow>[]): ReactNode[] {
-    return groups.flatMap((group) => [
-      <TableGroupRow
-        key={`${group.depth}-${group.key}`}
-        label={`${group.fieldLabel}: ${group.label}`}
-        depth={group.depth}
-        colSpan={visibleTemplateColumns.length}
-      />,
-      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderTemplateRow(row))),
-    ])
-  }
-
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
@@ -146,10 +122,10 @@ export default function TemplatesClient({
           <TableActionsSummary count={filteredTemplates.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={serverTableControls.onSearchQueryChange}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search property"
               isAscendingSort={isAscendingSort}
-              onToggleSort={serverTableControls.onToggleSort}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={orderedTemplateColumns}
@@ -159,7 +135,7 @@ export default function TemplatesClient({
                 onSetColumnOrder={setTemplateColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               <button
                 type="button"
@@ -186,7 +162,13 @@ export default function TemplatesClient({
               </tr>
             </TableHead>
             <tbody>
-              {isGroupingEnabled ? renderGroupedRows(groupedTemplates) : sortedTemplates.map((row) => renderTemplateRow(row))}
+              {isGroupingEnabled
+                ? renderGroupedTableRows({
+                    groups: groupedTemplates as GroupedRowTree<TemplateRow>[],
+                    colSpan: visibleTemplateColumns.length,
+                    renderRow: renderTemplateRow,
+                  })
+                : sortedTemplates.map((row) => renderTemplateRow(row))}
 
               {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
             </tbody>

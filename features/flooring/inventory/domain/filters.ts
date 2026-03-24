@@ -1,18 +1,13 @@
-export const ALL_INVENTORY_STATUS_FILTER = "all" as const
-export const ALL_INVENTORY_WAREHOUSE_FILTER = "all" as const
-export const ALL_INVENTORY_CATEGORY_FILTER = "all" as const
-export const ALL_INVENTORY_PRODUCT_FILTER = "all" as const
-
-export type InventoryStatusFilter = "all" | "pending" | "final"
+export type InventoryStatusFilter = "pending" | "final"
 
 export type InventoryFilterState = {
-  status: InventoryStatusFilter
-  warehouseId: string
+  status: InventoryStatusFilter[]
+  warehouseId: string[]
 }
 
 export type InventoryPageFilterState = InventoryFilterState & {
-  categoryId: string
-  productId: string
+  categoryId: string[]
+  productId: string[]
 }
 
 type InventoryFilterableRow = {
@@ -22,29 +17,58 @@ type InventoryFilterableRow = {
   warehouseId?: string | null
 }
 
-export function parseInventoryStatusFilter(value: unknown): InventoryStatusFilter {
-  const normalized = String(value ?? "").trim().toLowerCase()
-
-  if (normalized === "pending" || normalized === "final") {
-    return normalized
+function coerceFilterArray<T extends string>(value: T[] | T | string[] | string | undefined) {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is T => typeof entry === "string" && entry.length > 0)
   }
 
-  return ALL_INVENTORY_STATUS_FILTER
+  if (typeof value === "string" && value.length > 0) {
+    return [value as T]
+  }
+
+  return []
 }
 
-export function parseInventoryWarehouseFilter(value: unknown) {
-  const normalized = String(value ?? "").trim()
-  return normalized && normalized !== ALL_INVENTORY_WAREHOUSE_FILTER ? normalized : ALL_INVENTORY_WAREHOUSE_FILTER
+export function parseInventoryStatusFilter(value: unknown): InventoryStatusFilter[] {
+  const normalizedValues = Array.isArray(value) ? value : [value]
+  const requestedValues = normalizedValues
+    .map((entry) => String(entry ?? "").trim().toLowerCase())
+    .filter((entry): entry is InventoryStatusFilter => entry === "pending" || entry === "final")
+
+  return Array.from(new Set(requestedValues))
 }
 
-export function parseInventoryCategoryFilter(value: unknown) {
-  const normalized = String(value ?? "").trim()
-  return normalized && normalized !== ALL_INVENTORY_CATEGORY_FILTER ? normalized : ALL_INVENTORY_CATEGORY_FILTER
+export function parseInventoryWarehouseFilter(value: unknown): string[] {
+  const normalizedValues = Array.isArray(value) ? value : [value]
+  return Array.from(
+    new Set(
+      normalizedValues
+        .map((entry) => String(entry ?? "").trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
 }
 
-export function parseInventoryProductFilter(value: unknown) {
-  const normalized = String(value ?? "").trim()
-  return normalized && normalized !== ALL_INVENTORY_PRODUCT_FILTER ? normalized : ALL_INVENTORY_PRODUCT_FILTER
+export function parseInventoryCategoryFilter(value: unknown): string[] {
+  const normalizedValues = Array.isArray(value) ? value : [value]
+  return Array.from(
+    new Set(
+      normalizedValues
+        .map((entry) => String(entry ?? "").trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+}
+
+export function parseInventoryProductFilter(value: unknown): string[] {
+  const normalizedValues = Array.isArray(value) ? value : [value]
+  return Array.from(
+    new Set(
+      normalizedValues
+        .map((entry) => String(entry ?? "").trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
 }
 
 export function getEffectiveInventoryWarehouseId(row: InventoryFilterableRow) {
@@ -65,24 +89,28 @@ export function getInventoryCutLogBlockedReason(row: InventoryFilterableRow) {
     : "Pending import inventory cannot be cut until the import is marked Final."
 }
 
-export function matchesInventoryStatusFilter(row: InventoryFilterableRow, status: InventoryStatusFilter) {
-  if (status === ALL_INVENTORY_STATUS_FILTER) {
+export function matchesInventoryStatusFilter(row: InventoryFilterableRow, statuses: InventoryStatusFilter[] | InventoryStatusFilter) {
+  const normalizedStatuses = coerceFilterArray<InventoryStatusFilter>(statuses)
+  if (normalizedStatuses.length === 0) {
     return true
   }
 
-  if (status === "pending") {
-    return isPendingInventoryRow(row)
-  }
+  return normalizedStatuses.some((status) => {
+    if (status === "pending") {
+      return isPendingInventoryRow(row)
+    }
 
-  return !isPendingInventoryRow(row)
+    return !isPendingInventoryRow(row)
+  })
 }
 
-export function matchesInventoryWarehouseFilter(row: InventoryFilterableRow, warehouseId: string) {
-  if (!warehouseId || warehouseId === ALL_INVENTORY_WAREHOUSE_FILTER) {
+export function matchesInventoryWarehouseFilter(row: InventoryFilterableRow, warehouseIds: string[] | string) {
+  const normalizedWarehouseIds = coerceFilterArray<string>(warehouseIds)
+  if (normalizedWarehouseIds.length === 0) {
     return true
   }
 
-  return getEffectiveInventoryWarehouseId(row) === warehouseId
+  return normalizedWarehouseIds.includes(getEffectiveInventoryWarehouseId(row))
 }
 
 export function filterInventoryRows<T extends InventoryFilterableRow>(rows: T[], filters: InventoryFilterState) {

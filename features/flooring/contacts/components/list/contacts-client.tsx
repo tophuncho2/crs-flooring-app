@@ -19,20 +19,24 @@ import { ContactsTable } from "./contacts-table"
 export default function ContactsClient({
   initialContacts,
   initialTablePreferences,
+  tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
   initialContacts: ContactRow[]
   initialTablePreferences?: TablePreferencePayload | null
+  tableState: {
+    searchQuery: string
+    isAscendingSort: boolean
+    isGroupingEnabled: boolean
+    groupByKeys: string[]
+  }
 }) {
   const controller = useContactsListController(initialContacts)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/contacts")
   const {
     searchQuery,
-    setSearchQuery,
     isAscendingSort,
-    setIsAscendingSort,
     isGroupingEnabled,
     groupByKeys,
-    toggleGroupByKey,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -49,6 +53,9 @@ export default function ContactsClient({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
+    onSearchQueryChange,
+    onToggleSort,
+    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "contacts-main",
@@ -59,7 +66,12 @@ export default function ContactsClient({
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
-    defaultGroupKeys: ["type"],
+    sortFieldKey: "name",
+    initialSearchQuery: tableState.searchQuery,
+    defaultGrouped: tableState.isGroupingEnabled,
+    defaultGroupKeys: tableState.groupByKeys,
+    defaultAscending: tableState.isAscendingSort,
+    urlSyncMode: "history",
     initialPreferences: initialTablePreferences,
   })
 
@@ -73,10 +85,10 @@ export default function ContactsClient({
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
               searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               searchPlaceholder="Search contact"
               isAscendingSort={isAscendingSort}
-              onToggleSort={() => setIsAscendingSort((previous) => !previous)}
+              onToggleSort={onToggleSort}
             >
               <TableColumnSettings
                 columns={allColumns}
@@ -86,7 +98,7 @@ export default function ContactsClient({
                 onSetColumnOrder={setColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={toggleGroupByKey}
+                onToggleGroupedColumn={onToggleGroupedColumn}
               />
               <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
