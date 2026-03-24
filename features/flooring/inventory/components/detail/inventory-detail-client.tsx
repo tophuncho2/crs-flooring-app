@@ -11,6 +11,7 @@ import { CutLogsEditor } from "@/features/flooring/shared/ui/record-items/cut-lo
 import { useInventoryRecordController } from "@/features/flooring/inventory/controllers/use-inventory-record-controller"
 import type { InventoryRow, LocationOption } from "@/features/flooring/inventory/domain/types"
 import { InventoryHeaderActions } from "./inventory-header-actions"
+import { InventoryHeaderMeta } from "./inventory-header-meta"
 import { InventorySnapshotGrid } from "./inventory-snapshot-grid"
 
 export function InventoryDetailClient({
@@ -71,6 +72,7 @@ export function InventoryDetailClient({
       backHref={backHref}
       onBack={closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
+      headerMeta={<InventoryHeaderMeta productName={record.productName} />}
       headerActions={<InventoryHeaderActions row={record} />}
     >
       <div className="space-y-6">
