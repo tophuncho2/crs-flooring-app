@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client"
-import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { createAppError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { isBucketFileUrl } from "@/server/storage/s3"
 
 export type CreateProductInput = {
   categoryId: string
@@ -19,9 +20,23 @@ export type CreateProductInput = {
 export type UpdateProductInput = Partial<CreateProductInput>
 
 function parsePhotoUrls(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim())
-    : []
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .map((item) => item.trim())
+    .map((item) => {
+      if (!isBucketFileUrl(item)) {
+        throw createAppError("photoUrls must contain uploaded product photo URLs only", {
+          field: "photoUrls",
+          status: 400,
+        })
+      }
+
+      return item
+    })
 }
 
 function parseCoveragePerUnit(value: unknown) {

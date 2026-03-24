@@ -76,6 +76,7 @@ type ManufacturerOption = {
 type InventoryRow = {
   id: string
   importEntryId: string
+  importWarehouseId: string
   importNumber: string
   importTag: string
   importStatus: string
@@ -405,13 +406,22 @@ export function ProductDetailClient({
                 <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
               </label>
               {productForm.photoUrls.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {productForm.photoUrls.map((url) => (
-                    <div key={url} className="flex items-center gap-2 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-xs">
-                      <span className="max-w-[220px] truncate">{url}</span>
-                      <button type="button" onClick={() => removePhotoUrl(url)} className="rounded p-1 hover:bg-[var(--panel-hover)]">
-                        <X size={14} />
-                      </button>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {productForm.photoUrls.map((url, index) => (
+                    <div key={url} className="overflow-hidden rounded-xl border border-[var(--panel-border)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Product photo previews use runtime-configured bucket URLs that are not statically known to next/image. */}
+                      <img
+                        src={url}
+                        alt={`Product photo ${index + 1}`}
+                        className="h-40 w-full bg-[var(--panel-hover)] object-cover"
+                        loading="lazy"
+                      />
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
+                        <span className="min-w-0 flex-1 truncate">{url}</span>
+                        <button type="button" onClick={() => removePhotoUrl(url)} className="rounded p-1 hover:bg-[var(--panel-hover)]">
+                          <X size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

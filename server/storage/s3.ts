@@ -48,6 +48,21 @@ export function buildBucketFileUrl(fileName: string) {
   return `${storage.endpointUrl}/${getBucketName()}/uploads/${fileName}`
 }
 
+export function isBucketFileUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url)
+    const storage = getStorageEnvironment()
+    const endpointUrl = new URL(storage.endpointUrl)
+
+    return (
+      parsedUrl.origin === endpointUrl.origin &&
+      parsedUrl.pathname.startsWith(`/${storage.bucketName}/uploads/`)
+    )
+  } catch {
+    return false
+  }
+}
+
 export async function getFileFromBucket(fileName: string) {
   const result = await getS3Client().send(
     new GetObjectCommand({

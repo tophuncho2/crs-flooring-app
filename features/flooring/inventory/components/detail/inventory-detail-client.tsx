@@ -31,6 +31,10 @@ export function InventoryDetailClient({
     isDirty,
     editLocationId,
     setEditLocationId,
+    editItemNumber,
+    setEditItemNumber,
+    editDyeLot,
+    setEditDyeLot,
     cutLogDraft,
     setCutLogDraftField,
     isBusy,
@@ -44,6 +48,8 @@ export function InventoryDetailClient({
     addCutLog,
     deleteCutLog,
     canSubmitCutLog,
+    canCreateCutLogs,
+    cutLogBlockedReason,
     cutPreviewAfter,
     activeRunningBalance,
     lowBalanceWarning,
@@ -101,6 +107,20 @@ export function InventoryDetailClient({
               className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
             />
           </RecordFormField>
+          <RecordFormField label="Item #">
+            <input
+              value={editItemNumber}
+              onChange={(event) => setEditItemNumber(event.target.value)}
+              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
+          </RecordFormField>
+          <RecordFormField label="Dye Lot">
+            <input
+              value={editDyeLot}
+              onChange={(event) => setEditDyeLot(event.target.value)}
+              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
+          </RecordFormField>
         </div>
 
         <CutLogsEditor
@@ -115,8 +135,15 @@ export function InventoryDetailClient({
           onAdd={() => addCutLog()}
           onDeleteItem={(itemId) => void deleteCutLog(itemId)}
           canSubmit={canSubmitCutLog}
+          canCreate={canCreateCutLogs}
           submitLabel="Add"
         />
+
+        {cutLogBlockedReason ? (
+          <p className="rounded-md border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm text-sky-800">
+            {cutLogBlockedReason}
+          </p>
+        ) : null}
 
         {lowBalanceWarning ? (
           <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">

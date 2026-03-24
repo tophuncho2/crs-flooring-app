@@ -1,4 +1,5 @@
-import { deleteInventoryRow, updateInventoryRow } from "@/features/flooring/inventory/api"
+import { deleteInventoryRow } from "@/features/flooring/inventory/api"
+import { updateInventoryDetailUseCase } from "@/features/flooring/inventory/application/inventory-detail"
 import { getInventoryById } from "@/features/flooring/inventory/data/queries"
 import {
   enforceRouteRateLimit,
@@ -40,7 +41,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const inventory = await updateInventoryRow(undefined, id, body)
+    const inventory = await updateInventoryDetailUseCase(id, body)
     logRouteMutationSuccess(access, {
       message: "Inventory updated",
       action: "inventory.update",

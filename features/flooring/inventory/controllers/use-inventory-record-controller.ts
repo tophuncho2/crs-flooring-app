@@ -29,6 +29,8 @@ export function useInventoryRecordController({
 }) {
   const [record, setRecord] = useState(initialRecord)
   const [editLocationId, setEditLocationId] = useState(initialRecord.locationId)
+  const [editItemNumber, setEditItemNumber] = useState(initialRecord.itemNumber)
+  const [editDyeLot, setEditDyeLot] = useState(initialRecord.dyeLot)
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(EMPTY_CUT_LOG_DRAFT)
   const [isSavingInventory, setIsSavingInventory] = useState(false)
   const [isSavingCutLog, setIsSavingCutLog] = useState(false)
@@ -56,9 +58,14 @@ export function useInventoryRecordController({
   const draftQuantity = parseInventoryDecimal(cutLogDraft.quantityTaken)
   const cutPreviewAfter = toInventoryFixedString(activeRunningBalance - draftQuantity)
   const isDirty =
-    editLocationId !== record.locationId || cutLogDraft.quantityTaken.trim() !== "" || cutLogDraft.notes.trim() !== ""
+    editLocationId !== record.locationId ||
+    editItemNumber !== record.itemNumber ||
+    editDyeLot !== record.dyeLot ||
+    cutLogDraft.quantityTaken.trim() !== "" ||
+    cutLogDraft.notes.trim() !== ""
 
   const canSubmitCutLog =
+    record.canCreateCutLogs &&
     cutLogDraft.quantityTaken.trim() !== "" &&
     draftQuantity !== 0 &&
     !(draftQuantity > 0 && activeRunningBalance <= 0) &&
@@ -84,15 +91,9 @@ export function useInventoryRecordController({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          importEntryId: record.importEntryId || null,
-          productId: record.productId,
           locationId: editLocationId,
-          itemNumber: record.itemNumber,
-          dyeLot: record.dyeLot,
-          stockCount: record.stockCount,
-          cost: record.cost || null,
-          freight: record.freight || null,
-          notes: record.notes || null,
+          itemNumber: editItemNumber,
+          dyeLot: editDyeLot,
         }),
       })
 
@@ -101,6 +102,9 @@ export function useInventoryRecordController({
         ...payload.inventory,
         cutLogs: previous.cutLogs,
       }))
+      setEditLocationId(payload.inventory.locationId)
+      setEditItemNumber(payload.inventory.itemNumber)
+      setEditDyeLot(payload.inventory.dyeLot)
       notices.showSuccess("Inventory saved")
     } catch (error) {
       notices.showError(error instanceof Error ? error.message : "Failed to save inventory")
@@ -203,6 +207,10 @@ export function useInventoryRecordController({
     isDirty,
     editLocationId,
     setEditLocationId,
+    editItemNumber,
+    setEditItemNumber,
+    editDyeLot,
+    setEditDyeLot,
     cutLogDraft,
     setCutLogDraftField,
     isSavingInventory,
@@ -217,6 +225,8 @@ export function useInventoryRecordController({
     activeRunningBalance,
     cutPreviewAfter,
     canSubmitCutLog,
+    canCreateCutLogs: record.canCreateCutLogs,
+    cutLogBlockedReason: record.cutLogBlockedReason,
     saveInventory,
     deleteInventory,
     addCutLog,
@@ -229,11 +239,11 @@ export function useInventoryRecordController({
       importNumber: record.importNumber,
       importTag: record.importTag,
       productName: record.productName,
-      itemNumber: record.itemNumber,
+      itemNumber: editItemNumber,
       warehouseName: activeWarehouseName,
       sectionName: activeSectionName,
       locationCode: activeLocationCode,
-      dyeLot: record.dyeLot,
+      dyeLot: editDyeLot,
       startingStockLabel: formatInventoryQuantity(record.stockCount, record.stockUnit),
       cutTotalLabel: formatInventoryQuantity(record.cutTotal, record.stockUnit),
       runningBalanceLabel: formatInventoryQuantity(record.runningBalance, record.stockUnit),

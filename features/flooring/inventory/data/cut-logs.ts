@@ -29,6 +29,13 @@ export async function getInventoryCutBalanceState(inventoryId: string, db: DataA
   return db.flooringInventory.findUnique({
     where: { id: inventoryId },
     select: {
+      id: true,
+      importEntryId: true,
+      importEntry: {
+        select: {
+          status: true,
+        },
+      },
       stockCount: true,
       cutLogs: {
         select: {

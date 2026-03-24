@@ -16,6 +16,7 @@ const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock, validateI
   prismaMock: {
     flooringInventory: {
       delete: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       update: vi.fn(),
     },
   },
@@ -78,6 +79,10 @@ describe("inventory routes", () => {
   })
 
   it("PATCH accepts an empty dye lot and persists it as null", async () => {
+    prismaMock.flooringInventory.findUniqueOrThrow.mockResolvedValue({
+      id: "inv-1",
+      importEntryId: "imp-1",
+    })
     prismaMock.flooringInventory.update.mockResolvedValue({
       id: "inv-1",
       importEntryId: "imp-1",
@@ -120,15 +125,11 @@ describe("inventory routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          importEntryId: "imp-1",
-          productId: "prod-1",
           locationId: "loc-1",
           itemNumber: "1001",
           dyeLot: "",
-          stockCount: "12.00",
-          cost: "10.00",
-          freight: "5.00",
-          notes: "",
+          stockCount: "7.00",
+          productId: "prod-9",
         }),
       }),
       { params: Promise.resolve({ id: "inv-1" }) },
@@ -139,10 +140,14 @@ describe("inventory routes", () => {
     expect(prismaMock.flooringInventory.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          itemNumber: "1001",
+          locationId: "loc-1",
           dyeLot: null,
         }),
       }),
     )
+    expect(prismaMock.flooringInventory.update.mock.calls[0]?.[0]?.data).not.toHaveProperty("stockCount")
+    expect(prismaMock.flooringInventory.update.mock.calls[0]?.[0]?.data).not.toHaveProperty("productId")
     expect(payload.inventory.dyeLot).toBe("")
   })
 })

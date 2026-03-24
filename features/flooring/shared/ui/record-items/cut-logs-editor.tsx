@@ -42,6 +42,7 @@ export function CutLogsEditor({
   submitLabel = "Add",
   emptyMessage = "",
   readOnly = false,
+  canCreate = true,
 }: {
   title?: string
   items: EditableCutLog[]
@@ -59,6 +60,7 @@ export function CutLogsEditor({
   submitLabel?: string
   emptyMessage?: string
   readOnly?: boolean
+  canCreate?: boolean
 }) {
   const addRow = useInlineCreateRow(false)
   const showDelete = !readOnly && Boolean(onDeleteItem)
@@ -111,7 +113,7 @@ export function CutLogsEditor({
           {!loading && !readOnly && !addRow.isOpen ? (
             <tr className="border-t border-[var(--panel-border)]">
               <td colSpan={colSpan} className="px-3 py-3">
-                <InlineAddRowButton label="Add Cut Log" onClick={addRow.open} />
+                <InlineAddRowButton label="Add Cut Log" onClick={addRow.open} disabled={!canCreate} />
               </td>
             </tr>
           ) : null}

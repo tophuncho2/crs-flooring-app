@@ -2,7 +2,7 @@
 
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
   requestJsonMock,
@@ -70,6 +70,8 @@ type InventoryRow = {
   notes: string
   createdAt: string
   updatedAt: string
+  canCreateCutLogs: boolean
+  cutLogBlockedReason: string
   cutLogs: Array<{
     id: string
     inventoryId: string
@@ -111,6 +113,8 @@ function inventoryRow(overrides: Partial<InventoryRow> = {}): InventoryRow {
     notes: "Current notes",
     createdAt: "2026-03-19T00:00:00.000Z",
     updatedAt: "2026-03-19T00:00:00.000Z",
+    canCreateCutLogs: false,
+    cutLogBlockedReason: "Pending import inventory cannot be cut until the import is marked Final.",
     cutLogs: [
       {
         id: "cut-1",
@@ -142,12 +146,14 @@ describe("InventoryClient", () => {
       <InventoryClient
         initialInventory={[inventoryRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        filterState={{ status: "all", warehouseId: "all" }}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
       />,
     )
 
     expect(screen.getByRole("button", { name: "Open inventory item 1001" })).toBeTruthy()
     expect(screen.getByText("Purchase Order").className).toContain("bg-violet-200")
-    expect(screen.getByText("Pending").className).toContain("bg-sky-200")
+    expect(within(screen.getByRole("table")).getByText("Pending").className).toContain("bg-sky-200")
 
     await user.click(screen.getByRole("button", { name: "Open inventory item 1001" }))
 
@@ -160,7 +166,7 @@ describe("InventoryClient", () => {
   it("uses the canonical detail page shell and removes the legacy cut-log table link", () => {
     render(
       <InventoryDetailClient
-        initialRecord={inventoryRow()}
+        initialRecord={inventoryRow({ importStatus: "FINAL", canCreateCutLogs: true, cutLogBlockedReason: "" })}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         backHref="/dashboard/flooring/inventory"
       />,
@@ -175,7 +181,14 @@ describe("InventoryClient", () => {
   it("does not render the no-cut-logs empty-state copy when there are no cut logs", () => {
     render(
       <InventoryDetailClient
-        initialRecord={inventoryRow({ cutLogs: [], cutTotal: "0.00", runningBalance: "12.00" })}
+        initialRecord={inventoryRow({
+          importStatus: "FINAL",
+          canCreateCutLogs: true,
+          cutLogBlockedReason: "",
+          cutLogs: [],
+          cutTotal: "0.00",
+          runningBalance: "12.00",
+        })}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         backHref="/dashboard/flooring/inventory"
       />,
@@ -190,16 +203,18 @@ describe("InventoryClient", () => {
 
     requestJsonMock.mockResolvedValueOnce({
       inventory: {
-        ...inventoryRow(),
+        ...inventoryRow({ importStatus: "FINAL", canCreateCutLogs: true, cutLogBlockedReason: "" }),
         locationId: "loc-2",
         locationCode: "B2",
         sectionName: "Reserve",
+        itemNumber: "1002",
+        dyeLot: "DL-2",
       },
     })
 
     render(
       <InventoryDetailClient
-        initialRecord={inventoryRow()}
+        initialRecord={inventoryRow({ importStatus: "FINAL", canCreateCutLogs: true, cutLogBlockedReason: "" })}
         locationOptions={[
           { id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" },
           { id: "loc-2", warehouseId: "wh-1", locationCode: "B2", label: "B2", sectionName: "Reserve", warehouseName: "Main Warehouse" },
@@ -214,6 +229,8 @@ describe("InventoryClient", () => {
     expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "loc-2" } })
+    fireEvent.change(screen.getByLabelText("Item #"), { target: { value: "1002" } })
+    fireEvent.change(screen.getByLabelText("Dye Lot"), { target: { value: "DL-2" } })
     await user.click(screen.getByRole("button", { name: "Save Inventory" }))
 
     await waitFor(() => {
@@ -223,7 +240,50 @@ describe("InventoryClient", () => {
     })
 
     expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"locationId":"loc-2"')
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"itemNumber":"1002"')
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"dyeLot":"DL-2"')
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).not.toContain("stockCount")
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).not.toContain("productId")
     expect(await screen.findByText("Inventory saved")).toBeTruthy()
     expect(screen.getAllByText("Reserve").length).toBeGreaterThan(0)
+  })
+
+  it("updates the inventory URL filters without keeping the previous page param", async () => {
+    const user = userEvent.setup()
+    window.history.replaceState({}, "", "/dashboard/flooring/test?page=3")
+
+    render(
+      <InventoryClient
+        initialInventory={[inventoryRow()]}
+        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        filterState={{ status: "all", warehouseId: "all" }}
+        warehouseOptions={[
+          { id: "wh-1", name: "Main Warehouse" },
+          { id: "wh-2", name: "Overflow Warehouse" },
+        ]}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Pending" }))
+    expect(navigationMocks.replace).toHaveBeenCalledWith("/dashboard/flooring/test?status=pending", { scroll: false })
+
+    fireEvent.change(screen.getByLabelText("Warehouse"), { target: { value: "wh-2" } })
+    expect(navigationMocks.replace).toHaveBeenLastCalledWith(
+      "/dashboard/flooring/test?status=pending&warehouse=wh-2",
+      { scroll: false },
+    )
+  })
+
+  it("shows the pending-cut warning and disables cut creation for pending import rows", () => {
+    render(
+      <InventoryDetailClient
+        initialRecord={inventoryRow()}
+        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
+        backHref="/dashboard/flooring/inventory"
+      />,
+    )
+
+    expect(screen.getByText("Pending import inventory cannot be cut until the import is marked Final.")).toBeTruthy()
+    expect((screen.getByRole("button", { name: "Add Cut Log" }) as HTMLButtonElement).disabled).toBe(true)
   })
 })

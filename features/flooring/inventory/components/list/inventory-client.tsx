@@ -4,13 +4,25 @@ import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
+import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useInventoryListController } from "@/features/flooring/inventory/controllers/use-inventory-list-controller"
-import type { InventoryRow, ServerPaginationState, ServerTableState } from "@/features/flooring/inventory/domain/types"
+import { useInventoryPageFilters } from "@/features/flooring/inventory/controllers/use-inventory-page-filters"
+import {
+  ALL_INVENTORY_WAREHOUSE_FILTER,
+  parseInventoryStatusFilter,
+} from "@/features/flooring/inventory/domain/filters"
+import type {
+  InventoryServerFilterState,
+  InventoryRow,
+  InventoryWarehouseOption,
+  ServerPaginationState,
+  ServerTableState,
+} from "@/features/flooring/inventory/domain/types"
 import { InventoryTable } from "./inventory-table"
 import {
   formatImportStatus,
@@ -20,11 +32,15 @@ import {
 export default function InventoryClient({
   initialInventory,
   tableState,
+  filterState,
+  warehouseOptions,
   pagination,
   initialTablePreferences,
 }: {
   initialInventory: InventoryRow[]
   tableState: ServerTableState
+  filterState: InventoryServerFilterState
+  warehouseOptions: InventoryWarehouseOption[]
   pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
 }) {
@@ -109,6 +125,31 @@ export default function InventoryClient({
     setGroupByKeys,
     groupOptions: groupFields.map((field) => ({ key: field.key, label: field.label })),
   })
+  const inventoryFilters = useInventoryPageFilters(filterState)
+  const filterGroups = [
+    {
+      key: "status",
+      type: "tabs" as const,
+      value: inventoryFilters.status,
+      options: [
+        { value: "all", label: "All" },
+        { value: "pending", label: "Pending" },
+        { value: "final", label: "Final" },
+      ],
+      onChange: (value: string) => inventoryFilters.onStatusChange(parseInventoryStatusFilter(value)),
+    },
+    {
+      key: "warehouse",
+      type: "select" as const,
+      label: "Warehouse",
+      value: inventoryFilters.warehouseId,
+      options: [
+        { value: ALL_INVENTORY_WAREHOUSE_FILTER, label: "All Warehouses" },
+        ...warehouseOptions.map((warehouse) => ({ value: warehouse.id, label: warehouse.name })),
+      ],
+      onChange: inventoryFilters.onWarehouseChange,
+    },
+  ]
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
@@ -126,16 +167,19 @@ export default function InventoryClient({
                 ascendingSortLabel="A-Z"
                 descendingSortLabel="Z-A"
               >
-                <TableColumnSettings
-                  columns={allColumns}
-                  hiddenColumnKeys={hiddenColumnKeys}
-                  onToggleColumn={toggleColumnVisibility}
-                  onMoveColumn={moveColumn}
-                  onSetColumnOrder={setColumnOrder}
-                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                  maxGroupFields={MAX_GROUP_FIELDS}
-                  onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <TableFilterControls groups={filterGroups} />
+                  <TableColumnSettings
+                    columns={allColumns}
+                    hiddenColumnKeys={hiddenColumnKeys}
+                    onToggleColumn={toggleColumnVisibility}
+                    onMoveColumn={moveColumn}
+                    onSetColumnOrder={setColumnOrder}
+                    groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                    maxGroupFields={MAX_GROUP_FIELDS}
+                    onToggleGroupedColumn={serverTableControls.onToggleGroupByKey}
+                  />
+                </div>
               </TableControlsBar>
             </TableActionsSummary>
           )}

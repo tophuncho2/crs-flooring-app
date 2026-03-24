@@ -53,6 +53,36 @@ export function buildPageHref(pathname: string, page: number) {
   return page <= 1 ? pathname : `${pathname}?page=${page}`
 }
 
+export function buildPageHrefWithSearchParams(
+  pathname: string,
+  page: number,
+  searchParams?: Record<string, string | string[] | undefined>,
+) {
+  const nextSearchParams = new URLSearchParams()
+
+  for (const [key, rawValue] of Object.entries(searchParams ?? {})) {
+    if (rawValue === undefined) continue
+
+    if (Array.isArray(rawValue)) {
+      for (const value of rawValue) {
+        nextSearchParams.append(key, value)
+      }
+      continue
+    }
+
+    nextSearchParams.set(key, rawValue)
+  }
+
+  if (page <= 1) {
+    nextSearchParams.delete("page")
+  } else {
+    nextSearchParams.set("page", String(page))
+  }
+
+  const queryString = nextSearchParams.toString()
+  return queryString ? `${pathname}?${queryString}` : pathname
+}
+
 export function parseServerTableQueryState({
   searchParams,
   defaultGrouped = false,

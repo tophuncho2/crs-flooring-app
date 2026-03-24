@@ -1,4 +1,5 @@
 import type { EditableCutLog } from "@/features/flooring/shared/ui/record-items/cut-logs-editor"
+import type { InventoryFilterState } from "@/features/flooring/inventory/domain/filters"
 
 export type CutLogRow = EditableCutLog & {
   inventoryId: string
@@ -34,6 +35,8 @@ export type InventoryRow = {
   createdAt: string
   updatedAt: string
   cutLogs: CutLogRow[]
+  canCreateCutLogs: boolean
+  cutLogBlockedReason: string
 }
 
 export type LocationOption = {
@@ -43,6 +46,11 @@ export type LocationOption = {
   label: string
   sectionName?: string | null
   warehouseName?: string | null
+}
+
+export type InventoryWarehouseOption = {
+  id: string
+  name: string
 }
 
 export type ServerPaginationState = {
@@ -60,3 +68,5 @@ export type ServerTableState = {
   isGroupingEnabled: boolean
   groupByKeys: string[]
 }
+
+export type InventoryServerFilterState = InventoryFilterState

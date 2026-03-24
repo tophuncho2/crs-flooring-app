@@ -11,6 +11,7 @@ import {
 } from "@/features/flooring/inventory/data/cut-logs"
 import { createAppError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
+import { canCreateInventoryCutLogs, getInventoryCutLogBlockedReason } from "@/features/flooring/inventory/domain/filters"
 
 function normalizeCutLog(log: {
   id: string
@@ -57,6 +58,16 @@ export async function createCutLogUseCase(body: Record<string, unknown>) {
 
   if (!inventory) {
     throw createAppError("Inventory row not found", { status: 404 })
+  }
+
+  if (!canCreateInventoryCutLogs({
+    importEntryId: inventory.importEntryId,
+    importStatus: inventory.importEntry?.status ?? "FINAL",
+  })) {
+    throw createAppError(getInventoryCutLogBlockedReason({
+      importEntryId: inventory.importEntryId,
+      importStatus: inventory.importEntry?.status ?? "FINAL",
+    }), { status: 409 })
   }
 
   const cutTotal = inventory.cutLogs.reduce((sum, log) => sum.plus(log.cut), new Prisma.Decimal(0))

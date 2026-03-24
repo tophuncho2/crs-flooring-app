@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
+import { canCreateInventoryCutLogs, getInventoryCutLogBlockedReason } from "@/features/flooring/inventory/domain/filters"
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 
@@ -93,6 +94,12 @@ export function normalizeInventoryRow(row: {
       ? Number(row.cutTotal)
       : cutLogs.reduce((total, log) => total + Number(log.cut), 0)
   const runningBalance = Number(row.stockCount) - cutTotal
+  const filterRow = {
+    importEntryId: row.importEntryId,
+    importStatus: row.importEntry?.status ?? "FINAL",
+    importWarehouseId: row.importEntry?.warehouse?.id ?? "",
+    warehouseId: row.location?.warehouse.id ?? "",
+  }
 
   return {
     id: row.id,
@@ -121,6 +128,8 @@ export function normalizeInventoryRow(row: {
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    canCreateCutLogs: canCreateInventoryCutLogs(filterRow),
+    cutLogBlockedReason: getInventoryCutLogBlockedReason(filterRow),
     cutLogs: cutLogs.map((log) => ({
       id: log.id,
       inventoryId: log.inventoryId,
@@ -132,6 +141,14 @@ export function normalizeInventoryRow(row: {
       notes: log.notes ?? "",
       createdAt: log.createdAt.toISOString(),
     })),
+  }
+}
+
+function parseInventoryDetailMutationBody(body: Record<string, unknown>) {
+  return {
+    locationId: parseOptionalString(body.locationId),
+    itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
+    dyeLot: parseOptionalString(body.dyeLot),
   }
 }
 
@@ -198,6 +215,30 @@ export async function updateInventoryRow(db: DbClient = prisma, id: string, body
   const data = parseInventoryMutationBody(body)
   await validateInventoryLocationSelection(db, {
     importEntryId: data.importEntryId,
+    locationId: data.locationId,
+  })
+
+  const inventory = await db.flooringInventory.update({
+    where: { id },
+    data,
+    include: inventoryInclude(),
+  })
+
+  return normalizeInventoryRow(inventory)
+}
+
+export async function updateInventoryDetailRow(db: DbClient = prisma, id: string, body: Record<string, unknown>) {
+  const data = parseInventoryDetailMutationBody(body)
+  const existing = await db.flooringInventory.findUniqueOrThrow({
+    where: { id },
+    select: {
+      id: true,
+      importEntryId: true,
+    },
+  })
+
+  await validateInventoryLocationSelection(db, {
+    importEntryId: existing.importEntryId,
     locationId: data.locationId,
   })
 
