@@ -3,9 +3,9 @@ import { POST } from "@/app/api/flooring/management-companies/route"
 import { DELETE } from "@/app/api/flooring/management-companies/[id]/route"
 import { validateCreateManagementCompanyInput } from "@/features/flooring/management-companies/validators"
 import { validateCreatePropertyInput } from "@/features/flooring/properties/validators"
+import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { ensureBuilderOrAdminMock, createManagementCompanyMock, deleteManagementCompanyMock } = vi.hoisted(() => ({
-  ensureBuilderOrAdminMock: vi.fn(),
+const { createManagementCompanyMock, deleteManagementCompanyMock } = vi.hoisted(() => ({
   createManagementCompanyMock: vi.fn(),
   deleteManagementCompanyMock: vi.fn(),
 }))
@@ -22,16 +22,11 @@ const routeAccess = {
   clientIp: null,
 } as const
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
-}))
-
 vi.mock("@/server/http/route-helpers", () => ({
   requireRouteAccess: vi.fn(async () => routeAccess),
+  enforceRouteRateLimit: vi.fn(async () => null),
   routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
-  routeError: vi.fn((_context, error) =>
-    new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500 }),
-  ),
+  routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
 }))
 
 vi.mock("@/features/flooring/management-companies/data/mutations", async () => {
@@ -61,7 +56,6 @@ vi.mock("@/features/flooring/management-companies/mutations", async () => {
 describe("management companies", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
   })
 
   it("requires company name to create a management company", async () => {

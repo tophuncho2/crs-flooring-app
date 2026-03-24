@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import type { TablePreferencePayload } from "./table-preferences"
 
 export type TableColumnDefinition = {
   key: string
@@ -20,9 +21,11 @@ const tablePreferencesInflight = new Map<string, Promise<PreferencePayload>>()
 export function useTableColumns<TColumn extends TableColumnDefinition>({
   tableKey,
   columns,
+  initialPreferences,
 }: {
   tableKey: string
   columns: TColumn[]
+  initialPreferences?: TablePreferencePayload | null
 }) {
   const columnKeys = useMemo(() => columns.map((column) => column.key), [columns])
   const defaultHiddenKeys = useMemo(
@@ -38,9 +41,32 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   const columnKeysRef = useRef(columnKeys)
   const defaultHiddenKeysRef = useRef(defaultHiddenKeys)
 
-  const [hiddenColumnKeys, setHiddenColumnKeys] = useState<string[]>(defaultHiddenKeys)
-  const [columnOrderKeys, setColumnOrderKeys] = useState<string[]>(columnKeys)
-  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true)
+  const normalizePayload = (payload: Partial<TablePreferencePayload>) => {
+    const nextOrder = Array.isArray(payload.columnOrderKeys)
+      ? payload.columnOrderKeys.filter((key) => columnKeysRef.current.includes(key))
+      : []
+    for (const key of columnKeysRef.current) {
+      if (!nextOrder.includes(key)) nextOrder.push(key)
+    }
+
+    const nextHidden = Array.isArray(payload.hiddenColumnKeys)
+      ? payload.hiddenColumnKeys.filter((key) => columnKeysRef.current.includes(key))
+      : defaultHiddenKeysRef.current
+
+    return {
+      columnOrderKeys: nextOrder,
+      hiddenColumnKeys: nextHidden,
+    }
+  }
+
+  const normalizedInitialPreferences = useMemo(
+    () => (initialPreferences ? normalizePayload(initialPreferences) : null),
+    [initialPreferences, preferenceCacheKey],
+  )
+
+  const [hiddenColumnKeys, setHiddenColumnKeys] = useState<string[]>(normalizedInitialPreferences?.hiddenColumnKeys ?? defaultHiddenKeys)
+  const [columnOrderKeys, setColumnOrderKeys] = useState<string[]>(normalizedInitialPreferences?.columnOrderKeys ?? columnKeys)
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(!normalizedInitialPreferences)
   const [preferenceError, setPreferenceError] = useState("")
   const hasLoadedRef = useRef(false)
 
@@ -50,22 +76,14 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   useEffect(() => {
     let isCancelled = false
 
-    function normalizePayload(payload: Partial<PreferencePayload>) {
-      const nextOrder = Array.isArray(payload.columnOrderKeys)
-        ? payload.columnOrderKeys.filter((key) => columnKeysRef.current.includes(key))
-        : []
-      for (const key of columnKeysRef.current) {
-        if (!nextOrder.includes(key)) nextOrder.push(key)
-      }
-
-      const nextHidden = Array.isArray(payload.hiddenColumnKeys)
-        ? payload.hiddenColumnKeys.filter((key) => columnKeysRef.current.includes(key))
-        : defaultHiddenKeysRef.current
-
-      return {
-        columnOrderKeys: nextOrder,
-        hiddenColumnKeys: nextHidden,
-      }
+    if (normalizedInitialPreferences) {
+      tablePreferencesCache.set(preferenceCacheKey, normalizedInitialPreferences)
+      setColumnOrderKeys(normalizedInitialPreferences.columnOrderKeys)
+      setHiddenColumnKeys(normalizedInitialPreferences.hiddenColumnKeys)
+      setIsLoadingPreferences(false)
+      setPreferenceError("")
+      hasLoadedRef.current = true
+      return
     }
 
     const cachedPreferences = tablePreferencesCache.get(preferenceCacheKey)
@@ -127,7 +145,7 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     return () => {
       isCancelled = true
     }
-  }, [preferenceCacheKey, tableKey])
+  }, [normalizedInitialPreferences, preferenceCacheKey, tableKey])
 
   async function persistPreferences(nextHiddenKeys: string[], nextOrderKeys: string[]) {
     try {

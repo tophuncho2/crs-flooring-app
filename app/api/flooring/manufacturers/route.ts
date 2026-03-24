@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { createManufacturer } from "@/features/flooring/manufacturers/mutations"
 import { listManufacturers } from "@/features/flooring/manufacturers/queries"
 import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
+import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 function normalizeManufacturerResponse(
   manufacturer:
@@ -13,23 +13,30 @@ function normalizeManufacturerResponse(
   return "productsCount" in manufacturer ? manufacturer : normalizeManufacturer(manufacturer)
 }
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeManufacturersRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const manufacturers = await listManufacturers()
 
-    return NextResponse.json({ manufacturers: manufacturers.map(normalizeManufacturerResponse) })
+    return routeJson(access, { manufacturers: manufacturers.map(normalizeManufacturerResponse) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+  const access = await authorizeManufacturersRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "manufacturers.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/manufacturers",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = (await request.json()) as Record<string, unknown>
@@ -43,9 +50,8 @@ export async function POST(request: Request) {
       email: parseOptionalString(body.email),
     })
 
-    return NextResponse.json({ manufacturer: normalizeManufacturer(manufacturer) }, { status: 201 })
+    return routeJson(access, { manufacturer: normalizeManufacturer(manufacturer) }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

@@ -78,8 +78,7 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
   const where = buildInventoryWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringInventory.count({ where })
   const pagination = createServerPagination({ page, totalItems })
-  const [inventory, locationOptions] = await Promise.all([
-    prisma.flooringInventory.findMany({
+  const inventory = await prisma.flooringInventory.findMany({
       where,
       include: {
         product: {
@@ -110,25 +109,25 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
             warehouse: { select: { id: true, name: true } },
           },
         },
-        cutLogs: {
-          orderBy: [{ createdAt: "desc" }],
-          select: {
-            id: true,
-            inventoryId: true,
-            before: true,
-            cut: true,
-            after: true,
-            notes: true,
-            createdAt: true,
-          },
-        },
       },
       orderBy: buildInventoryOrderBy(tableState),
       skip: pagination.skip,
       take: pagination.take,
-    }),
-    listInventoryLocationOptions(),
-  ])
+    })
+  const cutLogTotals = inventory.length
+    ? await prisma.flooringCutLog.groupBy({
+        by: ["inventoryId"],
+        where: {
+          inventoryId: {
+            in: inventory.map((row) => row.id),
+          },
+        },
+        _sum: {
+          cut: true,
+        },
+      })
+    : []
+  const cutTotalByInventoryId = new Map(cutLogTotals.map((row) => [row.inventoryId, row._sum.cut ?? 0]))
 
   return {
     pagination: {
@@ -138,8 +137,12 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
       totalPages: pagination.totalPages,
     },
     tableState,
-    initialInventory: inventory.map(normalizeInventoryRow),
-    locationOptions,
+    initialInventory: inventory.map((row) =>
+      normalizeInventoryRow({
+        ...row,
+        cutTotal: cutTotalByInventoryId.get(row.id) ?? 0,
+      }),
+    ),
   }
 }
 

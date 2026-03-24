@@ -2,14 +2,31 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { POST } from "@/app/api/flooring/properties/route"
 import { validateCreatePropertyInput } from "@/features/flooring/properties/validators"
 import { normalizeProperty } from "@/features/flooring/properties/services"
+import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { ensureBuilderOrAdminMock, createPropertyMock } = vi.hoisted(() => ({
-  ensureBuilderOrAdminMock: vi.fn(),
+const { requireRouteAccessMock, enforceRouteRateLimitMock, createPropertyMock } = vi.hoisted(() => ({
+  requireRouteAccessMock: vi.fn(),
+  enforceRouteRateLimitMock: vi.fn(),
   createPropertyMock: vi.fn(),
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+const routeAccess = {
+  requestId: "req-1",
+  user: {
+    id: "user-1",
+    email: "builder@example.com",
+    role: "BUILDER",
+    isVerified: true,
+    tools: [],
+  },
+  clientIp: "127.0.0.1",
+} as const
+
+vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
+  enforceRouteRateLimit: enforceRouteRateLimitMock,
+  routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
+  routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
 }))
 
 vi.mock("@/features/flooring/properties/mutations", async () => {
@@ -60,7 +77,8 @@ function propertyRecord(overrides: Partial<{
 describe("properties", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
+    requireRouteAccessMock.mockResolvedValue(routeAccess)
+    enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 
   it("requires property name and no other property field", async () => {

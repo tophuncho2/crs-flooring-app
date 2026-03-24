@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 function normalizeWarehouseRow(warehouse: {
   id: string
@@ -29,9 +29,9 @@ function normalizeWarehouseRow(warehouse: {
   }
 }
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeWarehouseRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const warehouses = await prisma.flooringWarehouse.findMany({
@@ -53,16 +53,23 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json({ warehouses: warehouses.map(normalizeWarehouseRow) })
+    return routeJson(access, { warehouses: warehouses.map(normalizeWarehouseRow) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeWarehouseRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "warehouses.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/warehouses",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = (await request.json()) as Record<string, unknown>
@@ -90,9 +97,8 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ warehouse: normalizeWarehouseRow(warehouse) }, { status: 201 })
+    return routeJson(access, { warehouse: normalizeWarehouseRow(warehouse) }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

@@ -1,6 +1,7 @@
 import { getProductById } from "@/features/flooring/products/data/queries"
-import { deleteProduct, updateProduct } from "@/features/flooring/products/mutations"
-import { validateUpdateProductInput } from "@/features/flooring/products/validators"
+import { deleteProductUseCase, updateProductUseCase } from "@/features/flooring/products/application/manage-product"
+import { authorizeProductsRoute } from "@/features/flooring/shared/access/domain-tools"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 import { requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
@@ -20,13 +21,23 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "products" })
+  const access = await authorizeProductsRoute(request)
   if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const product = await updateProduct(id, validateUpdateProductInput(body))
+    const product = await withMutationTelemetry(
+      access,
+      {
+        message: "Product updated",
+        action: "products.update",
+        route: "/api/flooring/products/[id]",
+        entityType: "flooringProduct",
+        entityId: id,
+      },
+      () => updateProductUseCase(id, body),
+    )
     return routeJson(access, { product })
   } catch (error) {
     return routeError(access, error)
@@ -34,12 +45,22 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "products" })
+  const access = await authorizeProductsRoute(request)
   if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
-    await deleteProduct(id)
+    await withMutationTelemetry(
+      access,
+      {
+        message: "Product deleted",
+        action: "products.delete",
+        route: "/api/flooring/products/[id]",
+        entityType: "flooringProduct",
+        entityId: id,
+      },
+      () => deleteProductUseCase(id),
+    )
     return routeJson(access, { ok: true })
   } catch (error) {
     return routeError(access, error)

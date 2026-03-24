@@ -2,17 +2,34 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Prisma } from "@prisma/client"
 import { GET, POST } from "@/app/api/flooring/services/route"
 import { DELETE, PATCH } from "@/app/api/flooring/services/[id]/route"
+import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { ensureBuilderOrAdminMock, listServicesMock, createServiceMock, updateServiceMock, deleteServiceMock } = vi.hoisted(() => ({
-  ensureBuilderOrAdminMock: vi.fn(),
+const { requireRouteAccessMock, enforceRouteRateLimitMock, listServicesMock, createServiceMock, updateServiceMock, deleteServiceMock } = vi.hoisted(() => ({
+  requireRouteAccessMock: vi.fn(),
+  enforceRouteRateLimitMock: vi.fn(),
   listServicesMock: vi.fn(),
   createServiceMock: vi.fn(),
   updateServiceMock: vi.fn(),
   deleteServiceMock: vi.fn(),
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+const routeAccess = {
+  requestId: "req-1",
+  user: {
+    id: "user-1",
+    email: "builder@example.com",
+    role: "BUILDER",
+    isVerified: true,
+    tools: [],
+  },
+  clientIp: "127.0.0.1",
+} as const
+
+vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
+  enforceRouteRateLimit: enforceRouteRateLimitMock,
+  routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
+  routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
 }))
 
 vi.mock("@/features/flooring/services/queries", () => ({
@@ -57,7 +74,8 @@ function serviceRecord(
 describe("services routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
+    requireRouteAccessMock.mockResolvedValue(routeAccess)
+    enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 
   it("GET returns normalized rows", async () => {
@@ -75,7 +93,7 @@ describe("services routes", () => {
       },
     ])
 
-    const response = await GET()
+    const response = await GET(new Request("http://localhost/api/flooring/services"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
@@ -92,7 +110,7 @@ describe("services routes", () => {
         updatedAt: "2026-03-19T00:00:00.000Z",
       },
     ])
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "warehouse" })
+    expect(requireRouteAccessMock).toHaveBeenCalled()
   })
 
   it("POST requires name, unitId, and baseCost", async () => {

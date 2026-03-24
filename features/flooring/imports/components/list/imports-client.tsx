@@ -10,15 +10,13 @@ import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-s
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import {
   formatImportStatus,
   formatTransportType,
 } from "@/features/flooring/imports/contracts"
 import {
   type ImportRow,
-  type ProductOption,
-  type WarehouseOption,
-  type LocationOption,
   useImportsListController,
 } from "@/features/flooring/imports/controllers/use-imports-list-controller"
 import { ImportsCreateModal } from "./imports-create-modal"
@@ -42,16 +40,12 @@ type ServerTableState = {
 
 export default function ImportsClient({
   initialImports,
-  productOptions,
-  warehouseOptions,
-  locationOptions,
+  initialTablePreferences,
   tableState,
   pagination,
 }: {
   initialImports: ImportRow[]
-  productOptions: ProductOption[]
-  warehouseOptions: WarehouseOption[]
-  locationOptions: LocationOption[]
+  initialTablePreferences?: TablePreferencePayload | null
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
@@ -60,6 +54,7 @@ export default function ImportsClient({
     draft,
     isCreateModalOpen,
     isSaving,
+    isLoadingOptions,
     deletingId,
     message,
     pageError,
@@ -75,10 +70,11 @@ export default function ImportsClient({
     deleteImport,
     openImport,
     productLookup,
+    productOptions,
+    warehouseOptions,
+    locationOptions,
   } = useImportsListController({
     initialImports,
-    productOptions,
-    locationOptions,
   })
 
   const {
@@ -128,6 +124,7 @@ export default function ImportsClient({
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
+    initialPreferences: initialTablePreferences,
   })
   const importGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
   const serverTableControls = useServerTableQueryControls({
@@ -220,6 +217,7 @@ export default function ImportsClient({
         onRemoveItemRow={removeItemRow}
         onSave={createImport}
         isSaving={isSaving}
+        isLoadingOptions={isLoadingOptions}
         error={createModalError}
       />
     </div>

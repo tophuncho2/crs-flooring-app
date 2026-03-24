@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
+import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import type { LocationRow, SectionRow, WarehouseRow } from "./types"
 
 async function loadWarehouseRows() {
@@ -32,7 +33,14 @@ async function loadWarehouseRows() {
 }
 
 export async function getWarehousePageData() {
-  return withPrismaConnectivityHandling(() => loadWarehouseRows())
+  return withPrismaConnectivityHandling(() =>
+    withLoaderTiming(
+      {
+        loader: "flooring.warehouse.list",
+      },
+      () => loadWarehouseRows(),
+    ),
+  )
 }
 
 export async function getWarehouseById(id: string) {
@@ -99,5 +107,34 @@ export async function getWarehouseById(id: string) {
         sectionName: location.section?.name ?? null,
       }),
     ),
+  }
+}
+
+export async function getWarehouseDetailPageData(id: string): Promise<PrismaDetailPageResult<Awaited<ReturnType<typeof getWarehouseById>>>> {
+  try {
+    return {
+      ok: true,
+      data: await withLoaderTiming(
+        {
+          loader: "flooring.warehouse.detail",
+          details: { warehouseId: id },
+        },
+        () => getWarehouseById(id),
+      ),
+    }
+  } catch (error) {
+    if (isPrismaNotFoundError(error)) {
+      return { ok: false, notFound: true }
+    }
+
+    return {
+      ok: false,
+      error: createPrismaPageLoadIssue(error, {
+        code: "WAREHOUSE_DETAIL_LOAD_FAILED",
+        title: "Warehouse Unavailable",
+        message: "The app could not load this warehouse.",
+        detail: "The warehouse record or its linked sections and locations could not be loaded.",
+      }),
+    }
   }
 }

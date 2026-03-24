@@ -3,13 +3,14 @@ import { requireToolAccess } from "@/server/auth/session"
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
 import { getImportsPageData } from "@/features/flooring/imports/queries"
+import { getUserTablePreference } from "@/server/account/table-preferences"
 
 export default async function FlooringImportsPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  const user = await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
@@ -18,7 +19,10 @@ export default async function FlooringImportsPage({
     defaultGroupKeys: ["warehouse"],
     allowedGroupKeys: ["transport", "status", "warehouse"],
   })
-  const result = await getImportsPageData(page, tableState)
+  const [result, initialTablePreferences] = await Promise.all([
+    getImportsPageData(page, tableState),
+    getUserTablePreference(user.id, "imports-main"),
+  ])
 
   if (!result.ok) {
     return (
@@ -37,9 +41,7 @@ export default async function FlooringImportsPage({
     <ImportsClient
       key={`imports-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialImports={pageData.initialImports}
-      productOptions={pageData.productOptions}
-      warehouseOptions={pageData.warehouseOptions}
-      locationOptions={pageData.locationOptions}
+      initialTablePreferences={initialTablePreferences}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

@@ -1,5 +1,5 @@
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
-import { TEMPLATES_TOOL_SLUG, WORK_ORDERS_TOOL_SLUG } from "@/features/flooring/shared/access/domain-tools"
+import { TEMPLATES_TOOL_SLUG, WORK_ORDERS_TOOL_SLUG } from "@/features/flooring/shared/access/tool-slugs"
 
 export type FlooringHotkeyDefinition = {
   id: string

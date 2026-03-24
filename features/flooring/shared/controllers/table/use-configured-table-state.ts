@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { useTableColumns, type TableColumnDefinition } from "./use-table-columns"
+import type { TablePreferencePayload } from "./table-preferences"
 import { useTableControls, type GroupField, type TableValueGetter, type SearchField } from "./use-table-controls"
 
 export type ConfiguredTableField<T> = TableColumnDefinition & {
@@ -21,6 +22,7 @@ export function useConfiguredTableState<T>({
   defaultGroupKey = null,
   defaultGroupKeys,
   defaultAscending = true,
+  initialPreferences = null,
   disableClientFiltering = false,
   disableClientSorting = false,
   disableClientPagination = false,
@@ -34,6 +36,7 @@ export function useConfiguredTableState<T>({
   defaultGroupKey?: string | null
   defaultGroupKeys?: string[]
   defaultAscending?: boolean
+  initialPreferences?: TablePreferencePayload | null
   disableClientFiltering?: boolean
   disableClientSorting?: boolean
   disableClientPagination?: boolean
@@ -72,6 +75,7 @@ export function useConfiguredTableState<T>({
   const tableColumns = useTableColumns({
     tableKey,
     columns,
+    initialPreferences,
   })
 
   return {

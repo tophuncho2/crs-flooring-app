@@ -27,6 +27,7 @@ export function ProductsCreateModal({
   onSave,
   isSaving,
   isUploadingPhotos,
+  isLoadingOptions,
   message,
   error,
 }: {
@@ -46,6 +47,7 @@ export function ProductsCreateModal({
   onSave: () => void
   isSaving: boolean
   isUploadingPhotos: boolean
+  isLoadingOptions: boolean
   message: string
   error: string
 }) {
@@ -57,7 +59,9 @@ export function ProductsCreateModal({
         <FormStatusNotices
           message={message}
           error={error}
-          loadingMessage={isSaving ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : ""}
+          loadingMessage={
+            isSaving ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : isLoadingOptions ? "Loading product options..." : ""
+          }
         />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -65,6 +69,7 @@ export function ProductsCreateModal({
             <select
               value={productForm.categoryId}
               onChange={(event) => onFieldChange("categoryId", event.target.value)}
+              disabled={isLoadingOptions}
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
             >
               <option value="">Select a category</option>
@@ -94,6 +99,7 @@ export function ProductsCreateModal({
             <select
               value={productForm.manufacturerId}
               onChange={(event) => onFieldChange("manufacturerId", event.target.value)}
+              disabled={isLoadingOptions}
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
             >
               <option value="">Select a manufacturer</option>
@@ -202,7 +208,7 @@ export function ProductsCreateModal({
           <button
             type="button"
             onClick={onSave}
-            disabled={isSaving || isUploadingPhotos}
+            disabled={isSaving || isUploadingPhotos || isLoadingOptions}
             className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
           >
             <Save size={16} />

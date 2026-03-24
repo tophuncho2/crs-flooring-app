@@ -1,10 +1,8 @@
 import { authorizeWorkOrdersRoute } from "@/features/flooring/shared/access/templates-work-orders"
-import { syncTemplateToWorkOrder } from "@/features/flooring/work-orders/domain/syncTemplate"
-import { validateSyncTemplateToWorkOrderInput } from "@/features/flooring/work-orders/validators"
+import { syncTemplateToWorkOrderUseCase } from "@/features/flooring/work-orders/application/sync-template"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 import {
   enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
   routeError,
   routeJson,
 } from "@/server/http/route-helpers"
@@ -28,29 +26,20 @@ export async function POST(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
-    const result = await syncTemplateToWorkOrder(id, validateSyncTemplateToWorkOrderInput(body))
-    logRouteMutationSuccess(access, {
-      message: "Work order synced from template",
-      action: "workOrders.syncTemplate",
-      route: "/api/flooring/work-orders/[id]/sync-template",
-      entityType: "flooringWorkOrder",
-      entityId: id,
-      details: { templateId: typeof body.templateId === "string" ? body.templateId : null },
-    })
-    return routeJson(access, result)
-  } catch (error) {
-    const { id } = await params
-    logRouteMutationFailure(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Work order template sync failed",
-        action: "workOrders.syncTemplate.error",
+        message: "Work order synced from template",
+        action: "workOrders.syncTemplate",
         route: "/api/flooring/work-orders/[id]/sync-template",
         entityType: "flooringWorkOrder",
         entityId: id,
+        details: { templateId: typeof body.templateId === "string" ? body.templateId : null },
       },
-      error,
+      () => syncTemplateToWorkOrderUseCase(id, body),
     )
+    return routeJson(access, result)
+  } catch (error) {
     return routeError(access, error)
   }
 }

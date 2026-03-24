@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server"
 import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
 import { prisma } from "@/server/db/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin, ensureGovernanceUser } from "@/server/auth/route-auth"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 function normalizeCategory(category: {
   id: string
@@ -24,9 +24,9 @@ function normalizeCategory(category: {
   }
 }
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeCategoriesRoute(request)
+  if (access instanceof Response) return access
 
   try {
     const categories = await prisma.flooringCategory.findMany({
@@ -39,16 +39,23 @@ export async function GET() {
       orderBy: { name: "asc" },
     })
 
-    return NextResponse.json({ categories: categories.map(normalizeCategory) })
+    return routeJson(access, { categories: categories.map(normalizeCategory) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureGovernanceUser()
-  if (authError) return authError
+  const access = await authorizeCategoriesRoute(request, { capability: "governance.access" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "categories.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/categories",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = (await request.json()) as Record<string, unknown>
@@ -69,9 +76,8 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ category: normalizeCategory(category) }, { status: 201 })
+    return routeJson(access, { category: normalizeCategory(category) }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

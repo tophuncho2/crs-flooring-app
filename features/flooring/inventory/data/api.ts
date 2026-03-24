@@ -76,6 +76,7 @@ export function normalizeInventoryRow(row: {
     transportType: string
     warehouse: { id: string; name: string } | null
   } | null
+  cutTotal?: { toString(): string } | number | string | null
   cutLogs?: Array<{
     id: string
     inventoryId: string
@@ -87,7 +88,10 @@ export function normalizeInventoryRow(row: {
   }>
 }) {
   const cutLogs = row.cutLogs ?? []
-  const cutTotal = cutLogs.reduce((total, log) => total + Number(log.cut), 0)
+  const cutTotal =
+    row.cutTotal !== undefined && row.cutTotal !== null
+      ? Number(row.cutTotal)
+      : cutLogs.reduce((total, log) => total + Number(log.cut), 0)
   const runningBalance = Number(row.stockCount) - cutTotal
 
   return {

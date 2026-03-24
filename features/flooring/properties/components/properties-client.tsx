@@ -2,19 +2,21 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/display/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/display/dashboard-card-title"
-import { ErrorNotice, FormStatusNotices, SuccessNotice } from "../../shared/feedback/notices"
-import { DeleteRowButton } from "../../shared/table/row-action-buttons"
-import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/forms/record-form"
-import { TableColumnSettings } from "../../shared/table/table-column-settings"
-import TableControlsBar from "../../shared/table/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table/table-shell"
-import { useConfiguredTableState } from "../../shared/table/use-configured-table-state"
-import { useCanonicalDetailNavigation } from "../../shared/controllers/navigation/use-canonical-detail-navigation"
-import { useServerTableQueryControls } from "../../shared/table/use-server-table-query-controls"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/table/use-table-controls"
-import { buildFullAddress, normalizeAddressState } from "../../shared/utils/address-helpers"
+import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
+import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
+import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { ErrorNotice, FormStatusNotices, SuccessNotice } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
+import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
+import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import { requestJson } from "@/features/flooring/shared/transport/http"
 
 type ManagementCompanyOption = {
   id: string
@@ -37,12 +39,8 @@ type PropertyRow = {
   email: string
   fullAddress: string
   managementCompany: PropertyManagementCompany | null
-  templates: Array<{
-    id: string
-    templateTag: string
-    warehouseName: string
-    itemsCount: number
-  }>
+  templateCount: number
+  templatePreviewTags: string[]
 }
 
 type DraftProperty = {
@@ -88,11 +86,13 @@ export default function PropertiesClient({
   managementOptions,
   tableState,
   pagination,
+  initialTablePreferences,
 }: {
   initialProperties: PropertyRow[]
   managementOptions: ManagementCompanyOption[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const [properties, setProperties] = useState<PropertyRow[]>(initialProperties)
   const [newDraft, setNewDraft] = useState<DraftProperty>(defaultDraft)
@@ -148,6 +148,7 @@ export default function PropertiesClient({
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    initialPreferences: initialTablePreferences,
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
@@ -180,7 +181,15 @@ export default function PropertiesClient({
         throw new Error("Property name is required")
       }
 
-      const response = await fetch("/api/flooring/properties", {
+      const payload = await requestJson<{
+        property: PropertyRow & {
+          managementCompany: {
+            id: string
+            name: string
+          } | null
+          templates?: Array<{ id: string; templateTag: string }>
+        }
+      }>("/api/flooring/properties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -189,24 +198,10 @@ export default function PropertiesClient({
         }),
       })
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        property?: PropertyRow & {
-          managementCompany: {
-            id: string
-            name: string
-          } | null
-          templates?: PropertyRow["templates"]
-        }
-      }
-
-      if (!response.ok || !payload.property) {
-        throw new Error(payload.error ?? "Failed to create property")
-      }
-
       const createdProperty = {
         ...payload.property,
-        templates: payload.property.templates ?? [],
+        templateCount: payload.property.templates?.length ?? 0,
+        templatePreviewTags: payload.property.templates?.map((template) => template.templateTag) ?? [],
       }
       setProperties((prev) => [createdProperty, ...prev])
       setNewDraft(defaultDraft)
@@ -225,12 +220,7 @@ export default function PropertiesClient({
     setDeletingId(id)
 
     try {
-      const response = await fetch(`/api/flooring/properties/${id}`, { method: "DELETE" })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to delete property")
-      }
+      await requestJson<{ ok: boolean }>(`/api/flooring/properties/${id}`, { method: "DELETE" })
 
       setProperties((prev) => prev.filter((property) => property.id !== id))
       setMessage("Property deleted")

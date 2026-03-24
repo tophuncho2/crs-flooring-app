@@ -1,16 +1,16 @@
 import { prisma } from "@/server/db/prisma"
-import { createImportEntry, listImportEntries, normalizeImportEntry } from "@/features/flooring/imports/api"
+import { listImportEntries } from "@/features/flooring/imports/api"
+import { createImportEntryUseCase } from "@/features/flooring/imports/application/import-entry"
+import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
 import {
   enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  requireRouteAccess,
   routeError,
   routeJson,
 } from "@/server/http/route-helpers"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 
 export async function GET(request: Request) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
   try {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -34,32 +34,18 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const created = await createImportEntry(prisma, body)
-    const normalized = normalizeImportEntry(created)
-    logRouteMutationSuccess(access, {
-      message: "Import created",
-      action: "imports.create",
-      route: "/api/flooring/imports",
-      entityType: "flooringImportEntry",
-      entityId: normalized.id,
-      details: {
-        importNumber: normalized.importNumber,
-        itemsCount: normalized.itemsCount,
-      },
-    })
-
-    return routeJson(access, { import: normalized }, { status: 201 })
-  } catch (error) {
-    logRouteMutationFailure(
+    const normalized = await withMutationTelemetry(
       access,
       {
-        message: "Import creation failed",
-        action: "imports.create.error",
+        message: "Import created",
+        action: "imports.create",
         route: "/api/flooring/imports",
         entityType: "flooringImportEntry",
       },
-      error,
+      () => createImportEntryUseCase(body),
     )
+    return routeJson(access, { import: normalized }, { status: 201 })
+  } catch (error) {
     return routeError(access, error)
   }
 }

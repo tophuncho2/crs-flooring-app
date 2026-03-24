@@ -13,6 +13,8 @@ type RegisterBody = {
   isVerified?: boolean
 }
 
+const MIN_PASSWORD_LENGTH = 12
+
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase()
 }
@@ -47,8 +49,8 @@ export async function POST(request: Request) {
       return jsonWithRequestId({ error: "Email and password are required" }, requestId, { status: 400 })
     }
 
-    if (password.length < 8) {
-      return jsonWithRequestId({ error: "Password must be at least 8 characters" }, requestId, { status: 400 })
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return jsonWithRequestId({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` }, requestId, { status: 400 })
     }
 
     const existing = await prisma.user.findUnique({ where: { email } })
@@ -60,18 +62,22 @@ export async function POST(request: Request) {
       return jsonWithRequestId({ error: "Only builder accounts can be created from this route" }, requestId, { status: 400 })
     }
 
-    const hashed = await bcrypt.hash(password, 10)
     const userCount = await prisma.user.count()
-    const isBootstrap = userCount === 0
+    if (userCount === 0 && !viewerCanGovern) {
+      return jsonWithRequestId(
+        { error: "Initial owner must be created from the CLI recovery path before web registration is enabled" },
+        requestId,
+        { status: 403 },
+      )
+    }
 
-    const role: "OWNER" | "BUILDER" = isBootstrap ? "OWNER" : "BUILDER"
+    const hashed = await bcrypt.hash(password, 10)
+    const role: "BUILDER" = "BUILDER"
     const isVerified = viewerCanGovern
       ? typeof body.isVerified === "boolean"
         ? body.isVerified
         : true
-      : isBootstrap
-        ? true
-        : false
+      : false
 
     const createdUser = await prisma.user.create({
       data: {
@@ -85,7 +91,7 @@ export async function POST(request: Request) {
 
     logEvent({
       message: "Account created",
-      action: viewerCanGovern ? "users.create" : isBootstrap ? "auth.bootstrap" : "auth.register",
+      action: viewerCanGovern ? "users.create" : "auth.register",
       route: "/api/auth/register",
       requestId,
       userId: actor?.id,
@@ -104,9 +110,7 @@ export async function POST(request: Request) {
       ? createdUser.isVerified
         ? "Builder account created."
         : "Builder account created and left pending approval."
-      : isBootstrap
-        ? "Initial owner account created."
-        : "Account request created. Pending approval."
+      : "Account request created. Pending approval."
 
     return jsonWithRequestId(
       {

@@ -1,14 +1,14 @@
 "use client"
 
-import { useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { FormStatusNotices } from "@/features/flooring/shared/notices"
-import { RecordDetailPageShell } from "@/features/flooring/shared/record-detail-page-shell"
-import { RecordFormField } from "@/features/flooring/shared/record-form"
-import { RecordPanelFooter } from "@/features/flooring/shared/record-panel-footer"
-import { RecordSummaryCard } from "@/features/flooring/shared/record-summary-card"
-import { RecordSummaryGrid } from "@/features/flooring/shared/record-summary-grid"
-import { useUnsavedChangesGuard } from "@/features/flooring/shared/use-unsaved-changes-guard"
+import { useEffect } from "react"
+import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
+import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { RecordSummaryCard } from "@/features/flooring/shared/ui/display/record-summary-card"
+import { RecordSummaryGrid } from "@/features/flooring/shared/ui/display/record-summary-grid"
+import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import type { LocationRow, SectionRow, WarehouseRow } from "../types"
 import { useWarehouseRecordController } from "../use-warehouse-record-controller"
 import { WarehouseLocationsSection } from "./warehouse-locations-section"
@@ -25,25 +25,27 @@ export function WarehouseDetailClient({
   locations: LocationRow[]
   backHref: string
 }) {
-  const router = useRouter()
+  const page = useRecordPageController({
+    backHref,
+    dirtyMessage: "You have unsaved warehouse changes. Leave this warehouse without saving?",
+  })
   const controller = useWarehouseRecordController({
     initialWarehouse: warehouse,
     initialSections: sections,
     initialLocations: locations,
   })
-  const guard = useUnsavedChangesGuard({
-    isDirty: controller.isDirty,
-    message: "You have unsaved warehouse changes. Leave this warehouse without saving?",
-  })
 
-  const closePage = useCallback(() => {
-    guard.confirmNavigation(() => {
-      router.push(backHref, { scroll: false })
-    })
-  }, [backHref, guard, router])
+  useEffect(() => {
+    page.setIsDirty(controller.isDirty)
+  }, [controller.isDirty, page.setIsDirty])
 
   return (
-    <RecordDetailPageShell title={`Warehouse ${controller.warehouse.name}`} backHref={backHref} onBack={closePage} sizeClass="max-w-6xl">
+    <RecordDetailPageShell
+      title={`Warehouse ${controller.warehouse.name}`}
+      backHref={backHref}
+      onBack={page.closePage}
+      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
+    >
       <div className="space-y-6">
         <FormStatusNotices
           message={controller.message}
@@ -119,7 +121,7 @@ export function WarehouseDetailClient({
         </div>
 
         <RecordPanelFooter
-          onClose={closePage}
+          onClose={page.closePage}
           closeLabel="Back"
           onSave={() => void controller.saveWarehouse()}
           saveLabel="Save Warehouse"

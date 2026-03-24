@@ -48,6 +48,7 @@ export function ImportsCreateModal({
   onRemoveItemRow,
   onSave,
   isSaving,
+  isLoadingOptions,
   error,
 }: {
   isOpen: boolean
@@ -64,6 +65,7 @@ export function ImportsCreateModal({
   onRemoveItemRow: (index: number) => void
   onSave: () => void
   isSaving: boolean
+  isLoadingOptions: boolean
   error: string
 }) {
   if (!isOpen) return null
@@ -74,11 +76,13 @@ export function ImportsCreateModal({
     <ModalShell title="New Import" onClose={onClose}>
       <div className="space-y-6">
         {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+        {isLoadingOptions ? <p className="text-sm text-[var(--foreground)]/65">Loading import options...</p> : null}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <FormField label="Import Warehouse">
             <select
               value={draft.warehouseId}
               onChange={(event) => onDraftFieldChange("warehouseId", event.target.value)}
+              disabled={isLoadingOptions}
               className={`rounded-lg border px-3 py-2 ${getSharedFormFieldClass({
                 isRequired: true,
                 isEmpty: validation.warehouseId,
@@ -184,6 +188,7 @@ export function ImportsCreateModal({
                       <select
                         value={item.productId}
                         onChange={(event) => onItemFieldChange(index, "productId", event.target.value)}
+                        disabled={isLoadingOptions}
                         className={`w-56 rounded border px-2 py-1 ${getSharedFormFieldClass({
                           isRequired: true,
                           isEmpty: itemValidation.productId,
@@ -221,6 +226,7 @@ export function ImportsCreateModal({
                       <select
                         value={item.locationId}
                         onChange={(event) => onItemFieldChange(index, "locationId", event.target.value)}
+                        disabled={isLoadingOptions}
                         className="w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                       >
                         <option value="">Select location</option>
@@ -282,7 +288,7 @@ export function ImportsCreateModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={isSaving}
+            disabled={isSaving || isLoadingOptions}
             className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm"
           >
             Cancel
@@ -290,11 +296,11 @@ export function ImportsCreateModal({
           <button
             type="button"
             onClick={onSave}
-            disabled={isSaving}
+            disabled={isSaving || isLoadingOptions}
             className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
           >
             <Save size={16} />
-            {isSaving ? "Creating..." : "Create Import"}
+            {isLoadingOptions ? "Loading..." : isSaving ? "Creating..." : "Create Import"}
           </button>
         </div>
       </div>

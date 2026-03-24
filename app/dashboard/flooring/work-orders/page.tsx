@@ -3,13 +3,14 @@ import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templ
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getWorkOrdersPageData } from "@/features/flooring/work-orders/queries"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
+import { getUserTablePreference } from "@/server/account/table-preferences"
 
 export default async function WorkOrdersPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireWorkOrdersAccess()
+  const user = await requireWorkOrdersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
@@ -17,7 +18,10 @@ export default async function WorkOrdersPage({
     allowedGroupKeys: ["status", "warehouse", "property", "date", "unitType", "vacancy"],
     defaultGroupKeys: ["warehouse"],
   })
-  const result = await getWorkOrdersPageData(page, tableState)
+  const [result, initialTablePreferences] = await Promise.all([
+    getWorkOrdersPageData(page, tableState),
+    getUserTablePreference(user.id, "work-orders-main"),
+  ])
 
   if (!result.ok) {
     return (
@@ -39,6 +43,7 @@ export default async function WorkOrdersPage({
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
       templateOptions={pageData.templateOptions}
+      initialTablePreferences={initialTablePreferences}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

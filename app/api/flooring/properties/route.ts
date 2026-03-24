@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { authorizePropertiesRoute } from "@/features/flooring/shared/access/domain-tools"
 import { createProperty } from "@/features/flooring/properties/mutations"
 import { listProperties } from "@/features/flooring/properties/queries"
 import { validateCreatePropertyInput } from "@/features/flooring/properties/validators"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizePropertiesRoute(request)
+  if (access instanceof Response) return access
 
   try {
-    return NextResponse.json({
+    return routeJson(access, {
       properties: await listProperties(undefined, {
         searchQuery: "",
         isAscendingSort: true,
@@ -19,21 +18,27 @@ export async function GET() {
       }),
     })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizePropertiesRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "properties.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/properties",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = (await request.json()) as Record<string, unknown>
     const property = await createProperty(validateCreatePropertyInput(body))
-    return NextResponse.json({ property }, { status: 201 })
+    return routeJson(access, { property }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

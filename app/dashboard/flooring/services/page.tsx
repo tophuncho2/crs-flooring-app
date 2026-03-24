@@ -2,10 +2,14 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireServicesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import ServicesClient from "@/features/flooring/services/components/list/services-client"
 import { getServicesPageData } from "@/features/flooring/services/data/queries"
+import { getUserTablePreference } from "@/server/account/table-preferences"
 
 export default async function ServicesPage() {
-  await requireServicesAccess()
-  const result = await getServicesPageData()
+  const user = await requireServicesAccess()
+  const [result, initialTablePreferences] = await Promise.all([
+    getServicesPageData(),
+    getUserTablePreference(user.id, "services-main"),
+  ])
 
   if (!result.ok) {
     return (
@@ -18,5 +22,11 @@ export default async function ServicesPage() {
     )
   }
 
-  return <ServicesClient initialServices={result.data.services} unitOptions={result.data.unitOptions} />
+  return (
+    <ServicesClient
+      initialServices={result.data.services}
+      unitOptions={result.data.unitOptions}
+      initialTablePreferences={initialTablePreferences}
+    />
+  )
 }

@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
+import { authorizeManagementCompaniesRoute } from "@/features/flooring/shared/access/domain-tools"
 import { createManagementCompany } from "@/features/flooring/management-companies/mutations"
 import { listManagementCompanies } from "@/features/flooring/management-companies/queries"
 import { validateCreateManagementCompanyInput } from "@/features/flooring/management-companies/validators"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeManagementCompaniesRoute(request)
+  if (access instanceof Response) return access
 
   try {
-    return NextResponse.json({
+    return routeJson(access, {
       managementCompanies: await listManagementCompanies(undefined, {
         searchQuery: "",
         isAscendingSort: true,
@@ -19,21 +18,27 @@ export async function GET() {
       }),
     })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeManagementCompaniesRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "managementCompanies.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/management-companies",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = (await request.json()) as Record<string, unknown>
     const managementCompany = await createManagementCompany(validateCreateManagementCompanyInput(body))
-    return NextResponse.json({ managementCompany }, { status: 201 })
+    return routeJson(access, { managementCompany }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

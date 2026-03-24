@@ -3,13 +3,14 @@ import { requireTemplatesAccess } from "@/features/flooring/shared/access/templa
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getTemplatesPageData } from "@/features/flooring/templates/queries"
 import TemplatesClient from "@/features/flooring/templates/components/templates-client"
+import { getUserTablePreference } from "@/server/account/table-preferences"
 
 export default async function TemplatesPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireTemplatesAccess()
+  const user = await requireTemplatesAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
@@ -18,7 +19,10 @@ export default async function TemplatesPage({
     defaultGroupKeys: ["property"],
     allowedGroupKeys: ["templateTag", "property", "warehouse", "padType"],
   })
-  const result = await getTemplatesPageData(page, tableState)
+  const [result, initialTablePreferences] = await Promise.all([
+    getTemplatesPageData(page, tableState),
+    getUserTablePreference(user.id, "templates-main"),
+  ])
 
   if (!result.ok) {
     return (
@@ -40,6 +44,7 @@ export default async function TemplatesPage({
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
       padProductOptions={pageData.padProductOptions}
+      initialTablePreferences={initialTablePreferences}
       tableState={pageData.tableState}
       pagination={{
         ...pageData.pagination,

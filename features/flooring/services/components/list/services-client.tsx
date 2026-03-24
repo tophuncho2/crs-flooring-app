@@ -9,6 +9,7 @@ import { TableColumnSettings } from "@/features/flooring/shared/table/table-colu
 import TableControlsBar from "@/features/flooring/shared/table/table-controls-bar"
 import { TableActionsSummary, TablePaginationControls } from "@/features/flooring/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import type { ServiceRow, UnitOption } from "../../domain/types"
 import { useServicesListController } from "../../controllers/use-services-list-controller"
@@ -18,9 +19,11 @@ import { ServicesTable } from "./services-table"
 export default function ServicesClient({
   initialServices,
   unitOptions,
+  initialTablePreferences,
 }: {
   initialServices: ServiceRow[]
   unitOptions: UnitOption[]
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const controller = useServicesListController(initialServices)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/services")
@@ -61,6 +64,7 @@ export default function ServicesClient({
     ],
     sortField: (row) => row.name,
     defaultGroupKeys: ["unit"],
+    initialPreferences: initialTablePreferences,
   })
 
   return (

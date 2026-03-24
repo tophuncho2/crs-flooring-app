@@ -12,6 +12,7 @@ import {
   TablePaginationControls,
 } from "@/features/flooring/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { type GroupedRowTree, MAX_GROUP_FIELDS } from "@/features/flooring/shared/table/use-table-controls"
 import type { UnitOfMeasureRow } from "../../domain/types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
@@ -21,9 +22,11 @@ import { UnitOfMeasuresTable } from "./unit-of-measures-table"
 export default function UnitOfMeasuresClient({
   canManage,
   initialUnitOfMeasures,
+  initialTablePreferences,
 }: {
   canManage: boolean
   initialUnitOfMeasures: UnitOfMeasureRow[]
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/unit-of-measures")
@@ -61,6 +64,7 @@ export default function UnitOfMeasuresClient({
     ],
     sortField: (row) => row.name,
     defaultGroupKeys: ["name"],
+    initialPreferences: initialTablePreferences,
   })
 
   return (

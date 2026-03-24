@@ -1,18 +1,19 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
-import { normalizePrismaError } from "@/server/http/api-helpers"
-import { createProduct } from "@/features/flooring/products/mutations"
+import { createProductUseCase } from "@/features/flooring/products/application/manage-product"
 import { listCatalogProducts, listProductOptions } from "@/features/flooring/products/queries"
-import { validateCreateProductInput } from "@/features/flooring/products/validators"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const catalogMode = searchParams.get("catalog") === "1"
-  const authError = await ensureBuilderOrAdmin({ toolSlug: catalogMode ? "products" : "warehouse" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, {
+    capability: "system.access",
+    toolSlug: catalogMode ? "products" : "warehouse",
+  })
+  if (access instanceof Response) return access
 
   try {
-    return NextResponse.json({
+    return routeJson(access, {
       products: catalogMode
         ? await listCatalogProducts(undefined, {
             searchQuery: "",
@@ -23,21 +24,28 @@ export async function GET(request: Request) {
         : await listProductOptions(),
     })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "products" })
+  if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const product = await createProduct(validateCreateProductInput(body))
-    return NextResponse.json({ product }, { status: 201 })
+    const product = await withMutationTelemetry(
+      access,
+      {
+        message: "Product created",
+        action: "products.create",
+        route: "/api/flooring/products",
+        entityType: "flooringProduct",
+      },
+      () => createProductUseCase(body),
+    )
+    return routeJson(access, { product }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

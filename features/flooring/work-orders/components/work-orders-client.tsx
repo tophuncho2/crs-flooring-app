@@ -13,6 +13,7 @@ import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
+import type { TablePreferencePayload } from "../../shared/controllers/table/table-preferences"
 import { getWorkOrderStatusFieldClass, getWorkOrderStatusLabel } from "../contracts"
 import type { PropertyOption, ServerPaginationState, ServerTableState, TemplateOption, WarehouseOption, WorkOrderRow } from "../types"
 import { useWorkOrdersClientController } from "../use-work-orders-client-controller"
@@ -28,6 +29,7 @@ export default function WorkOrdersClient({
   propertyOptions,
   warehouseOptions,
   templateOptions,
+  initialTablePreferences,
   tableState,
   pagination,
 }: {
@@ -35,6 +37,7 @@ export default function WorkOrdersClient({
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   templateOptions: TemplateOption[]
+  initialTablePreferences?: TablePreferencePayload | null
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
@@ -97,6 +100,7 @@ export default function WorkOrdersClient({
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
+    initialPreferences: initialTablePreferences,
   })
   const serverTableControls = useServerTableQueryControls({
     searchQuery,

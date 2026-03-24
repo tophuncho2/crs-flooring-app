@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server"
 import { flooringCategoryUnitInclude, normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"
 import { prisma } from "@/server/db/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureGovernanceUser } from "@/server/auth/route-auth"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -29,8 +29,16 @@ function normalizeCategory(category: {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const authError = await ensureGovernanceUser()
-  if (authError) return authError
+  const access = await authorizeCategoriesRoute(request, { capability: "governance.access" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "categories.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/categories/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await context.params
@@ -53,23 +61,29 @@ export async function PATCH(request: Request, context: RouteContext) {
       },
     })
 
-    return NextResponse.json({ category: normalizeCategory(category) })
+    return routeJson(access, { category: normalizeCategory(category) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
-  const authError = await ensureGovernanceUser()
-  if (authError) return authError
+export async function DELETE(request: Request, context: RouteContext) {
+  const access = await authorizeCategoriesRoute(request, { capability: "governance.access" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "categories.delete",
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/categories/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await context.params
     await prisma.flooringCategory.delete({ where: { id } })
-    return NextResponse.json({ success: true })
+    return routeJson(access, { success: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

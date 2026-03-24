@@ -13,6 +13,7 @@ import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
 import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
+import type { TablePreferencePayload } from "../../shared/controllers/table/table-preferences"
 import type { PadProductOption, PropertyOption, ServerPaginationState, ServerTableState, TemplateRow, WarehouseOption } from "../types"
 import { useTemplatesClientController } from "../use-templates-client-controller"
 import { TemplateCreateModal } from "./template-create-modal"
@@ -22,6 +23,7 @@ export default function TemplatesClient({
   propertyOptions,
   warehouseOptions,
   padProductOptions,
+  initialTablePreferences,
   tableState,
   pagination,
 }: {
@@ -29,6 +31,7 @@ export default function TemplatesClient({
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   padProductOptions: PadProductOption[]
+  initialTablePreferences?: TablePreferencePayload | null
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
@@ -81,6 +84,7 @@ export default function TemplatesClient({
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
+    initialPreferences: initialTablePreferences,
   })
   const templateGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
   const serverTableControls = useServerTableQueryControls({

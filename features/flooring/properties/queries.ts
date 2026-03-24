@@ -1,9 +1,10 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
+import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { normalizeProperty, normalizePropertyOption } from "./services"
+import { normalizeProperty, normalizePropertyListRow, normalizePropertyOption } from "./services"
 
 function buildPropertiesWhere(searchQuery: string): Prisma.PropertyWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -68,20 +69,22 @@ export async function listProperties(
       managementCompany: {
         select: { id: true, name: true },
       },
+      _count: {
+        select: { templates: true },
+      },
       templates: {
         select: {
           id: true,
           templateTag: true,
-          warehouse: { select: { name: true } },
-          _count: { select: { items: true, serviceItems: true } },
         },
         orderBy: { createdAt: "desc" },
+        take: 3,
       },
     },
     ...(pagination ?? {}),
   })
 
-  return properties.map(normalizeProperty)
+  return properties.map(normalizePropertyListRow)
 }
 
 export async function listPropertyOptions() {
@@ -232,5 +235,17 @@ async function loadPropertiesPageData(page: number, tableState: ServerTableQuery
 }
 
 export async function getPropertiesPageData(page: number, tableState: ServerTableQueryState) {
-  return withPrismaConnectivityHandling(() => loadPropertiesPageData(page, tableState))
+  return withPrismaConnectivityHandling(() =>
+    withLoaderTiming(
+      {
+        loader: "flooring.properties.list",
+        details: {
+          page,
+          searchQuery: tableState.searchQuery,
+          groupCount: tableState.groupByKeys.length,
+        },
+      },
+      () => loadPropertiesPageData(page, tableState),
+    ),
+  )
 }

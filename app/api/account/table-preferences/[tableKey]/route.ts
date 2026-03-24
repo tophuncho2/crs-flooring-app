@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { canBypassVerification } from "@/server/auth/access-control"
 import { getSessionUser } from "@/server/auth/session"
 import { prisma } from "@/server/db/prisma"
+import { getUserTablePreference } from "@/server/account/table-preferences"
 
 function normalizeBody(body: unknown) {
   if (!body || typeof body !== "object") return null
@@ -58,23 +59,7 @@ export async function GET(_: Request, context: { params: Promise<{ tableKey: str
   }
 
   const { tableKey } = await context.params
-  const preference = await prisma.userTablePreference.findUnique({
-    where: {
-      userId_tableKey: {
-        userId: user.id,
-        tableKey,
-      },
-    },
-    select: {
-      hiddenColumnKeys: true,
-      columnOrderKeys: true,
-    },
-  })
-
-  return NextResponse.json({
-    hiddenColumnKeys: preference?.hiddenColumnKeys ?? [],
-    columnOrderKeys: preference?.columnOrderKeys ?? [],
-  })
+  return NextResponse.json(await getUserTablePreference(user.id, tableKey))
 }
 
 export async function PATCH(request: Request, context: { params: Promise<{ tableKey: string }> }) {

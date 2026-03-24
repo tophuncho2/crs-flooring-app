@@ -125,21 +125,53 @@ export async function getProductById(id: string) {
   return normalizeCatalogProduct(product)
 }
 
+async function listProductCategoryOptions() {
+  const categories = await prisma.flooringCategory.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      ...flooringCategoryUnitInclude,
+    },
+  })
+
+  return categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    ...normalizeCategoryUnitValues(category),
+  }))
+}
+
+async function listProductManufacturerOptions() {
+  const manufacturers = await listManufacturers()
+
+  return manufacturers.map((manufacturer) => ({
+    id: manufacturer.id,
+    name: manufacturer.companyName,
+    website: manufacturer.website ?? "",
+    phone: manufacturer.phone ?? "",
+    email: manufacturer.email ?? "",
+  }))
+}
+
+export async function getProductFormOptions() {
+  const [categoryOptions, manufacturerOptions] = await Promise.all([
+    listProductCategoryOptions(),
+    listProductManufacturerOptions(),
+  ])
+
+  return {
+    categoryOptions,
+    manufacturerOptions,
+  }
+}
+
 export async function getProductsPageData(page: number, tableState: ServerTableQueryState) {
   const where = buildProductWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringProduct.count({ where })
   const pagination = createServerPagination({ page, totalItems })
 
-  const [categories, manufacturers, products] = await Promise.all([
-    prisma.flooringCategory.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        ...flooringCategoryUnitInclude,
-      },
-    }),
-    listManufacturers(),
+  const [products] = await Promise.all([
     listCatalogProducts({ skip: pagination.skip, take: pagination.take }, tableState),
   ])
 
@@ -151,49 +183,19 @@ export async function getProductsPageData(page: number, tableState: ServerTableQ
       totalPages: pagination.totalPages,
     },
     tableState,
-    categoryOptions: categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      ...normalizeCategoryUnitValues(category),
-    })),
-    manufacturerOptions: manufacturers.map((manufacturer) => ({
-      id: manufacturer.id,
-      name: manufacturer.companyName,
-      website: manufacturer.website ?? "",
-      phone: manufacturer.phone ?? "",
-      email: manufacturer.email ?? "",
-    })),
     initialProducts: products,
   }
 }
 
 async function loadProductDetailOptions(productId: string) {
-  const [categories, manufacturers, inventoryRows] = await Promise.all([
-    prisma.flooringCategory.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        ...flooringCategoryUnitInclude,
-      },
-    }),
-    listManufacturers(),
+  const [formOptions, inventoryRows] = await Promise.all([
+    getProductFormOptions(),
     listInventoryRows(prisma, productId),
   ])
 
   return {
-    categoryOptions: categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      ...normalizeCategoryUnitValues(category),
-    })),
-    manufacturerOptions: manufacturers.map((manufacturer) => ({
-      id: manufacturer.id,
-      name: manufacturer.companyName,
-      website: manufacturer.website ?? "",
-      phone: manufacturer.phone ?? "",
-      email: manufacturer.email ?? "",
-    })),
+    categoryOptions: formOptions.categoryOptions,
+    manufacturerOptions: formOptions.manufacturerOptions,
     inventoryRows,
   }
 }

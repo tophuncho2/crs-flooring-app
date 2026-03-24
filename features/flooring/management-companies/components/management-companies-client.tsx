@@ -2,18 +2,20 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/display/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/display/dashboard-card-title"
-import { ErrorNotice, FormStatusNotices, SuccessNotice } from "../../shared/feedback/notices"
-import { DeleteRowButton } from "../../shared/table/row-action-buttons"
-import { RecordFormField as FormField, RecordModalShell as ModalShell } from "../../shared/forms/record-form"
-import { TableColumnSettings } from "../../shared/table/table-column-settings"
-import TableControlsBar from "../../shared/table/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table/table-shell"
-import { useConfiguredTableState } from "../../shared/table/use-configured-table-state"
-import { useCanonicalDetailNavigation } from "../../shared/controllers/navigation/use-canonical-detail-navigation"
-import { useServerTableQueryControls } from "../../shared/table/use-server-table-query-controls"
-import { buildFullAddress, normalizeAddressState } from "../../shared/utils/address-helpers"
+import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
+import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
+import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
+import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { ErrorNotice, FormStatusNotices, SuccessNotice } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
+import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
+import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import { requestJson } from "@/features/flooring/shared/transport/http"
 
 type ManagementCompanyRow = {
   id: string
@@ -25,7 +27,8 @@ type ManagementCompanyRow = {
   phone: string
   email: string
   fullAddress: string
-  properties: { id: string; name: string; fullAddress: string }[]
+  propertyCount: number
+  propertyPreviewNames: string[]
 }
 
 type DraftCompany = {
@@ -68,10 +71,12 @@ export default function ManagementCompaniesClient({
   initialCompanies,
   tableState,
   pagination,
+  initialTablePreferences,
 }: {
   initialCompanies: ManagementCompanyRow[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
   const [newDraft, setNewDraft] = useState<DraftCompany>(defaultDraft)
@@ -114,7 +119,7 @@ export default function ManagementCompaniesClient({
       { key: "phone", label: "Phone", getValue: (row) => row.phone },
       { key: "email", label: "Email", getValue: (row) => row.email },
       { key: "fullAddress", label: "Full Address", getValue: (row) => row.fullAddress },
-      { key: "properties", label: "Properties", getValue: (row) => row.properties.map((property) => property.name).join(" ") },
+      { key: "properties", label: "Properties", getValue: (row) => row.propertyPreviewNames.join(" ") },
       { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
@@ -122,6 +127,7 @@ export default function ManagementCompaniesClient({
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    initialPreferences: initialTablePreferences,
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
@@ -153,15 +159,8 @@ export default function ManagementCompaniesClient({
         throw new Error("Company name is required")
       }
 
-      const response = await fetch("/api/flooring/management-companies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDraft),
-      })
-
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string
-        managementCompany?: {
+      const payload = await requestJson<{
+        managementCompany: {
           id: string
           name: string
           streetAddress: string | null
@@ -170,13 +169,13 @@ export default function ManagementCompaniesClient({
           postalCode: string | null
           phone: string | null
           email: string | null
-          properties: Array<{ id: string; name: string; fullAddress: string }>
+          properties: Array<{ id: string; name: string }>
         }
-      }
-
-      if (!response.ok || !payload.managementCompany) {
-        throw new Error(payload.error ?? "Failed to create company")
-      }
+      }>("/api/flooring/management-companies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newDraft),
+      })
 
       const payloadCompany = payload.managementCompany
       const newCompany: ManagementCompanyRow = {
@@ -194,7 +193,8 @@ export default function ManagementCompaniesClient({
           state: payloadCompany.state ?? "",
           zip: payloadCompany.postalCode ?? "",
         }),
-        properties: payloadCompany.properties,
+        propertyCount: payloadCompany.properties.length,
+        propertyPreviewNames: payloadCompany.properties.map((property) => property.name).slice(0, 3),
       }
 
       setCompanies((prev) => [newCompany, ...prev])
@@ -214,12 +214,7 @@ export default function ManagementCompaniesClient({
     setDeletingId(id)
 
     try {
-      const response = await fetch(`/api/flooring/management-companies/${id}`, { method: "DELETE" })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to delete company")
-      }
+      await requestJson<{ ok: boolean }>(`/api/flooring/management-companies/${id}`, { method: "DELETE" })
 
       setCompanies((prev) => prev.filter((company) => company.id !== id))
       setMessage("Management company deleted")
@@ -282,7 +277,8 @@ export default function ManagementCompaniesClient({
           </TableHead>
           <tbody>
             {sortedCompanies.map((row) => {
-              const linkedProperties = row.properties.map((property) => property.name).join(", ") || "-"
+              const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
+              const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
               const cells: Record<string, ReactNode> = {
                 company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
                 street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
@@ -294,7 +290,10 @@ export default function ManagementCompaniesClient({
                 fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
                 properties: (
                   <td key="properties" className="px-3 py-2">
-                    <p className="text-xs text-[var(--foreground)]/70">{linkedProperties}</p>
+                    <p className="text-xs text-[var(--foreground)]/70">
+                      {linkedProperties}
+                      {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
+                    </p>
                   </td>
                 ),
                 delete: (

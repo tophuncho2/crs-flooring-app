@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server"
 import { prisma } from "@/server/db/prisma"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -32,8 +32,16 @@ function normalizeWarehouseRow(warehouse: {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeWarehouseRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "warehouses.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/warehouses/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await params
@@ -64,9 +72,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       },
     })
 
-    return NextResponse.json({ warehouse: normalizeWarehouseRow(warehouse) })
+    return routeJson(access, { warehouse: normalizeWarehouseRow(warehouse) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

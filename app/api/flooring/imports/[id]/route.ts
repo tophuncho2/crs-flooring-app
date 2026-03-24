@@ -1,25 +1,22 @@
 import { prisma } from "@/server/db/prisma"
 import {
   getImportEntryById,
-  normalizeImportEntry,
-  removeImportEntryIfEmpty,
-  updateImportEntry,
 } from "@/features/flooring/imports/api"
+import { deleteImportEntryUseCase, updateImportEntryUseCase } from "@/features/flooring/imports/application/import-entry"
+import { authorizeWarehouseRoute } from "@/features/flooring/shared/access/domain-tools"
 import {
   enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  requireRouteAccess,
   routeError,
   routeJson,
 } from "@/server/http/route-helpers"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
   try {
@@ -31,7 +28,7 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -45,38 +42,25 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const entry = await updateImportEntry(prisma, id, body)
-    const normalized = normalizeImportEntry(entry)
-    logRouteMutationSuccess(access, {
-      message: "Import updated",
-      action: "imports.update",
-      route: "/api/flooring/imports/[id]",
-      entityType: "flooringImportEntry",
-      entityId: normalized.id,
-      details: {
-        importNumber: normalized.importNumber,
-        itemsCount: normalized.itemsCount,
-      },
-    })
-
-    return routeJson(access, { import: normalized })
-  } catch (error) {
-    logRouteMutationFailure(
+    const normalized = await withMutationTelemetry(
       access,
       {
-        message: "Import update failed",
-        action: "imports.update.error",
+        message: "Import updated",
+        action: "imports.update",
         route: "/api/flooring/imports/[id]",
         entityType: "flooringImportEntry",
+        entityId: id,
       },
-      error,
+      () => updateImportEntryUseCase(id, body),
     )
+    return routeJson(access, { import: normalized })
+  } catch (error) {
     return routeError(access, error)
   }
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -89,27 +73,19 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    await removeImportEntryIfEmpty(prisma, id)
-    logRouteMutationSuccess(access, {
-      message: "Import deleted",
-      action: "imports.delete",
-      route: "/api/flooring/imports/[id]",
-      entityType: "flooringImportEntry",
-      entityId: id,
-    })
-    return routeJson(access, { ok: true })
-  } catch (error) {
-    logRouteMutationFailure(
+    await withMutationTelemetry(
       access,
       {
-        message: "Import deletion failed",
-        action: "imports.delete.error",
+        message: "Import deleted",
+        action: "imports.delete",
         route: "/api/flooring/imports/[id]",
         entityType: "flooringImportEntry",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => deleteImportEntryUseCase(id),
     )
+    return routeJson(access, { ok: true })
+  } catch (error) {
     return routeError(access, error)
   }
 }

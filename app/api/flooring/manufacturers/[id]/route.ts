@@ -1,17 +1,25 @@
-import { NextResponse } from "next/server"
-import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { prisma } from "@/server/db/prisma"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
 import { updateManufacturer } from "@/features/flooring/manufacturers/mutations"
 import { normalizeManufacturer } from "@/features/flooring/manufacturers/services"
+import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+  const access = await authorizeManufacturersRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "manufacturers.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/manufacturers/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await context.params
@@ -26,16 +34,23 @@ export async function PATCH(request: Request, context: RouteContext) {
       email: parseOptionalString(body.email),
     })
 
-    return NextResponse.json({ manufacturer: normalizeManufacturer(manufacturer) })
+    return routeJson(access, { manufacturer: normalizeManufacturer(manufacturer) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+export async function DELETE(request: Request, context: RouteContext) {
+  const access = await authorizeManufacturersRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "manufacturers.delete",
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/manufacturers/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await context.params
@@ -44,16 +59,16 @@ export async function DELETE(_request: Request, context: RouteContext) {
     })
 
     if (linkedProducts > 0) {
-      return NextResponse.json(
+      return routeJson(
+        access,
         { error: "This manufacturer has linked products and cannot be deleted" },
         { status: 409 },
       )
     }
 
     await prisma.flooringManufacturer.delete({ where: { id } })
-    return NextResponse.json({ ok: true })
+    return routeJson(access, { ok: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

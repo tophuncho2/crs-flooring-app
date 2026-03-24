@@ -100,19 +100,21 @@ function isValidDecimal(value: string) {
 
 export function useProductsListController({
   initialProducts,
-  categoryOptions,
 }: {
   initialProducts: ProductRow[]
-  categoryOptions: CategoryOption[]
 }) {
   const productNavigation = useCanonicalDetailNavigation("/dashboard/flooring/products")
   const [products, setProducts] = useState(initialProducts)
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
+  const [manufacturerOptions, setManufacturerOptions] = useState<ManufacturerOption[]>([])
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [productForm, setProductForm] = useState<ProductForm>(EMPTY_PRODUCT_FORM)
   const [isSavingProduct, setIsSavingProduct] = useState(false)
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false)
+  const [isLoadingFormOptions, setIsLoadingFormOptions] = useState(false)
+  const [hasLoadedFormOptions, setHasLoadedFormOptions] = useState(false)
   const [newBaseColor, setNewBaseColor] = useState("")
   const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null)
@@ -135,11 +137,34 @@ export function useProductsListController({
     setError("")
   }
 
+  async function ensureCreateOptionsLoaded() {
+    if (hasLoadedFormOptions || isLoadingFormOptions) {
+      return
+    }
+
+    setIsLoadingFormOptions(true)
+
+    try {
+      const payload = await requestJson<{
+        categoryOptions: CategoryOption[]
+        manufacturerOptions: ManufacturerOption[]
+      }>("/api/flooring/products/options")
+      setCategoryOptions(payload.categoryOptions)
+      setManufacturerOptions(payload.manufacturerOptions)
+      setHasLoadedFormOptions(true)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load product form options")
+    } finally {
+      setIsLoadingFormOptions(false)
+    }
+  }
+
   function openCreateProduct() {
     clearNotices()
     setProductForm(EMPTY_PRODUCT_FORM)
     setNewBaseColor("")
     setIsCreateModalOpen(true)
+    void ensureCreateOptionsLoaded()
   }
 
   function closeCreateProduct() {
@@ -156,6 +181,11 @@ export function useProductsListController({
 
     if (!productForm.categoryId) {
       setError("Category is required")
+      return
+    }
+
+    if (!hasLoadedFormOptions) {
+      setError("Product form options are still loading")
       return
     }
 
@@ -266,6 +296,7 @@ export function useProductsListController({
     updateProductForm,
     isSavingProduct,
     isUploadingPhotos,
+    isLoadingFormOptions,
     createProduct,
     deletingProductId,
     deleteProduct,
@@ -276,6 +307,8 @@ export function useProductsListController({
     setNewBaseColor,
     addBaseColorOption,
     baseColorOptions,
+    categoryOptions,
+    manufacturerOptions,
     openProductRecord: productNavigation.openRecord,
   }
 }

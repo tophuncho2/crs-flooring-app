@@ -1,14 +1,15 @@
 import { deleteProperty, updateProperty } from "@/features/flooring/properties/data/mutations"
 import { getPropertyById } from "@/features/flooring/properties/data/queries"
 import { validateUpdatePropertyInput } from "@/features/flooring/properties/domain/validators"
-import { requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
+import { authorizePropertiesRoute } from "@/features/flooring/shared/access/domain-tools"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizePropertiesRoute(request)
   if (access instanceof Response) return access
 
   try {
@@ -20,8 +21,16 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizePropertiesRoute(request)
   if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "properties.write",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/properties/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await params
@@ -34,8 +43,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await authorizePropertiesRoute(request)
   if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "properties.delete",
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/properties/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await params

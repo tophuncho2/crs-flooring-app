@@ -149,18 +149,19 @@ export function hasCreateImportValidationErrors(validation: CreateImportValidati
 
 export function useImportsListController({
   initialImports,
-  productOptions,
-  locationOptions,
 }: {
   initialImports: ImportRow[]
-  productOptions: ProductOption[]
-  locationOptions: LocationOption[]
 }) {
   const importNavigation = useCanonicalDetailNavigation("/dashboard/flooring/imports")
   const [imports, setImports] = useState(initialImports)
+  const [productOptions, setProductOptions] = useState<ProductOption[]>([])
+  const [warehouseOptions, setWarehouseOptions] = useState<WarehouseOption[]>([])
+  const [locationOptions, setLocationOptions] = useState<LocationOption[]>([])
   const [draft, setDraft] = useState<ImportDraft>(() => createEmptyDraft())
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false)
+  const [hasLoadedOptions, setHasLoadedOptions] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
@@ -179,11 +180,37 @@ export function useImportsListController({
     setCreateValidation(validateCreateImportDraft(emptyDraft))
     setDraft(emptyDraft)
     setIsCreateModalOpen(true)
+    void ensureCreateOptionsLoaded()
   }
 
   function closeCreateModal() {
-    if (isSaving) return
+    if (isSaving || isLoadingOptions) return
     setIsCreateModalOpen(false)
+  }
+
+  async function ensureCreateOptionsLoaded() {
+    if (hasLoadedOptions || isLoadingOptions) {
+      return
+    }
+
+    setIsLoadingOptions(true)
+
+    try {
+      const payload = await requestJson<{
+        productOptions: ProductOption[]
+        warehouseOptions: WarehouseOption[]
+        locationOptions: LocationOption[]
+      }>("/api/flooring/imports/options")
+
+      setProductOptions(payload.productOptions)
+      setWarehouseOptions(payload.warehouseOptions)
+      setLocationOptions(payload.locationOptions)
+      setHasLoadedOptions(true)
+    } catch (loadError) {
+      setCreateModalError(loadError instanceof Error ? loadError.message : "Failed to load import form options")
+    } finally {
+      setIsLoadingOptions(false)
+    }
   }
 
   function setDraftField(field: keyof Omit<ImportDraft, "items">, value: string) {
@@ -247,6 +274,11 @@ export function useImportsListController({
       return
     }
 
+    if (!hasLoadedOptions) {
+      setCreateModalError("Import form options are still loading")
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -298,6 +330,7 @@ export function useImportsListController({
     draft,
     isCreateModalOpen,
     isSaving,
+    isLoadingOptions,
     deletingId,
     message,
     pageError,
@@ -313,5 +346,8 @@ export function useImportsListController({
     deleteImport,
     openImport: importNavigation.openRecord,
     productLookup,
+    productOptions,
+    warehouseOptions,
+    locationOptions,
   }
 }

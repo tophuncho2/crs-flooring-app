@@ -10,9 +10,8 @@ import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-s
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import {
-  type CategoryOption,
-  type ManufacturerOption,
   type ProductRow,
   useProductsListController,
 } from "@/features/flooring/products/controllers/use-products-list-controller"
@@ -36,17 +35,15 @@ type ServerTableState = {
 }
 
 export default function FlooringProductsClient({
-  categoryOptions,
-  manufacturerOptions,
   initialProducts,
   tableState,
   pagination,
+  initialTablePreferences,
 }: {
-  categoryOptions: CategoryOption[]
-  manufacturerOptions: ManufacturerOption[]
   initialProducts: ProductRow[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const {
     products,
@@ -59,6 +56,7 @@ export default function FlooringProductsClient({
     updateProductForm,
     isSavingProduct,
     isUploadingPhotos,
+    isLoadingFormOptions,
     createProduct,
     deletingProductId,
     deleteProduct,
@@ -69,10 +67,11 @@ export default function FlooringProductsClient({
     setNewBaseColor,
     addBaseColorOption,
     baseColorOptions,
+    categoryOptions,
+    manufacturerOptions,
     openProductRecord,
   } = useProductsListController({
     initialProducts,
-    categoryOptions,
   })
 
   const {
@@ -129,6 +128,7 @@ export default function FlooringProductsClient({
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    initialPreferences: initialTablePreferences,
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
@@ -222,6 +222,7 @@ export default function FlooringProductsClient({
         onSave={createProduct}
         isSaving={isSavingProduct}
         isUploadingPhotos={isUploadingPhotos}
+        isLoadingOptions={isLoadingFormOptions}
         message=""
         error={error}
       />

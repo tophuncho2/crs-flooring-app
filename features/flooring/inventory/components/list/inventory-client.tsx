@@ -8,6 +8,7 @@ import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-s
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useInventoryListController } from "@/features/flooring/inventory/controllers/use-inventory-list-controller"
 import type { InventoryRow, ServerPaginationState, ServerTableState } from "@/features/flooring/inventory/domain/types"
 import { InventoryTable } from "./inventory-table"
@@ -20,10 +21,12 @@ export default function InventoryClient({
   initialInventory,
   tableState,
   pagination,
+  initialTablePreferences,
 }: {
   initialInventory: InventoryRow[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const {
     rows,
@@ -89,6 +92,7 @@ export default function InventoryClient({
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
+    initialPreferences: initialTablePreferences,
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,

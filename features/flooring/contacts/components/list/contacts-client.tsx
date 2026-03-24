@@ -9,6 +9,7 @@ import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-c
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
 import { TableActionsSummary, TablePaginationControls } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { ContactRow } from "../../domain/types"
 import { useContactsListController } from "../../controllers/use-contacts-list-controller"
@@ -17,8 +18,10 @@ import { ContactsTable } from "./contacts-table"
 
 export default function ContactsClient({
   initialContacts,
+  initialTablePreferences,
 }: {
   initialContacts: ContactRow[]
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const controller = useContactsListController(initialContacts)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/contacts")
@@ -57,6 +60,7 @@ export default function ContactsClient({
     ],
     sortField: (row) => row.name,
     defaultGroupKeys: ["type"],
+    initialPreferences: initialTablePreferences,
   })
 
   return (

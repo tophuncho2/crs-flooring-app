@@ -46,6 +46,40 @@ export function normalizeProperty(property: {
   }
 }
 
+export function normalizePropertyListRow(property: {
+  id: string
+  updatedAt: Date | string
+  name: string
+  streetAddress: string | null
+  city: string | null
+  state: string | null
+  postalCode: string | null
+  phone: string | null
+  email: string | null
+  managementCompany: { id: string; name: string } | null
+  templates: Array<{
+    id: string
+    templateTag: string
+  }>
+  _count: { templates: number }
+}) {
+  return {
+    id: property.id,
+    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
+    name: property.name,
+    streetAddress: property.streetAddress ?? "",
+    city: property.city ?? "",
+    state: property.state ?? "",
+    zip: property.postalCode ?? "",
+    phone: property.phone ?? "",
+    email: property.email ?? "",
+    fullAddress: normalizePropertyAddress(property),
+    managementCompany: property.managementCompany,
+    templateCount: property._count.templates,
+    templatePreviewTags: property.templates.map((template) => template.templateTag),
+  }
+}
+
 export function normalizePropertyOption(property: {
   id: string
   name: string

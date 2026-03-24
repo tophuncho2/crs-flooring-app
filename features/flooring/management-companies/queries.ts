@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
+import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { normalizeManagementCompany, normalizeManagementCompanyOption } from "./services"
+import { normalizeManagementCompany, normalizeManagementCompanyListRow, normalizeManagementCompanyOption } from "./services"
 
 function buildManagementCompaniesWhere(searchQuery: string): Prisma.FlooringManagementCompanyWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -75,22 +76,22 @@ export async function listManagementCompanies(
       postalCode: true,
       phone: true,
       email: true,
+      _count: {
+        select: { properties: true },
+      },
       properties: {
         select: {
           id: true,
           name: true,
-          streetAddress: true,
-          city: true,
-          state: true,
-          postalCode: true,
         },
         orderBy: { name: "asc" },
+        take: 3,
       },
     },
     ...(pagination ?? {}),
   })
 
-  return companies.map(normalizeManagementCompany)
+  return companies.map(normalizeManagementCompanyListRow)
 }
 
 export async function listManagementCompanyOptions() {
@@ -178,5 +179,17 @@ async function loadManagementCompaniesPageData(page: number, tableState: ServerT
 }
 
 export async function getManagementCompaniesPageData(page: number, tableState: ServerTableQueryState) {
-  return withPrismaConnectivityHandling(() => loadManagementCompaniesPageData(page, tableState))
+  return withPrismaConnectivityHandling(() =>
+    withLoaderTiming(
+      {
+        loader: "flooring.management-companies.list",
+        details: {
+          page,
+          searchQuery: tableState.searchQuery,
+          groupCount: tableState.groupByKeys.length,
+        },
+      },
+      () => loadManagementCompaniesPageData(page, tableState),
+    ),
+  )
 }

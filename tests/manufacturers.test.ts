@@ -5,8 +5,9 @@ import { validateManufacturerForm } from "@/features/flooring/manufacturers/vali
 import { normalizeCatalogProduct } from "@/features/flooring/products/services"
 import { GET, POST } from "@/app/api/flooring/manufacturers/route"
 import { DELETE, PATCH } from "@/app/api/flooring/manufacturers/[id]/route"
+import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { prismaMock, createManufacturerMock, updateManufacturerMock, listManufacturersMock, ensureBuilderOrAdminMock } = vi.hoisted(() => ({
+const { prismaMock, createManufacturerMock, updateManufacturerMock, listManufacturersMock, requireRouteAccessMock, enforceRouteRateLimitMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringManufacturer: {
       create: vi.fn(),
@@ -19,15 +20,31 @@ const { prismaMock, createManufacturerMock, updateManufacturerMock, listManufact
   createManufacturerMock: vi.fn(),
   updateManufacturerMock: vi.fn(),
   listManufacturersMock: vi.fn(),
-  ensureBuilderOrAdminMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
+  enforceRouteRateLimitMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: prismaMock,
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
+const routeAccess = {
+  requestId: "req-1",
+  user: {
+    id: "user-1",
+    email: "builder@example.com",
+    role: "BUILDER",
+    isVerified: true,
+    tools: [],
+  },
+  clientIp: "127.0.0.1",
+} as const
+
+vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
+  enforceRouteRateLimit: enforceRouteRateLimitMock,
+  routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
+  routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
 }))
 
 vi.mock("@/features/flooring/manufacturers/mutations", async () => {
@@ -74,7 +91,8 @@ function manufacturerRecord(overrides: Partial<{
 describe("manufacturers", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
+    requireRouteAccessMock.mockResolvedValue(routeAccess)
+    enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 
   it("manufacturer POST route accepts missing agentName and returns normalized payload", async () => {
@@ -124,7 +142,7 @@ describe("manufacturers", () => {
       manufacturerRecord({ id: "mfg-2", companyName: "Zen Floors", _count: { products: 3 } }),
     ])
 
-    const response = await GET()
+    const response = await GET(new Request("http://localhost/api/flooring/manufacturers"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
@@ -132,7 +150,7 @@ describe("manufacturers", () => {
       normalizeManufacturer(manufacturerRecord()),
       normalizeManufacturer(manufacturerRecord({ id: "mfg-2", companyName: "Zen Floors", _count: { products: 3 } })),
     ])
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "products" })
+    expect(requireRouteAccessMock).toHaveBeenCalled()
   })
 
   it("requires company name when creating a manufacturer", async () => {

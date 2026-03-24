@@ -1,16 +1,24 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { authorizeServicesRoute } from "@/features/flooring/shared/access/lookup-domains"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { deleteService, updateService } from "@/features/flooring/services/mutations"
 import { normalizeServiceRow } from "@/features/flooring/services/services"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeServicesRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "services.write",
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/services/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await params
@@ -22,23 +30,29 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       notes: parseOptionalString(body.notes),
     })
 
-    return NextResponse.json({ service: normalizeServiceRow(service) })
+    return routeJson(access, { service: normalizeServiceRow(service) })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await authorizeServicesRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "services.delete",
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/services/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await params
     await deleteService(id)
-    return NextResponse.json({ ok: true })
+    return routeJson(access, { ok: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

@@ -1,5 +1,6 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
+import { getUserTablePreference } from "@/server/account/table-preferences"
 import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getPropertiesPageData } from "@/features/flooring/properties/queries"
 import PropertiesClient from "@/features/flooring/properties/components/properties-client"
@@ -9,7 +10,7 @@ export default async function FlooringPropertiesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  const user = await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
@@ -17,7 +18,10 @@ export default async function FlooringPropertiesPage({
     allowedGroupKeys: ["city", "state", "managementCompany"],
     defaultGroupKeys: ["managementCompany"],
   })
-  const result = await getPropertiesPageData(page, tableState)
+  const [result, initialTablePreferences] = await Promise.all([
+    getPropertiesPageData(page, tableState),
+    getUserTablePreference(user.id, "properties-main"),
+  ])
 
   if (!result.ok) {
     return (
@@ -38,6 +42,7 @@ export default async function FlooringPropertiesPage({
       initialProperties={pageData.initialProperties}
       managementOptions={pageData.managementOptions}
       tableState={pageData.tableState}
+      initialTablePreferences={initialTablePreferences}
       pagination={{
         ...pageData.pagination,
         previousPageHref: buildPageHref("/dashboard/flooring/properties", pageData.pagination.page - 1),

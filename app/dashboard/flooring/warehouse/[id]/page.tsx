@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation"
+import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
-import { getWarehouseById } from "@/features/flooring/warehouse/queries"
+import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { getWarehouseDetailPageData } from "@/features/flooring/warehouse/queries"
 import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/warehouse-detail-client"
 
 export default async function WarehouseDetailPage({
@@ -16,18 +17,33 @@ export default async function WarehouseDetailPage({
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  try {
-    const pageData = await getWarehouseById(id)
+  const result = await getWarehouseDetailPageData(id)
 
-    return (
-      <WarehouseDetailClient
-        warehouse={pageData.warehouse}
-        sections={pageData.sections}
-        locations={pageData.locations}
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/warehouse")}
-      />
-    )
-  } catch {
+  if (!result.ok) {
+    if ("notFound" in result && result.notFound) {
+      notFound()
+    }
+
+    if ("error" in result) {
+      return (
+        <DashboardErrorState
+          title={result.error.title}
+          message={result.error.message}
+          detail={result.error.detail}
+          errorCode={result.error.code}
+        />
+      )
+    }
+
     notFound()
   }
+
+  return (
+    <WarehouseDetailClient
+      warehouse={result.data.warehouse}
+      sections={result.data.sections}
+      locations={result.data.locations}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/warehouse")}
+    />
+  )
 }

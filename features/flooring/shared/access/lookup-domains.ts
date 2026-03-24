@@ -1,12 +1,21 @@
 import type { Capability } from "@/server/auth/access-control"
 import { requireToolAccess } from "@/server/auth/session"
 import { requireRouteAccess } from "@/server/http/route-helpers"
+import {
+  CATEGORIES_TOOL_SLUG,
+  CONTACTS_TOOL_SLUG,
+  MANUFACTURERS_TOOL_SLUG,
+  SERVICES_TOOL_SLUG,
+  UNIT_OF_MEASURES_TOOL_SLUG,
+} from "@/features/flooring/shared/access/tool-slugs"
 
-export const CATEGORIES_TOOL_SLUG = "products" as const
-export const CONTACTS_TOOL_SLUG = "warehouse" as const
-export const MANUFACTURERS_TOOL_SLUG = "products" as const
-export const UNIT_OF_MEASURES_TOOL_SLUG = "products" as const
-export const SERVICES_TOOL_SLUG = "warehouse" as const
+export {
+  CATEGORIES_TOOL_SLUG,
+  CONTACTS_TOOL_SLUG,
+  MANUFACTURERS_TOOL_SLUG,
+  SERVICES_TOOL_SLUG,
+  UNIT_OF_MEASURES_TOOL_SLUG,
+}
 
 type RouteAccessOptions = {
   capability?: Capability

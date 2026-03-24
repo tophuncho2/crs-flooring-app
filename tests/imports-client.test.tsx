@@ -7,6 +7,14 @@ import userEvent from "@testing-library/user-event"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
 import { ImportDetailClient } from "@/features/flooring/imports/components/import-detail-client"
 
+function jsonResponse(body: unknown, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: vi.fn().mockResolvedValue(body),
+  }
+}
+
 vi.mock("@/features/flooring/shared/use-table-columns", () => ({
   useTableColumns: () => ({
     allColumns: [
@@ -133,9 +141,6 @@ describe("ImportsClient", () => {
     render(
       <ImportsClient
         initialImports={[importRow()]}
-        productOptions={[{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }]}
-        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
@@ -168,13 +173,17 @@ describe("ImportsClient", () => {
 
   it("uses the shared child-table pattern in the create form and requires at least one item row", async () => {
     const user = userEvent.setup()
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      jsonResponse({
+        productOptions: [{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }],
+        warehouseOptions: [{ id: "wh-1", name: "Main Warehouse" }],
+        locationOptions: [{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }],
+      }),
+    )
 
     render(
       <ImportsClient
         initialImports={[]}
-        productOptions={[{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }]}
-        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )

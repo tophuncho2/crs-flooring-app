@@ -83,29 +83,21 @@ describe("register route", () => {
     userFindUniqueMock.mockResolvedValue(null)
   })
 
-  it("bootstraps the first account as a verified owner", async () => {
+  it("blocks public bootstrap when the system has no owner yet", async () => {
     userCountMock.mockResolvedValue(0)
-    userCreateMock.mockResolvedValue({ id: "user-1", role: "OWNER", isVerified: true })
 
     const response = await POST(
       new Request("http://localhost/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@test.com", password: "password123" }),
+        body: JSON.stringify({ email: "admin@test.com", password: "password1234" }),
       }),
     )
     const payload = await response.json()
 
-    expect(response.status).toBe(201)
-    expect(userCreateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          role: "OWNER",
-          isVerified: true,
-        }),
-      }),
-    )
-    expect(payload.message).toBe("Initial owner account created.")
+    expect(response.status).toBe(403)
+    expect(payload.error).toContain("Initial owner must be created")
+    expect(userCreateMock).not.toHaveBeenCalled()
   })
 
   it("creates an unverified builder request for public signups after bootstrap", async () => {
@@ -116,7 +108,7 @@ describe("register route", () => {
       new Request("http://localhost/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "builder@test.com", password: "password123" }),
+        body: JSON.stringify({ email: "builder@test.com", password: "password1234" }),
       }),
     )
     const payload = await response.json()
@@ -149,7 +141,7 @@ describe("register route", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: "new-builder@test.com",
-          password: "password123",
+          password: "password1234",
           role: "BUILDER",
           isVerified: true,
         }),
@@ -184,7 +176,7 @@ describe("register route", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: "new-admin@test.com",
-          password: "password123",
+          password: "password1234",
           role: "ADMIN",
         }),
       }),
@@ -203,11 +195,28 @@ describe("register route", () => {
       new Request("http://localhost/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@test.com", password: "password123" }),
+        body: JSON.stringify({ email: "admin@test.com", password: "password1234" }),
       }),
     )
 
     expect(response.status).toBe(409)
+    expect(userCreateMock).not.toHaveBeenCalled()
+  })
+
+  it("requires a 12 character password minimum", async () => {
+    userCountMock.mockResolvedValue(1)
+
+    const response = await POST(
+      new Request("http://localhost/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "builder@test.com", password: "shortpass" }),
+      }),
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload.error).toBe("Password must be at least 12 characters")
     expect(userCreateMock).not.toHaveBeenCalled()
   })
 
@@ -225,7 +234,7 @@ describe("register route", () => {
       new Request("http://localhost/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "admin@test.com", password: "password123" }),
+        body: JSON.stringify({ email: "admin@test.com", password: "password1234" }),
       }),
     )
 

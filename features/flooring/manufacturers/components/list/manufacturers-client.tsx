@@ -9,13 +9,20 @@ import { TableColumnSettings } from "@/features/flooring/shared/table/table-colu
 import TableControlsBar from "@/features/flooring/shared/table/table-controls-bar"
 import { TableActionsSummary, TablePaginationControls } from "@/features/flooring/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import type { ManufacturerRow } from "../../domain/types"
 import { useManufacturersListController } from "../../controllers/use-manufacturers-list-controller"
 import { ManufacturersCreateModal } from "./manufacturers-create-modal"
 import { ManufacturersTable } from "./manufacturers-table"
 
-export default function ManufacturersClient({ initialManufacturers }: { initialManufacturers: ManufacturerRow[] }) {
+export default function ManufacturersClient({
+  initialManufacturers,
+  initialTablePreferences,
+}: {
+  initialManufacturers: ManufacturerRow[]
+  initialTablePreferences?: TablePreferencePayload | null
+}) {
   const controller = useManufacturersListController(initialManufacturers)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/manufacturers")
   const {
@@ -56,6 +63,7 @@ export default function ManufacturersClient({ initialManufacturers }: { initialM
     ],
     sortField: (row) => row.companyName || row.agentName,
     defaultGroupKeys: ["companyName"],
+    initialPreferences: initialTablePreferences,
   })
 
   return (

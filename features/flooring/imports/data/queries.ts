@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/server/db/prisma"
 import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
+import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import { getImportEntryById, listImportLocationOptions, normalizeImportEntry } from "@/features/flooring/imports/api"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
@@ -52,51 +53,16 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
   const where = buildImportsWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringImportEntry.count({ where })
   const pagination = createServerPagination({ page, totalItems })
-  const [entries, products, warehouses, locations] = await Promise.all([
-    prisma.flooringImportEntry.findMany({
-      include: {
-        warehouse: { select: { id: true, name: true } },
-        _count: { select: { inventories: true } },
-        inventories: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                style: true,
-                color: true,
-                category: { select: { stockUnit: { select: { name: true } } } },
-              },
-            },
-            location: {
-              select: {
-                id: true,
-                locationCode: true,
-                section: { select: { name: true } },
-                warehouse: { select: { id: true, name: true } },
-              },
-            },
-          },
-          orderBy: [{ createdAt: "asc" }],
-        },
-      },
-      where,
-      orderBy: buildImportsOrderBy(tableState),
-      skip: pagination.skip,
-      take: pagination.take,
-    }),
-    prisma.flooringProduct.findMany({
-      include: {
-        category: { select: { stockUnit: { select: { name: true } } } },
-      },
-      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
-    }),
-    prisma.flooringWarehouse.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    listImportLocationOptions(),
-  ])
+  const entries = await prisma.flooringImportEntry.findMany({
+    include: {
+      warehouse: { select: { id: true, name: true } },
+      _count: { select: { inventories: true } },
+    },
+    where,
+    orderBy: buildImportsOrderBy(tableState),
+    skip: pagination.skip,
+    take: pagination.take,
+  })
 
   return {
     pagination: {
@@ -110,23 +76,61 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
       ...normalizeImportEntry(entry),
       itemsCount: entry._count.inventories,
     })),
-    productOptions: products.map((product) => ({
-      id: product.id,
-      label: buildFlooringProductDisplayName(product),
-      stockUnit: product.category.stockUnit?.name ?? "",
-    })),
-    warehouseOptions: warehouses,
-    locationOptions: locations.map((location) => ({
-      id: location.id,
-      warehouseId: location.warehouseId,
-      locationCode: location.locationCode,
-      label: location.locationCode,
-    })),
   }
 }
 
 export async function getImportsPageData(page: number, tableState: ServerTableQueryState) {
-  return withPrismaConnectivityHandling(() => loadImportsPageData(page, tableState))
+  return withPrismaConnectivityHandling(() =>
+    withLoaderTiming(
+      {
+        loader: "flooring.imports.list",
+        details: {
+          page,
+          searchQuery: tableState.searchQuery,
+          groupCount: tableState.groupByKeys.length,
+        },
+      },
+      () => loadImportsPageData(page, tableState),
+    ),
+  )
+}
+
+export async function getImportFormOptions() {
+  return withLoaderTiming(
+    {
+      loader: "flooring.imports.options",
+    },
+    async () => {
+      const [products, warehouses, locations] = await Promise.all([
+        prisma.flooringProduct.findMany({
+          include: {
+            category: { select: { stockUnit: { select: { name: true } } } },
+          },
+          orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
+        }),
+        prisma.flooringWarehouse.findMany({
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        }),
+        listImportLocationOptions(),
+      ])
+
+      return {
+        productOptions: products.map((product) => ({
+          id: product.id,
+          label: buildFlooringProductDisplayName(product),
+          stockUnit: product.category.stockUnit?.name ?? "",
+        })),
+        warehouseOptions: warehouses,
+        locationOptions: locations.map((location) => ({
+          id: location.id,
+          warehouseId: location.warehouseId,
+          locationCode: location.locationCode,
+          label: location.locationCode,
+        })),
+      }
+    },
+  )
 }
 
 export async function getImportById(id: string) {
@@ -134,34 +138,7 @@ export async function getImportById(id: string) {
 }
 
 async function loadImportDetailOptions() {
-  const [products, warehouses, locations] = await Promise.all([
-    prisma.flooringProduct.findMany({
-      include: {
-        category: { select: { stockUnit: { select: { name: true } } } },
-      },
-      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
-    }),
-    prisma.flooringWarehouse.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    listImportLocationOptions(),
-  ])
-
-  return {
-    productOptions: products.map((product) => ({
-      id: product.id,
-      label: buildFlooringProductDisplayName(product),
-      stockUnit: product.category.stockUnit?.name ?? "",
-    })),
-    warehouseOptions: warehouses,
-    locationOptions: locations.map((location) => ({
-      id: location.id,
-      warehouseId: location.warehouseId,
-      locationCode: location.locationCode,
-      label: location.locationCode,
-    })),
-  }
+  return getImportFormOptions()
 }
 
 export async function getImportDetailPageData(id: string): Promise<PrismaDetailPageResult<{

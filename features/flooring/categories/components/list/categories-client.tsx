@@ -9,6 +9,7 @@ import { TableColumnSettings } from "@/features/flooring/shared/table/table-colu
 import TableControlsBar from "@/features/flooring/shared/table/table-controls-bar"
 import { TableActionsSummary, TablePaginationControls } from "@/features/flooring/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import { useCategoriesListController } from "../../controllers/use-categories-list-controller"
 import type { CategoryRow, UnitOfMeasureOption } from "../../domain/types"
@@ -19,10 +20,12 @@ export default function CategoriesClient({
   canManage,
   initialCategories,
   unitOfMeasureOptions,
+  initialTablePreferences,
 }: {
   canManage: boolean
   initialCategories: CategoryRow[]
   unitOfMeasureOptions: UnitOfMeasureOption[]
+  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const controller = useCategoriesListController(initialCategories)
   const navigation = useCanonicalDetailNavigation("/dashboard/flooring/categories")
@@ -65,6 +68,7 @@ export default function CategoriesClient({
     ],
     sortField: (row) => row.name,
     defaultGroupKeys: ["sendUnit"],
+    initialPreferences: initialTablePreferences,
   })
 
   return (

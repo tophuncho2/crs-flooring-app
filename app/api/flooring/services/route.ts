@@ -1,25 +1,32 @@
-import { NextResponse } from "next/server"
-import { ensureBuilderOrAdmin } from "@/server/auth/route-auth"
+import { authorizeServicesRoute } from "@/features/flooring/shared/access/lookup-domains"
 import { normalizePrismaError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { createService } from "@/features/flooring/services/mutations"
 import { listServices } from "@/features/flooring/services/queries"
 import { normalizeServiceRow } from "@/features/flooring/services/services"
+import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await authorizeServicesRoute(request)
+  if (access instanceof Response) return access
 
   try {
-    return NextResponse.json({ services: await listServices() })
+    return routeJson(access, { services: await listServices() })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "warehouse" })
-  if (authError) return authError
+  const access = await authorizeServicesRoute(request)
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "services.write",
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/services",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const body = (await request.json()) as Record<string, unknown>
@@ -30,9 +37,8 @@ export async function POST(request: Request) {
       notes: parseOptionalString(body.notes),
     })
 
-    return NextResponse.json({ service: normalizeServiceRow(service) }, { status: 201 })
+    return routeJson(access, { service: normalizeServiceRow(service) }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
