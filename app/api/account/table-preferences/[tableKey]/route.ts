@@ -1,104 +1,56 @@
-import { NextResponse } from "next/server"
-import { canBypassVerification } from "@/server/auth/access-control"
-import { getSessionUser } from "@/server/auth/session"
-import { prisma } from "@/server/db/prisma"
-import { getUserTablePreference } from "@/server/account/table-preferences"
+import {
+  getUserTablePreference,
+  normalizeTablePreferenceInput,
+  saveUserTablePreference,
+} from "@/server/account/table-preferences"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
-function normalizeBody(body: unknown) {
-  if (!body || typeof body !== "object") return null
-
-  const rawHiddenColumnKeys = (body as { hiddenColumnKeys?: unknown }).hiddenColumnKeys
-  const rawColumnOrderKeys = (body as { columnOrderKeys?: unknown }).columnOrderKeys
-  const rawAllowedColumnKeys = (body as { allowedColumnKeys?: unknown }).allowedColumnKeys
-
-  if (
-    !Array.isArray(rawHiddenColumnKeys) ||
-    !rawHiddenColumnKeys.every((key) => typeof key === "string") ||
-    !Array.isArray(rawColumnOrderKeys) ||
-    !rawColumnOrderKeys.every((key) => typeof key === "string") ||
-    !Array.isArray(rawAllowedColumnKeys) ||
-    !rawAllowedColumnKeys.every((key) => typeof key === "string")
-  ) {
-    return null
-  }
-
-  const allowedColumnKeys = Array.from(new Set(rawAllowedColumnKeys))
-  const allowedSet = new Set(allowedColumnKeys)
-  const hiddenColumnKeys = Array.from(new Set(rawHiddenColumnKeys.filter((key) => allowedSet.has(key))))
-  const columnOrderKeys = Array.from(new Set(rawColumnOrderKeys.filter((key) => allowedSet.has(key))))
-
-  for (const key of allowedColumnKeys) {
-    if (!columnOrderKeys.includes(key)) {
-      columnOrderKeys.push(key)
-    }
-  }
-
-  return { hiddenColumnKeys, columnOrderKeys, allowedColumnKeys }
-}
-
-async function getCurrentUser() {
-  const user = await getSessionUser()
-  if (!user) {
-    return null
-  }
-
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    return "forbidden" as const
-  }
-
-  return user
-}
-
-export async function GET(_: Request, context: { params: Promise<{ tableKey: string }> }) {
-  const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-  if (user === "forbidden") {
-    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
-  }
+export async function GET(request: Request, context: { params: Promise<{ tableKey: string }> }) {
+  const access = await applyRoutePolicy(request, { capability: "system.access" })
+  if (access instanceof Response) return access
 
   const { tableKey } = await context.params
-  return NextResponse.json(await getUserTablePreference(user.id, tableKey))
+
+  try {
+    return routeJson(access, await getUserTablePreference(access.user.id, tableKey))
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 export async function PATCH(request: Request, context: { params: Promise<{ tableKey: string }> }) {
-  const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-  if (user === "forbidden") {
-    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
-  }
-
-  const { tableKey } = await context.params
-  const normalized = normalizeBody(await request.json().catch(() => null))
-  if (!normalized) {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
-  }
-
-  const preference = await prisma.userTablePreference.upsert({
-    where: {
-      userId_tableKey: {
-        userId: user.id,
-        tableKey,
-      },
-    },
-    update: {
-      hiddenColumnKeys: normalized.hiddenColumnKeys,
-      columnOrderKeys: normalized.columnOrderKeys,
-    },
-    create: {
-      userId: user.id,
-      tableKey,
-      hiddenColumnKeys: normalized.hiddenColumnKeys,
-      columnOrderKeys: normalized.columnOrderKeys,
-    },
-    select: {
-      hiddenColumnKeys: true,
-      columnOrderKeys: true,
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    rateLimit: {
+      scope: "account.tablePreferences.update",
+      limit: 120,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/account/table-preferences/[tableKey]",
     },
   })
+  if (access instanceof Response) return access
 
-  return NextResponse.json(preference)
+  const { tableKey } = await context.params
+
+  try {
+    const body = await request.json().catch(() => null)
+    const preference = await withMutationTelemetry(
+      access,
+      {
+        message: "Table preference updated",
+        action: "account.tablePreferences.update",
+        route: "/api/account/table-preferences/[tableKey]",
+        entityType: "userTablePreference",
+        entityId: `${access.user.id}:${tableKey}`,
+        details: { tableKey },
+      },
+      () => saveUserTablePreference(access.user.id, tableKey, normalizeTablePreferenceInput(body)),
+    )
+
+    return routeJson(access, preference)
+  } catch (error) {
+    return routeError(access, error)
+  }
 }

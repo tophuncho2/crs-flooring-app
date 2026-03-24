@@ -1,66 +1,36 @@
-import { NextResponse } from "next/server"
-import { canBypassVerification } from "@/server/auth/access-control"
-import { getSessionUser } from "@/server/auth/session"
-import { prisma } from "@/server/db/prisma"
-import { FLOORING_NAV_SLUGS } from "@/app/dashboard/flooring-navigation"
-
-function normalizeBody(body: unknown): { visibleSlugs: string[]; orderedSlugs: string[] } | null {
-  if (!body || typeof body !== "object") return null
-
-  const rawVisibleSlugs = (body as { visibleSlugs?: unknown }).visibleSlugs
-  const rawOrderedSlugs = (body as { orderedSlugs?: unknown }).orderedSlugs
-
-  if (
-    !Array.isArray(rawVisibleSlugs) ||
-    !rawVisibleSlugs.every((slug) => typeof slug === "string") ||
-    !Array.isArray(rawOrderedSlugs) ||
-    !rawOrderedSlugs.every((slug) => typeof slug === "string")
-  ) {
-    return null
-  }
-
-  const allowed = new Set(FLOORING_NAV_SLUGS)
-  const visibleSlugs = Array.from(new Set(rawVisibleSlugs.filter((slug) => allowed.has(slug))))
-  const orderedSlugs = Array.from(new Set(rawOrderedSlugs.filter((slug) => allowed.has(slug))))
-
-  for (const slug of FLOORING_NAV_SLUGS) {
-    if (!orderedSlugs.includes(slug)) {
-      orderedSlugs.push(slug)
-    }
-  }
-
-  return { visibleSlugs, orderedSlugs }
-}
+import { normalizeFlooringNavPreferenceInput, saveUserFlooringNavPreference } from "@/server/account/flooring-nav"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
 export async function PATCH(request: Request) {
-  const user = await getSessionUser()
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
-    return NextResponse.json({ error: "Account restricted" }, { status: 403 })
-  }
-
-  const normalized = normalizeBody(await request.json().catch(() => null))
-  if (!normalized) {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
-  }
-
-  const visibleSlugSet = new Set(normalized.visibleSlugs)
-  const hiddenFlooringNavSlugs = FLOORING_NAV_SLUGS.filter((slug) => !visibleSlugSet.has(slug))
-
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      hiddenFlooringNavSlugs,
-      flooringNavOrderSlugs: normalized.orderedSlugs,
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    rateLimit: {
+      scope: "account.flooringNav.update",
+      limit: 60,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/account/flooring-nav",
     },
-    select: { hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
   })
+  if (access instanceof Response) return access
 
-  return NextResponse.json({
-    visibleSlugs: FLOORING_NAV_SLUGS.filter((slug) => !updatedUser.hiddenFlooringNavSlugs.includes(slug)),
-    orderedSlugs: updatedUser.flooringNavOrderSlugs,
-  })
+  try {
+    const body = await request.json().catch(() => null)
+    const preferences = await withMutationTelemetry(
+      access,
+      {
+        message: "Flooring navigation preferences updated",
+        action: "account.flooringNav.update",
+        route: "/api/account/flooring-nav",
+        entityType: "user",
+        entityId: access.user.id,
+      },
+      () => saveUserFlooringNavPreference(access.user.id, normalizeFlooringNavPreferenceInput(body)),
+    )
+
+    return routeJson(access, preferences)
+  } catch (error) {
+    return routeError(access, error)
+  }
 }

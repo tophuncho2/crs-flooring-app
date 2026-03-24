@@ -57,17 +57,22 @@ export function getRequestId(carrier?: HeaderCarrier) {
 export function getClientIp(carrier?: HeaderCarrier) {
   const headers = getHeaders(carrier)
   const trustedIp =
-    headers?.get("cf-connecting-ip")?.trim() ||
-    headers?.get("x-real-ip")?.trim() ||
-    headers?.get("x-railway-client-ip")?.trim()
+    headers?.get("x-railway-client-ip")?.trim() ||
+    headers?.get("cf-connecting-ip")?.trim()
 
   if (trustedIp) {
     return trustedIp
   }
 
-  const forwarded = headers?.get("x-forwarded-for")
-  if (process.env.NODE_ENV !== "production" && forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown"
+  if (process.env.NODE_ENV !== "production") {
+    const forwarded = headers?.get("x-forwarded-for")
+    const realIp = headers?.get("x-real-ip")?.trim()
+    if (realIp) {
+      return realIp
+    }
+    if (forwarded) {
+      return forwarded.split(",")[0]?.trim() || "unknown"
+    }
   }
 
   return "unknown"

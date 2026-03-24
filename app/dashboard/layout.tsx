@@ -2,12 +2,12 @@ import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 import DashboardErrorState from "./dashboard-error-state"
 import HeaderControlsShell from "./header-controls-shell"
-import { prisma } from "@/server/db/prisma"
 import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
 import { hasSystemAccess } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
 import { getUserToolContext } from "@/server/platform/tool-subscriptions"
 import { FLOORING_NAV_SLUGS } from "./flooring-navigation"
+import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
 
 const ALWAYS_VISIBLE_FLOORING_SLUGS = new Set(["flooring-services"])
 
@@ -19,10 +19,7 @@ export default async function DashboardLayout({
   const sessionUser = await requireSessionUser()
   let user
   try {
-    user = await prisma.user.findUnique({
-      where: { id: sessionUser.id },
-      select: { id: true, email: true, role: true, isVerified: true, hiddenFlooringNavSlugs: true, flooringNavOrderSlugs: true },
-    })
+    user = await getDashboardLayoutUser(sessionUser.id)
   } catch (error) {
     const connectivityIssue = getPrismaConnectivityIssue(error)
     if (connectivityIssue) {

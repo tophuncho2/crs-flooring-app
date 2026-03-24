@@ -2,6 +2,7 @@ import { createProductUseCase } from "@/features/flooring/products/application/m
 import { listCatalogProducts, listProductOptions } from "@/features/flooring/products/queries"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 import { requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -29,7 +30,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "products" })
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: "products",
+    rateLimit: {
+      scope: "products.create",
+      limit: 60,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/products",
+    },
+  })
   if (access instanceof Response) return access
 
   try {

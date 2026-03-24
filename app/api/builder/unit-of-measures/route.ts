@@ -1,40 +1,50 @@
-import { NextResponse } from "next/server"
-import { normalizePrismaError, parseRequiredString } from "@/server/http/api-helpers"
-import { normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
-import { prisma } from "@/server/db/prisma"
-import { ensureBuilderOrAdmin, ensureGovernanceUser } from "@/server/auth/route-auth"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { createUnitOfMeasure, listUnitOfMeasures, normalizeUnitOfMeasureInput } from "@/server/builder/unit-of-measures"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
-export async function GET() {
-  const authError = await ensureBuilderOrAdmin({ toolSlug: "products" })
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: "products",
+  })
+  if (access instanceof Response) return access
 
   try {
-    const unitOfMeasures = await prisma.flooringUnitOfMeasure.findMany({
-      orderBy: { name: "asc" },
-    })
-
-    return NextResponse.json({ unitOfMeasures: unitOfMeasures.map(normalizeUnitOfMeasureOption) })
+    return routeJson(access, { unitOfMeasures: await listUnitOfMeasures() })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
 export async function POST(request: Request) {
-  const authError = await ensureGovernanceUser()
-  if (authError) return authError
+  const access = await applyRoutePolicy(request, {
+    capability: "unitOfMeasures.edit",
+    toolSlug: "products",
+    rateLimit: {
+      scope: "builder.unitOfMeasures.create",
+      limit: 30,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/builder/unit-of-measures",
+    },
+  })
+  if (access instanceof Response) return access
 
   try {
-    const body = (await request.json()) as Record<string, unknown>
-    const unitOfMeasure = await prisma.flooringUnitOfMeasure.create({
-      data: {
-        name: parseRequiredString(body.name, "name"),
+    const body = await request.json().catch(() => null)
+    const unitOfMeasure = await withMutationTelemetry(
+      access,
+      {
+        message: "Unit of measure created",
+        action: "builder.unitOfMeasures.create",
+        route: "/api/builder/unit-of-measures",
+        entityType: "flooringUnitOfMeasure",
       },
-    })
+      () => createUnitOfMeasure(normalizeUnitOfMeasureInput(body).name),
+    )
 
-    return NextResponse.json({ unitOfMeasure: normalizeUnitOfMeasureOption(unitOfMeasure) }, { status: 201 })
+    return routeJson(access, { unitOfMeasure }, { status: 201 })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }

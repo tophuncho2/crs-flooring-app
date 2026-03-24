@@ -1,38 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
-  ensureBuilderPanelAccessMock,
-  getSessionUserMock,
-  consumeRateLimitMock,
+  applyRoutePolicyMock,
   userFindManyMock,
   userFindUniqueMock,
   userUpdateMock,
   userDeleteMock,
 } = vi.hoisted(() => ({
-  ensureBuilderPanelAccessMock: vi.fn(),
-  getSessionUserMock: vi.fn(),
-  consumeRateLimitMock: vi.fn(),
+  applyRoutePolicyMock: vi.fn(),
   userFindManyMock: vi.fn(),
   userFindUniqueMock: vi.fn(),
   userUpdateMock: vi.fn(),
   userDeleteMock: vi.fn(),
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderPanelAccess: ensureBuilderPanelAccessMock,
-}))
-
-vi.mock("@/server/auth/session", () => ({
-  getSessionUser: getSessionUserMock,
+vi.mock("@/server/http/route-policy", () => ({
+  applyRoutePolicy: applyRoutePolicyMock,
 }))
 
 vi.mock("@/server/platform/logger", () => ({
   logEvent: vi.fn(),
-}))
-
-vi.mock("@/server/platform/rate-limit", () => ({
-  consumeRateLimit: consumeRateLimitMock,
-  buildRateLimitResponse: vi.fn(() => new Response(JSON.stringify({ error: "Too many requests" }), { status: 429 })),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
@@ -52,20 +39,16 @@ const { DELETE: DELETE_USER, PATCH: PATCH_USER } = await import("@/app/api/build
 describe("builder user routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderPanelAccessMock.mockResolvedValue(null)
-    getSessionUserMock.mockResolvedValue({
-      id: "admin-1",
-      email: "admin@test.com",
-      role: "ADMIN",
-      isVerified: true,
-    })
-    consumeRateLimitMock.mockResolvedValue({
-      allowed: true,
-      count: 1,
-      limit: 10,
-      retryAfterSeconds: 60,
+    applyRoutePolicyMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
+      id: "admin-1",
+      user: {
+        id: "admin-1",
+        email: "admin@test.com",
+        role: "ADMIN",
+        isVerified: true,
+      },
     })
   })
 
@@ -94,7 +77,7 @@ describe("builder user routes", () => {
       },
     ])
 
-    const response = await GET_USERS()
+    const response = await GET_USERS(new Request("http://localhost/api/builder/users"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
@@ -242,5 +225,15 @@ describe("builder user routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("Only builder accounts can be governed from this panel")
     expect(userDeleteMock).not.toHaveBeenCalled()
+  })
+
+  it("returns shared auth responses unchanged", async () => {
+    applyRoutePolicyMock.mockResolvedValueOnce(Response.json({ error: "Unauthorized" }, { status: 401 }))
+
+    const response = await GET_USERS(new Request("http://localhost/api/builder/users"))
+    const payload = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(payload.error).toBe("Unauthorized")
   })
 })

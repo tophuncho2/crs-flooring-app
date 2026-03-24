@@ -1,4 +1,3 @@
-import { prisma } from "@/server/db/prisma"
 import { getImportFormOptions } from "@/features/flooring/imports/data/queries"
 import {
   createImportEntry,
@@ -12,16 +11,16 @@ export async function loadImportFormOptionsUseCase() {
 }
 
 export async function createImportEntryUseCase(body: Record<string, unknown>) {
-  const created = await createImportEntry(prisma, body)
+  const created = await createImportEntry(body)
   return normalizeImportEntry(created)
 }
 
 export async function updateImportEntryUseCase(id: string, body: Record<string, unknown>) {
-  const updated = await updateImportEntry(prisma, id, body)
+  const updated = await updateImportEntry(id, body)
   return normalizeImportEntry(updated)
 }
 
 export async function deleteImportEntryUseCase(id: string) {
-  await removeImportEntryIfEmpty(prisma, id)
+  await removeImportEntryIfEmpty(id)
   return { ok: true as const }
 }

@@ -233,7 +233,7 @@ export async function getImportEntryById(id: string, db: DbClient = prisma) {
   return normalizeImportEntry(entry)
 }
 
-export async function createImportEntry(db: RootDbClient, body: Record<string, unknown>) {
+export async function createImportEntry(body: Record<string, unknown>, db: RootDbClient = prisma) {
   const parsedItems = parseImportItems(Array.isArray(body.items) ? body.items : [])
 
   return db.$transaction(async (tx) => {
@@ -274,7 +274,7 @@ export async function createImportEntry(db: RootDbClient, body: Record<string, u
   })
 }
 
-export async function updateImportEntry(db: RootDbClient, id: string, body: Record<string, unknown>) {
+export async function updateImportEntry(id: string, body: Record<string, unknown>, db: RootDbClient = prisma) {
   const parsedItems = parseImportItems(Array.isArray(body.items) ? body.items : [])
 
   return db.$transaction(async (tx) => {
@@ -318,7 +318,7 @@ export async function updateImportEntry(db: RootDbClient, id: string, body: Reco
   })
 }
 
-export async function removeImportEntryIfEmpty(db: DbClient, id: string) {
+export async function removeImportEntryIfEmpty(id: string, db: DbClient = prisma) {
   const entry = await db.flooringImportEntry.findUnique({
     where: { id },
     select: { id: true, _count: { select: { inventories: true } } },

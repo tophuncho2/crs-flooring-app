@@ -53,15 +53,6 @@ model UserLoginActivity {
   @@index([userEmail])
 }
 
-model Hotkey {
-  id          String   @id @default(uuid())
-  key         String
-  combination String
-  action      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 enum FlooringWorkOrderStatus {
   BUILDING_ORDER
   PENDING_EXPORT

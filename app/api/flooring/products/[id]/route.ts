@@ -2,7 +2,7 @@ import { getProductById } from "@/features/flooring/products/data/queries"
 import { deleteProductUseCase, updateProductUseCase } from "@/features/flooring/products/application/manage-product"
 import { authorizeProductsRoute } from "@/features/flooring/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
+import { enforceRouteRateLimit, requireRouteAccess, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -23,6 +23,14 @@ export async function GET(request: Request, context: RouteContext) {
 export async function PATCH(request: Request, context: RouteContext) {
   const access = await authorizeProductsRoute(request)
   if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "products.update",
+    limit: 80,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/products/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await context.params
@@ -47,6 +55,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(request: Request, context: RouteContext) {
   const access = await authorizeProductsRoute(request)
   if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "products.delete",
+    limit: 40,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/flooring/products/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
 
   try {
     const { id } = await context.params

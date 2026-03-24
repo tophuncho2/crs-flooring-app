@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { getClientErrorMessage } from "@/features/flooring/shared/client-errors"
-import { requestJson } from "@/features/flooring/shared/http"
+import { getClientErrorMessage } from "@/features/flooring/shared/transport/client-errors"
+import { requestJson } from "@/features/flooring/shared/transport/http"
 import type { WarehouseDraft, WarehouseRow } from "./types"
 
 type WarehousePayload = {

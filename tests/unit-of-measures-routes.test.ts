@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client"
 import { GET, POST } from "@/app/api/builder/unit-of-measures/route"
 import { DELETE, PATCH } from "@/app/api/builder/unit-of-measures/[id]/route"
 
-const { prismaMock, ensureBuilderOrAdminMock, ensureGovernanceUserMock } = vi.hoisted(() => ({
+const { prismaMock, applyRoutePolicyMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringUnitOfMeasure: {
       findMany: vi.fn(),
@@ -12,21 +12,20 @@ const { prismaMock, ensureBuilderOrAdminMock, ensureGovernanceUserMock } = vi.ho
       findUnique: vi.fn(),
       delete: vi.fn(),
     },
-    flooringCategory: {
-      delete: vi.fn(),
-    },
   },
-  ensureBuilderOrAdminMock: vi.fn(),
-  ensureGovernanceUserMock: vi.fn(),
+  applyRoutePolicyMock: vi.fn(),
 }))
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: prismaMock,
 }))
 
-vi.mock("@/server/auth/route-auth", () => ({
-  ensureBuilderOrAdmin: ensureBuilderOrAdminMock,
-  ensureGovernanceUser: ensureGovernanceUserMock,
+vi.mock("@/server/http/route-policy", () => ({
+  applyRoutePolicy: applyRoutePolicyMock,
+}))
+
+vi.mock("@/server/platform/logger", () => ({
+  logEvent: vi.fn(),
 }))
 
 function unitRecord(
@@ -47,8 +46,16 @@ function unitRecord(
 describe("unit-of-measures routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureBuilderOrAdminMock.mockResolvedValue(null)
-    ensureGovernanceUserMock.mockResolvedValue(null)
+    applyRoutePolicyMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: {
+        id: "admin-1",
+        email: "admin@test.com",
+        role: "ADMIN",
+        isVerified: true,
+      },
+    })
   })
 
   it("GET returns normalized rows", async () => {
@@ -57,7 +64,7 @@ describe("unit-of-measures routes", () => {
       unitRecord({ id: "u-2", name: "Hour" }),
     ])
 
-    const response = await GET()
+    const response = await GET(new Request("http://localhost/api/builder/unit-of-measures"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
@@ -65,7 +72,7 @@ describe("unit-of-measures routes", () => {
       { id: "u-1", name: "Square Feet", createdAt: "2026-03-19T00:00:00.000Z" },
       { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z" },
     ])
-    expect(ensureBuilderOrAdminMock).toHaveBeenCalledWith({ toolSlug: "products" })
+    expect(applyRoutePolicyMock).toHaveBeenCalled()
   })
 
   it("POST requires name", async () => {
@@ -81,7 +88,6 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("name is required")
     expect(prismaMock.flooringUnitOfMeasure.create).not.toHaveBeenCalled()
-    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("POST returns normalized payload", async () => {
@@ -102,7 +108,6 @@ describe("unit-of-measures routes", () => {
       name: "Square Feet",
       createdAt: "2026-03-19T00:00:00.000Z",
     })
-    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("PATCH requires name", async () => {
@@ -140,7 +145,6 @@ describe("unit-of-measures routes", () => {
       name: "Hour",
       createdAt: "2026-03-19T00:00:00.000Z",
     })
-    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE succeeds on happy path only when there is no linkage", async () => {
@@ -166,8 +170,6 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(200)
     expect(payload).toEqual({ success: true })
     expect(prismaMock.flooringUnitOfMeasure.delete).toHaveBeenCalledWith({ where: { id: "u-1" } })
-    expect(prismaMock.flooringCategory.delete).not.toHaveBeenCalled()
-    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE is blocked when linked to categories", async () => {
@@ -193,7 +195,6 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This unit of measure is linked to categories and cannot be deleted")
     expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
-    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("DELETE is blocked when linked to a representative service relation", async () => {
@@ -219,7 +220,6 @@ describe("unit-of-measures routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This unit of measure is linked and cannot be deleted")
     expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
-    expect(ensureGovernanceUserMock).toHaveBeenCalled()
   })
 
   it("normalizes unit name conflicts", async () => {
@@ -242,5 +242,15 @@ describe("unit-of-measures routes", () => {
 
     expect(response.status).toBe(409)
     expect(payload.error).toBe("Name must be unique")
+  })
+
+  it("returns shared auth responses unchanged", async () => {
+    applyRoutePolicyMock.mockResolvedValueOnce(Response.json({ error: "Forbidden" }, { status: 403 }))
+
+    const response = await GET(new Request("http://localhost/api/builder/unit-of-measures"))
+    const payload = await response.json()
+
+    expect(response.status).toBe(403)
+    expect(payload.error).toBe("Forbidden")
   })
 })

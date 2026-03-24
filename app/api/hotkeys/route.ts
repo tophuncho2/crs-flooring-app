@@ -1,12 +1,13 @@
-import { ensureAuthenticated } from "@/server/auth/route-auth"
 import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
-import { getRequestId, jsonWithRequestId } from "@/server/platform/request-context"
+import { routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
-export async function GET() {
-  const authError = await ensureAuthenticated()
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await applyRoutePolicy(request, { capability: "hotkeys.view" })
+  if (access instanceof Response) return access
 
-  return jsonWithRequestId(
+  return routeJson(
+    access,
     {
       hotkeys: FLOORING_HOTKEYS.map((hotkey) => ({
         id: hotkey.id,
@@ -15,6 +16,5 @@ export async function GET() {
         action: hotkey.action,
       })),
     },
-    getRequestId(),
   )
 }

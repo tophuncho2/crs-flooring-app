@@ -1,25 +1,16 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/server/db/prisma"
-import { ensureBuilderPanelAccess } from "@/server/auth/route-auth"
+import { listManagedUserActivity } from "@/server/builder/users"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
-export async function GET() {
-  const authError = await ensureBuilderPanelAccess()
-  if (authError) return authError
+export async function GET(request: Request) {
+  const access = await applyRoutePolicy(request, { capability: "users.manage" })
+  if (access instanceof Response) return access
 
-  const activity = await prisma.userLoginActivity.findMany({
-    orderBy: { loggedInAt: "desc" },
-    take: 200,
-    select: {
-      id: true,
-      userEmail: true,
-      loggedInAt: true,
-    },
-  })
-
-  return NextResponse.json({
-    activity: activity.map((row) => ({
-      ...row,
-      loggedInAt: row.loggedInAt.toISOString(),
-    })),
-  })
+  try {
+    return routeJson(access, {
+      activity: await listManagedUserActivity(),
+    })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }

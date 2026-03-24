@@ -1,5 +1,14 @@
 import { Prisma } from "@prisma/client"
-import { prisma } from "@/server/db/prisma"
+import { withTransaction } from "@/features/flooring/shared/application/with-transaction"
+import {
+  createCutLogRecord,
+  deleteCutLogRecord,
+  getCutLogRebalanceState,
+  getCutLogTarget,
+  getInventoryCutBalanceState,
+  listCutLogRecords,
+  updateCutLogBalanceRows,
+} from "@/features/flooring/inventory/data/cut-logs"
 import { createAppError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
@@ -35,26 +44,7 @@ function normalizeCutLog(log: {
 }
 
 export async function listCutLogsUseCase(inventoryId: string | null) {
-  const logs = await prisma.flooringCutLog.findMany({
-    where: inventoryId ? { inventoryId } : undefined,
-    include: {
-      inventory: {
-        select: {
-          id: true,
-          itemNumber: true,
-          product: {
-            select: {
-              name: true,
-              style: true,
-              color: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: [{ createdAt: "desc" }],
-    take: 250,
-  })
+  const logs = await listCutLogRecords(inventoryId)
 
   return logs.map(normalizeCutLog)
 }
@@ -63,17 +53,7 @@ export async function createCutLogUseCase(body: Record<string, unknown>) {
   const inventoryId = parseRequiredString(body.inventoryId, "inventoryId")
   const cut = parseDecimal(body.cut ?? body.quantityTaken, "cut", 2)
 
-  const inventory = await prisma.flooringInventory.findUnique({
-    where: { id: inventoryId },
-    select: {
-      stockCount: true,
-      cutLogs: {
-        select: {
-          cut: true,
-        },
-      },
-    },
-  })
+  const inventory = await getInventoryCutBalanceState(inventoryId)
 
   if (!inventory) {
     throw createAppError("Inventory row not found", { status: 404 })
@@ -90,91 +70,50 @@ export async function createCutLogUseCase(body: Record<string, unknown>) {
     throw createAppError("Quantity taken cannot exceed the current running balance", { status: 400 })
   }
 
-  const created = await prisma.flooringCutLog.create({
-    data: {
-      inventoryId,
-      before: runningBalance,
-      cut,
-      after: runningBalance.minus(cut),
-      notes: parseOptionalString(body.notes),
-    },
-    include: {
-      inventory: {
-        select: {
-          id: true,
-          itemNumber: true,
-          product: {
-            select: {
-              name: true,
-              style: true,
-              color: true,
-            },
-          },
-        },
-      },
-    },
+  const created = await createCutLogRecord({
+    inventoryId,
+    before: runningBalance,
+    cut,
+    after: runningBalance.minus(cut),
+    notes: parseOptionalString(body.notes),
   })
 
   return normalizeCutLog(created)
 }
 
 export async function deleteCutLogUseCase(id: string) {
-  const target = await prisma.flooringCutLog.findUnique({
-    where: { id },
-    select: { id: true, inventoryId: true },
+  return withTransaction(async (tx) => {
+    const target = await getCutLogTarget(id, tx)
+
+    if (!target) {
+      throw createAppError("Cut log not found", { status: 404 })
+    }
+
+    const inventory = await getCutLogRebalanceState(target.inventoryId, target.id, tx)
+
+    if (!inventory) {
+      throw createAppError("Inventory row not found", { status: 404 })
+    }
+
+    const updates: Array<{ id: string; before: Prisma.Decimal; after: Prisma.Decimal }> = []
+    const updatedRows: Array<{ id: string; before: string; after: string }> = []
+    let runningBalance = new Prisma.Decimal(inventory.stockCount)
+
+    for (const cutLog of inventory.cutLogs) {
+      const before = runningBalance
+      const after = before.minus(cutLog.cut)
+      updates.push({ id: cutLog.id, before, after })
+      updatedRows.push({ id: cutLog.id, before: before.toString(), after: after.toString() })
+      runningBalance = after
+    }
+
+    await deleteCutLogRecord(target.id, tx)
+    await updateCutLogBalanceRows(updates, tx)
+
+    return {
+      success: true,
+      inventoryId: target.inventoryId,
+      updatedRows,
+    }
   })
-
-  if (!target) {
-    throw createAppError("Cut log not found", { status: 404 })
-  }
-
-  const inventory = await prisma.flooringInventory.findUnique({
-    where: { id: target.inventoryId },
-    select: {
-      id: true,
-      stockCount: true,
-      cutLogs: {
-        where: { id: { not: target.id } },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-        select: {
-          id: true,
-          cut: true,
-        },
-      },
-    },
-  })
-
-  if (!inventory) {
-    throw createAppError("Inventory row not found", { status: 404 })
-  }
-
-  const updates: Array<ReturnType<typeof prisma.flooringCutLog.update>> = []
-  const updatedRows: Array<{ id: string; before: string; after: string }> = []
-  let runningBalance = new Prisma.Decimal(inventory.stockCount)
-
-  for (const cutLog of inventory.cutLogs) {
-    const before = runningBalance
-    const after = before.minus(cutLog.cut)
-    updates.push(
-      prisma.flooringCutLog.update({
-        where: { id: cutLog.id },
-        data: { before, after },
-      }),
-    )
-    updatedRows.push({ id: cutLog.id, before: before.toString(), after: after.toString() })
-    runningBalance = after
-  }
-
-  await prisma.$transaction([
-    prisma.flooringCutLog.delete({
-      where: { id: target.id },
-    }),
-    ...updates,
-  ])
-
-  return {
-    success: true,
-    inventoryId: target.inventoryId,
-    updatedRows,
-  }
 }

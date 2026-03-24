@@ -1,86 +1,75 @@
-import { NextResponse } from "next/server"
-import { normalizePrismaError, parseRequiredString } from "@/server/http/api-helpers"
-import { normalizeUnitOfMeasureOption } from "@/server/flooring/unit-measures"
-import { prisma } from "@/server/db/prisma"
-import { ensureGovernanceUser } from "@/server/auth/route-auth"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { deleteUnitOfMeasure, normalizeUnitOfMeasureInput, updateUnitOfMeasure } from "@/server/builder/unit-of-measures"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const authError = await ensureGovernanceUser()
-  if (authError) return authError
+  const access = await applyRoutePolicy(request, {
+    capability: "unitOfMeasures.edit",
+    toolSlug: "products",
+    rateLimit: {
+      scope: "builder.unitOfMeasures.update",
+      limit: 30,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/builder/unit-of-measures/[id]",
+    },
+  })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
-    const body = (await request.json()) as Record<string, unknown>
-    const unitOfMeasure = await prisma.flooringUnitOfMeasure.update({
-      where: { id },
-      data: {
-        name: parseRequiredString(body.name, "name"),
+    const body = await request.json().catch(() => null)
+    const unitOfMeasure = await withMutationTelemetry(
+      access,
+      {
+        message: "Unit of measure updated",
+        action: "builder.unitOfMeasures.update",
+        route: "/api/builder/unit-of-measures/[id]",
+        entityType: "flooringUnitOfMeasure",
+        entityId: id,
       },
-    })
+      () => updateUnitOfMeasure(id, normalizeUnitOfMeasureInput(body).name),
+    )
 
-    return NextResponse.json({ unitOfMeasure: normalizeUnitOfMeasureOption(unitOfMeasure) })
+    return routeJson(access, { unitOfMeasure })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
-  const authError = await ensureGovernanceUser()
-  if (authError) return authError
+export async function DELETE(request: Request, context: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    capability: "unitOfMeasures.edit",
+    toolSlug: "products",
+    rateLimit: {
+      scope: "builder.unitOfMeasures.delete",
+      limit: 20,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/builder/unit-of-measures/[id]",
+    },
+  })
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
-    const unitOfMeasure = await prisma.flooringUnitOfMeasure.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        _count: {
-          select: {
-            sendUnitCategories: true,
-            stockUnitCategories: true,
-            coverageAvailableUnitCategories: true,
-            itemCoverageUnitCategories: true,
-            serviceUnitCategories: true,
-            services: true,
-            templateServiceItems: true,
-            workOrderServiceItems: true,
-          },
-        },
+    await withMutationTelemetry(
+      access,
+      {
+        message: "Unit of measure deleted",
+        action: "builder.unitOfMeasures.delete",
+        route: "/api/builder/unit-of-measures/[id]",
+        entityType: "flooringUnitOfMeasure",
+        entityId: id,
       },
-    })
+      () => deleteUnitOfMeasure(id),
+    )
 
-    if (!unitOfMeasure) {
-      return NextResponse.json({ error: "Unit of measure not found" }, { status: 404 })
-    }
-
-    const categoryLinks =
-      unitOfMeasure._count.sendUnitCategories +
-      unitOfMeasure._count.stockUnitCategories +
-      unitOfMeasure._count.coverageAvailableUnitCategories +
-      unitOfMeasure._count.itemCoverageUnitCategories +
-      unitOfMeasure._count.serviceUnitCategories
-
-    if (categoryLinks > 0) {
-      return NextResponse.json({ error: "This unit of measure is linked to categories and cannot be deleted" }, { status: 409 })
-    }
-
-    if (
-      unitOfMeasure._count.services > 0 ||
-      unitOfMeasure._count.templateServiceItems > 0 ||
-      unitOfMeasure._count.workOrderServiceItems > 0
-    ) {
-      return NextResponse.json({ error: "This unit of measure is linked and cannot be deleted" }, { status: 409 })
-    }
-
-    await prisma.flooringUnitOfMeasure.delete({ where: { id } })
-    return NextResponse.json({ success: true })
+    return routeJson(access, { success: true })
   } catch (error) {
-    const normalized = normalizePrismaError(error)
-    return NextResponse.json({ error: normalized.message }, { status: normalized.status })
+    return routeError(access, error)
   }
 }
