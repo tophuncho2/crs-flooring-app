@@ -46,7 +46,12 @@ export function RecordPanelFooter({
       <div className="flex gap-2">
         {leftExtra}
         {onDelete && deleteLabel ? (
-          <button type="button" onClick={handleDelete} className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isSaving}
+            className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             {deleteLabel}
           </button>
         ) : null}

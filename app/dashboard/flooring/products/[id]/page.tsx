@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/detail-routes"
+import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
 import { listInventoryRows } from "@/features/flooring/inventory/api"
-import { ProductDetailClient } from "@/features/flooring/products/components/product-detail-client"
-import { getProductById, getProductsPageData } from "@/features/flooring/products/queries"
+import { ProductDetailClient } from "@/features/flooring/products/components/detail/product-detail-client"
+import { getProductById, getProductsPageData } from "@/features/flooring/products/data/queries"
 
 export default async function ProductDetailPage({
   params,

@@ -1,17 +1,16 @@
 "use client"
 
-import { type ChangeEvent, useCallback, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Save, Upload, X } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
-import { CollapsibleTableSection } from "@/features/flooring/shared/ui/table/collapsible-table-section"
+import { type ChangeEvent, useEffect, useMemo, useState } from "react"
+import { Upload, X } from "lucide-react"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordFormField as FormField } from "@/features/flooring/shared/ui/forms/record-form"
-import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/flooring/shared/controllers/record-page/detail-routes"
-import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
+import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { useUnsavedChangesGuard } from "@/features/flooring/shared/controllers/record-page/use-unsaved-changes-guard"
+import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
+import { ProductInventoryRowsSection } from "./product-inventory-rows-section"
 
 type CategoryOption = {
   id: string
@@ -150,23 +149,20 @@ export function ProductDetailClient({
   inventoryRows: InventoryRow[]
   backHref: string
 }) {
-  const router = useRouter()
+  const page = useRecordPageController({
+    backHref,
+    dirtyMessage: "You have unsaved product changes. Leave this product without saving?",
+  })
   const [product, setProduct] = useState(initialProduct)
   const [productForm, setProductForm] = useState<ProductForm>(toProductForm(initialProduct))
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false)
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
   const [newBaseColor, setNewBaseColor] = useState("")
   const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
 
   const categories = categoryOptions
   const selectedCategory = categories.find((category) => category.id === productForm.categoryId) ?? null
   const isDirty = useMemo(() => JSON.stringify(productForm) !== JSON.stringify(toProductForm(product)), [product, productForm])
-  const guard = useUnsavedChangesGuard({
-    isDirty,
-    message: "You have unsaved product changes. Leave this product without saving?",
-  })
   const baseColorOptions = Array.from(
     new Set(
       [...DEFAULT_BASE_COLOR_OPTIONS, ...customBaseColors, product.baseColor]
@@ -175,26 +171,18 @@ export function ProductDetailClient({
     ),
   ).sort((a, b) => a.localeCompare(b))
 
-  const inventoryByWarehouse = useMemo(
-    () => Array.from(new Set(inventoryRows.map((row) => row.warehouseName))),
-    [inventoryRows],
-  )
-
-  const closePage = useCallback(() => {
-    guard.confirmNavigation(() => {
-      router.push(backHref, { scroll: false })
-    })
-  }, [backHref, guard, router])
+  useEffect(() => {
+    page.setIsDirty(isDirty)
+  }, [isDirty, page.setIsDirty])
 
   async function saveProduct() {
-    setMessage("")
-    setError("")
+    page.notices.clearNotices()
     if (!productForm.categoryId) {
-      setError("Category is required")
+      page.notices.showError("Category is required")
       return
     }
     if (productForm.coveragePerUnit.trim() && !isValidDecimal(productForm.coveragePerUnit)) {
-      setError("Coverage per unit must be numeric with up to 4 decimals")
+      page.notices.showError("Coverage per unit must be numeric with up to 4 decimals")
       return
     }
 
@@ -212,25 +200,23 @@ export function ProductDetailClient({
 
       setProduct(payload.product)
       setProductForm(toProductForm(payload.product))
-      setMessage("Product updated")
+      page.notices.showSuccess("Product updated")
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Failed to save product")
+      page.notices.showError(saveError instanceof Error ? saveError.message : "Failed to save product")
     } finally {
       setIsSaving(false)
     }
   }
 
   async function deleteProduct() {
-    if (!confirmRecordDelete(buildDeleteConfirmationMessage("product"))) return
-    setMessage("")
-    setError("")
+    page.notices.clearNotices()
     setIsSaving(true)
 
     try {
-      await requestJson<{ success: boolean }>(`/api/flooring/products/${product.id}`, { method: "DELETE" })
-      router.push(backHref, { scroll: false })
+      await requestJson<{ ok: boolean }>(`/api/flooring/products/${product.id}`, { method: "DELETE" })
+      page.redirectToBack()
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete product")
+      page.notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete product")
       setIsSaving(false)
     }
   }
@@ -239,8 +225,7 @@ export function ProductDetailClient({
     const files = event.target.files
     if (!files || files.length === 0) return
 
-    setMessage("")
-    setError("")
+    page.notices.clearNotices()
     setIsUploadingPhotos(true)
 
     try {
@@ -260,9 +245,9 @@ export function ProductDetailClient({
         ...prev,
         photoUrls: Array.from(new Set([...prev.photoUrls, ...uploadedUrls])),
       }))
-      setMessage(`${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"} uploaded`)
+      page.notices.showSuccess(`${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"} uploaded`)
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Failed to upload photos")
+      page.notices.showError(uploadError instanceof Error ? uploadError.message : "Failed to upload photos")
     } finally {
       setIsUploadingPhotos(false)
       event.target.value = ""
@@ -284,17 +269,14 @@ export function ProductDetailClient({
     setNewBaseColor("")
   }
 
-  function openInventoryRecord(inventoryId: string) {
-    const currentPath = buildCurrentPath(window.location.pathname, new URLSearchParams(window.location.search))
-    guard.confirmNavigation(() => {
-      router.push(buildCanonicalDetailHref("/dashboard/flooring/inventory", inventoryId, currentPath), { scroll: false })
-    })
-  }
-
   return (
-    <RecordDetailPageShell title={product.name || "Product"} backHref={backHref} onBack={closePage} sizeClass="max-w-6xl">
+    <RecordDetailPageShell title={product.name || "Product"} backHref={backHref} onBack={page.closePage} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
       <div className="space-y-6">
-        <FormStatusNotices message={message} error={error} loadingMessage={isSaving ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : ""} />
+        <FormStatusNotices
+          message={page.notices.message}
+          error={page.notices.error}
+          loadingMessage={isSaving ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : ""}
+        />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <FormField label="Category Link">
@@ -438,85 +420,18 @@ export function ProductDetailClient({
           </FormField>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={closePage} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-            Back
-          </button>
-          <button type="button" onClick={() => void deleteProduct()} disabled={isSaving || isUploadingPhotos} className="rounded-lg border border-rose-500/40 px-3 py-2 text-sm text-rose-600 hover:bg-rose-500/10">
-            Delete Product
-          </button>
-          <button
-            type="button"
-            onClick={() => void saveProduct()}
-            disabled={isSaving || isUploadingPhotos}
-            className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
-          >
-            <Save size={16} />
-            {isSaving ? "Saving..." : "Save Product"}
-          </button>
-        </div>
+        <RecordPanelFooter
+          deleteLabel="Delete Product"
+          deleteConfirmMessage={buildDeleteConfirmationMessage("product")}
+          onDelete={() => void deleteProduct()}
+          onClose={page.closePage}
+          saveLabel="Save Product"
+          savingLabel="Saving..."
+          onSave={() => void saveProduct()}
+          isSaving={isSaving || isUploadingPhotos}
+        />
 
-        <div className="space-y-3">
-          <div>
-            <h3 className="text-base font-semibold">Inventory by Warehouse</h3>
-            <p className="text-sm text-[var(--foreground)]/70">Open an inventory row to manage cuts and running balance in its own detail page.</p>
-          </div>
-
-          {inventoryRows.length === 0 ? (
-            <div className="rounded-lg border border-[var(--panel-border)] px-4 py-8 text-center text-sm text-[var(--foreground)]/70">
-              No inventory rows found for this product.
-            </div>
-          ) : (
-            inventoryByWarehouse.map((warehouseName) => {
-              const warehouseRows = inventoryRows.filter((row) => row.warehouseName === warehouseName)
-
-              return (
-                <CollapsibleTableSection
-                  key={warehouseName}
-                  title={warehouseName}
-                  defaultOpen
-                  actions={<span className="text-xs text-[var(--foreground)]/60">{warehouseRows.length} rows</span>}
-                  className="overflow-hidden rounded-lg border border-[var(--panel-border)] p-0"
-                >
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[980px] text-sm">
-                      <thead className="bg-[var(--panel-hover)]/60 text-left">
-                        <tr>
-                          <th className="h-10 px-3 py-2">Item #</th>
-                          <th className="h-10 px-3 py-2">Dye Lot</th>
-                          <th className="h-10 px-3 py-2">Section</th>
-                          <th className="h-10 px-3 py-2">Location</th>
-                          <th className="h-10 px-3 py-2">Starting Stock</th>
-                          <th className="h-10 px-3 py-2">Cuts Total</th>
-                          <th className="h-10 px-3 py-2">Running Balance</th>
-                          <th className="h-10 px-3 py-2">Import #</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {warehouseRows.map((row) => (
-                          <tr
-                            key={row.id}
-                            className="cursor-pointer border-t border-[var(--panel-border)] hover:bg-[var(--panel-hover)]"
-                            onClick={() => openInventoryRecord(row.id)}
-                          >
-                            <td className="px-3 py-2">{row.itemNumber}</td>
-                            <td className="px-3 py-2">{row.dyeLot || "-"}</td>
-                            <td className="px-3 py-2">{row.sectionName || "-"}</td>
-                            <td className="px-3 py-2">{row.locationCode || "-"}</td>
-                            <td className="px-3 py-2">{row.stockCount} {row.stockUnit}</td>
-                            <td className="px-3 py-2">{row.cutTotal}</td>
-                            <td className="px-3 py-2 font-semibold">{row.runningBalance} {row.stockUnit}</td>
-                            <td className="px-3 py-2">{row.importNumber ? `IMP-${row.importNumber.padStart(4, "0")}` : "-"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CollapsibleTableSection>
-              )
-            })
-          )}
-        </div>
+        <ProductInventoryRowsSection inventoryRows={inventoryRows} />
       </div>
     </RecordDetailPageShell>
   )
