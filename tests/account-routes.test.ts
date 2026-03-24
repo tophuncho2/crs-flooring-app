@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
@@ -191,6 +192,113 @@ describe("account routes", () => {
       isGroupingEnabled: true,
       groupByKeys: ["warehouse"],
       filters: { status: "pending", warehouseId: "wh-1" },
+    })
+  })
+
+  it("GET /api/account/table-preferences/[tableKey] falls back to legacy columns when view-state columns are not in the database yet", async () => {
+    userTablePreferenceFindUniqueMock
+      .mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError(
+          "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
+          {
+            code: "P2022",
+            clientVersion: "6.12.0",
+          },
+        ),
+      )
+      .mockResolvedValueOnce({
+        hiddenColumnKeys: ["cost"],
+        columnOrderKeys: ["name", "cost"],
+      })
+
+    const response = await GET_TABLE_PREFERENCE(new Request("http://localhost/api/account/table-preferences/products-main"), {
+      params: Promise.resolve({ tableKey: "products-main" }),
+    })
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload).toEqual({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["name", "cost"],
+      isAscendingSort: true,
+      isGroupingEnabled: false,
+      groupByKeys: [],
+      filters: {},
+    })
+    expect(userTablePreferenceFindUniqueMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("PATCH /api/account/table-preferences/[tableKey] falls back to legacy writes when view-state columns are not in the database yet", async () => {
+    userTablePreferenceFindUniqueMock
+      .mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError(
+          "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
+          {
+            code: "P2022",
+            clientVersion: "6.12.0",
+          },
+        ),
+      )
+      .mockResolvedValueOnce({
+        hiddenColumnKeys: [],
+        columnOrderKeys: [],
+      })
+    userTablePreferenceUpsertMock
+      .mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError(
+          "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
+          {
+            code: "P2022",
+            clientVersion: "6.12.0",
+          },
+        ),
+      )
+      .mockResolvedValueOnce({
+        hiddenColumnKeys: ["cost"],
+        columnOrderKeys: ["qty", "name", "cost"],
+      })
+
+    const response = await PATCH_TABLE_PREFERENCE(
+      new Request("http://localhost/api/account/table-preferences/products-main", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hiddenColumnKeys: ["cost", "bad"],
+          columnOrderKeys: ["qty", "bad", "name"],
+          isAscendingSort: false,
+          filters: { status: "pending" },
+          allowedColumnKeys: ["name", "qty", "cost"],
+          allowedFilterValues: {
+            status: ["all", "pending"],
+          },
+        }),
+      }),
+      { params: Promise.resolve({ tableKey: "products-main" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(userTablePreferenceUpsertMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        update: {
+          hiddenColumnKeys: ["cost"],
+          columnOrderKeys: ["qty", "name", "cost"],
+        },
+        create: {
+          userId: "user-1",
+          tableKey: "products-main",
+          hiddenColumnKeys: ["cost"],
+          columnOrderKeys: ["qty", "name", "cost"],
+        },
+      }),
+    )
+    expect(payload).toEqual({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["qty", "name", "cost"],
+      isAscendingSort: true,
+      isGroupingEnabled: false,
+      groupByKeys: [],
+      filters: {},
     })
   })
 

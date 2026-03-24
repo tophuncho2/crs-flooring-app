@@ -1,7 +1,8 @@
-import type { Prisma } from "@prisma/client"
+import { Prisma } from "@prisma/client"
 import type { DataAccessContext } from "@/server/db/context"
 import { prisma } from "@/server/db/prisma"
 import { createAppError } from "@/server/http/api-helpers"
+import { logEvent } from "@/server/platform/logger"
 import {
   DEFAULT_TABLE_PREFERENCE_PAYLOAD,
   type TableFilterPreferenceMap,
@@ -12,6 +13,27 @@ export type TablePreferenceInput = Partial<TablePreferencePayload>
 export type ResolvedTablePreference = TablePreferencePayload & {
   hasSavedPreference: boolean
 }
+
+type FullTablePreferenceRecord = {
+  hiddenColumnKeys: string[]
+  columnOrderKeys: string[]
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
+  filtersJson: Prisma.JsonValue | null
+}
+
+type LegacyTablePreferenceRecord = {
+  hiddenColumnKeys: string[]
+  columnOrderKeys: string[]
+}
+
+const USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS = [
+  "UserTablePreference.isAscendingSort",
+  "UserTablePreference.isGroupingEnabled",
+  "UserTablePreference.groupByKeys",
+  "UserTablePreference.filtersJson",
+] as const
 
 function normalizeStoredFilters(value: Prisma.JsonValue | null | undefined): TableFilterPreferenceMap {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -144,14 +166,7 @@ export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInp
   return nextPreference
 }
 
-function normalizeTablePreferenceRecord(preference: {
-  hiddenColumnKeys: string[]
-  columnOrderKeys: string[]
-  isAscendingSort: boolean
-  isGroupingEnabled: boolean
-  groupByKeys: string[]
-  filtersJson: Prisma.JsonValue | null
-} | null): ResolvedTablePreference {
+function normalizeTablePreferenceRecord(preference: FullTablePreferenceRecord | null): ResolvedTablePreference {
   return {
     hasSavedPreference: Boolean(preference),
     hiddenColumnKeys: preference?.hiddenColumnKeys ?? DEFAULT_TABLE_PREFERENCE_PAYLOAD.hiddenColumnKeys,
@@ -163,28 +178,43 @@ function normalizeTablePreferenceRecord(preference: {
   }
 }
 
-export async function getUserTablePreference(
-  userId: string,
-  tableKey: string,
-  db: DataAccessContext = prisma,
-): Promise<TablePreferencePayload> {
-  const normalized = await getResolvedUserTablePreference(userId, tableKey, db)
+function normalizeLegacyTablePreferenceRecord(preference: LegacyTablePreferenceRecord | null): ResolvedTablePreference {
   return {
-    hiddenColumnKeys: normalized.hiddenColumnKeys,
-    columnOrderKeys: normalized.columnOrderKeys,
-    isAscendingSort: normalized.isAscendingSort,
-    isGroupingEnabled: normalized.isGroupingEnabled,
-    groupByKeys: normalized.groupByKeys,
-    filters: normalized.filters,
+    hasSavedPreference: Boolean(preference),
+    hiddenColumnKeys: preference?.hiddenColumnKeys ?? DEFAULT_TABLE_PREFERENCE_PAYLOAD.hiddenColumnKeys,
+    columnOrderKeys: preference?.columnOrderKeys ?? DEFAULT_TABLE_PREFERENCE_PAYLOAD.columnOrderKeys,
+    isAscendingSort: DEFAULT_TABLE_PREFERENCE_PAYLOAD.isAscendingSort,
+    isGroupingEnabled: DEFAULT_TABLE_PREFERENCE_PAYLOAD.isGroupingEnabled,
+    groupByKeys: DEFAULT_TABLE_PREFERENCE_PAYLOAD.groupByKeys,
+    filters: DEFAULT_TABLE_PREFERENCE_PAYLOAD.filters,
   }
 }
 
-export async function getResolvedUserTablePreference(
+function toTablePreferencePayload(preference: ResolvedTablePreference): TablePreferencePayload {
+  return {
+    hiddenColumnKeys: preference.hiddenColumnKeys,
+    columnOrderKeys: preference.columnOrderKeys,
+    isAscendingSort: preference.isAscendingSort,
+    isGroupingEnabled: preference.isGroupingEnabled,
+    groupByKeys: preference.groupByKeys,
+    filters: preference.filters,
+  }
+}
+
+function isMissingUserTablePreferenceViewStateColumnError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2022" &&
+    USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS.some((column) => error.message.includes(column))
+  )
+}
+
+async function findFullTablePreference(
   userId: string,
   tableKey: string,
-  db: DataAccessContext = prisma,
-): Promise<ResolvedTablePreference> {
-  const preference = await db.userTablePreference.findUnique({
+  db: DataAccessContext,
+) {
+  return db.userTablePreference.findUnique({
     where: {
       userId_tableKey: {
         userId,
@@ -200,8 +230,68 @@ export async function getResolvedUserTablePreference(
       filtersJson: true,
     },
   })
+}
 
-  return normalizeTablePreferenceRecord(preference)
+async function findLegacyTablePreference(
+  userId: string,
+  tableKey: string,
+  db: DataAccessContext,
+) {
+  return db.userTablePreference.findUnique({
+    where: {
+      userId_tableKey: {
+        userId,
+        tableKey,
+      },
+    },
+    select: {
+      hiddenColumnKeys: true,
+      columnOrderKeys: true,
+    },
+  })
+}
+
+function logLegacyTablePreferenceFallback(action: "read" | "write", tableKey: string, error: unknown) {
+  logEvent({
+    level: "warn",
+    message: "Falling back to legacy table preference storage because view-state columns are missing",
+    action: `account.tablePreferences.${action}.legacyFallback`,
+    entityType: "userTablePreference",
+    entityId: tableKey,
+    details: {
+      tableKey,
+      missingColumns: USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS,
+    },
+    error,
+  })
+}
+
+export async function getUserTablePreference(
+  userId: string,
+  tableKey: string,
+  db: DataAccessContext = prisma,
+): Promise<TablePreferencePayload> {
+  const normalized = await getResolvedUserTablePreference(userId, tableKey, db)
+  return toTablePreferencePayload(normalized)
+}
+
+export async function getResolvedUserTablePreference(
+  userId: string,
+  tableKey: string,
+  db: DataAccessContext = prisma,
+): Promise<ResolvedTablePreference> {
+  try {
+    const preference = await findFullTablePreference(userId, tableKey, db)
+    return normalizeTablePreferenceRecord(preference)
+  } catch (error) {
+    if (!isMissingUserTablePreferenceViewStateColumnError(error)) {
+      throw error
+    }
+
+    logLegacyTablePreferenceFallback("read", tableKey, error)
+    const legacyPreference = await findLegacyTablePreference(userId, tableKey, db)
+    return normalizeLegacyTablePreferenceRecord(legacyPreference)
+  }
 }
 
 export async function saveUserTablePreference(
@@ -210,23 +300,7 @@ export async function saveUserTablePreference(
   input: TablePreferenceInput,
   db: DataAccessContext = prisma,
 ): Promise<TablePreferencePayload> {
-  const existing = await db.userTablePreference.findUnique({
-    where: {
-      userId_tableKey: {
-        userId,
-        tableKey,
-      },
-    },
-    select: {
-      hiddenColumnKeys: true,
-      columnOrderKeys: true,
-      isAscendingSort: true,
-      isGroupingEnabled: true,
-      groupByKeys: true,
-      filtersJson: true,
-    },
-  })
-  const currentPreference = normalizeTablePreferenceRecord(existing)
+  const currentPreference = await getResolvedUserTablePreference(userId, tableKey, db)
   const nextPreference: TablePreferencePayload = {
     hiddenColumnKeys: input.hiddenColumnKeys ?? currentPreference.hiddenColumnKeys,
     columnOrderKeys: input.columnOrderKeys ?? currentPreference.columnOrderKeys,
@@ -236,48 +310,72 @@ export async function saveUserTablePreference(
     filters: input.filters ?? currentPreference.filters,
   }
 
-  const preference = await db.userTablePreference.upsert({
-    where: {
-      userId_tableKey: {
+  try {
+    const preference = await db.userTablePreference.upsert({
+      where: {
+        userId_tableKey: {
+          userId,
+          tableKey,
+        },
+      },
+      update: {
+        hiddenColumnKeys: nextPreference.hiddenColumnKeys,
+        columnOrderKeys: nextPreference.columnOrderKeys,
+        isAscendingSort: nextPreference.isAscendingSort,
+        isGroupingEnabled: nextPreference.isGroupingEnabled,
+        groupByKeys: nextPreference.groupByKeys,
+        filtersJson: nextPreference.filters,
+      },
+      create: {
         userId,
         tableKey,
+        hiddenColumnKeys: nextPreference.hiddenColumnKeys,
+        columnOrderKeys: nextPreference.columnOrderKeys,
+        isAscendingSort: nextPreference.isAscendingSort,
+        isGroupingEnabled: nextPreference.isGroupingEnabled,
+        groupByKeys: nextPreference.groupByKeys,
+        filtersJson: nextPreference.filters,
       },
-    },
-    update: {
-      hiddenColumnKeys: nextPreference.hiddenColumnKeys,
-      columnOrderKeys: nextPreference.columnOrderKeys,
-      isAscendingSort: nextPreference.isAscendingSort,
-      isGroupingEnabled: nextPreference.isGroupingEnabled,
-      groupByKeys: nextPreference.groupByKeys,
-      filtersJson: nextPreference.filters,
-    },
-    create: {
-      userId,
-      tableKey,
-      hiddenColumnKeys: nextPreference.hiddenColumnKeys,
-      columnOrderKeys: nextPreference.columnOrderKeys,
-      isAscendingSort: nextPreference.isAscendingSort,
-      isGroupingEnabled: nextPreference.isGroupingEnabled,
-      groupByKeys: nextPreference.groupByKeys,
-      filtersJson: nextPreference.filters,
-    },
-    select: {
-      hiddenColumnKeys: true,
-      columnOrderKeys: true,
-      isAscendingSort: true,
-      isGroupingEnabled: true,
-      groupByKeys: true,
-      filtersJson: true,
-    },
-  })
+      select: {
+        hiddenColumnKeys: true,
+        columnOrderKeys: true,
+        isAscendingSort: true,
+        isGroupingEnabled: true,
+        groupByKeys: true,
+        filtersJson: true,
+      },
+    })
 
-  const normalized = normalizeTablePreferenceRecord(preference)
-  return {
-    hiddenColumnKeys: normalized.hiddenColumnKeys,
-    columnOrderKeys: normalized.columnOrderKeys,
-    isAscendingSort: normalized.isAscendingSort,
-    isGroupingEnabled: normalized.isGroupingEnabled,
-    groupByKeys: normalized.groupByKeys,
-    filters: normalized.filters,
+    return toTablePreferencePayload(normalizeTablePreferenceRecord(preference))
+  } catch (error) {
+    if (!isMissingUserTablePreferenceViewStateColumnError(error)) {
+      throw error
+    }
+
+    logLegacyTablePreferenceFallback("write", tableKey, error)
+    const legacyPreference = await db.userTablePreference.upsert({
+      where: {
+        userId_tableKey: {
+          userId,
+          tableKey,
+        },
+      },
+      update: {
+        hiddenColumnKeys: nextPreference.hiddenColumnKeys,
+        columnOrderKeys: nextPreference.columnOrderKeys,
+      },
+      create: {
+        userId,
+        tableKey,
+        hiddenColumnKeys: nextPreference.hiddenColumnKeys,
+        columnOrderKeys: nextPreference.columnOrderKeys,
+      },
+      select: {
+        hiddenColumnKeys: true,
+        columnOrderKeys: true,
+      },
+    })
+
+    return toTablePreferencePayload(normalizeLegacyTablePreferenceRecord(legacyPreference))
   }
 }
