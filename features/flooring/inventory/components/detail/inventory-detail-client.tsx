@@ -4,6 +4,7 @@ import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notice
 import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
+import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { CutLogsEditor } from "@/features/flooring/shared/ui/record-items/cut-logs-editor"
 import { useInventoryRecordController } from "@/features/flooring/inventory/controllers/use-inventory-record-controller"
 import type { InventoryRow, LocationOption } from "@/features/flooring/inventory/domain/types"
@@ -53,7 +54,7 @@ export function InventoryDetailClient({
       title={`Inventory ${record.itemNumber}`}
       backHref={backHref}
       onBack={closeDetail}
-      sizeClass="max-w-6xl"
+      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
       headerActions={<InventoryHeaderActions row={record} />}
     >
       <div className="space-y-6">
