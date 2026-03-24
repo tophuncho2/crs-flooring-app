@@ -1,11 +1,18 @@
 export const ALL_INVENTORY_STATUS_FILTER = "all" as const
 export const ALL_INVENTORY_WAREHOUSE_FILTER = "all" as const
+export const ALL_INVENTORY_CATEGORY_FILTER = "all" as const
+export const ALL_INVENTORY_PRODUCT_FILTER = "all" as const
 
 export type InventoryStatusFilter = "all" | "pending" | "final"
 
 export type InventoryFilterState = {
   status: InventoryStatusFilter
   warehouseId: string
+}
+
+export type InventoryPageFilterState = InventoryFilterState & {
+  categoryId: string
+  productId: string
 }
 
 type InventoryFilterableRow = {
@@ -28,6 +35,16 @@ export function parseInventoryStatusFilter(value: unknown): InventoryStatusFilte
 export function parseInventoryWarehouseFilter(value: unknown) {
   const normalized = String(value ?? "").trim()
   return normalized && normalized !== ALL_INVENTORY_WAREHOUSE_FILTER ? normalized : ALL_INVENTORY_WAREHOUSE_FILTER
+}
+
+export function parseInventoryCategoryFilter(value: unknown) {
+  const normalized = String(value ?? "").trim()
+  return normalized && normalized !== ALL_INVENTORY_CATEGORY_FILTER ? normalized : ALL_INVENTORY_CATEGORY_FILTER
+}
+
+export function parseInventoryProductFilter(value: unknown) {
+  const normalized = String(value ?? "").trim()
+  return normalized && normalized !== ALL_INVENTORY_PRODUCT_FILTER ? normalized : ALL_INVENTORY_PRODUCT_FILTER
 }
 
 export function getEffectiveInventoryWarehouseId(row: InventoryFilterableRow) {

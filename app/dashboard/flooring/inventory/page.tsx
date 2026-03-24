@@ -1,10 +1,12 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { getUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import { getInventoryPageData } from "@/features/flooring/inventory/queries"
+import { getInventoryPageData, listInventoryPageFilterOptions } from "@/features/flooring/inventory/queries"
 import InventoryClient from "@/features/flooring/inventory/components/list/inventory-client"
-import { parseInventoryStatusFilter, parseInventoryWarehouseFilter } from "@/features/flooring/inventory/domain/filters"
+import { parseServerTableFilterState } from "@/features/flooring/shared/controllers/table/table-filter-state"
+import { createInventoryPageFilterDefinitions } from "@/features/flooring/inventory/table-filters"
+import type { InventoryServerFilterState } from "@/features/flooring/inventory/domain/types"
 
 export default async function FlooringInventoryPage({
   searchParams,
@@ -13,21 +15,23 @@ export default async function FlooringInventoryPage({
 }) {
   const user = await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "inventory-main")
+  const filterOptions = await listInventoryPageFilterOptions()
+  const filterDefinitions = createInventoryPageFilterDefinitions(filterOptions)
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    defaultGrouped: false,
-    defaultGroupKeys: [],
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isAscendingSort : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isGroupingEnabled : false,
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.groupByKeys : [],
     allowedGroupKeys: ["status", "transport", "product", "warehouse", "section", "location"],
   })
-  const filterState = {
-    status: parseInventoryStatusFilter(resolvedSearchParams?.status),
-    warehouseId: parseInventoryWarehouseFilter(resolvedSearchParams?.warehouse),
-  }
-  const [result, initialTablePreferences] = await Promise.all([
-    getInventoryPageData(page, tableState, filterState),
-    getUserTablePreference(user.id, "inventory-main"),
-  ])
+  const filterState: InventoryServerFilterState = parseServerTableFilterState({
+    searchParams: resolvedSearchParams,
+    definitions: filterDefinitions,
+    preferenceFilters: initialTablePreferences.hasSavedPreference ? initialTablePreferences.filters : {},
+  })
+  const result = await getInventoryPageData(page, tableState, filterState)
 
   if (!result.ok) {
     return (
@@ -42,11 +46,13 @@ export default async function FlooringInventoryPage({
 
   return (
     <InventoryClient
-      key={`inventory-${result.data.pagination.page}-${result.data.tableState.searchQuery}-${result.data.tableState.isAscendingSort}-${result.data.tableState.isGroupingEnabled}-${result.data.tableState.groupByKeys.join(",")}-${result.data.filterState.status}-${result.data.filterState.warehouseId}`}
+      key={`inventory-${result.data.pagination.page}-${result.data.tableState.searchQuery}-${result.data.tableState.isAscendingSort}-${result.data.tableState.isGroupingEnabled}-${result.data.tableState.groupByKeys.join(",")}-${result.data.filterState.status}-${result.data.filterState.warehouseId}-${result.data.filterState.categoryId}-${result.data.filterState.productId}`}
       initialInventory={result.data.initialInventory}
       tableState={result.data.tableState}
       filterState={result.data.filterState}
-      warehouseOptions={result.data.warehouseOptions}
+      warehouseOptions={filterOptions.warehouseOptions}
+      categoryOptions={filterOptions.categoryOptions}
+      productOptions={filterOptions.productOptions}
       initialTablePreferences={initialTablePreferences}
       pagination={{
         ...result.data.pagination,

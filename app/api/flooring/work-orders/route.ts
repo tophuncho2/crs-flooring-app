@@ -15,6 +15,9 @@ export async function GET(request: Request) {
         isAscendingSort: true,
         isGroupingEnabled: false,
         groupByKeys: [],
+      }, {
+        status: "all",
+        warehouseId: "all",
       }),
     })
   } catch (error) {

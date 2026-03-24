@@ -6,8 +6,10 @@ import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
+import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
+import { usePageTableFilters } from "@/features/flooring/shared/controllers/table/use-page-table-filters"
 import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -15,8 +17,11 @@ import {
   formatImportStatus,
   formatTransportType,
 } from "@/features/flooring/imports/contracts"
+import type { ImportPageFilterState } from "@/features/flooring/imports/domain/filters"
+import { createImportsPageFilterDefinitions } from "@/features/flooring/imports/table-filters"
 import {
   type ImportRow,
+  type WarehouseOption,
   useImportsListController,
 } from "@/features/flooring/imports/controllers/use-imports-list-controller"
 import { ImportsCreateModal } from "./imports-create-modal"
@@ -42,11 +47,15 @@ export default function ImportsClient({
   initialImports,
   initialTablePreferences,
   tableState,
+  filterState,
+  filterWarehouseOptions,
   pagination,
 }: {
   initialImports: ImportRow[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: ServerTableState
+  filterState: ImportPageFilterState
+  filterWarehouseOptions: WarehouseOption[]
   pagination?: ServerPaginationState
 }) {
   const {
@@ -103,6 +112,7 @@ export default function ImportsClient({
     toggleColumnVisibility: toggleImportColumnVisibility,
     moveColumn: moveImportColumn,
     setColumnOrder: setImportColumnOrder,
+    persistViewPreferences,
   } = useConfiguredTableState({
     rows: imports,
     tableKey: "imports-main",
@@ -126,6 +136,18 @@ export default function ImportsClient({
     disableClientPagination: true,
     initialPreferences: initialTablePreferences,
   })
+  const importFilterDefinitions = createImportsPageFilterDefinitions(filterWarehouseOptions)
+  const importFilters = usePageTableFilters({
+    definitions: importFilterDefinitions,
+    initialFilters: filterState,
+    onPersistState: persistViewPreferences,
+    getCurrentViewState: () => ({
+      isAscendingSort,
+      isGroupingEnabled,
+      groupByKeys,
+      allowedGroupKeys: groupFields.map((field) => field.key),
+    }),
+  })
   const importGroupOptions = groupFields.map((field) => ({ key: field.key, label: field.label }))
   const serverTableControls = useServerTableQueryControls({
     searchQuery,
@@ -137,6 +159,9 @@ export default function ImportsClient({
     groupByKeys,
     setGroupByKeys,
     groupOptions: importGroupOptions,
+    filters: importFilters.filters,
+    allowedFilterValues: importFilters.allowedFilterValues,
+    onPersistState: persistViewPreferences,
   })
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
@@ -154,6 +179,7 @@ export default function ImportsClient({
                 ascendingSortLabel="1-9"
                 descendingSortLabel="9-1"
               >
+                <TableFilterControls groups={importFilters.filterGroups} />
                 <TableColumnSettings
                   columns={orderedImportColumns}
                   hiddenColumnKeys={hiddenImportColumnKeys}

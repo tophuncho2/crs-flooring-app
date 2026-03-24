@@ -7,6 +7,11 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
+export const PAGE_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--panel-hover)] text-left"
+export const MODAL_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-header-background)] text-left"
+export const PAGE_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[var(--panel-border)] bg-[var(--panel-hover)]"
+export const MODAL_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[color:var(--subpanel-border)] bg-[var(--subpanel-header-background)]"
+
 export function TableShell({
   children,
   minWidthClass,
@@ -45,11 +50,11 @@ export function ModalTableShell({
 }
 
 export function TableHead({ children, className }: { children: ReactNode; className?: string }) {
-  return <thead className={joinClasses("bg-[var(--panel-hover)] text-left", className)}>{children}</thead>
+  return <thead className={joinClasses(PAGE_TABLE_HEAD_TONE_CLASS_NAME, className)}>{children}</thead>
 }
 
 export function ModalTableHead({ children, className }: { children: ReactNode; className?: string }) {
-  return <thead className={joinClasses("bg-[var(--subpanel-header-background)] text-left", className)}>{children}</thead>
+  return <thead className={joinClasses(MODAL_TABLE_HEAD_TONE_CLASS_NAME, className)}>{children}</thead>
 }
 
 export function TableHeaderCell({ children, className }: { children: ReactNode; className?: string }) {
@@ -60,16 +65,27 @@ export function TableGroupRow({
   label,
   colSpan,
   depth = 0,
+  variant = "page",
   className,
 }: {
   label: string
   colSpan: number
   depth?: number
+  variant?: "page" | "modal"
   className?: string
 }) {
   return (
-    <tr className={joinClasses("border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/30", className)}>
-      <td colSpan={colSpan} className="px-3 py-2 text-sm font-semibold text-blue-500" style={{ paddingLeft: `${0.75 + depth * 1.25}rem` }}>
+    <tr
+      className={joinClasses(
+        variant === "modal" ? MODAL_TABLE_GROUP_ROW_TONE_CLASS_NAME : PAGE_TABLE_GROUP_ROW_TONE_CLASS_NAME,
+        className,
+      )}
+    >
+      <td
+        colSpan={colSpan}
+        className="px-3 py-2 text-sm font-semibold text-[var(--foreground)]/75"
+        style={{ paddingLeft: `${0.75 + depth * 1.25}rem` }}
+      >
         {label}
       </td>
     </tr>

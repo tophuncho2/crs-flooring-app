@@ -1,9 +1,12 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templates-work-orders"
-import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import { getWorkOrdersPageData } from "@/features/flooring/work-orders/queries"
+import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
+import { getWorkOrdersPageData, listWorkOrdersPageFilterOptions } from "@/features/flooring/work-orders/queries"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
-import { getUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { parseServerTableFilterState } from "@/features/flooring/shared/controllers/table/table-filter-state"
+import { createWorkOrdersPageFilterDefinitions } from "@/features/flooring/work-orders/table-filters"
+import type { WorkOrderServerFilterState } from "@/features/flooring/work-orders/types"
 
 export default async function WorkOrdersPage({
   searchParams,
@@ -12,16 +15,23 @@ export default async function WorkOrdersPage({
 }) {
   const user = await requireWorkOrdersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "work-orders-main")
+  const warehouseFilterOptions = await listWorkOrdersPageFilterOptions()
+  const filterDefinitions = createWorkOrdersPageFilterDefinitions(warehouseFilterOptions)
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isAscendingSort : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isGroupingEnabled : false,
     allowedGroupKeys: ["status", "warehouse", "property", "date", "unitType", "vacancy"],
-    defaultGroupKeys: ["warehouse"],
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.groupByKeys : ["warehouse"],
   })
-  const [result, initialTablePreferences] = await Promise.all([
-    getWorkOrdersPageData(page, tableState),
-    getUserTablePreference(user.id, "work-orders-main"),
-  ])
+  const filterState: WorkOrderServerFilterState = parseServerTableFilterState({
+    searchParams: resolvedSearchParams,
+    definitions: filterDefinitions,
+    preferenceFilters: initialTablePreferences.hasSavedPreference ? initialTablePreferences.filters : {},
+  })
+  const result = await getWorkOrdersPageData(page, tableState, filterState, warehouseFilterOptions)
 
   if (!result.ok) {
     return (
@@ -38,17 +48,18 @@ export default async function WorkOrdersPage({
 
   return (
     <WorkOrdersClient
-      key={`wo-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
+      key={`wo-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}-${pageData.filterState.status}-${pageData.filterState.warehouseId}`}
       initialWorkOrders={pageData.initialWorkOrders}
       propertyOptions={pageData.propertyOptions}
       warehouseOptions={pageData.warehouseOptions}
       templateOptions={pageData.templateOptions}
       initialTablePreferences={initialTablePreferences}
       tableState={pageData.tableState}
+      filterState={pageData.filterState}
       pagination={{
         ...pageData.pagination,
-        previousPageHref: buildPageHref("/dashboard/flooring/work-orders", pageData.pagination.page - 1),
-        nextPageHref: buildPageHref("/dashboard/flooring/work-orders", pageData.pagination.page + 1),
+        previousPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/work-orders", pageData.pagination.page - 1, resolvedSearchParams),
+        nextPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/work-orders", pageData.pagination.page + 1, resolvedSearchParams),
       }}
     />
   )

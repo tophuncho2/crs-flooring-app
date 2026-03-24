@@ -61,12 +61,25 @@ export function useServerTableQueryControls({
   groupByKeys,
   setGroupByKeys,
   groupOptions,
+  filters = {},
+  allowedFilterValues = {},
+  onPersistState,
 }: ServerTableQueryState & {
   setSearchQuery: (value: string) => void
   setIsAscendingSort: (value: boolean | ((current: boolean) => boolean)) => void
   setIsGroupingEnabled: (value: boolean | ((current: boolean) => boolean)) => void
   setGroupByKeys: (value: string[]) => void
   groupOptions: GroupOption[]
+  filters?: Record<string, string>
+  allowedFilterValues?: Record<string, string[]>
+  onPersistState?: (nextState: {
+    isAscendingSort: boolean
+    isGroupingEnabled: boolean
+    groupByKeys: string[]
+    filters: Record<string, string>
+    allowedGroupKeys: string[]
+    allowedFilterValues: Record<string, string[]>
+  }) => void
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -140,6 +153,14 @@ export function useServerTableQueryControls({
         isGroupingEnabled,
         groupByKeys,
       })
+      onPersistState?.({
+        isAscendingSort: nextIsAscendingSort,
+        isGroupingEnabled,
+        groupByKeys,
+        filters,
+        allowedGroupKeys: stableGroupOptions,
+        allowedFilterValues,
+      })
     },
     onToggleGroupByKey: (columnKey: string) => {
       if (!stableGroupOptions.includes(columnKey)) return
@@ -163,6 +184,14 @@ export function useServerTableQueryControls({
         isAscendingSort,
         isGroupingEnabled: nextIsGroupingEnabled,
         groupByKeys: nextGroupByKeys,
+      })
+      onPersistState?.({
+        isAscendingSort,
+        isGroupingEnabled: nextIsGroupingEnabled,
+        groupByKeys: nextGroupByKeys,
+        filters,
+        allowedGroupKeys: stableGroupOptions,
+        allowedFilterValues,
       })
     },
   }

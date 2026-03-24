@@ -1,9 +1,12 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { buildPageHref, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
+import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
-import { getImportsPageData } from "@/features/flooring/imports/queries"
-import { getUserTablePreference } from "@/server/account/table-preferences"
+import { getImportsPageData, listImportsPageFilterOptions } from "@/features/flooring/imports/queries"
+import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { parseServerTableFilterState } from "@/features/flooring/shared/controllers/table/table-filter-state"
+import type { ImportPageFilterState } from "@/features/flooring/imports/domain/filters"
+import { createImportsPageFilterDefinitions } from "@/features/flooring/imports/table-filters"
 
 export default async function FlooringImportsPage({
   searchParams,
@@ -12,17 +15,23 @@ export default async function FlooringImportsPage({
 }) {
   const user = await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "imports-main")
+  const warehouseOptions = await listImportsPageFilterOptions()
+  const filterDefinitions = createImportsPageFilterDefinitions(warehouseOptions)
   const page = parsePageParam(resolvedSearchParams?.page)
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
-    defaultGrouped: true,
-    defaultGroupKeys: ["warehouse"],
+    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isAscendingSort : true,
+    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.isGroupingEnabled : true,
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.groupByKeys : ["warehouse"],
     allowedGroupKeys: ["transport", "status", "warehouse"],
   })
-  const [result, initialTablePreferences] = await Promise.all([
-    getImportsPageData(page, tableState),
-    getUserTablePreference(user.id, "imports-main"),
-  ])
+  const filterState: ImportPageFilterState = parseServerTableFilterState({
+    searchParams: resolvedSearchParams,
+    definitions: filterDefinitions,
+    preferenceFilters: initialTablePreferences.hasSavedPreference ? initialTablePreferences.filters : {},
+  })
+  const result = await getImportsPageData(page, tableState, filterState)
 
   if (!result.ok) {
     return (
@@ -39,14 +48,16 @@ export default async function FlooringImportsPage({
 
   return (
     <ImportsClient
-      key={`imports-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
+      key={`imports-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}-${pageData.filterState.status}-${pageData.filterState.warehouseId}`}
       initialImports={pageData.initialImports}
       initialTablePreferences={initialTablePreferences}
       tableState={pageData.tableState}
+      filterState={pageData.filterState}
+      filterWarehouseOptions={warehouseOptions}
       pagination={{
         ...pageData.pagination,
-        previousPageHref: buildPageHref("/dashboard/flooring/imports", pageData.pagination.page - 1),
-        nextPageHref: buildPageHref("/dashboard/flooring/imports", pageData.pagination.page + 1),
+        previousPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/imports", pageData.pagination.page - 1, resolvedSearchParams),
+        nextPageHref: buildPageHrefWithSearchParams("/dashboard/flooring/imports", pageData.pagination.page + 1, resolvedSearchParams),
       }}
     />
   )

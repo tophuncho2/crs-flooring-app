@@ -85,11 +85,13 @@ export function buildPageHrefWithSearchParams(
 
 export function parseServerTableQueryState({
   searchParams,
+  defaultAscending = true,
   defaultGrouped = false,
   defaultGroupKeys = [],
   allowedGroupKeys = [],
 }: {
   searchParams?: Record<string, string | string[] | undefined>
+  defaultAscending?: boolean
   defaultGrouped?: boolean
   defaultGroupKeys?: string[]
   allowedGroupKeys?: string[]
@@ -106,7 +108,7 @@ export function parseServerTableQueryState({
 
   return {
     searchQuery,
-    isAscendingSort: sort !== "desc",
+    isAscendingSort: sort ? sort !== "desc" : defaultAscending,
     isGroupingEnabled: grouped ? grouped !== "0" : defaultGrouped,
     groupByKeys,
   }

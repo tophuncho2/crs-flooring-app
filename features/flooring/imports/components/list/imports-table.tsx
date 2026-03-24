@@ -7,13 +7,13 @@ import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-
 import {
   ClickableTableRow,
   TableEmptyRow,
-  TableGroupRow,
   TableHead,
   TableHeaderCell,
   TablePaginationControls,
   TableShell,
 } from "@/features/flooring/shared/ui/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import type { ImportRow } from "@/features/flooring/imports/controllers/use-imports-list-controller"
 import {
   formatImportStatus,
@@ -106,13 +106,6 @@ export function ImportsTable({
     )
   }
 
-  function renderGroupedRows(groups: GroupedRowTree<ImportRow>[]): ReactNode[] {
-    return groups.flatMap((group) => [
-      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleColumnKeys.length} />,
-      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
-    ])
-  }
-
   return (
     <>
       <TableShell minWidthClass="min-w-[980px]">
@@ -124,7 +117,13 @@ export function ImportsTable({
           </tr>
         </TableHead>
         <tbody>
-          {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
+          {isGroupingEnabled
+            ? renderGroupedTableRows({
+                groups: groupedRows,
+                colSpan: visibleColumnKeys.length,
+                renderRow,
+              })
+            : rows.map((row) => renderRow(row))}
           {rows.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleColumnKeys.length} /> : null}
         </tbody>
       </TableShell>

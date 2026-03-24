@@ -96,6 +96,8 @@ describe("ProductDetailClient", () => {
     expect(screen.getByRole("heading", { name: "Inventory Rows" })).toBeTruthy()
     expect(screen.getByText("$15.00")).toBeTruthy()
     expect(within(screen.getByRole("table")).getByText("Main Warehouse")).toBeTruthy()
+    expect(within(screen.getByRole("table")).getByText("Cost")).toBeTruthy()
+    expect(within(screen.getByRole("table")).getByText("Freight")).toBeTruthy()
     expect(screen.getByAltText("Product photo 1")).toBeTruthy()
 
     fireEvent.click(screen.getByText("A100"))

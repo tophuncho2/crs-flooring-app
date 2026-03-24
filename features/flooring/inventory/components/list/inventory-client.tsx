@@ -7,23 +7,22 @@ import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls
 import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
+import { usePageTableFilters } from "@/features/flooring/shared/controllers/table/use-page-table-filters"
 import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useInventoryListController } from "@/features/flooring/inventory/controllers/use-inventory-list-controller"
-import { useInventoryPageFilters } from "@/features/flooring/inventory/controllers/use-inventory-page-filters"
-import {
-  ALL_INVENTORY_WAREHOUSE_FILTER,
-  parseInventoryStatusFilter,
-} from "@/features/flooring/inventory/domain/filters"
 import type {
+  InventoryCategoryOption,
   InventoryServerFilterState,
+  InventoryProductOption,
   InventoryRow,
   InventoryWarehouseOption,
   ServerPaginationState,
   ServerTableState,
 } from "@/features/flooring/inventory/domain/types"
 import { InventoryTable } from "./inventory-table"
+import { createInventoryPageFilterDefinitions } from "@/features/flooring/inventory/table-filters"
 import {
   formatImportStatus,
   formatTransportType,
@@ -34,6 +33,8 @@ export default function InventoryClient({
   tableState,
   filterState,
   warehouseOptions,
+  categoryOptions,
+  productOptions,
   pagination,
   initialTablePreferences,
 }: {
@@ -41,6 +42,8 @@ export default function InventoryClient({
   tableState: ServerTableState
   filterState: InventoryServerFilterState
   warehouseOptions: InventoryWarehouseOption[]
+  categoryOptions: InventoryCategoryOption[]
+  productOptions: InventoryProductOption[]
   pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
 }) {
@@ -80,6 +83,7 @@ export default function InventoryClient({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
+    persistViewPreferences,
   } = useConfiguredTableState({
     rows,
     tableKey: "inventory-main",
@@ -113,6 +117,22 @@ export default function InventoryClient({
     disableClientSorting: true,
     disableClientPagination: true,
   })
+  const filterDefinitions = createInventoryPageFilterDefinitions({
+    warehouseOptions,
+    categoryOptions,
+    productOptions,
+  })
+  const inventoryFilters = usePageTableFilters({
+    definitions: filterDefinitions,
+    initialFilters: filterState,
+    onPersistState: persistViewPreferences,
+    getCurrentViewState: () => ({
+      isAscendingSort,
+      isGroupingEnabled,
+      groupByKeys,
+      allowedGroupKeys: groupFields.map((field) => field.key),
+    }),
+  })
 
   const serverTableControls = useServerTableQueryControls({
     searchQuery,
@@ -124,32 +144,10 @@ export default function InventoryClient({
     groupByKeys,
     setGroupByKeys,
     groupOptions: groupFields.map((field) => ({ key: field.key, label: field.label })),
+    filters: inventoryFilters.filters,
+    allowedFilterValues: inventoryFilters.allowedFilterValues,
+    onPersistState: persistViewPreferences,
   })
-  const inventoryFilters = useInventoryPageFilters(filterState)
-  const filterGroups = [
-    {
-      key: "status",
-      type: "tabs" as const,
-      value: inventoryFilters.status,
-      options: [
-        { value: "all", label: "All" },
-        { value: "pending", label: "Pending" },
-        { value: "final", label: "Final" },
-      ],
-      onChange: (value: string) => inventoryFilters.onStatusChange(parseInventoryStatusFilter(value)),
-    },
-    {
-      key: "warehouse",
-      type: "select" as const,
-      label: "Warehouse",
-      value: inventoryFilters.warehouseId,
-      options: [
-        { value: ALL_INVENTORY_WAREHOUSE_FILTER, label: "All Warehouses" },
-        ...warehouseOptions.map((warehouse) => ({ value: warehouse.id, label: warehouse.name })),
-      ],
-      onChange: inventoryFilters.onWarehouseChange,
-    },
-  ]
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
@@ -168,7 +166,7 @@ export default function InventoryClient({
                 descendingSortLabel="Z-A"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <TableFilterControls groups={filterGroups} />
+                  <TableFilterControls groups={inventoryFilters.filterGroups} />
                   <TableColumnSettings
                     columns={allColumns}
                     hiddenColumnKeys={hiddenColumnKeys}

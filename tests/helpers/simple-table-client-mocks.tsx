@@ -74,6 +74,7 @@ export function useConfiguredTableStateStub({ rows, fields }: TableStateInput) {
     toggleColumnVisibility: vi.fn(),
     moveColumn: vi.fn(),
     setColumnOrder: vi.fn(),
+    persistViewPreferences: vi.fn(),
   }
 }
 

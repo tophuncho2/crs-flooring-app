@@ -1,14 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
-  ALL_INVENTORY_STATUS_FILTER,
-  ALL_INVENTORY_WAREHOUSE_FILTER,
   filterInventoryRows,
   getEffectiveInventoryWarehouseId,
-  parseInventoryStatusFilter,
 } from "@/features/flooring/inventory/domain/filters"
+import { createInventoryChildFilterDefinitions } from "@/features/flooring/inventory/table-filters"
 import { calculateProductInventorySummary } from "@/features/flooring/products/domain/inventory-summary"
+import { useLocalTableFilters } from "@/features/flooring/shared/controllers/table/use-local-table-filters"
 import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/ui/record-items/record-child-table-section"
 import { TableEmptyRow, TableGroupRow, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
@@ -38,13 +37,6 @@ export function ProductInventoryRowsSection({
 }: {
   inventoryRows: InventoryRow[]
 }) {
-  const [statusFilter, setStatusFilter] = useState<typeof ALL_INVENTORY_STATUS_FILTER | "pending" | "final">(ALL_INVENTORY_STATUS_FILTER)
-  const [warehouseFilter, setWarehouseFilter] = useState<string>(ALL_INVENTORY_WAREHOUSE_FILTER)
-  const filteredRows = useMemo(
-    () => filterInventoryRows(inventoryRows, { status: statusFilter, warehouseId: warehouseFilter }),
-    [inventoryRows, statusFilter, warehouseFilter],
-  )
-  const summary = useMemo(() => calculateProductInventorySummary(filteredRows), [filteredRows])
   const warehouseOptions = useMemo(() => (
     Array.from(
       inventoryRows.reduce((options, row) => {
@@ -57,8 +49,23 @@ export function ProductInventoryRowsSection({
 
         return options
       }, new Map<string, string>()),
-    ).map(([id, name]) => ({ value: id, label: name }))
+    ).map(([id, name]) => ({ id, name }))
   ), [inventoryRows])
+  const childFilterDefinitions = useMemo(
+    () => createInventoryChildFilterDefinitions(warehouseOptions),
+    [warehouseOptions],
+  )
+  const childFilters = useLocalTableFilters({
+    definitions: childFilterDefinitions,
+  })
+  const filteredRows = useMemo(
+    () => filterInventoryRows(inventoryRows, {
+      status: childFilters.filters.status === "pending" ? "pending" : childFilters.filters.status === "final" ? "final" : "all",
+      warehouseId: childFilters.filters.warehouseId ?? "all",
+    }),
+    [childFilters.filters.status, childFilters.filters.warehouseId, inventoryRows],
+  )
+  const summary = useMemo(() => calculateProductInventorySummary(filteredRows), [filteredRows])
   const rowsByWarehouse = useMemo(() => {
     const grouped = new Map<string, InventoryRow[]>()
 
@@ -71,30 +78,6 @@ export function ProductInventoryRowsSection({
 
     return Array.from(grouped.entries())
   }, [filteredRows])
-  const filterGroups = [
-    {
-      key: "status",
-      type: "tabs" as const,
-      value: statusFilter,
-      options: [
-        { value: ALL_INVENTORY_STATUS_FILTER, label: "All" },
-        { value: "pending", label: "Pending" },
-        { value: "final", label: "Final" },
-      ],
-      onChange: (value: string) => setStatusFilter(parseInventoryStatusFilter(value)),
-    },
-    {
-      key: "warehouse",
-      type: "select" as const,
-      label: "Warehouse",
-      value: warehouseFilter,
-      options: [
-        { value: ALL_INVENTORY_WAREHOUSE_FILTER, label: "All Warehouses" },
-        ...warehouseOptions,
-      ],
-      onChange: setWarehouseFilter,
-    },
-  ]
 
   return (
     <RecordChildTableSection
@@ -103,10 +86,10 @@ export function ProductInventoryRowsSection({
       actions={(
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-[var(--foreground)]/60">{summary.rowCount} rows</span>
-          <TableFilterControls groups={filterGroups} />
+          <TableFilterControls groups={childFilters.filterGroups} />
         </div>
       )}
-      minWidthClass="min-w-[980px]"
+      minWidthClass="min-w-[1180px]"
       defaultOpen
     >
       <ModalTableHead>
@@ -115,6 +98,8 @@ export function ProductInventoryRowsSection({
           <TableHeaderCell>Dye Lot</TableHeaderCell>
           <TableHeaderCell>Section</TableHeaderCell>
           <TableHeaderCell>Location</TableHeaderCell>
+          <TableHeaderCell>Cost</TableHeaderCell>
+          <TableHeaderCell>Freight</TableHeaderCell>
           <TableHeaderCell>Starting Stock</TableHeaderCell>
           <TableHeaderCell>Cuts Total</TableHeaderCell>
           <TableHeaderCell>Running Balance</TableHeaderCell>
@@ -123,17 +108,19 @@ export function ProductInventoryRowsSection({
       </ModalTableHead>
       <tbody>
         {rowsByWarehouse.length === 0 ? (
-          <TableEmptyRow message="No inventory rows found for this product." colSpan={8} />
+          <TableEmptyRow message="No inventory rows found for this product." colSpan={10} />
         ) : (
           rowsByWarehouse.map(([warehouseName, warehouseRows]) => (
             warehouseRows.map((row, index) => (
               index === 0 ? [
-                <TableGroupRow key={`${warehouseName}-group`} label={warehouseName} colSpan={8} />,
+                <TableGroupRow key={`${warehouseName}-group`} label={warehouseName} colSpan={10} variant="modal" />,
                 <tr key={row.id} className="border-t border-[var(--panel-border)]">
                   <td className="px-3 py-2">{row.itemNumber}</td>
                   <td className="px-3 py-2">{row.dyeLot || "-"}</td>
                   <td className="px-3 py-2">{row.sectionName || "-"}</td>
                   <td className="px-3 py-2">{row.locationCode || "-"}</td>
+                  <td className="px-3 py-2">{row.cost || "-"}</td>
+                  <td className="px-3 py-2">{row.freight || "-"}</td>
                   <td className="px-3 py-2">{row.stockCount} {row.stockUnit}</td>
                   <td className="px-3 py-2">{row.cutTotal}</td>
                   <td className="px-3 py-2 font-semibold">{row.runningBalance} {row.stockUnit}</td>
@@ -145,6 +132,8 @@ export function ProductInventoryRowsSection({
                   <td className="px-3 py-2">{row.dyeLot || "-"}</td>
                   <td className="px-3 py-2">{row.sectionName || "-"}</td>
                   <td className="px-3 py-2">{row.locationCode || "-"}</td>
+                  <td className="px-3 py-2">{row.cost || "-"}</td>
+                  <td className="px-3 py-2">{row.freight || "-"}</td>
                   <td className="px-3 py-2">{row.stockCount} {row.stockUnit}</td>
                   <td className="px-3 py-2">{row.cutTotal}</td>
                   <td className="px-3 py-2 font-semibold">{row.runningBalance} {row.stockUnit}</td>

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
 import { ImportDetailClient } from "@/features/flooring/imports/components/import-detail-client"
@@ -142,11 +142,13 @@ describe("ImportsClient", () => {
       <ImportsClient
         initialImports={[importRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        filterState={{ status: "all", warehouseId: "all" }}
+        filterWarehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
       />,
     )
 
     expect(screen.getByText("Purchase Order").className).toContain("bg-violet-200")
-    expect(screen.getByText("Pending").className).toContain("bg-sky-200")
+    expect(within(screen.getByRole("table")).getByText("Pending").className).toContain("bg-sky-200")
   })
 
   it("uses header-only import number and header metrics in the canonical detail page", () => {
@@ -185,6 +187,8 @@ describe("ImportsClient", () => {
       <ImportsClient
         initialImports={[]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
+        filterState={{ status: "all", warehouseId: "all" }}
+        filterWarehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
       />,
     )
 

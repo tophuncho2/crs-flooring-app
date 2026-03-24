@@ -34,6 +34,10 @@ model UserTablePreference {
   tableKey         String
   hiddenColumnKeys String[] @default([])
   columnOrderKeys  String[] @default([])
+  isAscendingSort  Boolean  @default(true)
+  isGroupingEnabled Boolean @default(false)
+  groupByKeys      String[] @default([])
+  filtersJson      Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)

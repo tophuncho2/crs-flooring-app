@@ -2,20 +2,32 @@
 
 import { type ReactNode } from "react"
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
-import { FormStatusNotices } from "../../shared/ui/feedback/notices"
-import { DeleteRowButton } from "../../shared/row-action-buttons"
-import { TableColumnSettings } from "../../shared/table-column-settings"
-import TableControlsBar from "../../shared/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
-import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
-import { useConfiguredTableState } from "../../shared/use-configured-table-state"
-import { useServerTableQueryControls } from "../../shared/use-server-table-query-controls"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
-import type { TablePreferencePayload } from "../../shared/controllers/table/table-preferences"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
+import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
+import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
+import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
+import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
+import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
+import { usePageTableFilters } from "@/features/flooring/shared/controllers/table/use-page-table-filters"
+import { useServerTableQueryControls } from "@/features/flooring/shared/controllers/table/use-server-table-query-controls"
+import { MAX_GROUP_FIELDS } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { getWorkOrderStatusFieldClass, getWorkOrderStatusLabel } from "../contracts"
-import type { PropertyOption, ServerPaginationState, ServerTableState, TemplateOption, WarehouseOption, WorkOrderRow } from "../types"
+import type {
+  PropertyOption,
+  ServerPaginationState,
+  ServerTableState,
+  TemplateOption,
+  WarehouseOption,
+  WorkOrderRow,
+  WorkOrderServerFilterState,
+} from "../types"
+import { createWorkOrdersPageFilterDefinitions } from "../table-filters"
 import { useWorkOrdersClientController } from "../use-work-orders-client-controller"
 import { WorkOrderCreateModal } from "./work-order-create-modal"
 import { WorkOrderSyncModal } from "./work-order-sync-modal"
@@ -31,6 +43,7 @@ export default function WorkOrdersClient({
   templateOptions,
   initialTablePreferences,
   tableState,
+  filterState,
   pagination,
 }: {
   initialWorkOrders: WorkOrderRow[]
@@ -39,6 +52,7 @@ export default function WorkOrdersClient({
   templateOptions: TemplateOption[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: ServerTableState
+  filterState: WorkOrderServerFilterState
   pagination?: ServerPaginationState
 }) {
   const controller = useWorkOrdersClientController({
@@ -73,6 +87,7 @@ export default function WorkOrdersClient({
     toggleColumnVisibility: toggleWorkOrderColumnVisibility,
     moveColumn: moveWorkOrderColumn,
     setColumnOrder: setWorkOrderColumnOrder,
+    persistViewPreferences,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "work-orders-main",
@@ -102,6 +117,18 @@ export default function WorkOrdersClient({
     disableClientPagination: true,
     initialPreferences: initialTablePreferences,
   })
+  const workOrderFilterDefinitions = createWorkOrdersPageFilterDefinitions(warehouseOptions)
+  const workOrderFilters = usePageTableFilters({
+    definitions: workOrderFilterDefinitions,
+    initialFilters: filterState,
+    onPersistState: persistViewPreferences,
+    getCurrentViewState: () => ({
+      isAscendingSort,
+      isGroupingEnabled,
+      groupByKeys,
+      allowedGroupKeys: groupFields.map((field) => field.key),
+    }),
+  })
   const serverTableControls = useServerTableQueryControls({
     searchQuery,
     setSearchQuery,
@@ -112,6 +139,9 @@ export default function WorkOrdersClient({
     groupByKeys,
     setGroupByKeys,
     groupOptions: groupFields.map((field) => ({ key: field.key, label: field.label })),
+    filters: workOrderFilters.filters,
+    allowedFilterValues: workOrderFilters.allowedFilterValues,
+    onPersistState: persistViewPreferences,
   })
 
   function renderWorkOrderRow(row: WorkOrderRow) {
@@ -157,18 +187,6 @@ export default function WorkOrdersClient({
     )
   }
 
-  function renderGroupedWorkOrders(groups: GroupedRowTree<WorkOrderRow>[]): ReactNode[] {
-    return groups.flatMap((group) => [
-      <TableGroupRow
-        key={`${group.depth}-${group.key}`}
-        label={`${group.fieldLabel}: ${group.label}`}
-        depth={group.depth}
-        colSpan={visibleWorkOrderColumns.length}
-      />,
-      ...(group.children.length > 0 ? renderGroupedWorkOrders(group.children) : group.rows.map((row) => renderWorkOrderRow(row))),
-    ])
-  }
-
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
       <div className="w-full space-y-6">
@@ -187,6 +205,7 @@ export default function WorkOrdersClient({
                 ascendingSortLabel="1-9"
                 descendingSortLabel="9-1"
               >
+                <TableFilterControls groups={workOrderFilters.filterGroups} />
                 <TableColumnSettings
                   columns={orderedWorkOrderColumns}
                   hiddenColumnKeys={hiddenWorkOrderColumnKeys}
@@ -226,7 +245,11 @@ export default function WorkOrdersClient({
             </TableHead>
             <tbody>
               {isGroupingEnabled
-                ? renderGroupedWorkOrders(groupedWorkOrders)
+                ? renderGroupedTableRows({
+                    groups: groupedWorkOrders,
+                    colSpan: visibleWorkOrderColumns.length,
+                    renderRow: renderWorkOrderRow,
+                  })
                 : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
 
               {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={visibleWorkOrderColumns.length} /> : null}

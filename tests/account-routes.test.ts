@@ -56,6 +56,10 @@ describe("account routes", () => {
     userTablePreferenceFindUniqueMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "cost"],
+      isAscendingSort: false,
+      isGroupingEnabled: true,
+      groupByKeys: ["warehouse"],
+      filtersJson: { status: "pending" },
     })
 
     const response = await GET_TABLE_PREFERENCE(new Request("http://localhost/api/account/table-preferences/products-main"), {
@@ -67,13 +71,29 @@ describe("account routes", () => {
     expect(payload).toEqual({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "cost"],
+      isAscendingSort: false,
+      isGroupingEnabled: true,
+      groupByKeys: ["warehouse"],
+      filters: { status: "pending" },
     })
   })
 
   it("PATCH /api/account/table-preferences/[tableKey] filters unknown columns before persisting", async () => {
+    userTablePreferenceFindUniqueMock.mockResolvedValue({
+      hiddenColumnKeys: [],
+      columnOrderKeys: [],
+      isAscendingSort: true,
+      isGroupingEnabled: false,
+      groupByKeys: [],
+      filtersJson: null,
+    })
     userTablePreferenceUpsertMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "qty", "cost"],
+      isAscendingSort: true,
+      isGroupingEnabled: false,
+      groupByKeys: [],
+      filtersJson: null,
     })
 
     const response = await PATCH_TABLE_PREFERENCE(
@@ -93,15 +113,84 @@ describe("account routes", () => {
     expect(response.status).toBe(200)
     expect(userTablePreferenceUpsertMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        update: {
+        update: expect.objectContaining({
           hiddenColumnKeys: ["cost"],
           columnOrderKeys: ["qty", "name", "cost"],
-        },
+        }),
       }),
     )
     expect(payload).toEqual({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "qty", "cost"],
+      isAscendingSort: true,
+      isGroupingEnabled: false,
+      groupByKeys: [],
+      filters: {},
+    })
+  })
+
+  it("PATCH /api/account/table-preferences/[tableKey] merges valid sort, grouping, and filters into the existing preference", async () => {
+    userTablePreferenceFindUniqueMock.mockResolvedValue({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["name", "cost"],
+      isAscendingSort: true,
+      isGroupingEnabled: false,
+      groupByKeys: [],
+      filtersJson: { status: "all", warehouseId: "all" },
+    })
+    userTablePreferenceUpsertMock.mockResolvedValue({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["name", "cost"],
+      isAscendingSort: false,
+      isGroupingEnabled: true,
+      groupByKeys: ["warehouse"],
+      filtersJson: { status: "pending", warehouseId: "wh-1" },
+    })
+
+    const response = await PATCH_TABLE_PREFERENCE(
+      new Request("http://localhost/api/account/table-preferences/inventory-main", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isAscendingSort: false,
+          isGroupingEnabled: true,
+          groupByKeys: ["warehouse", "bad"],
+          filters: {
+            status: "pending",
+            warehouseId: "wh-1",
+            unknown: "bad",
+          },
+          allowedGroupKeys: ["warehouse", "status"],
+          allowedFilterValues: {
+            status: ["all", "pending", "final"],
+            warehouseId: ["all", "wh-1"],
+          },
+        }),
+      }),
+      { params: Promise.resolve({ tableKey: "inventory-main" }) },
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(userTablePreferenceUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          hiddenColumnKeys: ["cost"],
+          columnOrderKeys: ["name", "cost"],
+          isAscendingSort: false,
+          isGroupingEnabled: true,
+          groupByKeys: ["warehouse"],
+          filtersJson: { status: "pending", warehouseId: "wh-1" },
+        }),
+      }),
+    )
+    expect(payload).toEqual({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["name", "cost"],
+      isAscendingSort: false,
+      isGroupingEnabled: true,
+      groupByKeys: ["warehouse"],
+      filters: { status: "pending", warehouseId: "wh-1" },
     })
   })
 

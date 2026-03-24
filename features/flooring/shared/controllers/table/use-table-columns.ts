@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import type { TablePreferencePayload } from "./table-preferences"
+import { patchTablePreference } from "./table-preference-client"
+import { DEFAULT_TABLE_PREFERENCE_PAYLOAD, type TablePreferencePayload } from "./table-preferences"
 
 export type TableColumnDefinition = {
   key: string
@@ -13,6 +14,10 @@ export type TableColumnDefinition = {
 type PreferencePayload = {
   hiddenColumnKeys: string[]
   columnOrderKeys: string[]
+  isAscendingSort: boolean
+  isGroupingEnabled: boolean
+  groupByKeys: string[]
+  filters: Record<string, string>
 }
 
 const tablePreferencesCache = new Map<string, PreferencePayload>()
@@ -40,6 +45,12 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   )
   const columnKeysRef = useRef(columnKeys)
   const defaultHiddenKeysRef = useRef(defaultHiddenKeys)
+  const viewPreferenceRef = useRef({
+    isAscendingSort: DEFAULT_TABLE_PREFERENCE_PAYLOAD.isAscendingSort,
+    isGroupingEnabled: DEFAULT_TABLE_PREFERENCE_PAYLOAD.isGroupingEnabled,
+    groupByKeys: DEFAULT_TABLE_PREFERENCE_PAYLOAD.groupByKeys,
+    filters: DEFAULT_TABLE_PREFERENCE_PAYLOAD.filters,
+  })
 
   const normalizePayload = (payload: Partial<TablePreferencePayload>) => {
     const nextOrder = Array.isArray(payload.columnOrderKeys)
@@ -56,6 +67,19 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     return {
       columnOrderKeys: nextOrder,
       hiddenColumnKeys: nextHidden,
+      isAscendingSort: typeof payload.isAscendingSort === "boolean" ? payload.isAscendingSort : DEFAULT_TABLE_PREFERENCE_PAYLOAD.isAscendingSort,
+      isGroupingEnabled:
+        typeof payload.isGroupingEnabled === "boolean" ? payload.isGroupingEnabled : DEFAULT_TABLE_PREFERENCE_PAYLOAD.isGroupingEnabled,
+      groupByKeys:
+        Array.isArray(payload.groupByKeys) && payload.groupByKeys.every((key) => typeof key === "string")
+          ? Array.from(new Set(payload.groupByKeys))
+          : DEFAULT_TABLE_PREFERENCE_PAYLOAD.groupByKeys,
+      filters:
+        payload.filters && typeof payload.filters === "object" && !Array.isArray(payload.filters)
+          ? Object.fromEntries(
+              Object.entries(payload.filters).filter((entry): entry is [string, string] => typeof entry[0] === "string" && typeof entry[1] === "string"),
+            )
+          : DEFAULT_TABLE_PREFERENCE_PAYLOAD.filters,
     }
   }
 
@@ -80,6 +104,12 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
       tablePreferencesCache.set(preferenceCacheKey, normalizedInitialPreferences)
       setColumnOrderKeys(normalizedInitialPreferences.columnOrderKeys)
       setHiddenColumnKeys(normalizedInitialPreferences.hiddenColumnKeys)
+      viewPreferenceRef.current = {
+        isAscendingSort: normalizedInitialPreferences.isAscendingSort,
+        isGroupingEnabled: normalizedInitialPreferences.isGroupingEnabled,
+        groupByKeys: normalizedInitialPreferences.groupByKeys,
+        filters: normalizedInitialPreferences.filters,
+      }
       setIsLoadingPreferences(false)
       setPreferenceError("")
       hasLoadedRef.current = true
@@ -90,6 +120,12 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     if (cachedPreferences) {
       setColumnOrderKeys(cachedPreferences.columnOrderKeys)
       setHiddenColumnKeys(cachedPreferences.hiddenColumnKeys)
+      viewPreferenceRef.current = {
+        isAscendingSort: cachedPreferences.isAscendingSort,
+        isGroupingEnabled: cachedPreferences.isGroupingEnabled,
+        groupByKeys: cachedPreferences.groupByKeys,
+        filters: cachedPreferences.filters,
+      }
       setIsLoadingPreferences(false)
       setPreferenceError("")
       hasLoadedRef.current = true
@@ -127,6 +163,12 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
 
         setColumnOrderKeys(payload.columnOrderKeys)
         setHiddenColumnKeys(payload.hiddenColumnKeys)
+        viewPreferenceRef.current = {
+          isAscendingSort: payload.isAscendingSort,
+          isGroupingEnabled: payload.isGroupingEnabled,
+          groupByKeys: payload.groupByKeys,
+          filters: payload.filters,
+        }
       } catch (error) {
         if (isCancelled) return
         setColumnOrderKeys(columnKeysRef.current)
@@ -150,22 +192,68 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   async function persistPreferences(nextHiddenKeys: string[], nextOrderKeys: string[]) {
     try {
       setPreferenceError("")
-      const response = await fetch(`/api/account/table-preferences/${tableKey}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await patchTablePreference({
+        tableKey,
+        patch: {
           hiddenColumnKeys: nextHiddenKeys,
           columnOrderKeys: nextOrderKeys,
-          allowedColumnKeys: columnKeys,
-        }),
+        },
+        allowedColumnKeys: columnKeys,
       })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string }
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to save table preferences")
-      }
       tablePreferencesCache.set(preferenceCacheKey, {
         hiddenColumnKeys: nextHiddenKeys,
         columnOrderKeys: nextOrderKeys,
+        isAscendingSort: viewPreferenceRef.current.isAscendingSort,
+        isGroupingEnabled: viewPreferenceRef.current.isGroupingEnabled,
+        groupByKeys: viewPreferenceRef.current.groupByKeys,
+        filters: viewPreferenceRef.current.filters,
+      })
+    } catch (error) {
+      setPreferenceError(error instanceof Error ? error.message : "Failed to save table preferences")
+    }
+  }
+
+  async function persistViewPreferences({
+    isAscendingSort,
+    isGroupingEnabled,
+    groupByKeys,
+    filters,
+    allowedGroupKeys,
+    allowedFilterValues,
+  }: {
+    isAscendingSort: boolean
+    isGroupingEnabled: boolean
+    groupByKeys: string[]
+    filters: Record<string, string>
+    allowedGroupKeys: string[]
+    allowedFilterValues: Record<string, string[]>
+  }) {
+    try {
+      setPreferenceError("")
+      await patchTablePreference({
+        tableKey,
+        patch: {
+          isAscendingSort,
+          isGroupingEnabled,
+          groupByKeys,
+          filters,
+        },
+        allowedGroupKeys,
+        allowedFilterValues,
+      })
+      viewPreferenceRef.current = {
+        isAscendingSort,
+        isGroupingEnabled,
+        groupByKeys,
+        filters,
+      }
+      tablePreferencesCache.set(preferenceCacheKey, {
+        hiddenColumnKeys,
+        columnOrderKeys,
+        isAscendingSort,
+        isGroupingEnabled,
+        groupByKeys,
+        filters,
       })
     } catch (error) {
       setPreferenceError(error instanceof Error ? error.message : "Failed to save table preferences")
@@ -233,5 +321,6 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
     toggleColumnVisibility,
     moveColumn,
     setColumnOrder,
+    persistViewPreferences,
   }
 }

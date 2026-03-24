@@ -146,8 +146,10 @@ describe("InventoryClient", () => {
       <InventoryClient
         initialInventory={[inventoryRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: "all", warehouseId: "all", categoryId: "all", productId: "all" }}
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        categoryOptions={[{ id: "cat-1", name: "Hard Surface" }]}
+        productOptions={[{ id: "prod-1", label: "Oak Plank" }]}
       />,
     )
 
@@ -284,11 +286,13 @@ describe("InventoryClient", () => {
       <InventoryClient
         initialInventory={[inventoryRow()]}
         tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-        filterState={{ status: "all", warehouseId: "all" }}
+        filterState={{ status: "all", warehouseId: "all", categoryId: "all", productId: "all" }}
         warehouseOptions={[
           { id: "wh-1", name: "Main Warehouse" },
           { id: "wh-2", name: "Overflow Warehouse" },
         ]}
+        categoryOptions={[{ id: "cat-1", name: "Hard Surface" }]}
+        productOptions={[{ id: "prod-1", label: "Oak Plank" }]}
       />,
     )
 

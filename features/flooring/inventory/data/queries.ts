@@ -9,10 +9,13 @@ import {
 import { listInventoryLocationOptions, normalizeInventoryRow } from "./api"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import {
+  ALL_INVENTORY_CATEGORY_FILTER,
+  ALL_INVENTORY_PRODUCT_FILTER,
   ALL_INVENTORY_STATUS_FILTER,
   ALL_INVENTORY_WAREHOUSE_FILTER,
-  type InventoryFilterState,
+  type InventoryPageFilterState,
 } from "@/features/flooring/inventory/domain/filters"
+import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 
 function buildInventorySearchWhere(searchQuery: string): Prisma.FlooringInventoryWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -49,7 +52,7 @@ function buildInventorySearchWhere(searchQuery: string): Prisma.FlooringInventor
   }
 }
 
-function buildInventoryStatusWhere(status: InventoryFilterState["status"]): Prisma.FlooringInventoryWhereInput | undefined {
+function buildInventoryStatusWhere(status: InventoryPageFilterState["status"]): Prisma.FlooringInventoryWhereInput | undefined {
   if (status === ALL_INVENTORY_STATUS_FILTER) {
     return undefined
   }
@@ -116,11 +119,35 @@ function buildInventoryWarehouseWhere(warehouseId: string): Prisma.FlooringInven
   }
 }
 
-function buildInventoryWhere(searchQuery: string, filters: InventoryFilterState): Prisma.FlooringInventoryWhereInput | undefined {
+function buildInventoryCategoryWhere(categoryId: string): Prisma.FlooringInventoryWhereInput | undefined {
+  if (!categoryId || categoryId === ALL_INVENTORY_CATEGORY_FILTER) {
+    return undefined
+  }
+
+  return {
+    product: {
+      categoryId,
+    },
+  }
+}
+
+function buildInventoryProductWhere(productId: string): Prisma.FlooringInventoryWhereInput | undefined {
+  if (!productId || productId === ALL_INVENTORY_PRODUCT_FILTER) {
+    return undefined
+  }
+
+  return {
+    productId,
+  }
+}
+
+function buildInventoryWhere(searchQuery: string, filters: InventoryPageFilterState): Prisma.FlooringInventoryWhereInput | undefined {
   const whereClauses = [
     buildInventorySearchWhere(searchQuery),
     buildInventoryStatusWhere(filters.status),
     buildInventoryWarehouseWhere(filters.warehouseId),
+    buildInventoryCategoryWhere(filters.categoryId),
+    buildInventoryProductWhere(filters.productId),
   ].filter(Boolean) as Prisma.FlooringInventoryWhereInput[]
 
   if (whereClauses.length === 0) {
@@ -176,49 +203,87 @@ async function listInventoryWarehouseOptions() {
   })
 }
 
-async function loadInventoryPageData(page: number, tableState: ServerTableQueryState, filters: InventoryFilterState) {
-  const where = buildInventoryWhere(tableState.searchQuery, filters)
-  const totalItems = await prisma.flooringInventory.count({ where })
-  const pagination = createServerPagination({ page, totalItems })
-  const [inventory, warehouseOptions] = await Promise.all([
-    prisma.flooringInventory.findMany({
-      where,
-      include: {
-        product: {
+export async function listInventoryPageFilterOptions() {
+  const [warehouseOptions, categoryOptions, productOptions] = await Promise.all([
+    listInventoryWarehouseOptions(),
+    prisma.flooringCategory.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: [{ name: "asc" }],
+    }),
+    prisma.flooringProduct.findMany({
+      select: {
+        id: true,
+        name: true,
+        style: true,
+        color: true,
+        category: {
           select: {
-            id: true,
             name: true,
-            manufacturerName: true,
-            style: true,
-            color: true,
-            category: { select: { stockUnit: { select: { name: true } } } },
-          },
-        },
-        location: {
-          select: {
-            id: true,
-            locationCode: true,
-            section: { select: { name: true } },
-            warehouse: { select: { id: true, name: true } },
-          },
-        },
-        importEntry: {
-          select: {
-            id: true,
-            importNumber: true,
-            tag: true,
-            status: true,
-            transportType: true,
-            warehouse: { select: { id: true, name: true } },
           },
         },
       },
-      orderBy: buildInventoryOrderBy(tableState),
-      skip: pagination.skip,
-      take: pagination.take,
+      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
     }),
-    listInventoryWarehouseOptions(),
   ])
+
+  return {
+    warehouseOptions,
+    categoryOptions,
+    productOptions: productOptions.map((product) => ({
+      id: product.id,
+      label: buildFlooringProductDisplayName({
+        name: product.name,
+        style: product.style,
+        color: product.color,
+        categoryName: product.category.name,
+      }),
+    })),
+  }
+}
+
+async function loadInventoryPageData(page: number, tableState: ServerTableQueryState, filters: InventoryPageFilterState) {
+  const where = buildInventoryWhere(tableState.searchQuery, filters)
+  const totalItems = await prisma.flooringInventory.count({ where })
+  const pagination = createServerPagination({ page, totalItems })
+  const inventory = await prisma.flooringInventory.findMany({
+    where,
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          manufacturerName: true,
+          style: true,
+          color: true,
+          category: { select: { stockUnit: { select: { name: true } } } },
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          locationCode: true,
+          section: { select: { name: true } },
+          warehouse: { select: { id: true, name: true } },
+        },
+      },
+      importEntry: {
+        select: {
+          id: true,
+          importNumber: true,
+          tag: true,
+          status: true,
+          transportType: true,
+          warehouse: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: buildInventoryOrderBy(tableState),
+    skip: pagination.skip,
+    take: pagination.take,
+  })
   const cutLogTotals = inventory.length
     ? await prisma.flooringCutLog.groupBy({
         by: ["inventoryId"],
@@ -243,7 +308,6 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
     },
     tableState,
     filterState: filters,
-    warehouseOptions,
     initialInventory: inventory.map((row) =>
       normalizeInventoryRow({
         ...row,
@@ -253,7 +317,7 @@ async function loadInventoryPageData(page: number, tableState: ServerTableQueryS
   }
 }
 
-export async function getInventoryPageData(page: number, tableState: ServerTableQueryState, filters: InventoryFilterState) {
+export async function getInventoryPageData(page: number, tableState: ServerTableQueryState, filters: InventoryPageFilterState) {
   return withPrismaConnectivityHandling(() => loadInventoryPageData(page, tableState, filters))
 }
 
