@@ -36,6 +36,12 @@ export function InventoryDetailClient({
     setEditItemNumber,
     editDyeLot,
     setEditDyeLot,
+    editCost,
+    setEditCost,
+    editFreight,
+    setEditFreight,
+    editNotes,
+    setEditNotes,
     cutLogDraft,
     setCutLogDraftField,
     isBusy,
@@ -43,7 +49,6 @@ export function InventoryDetailClient({
     deletingCutLogId,
     availableLocationOptions,
     activeWarehouseName,
-    activeSectionName,
     saveInventory,
     deleteInventory,
     addCutLog,
@@ -72,7 +77,13 @@ export function InventoryDetailClient({
       backHref={backHref}
       onBack={closePage}
       sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
-      headerMeta={<InventoryHeaderMeta productName={record.productName} />}
+      headerMeta={(
+        <InventoryHeaderMeta
+          productName={record.productName}
+          warehouseName={activeWarehouseName}
+          importNumber={record.importNumber}
+        />
+      )}
       headerActions={<InventoryHeaderActions row={record} />}
     >
       <div className="space-y-6">
@@ -80,7 +91,7 @@ export function InventoryDetailClient({
 
         <InventorySnapshotGrid summary={inventorySummary} />
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <RecordFormField label="Location">
             <select
               value={editLocationId}
@@ -95,20 +106,6 @@ export function InventoryDetailClient({
               ))}
             </select>
           </RecordFormField>
-          <RecordFormField label="Section">
-            <input
-              value={activeSectionName || ""}
-              readOnly
-              className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
-            />
-          </RecordFormField>
-          <RecordFormField label="Import Warehouse">
-            <input
-              value={activeWarehouseName || ""}
-              readOnly
-              className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
-            />
-          </RecordFormField>
           <RecordFormField label="Item #">
             <input
               value={editItemNumber}
@@ -116,13 +113,41 @@ export function InventoryDetailClient({
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </RecordFormField>
-          <RecordFormField label="Dye Lot">
+          <RecordFormField label="Lot">
             <input
               value={editDyeLot}
               onChange={(event) => setEditDyeLot(event.target.value)}
               className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </RecordFormField>
+          <RecordFormField label="Cost">
+            <input
+              value={editCost}
+              onChange={(event) => setEditCost(event.target.value)}
+              inputMode="decimal"
+              placeholder="0.00"
+              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
+          </RecordFormField>
+          <RecordFormField label="Freight">
+            <input
+              value={editFreight}
+              onChange={(event) => setEditFreight(event.target.value)}
+              inputMode="decimal"
+              placeholder="0.00"
+              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
+          </RecordFormField>
+          <div className="md:col-span-2 xl:col-span-5">
+            <RecordFormField label="Notes">
+              <textarea
+                value={editNotes}
+                onChange={(event) => setEditNotes(event.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+              />
+            </RecordFormField>
+          </div>
         </div>
 
         <CutLogsEditor

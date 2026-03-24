@@ -145,10 +145,19 @@ export function normalizeInventoryRow(row: {
 }
 
 function parseInventoryDetailMutationBody(body: Record<string, unknown>) {
+  const costValue = body.cost
+  const freightValue = body.freight
+
   return {
     locationId: parseOptionalString(body.locationId),
     itemNumber: parseRequiredString(body.itemNumber, "itemNumber"),
     dyeLot: parseOptionalString(body.dyeLot),
+    cost: costValue === "" || costValue === null || costValue === undefined ? null : parseDecimal(costValue, "cost", 2),
+    freight:
+      freightValue === "" || freightValue === null || freightValue === undefined
+        ? null
+        : parseDecimal(freightValue, "freight", 2),
+    notes: parseOptionalString(body.notes),
   }
 }
 

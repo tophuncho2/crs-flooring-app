@@ -173,8 +173,26 @@ describe("InventoryClient", () => {
     )
 
     expect(screen.getByRole("heading", { name: "Inventory 1001" })).toBeTruthy()
+    expect(screen.getByText("Product")).toBeTruthy()
+    expect(screen.getByText("Oak Plank")).toBeTruthy()
+    expect(screen.getByText("Warehouse")).toBeTruthy()
+    expect(screen.getAllByText("Main Warehouse").length).toBeGreaterThan(0)
+    expect(screen.getByText("Import #")).toBeTruthy()
+    expect(screen.getByText("IMP-0001")).toBeTruthy()
     expect(screen.getByText("Cut Logs")).toBeTruthy()
     expect(screen.queryByText("Open Cut Logs Table")).toBeNull()
+    expect(screen.queryByText("Product", { selector: "p" })).toBeTruthy()
+    expect(screen.queryByText("Import Tag")).toBeNull()
+    expect(screen.queryByText("Running Balance")).toBeTruthy()
+    expect(screen.queryByText("Cuts Total")).toBeTruthy()
+    expect(screen.queryByText("Starting Stock")).toBeTruthy()
+    expect(screen.queryByText("Section")).toBeTruthy()
+    expect(screen.queryByText(/^Item #$/)).toBeTruthy()
+    expect(screen.queryByText(/^Lot$/)).toBeTruthy()
+    expect(screen.queryByText(/^Cost$/)).toBeTruthy()
+    expect(screen.queryByText(/^Freight$/)).toBeTruthy()
+    expect(screen.getByLabelText("Notes")).toBeTruthy()
+    expect(screen.getByDisplayValue("Current notes")).toBeTruthy()
     expect(screen.getByText("Unit turn")).toBeTruthy()
   })
 
@@ -209,6 +227,9 @@ describe("InventoryClient", () => {
         sectionName: "Reserve",
         itemNumber: "1002",
         dyeLot: "DL-2",
+        cost: "12.50",
+        freight: "7.25",
+        notes: "Reserved side stack",
       },
     })
 
@@ -230,7 +251,10 @@ describe("InventoryClient", () => {
 
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "loc-2" } })
     fireEvent.change(screen.getByLabelText("Item #"), { target: { value: "1002" } })
-    fireEvent.change(screen.getByLabelText("Dye Lot"), { target: { value: "DL-2" } })
+    fireEvent.change(screen.getByLabelText("Lot"), { target: { value: "DL-2" } })
+    fireEvent.change(screen.getByLabelText("Cost"), { target: { value: "12.50" } })
+    fireEvent.change(screen.getByLabelText("Freight"), { target: { value: "7.25" } })
+    fireEvent.change(screen.getByLabelText("Notes"), { target: { value: "Reserved side stack" } })
     await user.click(screen.getByRole("button", { name: "Save Inventory" }))
 
     await waitFor(() => {
@@ -242,10 +266,14 @@ describe("InventoryClient", () => {
     expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"locationId":"loc-2"')
     expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"itemNumber":"1002"')
     expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"dyeLot":"DL-2"')
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"cost":"12.50"')
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"freight":"7.25"')
+    expect(requestJsonMock.mock.calls[0]?.[1]?.body).toContain('"notes":"Reserved side stack"')
     expect(requestJsonMock.mock.calls[0]?.[1]?.body).not.toContain("stockCount")
     expect(requestJsonMock.mock.calls[0]?.[1]?.body).not.toContain("productId")
     expect(await screen.findByText("Inventory saved")).toBeTruthy()
     expect(screen.getAllByText("Reserve").length).toBeGreaterThan(0)
+    expect(screen.getByDisplayValue("Reserved side stack")).toBeTruthy()
   })
 
   it("updates the inventory URL filters without keeping the previous page param", async () => {

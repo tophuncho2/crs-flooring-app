@@ -31,6 +31,9 @@ export function useInventoryRecordController({
   const [editLocationId, setEditLocationId] = useState(initialRecord.locationId)
   const [editItemNumber, setEditItemNumber] = useState(initialRecord.itemNumber)
   const [editDyeLot, setEditDyeLot] = useState(initialRecord.dyeLot)
+  const [editCost, setEditCost] = useState(initialRecord.cost)
+  const [editFreight, setEditFreight] = useState(initialRecord.freight)
+  const [editNotes, setEditNotes] = useState(initialRecord.notes)
   const [cutLogDraft, setCutLogDraft] = useState<CutLogDraft>(EMPTY_CUT_LOG_DRAFT)
   const [isSavingInventory, setIsSavingInventory] = useState(false)
   const [isSavingCutLog, setIsSavingCutLog] = useState(false)
@@ -53,7 +56,6 @@ export function useInventoryRecordController({
 
   const activeWarehouseName = selectedEditLocation?.warehouseName || record.importWarehouseName || record.warehouseName || ""
   const activeSectionName = selectedEditLocation?.sectionName || record.sectionName || ""
-  const activeLocationCode = selectedEditLocation?.locationCode || record.locationCode || ""
   const activeRunningBalance = parseInventoryDecimal(record.runningBalance)
   const draftQuantity = parseInventoryDecimal(cutLogDraft.quantityTaken)
   const cutPreviewAfter = toInventoryFixedString(activeRunningBalance - draftQuantity)
@@ -61,6 +63,9 @@ export function useInventoryRecordController({
     editLocationId !== record.locationId ||
     editItemNumber !== record.itemNumber ||
     editDyeLot !== record.dyeLot ||
+    editCost !== record.cost ||
+    editFreight !== record.freight ||
+    editNotes !== record.notes ||
     cutLogDraft.quantityTaken.trim() !== "" ||
     cutLogDraft.notes.trim() !== ""
 
@@ -94,6 +99,9 @@ export function useInventoryRecordController({
           locationId: editLocationId,
           itemNumber: editItemNumber,
           dyeLot: editDyeLot,
+          cost: editCost,
+          freight: editFreight,
+          notes: editNotes,
         }),
       })
 
@@ -105,6 +113,9 @@ export function useInventoryRecordController({
       setEditLocationId(payload.inventory.locationId)
       setEditItemNumber(payload.inventory.itemNumber)
       setEditDyeLot(payload.inventory.dyeLot)
+      setEditCost(payload.inventory.cost)
+      setEditFreight(payload.inventory.freight)
+      setEditNotes(payload.inventory.notes)
       notices.showSuccess("Inventory saved")
     } catch (error) {
       notices.showError(error instanceof Error ? error.message : "Failed to save inventory")
@@ -211,6 +222,12 @@ export function useInventoryRecordController({
     setEditItemNumber,
     editDyeLot,
     setEditDyeLot,
+    editCost,
+    setEditCost,
+    editFreight,
+    setEditFreight,
+    editNotes,
+    setEditNotes,
     cutLogDraft,
     setCutLogDraftField,
     isSavingInventory,
@@ -221,7 +238,6 @@ export function useInventoryRecordController({
     availableLocationOptions,
     activeWarehouseName,
     activeSectionName,
-    activeLocationCode,
     activeRunningBalance,
     cutPreviewAfter,
     canSubmitCutLog,
@@ -236,18 +252,10 @@ export function useInventoryRecordController({
         ? "Running balance is 0. Positive cuts cannot be added until stock is restored."
         : "",
     inventorySummary: {
-      importNumber: record.importNumber,
-      importTag: record.importTag,
-      productName: record.productName,
-      itemNumber: editItemNumber,
-      warehouseName: activeWarehouseName,
-      sectionName: activeSectionName,
-      locationCode: activeLocationCode,
-      dyeLot: editDyeLot,
-      startingStockLabel: formatInventoryQuantity(record.stockCount, record.stockUnit),
-      cutTotalLabel: formatInventoryQuantity(record.cutTotal, record.stockUnit),
       runningBalanceLabel: formatInventoryQuantity(record.runningBalance, record.stockUnit),
-      notes: record.notes,
+      cutTotalLabel: formatInventoryQuantity(record.cutTotal, record.stockUnit),
+      startingStockLabel: formatInventoryQuantity(record.stockCount, record.stockUnit),
+      sectionName: activeSectionName,
     },
   }
 }

@@ -78,7 +78,7 @@ describe("inventory routes", () => {
     })
   })
 
-  it("PATCH accepts an empty dye lot and persists it as null", async () => {
+  it("PATCH accepts an empty dye lot, preserves detail-only fields, and persists notes", async () => {
     prismaMock.flooringInventory.findUniqueOrThrow.mockResolvedValue({
       id: "inv-1",
       importEntryId: "imp-1",
@@ -128,6 +128,7 @@ describe("inventory routes", () => {
           locationId: "loc-1",
           itemNumber: "1001",
           dyeLot: "",
+          notes: "Floor sample hold",
           stockCount: "7.00",
           productId: "prod-9",
         }),
@@ -143,6 +144,7 @@ describe("inventory routes", () => {
           itemNumber: "1001",
           locationId: "loc-1",
           dyeLot: null,
+          notes: "Floor sample hold",
         }),
       }),
     )
