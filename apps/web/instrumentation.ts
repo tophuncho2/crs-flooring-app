@@ -3,12 +3,12 @@ export async function register() {
     return
   }
 
-  const [{ validateRuntimeEnvironment }, { logEvent }] = await Promise.all([
+  const [{ validateWebCoreEnvironment }, { logEvent }] = await Promise.all([
     import("@/server/platform/env"),
     import("@/server/platform/logger"),
   ])
 
-  validateRuntimeEnvironment()
+  validateWebCoreEnvironment()
 
   logEvent({
     message: "Runtime environment validated successfully",

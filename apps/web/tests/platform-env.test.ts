@@ -1,67 +1,107 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { resetRuntimeEnvironmentCacheForTests, validateRuntimeEnvironment } from "@/server/platform/env"
+import {
+  resetRuntimeEnvironmentCacheForTests,
+  validateAuthEnvironment,
+  validateRateLimitEnvironment,
+  validateStorageEnvironment,
+  validateWebCoreEnvironment,
+} from "@/server/platform/env"
 
-const baseEnvironment = {
-  NEXTAUTH_SECRET: "super-secret-value-123",
-  NEXTAUTH_URL: "https://example.com",
-  AWS_ACCESS_KEY_ID: "key",
-  AWS_DEFAULT_REGION: "us-east-1",
-  AWS_ENDPOINT_URL: "https://bucket.example.com",
-  AWS_S3_BUCKET_NAME: "builders-bucket",
-  AWS_SECRET_ACCESS_KEY: "secret",
-}
-
-describe("validateRuntimeEnvironment", () => {
+describe("platform environment", () => {
   afterEach(() => {
     resetRuntimeEnvironmentCacheForTests()
   })
 
-  it("accepts the current required runtime variables", () => {
-    const parsed = validateRuntimeEnvironment(baseEnvironment)
-
-    expect(parsed.NEXTAUTH_URL).toBe("https://example.com")
-  })
-
-  it("rejects partial seeded admin configuration", () => {
-    expect(() =>
-      validateRuntimeEnvironment({
-        ...baseEnvironment,
-        SEEDED_ADMIN_EMAIL: "admin@test.com",
+  it("allows the app to boot with only core environment values", () => {
+    expect(
+      validateWebCoreEnvironment({
+        RAILWAY_ENVIRONMENT_NAME: "development",
+        RAILWAY_SERVICE_NAME: "builders-app",
       }),
-    ).toThrow("SEEDED_ADMIN_EMAIL and SEEDED_ADMIN_PASSWORD must be provided together")
+    ).toEqual({
+      RAILWAY_ENVIRONMENT_NAME: "development",
+      RAILWAY_SERVICE_NAME: "builders-app",
+    })
+
+    expect(validateWebCoreEnvironment({})).toEqual({
+      RAILWAY_ENVIRONMENT_NAME: undefined,
+      RAILWAY_SERVICE_NAME: undefined,
+    })
   })
 
-  it("rejects invalid redis urls when provided", () => {
+  it("validates auth configuration only when auth is used", () => {
     expect(() =>
-      validateRuntimeEnvironment({
-        ...baseEnvironment,
-        REDIS_URL: "not-a-url",
+      validateAuthEnvironment({
+        NEXTAUTH_SECRET: "short",
+        NEXTAUTH_URL: "http://localhost:3000",
       }),
-    ).toThrow("REDIS_URL must be a valid URL")
+    ).toThrow("NEXTAUTH_SECRET must be at least 16 characters")
+
+    expect(
+      validateAuthEnvironment({
+        NEXTAUTH_SECRET: "super-secret-value-123",
+        NEXTAUTH_URL: "http://localhost:3000",
+      }),
+    ).toEqual({
+      NEXTAUTH_SECRET: "super-secret-value-123",
+      NEXTAUTH_URL: "http://localhost:3000",
+    })
   })
 
-  it("requires REDIS_URL in staging and production", () => {
+  it("validates storage configuration only when storage is used", () => {
     expect(() =>
-      validateRuntimeEnvironment({
-        ...baseEnvironment,
-        RAILWAY_ENVIRONMENT_NAME: "Staging",
+      validateStorageEnvironment({
+        AWS_ACCESS_KEY_ID: "key",
+      }),
+    ).toThrow("AWS_DEFAULT_REGION")
+
+    expect(
+      validateStorageEnvironment({
+        AWS_ACCESS_KEY_ID: "key",
+        AWS_DEFAULT_REGION: "us-east-1",
+        AWS_ENDPOINT_URL: "https://bucket.example.com",
+        AWS_S3_BUCKET_NAME: "builders-bucket",
+        AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toEqual({
+      accessKeyId: "key",
+      defaultRegion: "us-east-1",
+      endpointUrl: "https://bucket.example.com",
+      bucketName: "builders-bucket",
+      secretAccessKey: "secret",
+    })
+  })
+
+  it("keeps rate limiting optional in local development", () => {
+    expect(
+      validateRateLimitEnvironment({
+        RAILWAY_ENVIRONMENT_NAME: "development",
+      }),
+    ).toEqual({
+      redisUrl: undefined,
+      prefix: "builderswebapp",
+    })
+  })
+
+  it("requires REDIS_URL for rate limiting in staging and production", () => {
+    expect(() =>
+      validateRateLimitEnvironment({
+        RAILWAY_ENVIRONMENT_NAME: "staging",
       }),
     ).toThrow("REDIS_URL is required in staging and production")
 
     expect(() =>
-      validateRuntimeEnvironment({
-        ...baseEnvironment,
+      validateRateLimitEnvironment({
         RAILWAY_ENVIRONMENT_NAME: "production",
       }),
     ).toThrow("REDIS_URL is required in staging and production")
   })
 
-  it("allows REDIS_URL to be omitted outside staging and production", () => {
-    expect(
-      validateRuntimeEnvironment({
-        ...baseEnvironment,
-        RAILWAY_ENVIRONMENT_NAME: "development",
-      }).REDIS_URL,
-    ).toBeUndefined()
+  it("rejects invalid REDIS_URL values when provided", () => {
+    expect(() =>
+      validateRateLimitEnvironment({
+        REDIS_URL: "not-a-url",
+      }),
+    ).toThrow("REDIS_URL must be a valid URL")
   })
 })

@@ -14,8 +14,14 @@ describe("package scripts", () => {
       readFileSync(join(process.cwd(), "..", "..", "package.json"), "utf8"),
     ) as { scripts: Record<string, string> }
 
-    expect(webPackageJson.scripts.dev).toBe("next dev")
-    expect(webPackageJson.scripts.start).toBe("next start")
+    expect(webPackageJson.scripts.dev).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next dev")
+    expect(webPackageJson.scripts.build).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next build --webpack")
+    expect(webPackageJson.scripts.start).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next start")
+    expect(webPackageJson.scripts.typecheck).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next typegen && tsc -p tsconfig.json --noEmit")
+    expect(rootPackageJson.scripts["build:web"]).toBe("npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run build --workspace @builders/web")
+    expect(rootPackageJson.scripts["start:web"]).toBe("npm run start --workspace @builders/web")
+    expect(rootPackageJson.scripts["build:worker"]).toBe("npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/worker")
+    expect(rootPackageJson.scripts["start:worker"]).toBe("npm run start --workspace @builders/worker")
     expect(rootPackageJson.scripts["db:generate"]).toBe("npm run db:generate --workspace @builders/db --")
     expect(rootPackageJson.scripts["db:migrate:dev"]).toBe("npm run db:migrate:dev --workspace @builders/db --")
     expect(rootPackageJson.scripts["db:deploy"]).toBe("npm run db:deploy --workspace @builders/db --")

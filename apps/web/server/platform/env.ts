@@ -5,41 +5,80 @@ function optionalTrimmed(value: string | undefined) {
   return trimmed ? trimmed : undefined
 }
 
-function readRuntimeEnvironment(source: NodeJS.ProcessEnv) {
+function formatEnvironmentIssues(error: z.ZodError) {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "environment"
+      return `${path}: ${issue.message}`
+    })
+    .join("; ")
+}
+
+function parseEnvironment<T>(label: string, schema: z.ZodType<T>, value: unknown) {
+  const parsed = schema.safeParse(value)
+
+  if (!parsed.success) {
+    throw new Error(`Invalid ${label} environment: ${formatEnvironmentIssues(parsed.error)}`)
+  }
+
+  return parsed.data
+}
+
+function readWebCoreEnvironment(source: NodeJS.ProcessEnv) {
   return {
     RAILWAY_ENVIRONMENT_NAME: optionalTrimmed(source.RAILWAY_ENVIRONMENT_NAME),
+    RAILWAY_SERVICE_NAME: optionalTrimmed(source.RAILWAY_SERVICE_NAME),
+  }
+}
+
+function readAuthEnvironment(source: NodeJS.ProcessEnv) {
+  return {
     NEXTAUTH_SECRET: optionalTrimmed(source.NEXTAUTH_SECRET),
     NEXTAUTH_URL: optionalTrimmed(source.NEXTAUTH_URL),
+  }
+}
+
+function readStorageEnvironment(source: NodeJS.ProcessEnv) {
+  return {
     AWS_ACCESS_KEY_ID: optionalTrimmed(source.AWS_ACCESS_KEY_ID),
     AWS_DEFAULT_REGION: optionalTrimmed(source.AWS_DEFAULT_REGION),
     AWS_ENDPOINT_URL: optionalTrimmed(source.AWS_ENDPOINT_URL),
     AWS_S3_BUCKET_NAME: optionalTrimmed(source.AWS_S3_BUCKET_NAME),
     AWS_SECRET_ACCESS_KEY: optionalTrimmed(source.AWS_SECRET_ACCESS_KEY),
-    REDIS_URL: optionalTrimmed(source.REDIS_URL),
-    RATE_LIMIT_PREFIX: optionalTrimmed(source.RATE_LIMIT_PREFIX),
-    SEEDED_ADMIN_EMAIL: optionalTrimmed(source.SEEDED_ADMIN_EMAIL),
-    SEEDED_ADMIN_PASSWORD: optionalTrimmed(source.SEEDED_ADMIN_PASSWORD),
-    SEEDED_BUILDER_EMAIL: optionalTrimmed(source.SEEDED_BUILDER_EMAIL),
-    SEEDED_BUILDER_PASSWORD: optionalTrimmed(source.SEEDED_BUILDER_PASSWORD),
   }
 }
 
-const runtimeEnvironmentSchema = z
+function readRateLimitEnvironment(source: NodeJS.ProcessEnv) {
+  return {
+    RAILWAY_ENVIRONMENT_NAME: optionalTrimmed(source.RAILWAY_ENVIRONMENT_NAME),
+    REDIS_URL: optionalTrimmed(source.REDIS_URL),
+    RATE_LIMIT_PREFIX: optionalTrimmed(source.RATE_LIMIT_PREFIX),
+  }
+}
+
+const webCoreEnvironmentSchema = z.object({
+  RAILWAY_ENVIRONMENT_NAME: z.string().min(1).optional(),
+  RAILWAY_SERVICE_NAME: z.string().min(1).optional(),
+})
+
+const authEnvironmentSchema = z.object({
+  NEXTAUTH_SECRET: z.string().min(16, "NEXTAUTH_SECRET must be at least 16 characters"),
+  NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
+})
+
+const storageEnvironmentSchema = z.object({
+  AWS_ACCESS_KEY_ID: z.string().min(1, "AWS_ACCESS_KEY_ID is required"),
+  AWS_DEFAULT_REGION: z.string().min(1, "AWS_DEFAULT_REGION is required"),
+  AWS_ENDPOINT_URL: z.string().url("AWS_ENDPOINT_URL must be a valid URL"),
+  AWS_S3_BUCKET_NAME: z.string().min(1, "AWS_S3_BUCKET_NAME is required"),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1, "AWS_SECRET_ACCESS_KEY is required"),
+})
+
+const rateLimitEnvironmentSchema = z
   .object({
     RAILWAY_ENVIRONMENT_NAME: z.string().min(1).optional(),
-    NEXTAUTH_SECRET: z.string().min(16, "NEXTAUTH_SECRET must be at least 16 characters"),
-    NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
-    AWS_ACCESS_KEY_ID: z.string().min(1, "AWS_ACCESS_KEY_ID is required"),
-    AWS_DEFAULT_REGION: z.string().min(1, "AWS_DEFAULT_REGION is required"),
-    AWS_ENDPOINT_URL: z.string().url("AWS_ENDPOINT_URL must be a valid URL"),
-    AWS_S3_BUCKET_NAME: z.string().min(1, "AWS_S3_BUCKET_NAME is required"),
-    AWS_SECRET_ACCESS_KEY: z.string().min(1, "AWS_SECRET_ACCESS_KEY is required"),
     REDIS_URL: z.string().url("REDIS_URL must be a valid URL").optional(),
     RATE_LIMIT_PREFIX: z.string().min(1, "RATE_LIMIT_PREFIX cannot be empty").optional(),
-    SEEDED_ADMIN_EMAIL: z.string().email("SEEDED_ADMIN_EMAIL must be a valid email").optional(),
-    SEEDED_ADMIN_PASSWORD: z.string().min(12, "SEEDED_ADMIN_PASSWORD must be at least 12 characters").optional(),
-    SEEDED_BUILDER_EMAIL: z.string().email("SEEDED_BUILDER_EMAIL must be a valid email").optional(),
-    SEEDED_BUILDER_PASSWORD: z.string().min(12, "SEEDED_BUILDER_PASSWORD must be at least 12 characters").optional(),
   })
   .superRefine((env, context) => {
     const runtimeLabel = env.RAILWAY_ENVIRONMENT_NAME?.toLowerCase()
@@ -50,85 +89,103 @@ const runtimeEnvironmentSchema = z
         path: ["REDIS_URL"],
       })
     }
-
-    const seededAdminValues = [env.SEEDED_ADMIN_EMAIL, env.SEEDED_ADMIN_PASSWORD]
-    if (seededAdminValues.some(Boolean) && !seededAdminValues.every(Boolean)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "SEEDED_ADMIN_EMAIL and SEEDED_ADMIN_PASSWORD must be provided together",
-        path: ["SEEDED_ADMIN_EMAIL"],
-      })
-    }
-
-    const seededBuilderValues = [env.SEEDED_BUILDER_EMAIL, env.SEEDED_BUILDER_PASSWORD]
-    if (seededBuilderValues.some(Boolean) && !seededBuilderValues.every(Boolean)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "SEEDED_BUILDER_EMAIL and SEEDED_BUILDER_PASSWORD must be provided together",
-        path: ["SEEDED_BUILDER_EMAIL"],
-      })
-    }
   })
 
-export type RuntimeEnvironment = z.infer<typeof runtimeEnvironmentSchema>
-
-let cachedRuntimeEnvironment: RuntimeEnvironment | null = null
-
-function formatEnvironmentIssues(error: z.ZodError<RuntimeEnvironment>) {
-  return error.issues
-    .map((issue) => {
-      const path = issue.path.length > 0 ? issue.path.join(".") : "environment"
-      return `${path}: ${issue.message}`
-    })
-    .join("; ")
+export type WebCoreEnvironment = z.infer<typeof webCoreEnvironmentSchema>
+export type AuthEnvironment = z.infer<typeof authEnvironmentSchema>
+export type StorageEnvironment = {
+  accessKeyId: string
+  defaultRegion: string
+  endpointUrl: string
+  bucketName: string
+  secretAccessKey: string
+}
+export type RateLimitEnvironment = {
+  redisUrl: string | undefined
+  prefix: string
 }
 
-export function validateRuntimeEnvironment(source: NodeJS.ProcessEnv = process.env): RuntimeEnvironment {
-  const parsed = runtimeEnvironmentSchema.safeParse(readRuntimeEnvironment(source))
+let cachedWebCoreEnvironment: WebCoreEnvironment | null = null
+let cachedAuthEnvironment: AuthEnvironment | null = null
+let cachedStorageEnvironment: StorageEnvironment | null = null
+let cachedRateLimitEnvironment: RateLimitEnvironment | null = null
 
-  if (!parsed.success) {
-    throw new Error(`Invalid runtime environment: ${formatEnvironmentIssues(parsed.error)}`)
-  }
-
-  return parsed.data
+export function validateWebCoreEnvironment(source: NodeJS.ProcessEnv = process.env): WebCoreEnvironment {
+  return parseEnvironment("web core", webCoreEnvironmentSchema, readWebCoreEnvironment(source))
 }
 
-export function getRuntimeEnvironment(): RuntimeEnvironment {
-  if (cachedRuntimeEnvironment) {
-    return cachedRuntimeEnvironment
+export function getWebCoreEnvironment(): WebCoreEnvironment {
+  if (cachedWebCoreEnvironment) {
+    return cachedWebCoreEnvironment
   }
 
-  cachedRuntimeEnvironment = validateRuntimeEnvironment()
-  return cachedRuntimeEnvironment
+  cachedWebCoreEnvironment = validateWebCoreEnvironment()
+  return cachedWebCoreEnvironment
+}
+
+export function validateAuthEnvironment(source: NodeJS.ProcessEnv = process.env): AuthEnvironment {
+  return parseEnvironment("auth", authEnvironmentSchema, readAuthEnvironment(source))
+}
+
+export function getAuthEnvironment(): AuthEnvironment {
+  if (cachedAuthEnvironment) {
+    return cachedAuthEnvironment
+  }
+
+  cachedAuthEnvironment = validateAuthEnvironment()
+  return cachedAuthEnvironment
+}
+
+export function validateStorageEnvironment(source: NodeJS.ProcessEnv = process.env): StorageEnvironment {
+  const parsed = parseEnvironment("storage", storageEnvironmentSchema, readStorageEnvironment(source))
+
+  return {
+    accessKeyId: parsed.AWS_ACCESS_KEY_ID,
+    defaultRegion: parsed.AWS_DEFAULT_REGION,
+    endpointUrl: parsed.AWS_ENDPOINT_URL,
+    bucketName: parsed.AWS_S3_BUCKET_NAME,
+    secretAccessKey: parsed.AWS_SECRET_ACCESS_KEY,
+  }
+}
+
+export function getStorageEnvironment(): StorageEnvironment {
+  if (cachedStorageEnvironment) {
+    return cachedStorageEnvironment
+  }
+
+  cachedStorageEnvironment = validateStorageEnvironment()
+  return cachedStorageEnvironment
+}
+
+export function validateRateLimitEnvironment(source: NodeJS.ProcessEnv = process.env): RateLimitEnvironment {
+  const parsed = parseEnvironment("rate limit", rateLimitEnvironmentSchema, readRateLimitEnvironment(source))
+
+  return {
+    redisUrl: parsed.REDIS_URL,
+    prefix: parsed.RATE_LIMIT_PREFIX ?? "builderswebapp",
+  }
+}
+
+export function getRateLimitEnvironment(): RateLimitEnvironment {
+  if (cachedRateLimitEnvironment) {
+    return cachedRateLimitEnvironment
+  }
+
+  cachedRateLimitEnvironment = validateRateLimitEnvironment()
+  return cachedRateLimitEnvironment
 }
 
 export function resetRuntimeEnvironmentCacheForTests() {
-  cachedRuntimeEnvironment = null
-}
-
-export function getStorageEnvironment() {
-  const env = getRuntimeEnvironment()
-
-  return {
-    accessKeyId: env.AWS_ACCESS_KEY_ID,
-    defaultRegion: env.AWS_DEFAULT_REGION,
-    endpointUrl: env.AWS_ENDPOINT_URL,
-    bucketName: env.AWS_S3_BUCKET_NAME,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-  }
-}
-
-export function getRateLimitEnvironment() {
-  return {
-    redisUrl: optionalTrimmed(process.env.REDIS_URL),
-    prefix: optionalTrimmed(process.env.RATE_LIMIT_PREFIX) ?? "builderswebapp",
-  }
+  cachedWebCoreEnvironment = null
+  cachedAuthEnvironment = null
+  cachedStorageEnvironment = null
+  cachedRateLimitEnvironment = null
 }
 
 export function getRuntimeEnvironmentLabel() {
-  return optionalTrimmed(process.env.RAILWAY_ENVIRONMENT_NAME) ?? process.env.NODE_ENV ?? "development"
+  return getWebCoreEnvironment().RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? "development"
 }
 
 export function getRuntimeServiceName() {
-  return optionalTrimmed(process.env.RAILWAY_SERVICE_NAME) ?? "builders-app"
+  return getWebCoreEnvironment().RAILWAY_SERVICE_NAME ?? "builders-app"
 }

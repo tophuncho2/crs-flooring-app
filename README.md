@@ -20,6 +20,10 @@ Run these from the repository root:
 npm install
 npm run dev
 npm run dev:worker
+npm run build:web
+npm run start:web
+npm run build:worker
+npm run start:worker
 npm run guard:prisma
 npm run build
 npm run lint
@@ -40,11 +44,18 @@ npm run db:studio
 
 ## Environment
 
-Copy values from `.env.example` into your local environment before starting the app.
+Copy values from `.env.example` into the repo-root `.env` before starting local services.
+
+Local development uses the repo-root `.env` as the single source of truth for:
+
+- `apps/web`
+- `apps/worker`
+- `packages/db`
 
 - `DATABASE_URL` is required for all DB-backed workspaces
-- `NEXTAUTH_*` variables are required for the web app
-- `REDIS_URL` enables the worker queue connection
+- `NEXTAUTH_*` variables are only required when auth/session flows are used
+- `AWS_*` variables are only required when storage/file flows are used
+- `REDIS_URL` enables shared rate limiting and the worker queue connection
 
 If `REDIS_URL` is omitted, `apps/worker` starts in a non-destructive scaffold mode and exits after reporting the registered processors.
 
@@ -57,3 +68,10 @@ Database changes follow Model A:
 - deploy `apps/worker` after the DB step
 - do not run migrations in web or worker build/start flows
 - run `npm run db:seed` only as an explicit environment setup action
+
+For Railway or similar multi-service deployment, use service-specific commands:
+
+- web build: `npm run build:web`
+- web start: `npm run start:web`
+- worker build: `npm run build:worker`
+- worker start: `npm run start:worker`

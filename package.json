@@ -13,6 +13,10 @@
     "dev": "npm run dev:web",
     "dev:web": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run dev --workspace @builders/web",
     "dev:worker": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/worker && npm run start --workspace @builders/worker",
+    "build:web": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run build --workspace @builders/web",
+    "start:web": "npm run start --workspace @builders/web",
+    "build:worker": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/worker",
+    "start:worker": "npm run start --workspace @builders/worker",
     "build": "npm run guard:prisma && npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run build --workspace @builders/web && npm run build --workspace @builders/worker",
     "lint": "npm run lint --workspace @builders/web",
     "test": "npm run test --workspace @builders/web",
@@ -32,5 +36,8 @@
   },
   "overrides": {
     "flatted": "^3.4.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
   }
 }

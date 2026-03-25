@@ -2,7 +2,7 @@ import type { Role } from "@builders/db"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { canBypassVerification, hasSystemAccess } from "@/server/auth/access-control"
-import { authOptions } from "@/server/auth/auth-options"
+import { getAuthOptions } from "@/server/auth/auth-options"
 import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-subscriptions"
 
 export type SessionUser = {
@@ -13,7 +13,7 @@ export type SessionUser = {
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(getAuthOptions())
   const { user } = session ?? {}
 
   if (!user?.id || !user.email || !user.role) {
