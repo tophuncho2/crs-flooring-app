@@ -1,0 +1,39 @@
+{
+  "name": "@builders/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "default": "./dist/errors.js"
+    }
+  },
+  "scripts": {
+    "generate": "XDG_CACHE_HOME=../../.cache prisma generate --schema ./prisma/schema.prisma",
+    "build": "npm run generate && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "XDG_CACHE_HOME=../../.cache prisma migrate deploy --schema ./prisma/schema.prisma",
+    "db:reset": "XDG_CACHE_HOME=../../.cache prisma migrate reset --force --skip-seed --schema ./prisma/schema.prisma",
+    "db:seed:users": "node scripts/seed.js",
+    "db:seed:reference-test-data": "node scripts/reference-test-data.js",
+    "db:backfill:product-names": "node scripts/backfill-product-names.js",
+    "db:promote-admin": "node scripts/admin-recovery.js",
+    "db:upsert-owner": "node scripts/owner-recovery.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.12.0",
+    "bcrypt": "^6.0.0",
+    "prisma": "^6.12.0"
+  }
+}

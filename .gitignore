@@ -16,13 +16,18 @@
 # next.js
 /.next/
 /out/
+/apps/web/.next/
+/apps/web/out/
 
 # production
 /build
+/apps/worker/dist/
+/packages/*/dist/
 
 # misc
 .DS_Store
 *.pem
+.cache/
 
 # debug
 npm-debug.log*
