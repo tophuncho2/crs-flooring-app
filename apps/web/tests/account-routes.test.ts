@@ -21,17 +21,30 @@ vi.mock("@/server/platform/logger", () => ({
   logEvent: vi.fn(),
 }))
 
-vi.mock("@/server/db/prisma", () => ({
-  prisma: {
-    user: {
-      update: userUpdateMock,
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: {
+      user: {
+        update: userUpdateMock,
+      },
+      userTablePreference: {
+        findUnique: userTablePreferenceFindUniqueMock,
+        upsert: userTablePreferenceUpsertMock,
+      },
     },
-    userTablePreference: {
-      findUnique: userTablePreferenceFindUniqueMock,
-      upsert: userTablePreferenceUpsertMock,
+    db: {
+      user: {
+        update: userUpdateMock,
+      },
+      userTablePreference: {
+        findUnique: userTablePreferenceFindUniqueMock,
+        upsert: userTablePreferenceUpsertMock,
+      },
     },
-  },
-}))
+  }
+})
 
 const { PATCH: PATCH_FLOORING_NAV } = await import("@/app/api/account/flooring-nav/route")
 const { GET: GET_TABLE_PREFERENCE, PATCH: PATCH_TABLE_PREFERENCE } = await import(

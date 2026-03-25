@@ -1,6 +1,4 @@
-import { Prisma } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
-import { createPrismaPageLoadIssue, isPrismaNotFoundError, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
+import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, type PrismaDetailPageResult } from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { flooringCategoryUnitInclude } from "@/server/flooring/unit-measures"
 import { normalizeCategoryUnitValues } from "@/server/flooring/unit-measures"

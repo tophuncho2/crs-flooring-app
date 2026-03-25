@@ -1,11 +1,10 @@
-import { Prisma } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma } from "@builders/db"
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
-} from "@/server/db/prisma-errors"
+} from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import {

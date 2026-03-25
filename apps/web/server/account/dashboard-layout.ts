@@ -1,5 +1,4 @@
-import type { DataAccessContext } from "@/server/db/context"
-import { prisma } from "@/server/db/prisma"
+import { prisma, type DataAccessContext } from "@builders/db"
 
 export async function getDashboardLayoutUser(userId: string, db: DataAccessContext = prisma) {
   return db.user.findUnique({

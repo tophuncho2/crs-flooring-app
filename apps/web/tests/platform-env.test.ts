@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest"
 import { resetRuntimeEnvironmentCacheForTests, validateRuntimeEnvironment } from "@/server/platform/env"
 
 const baseEnvironment = {
-  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/builders",
   NEXTAUTH_SECRET: "super-secret-value-123",
   NEXTAUTH_URL: "https://example.com",
   AWS_ACCESS_KEY_ID: "key",
@@ -20,7 +19,6 @@ describe("validateRuntimeEnvironment", () => {
   it("accepts the current required runtime variables", () => {
     const parsed = validateRuntimeEnvironment(baseEnvironment)
 
-    expect(parsed.DATABASE_URL).toContain("postgresql://")
     expect(parsed.NEXTAUTH_URL).toBe("https://example.com")
   })
 

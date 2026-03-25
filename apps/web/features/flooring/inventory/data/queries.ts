@@ -1,11 +1,10 @@
-import { Prisma } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma } from "@builders/db"
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
-} from "@/server/db/prisma-errors"
+} from "@builders/db"
 import { listInventoryLocationOptions, normalizeInventoryRow } from "./api"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import {

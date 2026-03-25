@@ -1,6 +1,4 @@
-import { Prisma } from "@builders/db"
-import type { DataAccessContext } from "@/server/db/context"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma, type DataAccessContext } from "@builders/db"
 
 export async function listCutLogRecords(inventoryId: string | null, db: DataAccessContext = prisma) {
   return db.flooringCutLog.findMany({

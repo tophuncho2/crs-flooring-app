@@ -21,18 +21,20 @@ const { prismaMock } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock("@/server/db/prisma", () => ({
-  prisma: prismaMock,
-}))
-
-vi.mock("@/server/db/prisma-errors", () => ({
-  createPrismaPageLoadIssue: vi.fn(),
-  isPrismaNotFoundError: vi.fn(),
-  withPrismaConnectivityHandling: vi.fn(async (operation: () => Promise<unknown>) => ({
-    ok: true,
-    data: await operation(),
-  })),
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: prismaMock,
+    db: prismaMock,
+    createPrismaPageLoadIssue: vi.fn(),
+    isPrismaNotFoundError: vi.fn(),
+    withPrismaConnectivityHandling: vi.fn(async (operation: () => Promise<unknown>) => ({
+      ok: true,
+      data: await operation(),
+    })),
+  }
+})
 
 const { getInventoryPageData, listInventoryPageFilterOptions } = await import("@/features/flooring/inventory/data/queries")
 

@@ -1,4 +1,4 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 
 type ServiceInput = {
   name: string

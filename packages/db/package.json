@@ -20,20 +20,27 @@
     }
   },
   "scripts": {
-    "generate": "XDG_CACHE_HOME=../../.cache prisma generate --schema ./prisma/schema.prisma",
-    "build": "npm run generate && tsc -p tsconfig.json",
+    "db:generate": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma generate",
+    "db:migrate:dev": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate dev --skip-seed",
+    "db:deploy": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate deploy",
+    "db:reset": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate reset --force --skip-seed",
+    "db:seed": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma db seed",
+    "db:studio": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma studio",
+    "guard:prisma": "node scripts/guard-prisma.js",
+    "build": "npm run db:generate && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:migrate": "XDG_CACHE_HOME=../../.cache prisma migrate deploy --schema ./prisma/schema.prisma",
-    "db:reset": "XDG_CACHE_HOME=../../.cache prisma migrate reset --force --skip-seed --schema ./prisma/schema.prisma",
-    "db:seed:users": "node scripts/seed.js",
-    "db:seed:reference-test-data": "node scripts/reference-test-data.js",
-    "db:backfill:product-names": "node scripts/backfill-product-names.js",
-    "db:promote-admin": "node scripts/admin-recovery.js",
-    "db:upsert-owner": "node scripts/owner-recovery.js"
+    "db:seed:reference-test-data": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/reference-test-data.js",
+    "db:backfill:product-names": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-product-names.js",
+    "db:promote-admin": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/admin-recovery.js",
+    "db:upsert-owner": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/owner-recovery.js"
+  },
+  "prisma": {
+    "seed": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "bcrypt": "^6.0.0",
+    "dotenv": "^16.4.7",
     "prisma": "^6.12.0"
   }
 }

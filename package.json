@@ -11,22 +11,24 @@
   ],
   "scripts": {
     "dev": "npm run dev:web",
-    "dev:web": "npm run db:generate && npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run dev --workspace @builders/web",
-    "dev:worker": "npm run db:generate && npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/worker && npm run start --workspace @builders/worker",
-    "build": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run build --workspace @builders/web && npm run build --workspace @builders/worker",
+    "dev:web": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run dev --workspace @builders/web",
+    "dev:worker": "npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/worker && npm run start --workspace @builders/worker",
+    "build": "npm run guard:prisma && npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run build --workspace @builders/web && npm run build --workspace @builders/worker",
     "lint": "npm run lint --workspace @builders/web",
     "test": "npm run test --workspace @builders/web",
     "test:e2e": "npm run test:e2e --workspace @builders/web",
-    "typecheck": "npm run typecheck --workspace @builders/db && npm run typecheck --workspace @builders/domain && npm run typecheck --workspace @builders/lib && npm run typecheck --workspace @builders/ui && npm run typecheck --workspace @builders/web && npm run typecheck --workspace @builders/worker",
-    "db:generate": "npm run generate --workspace @builders/db",
-    "db:migrate": "npm run db:migrate --workspace @builders/db",
+    "typecheck": "npm run guard:prisma && npm run typecheck --workspace @builders/db && npm run typecheck --workspace @builders/domain && npm run typecheck --workspace @builders/lib && npm run typecheck --workspace @builders/ui && npm run typecheck --workspace @builders/web && npm run typecheck --workspace @builders/worker",
+    "guard:prisma": "npm run guard:prisma --workspace @builders/db",
+    "db:generate": "npm run db:generate --workspace @builders/db --",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace @builders/db --",
+    "db:deploy": "npm run db:deploy --workspace @builders/db --",
     "db:reset": "npm run db:reset --workspace @builders/db",
-    "db:seed": "npm run db:seed:users --workspace @builders/db",
+    "db:seed": "npm run db:seed --workspace @builders/db --",
+    "db:studio": "npm run db:studio --workspace @builders/db --",
     "db:seed:reference-test-data": "npm run db:seed:reference-test-data --workspace @builders/db",
     "db:backfill:product-names": "npm run db:backfill:product-names --workspace @builders/db",
     "db:promote-admin": "npm run db:promote-admin --workspace @builders/db",
-    "db:upsert-owner": "npm run db:upsert-owner --workspace @builders/db",
-    "deploy:prepare": "npm run db:migrate && npm run db:seed"
+    "db:upsert-owner": "npm run db:upsert-owner --workspace @builders/db"
   },
   "overrides": {
     "flatted": "^3.4.2"

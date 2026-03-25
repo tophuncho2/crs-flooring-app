@@ -1,11 +1,11 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
   type PrismaPageDataResult,
-} from "@/server/db/prisma-errors"
+} from "@builders/db"
 import { normalizeContactDetail, normalizeContactRow } from "../domain/services"
 import type { ContactDetail, ContactRow } from "../domain/types"
 

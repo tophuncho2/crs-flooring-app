@@ -1,6 +1,4 @@
-import { Prisma } from "@builders/db"
-import type { DataAccessContext } from "@/server/db/context"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma, type DataAccessContext } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { logEvent } from "@/server/platform/logger"
 import { normalizeTableFilterValues } from "@/features/flooring/shared/controllers/table/table-filter-state"

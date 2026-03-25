@@ -1,4 +1,4 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import {
   applyTemplateSync,
   loadTemplateSnapshot,

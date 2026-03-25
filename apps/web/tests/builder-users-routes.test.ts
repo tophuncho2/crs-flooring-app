@@ -22,16 +22,28 @@ vi.mock("@/server/platform/logger", () => ({
   logEvent: vi.fn(),
 }))
 
-vi.mock("@/server/db/prisma", () => ({
-  prisma: {
-    user: {
-      findMany: userFindManyMock,
-      findUnique: userFindUniqueMock,
-      update: userUpdateMock,
-      delete: userDeleteMock,
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: {
+      user: {
+        findMany: userFindManyMock,
+        findUnique: userFindUniqueMock,
+        update: userUpdateMock,
+        delete: userDeleteMock,
+      },
     },
-  },
-}))
+    db: {
+      user: {
+        findMany: userFindManyMock,
+        findUnique: userFindUniqueMock,
+        update: userUpdateMock,
+        delete: userDeleteMock,
+      },
+    },
+  }
+})
 
 const { GET: GET_USERS } = await import("@/app/api/builder/users/route")
 const { DELETE: DELETE_USER, PATCH: PATCH_USER } = await import("@/app/api/builder/users/[id]/route")

@@ -1,5 +1,4 @@
-import { Prisma } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma } from "@builders/db"
 import { normalizeTemplate, normalizeTemplateItem, normalizeTemplateServiceItem } from "./services"
 import { createAppError } from "@/server/http/api-helpers"
 import { normalizeTemplateSalesRep } from "./domain/sales-reps"

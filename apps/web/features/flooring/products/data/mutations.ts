@@ -1,4 +1,4 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import { flooringCategoryUnitInclude } from "@/server/flooring/unit-measures"
 import { createAppError } from "@/server/http/api-helpers"
 import { buildStoredProductName, normalizeCatalogProduct } from "../domain/services"

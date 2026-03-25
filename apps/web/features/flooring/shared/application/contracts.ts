@@ -1,4 +1,4 @@
-import type { PrismaPageLoadIssue } from "@/server/db/prisma-errors"
+import type { PrismaPageLoadIssue } from "@builders/db"
 
 export type AppIssue = {
   code: string

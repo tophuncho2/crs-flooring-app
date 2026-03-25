@@ -1,4 +1,4 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { normalizeContactDetail } from "../domain/services"
 import type { ContactDetail, ContactType } from "../domain/types"

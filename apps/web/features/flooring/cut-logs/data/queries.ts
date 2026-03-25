@@ -1,5 +1,4 @@
-import { prisma } from "@/server/db/prisma"
-import { withPrismaConnectivityHandling } from "@/server/db/prisma-errors"
+import { prisma, withPrismaConnectivityHandling } from "@builders/db"
 import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 

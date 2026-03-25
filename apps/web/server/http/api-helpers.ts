@@ -1,5 +1,4 @@
-import { Prisma } from "@builders/db"
-import { getPrismaConnectivityIssue } from "@/server/db/prisma-errors"
+import { Prisma, getPrismaConnectivityIssue } from "@builders/db"
 
 export type AppError = {
   kind?: "app"

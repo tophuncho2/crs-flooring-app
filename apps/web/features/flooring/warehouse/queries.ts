@@ -1,5 +1,4 @@
-import { prisma } from "@/server/db/prisma"
-import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { withLoaderTiming } from "@/features/flooring/shared/application/loader-timing"
 import type { LocationRow, SectionRow, WarehouseRow } from "./types"
 

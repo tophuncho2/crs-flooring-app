@@ -1,5 +1,4 @@
-import type { DataAccessContext } from "@/server/db/context"
-import { prisma } from "@/server/db/prisma"
+import { prisma, type DataAccessContext } from "@builders/db"
 import { canManageUsers } from "@/server/auth/access-control"
 import { type SessionUser } from "@/server/auth/session"
 import {

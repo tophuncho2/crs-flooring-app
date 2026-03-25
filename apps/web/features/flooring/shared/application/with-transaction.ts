@@ -1,5 +1,4 @@
-import type { Prisma, PrismaClient } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { prisma, type Prisma, type PrismaClient } from "@builders/db"
 
 export type TransactionClient = Prisma.TransactionClient
 

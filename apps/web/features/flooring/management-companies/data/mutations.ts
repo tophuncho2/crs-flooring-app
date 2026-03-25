@@ -1,4 +1,4 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import { normalizeManagementCompany } from "../services"
 import type { CreateManagementCompanyInput, UpdateManagementCompanyInput } from "../validators"
 

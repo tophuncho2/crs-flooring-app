@@ -1,10 +1,10 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
-} from "@/server/db/prisma-errors"
+} from "@builders/db"
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import {
   flooringCategoryUnitInclude,

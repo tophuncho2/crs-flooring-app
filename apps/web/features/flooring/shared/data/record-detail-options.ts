@@ -1,4 +1,4 @@
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import { listSalesRepContactOptions } from "@/features/flooring/contacts/data/queries"
 import { listServiceOptions } from "@/features/flooring/services/data/queries"
 import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"

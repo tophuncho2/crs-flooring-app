@@ -1,5 +1,4 @@
-import { Prisma, type PrismaClient } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma, type PrismaClient } from "@builders/db"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"

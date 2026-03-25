@@ -20,6 +20,7 @@ Run these from the repository root:
 npm install
 npm run dev
 npm run dev:worker
+npm run guard:prisma
 npm run build
 npm run lint
 npm run typecheck
@@ -30,9 +31,11 @@ Database commands:
 
 ```bash
 npm run db:generate
-npm run db:migrate
+npm run db:migrate:dev
+npm run db:deploy
 npm run db:reset
 npm run db:seed
+npm run db:studio
 ```
 
 ## Environment
@@ -44,3 +47,13 @@ Copy values from `.env.example` into your local environment before starting the 
 - `REDIS_URL` enables the worker queue connection
 
 If `REDIS_URL` is omitted, `apps/worker` starts in a non-destructive scaffold mode and exits after reporting the registered processors.
+
+## Deployment
+
+Database changes follow Model A:
+
+- run `npm run db:deploy` as its own explicit database deployment step
+- deploy `apps/web` after the DB step
+- deploy `apps/worker` after the DB step
+- do not run migrations in web or worker build/start flows
+- run `npm run db:seed` only as an explicit environment setup action

@@ -25,9 +25,14 @@ const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock, validateI
   validateInventoryLocationSelectionMock: vi.fn(),
 }))
 
-vi.mock("@/server/db/prisma", () => ({
-  prisma: prismaMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: prismaMock,
+    db: prismaMock,
+  }
+})
 
 vi.mock("@/server/http/route-helpers", () => ({
   requireRouteAccess: requireRouteAccessMock,

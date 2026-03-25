@@ -1,5 +1,4 @@
-import { withPrismaConnectivityHandling, createPrismaPageLoadIssue, isPrismaNotFoundError, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
-import { prisma } from "@/server/db/prisma"
+import { createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { normalizeManufacturer } from "../domain/services"
 import type { ManufacturerRow } from "../domain/types"
 

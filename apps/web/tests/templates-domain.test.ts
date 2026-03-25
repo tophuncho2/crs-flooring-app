@@ -38,9 +38,14 @@ const { prismaMock } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock("@/server/db/prisma", () => ({
-  prisma: prismaMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: prismaMock,
+    db: prismaMock,
+  }
+})
 
 function decimal(value: string) {
   return new Prisma.Decimal(value)

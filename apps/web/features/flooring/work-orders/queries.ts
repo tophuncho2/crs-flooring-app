@@ -1,6 +1,4 @@
-import { Prisma } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
-import { createPrismaPageLoadIssue, isPrismaNotFoundError, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@/server/db/prisma-errors"
+import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/transport/record-detail-options"
 import {

@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt"
-import { prisma } from "@/server/db/prisma"
+import { prisma } from "@builders/db"
 import { hasGovernanceAccess } from "@/server/auth/access-control"
 import { getSessionUser } from "@/server/auth/session"
 import { logEvent } from "@/server/platform/logger"

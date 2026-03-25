@@ -52,15 +52,26 @@ vi.mock("@/server/platform/request-context", async () => {
   }
 })
 
-vi.mock("@/server/db/prisma", () => ({
-  prisma: {
-    user: {
-      findUnique: userFindUniqueMock,
-      count: userCountMock,
-      create: userCreateMock,
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: {
+      user: {
+        findUnique: userFindUniqueMock,
+        count: userCountMock,
+        create: userCreateMock,
+      },
     },
-  },
-}))
+    db: {
+      user: {
+        findUnique: userFindUniqueMock,
+        count: userCountMock,
+        create: userCreateMock,
+      },
+    },
+  }
+})
 
 const { POST } = await import("@/app/api/auth/register/route")
 

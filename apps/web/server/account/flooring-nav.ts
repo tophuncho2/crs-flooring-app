@@ -1,6 +1,5 @@
 import { FLOORING_NAV_SLUGS } from "@/features/flooring/navigation/definitions"
-import type { DataAccessContext } from "@/server/db/context"
-import { prisma } from "@/server/db/prisma"
+import { prisma, type DataAccessContext } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 
 export type FlooringNavPreferencePayload = {

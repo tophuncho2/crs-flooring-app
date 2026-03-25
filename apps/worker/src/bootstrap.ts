@@ -1,8 +1,10 @@
+import { getDatabaseEnvironment } from "@builders/db"
 import { createProcessorRegistry } from "./processors/index.js"
 import { getWorkerEnvironment } from "./env.js"
 import { createQueueConnection } from "./queues/connection.js"
 
 async function main() {
+  getDatabaseEnvironment()
   const env = getWorkerEnvironment()
   const registry = createProcessorRegistry()
   const connection = await createQueueConnection(env)

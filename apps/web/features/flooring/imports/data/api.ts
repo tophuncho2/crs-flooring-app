@@ -1,5 +1,4 @@
-import { Prisma, type PrismaClient } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma, type PrismaClient } from "@builders/db"
 import {
   createAppError,
   parseDecimal,

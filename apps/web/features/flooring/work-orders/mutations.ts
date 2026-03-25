@@ -1,5 +1,4 @@
-import { Prisma } from "@builders/db"
-import { prisma } from "@/server/db/prisma"
+import { Prisma, prisma } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
