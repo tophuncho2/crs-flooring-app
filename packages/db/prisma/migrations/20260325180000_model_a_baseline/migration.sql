@@ -16,6 +16,12 @@ CREATE TYPE "FlooringStoreCode" AS ENUM ('DARBY', 'COLUMBIA');
 -- CreateEnum
 CREATE TYPE "FlooringContactType" AS ENUM ('SALES_REP', 'CONTRACTOR', 'OTHER');
 
+-- CreateSequence
+CREATE SEQUENCE IF NOT EXISTS flooring_template_number_seq START WITH 1 INCREMENT BY 1;
+
+-- CreateSequence
+CREATE SEQUENCE IF NOT EXISTS flooring_work_order_number_seq START WITH 1 INCREMENT BY 1;
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -772,4 +778,3 @@ ALTER TABLE "flooring_work_order_sales_rep" ADD CONSTRAINT "flooring_work_order_
 
 -- AddForeignKey
 ALTER TABLE "flooring_analytics" ADD CONSTRAINT "flooring_analytics_workOrderId_fkey" FOREIGN KEY ("workOrderId") REFERENCES "flooring_work_order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

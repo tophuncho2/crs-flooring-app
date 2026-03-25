@@ -35,7 +35,7 @@
     "db:upsert-owner": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/owner-recovery.js"
   },
   "prisma": {
-    "seed": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed.js"
+    "seed": "node -r dotenv/config scripts/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
