@@ -298,11 +298,14 @@ describe("InventoryClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Filter" }))
     await user.click(screen.getByRole("button", { name: "Pending" }))
-    expect(navigationMocks.replace).toHaveBeenCalledWith("/dashboard/flooring/test?status=pending", { scroll: false })
+    expect(navigationMocks.replace).toHaveBeenCalledWith(
+      "/dashboard/flooring/test?status=pending&sort=asc&grouped=0",
+      { scroll: false },
+    )
 
     await user.click(screen.getByRole("button", { name: "Overflow Warehouse" }))
     expect(navigationMocks.replace).toHaveBeenLastCalledWith(
-      "/dashboard/flooring/test?status=pending&warehouse=wh-2",
+      "/dashboard/flooring/test?warehouse=wh-2&sort=asc&grouped=0",
       { scroll: false },
     )
   })

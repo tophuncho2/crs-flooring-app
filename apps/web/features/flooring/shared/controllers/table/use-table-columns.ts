@@ -12,6 +12,25 @@ export type TableColumnDefinition = {
 
 const DEFAULT_MAX_GROUP_FIELDS = 3
 
+function areStringArraysEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((value, index) => value === right[index])
+}
+
+function areColumnVisibilityMapsEqual(left: Record<string, boolean>, right: Record<string, boolean>) {
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false
+  }
+
+  return leftKeys.every((key) => right[key] === left[key])
+}
+
 export function normalizeColumnOrder(columnKeys: string[], requestedOrder: string[]) {
   const normalizedOrder = Array.from(new Set(requestedOrder.filter((key) => columnKeys.includes(key))))
 
@@ -98,11 +117,13 @@ export function useTableColumns<TColumn extends TableColumnDefinition>({
   const [columnVisibility, setColumnVisibilityState] = useState<Record<string, boolean>>(normalizedInitialVisibility)
 
   useEffect(() => {
-    setColumnOrderState(normalizedInitialOrder)
+    setColumnOrderState((current) => (areStringArraysEqual(current, normalizedInitialOrder) ? current : normalizedInitialOrder))
   }, [normalizedInitialOrder])
 
   useEffect(() => {
-    setColumnVisibilityState(normalizedInitialVisibility)
+    setColumnVisibilityState((current) => (
+      areColumnVisibilityMapsEqual(current, normalizedInitialVisibility) ? current : normalizedInitialVisibility
+    ))
   }, [normalizedInitialVisibility])
 
   function toggleColumnVisibility(columnKey: string, isVisible: boolean) {

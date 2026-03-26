@@ -44,6 +44,25 @@ type PersistedStateContext = {
   allowedFilterValues: Record<string, string[]>
 }
 
+function areStringArraysEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((value, index) => value === right[index])
+}
+
+function areTableFilterStatesEqual(left: TableFilterState, right: TableFilterState) {
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false
+  }
+
+  return leftKeys.every((key) => areStringArraysEqual(left[key] ?? [], right[key] ?? []))
+}
+
 const tableStateSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const tableStatePersistedCache = new Map<string, string>()
 const tableStateInflightAbortControllers = new Map<string, AbortController>()
@@ -265,7 +284,7 @@ export function useConfiguredTableState<T>({
   const allowedFilterValues = useMemo(() => buildAllowedFilterValues(filterDefinitions), [filterDefinitions])
 
   useEffect(() => {
-    setFilters(initialFilterState)
+    setFilters((current) => (areTableFilterStatesEqual(current, initialFilterState) ? current : initialFilterState))
   }, [initialFilterState])
 
   useEffect(() => {
