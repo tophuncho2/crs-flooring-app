@@ -14,15 +14,15 @@ function createPrismaClient() {
 }
 
 function getPrismaClient() {
-  if (global.prismaClientSingleton) {
-    return global.prismaClientSingleton
+  if (globalThis.prismaClientSingleton) {
+    return globalThis.prismaClientSingleton
   }
 
   const prismaClient = createPrismaClient()
 
-  if (process.env.NODE_ENV !== "production") {
-    global.prismaClientSingleton = prismaClient
-  }
+  // Next can bundle shared workspace packages into multiple server chunks.
+  // Persisting the client on globalThis keeps those chunks from opening their own pools.
+  globalThis.prismaClientSingleton = prismaClient
 
   return prismaClient
 }
