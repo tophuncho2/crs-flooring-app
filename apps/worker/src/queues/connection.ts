@@ -1,14 +1,7 @@
-import { createClient } from "redis"
+import type { ConnectionOptions } from "bullmq"
+import { parseRedisConnectionUrl } from "@builders/lib"
 import type { WorkerEnvironment } from "../env.js"
 
-export type QueueConnection = ReturnType<typeof createClient>
-
-export async function createQueueConnection(env: WorkerEnvironment): Promise<QueueConnection | null> {
-  if (!env.REDIS_URL) {
-    return null
-  }
-
-  const client = createClient({ url: env.REDIS_URL })
-  await client.connect()
-  return client
+export function createQueueConnection(env: WorkerEnvironment): ConnectionOptions {
+  return parseRedisConnectionUrl(env.redisUrl)
 }

@@ -223,7 +223,7 @@ describe("WarehouseDetailClient", () => {
 
     await user.clear(screen.getByLabelText("Warehouse Name"))
     await user.type(screen.getByLabelText("Warehouse Name"), "Dirty Warehouse")
-    await user.click(screen.getByRole("button", { name: "Back" }))
+    await user.click(screen.getAllByRole("button", { name: "Back" })[0])
 
     expect(window.confirm).toHaveBeenCalled()
     expect(navigationMocks.push).not.toHaveBeenCalled()

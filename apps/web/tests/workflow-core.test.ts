@@ -318,8 +318,9 @@ describe("workflow core", () => {
 
   it("deletes work-order rows without extra lookup work", async () => {
     const tx = {
-      flooringWorkOrderItem: { delete: vi.fn().mockResolvedValue({}) },
-      flooringWorkOrderServiceItem: { delete: vi.fn().mockResolvedValue({}) },
+      flooringWorkOrderItem: { delete: vi.fn().mockResolvedValue({ workOrderId: "wo-1" }) },
+      flooringWorkOrderServiceItem: { delete: vi.fn().mockResolvedValue({ workOrderId: "wo-1" }) },
+      flooringWorkOrder: { update: vi.fn().mockResolvedValue({}) },
     }
 
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof tx) => unknown) => callback(tx))
@@ -327,7 +328,14 @@ describe("workflow core", () => {
     await deleteWorkOrderItem("item-1")
     await deleteWorkOrderServiceItem("service-1")
 
-    expect(tx.flooringWorkOrderItem.delete).toHaveBeenCalledWith({ where: { id: "item-1" } })
-    expect(tx.flooringWorkOrderServiceItem.delete).toHaveBeenCalledWith({ where: { id: "service-1" } })
+    expect(tx.flooringWorkOrderItem.delete).toHaveBeenCalledWith({
+      where: { id: "item-1" },
+      select: { workOrderId: true },
+    })
+    expect(tx.flooringWorkOrderServiceItem.delete).toHaveBeenCalledWith({
+      where: { id: "service-1" },
+      select: { workOrderId: true },
+    })
+    expect(tx.flooringWorkOrder.update).toHaveBeenCalledTimes(2)
   })
 })

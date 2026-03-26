@@ -1,6 +1,7 @@
 import { Prisma, prisma } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
+import { buildInvoiceInvalidationFields } from "./invoice-state"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
 import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import type {
@@ -248,6 +249,10 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
   if (input.googleDriveSlip !== undefined) data.googleDriveSlip = input.googleDriveSlip
   if (input.googleDocUrl !== undefined) data.googleDocUrl = input.googleDocUrl
 
+  if (Object.keys(data).length > 0) {
+    Object.assign(data, buildInvoiceInvalidationFields())
+  }
+
   const workOrder = await prisma.flooringWorkOrder.update({
     where: { id },
     data,
@@ -303,6 +308,11 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
       },
     })
 
+    await tx.flooringWorkOrder.update({
+      where: { id: workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+
     return item
   })
 
@@ -345,6 +355,11 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
       },
     })
 
+    await tx.flooringWorkOrder.update({
+      where: { id: item.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+
     return item
   })
 
@@ -353,7 +368,14 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
 
 export async function deleteWorkOrderItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
-    await tx.flooringWorkOrderItem.delete({ where: { id: itemId } })
+    const deleted = await tx.flooringWorkOrderItem.delete({
+      where: { id: itemId },
+      select: { workOrderId: true },
+    })
+    await tx.flooringWorkOrder.update({
+      where: { id: deleted.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
   })
 }
 
@@ -378,6 +400,11 @@ export async function createWorkOrderServiceItem(workOrderId: string, input: Wor
           },
         },
       },
+    })
+
+    await tx.flooringWorkOrder.update({
+      where: { id: workOrderId },
+      data: buildInvoiceInvalidationFields(),
     })
 
     return item
@@ -415,6 +442,11 @@ export async function updateWorkOrderServiceItem(itemId: string, input: Partial<
       },
     })
 
+    await tx.flooringWorkOrder.update({
+      where: { id: item.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+
     return item
   })
 
@@ -423,7 +455,14 @@ export async function updateWorkOrderServiceItem(itemId: string, input: Partial<
 
 export async function deleteWorkOrderServiceItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
-    await tx.flooringWorkOrderServiceItem.delete({ where: { id: itemId } })
+    const deleted = await tx.flooringWorkOrderServiceItem.delete({
+      where: { id: itemId },
+      select: { workOrderId: true },
+    })
+    await tx.flooringWorkOrder.update({
+      where: { id: deleted.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
   })
 }
 

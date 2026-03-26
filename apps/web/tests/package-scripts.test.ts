@@ -22,6 +22,7 @@ describe("package scripts", () => {
     expect(rootPackageJson.scripts["start:web"]).toBe("npm run start --workspace @builders/web")
     expect(rootPackageJson.scripts["build:worker"]).toBe("npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/worker")
     expect(rootPackageJson.scripts["start:worker"]).toBe("npm run start --workspace @builders/worker")
+    expect(rootPackageJson.scripts.test).toBe("npm run test --workspace @builders/web && npm run test --workspace @builders/worker")
     expect(rootPackageJson.scripts["db:generate"]).toBe("npm run db:generate --workspace @builders/db --")
     expect(rootPackageJson.scripts["db:migrate:dev"]).toBe("npm run db:migrate:dev --workspace @builders/db --")
     expect(rootPackageJson.scripts["db:deploy"]).toBe("npm run db:deploy --workspace @builders/db --")

@@ -67,6 +67,14 @@ enum FlooringWorkOrderStatus {
   MODIFY
 }
 
+enum FlooringInvoiceStatus {
+  IDLE
+  QUEUED
+  PROCESSING
+  READY
+  FAILED
+}
+
 enum FlooringVacancyStatus {
   VACANT
   OCCUPIED
@@ -458,6 +466,14 @@ model FlooringWorkOrder {
   notes           String?
   googleDriveSlip String?
   googleDocUrl    String?
+  invoiceSourceUpdatedAt DateTime                @default(now())
+  invoiceStatus   FlooringInvoiceStatus          @default(IDLE)
+  invoiceFileKey  String?
+  invoiceRequestedAt DateTime?
+  invoiceGeneratedAt DateTime?
+  invoiceFailedAt DateTime?
+  invoiceError    String?
+  invoiceIdempotencyKey String?
   templateSyncedAt DateTime?
   templateSyncMode String?
   templateSnapshotHash String?
@@ -478,6 +494,8 @@ model FlooringWorkOrder {
   @@index([updatedAt])
   @@index([templateId])
   @@index([warehouseId])
+  @@index([invoiceStatus])
+  @@index([invoiceIdempotencyKey])
   @@map("flooring_work_order")
 }
 

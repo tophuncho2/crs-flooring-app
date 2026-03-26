@@ -109,6 +109,12 @@ type WorkOrderRow = {
   instructions: string
   notes: string
   workOrderImageUrl: string
+  invoiceStatus: "IDLE" | "QUEUED" | "PROCESSING" | "READY" | "FAILED"
+  invoiceRequestedAt: string | null
+  invoiceGeneratedAt: string | null
+  invoiceFailedAt: string | null
+  invoiceError: string
+  hasInvoice: boolean
   itemsCount: number
   createdAt: string
   updatedAt: string
@@ -136,6 +142,12 @@ function workOrderRow(overrides: Partial<WorkOrderRow> = {}): WorkOrderRow {
     instructions: "",
     notes: "",
     workOrderImageUrl: "",
+    invoiceStatus: "IDLE",
+    invoiceRequestedAt: null,
+    invoiceGeneratedAt: null,
+    invoiceFailedAt: null,
+    invoiceError: "",
+    hasInvoice: false,
     itemsCount: 0,
     createdAt: "2026-03-19T00:00:00.000Z",
     updatedAt: "2026-03-19T00:00:00.000Z",
@@ -288,6 +300,8 @@ describe("WorkOrdersClient", () => {
   })
 
   it("removes Sync Template from the canonical detail options menu", () => {
+    requestJsonMock.mockResolvedValue({ invoice: { status: "IDLE", canOpen: false, requestedAt: null, generatedAt: null, failedAt: null, error: "", downloadUrl: null } })
+
     render(
       <WorkOrderDetailClient
         workOrder={workOrderRow()}
@@ -305,6 +319,62 @@ describe("WorkOrdersClient", () => {
     expect(within(optionsMenu).queryByRole("button", { name: "Sync Template" })).toBeNull()
     expect(within(optionsMenu).getByRole("button", { name: "Complete" })).toBeTruthy()
     expect(within(optionsMenu).getByRole("button", { name: "Invoice" })).toBeTruthy()
+    expect(within(optionsMenu).getByRole("button", { name: "Open Invoice" })).toBeTruthy()
+  })
+
+  it("queues invoice generation and keeps Open Invoice disabled until a file exists", async () => {
+    const user = userEvent.setup()
+
+    requestJsonMock
+      .mockResolvedValueOnce({
+        invoice: {
+          status: "IDLE",
+          canOpen: false,
+          requestedAt: null,
+          generatedAt: null,
+          failedAt: null,
+          error: "",
+          downloadUrl: null,
+        },
+      })
+      .mockResolvedValueOnce({
+        invoice: {
+          status: "QUEUED",
+          canOpen: false,
+          requestedAt: "2026-03-26T12:00:00.000Z",
+          generatedAt: null,
+          failedAt: null,
+          error: "",
+          downloadUrl: null,
+        },
+      })
+
+    render(
+      <WorkOrderDetailClient
+        workOrder={workOrderRow()}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        backHref="/dashboard/flooring/work-orders"
+      />,
+    )
+
+    const optionsMenu = screen.getByTestId("record-options-menu")
+    const openInvoiceButton = within(optionsMenu).getByRole("button", { name: "Open Invoice" }) as HTMLButtonElement
+    expect(openInvoiceButton.disabled).toBe(true)
+
+    await user.click(within(optionsMenu).getByRole("button", { name: "Invoice" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders/wo-1/invoice", expect.objectContaining({
+        method: "POST",
+      }))
+    })
+
+    expect(await screen.findByText("Invoice generation queued")).toBeTruthy()
+    expect((within(optionsMenu).getByRole("button", { name: "Invoice" }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it("shows completion success inside the canonical detail notice area", async () => {

@@ -282,6 +282,12 @@ export function WorkOrderRecordPanel({
         items: materialItems,
         serviceItems,
         salesReps: salesRepCollection.items,
+        invoiceStatus: "IDLE",
+        invoiceRequestedAt: null,
+        invoiceGeneratedAt: null,
+        invoiceFailedAt: null,
+        invoiceError: "",
+        hasInvoice: false,
         summary: buildRecordSummary({
           materialItems,
           serviceItems,

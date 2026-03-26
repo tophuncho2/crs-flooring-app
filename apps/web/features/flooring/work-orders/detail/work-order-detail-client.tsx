@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useCallback, useDeferredValue, useState } from "react"
+import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { RecordOptionsMenu } from "@/features/flooring/shared/ui/display/record-options-menu"
@@ -11,6 +11,7 @@ import type { MaterialItemOption } from "@/features/flooring/shared/ui/record-it
 import type { ServiceOption, UnitOption } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { WorkOrderExpenseSummaryHeader } from "../components/work-order-expense-summary"
 import { normalizeWorkOrderExpenseSummary } from "../domain/expense-summary"
+import { useWorkOrderInvoiceController } from "../use-work-order-invoice-controller"
 import type { PropertyOption, SalesRepContactOption, WarehouseOption, WorkOrderDetail } from "../types"
 
 export default function WorkOrderDetailClient({
@@ -47,10 +48,27 @@ export default function WorkOrderDetailClient({
   )
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [refreshNonce, setRefreshNonce] = useState(0)
+  const invoice = useWorkOrderInvoiceController(workOrder)
+  const previousInvoiceStatusRef = useRef(invoice.invoice.status)
 
   const closePage = useCallback(() => {
     page.closePage()
   }, [page])
+
+  useEffect(() => {
+    const previousStatus = previousInvoiceStatusRef.current
+    const currentStatus = invoice.invoice.status
+
+    if ((previousStatus === "QUEUED" || previousStatus === "PROCESSING") && currentStatus === "READY") {
+      page.notices.showSuccess("Invoice ready")
+    }
+
+    if ((previousStatus === "QUEUED" || previousStatus === "PROCESSING") && currentStatus === "FAILED") {
+      page.notices.showError(invoice.invoice.error || "Invoice generation failed")
+    }
+
+    previousInvoiceStatusRef.current = currentStatus
+  }, [invoice.invoice.error, invoice.invoice.status, page.notices])
 
   async function markWorkOrderComplete() {
     if (workOrder.isComplete) return
@@ -83,6 +101,17 @@ export default function WorkOrderDetailClient({
     }
   }
 
+  async function queueInvoiceGeneration() {
+    page.notices.clearNotices()
+
+    try {
+      await invoice.queueInvoice()
+      page.notices.showSuccess("Invoice generation queued")
+    } catch (invoiceError) {
+      page.notices.showError(invoiceError instanceof Error ? invoiceError.message : "Failed to queue invoice generation")
+    }
+  }
+
   return (
     <RecordDetailPageShell
       title={`Work Order ${workOrder.workOrderNumber}`}
@@ -99,7 +128,13 @@ export default function WorkOrderDetailClient({
             },
             {
               label: "Invoice",
-              disabled: true,
+              onSelect: () => void queueInvoiceGeneration(),
+              disabled: invoice.isGenerating,
+            },
+            {
+              label: "Open Invoice",
+              onSelect: invoice.openInvoice,
+              disabled: !invoice.invoice.canOpen,
             },
           ]}
         />

@@ -1,57 +1,39 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import {
+  buildBucketObjectUrl,
+  getBucketObject,
+  type StorageEnvironment,
+  uploadBucketObject,
+} from "@builders/lib"
 import { getStorageEnvironment } from "@/server/platform/env"
 
-let cachedS3Client: S3Client | null = null
-
-function getS3Client() {
-  if (cachedS3Client) {
-    return cachedS3Client
-  }
-
-  const storage = getStorageEnvironment()
-
-  cachedS3Client = new S3Client({
-    region: storage.defaultRegion,
-    endpoint: storage.endpointUrl,
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: storage.accessKeyId,
-      secretAccessKey: storage.secretAccessKey,
-    },
-  })
-
-  return cachedS3Client
+function getEnv(): StorageEnvironment {
+  return getStorageEnvironment()
 }
 
 function getBucketName() {
-  return getStorageEnvironment().bucketName
+  return getEnv().bucketName
 }
 
 export async function uploadFileToBucket(buffer: Buffer, fileName: string, contentType: string) {
-  const key = `uploads/${fileName}`
-
-  await getS3Client().send(
-    new PutObjectCommand({
-      Bucket: getBucketName(),
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-    }),
-  )
-
-  return buildBucketFileUrl(fileName)
+  return uploadBucketObject(getEnv(), {
+    data: buffer,
+    key: `uploads/${fileName}`,
+    contentType,
+  })
 }
 
 export function buildBucketFileUrl(fileName: string) {
-  const storage = getStorageEnvironment()
+  return buildBucketObjectUrl(getEnv(), `uploads/${fileName}`)
+}
 
-  return `${storage.endpointUrl}/${getBucketName()}/uploads/${fileName}`
+export function buildBucketObjectUrlForKey(key: string) {
+  return buildBucketObjectUrl(getEnv(), key)
 }
 
 export function isBucketFileUrl(url: string) {
   try {
     const parsedUrl = new URL(url)
-    const storage = getStorageEnvironment()
+    const storage = getEnv()
     const endpointUrl = new URL(storage.endpointUrl)
 
     return (
@@ -64,20 +46,5 @@ export function isBucketFileUrl(url: string) {
 }
 
 export async function getFileFromBucket(fileName: string) {
-  const result = await getS3Client().send(
-    new GetObjectCommand({
-      Bucket: getBucketName(),
-      Key: `uploads/${fileName}`,
-    }),
-  )
-  const bytes = await result.Body?.transformToByteArray()
-
-  if (!bytes) {
-    throw new Error("Bucket file is empty or missing")
-  }
-
-  return {
-    data: Buffer.from(bytes),
-    contentType: result.ContentType ?? "application/octet-stream",
-  }
+  return getBucketObject(getEnv(), `uploads/${fileName}`)
 }
