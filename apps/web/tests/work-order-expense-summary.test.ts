@@ -22,7 +22,9 @@ describe("work order expense summary", () => {
       serviceTotal: 30,
       customerCost: 67,
       salesRepExpense: 10.385,
-      expenses: 40.385,
+      expenses: 77.385,
+      profit: -10.385000000000005,
+      profitMargin: -0.15500000000000008,
     })
   })
 

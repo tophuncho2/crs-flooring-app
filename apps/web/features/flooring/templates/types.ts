@@ -10,6 +10,7 @@ export type TemplateRow = {
   templateTag: string
   propertyId: string
   propertyName: string
+  unitType: string
   warehouseId: string
   warehouseName: string
   instructions: string
@@ -54,6 +55,7 @@ export type PadProductOption = {
 export type DraftTemplate = {
   templateTag: string
   propertyId: string
+  unitType: string
   warehouseId: string
   instructions: string
   templateNotes: string

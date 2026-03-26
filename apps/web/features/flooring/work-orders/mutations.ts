@@ -129,6 +129,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
     const templateSnapshot = input.templateId ? await loadTemplateSnapshot(input.templateId, tx) : null
     const useTemplateMaterialItems = Boolean(templateSnapshot && input.items.length === 0)
     const useTemplateServiceItems = Boolean(templateSnapshot && input.serviceItems.length === 0)
+    const useTemplateSalesReps = Boolean(templateSnapshot)
     const workOrder = await tx.flooringWorkOrder.create({
       data: {
         propertyId,
@@ -139,7 +140,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         vacancy: input.vacancy,
         scheduledFor: input.scheduledFor,
         unitLabel: input.unitLabel,
-        unitType: input.unitType,
+        unitType: templateSnapshot?.unitType ?? input.unitType,
         customAddress: input.customAddress,
         instructions: templateSnapshot?.instructions ?? input.instructions,
         notes: input.notes,
@@ -159,6 +160,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         snapshot: templateSnapshot,
         includeMaterialItems: useTemplateMaterialItems,
         includeServiceItems: useTemplateServiceItems,
+        includeSalesReps: useTemplateSalesReps,
       })
     }
 

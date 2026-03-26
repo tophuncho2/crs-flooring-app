@@ -55,6 +55,13 @@ export function TemplateCreateModal({
               ))}
             </select>
           </RecordFormField>
+          <RecordFormField label="Unit Type">
+            <input
+              value={draft.unitType}
+              onChange={(event) => onFieldChange("unitType", event.target.value)}
+              className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+            />
+          </RecordFormField>
           <RecordFormField label="Warehouse">
             <select
               value={draft.warehouseId}

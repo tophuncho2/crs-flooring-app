@@ -316,6 +316,7 @@ model FlooringTemplate {
   propertyId     String
   property       Property                      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateTag    String
+  unitType       String?
   store          FlooringStoreCode?
   warehouseId    String?
   warehouse      FlooringWarehouse?            @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
@@ -529,18 +530,20 @@ model FlooringWorkOrderServiceItem {
 }
 
 model FlooringWorkOrderSalesRep {
-  id         String           @id @default(uuid())
-  workOrderId String
-  workOrder  FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  contactId  String
-  contact    FlooringContact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
-  percent    Decimal           @db.Decimal(5, 2)
-  createdAt  DateTime          @default(now())
+  id                      String            @id @default(uuid())
+  workOrderId             String
+  workOrder               FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  sourceTemplateSalesRepId String?
+  contactId               String
+  contact                 FlooringContact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  percent                 Decimal           @db.Decimal(5, 2)
+  createdAt               DateTime          @default(now())
 
   @@unique([workOrderId, contactId])
   @@index([workOrderId])
   @@index([contactId])
   @@index([workOrderId, createdAt])
+  @@index([sourceTemplateSalesRepId])
   @@map("flooring_work_order_sales_rep")
 }
 

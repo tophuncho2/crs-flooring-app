@@ -22,10 +22,13 @@ import {
   type UnitOption,
 } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
+import { CalculationRowsTable } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
 import { PrimaryRecordFieldsGrid } from "@/features/flooring/shared/ui/record-items/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
+import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
+import { buildRecordCalculationRowsFromSummary, type CalculationRow } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
 import { useRecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import { normalizeTemplateExpenseSummary } from "@/features/flooring/templates/domain/expense-summary"
@@ -39,6 +42,7 @@ function toTemplateDraft(template: TemplateDetail): DraftTemplate {
   return {
     templateTag: template.templateTag,
     propertyId: template.propertyId,
+    unitType: template.unitType,
     warehouseId: template.warehouseId,
     instructions: template.instructions,
     templateNotes: template.templateNotes,
@@ -173,6 +177,17 @@ export function TemplateRecordPanel({
     }),
     skipReloadAfterMutation: true,
   })
+  const initialCalculationRows = buildRecordCalculationRowsFromSummary(initialTemplateDetail.expenseSummary)
+  const calculationRowsCollection = useReadOnlyChildCollection<CalculationRow>({
+    listUrl: `/api/flooring/templates/${templateId}/calculations`,
+    mapItems: (payload) => (payload.items as CalculationRow[] | undefined) ?? [],
+    initialItems: initialCalculationRows,
+  })
+  const {
+    items: calculationRows,
+    loading: loadingCalculationRows,
+    setItems: setCalculationRows,
+  } = calculationRowsCollection
 
   const onSummaryChangeRef = useRef(onSummaryChange)
   const onTemplateSavedRef = useRef(onTemplateSaved)
@@ -264,6 +279,11 @@ export function TemplateRecordPanel({
     serviceItems: lineItems.serviceItems,
     salesReps: salesRepLines.salesReps,
   })
+  const currentCalculationRows = buildRecordCalculationRowsFromSummary(currentExpenseSummary)
+
+  useEffect(() => {
+    setCalculationRows(currentCalculationRows)
+  }, [currentCalculationRows, setCalculationRows])
 
   const syncTemplateCollections = useCallback(
     (
@@ -362,6 +382,9 @@ export function TemplateRecordPanel({
           <RecordFormField label="Template Tag">
             <input value={draft.templateTag} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateTag: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
           </RecordFormField>
+          <RecordFormField label="Unit Type">
+            <input value={draft.unitType} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitType: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          </RecordFormField>
           <RecordFormField label="Warehouse">
             <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
               <option value="">No warehouse</option>
@@ -455,6 +478,12 @@ export function TemplateRecordPanel({
         onItemFieldChange={salesRepLines.handleItemFieldChange}
         onSaveItem={(item) => void salesRepLines.saveItem(item)}
         onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
+      />
+
+      <CalculationRowsTable
+        title="Calculations"
+        items={calculationRows}
+        loading={loadingCalculationRows}
       />
 
       <RecordPanelFooter

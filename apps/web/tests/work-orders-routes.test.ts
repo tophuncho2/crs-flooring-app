@@ -4,6 +4,7 @@ import { DELETE as DELETE_ITEM, PATCH as PATCH_ITEM } from "@/app/api/flooring/w
 import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/flooring/work-orders/[id]/service-items/route"
 import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/app/api/flooring/work-orders/[id]/service-items/[itemId]/route"
 import { GET as GET_SALES_REPS, POST as POST_SALES_REP } from "@/app/api/flooring/work-orders/[id]/sales-reps/route"
+import { GET as GET_CALCULATIONS } from "@/app/api/flooring/work-orders/[id]/calculations/route"
 import { DELETE as DELETE_SALES_REP, PATCH as PATCH_SALES_REP } from "@/app/api/flooring/work-orders/[id]/sales-reps/[repId]/route"
 
 const {
@@ -20,6 +21,7 @@ const {
   updateWorkOrderServiceItemMock,
   deleteWorkOrderServiceItemMock,
   listWorkOrderSalesRepsMock,
+  listWorkOrderCalculationRowsMock,
   createWorkOrderSalesRepMock,
   updateWorkOrderSalesRepMock,
   deleteWorkOrderSalesRepMock,
@@ -37,6 +39,7 @@ const {
   updateWorkOrderServiceItemMock: vi.fn(),
   deleteWorkOrderServiceItemMock: vi.fn(),
   listWorkOrderSalesRepsMock: vi.fn(),
+  listWorkOrderCalculationRowsMock: vi.fn(),
   createWorkOrderSalesRepMock: vi.fn(),
   updateWorkOrderSalesRepMock: vi.fn(),
   deleteWorkOrderSalesRepMock: vi.fn(),
@@ -76,6 +79,7 @@ vi.mock("@/features/flooring/work-orders/queries", () => ({
   listWorkOrderItems: listWorkOrderItemsMock,
   listWorkOrderServiceItems: listWorkOrderServiceItemsMock,
   listWorkOrderSalesReps: listWorkOrderSalesRepsMock,
+  listWorkOrderCalculationRows: listWorkOrderCalculationRowsMock,
 }))
 
 vi.mock("@/features/flooring/work-orders/mutations", () => ({
@@ -316,5 +320,24 @@ describe("work-order child routes", () => {
     expect(duplicateResponse.status).toBe(409)
     expect(duplicatePayload.error).toBe("This sales rep is already assigned to the work order")
     expect(duplicatePayload.field).toBe("contactId")
+  })
+
+  it("child calculation route lists derived rows", async () => {
+    listWorkOrderCalculationRowsMock.mockResolvedValue([
+      { key: "expenses", label: "Expenses", value: 88.5, format: "currency" },
+      { key: "profit", label: "Profit", value: 11.5, format: "currency" },
+    ])
+
+    const response = await GET_CALCULATIONS(new Request("http://localhost/api/flooring/work-orders/wo-1/calculations"), {
+      params: Promise.resolve({ id: "wo-1" }),
+    })
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload.items).toEqual([
+      { key: "expenses", label: "Expenses", value: 88.5, format: "currency" },
+      { key: "profit", label: "Profit", value: 11.5, format: "currency" },
+    ])
+    expect(listWorkOrderCalculationRowsMock).toHaveBeenCalledWith("wo-1")
   })
 })

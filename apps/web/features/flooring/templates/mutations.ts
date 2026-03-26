@@ -138,6 +138,7 @@ export async function createTemplate(input: CreateTemplateInput) {
       data: {
         propertyId: input.propertyId,
         templateTag: input.templateTag,
+        unitType: input.unitType,
         warehouseId: input.warehouseId,
         instructions: input.instructions,
         templateNotes: input.templateNotes,

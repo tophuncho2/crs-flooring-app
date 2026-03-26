@@ -37,7 +37,7 @@ function decimal(value: string) {
 describe("workflow core", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
+    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Renovation", instructions: "Template instructions" })
   })
 
   it("creates templates inside one transaction and resolves default prices through the transaction client", async () => {
@@ -56,6 +56,7 @@ describe("workflow core", () => {
           templateNumber: "TP-00001",
           templateTag: "Turn",
           propertyId: "prop-1",
+          unitType: "Renovation",
           property: { id: "prop-1", name: "Oak" },
           warehouse: { id: "wh-1", name: "Main" },
           padProduct: null,
@@ -75,6 +76,7 @@ describe("workflow core", () => {
     const template = await createTemplate({
       propertyId: "prop-1",
       templateTag: "Turn",
+      unitType: "Renovation",
       warehouseId: "wh-1",
       instructions: "Install",
       templateNotes: null,
@@ -126,12 +128,16 @@ describe("workflow core", () => {
             id: "tpl-1",
             propertyId: "prop-1",
             warehouseId: "wh-1",
+            unitType: "Renovation",
             instructions: "Template instructions",
             items: [
               { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: "material" },
             ],
             serviceItems: [
               { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+            ],
+            salesReps: [
+              { id: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") },
             ],
           }),
       },
@@ -165,7 +171,7 @@ describe("workflow core", () => {
           vacancy: null,
           scheduledFor: null,
           unitLabel: null,
-          unitType: null,
+          unitType: "Renovation",
           customAddress: null,
           instructions: "Template instructions",
           notes: null,
@@ -179,6 +185,7 @@ describe("workflow core", () => {
       },
       flooringWorkOrderItem: { create: vi.fn().mockResolvedValue({}) },
       flooringWorkOrderServiceItem: { create: vi.fn().mockResolvedValue({}) },
+      flooringWorkOrderSalesRep: { create: vi.fn().mockResolvedValue({}) },
     }
 
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof tx) => unknown) => callback(tx))
@@ -208,12 +215,14 @@ describe("workflow core", () => {
           propertyId: "prop-1",
           templateId: "tpl-1",
           warehouseId: "wh-1",
+          unitType: "Renovation",
           instructions: "Template instructions",
         }),
       }),
     )
     expect(tx.flooringWorkOrderItem.create).toHaveBeenCalledTimes(1)
     expect(tx.flooringWorkOrderServiceItem.create).toHaveBeenCalledTimes(1)
+    expect(tx.flooringWorkOrderSalesRep.create).toHaveBeenCalledTimes(1)
     expect(workOrder.templateId).toBe("tpl-1")
   })
 
@@ -225,6 +234,7 @@ describe("workflow core", () => {
           propertyId: "prop-1",
           templateId: null,
           warehouseId: null,
+          unitType: null,
           instructions: null,
           isComplete: false,
           updatedAt: new Date("2026-03-18T00:00:00Z"),
@@ -236,9 +246,11 @@ describe("workflow core", () => {
           id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
+          unitType: "Renovation",
           instructions: "Template instructions",
           items: [{ id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null }],
           serviceItems: [{ id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null }],
+          salesReps: [{ id: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") }],
         }),
       },
       flooringWorkOrderItem: {
@@ -248,6 +260,12 @@ describe("workflow core", () => {
         update: vi.fn(),
       },
       flooringWorkOrderServiceItem: {
+        findMany: vi.fn().mockResolvedValue([]),
+        createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        update: vi.fn(),
+      },
+      flooringWorkOrderSalesRep: {
         findMany: vi.fn().mockResolvedValue([]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -270,11 +288,13 @@ describe("workflow core", () => {
       data: expect.objectContaining({
         templateId: "tpl-1",
         warehouseId: "wh-1",
+        unitType: "Renovation",
         instructions: "Template instructions",
       }),
     })
     expect(result.headerUpdates).toEqual({
       warehouseId: true,
+      unitType: true,
       instructions: true,
       templateId: true,
     })

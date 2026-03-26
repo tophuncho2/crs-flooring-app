@@ -46,6 +46,7 @@ export function normalizeTemplate(template: {
   id: string
   templateNumber: string
   templateTag: string
+  unitType: string | null
   instructions: string | null
   templateNotes: string | null
   propertyId: string
@@ -62,6 +63,7 @@ export function normalizeTemplate(template: {
     templateTag: template.templateTag,
     propertyId: template.propertyId,
     propertyName: template.property.name,
+    unitType: template.unitType ?? "",
     warehouseId: template.warehouse?.id ?? "",
     warehouseName: template.warehouse?.name ?? "",
     instructions: template.instructions ?? "",

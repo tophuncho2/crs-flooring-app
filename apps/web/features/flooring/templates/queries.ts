@@ -1,5 +1,6 @@
 import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
+import { buildRecordCalculationRows } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import { loadTemplateRecordDetailOptions } from "@/features/flooring/shared/transport/record-detail-options"
 import { normalizeTemplate, normalizeTemplateExpenseTotals, normalizeTemplateItem, normalizeTemplateSalesRep, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
@@ -12,6 +13,7 @@ function buildTemplatesWhere(searchQuery: string): Prisma.FlooringTemplateWhereI
       { templateNumber: { contains: searchQuery, mode: "insensitive" } },
       { templateTag: { contains: searchQuery, mode: "insensitive" } },
       { property: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { unitType: { contains: searchQuery, mode: "insensitive" } },
       { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
       { instructions: { contains: searchQuery, mode: "insensitive" } },
       { templateNotes: { contains: searchQuery, mode: "insensitive" } },
@@ -208,6 +210,45 @@ export async function listTemplateSalesReps(templateId: string) {
   })
 
   return items.map(normalizeTemplateSalesRep)
+}
+
+export async function listTemplateCalculationRows(templateId: string) {
+  const [items, serviceItems, salesReps] = await Promise.all([
+    prisma.flooringTemplateItem.findMany({
+      where: { templateId },
+      select: {
+        quantity: true,
+        unitPrice: true,
+      },
+    }),
+    prisma.flooringTemplateServiceItem.findMany({
+      where: { templateId },
+      select: {
+        quantity: true,
+        unitPrice: true,
+      },
+    }),
+    prisma.flooringTemplateSalesRep.findMany({
+      where: { templateId },
+      select: {
+        percent: true,
+      },
+    }),
+  ])
+
+  return buildRecordCalculationRows({
+    items: items.map((item) => ({
+      quantity: item.quantity.toString(),
+      unitPrice: item.unitPrice.toString(),
+    })),
+    serviceItems: serviceItems.map((item) => ({
+      quantity: item.quantity.toString(),
+      unitPrice: item.unitPrice.toString(),
+    })),
+    salesReps: salesReps.map((item) => ({
+      percent: item.percent.toString(),
+    })),
+  })
 }
 
 function buildPadLabel(product: {

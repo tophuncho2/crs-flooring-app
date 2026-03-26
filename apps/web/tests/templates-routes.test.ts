@@ -6,6 +6,7 @@ import { DELETE as DELETE_ITEM, PATCH as PATCH_ITEM } from "@/app/api/flooring/t
 import { GET as GET_SERVICE_ITEMS, POST as POST_SERVICE_ITEM } from "@/app/api/flooring/templates/[id]/service-items/route"
 import { DELETE as DELETE_SERVICE_ITEM, PATCH as PATCH_SERVICE_ITEM } from "@/app/api/flooring/templates/[id]/service-items/[itemId]/route"
 import { GET as GET_SALES_REPS, POST as POST_SALES_REP } from "@/app/api/flooring/templates/[id]/sales-reps/route"
+import { GET as GET_CALCULATIONS } from "@/app/api/flooring/templates/[id]/calculations/route"
 import { DELETE as DELETE_SALES_REP, PATCH as PATCH_SALES_REP } from "@/app/api/flooring/templates/[id]/sales-reps/[repId]/route"
 
 const {
@@ -27,6 +28,7 @@ const {
   updateTemplateServiceItemMock,
   deleteTemplateServiceItemMock,
   listTemplateSalesRepsMock,
+  listTemplateCalculationRowsMock,
   createTemplateSalesRepMock,
   updateTemplateSalesRepMock,
   deleteTemplateSalesRepMock,
@@ -49,6 +51,7 @@ const {
   updateTemplateServiceItemMock: vi.fn(),
   deleteTemplateServiceItemMock: vi.fn(),
   listTemplateSalesRepsMock: vi.fn(),
+  listTemplateCalculationRowsMock: vi.fn(),
   createTemplateSalesRepMock: vi.fn(),
   updateTemplateSalesRepMock: vi.fn(),
   deleteTemplateSalesRepMock: vi.fn(),
@@ -90,6 +93,7 @@ vi.mock("@/features/flooring/templates/queries", () => ({
   listTemplateItems: listTemplateItemsMock,
   listTemplateServiceItems: listTemplateServiceItemsMock,
   listTemplateSalesReps: listTemplateSalesRepsMock,
+  listTemplateCalculationRows: listTemplateCalculationRowsMock,
 }))
 
 vi.mock("@/features/flooring/templates/mutations", () => ({
@@ -114,6 +118,7 @@ function templateRow(overrides: Partial<Record<string, unknown>> = {}) {
     templateTag: "Turn",
     propertyId: "prop-1",
     propertyName: "Oak Apartments",
+    unitType: "",
     warehouseId: "",
     warehouseName: "",
     instructions: "",
@@ -420,5 +425,24 @@ describe("template routes", () => {
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This sales rep is already assigned to the template")
     expect(payload.field).toBe("contactId")
+  })
+
+  it("child calculation route lists derived rows", async () => {
+    listTemplateCalculationRowsMock.mockResolvedValue([
+      { key: "customerCost", label: "Customer Cost", value: 100, format: "currency" },
+      { key: "profitMargin", label: "Profit Margin", value: 0.25, format: "percentage" },
+    ])
+
+    const response = await GET_CALCULATIONS(new Request("http://localhost/api/flooring/templates/tpl-1/calculations"), {
+      params: Promise.resolve({ id: "tpl-1" }),
+    })
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload.items).toEqual([
+      { key: "customerCost", label: "Customer Cost", value: 100, format: "currency" },
+      { key: "profitMargin", label: "Profit Margin", value: 0.25, format: "percentage" },
+    ])
+    expect(listTemplateCalculationRowsMock).toHaveBeenCalledWith("tpl-1")
   })
 })

@@ -37,6 +37,7 @@ function buildTx(overrides: Partial<Record<string, unknown>> = {}) {
         propertyId: "prop-1",
         templateId: null,
         warehouseId: null,
+        unitType: null,
         instructions: null,
         isComplete: false,
         updatedAt: new Date("2026-03-19T00:00:00Z"),
@@ -48,12 +49,16 @@ function buildTx(overrides: Partial<Record<string, unknown>> = {}) {
           id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
+          unitType: "Renovation",
           instructions: "Template instructions",
           items: [
             { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
           ],
           serviceItems: [
             { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+          ],
+          salesReps: [
+            { id: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") },
           ],
         }),
       },
@@ -67,6 +72,12 @@ function buildTx(overrides: Partial<Record<string, unknown>> = {}) {
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
+    flooringWorkOrderSalesRep: {
+      findMany: vi.fn().mockResolvedValue([]),
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      update: vi.fn(),
+    },
     ...overrides,
   }
 }
@@ -75,7 +86,7 @@ describe("template sync domain", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getWorkOrderByIdMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
-    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
+    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Renovation", instructions: "Template instructions" })
   })
 
   it("blocks sync for completed work orders", async () => {
@@ -86,6 +97,7 @@ describe("template sync domain", () => {
           propertyId: "prop-1",
           templateId: null,
           warehouseId: null,
+          unitType: null,
           instructions: null,
           isComplete: true,
           updatedAt: new Date("2026-03-19T00:00:00Z"),
@@ -134,9 +146,11 @@ describe("template sync domain", () => {
           id: "tpl-2",
           propertyId: "prop-2",
           warehouseId: "wh-1",
+          unitType: "Renovation",
           instructions: "Template instructions",
           items: [],
           serviceItems: [],
+          salesReps: [],
         }),
       },
     })
@@ -172,6 +186,12 @@ describe("template sync domain", () => {
         createMany: vi.fn(),
         deleteMany: vi.fn(),
       },
+      flooringWorkOrderSalesRep: {
+        findMany: vi.fn().mockResolvedValue([]),
+        createMany: vi.fn(),
+        deleteMany: vi.fn(),
+        update: vi.fn(),
+      },
     })
 
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof tx) => unknown) => callback(tx))
@@ -190,20 +210,24 @@ describe("template sync domain", () => {
       workOrder: null,
       headerUpdates: {
         warehouseId: true,
+        unitType: true,
         instructions: true,
         templateId: true,
       },
       rowsToCreate: {
         materialItems: 1,
         serviceItems: 1,
+        salesReps: 1,
       },
       rowsToDelete: {
         materialItems: 1,
         serviceItems: 1,
+        salesReps: 0,
       },
       counts: {
         materialItems: 1,
         serviceItems: 1,
+        salesReps: 1,
       },
     })
     expect(tx.flooringWorkOrderItem.deleteMany).not.toHaveBeenCalled()
@@ -217,6 +241,7 @@ describe("template sync domain", () => {
           id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
+          unitType: "Renovation",
           instructions: "Template instructions",
           items: [
             { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
@@ -225,6 +250,10 @@ describe("template sync domain", () => {
           serviceItems: [
             { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
             { id: "tpl-svc-2", serviceId: "svc-2", name: "Demo", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("5.00"), notes: null },
+          ],
+          salesReps: [
+            { id: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") },
+            { id: "tpl-rep-2", contactId: "contact-2", percent: decimal("5.00") },
           ],
         }),
       },
@@ -242,6 +271,14 @@ describe("template sync domain", () => {
         createMany: vi.fn(),
         deleteMany: vi.fn(),
       },
+      flooringWorkOrderSalesRep: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "wo-rep-1", sourceTemplateSalesRepId: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") },
+        ]),
+        createMany: vi.fn(),
+        deleteMany: vi.fn(),
+        update: vi.fn(),
+      },
     })
 
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof tx) => unknown) => callback(tx))
@@ -253,9 +290,9 @@ describe("template sync domain", () => {
       expectedUpdatedAt: null,
     })
 
-    expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1 })
-    expect(result.rowsToDelete).toEqual({ materialItems: 0, serviceItems: 0 })
-    expect(result.counts).toEqual({ materialItems: 2, serviceItems: 2 })
+    expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1, salesReps: 1 })
+    expect(result.rowsToDelete).toEqual({ materialItems: 0, serviceItems: 0, salesReps: 0 })
+    expect(result.counts).toEqual({ materialItems: 2, serviceItems: 2, salesReps: 2 })
     expect(result.workOrder).toBeNull()
   })
 
@@ -277,6 +314,14 @@ describe("template sync domain", () => {
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn(),
       },
+      flooringWorkOrderSalesRep: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "wo-rep-1", sourceTemplateSalesRepId: "tpl-rep-old", contactId: "contact-old", percent: decimal("8.00") },
+        ]),
+        createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn(),
+      },
     })
 
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof tx) => unknown) => callback(tx))
@@ -290,6 +335,7 @@ describe("template sync domain", () => {
 
     expect(tx.flooringWorkOrderItem.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["wo-item-1"] } } })
     expect(tx.flooringWorkOrderServiceItem.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["wo-svc-1"] } } })
+    expect(tx.flooringWorkOrderSalesRep.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["wo-rep-1"] } } })
     expect(tx.flooringWorkOrderItem.createMany).toHaveBeenCalledWith({
       data: [
         {
@@ -317,17 +363,28 @@ describe("template sync domain", () => {
         },
       ],
     })
+    expect(tx.flooringWorkOrderSalesRep.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          workOrderId: "wo-1",
+          sourceTemplateSalesRepId: "tpl-rep-1",
+          contactId: "contact-1",
+          percent: decimal("10.00"),
+        },
+      ],
+    })
     expect(tx.flooringWorkOrder.update).toHaveBeenCalledWith({
       where: { id: "wo-1" },
       data: expect.objectContaining({
         templateId: "tpl-1",
         warehouseId: "wh-1",
+        unitType: "Renovation",
         instructions: "Template instructions",
       }),
     })
-    expect(result.workOrder).toEqual({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
-    expect(result.rowsToDelete).toEqual({ materialItems: 1, serviceItems: 1 })
-    expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1 })
+    expect(result.workOrder).toEqual({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Renovation", instructions: "Template instructions" })
+    expect(result.rowsToDelete).toEqual({ materialItems: 1, serviceItems: 1, salesReps: 1 })
+    expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1, salesReps: 1 })
   })
 
   it("append adds only missing rows and does not delete or duplicate matching rows", async () => {
@@ -337,6 +394,7 @@ describe("template sync domain", () => {
           id: "tpl-1",
           propertyId: "prop-1",
           warehouseId: "wh-1",
+          unitType: "Renovation",
           instructions: "Template instructions",
           items: [
             { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
@@ -345,6 +403,10 @@ describe("template sync domain", () => {
           serviceItems: [
             { id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
             { id: "tpl-svc-2", serviceId: "svc-2", name: "Demo", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("5.00"), notes: null },
+          ],
+          salesReps: [
+            { id: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") },
+            { id: "tpl-rep-2", contactId: "contact-2", percent: decimal("5.00") },
           ],
         }),
       },
@@ -359,6 +421,14 @@ describe("template sync domain", () => {
       flooringWorkOrderServiceItem: {
         findMany: vi.fn().mockResolvedValue([
           { id: "wo-svc-1", sourceTemplateServiceItemId: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null },
+        ]),
+        createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn(),
+        update: vi.fn(),
+      },
+      flooringWorkOrderSalesRep: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "wo-rep-1", sourceTemplateSalesRepId: "tpl-rep-1", contactId: "contact-1", percent: decimal("10.00") },
         ]),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn(),
@@ -404,7 +474,17 @@ describe("template sync domain", () => {
         },
       ],
     })
-    expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1 })
-    expect(result.rowsToDelete).toEqual({ materialItems: 0, serviceItems: 0 })
+    expect(tx.flooringWorkOrderSalesRep.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          workOrderId: "wo-1",
+          sourceTemplateSalesRepId: "tpl-rep-2",
+          contactId: "contact-2",
+          percent: decimal("5.00"),
+        },
+      ],
+    })
+    expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1, salesReps: 1 })
+    expect(result.rowsToDelete).toEqual({ materialItems: 0, serviceItems: 0, salesReps: 0 })
   })
 })

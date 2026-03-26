@@ -26,6 +26,7 @@ export type TemplateSalesRepInput = {
 export type CreateTemplateInput = {
   propertyId: string
   templateTag: string
+  unitType: string | null
   warehouseId: string | null
   instructions: string | null
   templateNotes: string | null
@@ -143,6 +144,7 @@ export function validateCreateTemplateInput(body: Record<string, unknown>): Crea
   return {
     propertyId: parseRequiredString(body.propertyId, "propertyId"),
     templateTag: parseRequiredString(body.templateTag, "templateTag"),
+    unitType: parseOptionalString(body.unitType),
     warehouseId: parseOptionalString(body.warehouseId),
     instructions: parseOptionalString(body.instructions),
     templateNotes: parseOptionalString(body.templateNotes),
@@ -157,6 +159,7 @@ export function validateUpdateTemplateInput(body: Record<string, unknown>): Upda
 
   if ("propertyId" in body) input.propertyId = parseRequiredString(body.propertyId, "propertyId")
   if ("templateTag" in body) input.templateTag = parseRequiredString(body.templateTag, "templateTag")
+  if ("unitType" in body) input.unitType = parseOptionalString(body.unitType)
   if ("warehouseId" in body) input.warehouseId = parseOptionalString(body.warehouseId)
   if ("instructions" in body) input.instructions = parseOptionalString(body.instructions)
   if ("templateNotes" in body) input.templateNotes = parseOptionalString(body.templateNotes)

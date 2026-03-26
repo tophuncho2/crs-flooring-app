@@ -1,5 +1,6 @@
 import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
+import { buildRecordCalculationRows } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/transport/record-detail-options"
 import {
   type WorkOrderPageFilterState,
@@ -311,6 +312,45 @@ export async function listWorkOrderSalesReps(workOrderId: string) {
   })
 
   return items.map(normalizeWorkOrderSalesRep)
+}
+
+export async function listWorkOrderCalculationRows(workOrderId: string) {
+  const [items, serviceItems, salesReps] = await Promise.all([
+    prisma.flooringWorkOrderItem.findMany({
+      where: { workOrderId },
+      select: {
+        quantity: true,
+        unitPrice: true,
+      },
+    }),
+    prisma.flooringWorkOrderServiceItem.findMany({
+      where: { workOrderId },
+      select: {
+        quantity: true,
+        unitPrice: true,
+      },
+    }),
+    prisma.flooringWorkOrderSalesRep.findMany({
+      where: { workOrderId },
+      select: {
+        percent: true,
+      },
+    }),
+  ])
+
+  return buildRecordCalculationRows({
+    items: items.map((item) => ({
+      quantity: item.quantity.toString(),
+      unitPrice: item.unitPrice.toString(),
+    })),
+    serviceItems: serviceItems.map((item) => ({
+      quantity: item.quantity.toString(),
+      unitPrice: item.unitPrice.toString(),
+    })),
+    salesReps: salesReps.map((item) => ({
+      percent: item.percent.toString(),
+    })),
+  })
 }
 
 export async function listWorkOrdersPageFilterOptions() {

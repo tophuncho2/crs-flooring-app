@@ -240,6 +240,7 @@ CREATE TABLE "flooring_template" (
     "template_number" TEXT NOT NULL DEFAULT ('TP-'::text || lpad((nextval('flooring_template_number_seq'::regclass))::text, 5, '0'::text)),
     "propertyId" TEXT NOT NULL,
     "templateTag" TEXT NOT NULL,
+    "unitType" TEXT,
     "store" "FlooringStoreCode",
     "warehouseId" TEXT,
     "instructions" TEXT,
@@ -388,6 +389,7 @@ CREATE TABLE "flooring_work_order_service_item" (
 CREATE TABLE "flooring_work_order_sales_rep" (
     "id" TEXT NOT NULL,
     "workOrderId" TEXT NOT NULL,
+    "sourceTemplateSalesRepId" TEXT,
     "contactId" TEXT NOT NULL,
     "percent" DECIMAL(5,2) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -640,6 +642,9 @@ CREATE INDEX "flooring_work_order_sales_rep_contactId_idx" ON "flooring_work_ord
 
 -- CreateIndex
 CREATE INDEX "flooring_work_order_sales_rep_workOrderId_createdAt_idx" ON "flooring_work_order_sales_rep"("workOrderId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "flooring_work_order_sales_rep_sourceTemplateSalesRepI_idx" ON "flooring_work_order_sales_rep"("sourceTemplateSalesRepId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "flooring_work_order_sales_rep_workOrderId_contactId_key" ON "flooring_work_order_sales_rep"("workOrderId", "contactId");

@@ -10,6 +10,8 @@ export type RecordExpenseSummary = {
   customerCost: number
   salesRepExpense: number
   expenses: number
+  profit: number
+  profitMargin: number
 }
 
 function toNumber(value: string | number) {
@@ -30,13 +32,18 @@ export function calculateRecordExpenseSummary(input: {
   const serviceTotal = sumLineTotals(input.serviceItems)
   const customerCost = materialTotal + serviceTotal
   const salesRepExpense = calculateRecordSalesRepExpense(customerCost, input.salesReps)
+  const expenses = materialTotal + serviceTotal + salesRepExpense
+  const profit = customerCost - expenses
+  const profitMargin = customerCost === 0 ? 0 : profit / customerCost
 
   return {
     materialTotal,
     serviceTotal,
     customerCost,
     salesRepExpense,
-    expenses: serviceTotal + salesRepExpense,
+    expenses,
+    profit,
+    profitMargin,
   }
 }
 

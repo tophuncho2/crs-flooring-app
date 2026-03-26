@@ -22,10 +22,13 @@ import {
   type UnitOption,
 } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
+import { CalculationRowsTable } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
 import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/ui/record-items/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
+import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
+import { buildRecordCalculationRowsFromSummary, type CalculationRow } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
@@ -189,6 +192,17 @@ export function WorkOrderRecordPanel({
     }),
     skipReloadAfterMutation: true,
   })
+  const initialCalculationRows = buildRecordCalculationRowsFromSummary(initialWorkOrderDetail.expenseSummary)
+  const calculationRowsCollection = useReadOnlyChildCollection<CalculationRow>({
+    listUrl: `/api/flooring/work-orders/${workOrderId}/calculations`,
+    mapItems: (payload) => (payload.items as CalculationRow[] | undefined) ?? [],
+    initialItems: initialCalculationRows,
+  })
+  const {
+    items: calculationRows,
+    loading: loadingCalculationRows,
+    setItems: setCalculationRows,
+  } = calculationRowsCollection
 
   const onExpenseSummaryChangeRef = useRef(onExpenseSummaryChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
@@ -291,6 +305,17 @@ export function WorkOrderRecordPanel({
     )
   }, [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps])
 
+  const currentExpenseSummary = normalizeWorkOrderExpenseSummary({
+    items: lineItems.materialItems,
+    serviceItems: lineItems.serviceItems,
+    salesReps: salesRepLines.salesReps,
+  })
+  const currentCalculationRows = buildRecordCalculationRowsFromSummary(currentExpenseSummary)
+
+  useEffect(() => {
+    setCalculationRows(currentCalculationRows)
+  }, [currentCalculationRows, setCalculationRows])
+
   useEffect(() => {
     if (!hasMountedRefreshRef.current) {
       hasMountedRefreshRef.current = true
@@ -347,12 +372,6 @@ export function WorkOrderRecordPanel({
     return <CenteredErrorState title="Error" message="Work order could not be loaded." onDismiss={onClose} />
   }
 
-  const currentExpenseSummary = normalizeWorkOrderExpenseSummary({
-    items: lineItems.materialItems,
-    serviceItems: lineItems.serviceItems,
-    salesReps: salesRepLines.salesReps,
-  })
-
   return (
     <div className="space-y-6">
       <FormStatusNotices message={message} error={noticeError} loadingMessage={savingWorkOrder ? "Saving work order..." : ""} />
@@ -407,7 +426,11 @@ export function WorkOrderRecordPanel({
           <input type="date" value={draft.date} onChange={(event) => setDraft((prev) => (prev ? { ...prev, date: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
         </RecordFormField>
         <RecordFormField label="Unit Type">
-          <input value={draft.unitType} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitType: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          {workOrder.templateId ? (
+            <RecordStaticFieldValue>{draft.unitType || "Synced from template"}</RecordStaticFieldValue>
+          ) : (
+            <input value={draft.unitType} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitType: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+          )}
         </RecordFormField>
         <RecordFormField label="Unit Label">
           <input value={draft.unitText} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
@@ -479,6 +502,12 @@ export function WorkOrderRecordPanel({
         onItemFieldChange={salesRepLines.handleItemFieldChange}
         onSaveItem={(item) => void salesRepLines.saveItem(item)}
         onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
+      />
+
+      <CalculationRowsTable
+        title="Calculations"
+        items={calculationRows}
+        loading={loadingCalculationRows}
       />
 
       <RecordPanelFooter

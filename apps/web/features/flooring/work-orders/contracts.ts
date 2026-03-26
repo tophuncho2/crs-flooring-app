@@ -34,7 +34,7 @@ export const TEMPLATE_SYNC_POLICY = {
     vacancy: "work_order_only",
     scheduledFor: "work_order_only",
     unitLabel: "work_order_only",
-    unitType: "work_order_only",
+    unitType: "snapshot_from_template_on_sync",
     customAddress: "work_order_only",
     notes: "work_order_only",
     googleDriveSlip: "work_order_only",
@@ -43,6 +43,7 @@ export const TEMPLATE_SYNC_POLICY = {
   rowBehavior: {
     materialItems: "copied_from_template",
     serviceItems: "copied_from_template",
+    salesReps: "copied_from_template",
     overwrite: "replace_existing_work_order_rows",
     append: "only_add_missing_snapshot_rows",
   },

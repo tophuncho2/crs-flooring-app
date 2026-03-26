@@ -24,6 +24,7 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
         propertyId: true,
         templateId: true,
         warehouseId: true,
+        unitType: true,
         instructions: true,
         isComplete: true,
         updatedAt: true,
@@ -38,7 +39,7 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       throw { message: "Work order changed before sync completed. Refresh and try again.", field: "updatedAt", status: 409 }
     }
 
-    const [templateSnapshot, existingMaterialItems, existingServiceItems] = await Promise.all([
+    const [templateSnapshot, existingMaterialItems, existingServiceItems, existingSalesReps] = await Promise.all([
       loadTemplateSnapshot(input.templateId, tx),
       tx.flooringWorkOrderItem.findMany({
         where: { workOrderId },
@@ -65,6 +66,15 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
           notes: true,
         },
       }),
+      tx.flooringWorkOrderSalesRep.findMany({
+        where: { workOrderId },
+        select: {
+          id: true,
+          sourceTemplateSalesRepId: true,
+          contactId: true,
+          percent: true,
+        },
+      }),
     ])
 
     if (existingWorkOrder.propertyId !== templateSnapshot.propertyId) {
@@ -76,10 +86,12 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       existingWorkOrder: {
         templateId: existingWorkOrder.templateId,
         warehouseId: existingWorkOrder.warehouseId,
+        unitType: existingWorkOrder.unitType,
         instructions: existingWorkOrder.instructions,
       },
       existingMaterialItems,
       existingServiceItems,
+      existingSalesReps,
       snapshot: templateSnapshot,
     })
 
@@ -103,10 +115,12 @@ export async function syncTemplateToWorkOrder(workOrderId: string, input: SyncTe
       existingWorkOrder: {
         templateId: existingWorkOrder.templateId,
         warehouseId: existingWorkOrder.warehouseId,
+        unitType: existingWorkOrder.unitType,
         instructions: existingWorkOrder.instructions,
       },
       existingMaterialItems,
       existingServiceItems,
+      existingSalesReps,
       snapshot: templateSnapshot,
     })
 

@@ -9,6 +9,8 @@ const EMPTY_EXPENSE_SUMMARY: WorkOrderExpenseSummary = {
   customerCost: 0,
   salesRepExpense: 0,
   expenses: 0,
+  profit: 0,
+  profitMargin: 0,
 }
 
 export function WorkOrderExpenseSummaryHeader({
