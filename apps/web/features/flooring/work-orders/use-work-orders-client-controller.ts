@@ -16,7 +16,6 @@ const defaultDraft: DraftWorkOrder = {
   vacancy: "",
   date: "",
   unitText: "",
-  unitType: "",
   customAddress: "",
   instructions: "",
   notes: "",

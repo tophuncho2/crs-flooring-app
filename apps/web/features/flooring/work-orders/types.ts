@@ -56,7 +56,6 @@ export type DraftWorkOrder = {
   vacancy: "VACANT" | "OCCUPIED" | ""
   date: string
   unitText: string
-  unitType: string
   customAddress: string
   instructions: string
   notes: string

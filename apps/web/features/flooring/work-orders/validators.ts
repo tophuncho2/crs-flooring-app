@@ -35,7 +35,6 @@ export type CreateWorkOrderInput = {
   vacancy: FlooringVacancyStatus | null
   scheduledFor: Date | null
   unitLabel: string | null
-  unitType: string | null
   customAddress: string | null
   instructions: string | null
   notes: string | null
@@ -216,7 +215,6 @@ export function validateCreateWorkOrderInput(body: Record<string, unknown>): Cre
     vacancy: parseOptionalEnumValue(body.vacancy, "vacancy"),
     scheduledFor: parseOptionalDate(body.date, "date"),
     unitLabel: parseOptionalString(body.unitText),
-    unitType: parseOptionalString(body.unitType),
     customAddress: parseOptionalString(body.customAddress),
     instructions: parseOptionalString(body.instructions),
     notes: parseOptionalString(body.notes),
@@ -240,7 +238,6 @@ export function validateUpdateWorkOrderInput(body: Record<string, unknown>): Upd
   if ("vacancy" in body) input.vacancy = parseOptionalEnumValue(body.vacancy, "vacancy")
   if ("date" in body) input.scheduledFor = parseOptionalDate(body.date, "date")
   if ("unitText" in body) input.unitLabel = parseOptionalString(body.unitText)
-  if ("unitType" in body) input.unitType = parseOptionalString(body.unitType)
   if ("customAddress" in body) input.customAddress = parseOptionalString(body.customAddress)
   if ("instructions" in body) input.instructions = parseOptionalString(body.instructions)
   if ("notes" in body) input.notes = parseOptionalString(body.notes)

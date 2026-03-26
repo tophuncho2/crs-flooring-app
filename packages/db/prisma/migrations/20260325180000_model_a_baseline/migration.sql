@@ -240,7 +240,6 @@ CREATE TABLE "flooring_template" (
     "template_number" TEXT NOT NULL DEFAULT ('TP-'::text || lpad((nextval('flooring_template_number_seq'::regclass))::text, 5, '0'::text)),
     "propertyId" TEXT NOT NULL,
     "templateTag" TEXT NOT NULL,
-    "unitType" TEXT,
     "store" "FlooringStoreCode",
     "warehouseId" TEXT,
     "instructions" TEXT,

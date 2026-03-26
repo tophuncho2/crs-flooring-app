@@ -153,8 +153,8 @@ export async function loadTemplateSnapshot(templateId: string, tx: Prisma.Transa
     select: {
       id: true,
       propertyId: true,
+      templateTag: true,
       warehouseId: true,
-      unitType: true,
       instructions: true,
       items: {
         select: {
@@ -190,7 +190,7 @@ export async function loadTemplateSnapshot(templateId: string, tx: Prisma.Transa
     templateId: template.id,
     propertyId: template.propertyId,
     warehouseId: template.warehouseId,
-    unitType: template.unitType,
+    unitType: template.templateTag,
     instructions: template.instructions,
     items: (template.items ?? []).map<TemplateSnapshotMaterialRow>((item) => ({
       sourceTemplateItemId: item.id,

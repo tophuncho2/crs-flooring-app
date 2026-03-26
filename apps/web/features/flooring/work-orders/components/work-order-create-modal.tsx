@@ -111,13 +111,6 @@ export function WorkOrderCreateModal({
               className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
             />
           </RecordFormField>
-          <RecordFormField label="Unit Type">
-            <input
-              value={draft.unitType}
-              onChange={(event) => onFieldChange("unitType", event.target.value)}
-              className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </RecordFormField>
           <RecordFormField label="Unit Label">
             <input
               value={draft.unitText}
@@ -144,7 +137,7 @@ export function WorkOrderCreateModal({
         </div>
 
         <div className="rounded-lg border border-[var(--panel-border)] px-4 py-4 text-sm text-[var(--foreground)]/70">
-          This creates a blank work order row. Use the table-level <span className="font-semibold text-[var(--foreground)]">Sync Template</span> action when starting from a property template.
+          This creates a blank work order row. The Unit Type field is filled only by template sync and shows the synced template tag. Use the table-level <span className="font-semibold text-[var(--foreground)]">Sync Template</span> action when starting from a property template.
         </div>
 
         <div className="flex items-center justify-end gap-3">

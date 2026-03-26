@@ -48,8 +48,8 @@ function buildTx(overrides: Partial<Record<string, unknown>> = {}) {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           id: "tpl-1",
           propertyId: "prop-1",
+          templateTag: "Turn",
           warehouseId: "wh-1",
-          unitType: "Renovation",
           instructions: "Template instructions",
           items: [
             { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
@@ -86,7 +86,7 @@ describe("template sync domain", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getWorkOrderByIdMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", instructions: "Template instructions" })
-    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Renovation", instructions: "Template instructions" })
+    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Turn", instructions: "Template instructions" })
   })
 
   it("blocks sync for completed work orders", async () => {
@@ -145,8 +145,8 @@ describe("template sync domain", () => {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           id: "tpl-2",
           propertyId: "prop-2",
+          templateTag: "Turn",
           warehouseId: "wh-1",
-          unitType: "Renovation",
           instructions: "Template instructions",
           items: [],
           serviceItems: [],
@@ -240,8 +240,8 @@ describe("template sync domain", () => {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           id: "tpl-1",
           propertyId: "prop-1",
+          templateTag: "Turn",
           warehouseId: "wh-1",
-          unitType: "Renovation",
           instructions: "Template instructions",
           items: [
             { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },
@@ -378,11 +378,11 @@ describe("template sync domain", () => {
       data: expect.objectContaining({
         templateId: "tpl-1",
         warehouseId: "wh-1",
-        unitType: "Renovation",
+        unitType: "Turn",
         instructions: "Template instructions",
       }),
     })
-    expect(result.workOrder).toEqual({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Renovation", instructions: "Template instructions" })
+    expect(result.workOrder).toEqual({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Turn", instructions: "Template instructions" })
     expect(result.rowsToDelete).toEqual({ materialItems: 1, serviceItems: 1, salesReps: 1 })
     expect(result.rowsToCreate).toEqual({ materialItems: 1, serviceItems: 1, salesReps: 1 })
   })
@@ -393,8 +393,8 @@ describe("template sync domain", () => {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           id: "tpl-1",
           propertyId: "prop-1",
+          templateTag: "Turn",
           warehouseId: "wh-1",
-          unitType: "Renovation",
           instructions: "Template instructions",
           items: [
             { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null },

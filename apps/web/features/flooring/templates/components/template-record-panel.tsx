@@ -42,7 +42,6 @@ function toTemplateDraft(template: TemplateDetail): DraftTemplate {
   return {
     templateTag: template.templateTag,
     propertyId: template.propertyId,
-    unitType: template.unitType,
     warehouseId: template.warehouseId,
     instructions: template.instructions,
     templateNotes: template.templateNotes,
@@ -391,9 +390,6 @@ export function TemplateRecordPanel({
           </RecordFormField>
           <RecordFormField label="Template Tag">
             <input value={draft.templateTag} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateTag: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-          </RecordFormField>
-          <RecordFormField label="Unit Type">
-            <input value={draft.unitType} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitType: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
           </RecordFormField>
           <RecordFormField label="Warehouse">
             <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">

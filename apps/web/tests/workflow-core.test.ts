@@ -37,7 +37,7 @@ function decimal(value: string) {
 describe("workflow core", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Renovation", instructions: "Template instructions" })
+    getWorkOrderByIdWithClientMock.mockResolvedValue({ id: "wo-1", templateId: "tpl-1", warehouseId: "wh-1", unitType: "Turn", instructions: "Template instructions" })
   })
 
   it("creates templates inside one transaction and resolves default prices through the transaction client", async () => {
@@ -56,7 +56,6 @@ describe("workflow core", () => {
           templateNumber: "TP-00001",
           templateTag: "Turn",
           propertyId: "prop-1",
-          unitType: "Renovation",
           property: { id: "prop-1", name: "Oak" },
           warehouse: { id: "wh-1", name: "Main" },
           padProduct: null,
@@ -76,7 +75,6 @@ describe("workflow core", () => {
     const template = await createTemplate({
       propertyId: "prop-1",
       templateTag: "Turn",
-      unitType: "Renovation",
       warehouseId: "wh-1",
       instructions: "Install",
       templateNotes: null,
@@ -127,8 +125,8 @@ describe("workflow core", () => {
           .mockResolvedValueOnce({
             id: "tpl-1",
             propertyId: "prop-1",
+            templateTag: "Turn",
             warehouseId: "wh-1",
-            unitType: "Renovation",
             instructions: "Template instructions",
             items: [
               { id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: "material" },
@@ -171,7 +169,7 @@ describe("workflow core", () => {
           vacancy: null,
           scheduledFor: null,
           unitLabel: null,
-          unitType: "Renovation",
+          unitType: "Turn",
           customAddress: null,
           instructions: "Template instructions",
           notes: null,
@@ -199,7 +197,6 @@ describe("workflow core", () => {
       vacancy: null,
       scheduledFor: null,
       unitLabel: null,
-      unitType: null,
       customAddress: null,
       instructions: null,
       notes: null,
@@ -215,7 +212,7 @@ describe("workflow core", () => {
           propertyId: "prop-1",
           templateId: "tpl-1",
           warehouseId: "wh-1",
-          unitType: "Renovation",
+          unitType: "Turn",
           instructions: "Template instructions",
         }),
       }),
@@ -245,8 +242,8 @@ describe("workflow core", () => {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           id: "tpl-1",
           propertyId: "prop-1",
+          templateTag: "Turn",
           warehouseId: "wh-1",
-          unitType: "Renovation",
           instructions: "Template instructions",
           items: [{ id: "tpl-item-1", productId: "prod-1", quantity: decimal("2"), unitPrice: decimal("4.00"), notes: null }],
           serviceItems: [{ id: "tpl-svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", quantity: decimal("1"), unitPrice: decimal("9.00"), notes: null }],
@@ -288,7 +285,7 @@ describe("workflow core", () => {
       data: expect.objectContaining({
         templateId: "tpl-1",
         warehouseId: "wh-1",
-        unitType: "Renovation",
+        unitType: "Turn",
         instructions: "Template instructions",
       }),
     })

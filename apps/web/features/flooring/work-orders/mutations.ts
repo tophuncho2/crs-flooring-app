@@ -140,7 +140,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         vacancy: input.vacancy,
         scheduledFor: input.scheduledFor,
         unitLabel: input.unitLabel,
-        unitType: templateSnapshot?.unitType ?? input.unitType,
+        unitType: templateSnapshot?.unitType ?? null,
         customAddress: input.customAddress,
         instructions: templateSnapshot?.instructions ?? input.instructions,
         notes: input.notes,
@@ -242,7 +242,6 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
   if (input.vacancy !== undefined) data.vacancy = input.vacancy
   if (input.scheduledFor !== undefined) data.scheduledFor = input.scheduledFor
   if (input.unitLabel !== undefined) data.unitLabel = input.unitLabel
-  if (input.unitType !== undefined) data.unitType = input.unitType
   if (input.customAddress !== undefined) data.customAddress = input.customAddress
   if (input.instructions !== undefined) data.instructions = input.instructions
   if (input.notes !== undefined) data.notes = input.notes

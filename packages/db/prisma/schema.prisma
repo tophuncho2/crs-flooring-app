@@ -316,7 +316,6 @@ model FlooringTemplate {
   propertyId     String
   property       Property                      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateTag    String
-  unitType       String?
   store          FlooringStoreCode?
   warehouseId    String?
   warehouse      FlooringWarehouse?            @relation(fields: [warehouseId], references: [id], onDelete: SetNull)

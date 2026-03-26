@@ -68,7 +68,6 @@ function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
     vacancy: workOrder.vacancy ?? "",
     date: workOrder.date ? workOrder.date.split("T")[0] : "",
     unitText: workOrder.unitText,
-    unitType: workOrder.unitType,
     customAddress: workOrder.customAddress,
     instructions: workOrder.instructions,
     notes: workOrder.notes,
@@ -436,11 +435,7 @@ export function WorkOrderRecordPanel({
           <input type="date" value={draft.date} onChange={(event) => setDraft((prev) => (prev ? { ...prev, date: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
         </RecordFormField>
         <RecordFormField label="Unit Type">
-          {workOrder.templateId ? (
-            <RecordStaticFieldValue>{draft.unitType || "Synced from template"}</RecordStaticFieldValue>
-          ) : (
-            <input value={draft.unitType} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitType: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-          )}
+          <RecordStaticFieldValue>{workOrder.unitType || "Filled by template sync"}</RecordStaticFieldValue>
         </RecordFormField>
         <RecordFormField label="Unit Label">
           <input value={draft.unitText} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />

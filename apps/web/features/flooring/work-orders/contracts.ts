@@ -34,7 +34,7 @@ export const TEMPLATE_SYNC_POLICY = {
     vacancy: "work_order_only",
     scheduledFor: "work_order_only",
     unitLabel: "work_order_only",
-    unitType: "snapshot_from_template_on_sync",
+    unitType: "template_tag_snapshot_on_sync",
     customAddress: "work_order_only",
     notes: "work_order_only",
     googleDriveSlip: "work_order_only",

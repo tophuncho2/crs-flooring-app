@@ -13,7 +13,6 @@ function buildTemplatesWhere(searchQuery: string): Prisma.FlooringTemplateWhereI
       { templateNumber: { contains: searchQuery, mode: "insensitive" } },
       { templateTag: { contains: searchQuery, mode: "insensitive" } },
       { property: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { unitType: { contains: searchQuery, mode: "insensitive" } },
       { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
       { instructions: { contains: searchQuery, mode: "insensitive" } },
       { templateNotes: { contains: searchQuery, mode: "insensitive" } },

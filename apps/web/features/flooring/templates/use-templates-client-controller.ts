@@ -10,7 +10,6 @@ import type { DraftTemplate, TemplateRow } from "./types"
 const defaultDraft: DraftTemplate = {
   templateTag: "",
   propertyId: "",
-  unitType: "",
   warehouseId: "",
   instructions: "",
   templateNotes: "",

@@ -118,7 +118,6 @@ function templateRow(overrides: Partial<Record<string, unknown>> = {}) {
     templateTag: "Turn",
     propertyId: "prop-1",
     propertyName: "Oak Apartments",
-    unitType: "",
     warehouseId: "",
     warehouseName: "",
     instructions: "",
