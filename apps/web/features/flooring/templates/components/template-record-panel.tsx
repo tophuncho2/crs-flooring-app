@@ -177,7 +177,10 @@ export function TemplateRecordPanel({
     }),
     skipReloadAfterMutation: true,
   })
-  const initialCalculationRows = buildRecordCalculationRowsFromSummary(initialTemplateDetail.expenseSummary)
+  const initialCalculationRows = useMemo(
+    () => buildRecordCalculationRowsFromSummary(initialTemplateDetail.expenseSummary),
+    [initialTemplateDetail.expenseSummary],
+  )
   const calculationRowsCollection = useReadOnlyChildCollection<CalculationRow>({
     listUrl: `/api/flooring/templates/${templateId}/calculations`,
     mapItems: (payload) => (payload.items as CalculationRow[] | undefined) ?? [],
@@ -274,12 +277,19 @@ export function TemplateRecordPanel({
   }, [isDirty, onDirtyChange])
 
   const itemCount = lineItems.materialItems.length + lineItems.serviceItems.length
-  const currentExpenseSummary = normalizeTemplateExpenseSummary({
-    items: lineItems.materialItems,
-    serviceItems: lineItems.serviceItems,
-    salesReps: salesRepLines.salesReps,
-  })
-  const currentCalculationRows = buildRecordCalculationRowsFromSummary(currentExpenseSummary)
+  const currentExpenseSummary = useMemo(
+    () =>
+      normalizeTemplateExpenseSummary({
+        items: lineItems.materialItems,
+        serviceItems: lineItems.serviceItems,
+        salesReps: salesRepLines.salesReps,
+      }),
+    [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps],
+  )
+  const currentCalculationRows = useMemo(
+    () => buildRecordCalculationRowsFromSummary(currentExpenseSummary),
+    [currentExpenseSummary],
+  )
 
   useEffect(() => {
     setCalculationRows(currentCalculationRows)

@@ -192,7 +192,10 @@ export function WorkOrderRecordPanel({
     }),
     skipReloadAfterMutation: true,
   })
-  const initialCalculationRows = buildRecordCalculationRowsFromSummary(initialWorkOrderDetail.expenseSummary)
+  const initialCalculationRows = useMemo(
+    () => buildRecordCalculationRowsFromSummary(initialWorkOrderDetail.expenseSummary),
+    [initialWorkOrderDetail.expenseSummary],
+  )
   const calculationRowsCollection = useReadOnlyChildCollection<CalculationRow>({
     listUrl: `/api/flooring/work-orders/${workOrderId}/calculations`,
     mapItems: (payload) => (payload.items as CalculationRow[] | undefined) ?? [],
@@ -305,12 +308,19 @@ export function WorkOrderRecordPanel({
     )
   }, [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps])
 
-  const currentExpenseSummary = normalizeWorkOrderExpenseSummary({
-    items: lineItems.materialItems,
-    serviceItems: lineItems.serviceItems,
-    salesReps: salesRepLines.salesReps,
-  })
-  const currentCalculationRows = buildRecordCalculationRowsFromSummary(currentExpenseSummary)
+  const currentExpenseSummary = useMemo(
+    () =>
+      normalizeWorkOrderExpenseSummary({
+        items: lineItems.materialItems,
+        serviceItems: lineItems.serviceItems,
+        salesReps: salesRepLines.salesReps,
+      }),
+    [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps],
+  )
+  const currentCalculationRows = useMemo(
+    () => buildRecordCalculationRowsFromSummary(currentExpenseSummary),
+    [currentExpenseSummary],
+  )
 
   useEffect(() => {
     setCalculationRows(currentCalculationRows)

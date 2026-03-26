@@ -20,6 +20,10 @@ export function useReadOnlyChildCollection<TItem>({
 
   const setItems = useCallback((value: TItem[] | ((previous: TItem[]) => TItem[])) => {
     const nextItems = typeof value === "function" ? value(itemsRef.current) : value
+    if (Object.is(itemsRef.current, nextItems)) {
+      return
+    }
+
     itemsRef.current = nextItems
     setItemsState(nextItems)
   }, [])
@@ -29,6 +33,10 @@ export function useReadOnlyChildCollection<TItem>({
     try {
       const payload = await requestJson<Record<string, unknown>>(listUrl)
       const nextItems = mapItems(payload)
+      if (Object.is(itemsRef.current, nextItems)) {
+        return itemsRef.current
+      }
+
       itemsRef.current = nextItems
       setItemsState(nextItems)
       return nextItems

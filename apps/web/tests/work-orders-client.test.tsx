@@ -16,14 +16,18 @@ vi.mock("@/features/flooring/work-orders/components/work-order-record-panel", ()
   WorkOrderRecordPanel: ({
     workOrderId,
     notices,
+    onDirtyChange,
   }: {
     workOrderId: string
     notices?: { message?: string; error?: string }
+    onDirtyChange?: (value: boolean) => void
   }) => (
     <div>
       <div>{`Panel ${workOrderId}`}</div>
       {notices?.message ? <div>{notices.message}</div> : null}
       {notices?.error ? <div>{notices.error}</div> : null}
+      <button type="button" onClick={() => onDirtyChange?.(true)}>Mark Dirty</button>
+      <button type="button" onClick={() => onDirtyChange?.(false)}>Clear Dirty</button>
     </div>
   ),
 }))
@@ -335,5 +339,49 @@ describe("WorkOrdersClient", () => {
 
     expect(await screen.findByText("Work order marked complete")).toBeTruthy()
     expect(screen.getByText("Panel wo-1")).toBeTruthy()
+  })
+
+  it("closes the detail page immediately when there are no unsaved changes", async () => {
+    const user = userEvent.setup()
+
+    render(
+      <WorkOrderDetailClient
+        workOrder={workOrderRow()}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        backHref="/dashboard/flooring/work-orders"
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Back" }))
+
+    expect(navigationMocks.push).toHaveBeenCalledWith("/dashboard/flooring/work-orders", { scroll: false })
+  })
+
+  it("allows closing the detail page after confirming unsaved changes", async () => {
+    const user = userEvent.setup()
+    const confirmMock = vi.fn(() => true)
+    vi.stubGlobal("confirm", confirmMock)
+
+    render(
+      <WorkOrderDetailClient
+        workOrder={workOrderRow()}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        serviceOptions={[]}
+        unitOptions={[]}
+        backHref="/dashboard/flooring/work-orders"
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Mark Dirty" }))
+    await user.click(screen.getByRole("button", { name: "Back" }))
+
+    expect(confirmMock).toHaveBeenCalledWith("You have unsaved work order changes. Leave this work order without saving?")
+    expect(navigationMocks.push).toHaveBeenCalledWith("/dashboard/flooring/work-orders", { scroll: false })
   })
 })
