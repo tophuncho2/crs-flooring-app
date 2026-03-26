@@ -90,6 +90,7 @@ export function useRecordLineItemsController<
   const materialItemsRef = useRef(materialCollection.items)
   const serviceItemsRef = useRef(serviceCollection.items)
   const onCollectionsChangedRef = useRef(onCollectionsChanged)
+  const getCollectionsFromRecordRef = useRef(getCollectionsFromRecord)
 
   useEffect(() => {
     recordRef.current = record
@@ -108,14 +109,26 @@ export function useRecordLineItemsController<
   }, [onCollectionsChanged])
 
   useEffect(() => {
+    getCollectionsFromRecordRef.current = getCollectionsFromRecord
+  }, [getCollectionsFromRecord])
+
+  useEffect(() => {
     if (!record) {
       return
     }
 
-    const { materialItems, serviceItems } = getCollectionsFromRecord(record)
-    setMaterialItems(materialItems ?? [])
-    setServiceItems(serviceItems ?? [])
-  }, [getCollectionsFromRecord, record, setMaterialItems, setServiceItems])
+    const { materialItems, serviceItems } = getCollectionsFromRecordRef.current(record)
+    const nextMaterialItems = materialItems ?? []
+    const nextServiceItems = serviceItems ?? []
+
+    if (!Object.is(materialItemsRef.current, nextMaterialItems)) {
+      setMaterialItems(nextMaterialItems)
+    }
+
+    if (!Object.is(serviceItemsRef.current, nextServiceItems)) {
+      setServiceItems(nextServiceItems)
+    }
+  }, [record, setMaterialItems, setServiceItems])
 
   const publishCollections = useCallback(
     (

@@ -55,6 +55,7 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   const recordRef = useRef(record)
   const itemsRef = useRef(salesRepCollection.items)
   const onItemsChangedRef = useRef(onItemsChanged)
+  const getItemsFromRecordRef = useRef(getItemsFromRecord)
 
   useEffect(() => {
     recordRef.current = record
@@ -69,12 +70,21 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   }, [onItemsChanged])
 
   useEffect(() => {
+    getItemsFromRecordRef.current = getItemsFromRecord
+  }, [getItemsFromRecord])
+
+  useEffect(() => {
     if (!record) {
       return
     }
 
-    setSalesRepItems(getItemsFromRecord(record))
-  }, [getItemsFromRecord, record, setSalesRepItems])
+    const nextItems = getItemsFromRecordRef.current(record)
+    if (Object.is(itemsRef.current, nextItems)) {
+      return
+    }
+
+    setSalesRepItems(nextItems)
+  }, [record, setSalesRepItems])
 
   function clearMutationState() {
     clearParentError()

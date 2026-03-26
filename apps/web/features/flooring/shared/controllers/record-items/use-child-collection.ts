@@ -40,6 +40,10 @@ export function useChildCollection<TItem, TCreateInput, TUpdateInput>({
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null)
 
   const replaceItems = useCallback((nextItems: TItem[]) => {
+    if (Object.is(itemsRef.current, nextItems)) {
+      return itemsRef.current
+    }
+
     itemsRef.current = nextItems
     setItemsState(nextItems)
     return nextItems
