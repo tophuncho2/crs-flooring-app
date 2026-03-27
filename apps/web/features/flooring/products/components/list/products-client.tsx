@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
@@ -135,11 +136,10 @@ export default function FlooringProductsClient({
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
-        <DashboardCardHeader
-          title="Flooring Products"
-          actions={(
-            <TableActionsSummary count={filteredProducts.length}>
+      <DashboardTableSurface
+        title="Flooring Products"
+        actions={
+          <TableActionsSummary count={filteredProducts.length}>
             <TableControlsBar
               searchQuery={searchQuery}
               onSearchQueryChange={onSearchQueryChange}
@@ -149,47 +149,43 @@ export default function FlooringProductsClient({
             >
               <TableColumnSettings
                 columns={orderedProductColumns}
-                  hiddenColumnKeys={hiddenProductColumnKeys}
-                  onToggleColumn={toggleProductColumnVisibility}
-                  onMoveColumn={moveProductColumn}
+                hiddenColumnKeys={hiddenProductColumnKeys}
+                onToggleColumn={toggleProductColumnVisibility}
+                onMoveColumn={moveProductColumn}
                 onSetColumnOrder={setProductColumnOrder}
                 groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={onToggleGroupedColumn}
               />
-                <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
-                  <Plus size={16} />
-                  Product
-                </button>
-              </TableControlsBar>
-            </TableActionsSummary>
-          )}
+              <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+                <Plus size={16} />
+                Product
+              </button>
+            </TableControlsBar>
+          </TableActionsSummary>
+        }
+        notices={<FormStatusNotices message={message} error={error} />}
+      >
+        <ProductsTable
+          rows={sortedProducts}
+          groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
+          isGroupingEnabled={isGroupingEnabled}
+          visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
+          visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
+          pagination={pagination}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredProducts.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+          deletingProductId={deletingProductId}
+          onDeleteProduct={deleteProduct}
+          onOpenProduct={openProductRecord}
         />
-
-        <FormStatusNotices message={message} error={error} className="mt-4" />
-
-        <section className="mt-6">
-          <ProductsTable
-            rows={sortedProducts}
-            groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
-            isGroupingEnabled={isGroupingEnabled}
-            visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
-            visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
-            pagination={pagination}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredProducts.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-            deletingProductId={deletingProductId}
-            onDeleteProduct={deleteProduct}
-            onOpenProduct={openProductRecord}
-          />
-        </section>
-      </div>
+      </DashboardTableSurface>
 
       <ProductsCreateModal
         isOpen={isCreateModalOpen}

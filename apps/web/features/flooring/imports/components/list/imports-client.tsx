@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
@@ -138,68 +139,63 @@ export default function ImportsClient({
   })
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <DashboardCardHeader
-          title="Imports"
-          actions={(
-            <TableActionsSummary count={filteredImports.length}>
-              <TableControlsBar
-                searchQuery={searchQuery}
-                onSearchQueryChange={onSearchQueryChange}
-                searchPlaceholder="Search import # or tag"
-                isAscendingSort={isAscendingSort}
-                onToggleSort={onToggleSort}
-                ascendingSortLabel="1-9"
-                descendingSortLabel="9-1"
+      <DashboardTableSurface
+        title="Imports"
+        actions={
+          <TableActionsSummary count={filteredImports.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
+              searchPlaceholder="Search import # or tag"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={onToggleSort}
+              ascendingSortLabel="1-9"
+              descendingSortLabel="9-1"
+            >
+              <TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />
+              <TableColumnSettings
+                columns={orderedImportColumns}
+                hiddenColumnKeys={hiddenImportColumnKeys}
+                onToggleColumn={toggleImportColumnVisibility}
+                onMoveColumn={moveImportColumn}
+                onSetColumnOrder={setImportColumnOrder}
+                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                maxGroupFields={MAX_GROUP_FIELDS}
+                onToggleGroupedColumn={onToggleGroupedColumn}
+              />
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
-                <TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />
-                <TableColumnSettings
-                  columns={orderedImportColumns}
-                  hiddenColumnKeys={hiddenImportColumnKeys}
-                  onToggleColumn={toggleImportColumnVisibility}
-                  onMoveColumn={moveImportColumn}
-                  onSetColumnOrder={setImportColumnOrder}
-                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                  maxGroupFields={MAX_GROUP_FIELDS}
-                  onToggleGroupedColumn={onToggleGroupedColumn}
-                />
-                <button
-                  type="button"
-                  onClick={openCreateModal}
-                  className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
-                >
-                  <Plus size={16} />
-                  Import
-                </button>
-              </TableControlsBar>
-            </TableActionsSummary>
-          )}
+                <Plus size={16} />
+                Import
+              </button>
+            </TableControlsBar>
+          </TableActionsSummary>
+        }
+        notices={<FormStatusNotices message={message} error={pageError} />}
+      >
+        <ImportsTable
+          rows={sortedImports}
+          groupedRows={groupedRowTree as GroupedRowTree<ImportRow>[]}
+          isGroupingEnabled={isGroupingEnabled}
+          visibleColumnKeys={visibleImportColumns.map((column) => column.key)}
+          visibleColumns={visibleImportColumns.map((column) => ({ key: column.key, label: column.label }))}
+          pagination={pagination}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredImports.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+          deletingImportId={deletingId}
+          onDeleteImport={deleteImport}
+          onOpenImport={openImport}
         />
-
-        <FormStatusNotices message={message} error={pageError} className="mt-4" />
-
-        <section className="mt-6">
-          <ImportsTable
-            rows={sortedImports}
-            groupedRows={groupedRowTree as GroupedRowTree<ImportRow>[]}
-            isGroupingEnabled={isGroupingEnabled}
-            visibleColumnKeys={visibleImportColumns.map((column) => column.key)}
-            visibleColumns={visibleImportColumns.map((column) => ({ key: column.key, label: column.label }))}
-            pagination={pagination}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredImports.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-            deletingImportId={deletingId}
-            onDeleteImport={deleteImport}
-            onOpenImport={openImport}
-          />
-        </section>
-      </section>
+      </DashboardTableSurface>
 
       <ImportsCreateModal
         isOpen={isCreateModalOpen}

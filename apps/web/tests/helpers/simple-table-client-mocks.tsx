@@ -147,7 +147,9 @@ export const tableShellModule = {
   ),
   ModalTableHead: ({ children }: { children: React.ReactNode }) => <thead>{children}</thead>,
   ModalTableShell: ({ children }: { children: React.ReactNode }) => <table>{children}</table>,
+  EmbeddedPageTableShell: ({ children }: { children: React.ReactNode }) => <table>{children}</table>,
   TableActionsSummary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DashboardTableCell: ({ children }: { children: React.ReactNode }) => <td>{children}</td>,
   TableEmptyRow: ({ message, colSpan }: { message: string; colSpan: number }) => (
     <tr>
       <td colSpan={colSpan}>{message}</td>

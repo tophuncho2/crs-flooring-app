@@ -2,7 +2,15 @@
 
 import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/flooring/shared/table/row-action-buttons"
-import { ClickableTableRow, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableEmptyRow,
+  TableGroupRow,
+  TableHead,
+  TableHeaderCell,
+} from "@/features/flooring/shared/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import type { CategoryRow } from "../../domain/types"
 
@@ -26,22 +34,22 @@ export function CategoriesTable({
   onDelete: (row: CategoryRow) => void
 }) {
   function renderRow(row: CategoryRow) {
-    const cells: Record<string, ReactNode> = {
-      name: <td key="name" className="px-3 py-2 font-medium">{row.name}</td>,
-      sendUnit: <td key="sendUnit" className="px-3 py-2">{row.sendUnit || "-"}</td>,
-      stockUnit: <td key="stockUnit" className="px-3 py-2">{row.stockUnit || "-"}</td>,
-      coverageAvailableUnit: <td key="coverageAvailableUnit" className="px-3 py-2">{row.coverageAvailableUnit || "-"}</td>,
-      itemCoverageUnit: <td key="itemCoverageUnit" className="px-3 py-2">{row.itemCoverageUnit || "-"}</td>,
-      serviceUnit: <td key="serviceUnit" className="px-3 py-2">{row.serviceUnit || "-"}</td>,
-      products: <td key="products" className="px-3 py-2">{row.productCount}</td>,
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      name: (columnIndex) => <DashboardTableCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardTableCell>,
+      sendUnit: (columnIndex) => <DashboardTableCell key="sendUnit" columnIndex={columnIndex}>{row.sendUnit || "-"}</DashboardTableCell>,
+      stockUnit: (columnIndex) => <DashboardTableCell key="stockUnit" columnIndex={columnIndex}>{row.stockUnit || "-"}</DashboardTableCell>,
+      coverageAvailableUnit: (columnIndex) => <DashboardTableCell key="coverageAvailableUnit" columnIndex={columnIndex}>{row.coverageAvailableUnit || "-"}</DashboardTableCell>,
+      itemCoverageUnit: (columnIndex) => <DashboardTableCell key="itemCoverageUnit" columnIndex={columnIndex}>{row.itemCoverageUnit || "-"}</DashboardTableCell>,
+      serviceUnit: (columnIndex) => <DashboardTableCell key="serviceUnit" columnIndex={columnIndex}>{row.serviceUnit || "-"}</DashboardTableCell>,
+      products: (columnIndex) => <DashboardTableCell key="products" columnIndex={columnIndex}>{row.productCount}</DashboardTableCell>,
       ...(canManage
         ? {
-            delete: (
-              <td key="delete" className="px-3 py-2">
+            delete: (columnIndex: number) => (
+              <DashboardTableCell key="delete" columnIndex={columnIndex}>
                 <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
                   {deletingId === row.id ? "Deleting..." : "Delete"}
                 </DeleteRowButton>
-              </td>
+              </DashboardTableCell>
             ),
           }
         : {}),
@@ -49,7 +57,7 @@ export function CategoriesTable({
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open category ${row.name}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column) => cells[column.key])}
+        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -62,7 +70,7 @@ export function CategoriesTable({
   }
 
   return (
-    <TableShell minWidthClass="min-w-[1280px]">
+    <EmbeddedPageTableShell minWidthClass="min-w-[1280px]">
       <TableHead>
         <tr>
           {visibleColumns.map((column) => (
@@ -74,6 +82,6 @@ export function CategoriesTable({
         {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
         {rows.length === 0 ? <TableEmptyRow message="No categories found." colSpan={visibleColumns.length} /> : null}
       </tbody>
-    </TableShell>
+    </EmbeddedPageTableShell>
   )
 }

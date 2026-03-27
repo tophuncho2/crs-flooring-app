@@ -41,6 +41,24 @@ export function TableBleed({
   return <div className={joinClasses("w-auto", tableBleedClassName(variant), className)}>{children}</div>
 }
 
+export function EmbeddedPageTableShell({
+  children,
+  minWidthClass,
+  className,
+}: {
+  children: ReactNode
+  minWidthClass: string
+  className?: string
+}) {
+  return (
+    <TableBleed variant="dashboard">
+      <TableShell minWidthClass={minWidthClass} className={joinClasses(EMBEDDED_PAGE_TABLE_SHELL_CLASS_NAME, className)}>
+        {children}
+      </TableShell>
+    </TableBleed>
+  )
+}
+
 export function TableShell({
   children,
   minWidthClass,
@@ -118,6 +136,28 @@ export function RecordTableHead({ children, className }: { children: ReactNode; 
 
 export function TableHeaderCell({ children, className }: { children: ReactNode; className?: string }) {
   return <th className={joinClasses("h-10 px-3 py-2", className)}>{children}</th>
+}
+
+export function DashboardTableCell({
+  children,
+  columnIndex,
+  className,
+}: {
+  children: ReactNode
+  columnIndex: number
+  className?: string
+}) {
+  return (
+    <td
+      className={joinClasses(
+        "px-3 py-2 align-top",
+        columnIndex > 0 && "border-l border-[var(--panel-border)]",
+        className,
+      )}
+    >
+      {children}
+    </td>
+  )
 }
 
 export function TableGroupRow({

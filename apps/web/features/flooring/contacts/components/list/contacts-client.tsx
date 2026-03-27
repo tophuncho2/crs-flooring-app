@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
@@ -77,11 +78,9 @@ export default function ContactsClient({
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <DashboardCardTitle>Contacts</DashboardCardTitle>
-          </div>
+      <DashboardTableSurface
+        title={<DashboardCardTitle>Contacts</DashboardCardTitle>}
+        actions={
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
               searchQuery={searchQuery}
@@ -106,12 +105,13 @@ export default function ContactsClient({
               </button>
             </TableControlsBar>
           </TableActionsSummary>
-        </div>
-
-        {!controller.isCreateModalOpen ? (
-          <FormStatusNotices message={controller.notices.message} error={controller.notices.error} className="mt-3" />
-        ) : null}
-
+        }
+        notices={
+          !controller.isCreateModalOpen ? (
+            <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
+          ) : null
+        }
+      >
         <ContactsTable
           rows={sortedRows}
           visibleColumns={visibleColumns}
@@ -132,7 +132,7 @@ export default function ContactsClient({
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
         />
-      </section>
+      </DashboardTableSurface>
 
       {controller.isCreateModalOpen ? (
         <ContactsCreateModal

@@ -4,11 +4,21 @@ import { type ReactNode } from "react"
 import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
+import { DashboardTableSurface } from "../../shared/display/dashboard-table-surface"
 import { FormStatusNotices } from "../../shared/ui/feedback/notices"
 import { DeleteRowButton } from "../../shared/row-action-buttons"
 import { TableColumnSettings } from "../../shared/table-column-settings"
 import TableControlsBar from "../../shared/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "../../shared/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableActionsSummary,
+  TableEmptyRow,
+  TableHead,
+  TableHeaderCell,
+  TablePaginationControls,
+} from "../../shared/table-shell"
 import { renderGroupedTableRows } from "../../shared/ui/table/render-grouped-table-rows"
 import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "../../shared/use-configured-table-state"
@@ -88,37 +98,39 @@ export default function TemplatesClient({
   })
 
   function renderTemplateRow(row: TemplateRow) {
-    const cells: Record<string, ReactNode> = {
-      templateNumber: <td key="templateNumber" className="px-3 py-2 font-medium text-blue-500">{row.templateNumber}</td>,
-      templateTag: <td key="templateTag" className="px-3 py-2">{row.templateTag}</td>,
-      property: <td key="property" className="px-3 py-2">{row.propertyName}</td>,
-      warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
-      instructions: <td key="instructions" className="px-3 py-2">{row.instructions || "-"}</td>,
-      padType: <td key="padType" className="px-3 py-2">{row.padTypeLabel || "-"}</td>,
-      templateNotes: <td key="templateNotes" className="px-3 py-2">{row.templateNotes || "-"}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      templateNumber: (columnIndex) => (
+        <DashboardTableCell key="templateNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
+          {row.templateNumber}
+        </DashboardTableCell>
+      ),
+      templateTag: (columnIndex) => <DashboardTableCell key="templateTag" columnIndex={columnIndex}>{row.templateTag}</DashboardTableCell>,
+      property: (columnIndex) => <DashboardTableCell key="property" columnIndex={columnIndex}>{row.propertyName}</DashboardTableCell>,
+      warehouse: (columnIndex) => <DashboardTableCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardTableCell>,
+      instructions: (columnIndex) => <DashboardTableCell key="instructions" columnIndex={columnIndex}>{row.instructions || "-"}</DashboardTableCell>,
+      padType: (columnIndex) => <DashboardTableCell key="padType" columnIndex={columnIndex}>{row.padTypeLabel || "-"}</DashboardTableCell>,
+      templateNotes: (columnIndex) => <DashboardTableCell key="templateNotes" columnIndex={columnIndex}>{row.templateNotes || "-"}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void controller.deleteTemplate(row.id)} disabled={controller.deletingId === row.id}>
             {controller.deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Edit template ${row.templateNumber}`} onClick={() => templateNavigation.openRecord(row.id)}>
-        {visibleTemplateColumns.map((column) => cells[column.key])}
+        {visibleTemplateColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <DashboardCardTitle>Templates</DashboardCardTitle>
-          </div>
+      <DashboardTableSurface
+        title={<DashboardCardTitle>Templates</DashboardCardTitle>}
+        actions={
           <TableActionsSummary count={filteredTemplates.length}>
             <TableControlsBar
               searchQuery={searchQuery}
@@ -147,13 +159,14 @@ export default function TemplatesClient({
               </button>
             </TableControlsBar>
           </TableActionsSummary>
-        </div>
-
-        {!controller.isCreateModalOpen ? (
-          <FormStatusNotices message={controller.notices.message} error={controller.notices.error} className="mt-3" />
-        ) : null}
-
-        <TableShell minWidthClass="min-w-[1260px]">
+        }
+        notices={
+          !controller.isCreateModalOpen ? (
+            <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
+          ) : null
+        }
+      >
+        <EmbeddedPageTableShell minWidthClass="min-w-[1260px]">
             <TableHead>
               <tr>
                 {visibleTemplateColumns.map((column) => (
@@ -172,7 +185,7 @@ export default function TemplatesClient({
 
               {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
             </tbody>
-        </TableShell>
+        </EmbeddedPageTableShell>
         <TablePaginationControls
           page={pagination?.page ?? page}
           totalPages={pagination?.totalPages ?? totalPages}
@@ -185,8 +198,7 @@ export default function TemplatesClient({
           previousPageHref={pagination?.previousPageHref}
           nextPageHref={pagination?.nextPageHref}
         />
-
-      </section>
+      </DashboardTableSurface>
 
       {controller.isCreateModalOpen ? (
         <TemplateCreateModal

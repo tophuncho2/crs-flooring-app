@@ -3,12 +3,13 @@
 import type { ReactNode } from "react"
 import {
   ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
   TableEmptyRow,
   TableGroupRow,
   TableHead,
   TableHeaderCell,
   TablePaginationControls,
-  TableShell,
 } from "@/features/flooring/shared/ui/table/table-shell"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
@@ -59,32 +60,32 @@ export function ProductsTable({
   onOpenProduct: (productId: string) => void
 }) {
   function renderRow(product: ProductRow) {
-    const cells: Record<string, ReactNode> = {
-      product: <td key="product" className="px-3 py-2 font-medium">{product.name || "Pending name"}</td>,
-      category: <td key="category" className="px-3 py-2">{product.category.name}</td>,
-      manufacturer: <td key="manufacturer" className="px-3 py-2">{product.manufacturerName || "-"}</td>,
-      style: <td key="style" className="px-3 py-2">{product.style || "-"}</td>,
-      color: <td key="color" className="px-3 py-2">{product.color || "-"}</td>,
-      baseColor: <td key="baseColor" className="px-3 py-2">{product.baseColor || "-"}</td>,
-      coverage: (
-        <td key="coverage" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      product: (columnIndex) => <DashboardTableCell key="product" columnIndex={columnIndex} className="font-medium">{product.name || "Pending name"}</DashboardTableCell>,
+      category: (columnIndex) => <DashboardTableCell key="category" columnIndex={columnIndex}>{product.category.name}</DashboardTableCell>,
+      manufacturer: (columnIndex) => <DashboardTableCell key="manufacturer" columnIndex={columnIndex}>{product.manufacturerName || "-"}</DashboardTableCell>,
+      style: (columnIndex) => <DashboardTableCell key="style" columnIndex={columnIndex}>{product.style || "-"}</DashboardTableCell>,
+      color: (columnIndex) => <DashboardTableCell key="color" columnIndex={columnIndex}>{product.color || "-"}</DashboardTableCell>,
+      baseColor: (columnIndex) => <DashboardTableCell key="baseColor" columnIndex={columnIndex}>{product.baseColor || "-"}</DashboardTableCell>,
+      coverage: (columnIndex) => (
+        <DashboardTableCell key="coverage" columnIndex={columnIndex}>
           {product.coveragePerUnit ? `${product.coveragePerUnit} / ${product.coverageUnit || "unit"}` : "-"}
-        </td>
+        </DashboardTableCell>
       ),
-      width: <td key="width" className="px-3 py-2">{product.width || "-"}</td>,
-      sheetSize: <td key="sheetSize" className="px-3 py-2">{product.sheetSize || "-"}</td>,
-      thickness: <td key="thickness" className="px-3 py-2">{product.thickness || "-"}</td>,
-      unitWeight: <td key="unitWeight" className="px-3 py-2">{product.unitWeight || "-"}</td>,
-      photos: <td key="photos" className="px-3 py-2">{product.photoUrls.length}</td>,
-      actions: (
-        <td key="actions" className="px-3 py-2">
+      width: (columnIndex) => <DashboardTableCell key="width" columnIndex={columnIndex}>{product.width || "-"}</DashboardTableCell>,
+      sheetSize: (columnIndex) => <DashboardTableCell key="sheetSize" columnIndex={columnIndex}>{product.sheetSize || "-"}</DashboardTableCell>,
+      thickness: (columnIndex) => <DashboardTableCell key="thickness" columnIndex={columnIndex}>{product.thickness || "-"}</DashboardTableCell>,
+      unitWeight: (columnIndex) => <DashboardTableCell key="unitWeight" columnIndex={columnIndex}>{product.unitWeight || "-"}</DashboardTableCell>,
+      photos: (columnIndex) => <DashboardTableCell key="photos" columnIndex={columnIndex}>{product.photoUrls.length}</DashboardTableCell>,
+      actions: (columnIndex) => (
+        <DashboardTableCell key="actions" columnIndex={columnIndex}>
           <DeleteRowButton
             onClick={() => onDeleteProduct(product)}
             disabled={deletingProductId === product.id}
           >
             {deletingProductId === product.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
@@ -94,7 +95,7 @@ export function ProductsTable({
         ariaLabel={`Open product ${product.name || product.style || product.id}`}
         onClick={() => onOpenProduct(product.id)}
       >
-        {visibleColumnKeys.map((columnKey) => cells[columnKey])}
+        {visibleColumnKeys.map((columnKey, columnIndex) => cells[columnKey](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -108,7 +109,7 @@ export function ProductsTable({
 
   return (
     <>
-      <TableShell minWidthClass="min-w-[1400px]">
+      <EmbeddedPageTableShell minWidthClass="min-w-[1400px]">
         <TableHead>
           <tr>
             {visibleColumns.map((column) => (
@@ -120,7 +121,7 @@ export function ProductsTable({
           {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((product) => renderRow(product))}
           {rows.length === 0 ? <TableEmptyRow message="No flooring products yet." colSpan={visibleColumnKeys.length} /> : null}
         </tbody>
-      </TableShell>
+      </EmbeddedPageTableShell>
       <TablePaginationControls
         page={pagination?.page ?? page}
         totalPages={pagination?.totalPages ?? totalPages}

@@ -6,11 +6,12 @@ import { StatusPill } from "@/features/flooring/shared/ui/feedback/status-pill"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import {
   ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
   TableEmptyRow,
   TableHead,
   TableHeaderCell,
   TablePaginationControls,
-  TableShell,
 } from "@/features/flooring/shared/ui/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
@@ -68,51 +69,55 @@ export function InventoryTable({
   onOpenInventory: (id: string) => void
 }) {
   function renderRow(row: InventoryRow) {
-    const cells: Record<string, ReactNode> = {
-      importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">{formatInventoryImportNumber(row.importNumber)}</td>,
-      importTag: <td key="importTag" className="px-3 py-2">{row.importTag || "-"}</td>,
-      status: (
-        <td key="status" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      importNumber: (columnIndex) => (
+        <DashboardTableCell key="importNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
+          {formatInventoryImportNumber(row.importNumber)}
+        </DashboardTableCell>
+      ),
+      importTag: (columnIndex) => <DashboardTableCell key="importTag" columnIndex={columnIndex}>{row.importTag || "-"}</DashboardTableCell>,
+      status: (columnIndex) => (
+        <DashboardTableCell key="status" columnIndex={columnIndex}>
           <StatusPill label={formatImportStatus(row.importStatus)} toneClassName={getImportStatusFieldClass(row.importStatus)} />
-        </td>
+        </DashboardTableCell>
       ),
-      transport: (
-        <td key="transport" className="px-3 py-2">
+      transport: (columnIndex) => (
+        <DashboardTableCell key="transport" columnIndex={columnIndex}>
           <StatusPill label={formatTransportType(row.importTransportType)} toneClassName={getTransportTypeFieldClass(row.importTransportType)} />
-        </td>
+        </DashboardTableCell>
       ),
-      product: <td key="product" className="px-3 py-2">{row.productName}</td>,
-      itemNumber: <td key="itemNumber" className="px-3 py-2">{row.itemNumber}</td>,
-      stockCount: <td key="stockCount" className="px-3 py-2">{formatInventoryQuantity(row.stockCount, row.stockUnit)}</td>,
-      cutTotal: <td key="cutTotal" className="px-3 py-2">{formatInventoryQuantity(row.cutTotal, row.stockUnit)}</td>,
-      runningBalance: <td key="runningBalance" className="px-3 py-2 font-semibold">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</td>,
-      section: <td key="section" className="px-3 py-2">{row.sectionName || "-"}</td>,
-      location: <td key="location" className="px-3 py-2">{row.locationCode || "-"}</td>,
-      warehouse: <td key="warehouse" className="px-3 py-2">{row.importWarehouseName || row.warehouseName || "-"}</td>,
-      dyeLot: <td key="dyeLot" className="px-3 py-2">{row.dyeLot || "-"}</td>,
-      cost: <td key="cost" className="px-3 py-2">{row.cost || "-"}</td>,
-      freight: <td key="freight" className="px-3 py-2">{row.freight || "-"}</td>,
-      notes: <td key="notes" className="px-3 py-2">{row.notes || "-"}</td>,
-      updated: <td key="updated" className="px-3 py-2">{formatStableDate(row.updatedAt)}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+      product: (columnIndex) => <DashboardTableCell key="product" columnIndex={columnIndex}>{row.productName}</DashboardTableCell>,
+      itemNumber: (columnIndex) => <DashboardTableCell key="itemNumber" columnIndex={columnIndex}>{row.itemNumber}</DashboardTableCell>,
+      stockCount: (columnIndex) => <DashboardTableCell key="stockCount" columnIndex={columnIndex}>{formatInventoryQuantity(row.stockCount, row.stockUnit)}</DashboardTableCell>,
+      cutTotal: (columnIndex) => <DashboardTableCell key="cutTotal" columnIndex={columnIndex}>{formatInventoryQuantity(row.cutTotal, row.stockUnit)}</DashboardTableCell>,
+      runningBalance: (columnIndex) => <DashboardTableCell key="runningBalance" columnIndex={columnIndex} className="font-semibold">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</DashboardTableCell>,
+      section: (columnIndex) => <DashboardTableCell key="section" columnIndex={columnIndex}>{row.sectionName || "-"}</DashboardTableCell>,
+      location: (columnIndex) => <DashboardTableCell key="location" columnIndex={columnIndex}>{row.locationCode || "-"}</DashboardTableCell>,
+      warehouse: (columnIndex) => <DashboardTableCell key="warehouse" columnIndex={columnIndex}>{row.importWarehouseName || row.warehouseName || "-"}</DashboardTableCell>,
+      dyeLot: (columnIndex) => <DashboardTableCell key="dyeLot" columnIndex={columnIndex}>{row.dyeLot || "-"}</DashboardTableCell>,
+      cost: (columnIndex) => <DashboardTableCell key="cost" columnIndex={columnIndex}>{row.cost || "-"}</DashboardTableCell>,
+      freight: (columnIndex) => <DashboardTableCell key="freight" columnIndex={columnIndex}>{row.freight || "-"}</DashboardTableCell>,
+      notes: (columnIndex) => <DashboardTableCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardTableCell>,
+      updated: (columnIndex) => <DashboardTableCell key="updated" columnIndex={columnIndex}>{formatStableDate(row.updatedAt)}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => onDeleteInventory(row.id)} disabled={deletingInventoryId === row.id}>
             {deletingInventoryId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open inventory item ${row.itemNumber}`} onClick={() => onOpenInventory(row.id)}>
-        {visibleColumnKeys.map((columnKey) => cells[columnKey])}
+        {visibleColumnKeys.map((columnKey, columnIndex) => cells[columnKey](columnIndex))}
       </ClickableTableRow>
     )
   }
 
   return (
     <>
-      <TableShell minWidthClass="min-w-[1680px]">
+      <EmbeddedPageTableShell minWidthClass="min-w-[1680px]">
         <TableHead>
           <tr>
             {visibleColumns.map((column) => (
@@ -130,7 +135,7 @@ export function InventoryTable({
             : rows.map((row) => renderRow(row))}
           {rows.length === 0 ? <TableEmptyRow message="No live inventory rows yet." colSpan={visibleColumnKeys.length} /> : null}
         </tbody>
-      </TableShell>
+      </EmbeddedPageTableShell>
       <TablePaginationControls
         page={pagination?.page ?? page}
         totalPages={pagination?.totalPages ?? totalPages}

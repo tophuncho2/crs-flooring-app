@@ -5,10 +5,9 @@ import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import {
   DASHBOARD_PAGE_SHELL_EDGE_TO_EDGE_CLASS_NAME,
-  DASHBOARD_SURFACE_CARD_CLASS_NAME,
-  DASHBOARD_SURFACE_HEADER_BLEED_CLASS_NAME,
   DashboardCardTitle,
 } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
@@ -16,14 +15,13 @@ import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-c
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
 import {
   ClickableTableRow,
-  EMBEDDED_PAGE_TABLE_SHELL_CLASS_NAME,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
   TableActionsSummary,
-  TableBleed,
   TableEmptyRow,
   TableHead,
   TableHeaderCell,
   TablePaginationControls,
-  TableShell,
 } from "@/features/flooring/shared/ui/table/table-shell"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
@@ -47,18 +45,6 @@ import { WorkOrderSyncModal } from "./work-order-sync-modal"
 
 function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete" | "hasShortage">) {
   return getWorkOrderStatusLabel(row)
-}
-
-function joinClasses(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ")
-}
-
-function workOrderBodyCellClassName(columnIndex: number, className?: string) {
-  return joinClasses(
-    "px-3 py-2 align-top",
-    columnIndex > 0 && "border-l border-[var(--panel-border)]",
-    className,
-  )
 }
 
 export default function WorkOrdersClient({
@@ -148,14 +134,14 @@ export default function WorkOrdersClient({
   function renderWorkOrderRow(row: WorkOrderRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       wo: (columnIndex) => (
-        <td key="wo" className={workOrderBodyCellClassName(columnIndex, "font-medium text-blue-500")}>
+        <DashboardTableCell key="wo" columnIndex={columnIndex} className="font-medium text-blue-500">
           {row.workOrderNumber}
-        </td>
+        </DashboardTableCell>
       ),
       status: (
         columnIndex,
       ) => (
-        <td key="status" className={workOrderBodyCellClassName(columnIndex)}>
+        <DashboardTableCell key="status" columnIndex={columnIndex}>
           {row.isComplete ? (
             <span className="inline-flex min-w-[110px] rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-center text-sm text-emerald-700">
               Complete
@@ -165,29 +151,29 @@ export default function WorkOrdersClient({
               {workOrderStatusText(row)}
             </span>
           )}
-        </td>
+        </DashboardTableCell>
       ),
-      warehouse: (columnIndex) => <td key="warehouse" className={workOrderBodyCellClassName(columnIndex)}>{row.warehouseName || "-"}</td>,
-      property: (columnIndex) => <td key="property" className={workOrderBodyCellClassName(columnIndex)}>{row.propertyName}</td>,
+      warehouse: (columnIndex) => <DashboardTableCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardTableCell>,
+      property: (columnIndex) => <DashboardTableCell key="property" columnIndex={columnIndex}>{row.propertyName}</DashboardTableCell>,
       address: (columnIndex) => (
-        <td key="address" className={workOrderBodyCellClassName(columnIndex)}>
+        <DashboardTableCell key="address" columnIndex={columnIndex}>
           {row.customAddress.trim() || row.propertyAddress || "-"}
-        </td>
+        </DashboardTableCell>
       ),
-      customAddress: (columnIndex) => <td key="customAddress" className={workOrderBodyCellClassName(columnIndex)}>{row.customAddress || "-"}</td>,
-      date: (columnIndex) => <td key="date" className={workOrderBodyCellClassName(columnIndex)}>{row.date ? row.date.split("T")[0] : "-"}</td>,
-      unit: (columnIndex) => <td key="unit" className={workOrderBodyCellClassName(columnIndex)}>{row.unitText || "-"}</td>,
-      unitType: (columnIndex) => <td key="unitType" className={workOrderBodyCellClassName(columnIndex)}>{row.unitType || "-"}</td>,
-      vacancy: (columnIndex) => <td key="vacancy" className={workOrderBodyCellClassName(columnIndex)}>{row.vacancy || "-"}</td>,
-      instructions: (columnIndex) => <td key="instructions" className={workOrderBodyCellClassName(columnIndex)}>{row.instructions || "-"}</td>,
-      notes: (columnIndex) => <td key="notes" className={workOrderBodyCellClassName(columnIndex)}>{row.notes || "-"}</td>,
-      items: (columnIndex) => <td key="items" className={workOrderBodyCellClassName(columnIndex)}>{row.itemsCount}</td>,
+      customAddress: (columnIndex) => <DashboardTableCell key="customAddress" columnIndex={columnIndex}>{row.customAddress || "-"}</DashboardTableCell>,
+      date: (columnIndex) => <DashboardTableCell key="date" columnIndex={columnIndex}>{row.date ? row.date.split("T")[0] : "-"}</DashboardTableCell>,
+      unit: (columnIndex) => <DashboardTableCell key="unit" columnIndex={columnIndex}>{row.unitText || "-"}</DashboardTableCell>,
+      unitType: (columnIndex) => <DashboardTableCell key="unitType" columnIndex={columnIndex}>{row.unitType || "-"}</DashboardTableCell>,
+      vacancy: (columnIndex) => <DashboardTableCell key="vacancy" columnIndex={columnIndex}>{row.vacancy || "-"}</DashboardTableCell>,
+      instructions: (columnIndex) => <DashboardTableCell key="instructions" columnIndex={columnIndex}>{row.instructions || "-"}</DashboardTableCell>,
+      notes: (columnIndex) => <DashboardTableCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardTableCell>,
+      items: (columnIndex) => <DashboardTableCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardTableCell>,
       delete: (columnIndex) => (
-        <td key="delete" className={workOrderBodyCellClassName(columnIndex)}>
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void controller.deleteWorkOrder(row.id)} disabled={controller.deletingId === row.id}>
             {controller.deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
@@ -201,55 +187,51 @@ export default function WorkOrdersClient({
   return (
     <div className={DASHBOARD_PAGE_SHELL_EDGE_TO_EDGE_CLASS_NAME}>
       <div className="w-full space-y-6">
-        <section className={DASHBOARD_SURFACE_CARD_CLASS_NAME}>
-          <div className={DASHBOARD_SURFACE_HEADER_BLEED_CLASS_NAME}>
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <DashboardCardTitle>Work Orders</DashboardCardTitle>
-              </div>
-              <TableActionsSummary count={filteredWorkOrders.length}>
-                <TableControlsBar
-                  searchQuery={searchQuery}
-                  onSearchQueryChange={onSearchQueryChange}
-                  searchPlaceholder="Search property"
-                  isAscendingSort={isAscendingSort}
-                  onToggleSort={onToggleSort}
-                  ascendingSortLabel="1-9"
-                  descendingSortLabel="9-1"
+        <DashboardTableSurface
+          title={<DashboardCardTitle>Work Orders</DashboardCardTitle>}
+          actions={
+            <TableActionsSummary count={filteredWorkOrders.length}>
+              <TableControlsBar
+                searchQuery={searchQuery}
+                onSearchQueryChange={onSearchQueryChange}
+                searchPlaceholder="Search property"
+                isAscendingSort={isAscendingSort}
+                onToggleSort={onToggleSort}
+                ascendingSortLabel="1-9"
+                descendingSortLabel="9-1"
+              >
+                <TableFilterControls groups={filterGroups} panelKey="work-orders-main-filters" />
+                <TableColumnSettings
+                  columns={orderedWorkOrderColumns}
+                  hiddenColumnKeys={hiddenWorkOrderColumnKeys}
+                  onToggleColumn={toggleWorkOrderColumnVisibility}
+                  onMoveColumn={moveWorkOrderColumn}
+                  onSetColumnOrder={setWorkOrderColumnOrder}
+                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                  maxGroupFields={MAX_GROUP_FIELDS}
+                  onToggleGroupedColumn={onToggleGroupedColumn}
+                />
+                <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+                  <Plus size={16} />
+                  Work Order
+                </button>
+                <button
+                  type="button"
+                  onClick={controller.openSyncModal}
+                  className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20"
                 >
-                  <TableFilterControls groups={filterGroups} panelKey="work-orders-main-filters" />
-                  <TableColumnSettings
-                    columns={orderedWorkOrderColumns}
-                    hiddenColumnKeys={hiddenWorkOrderColumnKeys}
-                    onToggleColumn={toggleWorkOrderColumnVisibility}
-                    onMoveColumn={moveWorkOrderColumn}
-                    onSetColumnOrder={setWorkOrderColumnOrder}
-                    groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                    maxGroupFields={MAX_GROUP_FIELDS}
-                    onToggleGroupedColumn={onToggleGroupedColumn}
-                  />
-                  <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
-                    <Plus size={16} />
-                    Work Order
-                  </button>
-                  <button
-                    type="button"
-                    onClick={controller.openSyncModal}
-                    className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20"
-                  >
-                    Sync Template
-                  </button>
-                </TableControlsBar>
-              </TableActionsSummary>
-            </div>
-
-            {!controller.isCreateModalOpen && !controller.isSyncModalOpen ? (
-              <FormStatusNotices message={controller.notices.message} error={controller.notices.error} className="mt-3" />
-            ) : null}
-          </div>
-
-          <TableBleed variant="dashboard">
-            <TableShell minWidthClass="min-w-[1280px]" className={EMBEDDED_PAGE_TABLE_SHELL_CLASS_NAME}>
+                  Sync Template
+                </button>
+              </TableControlsBar>
+            </TableActionsSummary>
+          }
+          notices={
+            !controller.isCreateModalOpen && !controller.isSyncModalOpen ? (
+              <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
+            ) : null
+          }
+        >
+          <EmbeddedPageTableShell minWidthClass="min-w-[1280px]">
               <TableHead>
                 <tr>
                   {visibleWorkOrderColumns.map((column) => (
@@ -268,8 +250,7 @@ export default function WorkOrdersClient({
 
                 {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={visibleWorkOrderColumns.length} /> : null}
               </tbody>
-            </TableShell>
-          </TableBleed>
+          </EmbeddedPageTableShell>
           <TablePaginationControls
             page={pagination?.page ?? page}
             totalPages={pagination?.totalPages ?? totalPages}
@@ -282,7 +263,7 @@ export default function WorkOrdersClient({
             previousPageHref={pagination?.previousPageHref}
             nextPageHref={pagination?.nextPageHref}
           />
-        </section>
+        </DashboardTableSurface>
       </div>
 
       {controller.isCreateModalOpen ? (

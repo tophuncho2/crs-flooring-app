@@ -1,6 +1,7 @@
 "use client"
 
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
@@ -124,62 +125,57 @@ export default function InventoryClient({
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <DashboardCardHeader
-          title="Inventory"
-          actions={(
-            <TableActionsSummary count={filteredRows.length}>
-              <TableControlsBar
-                searchQuery={searchQuery}
-                onSearchQueryChange={onSearchQueryChange}
-                searchPlaceholder="Search product, item #, import, section, or location"
-                isAscendingSort={isAscendingSort}
-                onToggleSort={onToggleSort}
-                ascendingSortLabel="A-Z"
-                descendingSortLabel="Z-A"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <TableFilterControls groups={filterGroups} panelKey="inventory-main-filters" />
-                  <TableColumnSettings
-                    columns={allColumns}
-                    hiddenColumnKeys={hiddenColumnKeys}
-                    onToggleColumn={toggleColumnVisibility}
-                    onMoveColumn={moveColumn}
-                    onSetColumnOrder={setColumnOrder}
-                    groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                    maxGroupFields={MAX_GROUP_FIELDS}
-                    onToggleGroupedColumn={onToggleGroupedColumn}
-                  />
-                </div>
-              </TableControlsBar>
-            </TableActionsSummary>
-          )}
+      <DashboardTableSurface
+        title="Inventory"
+        actions={
+          <TableActionsSummary count={filteredRows.length}>
+            <TableControlsBar
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
+              searchPlaceholder="Search product, item #, import, section, or location"
+              isAscendingSort={isAscendingSort}
+              onToggleSort={onToggleSort}
+              ascendingSortLabel="A-Z"
+              descendingSortLabel="Z-A"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <TableFilterControls groups={filterGroups} panelKey="inventory-main-filters" />
+                <TableColumnSettings
+                  columns={allColumns}
+                  hiddenColumnKeys={hiddenColumnKeys}
+                  onToggleColumn={toggleColumnVisibility}
+                  onMoveColumn={moveColumn}
+                  onSetColumnOrder={setColumnOrder}
+                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+                  maxGroupFields={MAX_GROUP_FIELDS}
+                  onToggleGroupedColumn={onToggleGroupedColumn}
+                />
+              </div>
+            </TableControlsBar>
+          </TableActionsSummary>
+        }
+        notices={<FormStatusNotices message={notices.message} error={notices.error} />}
+      >
+        <InventoryTable
+          rows={sortedRows}
+          groupedRows={groupedRowTree as GroupedRowTree<InventoryRow>[]}
+          isGroupingEnabled={isGroupingEnabled}
+          visibleColumnKeys={visibleColumns.map((column) => column.key)}
+          visibleColumns={visibleColumns.map((column) => ({ key: column.key, label: column.label }))}
+          pagination={pagination}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredRows.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+          deletingInventoryId={deletingInventoryId}
+          onDeleteInventory={deleteInventory}
+          onOpenInventory={openInventory}
         />
-
-        <FormStatusNotices message={notices.message} error={notices.error} className="mt-4" />
-
-        <section className="mt-6">
-          <InventoryTable
-            rows={sortedRows}
-            groupedRows={groupedRowTree as GroupedRowTree<InventoryRow>[]}
-            isGroupingEnabled={isGroupingEnabled}
-            visibleColumnKeys={visibleColumns.map((column) => column.key)}
-            visibleColumns={visibleColumns.map((column) => ({ key: column.key, label: column.label }))}
-            pagination={pagination}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredRows.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-            deletingInventoryId={deletingInventoryId}
-            onDeleteInventory={deleteInventory}
-            onOpenInventory={openInventory}
-          />
-        </section>
-      </section>
+      </DashboardTableSurface>
     </div>
   )
 }

@@ -2,7 +2,15 @@
 
 import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/flooring/shared/table/row-action-buttons"
-import { ClickableTableRow, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableEmptyRow,
+  TableGroupRow,
+  TableHead,
+  TableHeaderCell,
+} from "@/features/flooring/shared/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import type { ManufacturerRow } from "../../domain/types"
 
@@ -24,25 +32,25 @@ export function ManufacturersTable({
   onDelete: (row: ManufacturerRow) => void
 }) {
   function renderRow(row: ManufacturerRow) {
-    const cells: Record<string, ReactNode> = {
-      companyName: <td key="companyName" className="px-3 py-2 font-medium">{row.companyName || "No company"}</td>,
-      agentName: <td key="agentName" className="px-3 py-2">{row.agentName || "-"}</td>,
-      website: <td key="website" className="px-3 py-2">{row.website || "-"}</td>,
-      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-      products: <td key="products" className="px-3 py-2">{row.productsCount}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      companyName: (columnIndex) => <DashboardTableCell key="companyName" columnIndex={columnIndex} className="font-medium">{row.companyName || "No company"}</DashboardTableCell>,
+      agentName: (columnIndex) => <DashboardTableCell key="agentName" columnIndex={columnIndex}>{row.agentName || "-"}</DashboardTableCell>,
+      website: (columnIndex) => <DashboardTableCell key="website" columnIndex={columnIndex}>{row.website || "-"}</DashboardTableCell>,
+      phone: (columnIndex) => <DashboardTableCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardTableCell>,
+      email: (columnIndex) => <DashboardTableCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardTableCell>,
+      products: (columnIndex) => <DashboardTableCell key="products" columnIndex={columnIndex}>{row.productsCount}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open manufacturer ${row.companyName || row.agentName || row.id}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column) => cells[column.key])}
+        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -55,7 +63,7 @@ export function ManufacturersTable({
   }
 
   return (
-    <TableShell minWidthClass="min-w-[1100px]">
+    <EmbeddedPageTableShell minWidthClass="min-w-[1100px]">
       <TableHead>
         <tr>
           {visibleColumns.map((column) => (
@@ -67,6 +75,6 @@ export function ManufacturersTable({
         {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
         {rows.length === 0 ? <TableEmptyRow message="No manufacturers found." colSpan={visibleColumns.length} /> : null}
       </tbody>
-    </TableShell>
+    </EmbeddedPageTableShell>
   )
 }

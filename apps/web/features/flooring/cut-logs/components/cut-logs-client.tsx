@@ -3,13 +3,22 @@
 import { useState, type ReactNode } from "react"
 import { getClientErrorMessage } from "@/features/flooring/shared/transport/client-errors"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_CLASS_NAME } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
-import { TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import {
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableActionsSummary,
+  TableEmptyRow,
+  TableHead,
+  TableHeaderCell,
+  TablePaginationControls,
+} from "@/features/flooring/shared/ui/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -107,30 +116,30 @@ export default function CutLogsClient({
   }
 
   function renderRow(log: CutLogPageRow) {
-    const cells: Record<string, ReactNode> = {
-      created: <td key="created" className="px-3 py-2">{formatStableDateTime(log.createdAt)}</td>,
-      product: <td key="product" className="px-3 py-2">{log.productName}</td>,
-      itemNumber: <td key="itemNumber" className="px-3 py-2">{log.itemNumber}</td>,
-      location: <td key="location" className="px-3 py-2">{log.locationLabel}</td>,
-      before: <td key="before" className="px-3 py-2">{log.before}</td>,
-      cut: <td key="cut" className="px-3 py-2">{log.cut}</td>,
-      after: <td key="after" className="px-3 py-2">{log.after}</td>,
-      notes: <td key="notes" className="px-3 py-2">{log.notes || "-"}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      created: (columnIndex) => <DashboardTableCell key="created" columnIndex={columnIndex}>{formatStableDateTime(log.createdAt)}</DashboardTableCell>,
+      product: (columnIndex) => <DashboardTableCell key="product" columnIndex={columnIndex}>{log.productName}</DashboardTableCell>,
+      itemNumber: (columnIndex) => <DashboardTableCell key="itemNumber" columnIndex={columnIndex}>{log.itemNumber}</DashboardTableCell>,
+      location: (columnIndex) => <DashboardTableCell key="location" columnIndex={columnIndex}>{log.locationLabel}</DashboardTableCell>,
+      before: (columnIndex) => <DashboardTableCell key="before" columnIndex={columnIndex}>{log.before}</DashboardTableCell>,
+      cut: (columnIndex) => <DashboardTableCell key="cut" columnIndex={columnIndex}>{log.cut}</DashboardTableCell>,
+      after: (columnIndex) => <DashboardTableCell key="after" columnIndex={columnIndex}>{log.after}</DashboardTableCell>,
+      notes: (columnIndex) => <DashboardTableCell key="notes" columnIndex={columnIndex}>{log.notes || "-"}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void deleteLog(log.id)} disabled={deletingId === log.id}>
             {deletingId === log.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
-    return <tr key={log.id} className="border-t border-[var(--panel-border)]">{visibleColumns.map((column) => cells[column.key])}</tr>
+    return <tr key={log.id} className="border-t border-[var(--panel-border)]">{visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}</tr>
   }
 
   return (
-    <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-      <DashboardCardHeader
+    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
+      <DashboardTableSurface
         title="Cut Logs"
         actions={(
           <TableActionsSummary count={filteredRows.length}>
@@ -156,11 +165,10 @@ export default function CutLogsClient({
             </TableControlsBar>
           </TableActionsSummary>
         )}
-      />
+        notices={<FormStatusNotices message={message} error={error} />}
+      >
 
-      <FormStatusNotices message={message} error={error} className="mt-3" />
-
-      <TableShell minWidthClass="min-w-[1180px]" className="mt-6">
+        <EmbeddedPageTableShell minWidthClass="min-w-[1180px]">
         <TableHead>
           <tr>
             {visibleColumns.map((column) => (
@@ -178,18 +186,19 @@ export default function CutLogsClient({
             : sortedRows.map((log) => renderRow(log))}
           {sortedRows.length === 0 ? <TableEmptyRow message="No cut logs yet." colSpan={visibleColumns.length} /> : null}
         </tbody>
-      </TableShell>
+        </EmbeddedPageTableShell>
 
-      <TablePaginationControls
-        page={page}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        totalItems={filteredRows.length}
-        hasPreviousPage={hasPreviousPage}
-        hasNextPage={hasNextPage}
-        onPreviousPage={goToPreviousPage}
-        onNextPage={goToNextPage}
-      />
-    </section>
+        <TablePaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredRows.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+        />
+      </DashboardTableSurface>
+    </div>
   )
 }

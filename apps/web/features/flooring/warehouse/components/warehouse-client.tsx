@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
@@ -81,11 +82,9 @@ export default function WarehouseClient({
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <DashboardCardTitle>Warehouse</DashboardCardTitle>
-          </div>
+      <DashboardTableSurface
+        title={<DashboardCardTitle>Warehouse</DashboardCardTitle>}
+        actions={
           <TableActionsSummary count={filteredRows.length}>
             <TableControlsBar
               searchQuery={searchQuery}
@@ -114,12 +113,13 @@ export default function WarehouseClient({
               </button>
             </TableControlsBar>
           </TableActionsSummary>
-        </div>
-
-        {!controller.isCreating ? (
-          <FormStatusNotices message={controller.message} error={controller.error} className="mt-3" />
-        ) : null}
-
+        }
+        notices={
+          !controller.isCreating ? (
+            <FormStatusNotices message={controller.message} error={controller.error} />
+          ) : null
+        }
+      >
         <WarehouseTable
           rows={sortedRows}
           visibleColumns={visibleColumns}
@@ -138,7 +138,7 @@ export default function WarehouseClient({
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
         />
-      </section>
+      </DashboardTableSurface>
 
       {controller.isCreating ? (
         <WarehouseCreateModal

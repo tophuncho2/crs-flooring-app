@@ -9,12 +9,23 @@ import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/share
 import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { ErrorNotice, FormStatusNotices, SuccessNotice } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableActionsSummary,
+  TableEmptyRow,
+  TableGroupRow,
+  TableHead,
+  TableHeaderCell,
+  TablePaginationControls,
+} from "@/features/flooring/shared/ui/table/table-shell"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 
 type ManagementCompanyOption = {
@@ -219,28 +230,36 @@ export default function PropertiesClient({
   }
 
   function renderPropertyRow(row: PropertyRow) {
-    const cells: Record<string, ReactNode> = {
-      property: <td key="property" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
-      street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-      city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-      state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-      zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-      fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-      managementCompany: <td key="managementCompany" className="px-3 py-2">{row.managementCompany?.name || "No management company"}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      property: (columnIndex) => (
+        <DashboardTableCell key="property" columnIndex={columnIndex} className="font-medium text-blue-500">
+          {row.name}
+        </DashboardTableCell>
+      ),
+      street: (columnIndex) => <DashboardTableCell key="street" columnIndex={columnIndex}>{row.streetAddress || "-"}</DashboardTableCell>,
+      city: (columnIndex) => <DashboardTableCell key="city" columnIndex={columnIndex}>{row.city || "-"}</DashboardTableCell>,
+      state: (columnIndex) => <DashboardTableCell key="state" columnIndex={columnIndex}>{row.state || "-"}</DashboardTableCell>,
+      zip: (columnIndex) => <DashboardTableCell key="zip" columnIndex={columnIndex}>{row.zip || "-"}</DashboardTableCell>,
+      phone: (columnIndex) => <DashboardTableCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardTableCell>,
+      email: (columnIndex) => <DashboardTableCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardTableCell>,
+      fullAddress: (columnIndex) => <DashboardTableCell key="fullAddress" columnIndex={columnIndex}>{row.fullAddress || "-"}</DashboardTableCell>,
+      managementCompany: (columnIndex) => (
+        <DashboardTableCell key="managementCompany" columnIndex={columnIndex}>
+          {row.managementCompany?.name || "No management company"}
+        </DashboardTableCell>
+      ),
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Edit property ${row.name}`} onClick={() => propertyNavigation.openRecord(row.id)}>
-        {visiblePropertyColumns.map((column) => cells[column.key])}
+        {visiblePropertyColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -259,11 +278,9 @@ export default function PropertiesClient({
 
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <DashboardCardTitle>Properties</DashboardCardTitle>
-          </div>
+      <DashboardTableSurface
+        title={<DashboardCardTitle>Properties</DashboardCardTitle>}
+        actions={
           <TableActionsSummary count={filteredProperties.length}>
             <TableControlsBar
               searchQuery={searchQuery}
@@ -297,12 +314,15 @@ export default function PropertiesClient({
               </button>
             </TableControlsBar>
           </TableActionsSummary>
-        </div>
-
-        {!isCreateModalOpen && message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
-        {!isCreateModalOpen && error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
-
-        <TableShell minWidthClass="min-w-[1320px]">
+        }
+        notices={
+          <>
+            {!isCreateModalOpen && message ? <SuccessNotice>{message}</SuccessNotice> : null}
+            {!isCreateModalOpen && error ? <ErrorNotice>{error}</ErrorNotice> : null}
+          </>
+        }
+      >
+        <EmbeddedPageTableShell minWidthClass="min-w-[1320px]">
           <TableHead>
             <tr>
               {visiblePropertyColumns.map((column) => (
@@ -315,7 +335,7 @@ export default function PropertiesClient({
 
             {filteredProperties.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visiblePropertyColumns.length} /> : null}
           </tbody>
-        </TableShell>
+        </EmbeddedPageTableShell>
         <TablePaginationControls
           page={pagination?.page ?? page}
           totalPages={pagination?.totalPages ?? totalPages}
@@ -328,7 +348,7 @@ export default function PropertiesClient({
           previousPageHref={pagination?.previousPageHref}
           nextPageHref={pagination?.nextPageHref}
         />
-      </section>
+      </DashboardTableSurface>
 
       {isCreateModalOpen ? (
         <ModalShell title="New Property" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>

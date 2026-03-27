@@ -4,11 +4,12 @@ import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/flooring/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
   TableEmptyRow,
   TableGroupRow,
   TableHead,
   TableHeaderCell,
-  TableShell,
 } from "@/features/flooring/shared/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
@@ -34,17 +35,17 @@ export function UnitOfMeasuresTable({
   onDelete: (row: UnitOfMeasureRow) => void
 }) {
   function renderRow(row: UnitOfMeasureRow) {
-    const cells: Record<string, ReactNode> = {
-      name: <td key="name" className="px-3 py-2 font-medium">{row.name}</td>,
-      createdAt: <td key="createdAt" className="px-3 py-2">{formatStableDateTime(row.createdAt)}</td>,
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      name: (columnIndex) => <DashboardTableCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardTableCell>,
+      createdAt: (columnIndex) => <DashboardTableCell key="createdAt" columnIndex={columnIndex}>{formatStableDateTime(row.createdAt)}</DashboardTableCell>,
       ...(canManage
         ? {
-            delete: (
-              <td key="delete" className="px-3 py-2">
+            delete: (columnIndex: number) => (
+              <DashboardTableCell key="delete" columnIndex={columnIndex}>
                 <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
                   {deletingId === row.id ? "Deleting..." : "Delete"}
                 </DeleteRowButton>
-              </td>
+              </DashboardTableCell>
             ),
           }
         : {}),
@@ -52,7 +53,7 @@ export function UnitOfMeasuresTable({
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open unit of measure ${row.name}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column) => cells[column.key])}
+        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -70,7 +71,7 @@ export function UnitOfMeasuresTable({
   }
 
   return (
-    <TableShell minWidthClass="min-w-[780px]">
+    <EmbeddedPageTableShell minWidthClass="min-w-[780px]">
       <TableHead>
         <tr>
           {visibleColumns.map((column) => (
@@ -82,6 +83,6 @@ export function UnitOfMeasuresTable({
         {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
         {rows.length === 0 ? <TableEmptyRow message="No units of measure found." colSpan={visibleColumns.length} /> : null}
       </tbody>
-    </TableShell>
+    </EmbeddedPageTableShell>
   )
 }

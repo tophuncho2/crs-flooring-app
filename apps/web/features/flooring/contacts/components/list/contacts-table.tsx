@@ -2,7 +2,15 @@
 
 import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
-import { ClickableTableRow, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableEmptyRow,
+  TableGroupRow,
+  TableHead,
+  TableHeaderCell,
+} from "@/features/flooring/shared/ui/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { ContactRow } from "../../domain/types"
 
@@ -24,22 +32,22 @@ export function ContactsTable({
   onDelete: (row: ContactRow) => void
 }) {
   function renderRow(row: ContactRow) {
-    const cells: Record<string, ReactNode> = {
-      name: <td key="name" className="px-3 py-2 font-medium">{row.name}</td>,
-      type: <td key="type" className="px-3 py-2">{row.typeLabel}</td>,
-      assignments: <td key="assignments" className="px-3 py-2">{row.assignmentsCount}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      name: (columnIndex) => <DashboardTableCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardTableCell>,
+      type: (columnIndex) => <DashboardTableCell key="type" columnIndex={columnIndex}>{row.typeLabel}</DashboardTableCell>,
+      assignments: (columnIndex) => <DashboardTableCell key="assignments" columnIndex={columnIndex}>{row.assignmentsCount}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open contact ${row.name}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column) => cells[column.key])}
+        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -52,7 +60,7 @@ export function ContactsTable({
   }
 
   return (
-    <TableShell minWidthClass="min-w-[860px]">
+    <EmbeddedPageTableShell minWidthClass="min-w-[860px]">
       <TableHead>
         <tr>
           {visibleColumns.map((column) => (
@@ -64,6 +72,6 @@ export function ContactsTable({
         {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
         {rows.length === 0 ? <TableEmptyRow message="No contacts found." colSpan={visibleColumns.length} /> : null}
       </tbody>
-    </TableShell>
+    </EmbeddedPageTableShell>
   )
 }

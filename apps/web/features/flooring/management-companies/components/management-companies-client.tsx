@@ -9,12 +9,22 @@ import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/share
 import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
 import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
 import { ErrorNotice, FormStatusNotices, SuccessNotice } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableActionsSummary,
+  TableEmptyRow,
+  TableHead,
+  TableHeaderCell,
+  TablePaginationControls,
+} from "@/features/flooring/shared/ui/table/table-shell"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 
@@ -220,13 +230,51 @@ export default function ManagementCompaniesClient({
     }
   }
 
+  function renderCompanyRow(row: ManagementCompanyRow) {
+    const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
+    const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      company: (columnIndex) => (
+        <DashboardTableCell key="company" columnIndex={columnIndex} className="font-medium text-blue-500">
+          {row.name}
+        </DashboardTableCell>
+      ),
+      street: (columnIndex) => <DashboardTableCell key="street" columnIndex={columnIndex}>{row.streetAddress || "-"}</DashboardTableCell>,
+      city: (columnIndex) => <DashboardTableCell key="city" columnIndex={columnIndex}>{row.city || "-"}</DashboardTableCell>,
+      state: (columnIndex) => <DashboardTableCell key="state" columnIndex={columnIndex}>{row.state || "-"}</DashboardTableCell>,
+      zip: (columnIndex) => <DashboardTableCell key="zip" columnIndex={columnIndex}>{row.zip || "-"}</DashboardTableCell>,
+      phone: (columnIndex) => <DashboardTableCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardTableCell>,
+      email: (columnIndex) => <DashboardTableCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardTableCell>,
+      fullAddress: (columnIndex) => <DashboardTableCell key="fullAddress" columnIndex={columnIndex}>{row.fullAddress || "-"}</DashboardTableCell>,
+      properties: (columnIndex) => (
+        <DashboardTableCell key="properties" columnIndex={columnIndex}>
+          <p className="text-xs text-[var(--foreground)]/70">
+            {linkedProperties}
+            {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
+          </p>
+        </DashboardTableCell>
+      ),
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
+          <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
+            {deletingId === row.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </DashboardTableCell>
+      ),
+    }
+
+    return (
+      <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
+        {visibleCompanyColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
+      </ClickableTableRow>
+    )
+  }
+
   return (
     <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <DashboardCardTitle>Management Companies</DashboardCardTitle>
-          </div>
+      <DashboardTableSurface
+        title={<DashboardCardTitle>Management Companies</DashboardCardTitle>}
+        actions={
           <TableActionsSummary count={filteredCompanies.length}>
             <TableControlsBar
               searchQuery={searchQuery}
@@ -260,12 +308,15 @@ export default function ManagementCompaniesClient({
               </button>
             </TableControlsBar>
           </TableActionsSummary>
-        </div>
-
-        {!isCreateModalOpen && message ? <SuccessNotice className="mt-3">{message}</SuccessNotice> : null}
-        {!isCreateModalOpen && error ? <ErrorNotice className="mt-3">{error}</ErrorNotice> : null}
-
-        <TableShell minWidthClass="min-w-[1320px]">
+        }
+        notices={
+          <>
+            {!isCreateModalOpen && message ? <SuccessNotice>{message}</SuccessNotice> : null}
+            {!isCreateModalOpen && error ? <ErrorNotice>{error}</ErrorNotice> : null}
+          </>
+        }
+      >
+        <EmbeddedPageTableShell minWidthClass="min-w-[1320px]">
           <TableHead>
             <tr>
               {visibleCompanyColumns.map((column) => (
@@ -278,81 +329,13 @@ export default function ManagementCompaniesClient({
               ? renderGroupedTableRows({
                   groups: groupedCompanies as GroupedRowTree<ManagementCompanyRow>[],
                   colSpan: visibleCompanyColumns.length,
-                  renderRow: (row) => {
-                    const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
-                    const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
-                    const cells: Record<string, ReactNode> = {
-                      company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
-                      street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-                      city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-                      state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-                      zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-                      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-                      email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-                      fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-                      properties: (
-                        <td key="properties" className="px-3 py-2">
-                          <p className="text-xs text-[var(--foreground)]/70">
-                            {linkedProperties}
-                            {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
-                          </p>
-                        </td>
-                      ),
-                      delete: (
-                        <td key="delete" className="px-3 py-2">
-                          <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
-                            {deletingId === row.id ? "Deleting..." : "Delete"}
-                          </DeleteRowButton>
-                        </td>
-                      ),
-                    }
-
-                    return (
-                      <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
-                        {visibleCompanyColumns.map((column) => cells[column.key])}
-                      </ClickableTableRow>
-                    )
-                  },
+                  renderRow: renderCompanyRow,
                 })
-              : sortedCompanies.map((row) => {
-                  const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
-                  const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
-                  const cells: Record<string, ReactNode> = {
-                    company: <td key="company" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
-                    street: <td key="street" className="px-3 py-2">{row.streetAddress || "-"}</td>,
-                    city: <td key="city" className="px-3 py-2">{row.city || "-"}</td>,
-                    state: <td key="state" className="px-3 py-2">{row.state || "-"}</td>,
-                    zip: <td key="zip" className="px-3 py-2">{row.zip || "-"}</td>,
-                    phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-                    email: <td key="email" className="px-3 py-2">{row.email || "-"}</td>,
-                    fullAddress: <td key="fullAddress" className="px-3 py-2">{row.fullAddress || "-"}</td>,
-                    properties: (
-                      <td key="properties" className="px-3 py-2">
-                        <p className="text-xs text-[var(--foreground)]/70">
-                          {linkedProperties}
-                          {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
-                        </p>
-                      </td>
-                    ),
-                    delete: (
-                      <td key="delete" className="px-3 py-2">
-                        <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
-                          {deletingId === row.id ? "Deleting..." : "Delete"}
-                        </DeleteRowButton>
-                      </td>
-                    ),
-                  }
-
-                  return (
-                    <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
-                      {visibleCompanyColumns.map((column) => cells[column.key])}
-                    </ClickableTableRow>
-                  )
-                })}
+              : sortedCompanies.map((row) => renderCompanyRow(row))}
 
             {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
           </tbody>
-        </TableShell>
+        </EmbeddedPageTableShell>
         <TablePaginationControls
           page={pagination?.page ?? page}
           totalPages={pagination?.totalPages ?? totalPages}
@@ -365,7 +348,7 @@ export default function ManagementCompaniesClient({
           previousPageHref={pagination?.previousPageHref}
           nextPageHref={pagination?.nextPageHref}
         />
-      </section>
+      </DashboardTableSurface>
 
       {isCreateModalOpen ? (
         <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>

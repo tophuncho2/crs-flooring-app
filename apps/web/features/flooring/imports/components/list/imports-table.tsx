@@ -6,11 +6,12 @@ import { StatusPill } from "@/features/flooring/shared/ui/feedback/status-pill"
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import {
   ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
   TableEmptyRow,
   TableHead,
   TableHeaderCell,
   TablePaginationControls,
-  TableShell,
 } from "@/features/flooring/shared/ui/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
@@ -67,31 +68,35 @@ export function ImportsTable({
   onOpenImport: (id: string) => void
 }) {
   function renderRow(row: ImportRow) {
-    const cells: Record<string, ReactNode> = {
-      importNumber: <td key="importNumber" className="px-3 py-2 font-medium text-blue-500">IMP-{String(row.importNumber).padStart(4, "0")}</td>,
-      tag: <td key="tag" className="px-3 py-2">{row.tag || "-"}</td>,
-      transport: (
-        <td key="transport" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      importNumber: (columnIndex) => (
+        <DashboardTableCell key="importNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
+          IMP-{String(row.importNumber).padStart(4, "0")}
+        </DashboardTableCell>
+      ),
+      tag: (columnIndex) => <DashboardTableCell key="tag" columnIndex={columnIndex}>{row.tag || "-"}</DashboardTableCell>,
+      transport: (columnIndex) => (
+        <DashboardTableCell key="transport" columnIndex={columnIndex}>
           <StatusPill label={formatTransportType(row.transportType)} toneClassName={getTransportTypeFieldClass(row.transportType)} />
-        </td>
+        </DashboardTableCell>
       ),
-      status: (
-        <td key="status" className="px-3 py-2">
+      status: (columnIndex) => (
+        <DashboardTableCell key="status" columnIndex={columnIndex}>
           <StatusPill label={formatImportStatus(row.status)} toneClassName={getImportStatusFieldClass(row.status)} />
-        </td>
+        </DashboardTableCell>
       ),
-      warehouse: <td key="warehouse" className="px-3 py-2">{row.warehouseName || "-"}</td>,
-      created: <td key="created" className="px-3 py-2">{formatStableDate(row.createdAt)}</td>,
-      items: <td key="items" className="px-3 py-2">{row.itemsCount}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+      warehouse: (columnIndex) => <DashboardTableCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardTableCell>,
+      created: (columnIndex) => <DashboardTableCell key="created" columnIndex={columnIndex}>{formatStableDate(row.createdAt)}</DashboardTableCell>,
+      items: (columnIndex) => <DashboardTableCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton
             onClick={() => onDeleteImport(row.id)}
             disabled={deletingImportId === row.id}
           >
             {deletingImportId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
@@ -101,14 +106,14 @@ export function ImportsTable({
         ariaLabel={`Open import ${String(row.importNumber).padStart(4, "0")}`}
         onClick={() => onOpenImport(row.id)}
       >
-        {visibleColumnKeys.map((columnKey) => cells[columnKey])}
+        {visibleColumnKeys.map((columnKey, columnIndex) => cells[columnKey](columnIndex))}
       </ClickableTableRow>
     )
   }
 
   return (
     <>
-      <TableShell minWidthClass="min-w-[980px]">
+      <EmbeddedPageTableShell minWidthClass="min-w-[980px]">
         <TableHead>
           <tr>
             {visibleColumns.map((column) => (
@@ -126,7 +131,7 @@ export function ImportsTable({
             : rows.map((row) => renderRow(row))}
           {rows.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleColumnKeys.length} /> : null}
         </tbody>
-      </TableShell>
+      </EmbeddedPageTableShell>
       <TablePaginationControls
         page={pagination?.page ?? page}
         totalPages={pagination?.totalPages ?? totalPages}

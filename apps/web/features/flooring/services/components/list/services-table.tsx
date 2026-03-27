@@ -2,7 +2,15 @@
 
 import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/flooring/shared/table/row-action-buttons"
-import { ClickableTableRow, TableEmptyRow, TableGroupRow, TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableEmptyRow,
+  TableGroupRow,
+  TableHead,
+  TableHeaderCell,
+} from "@/features/flooring/shared/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import type { ServiceRow } from "../../domain/types"
 
@@ -24,24 +32,24 @@ export function ServicesTable({
   onDelete: (row: ServiceRow) => void
 }) {
   function renderRow(row: ServiceRow) {
-    const cells: Record<string, ReactNode> = {
-      name: <td key="name" className="px-3 py-2 font-medium">{row.name}</td>,
-      unit: <td key="unit" className="px-3 py-2">{row.unitName}</td>,
-      cost: <td key="cost" className="px-3 py-2">{row.baseCost}</td>,
-      notes: <td key="notes" className="px-3 py-2">{row.notes || "-"}</td>,
-      usage: <td key="usage" className="px-3 py-2">{row.usageCount}</td>,
-      delete: (
-        <td key="delete" className="px-3 py-2">
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      name: (columnIndex) => <DashboardTableCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardTableCell>,
+      unit: (columnIndex) => <DashboardTableCell key="unit" columnIndex={columnIndex}>{row.unitName}</DashboardTableCell>,
+      cost: (columnIndex) => <DashboardTableCell key="cost" columnIndex={columnIndex}>{row.baseCost}</DashboardTableCell>,
+      notes: (columnIndex) => <DashboardTableCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardTableCell>,
+      usage: (columnIndex) => <DashboardTableCell key="usage" columnIndex={columnIndex}>{row.usageCount}</DashboardTableCell>,
+      delete: (columnIndex) => (
+        <DashboardTableCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </td>
+        </DashboardTableCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open service ${row.name}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column) => cells[column.key])}
+        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
@@ -54,7 +62,7 @@ export function ServicesTable({
   }
 
   return (
-    <TableShell minWidthClass="min-w-[980px]">
+    <EmbeddedPageTableShell minWidthClass="min-w-[980px]">
       <TableHead>
         <tr>
           {visibleColumns.map((column) => (
@@ -66,6 +74,6 @@ export function ServicesTable({
         {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
         {rows.length === 0 ? <TableEmptyRow message="No services found." colSpan={visibleColumns.length} /> : null}
       </tbody>
-    </TableShell>
+    </EmbeddedPageTableShell>
   )
 }

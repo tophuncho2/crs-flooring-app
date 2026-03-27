@@ -2,7 +2,14 @@
 
 import type { ReactNode } from "react"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
-import { ClickableTableRow, TableEmptyRow, TableHead, TableHeaderCell, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import {
+  ClickableTableRow,
+  DashboardTableCell,
+  EmbeddedPageTableShell,
+  TableEmptyRow,
+  TableHead,
+  TableHeaderCell,
+} from "@/features/flooring/shared/ui/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { WarehouseRow } from "../types"
 
@@ -20,24 +27,28 @@ export function WarehouseTable({
   onOpen: (row: WarehouseRow) => void
 }) {
   function renderRow(row: WarehouseRow) {
-    const cells: Record<string, ReactNode> = {
-      name: <td key="name" className="px-3 py-2 font-medium text-blue-500">{row.name}</td>,
-      address: <td key="address" className="px-3 py-2">{row.address || "-"}</td>,
-      phone: <td key="phone" className="px-3 py-2">{row.phone || "-"}</td>,
-      sections: <td key="sections" className="px-3 py-2">{row.sectionsCount}</td>,
-      locations: <td key="locations" className="px-3 py-2">{row.locationsCount}</td>,
-      workOrders: <td key="workOrders" className="px-3 py-2">{row.workOrdersCount}</td>,
+    const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      name: (columnIndex) => (
+        <DashboardTableCell key="name" columnIndex={columnIndex} className="font-medium text-blue-500">
+          {row.name}
+        </DashboardTableCell>
+      ),
+      address: (columnIndex) => <DashboardTableCell key="address" columnIndex={columnIndex}>{row.address || "-"}</DashboardTableCell>,
+      phone: (columnIndex) => <DashboardTableCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardTableCell>,
+      sections: (columnIndex) => <DashboardTableCell key="sections" columnIndex={columnIndex}>{row.sectionsCount}</DashboardTableCell>,
+      locations: (columnIndex) => <DashboardTableCell key="locations" columnIndex={columnIndex}>{row.locationsCount}</DashboardTableCell>,
+      workOrders: (columnIndex) => <DashboardTableCell key="workOrders" columnIndex={columnIndex}>{row.workOrdersCount}</DashboardTableCell>,
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open warehouse ${row.name}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column) => cells[column.key])}
+        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
       </ClickableTableRow>
     )
   }
 
   return (
-    <TableShell minWidthClass="min-w-[980px]">
+    <EmbeddedPageTableShell minWidthClass="min-w-[980px]">
       <TableHead>
         <tr>
           {visibleColumns.map((column) => (
@@ -55,6 +66,6 @@ export function WarehouseTable({
           : rows.map((row) => renderRow(row))}
         {rows.length === 0 ? <TableEmptyRow message="No warehouses found." colSpan={visibleColumns.length} /> : null}
       </tbody>
-    </TableShell>
+    </EmbeddedPageTableShell>
   )
 }
