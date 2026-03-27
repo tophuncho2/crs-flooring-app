@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { CollapsibleTableSection } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { ModalTableHead, ModalTableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import { ModalTableHead, ModalTableShell, TableBleed, type TableBleedVariant } from "@/features/flooring/shared/ui/table/table-shell"
 
 export function RecordChildTableSection({
   title,
@@ -13,6 +13,7 @@ export function RecordChildTableSection({
   collapsible = true,
   beforeTable,
   afterTable,
+  bleedVariant = "nested",
   children,
 }: {
   title: string
@@ -23,6 +24,7 @@ export function RecordChildTableSection({
   collapsible?: boolean
   beforeTable?: ReactNode
   afterTable?: ReactNode
+  bleedVariant?: TableBleedVariant | "none"
   children: ReactNode
 }) {
   return (
@@ -35,9 +37,17 @@ export function RecordChildTableSection({
     >
       <div className="space-y-4">
         {beforeTable}
-        <ModalTableShell minWidthClass={minWidthClass} className="w-full">
-          {children}
-        </ModalTableShell>
+        {bleedVariant === "none" ? (
+          <ModalTableShell minWidthClass={minWidthClass} className="w-full">
+            {children}
+          </ModalTableShell>
+        ) : (
+          <TableBleed variant={bleedVariant}>
+            <ModalTableShell minWidthClass={minWidthClass} className="w-full">
+              {children}
+            </ModalTableShell>
+          </TableBleed>
+        )}
         {afterTable}
       </div>
     </CollapsibleTableSection>

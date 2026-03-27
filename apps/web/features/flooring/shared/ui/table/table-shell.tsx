@@ -7,11 +7,38 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
+export type TableBleedVariant = "dashboard" | "record" | "nested"
+
 export const PAGE_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--panel-hover)] text-left"
 export const MODAL_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-header-background)] text-left"
 export const RECORD_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-background)] text-left"
 export const PAGE_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[var(--panel-border)] bg-[var(--panel-hover)]"
 export const MODAL_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[color:var(--subpanel-border)] bg-[var(--subpanel-header-background)]"
+
+function tableBleedClassName(variant: TableBleedVariant) {
+  switch (variant) {
+    case "dashboard":
+      return "-mx-4 sm:-mx-5"
+    case "record":
+      return "-mx-5"
+    case "nested":
+      return "-mx-4"
+    default:
+      return ""
+  }
+}
+
+export function TableBleed({
+  children,
+  variant,
+  className,
+}: {
+  children: ReactNode
+  variant: TableBleedVariant
+  className?: string
+}) {
+  return <div className={joinClasses("w-auto", tableBleedClassName(variant), className)}>{children}</div>
+}
 
 export function TableShell({
   children,

@@ -6,7 +6,7 @@ import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from 
 import { formatCurrencyValue, formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
-import { RecordTableHead, RecordTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 import { RecordNestedChildRowSection } from "./record-nested-child-row-section"
 
@@ -122,21 +122,22 @@ export function MaterialItemsEditor({
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
       actions={actions}
     >
-      <RecordTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
-        <RecordTableHead>
-          <tr>
-            <TableHeaderCell>Product</TableHeaderCell>
-            <TableHeaderCell>Qty</TableHeaderCell>
-            <TableHeaderCell>Unit</TableHeaderCell>
-            <TableHeaderCell>Unit Price</TableHeaderCell>
-            <TableHeaderCell>Total</TableHeaderCell>
-            <TableHeaderCell>Notes</TableHeaderCell>
-            {hasExpandableRows ? <TableHeaderCell>Allocations</TableHeaderCell> : null}
-            {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
-            <TableHeaderCell>Delete</TableHeaderCell>
-          </tr>
-        </RecordTableHead>
-        <tbody>
+      <TableBleed variant="record">
+        <RecordTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+          <RecordTableHead>
+            <tr>
+              <TableHeaderCell>Product</TableHeaderCell>
+              <TableHeaderCell>Qty</TableHeaderCell>
+              <TableHeaderCell>Unit</TableHeaderCell>
+              <TableHeaderCell>Unit Price</TableHeaderCell>
+              <TableHeaderCell>Total</TableHeaderCell>
+              <TableHeaderCell>Notes</TableHeaderCell>
+              {hasExpandableRows ? <TableHeaderCell>Allocations</TableHeaderCell> : null}
+              {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
+              <TableHeaderCell>Delete</TableHeaderCell>
+            </tr>
+          </RecordTableHead>
+          <tbody>
           {loading ? (
             <tr>
               <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading items...</td>
@@ -278,8 +279,9 @@ export function MaterialItemsEditor({
               </td>
             </tr>
           ) : null}
-        </tbody>
-      </RecordTableShell>
+          </tbody>
+        </RecordTableShell>
+      </TableBleed>
     </CollapsibleTableSection>
   )
 }

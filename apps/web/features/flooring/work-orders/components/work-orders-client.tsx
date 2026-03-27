@@ -9,7 +9,7 @@ import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-f
 import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
 import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { ClickableTableRow, TableActionsSummary, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
+import { ClickableTableRow, TableActionsSummary, TableBleed, TableEmptyRow, TableHead, TableHeaderCell, TablePaginationControls, TableShell } from "@/features/flooring/shared/ui/table/table-shell"
 import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
 import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
@@ -209,26 +209,28 @@ export default function WorkOrdersClient({
             <FormStatusNotices message={controller.notices.message} error={controller.notices.error} className="mt-3" />
           ) : null}
 
-          <TableShell minWidthClass="min-w-[1280px]">
-            <TableHead>
-              <tr>
-                {visibleWorkOrderColumns.map((column) => (
-                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-                ))}
-              </tr>
-            </TableHead>
-            <tbody>
-              {isGroupingEnabled
-                ? renderGroupedTableRows({
-                    groups: groupedWorkOrders,
-                    colSpan: visibleWorkOrderColumns.length,
-                    renderRow: renderWorkOrderRow,
-                  })
-                : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
+          <TableBleed variant="dashboard" className="mt-6">
+            <TableShell minWidthClass="min-w-[1280px]">
+              <TableHead>
+                <tr>
+                  {visibleWorkOrderColumns.map((column) => (
+                    <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
+                  ))}
+                </tr>
+              </TableHead>
+              <tbody>
+                {isGroupingEnabled
+                  ? renderGroupedTableRows({
+                      groups: groupedWorkOrders,
+                      colSpan: visibleWorkOrderColumns.length,
+                      renderRow: renderWorkOrderRow,
+                    })
+                  : sortedWorkOrders.map((row) => renderWorkOrderRow(row))}
 
-              {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={visibleWorkOrderColumns.length} /> : null}
-            </tbody>
-          </TableShell>
+                {filteredWorkOrders.length === 0 ? <TableEmptyRow message="No work orders yet." colSpan={visibleWorkOrderColumns.length} /> : null}
+              </tbody>
+            </TableShell>
+          </TableBleed>
           <TablePaginationControls
             page={pagination?.page ?? page}
             totalPages={pagination?.totalPages ?? totalPages}

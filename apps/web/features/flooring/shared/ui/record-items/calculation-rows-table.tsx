@@ -2,7 +2,7 @@
 
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
 import { CollapsibleTableSection } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { RecordTableHead, RecordTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type DisplayCalculationRow = {
@@ -31,14 +31,15 @@ export function CalculationRowsTable({
 }) {
   return (
     <CollapsibleTableSection title={title}>
-      <RecordTableShell minWidthClass={SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS}>
-        <RecordTableHead>
-          <tr>
-            <TableHeaderCell>Calculation</TableHeaderCell>
-            <TableHeaderCell>Value</TableHeaderCell>
-          </tr>
-        </RecordTableHead>
-        <tbody>
+      <TableBleed variant="record">
+        <RecordTableShell minWidthClass={SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+          <RecordTableHead>
+            <tr>
+              <TableHeaderCell>Calculation</TableHeaderCell>
+              <TableHeaderCell>Value</TableHeaderCell>
+            </tr>
+          </RecordTableHead>
+          <tbody>
           {loading ? (
             <tr>
               <td colSpan={2} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading calculations...</td>
@@ -55,8 +56,9 @@ export function CalculationRowsTable({
               </tr>
             ))
           )}
-        </tbody>
-      </RecordTableShell>
+          </tbody>
+        </RecordTableShell>
+      </TableBleed>
     </CollapsibleTableSection>
   )
 }

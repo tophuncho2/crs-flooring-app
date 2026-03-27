@@ -5,7 +5,7 @@ import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from 
 import { formatCurrencyValue, formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
-import { RecordTableHead, RecordTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type ServiceOption = {
@@ -126,21 +126,22 @@ export function ServiceItemsEditor({
       title={title}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
     >
-      <RecordTableShell minWidthClass={SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS}>
-        <RecordTableHead>
-          <tr>
-            <TableHeaderCell>Service</TableHeaderCell>
-            <TableHeaderCell>Name</TableHeaderCell>
-            <TableHeaderCell>Unit</TableHeaderCell>
-            <TableHeaderCell>Qty</TableHeaderCell>
-            <TableHeaderCell>Unit Price</TableHeaderCell>
-            <TableHeaderCell>Total</TableHeaderCell>
-            <TableHeaderCell>Notes</TableHeaderCell>
-            {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
-            <TableHeaderCell>Delete</TableHeaderCell>
-          </tr>
-        </RecordTableHead>
-        <tbody>
+      <TableBleed variant="record">
+        <RecordTableShell minWidthClass={SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+          <RecordTableHead>
+            <tr>
+              <TableHeaderCell>Service</TableHeaderCell>
+              <TableHeaderCell>Name</TableHeaderCell>
+              <TableHeaderCell>Unit</TableHeaderCell>
+              <TableHeaderCell>Qty</TableHeaderCell>
+              <TableHeaderCell>Unit Price</TableHeaderCell>
+              <TableHeaderCell>Total</TableHeaderCell>
+              <TableHeaderCell>Notes</TableHeaderCell>
+              {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
+              <TableHeaderCell>Delete</TableHeaderCell>
+            </tr>
+          </RecordTableHead>
+          <tbody>
           {loading ? (
             <tr>
               <td colSpan={colSpan} className="px-3 py-8 text-center text-[var(--foreground)]/70">Loading services...</td>
@@ -326,8 +327,9 @@ export function ServiceItemsEditor({
               </td>
             </tr>
           ) : null}
-        </tbody>
-      </RecordTableShell>
+          </tbody>
+        </RecordTableShell>
+      </TableBleed>
     </CollapsibleTableSection>
   )
 }
