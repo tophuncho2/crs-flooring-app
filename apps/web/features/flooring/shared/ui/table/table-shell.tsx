@@ -14,6 +14,7 @@ export const MODAL_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-header-backg
 export const RECORD_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-background)] text-left"
 export const PAGE_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[var(--panel-border)] bg-[var(--panel-hover)]"
 export const MODAL_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[color:var(--subpanel-border)] bg-[var(--subpanel-header-background)]"
+export const EMBEDDED_PAGE_TABLE_SHELL_CLASS_NAME = "rounded-none border-x-0 border-b-0 shadow-none"
 
 function tableBleedClassName(variant: TableBleedVariant) {
   switch (variant) {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME } from "@/features/flooring/shared/ui/display/dashboard-card-title"
 import { RECORD_DETAIL_PANEL_WIDTH_CLASS } from "./record-panel-width"
 import { RecordBackButton } from "./record-action-buttons"
 
@@ -27,7 +27,7 @@ export function RecordDetailPageShell({
   sizeClass?: string
 }) {
   return (
-    <div className={DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME}>
+    <div className={DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME}>
       <div className={joinClasses("mx-auto w-full", sizeClass)}>
         <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">
           <div className="border-b border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] px-5 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.12)]">

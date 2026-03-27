@@ -18,10 +18,22 @@ export const DASHBOARD_PAGE_SHELL_SHORT_CLASS_NAME = joinClasses(
   "min-h-screen bg-[var(--background)] px-1 pb-8 text-[var(--foreground)] sm:px-2 lg:px-3",
   DASHBOARD_PAGE_TOP_PADDING_CLASS_NAME,
 )
+export const DASHBOARD_PAGE_SHELL_EDGE_TO_EDGE_CLASS_NAME = joinClasses(
+  "min-h-screen bg-[var(--background)] px-0 pb-12 text-[var(--foreground)]",
+  DASHBOARD_PAGE_TOP_PADDING_CLASS_NAME,
+)
 export const DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME = joinClasses(
   "min-h-screen bg-[var(--background)] px-3 pb-12 text-[var(--foreground)] sm:px-6",
   DASHBOARD_PAGE_TOP_PADDING_CLASS_NAME,
 )
+export const DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME = joinClasses(
+  "min-h-screen bg-[var(--background)] px-0 pb-12 text-[var(--foreground)]",
+  DASHBOARD_PAGE_TOP_PADDING_CLASS_NAME,
+)
+export const DASHBOARD_SURFACE_CARD_CLASS_NAME =
+  "w-full overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 shadow-xl sm:p-5"
+export const DASHBOARD_SURFACE_HEADER_BLEED_CLASS_NAME =
+  "-mx-4 -mt-4 px-4 pt-4 pb-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 sm:pb-5"
 
 export function DashboardCardTitle({
   children,
