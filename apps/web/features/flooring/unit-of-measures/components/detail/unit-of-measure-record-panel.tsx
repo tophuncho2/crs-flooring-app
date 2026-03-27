@@ -29,7 +29,6 @@ export function UnitOfMeasureRecordPanel({
       title={`Unit Of Measure ${controller.unitOfMeasure.name}`}
       backHref={backHref}
       onBack={controller.closePage}
-      sizeClass="max-w-4xl"
     >
       <div className="space-y-6">
         <FormStatusNotices

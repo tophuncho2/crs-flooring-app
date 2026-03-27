@@ -4,7 +4,8 @@ import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-tota
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/ui/record-items/record-child-table-section"
+import { TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow, WorkOrderMaterialItem } from "../types"
 
@@ -87,23 +88,42 @@ export function MaterialAllocationsEditor({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--foreground)]/70">
-        <span>Allocated: {item.allocatedQuantity.toFixed(2)}</span>
-        <span>Remaining: {item.remainingQuantity.toFixed(2)}</span>
-        <span>Material Expense: {formatCurrencyValue(item.materialExpense)}</span>
-        {item.hasAllocationShortage ? (
-          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-200">
-            Shortage
-          </span>
-        ) : (
-          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
-            Fully Allocated
-          </span>
-        )}
-      </div>
-
-      <ModalTableShell minWidthClass="min-w-[72rem]">
+    <RecordChildTableSection
+      title="Allocations"
+      collapsible={false}
+      minWidthClass="min-w-[72rem]"
+      beforeTable={
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--foreground)]/70">
+          <span>Allocated: {item.allocatedQuantity.toFixed(2)}</span>
+          <span>Remaining: {item.remainingQuantity.toFixed(2)}</span>
+          <span>Material Expense: {formatCurrencyValue(item.materialExpense)}</span>
+          {item.hasAllocationShortage ? (
+            <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-200">
+              Shortage
+            </span>
+          ) : (
+            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
+              Fully Allocated
+            </span>
+          )}
+        </div>
+      }
+      afterTable={
+        <>
+          {allocationOptions.length === 0 && !loadingOptions ? (
+            <p className="text-sm text-[var(--foreground)]/60">
+              No eligible inventory rows are currently available for this material item.
+            </p>
+          ) : null}
+          {loadingOptions ? <p className="text-sm text-[var(--foreground)]/60">Loading inventory options...</p> : null}
+          {!loadingOptions && draft.inventoryId ? (
+            <p className="text-xs text-[var(--foreground)]/55">
+              Selected inventory: {readInventoryLabel(allocationOptions, draft.inventoryId)}
+            </p>
+          ) : null}
+        </>
+      }
+    >
         <ModalTableHead>
           <tr>
             <TableHeaderCell>Inventory</TableHeaderCell>
@@ -258,19 +278,6 @@ export function MaterialAllocationsEditor({
             </tr>
           ) : null}
         </tbody>
-      </ModalTableShell>
-
-      {allocationOptions.length === 0 && !loadingOptions ? (
-        <p className="text-sm text-[var(--foreground)]/60">
-          No eligible inventory rows are currently available for this material item.
-        </p>
-      ) : null}
-      {loadingOptions ? <p className="text-sm text-[var(--foreground)]/60">Loading inventory options...</p> : null}
-      {!loadingOptions && draft.inventoryId ? (
-        <p className="text-xs text-[var(--foreground)]/55">
-          Selected inventory: {readInventoryLabel(allocationOptions, draft.inventoryId)}
-        </p>
-      ) : null}
-    </div>
+    </RecordChildTableSection>
   )
 }

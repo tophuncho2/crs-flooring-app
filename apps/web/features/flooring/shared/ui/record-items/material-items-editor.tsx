@@ -8,6 +8,7 @@ import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/feature
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
+import { RecordNestedChildRowSection } from "./record-nested-child-row-section"
 
 export type MaterialItemOption = {
   id: string
@@ -210,7 +211,9 @@ export function MaterialItemsEditor({
                 {hasExpandableRows && expandedItemIds?.includes(item.id) ? (
                   <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/10">
                     <td colSpan={colSpan} className="px-3 py-3">
-                      {renderExpandedRow?.(item)}
+                      <RecordNestedChildRowSection>
+                        {renderExpandedRow?.(item)}
+                      </RecordNestedChildRowSection>
                     </td>
                   </tr>
                 ) : null}

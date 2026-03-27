@@ -27,7 +27,7 @@ export function CategoryRecordPanel({
   })
 
   return (
-    <RecordDetailPageShell title={`Category ${controller.category.name}`} backHref={backHref} onBack={controller.closePage} sizeClass="max-w-5xl">
+    <RecordDetailPageShell title={`Category ${controller.category.name}`} backHref={backHref} onBack={controller.closePage}>
       <div className="space-y-6">
         <FormStatusNotices message={controller.notices.message} error={controller.notices.error} loadingMessage={controller.isSaving ? "Saving category..." : ""} />
         <RecordSummaryGrid>

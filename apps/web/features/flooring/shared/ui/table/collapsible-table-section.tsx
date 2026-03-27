@@ -53,6 +53,7 @@ export function InlineAddRowButton({
 export function CollapsibleTableSection({
   title,
   defaultOpen = true,
+  collapsible = true,
   children,
   className,
   actions,
@@ -60,12 +61,14 @@ export function CollapsibleTableSection({
 }: {
   title: string
   defaultOpen?: boolean
+  collapsible?: boolean
   children: ReactNode
   className?: string
   actions?: ReactNode
   titleMeta?: ReactNode
 }) {
   const { isOpen, toggle } = useCollapsibleSection(defaultOpen)
+  const isSectionOpen = collapsible ? isOpen : true
 
   return (
     <section className={joinClasses("space-y-3", className)}>
@@ -78,19 +81,21 @@ export function CollapsibleTableSection({
         </div>
         <div className="mt-0.5 flex items-center gap-2">
           {actions}
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={isOpen}
-            aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-          >
-            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </button>
+          {collapsible ? (
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={isSectionOpen}
+              aria-label={isSectionOpen ? `Collapse ${title}` : `Expand ${title}`}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
+            >
+              {isSectionOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {isOpen ? children : null}
+      {isSectionOpen ? children : null}
     </section>
   )
 }

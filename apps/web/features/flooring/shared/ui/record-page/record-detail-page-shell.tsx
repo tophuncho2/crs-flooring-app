@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { ArrowLeft } from "lucide-react"
 import { DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME } from "@/features/flooring/shared/ui/display/dashboard-card-title"
+import { RECORD_DETAIL_PANEL_WIDTH_CLASS } from "./record-panel-width"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -15,7 +16,7 @@ export function RecordDetailPageShell({
   headerMeta,
   headerActions,
   children,
-  sizeClass = "max-w-6xl",
+  sizeClass = RECORD_DETAIL_PANEL_WIDTH_CLASS,
 }: {
   title: string
   backHref: string

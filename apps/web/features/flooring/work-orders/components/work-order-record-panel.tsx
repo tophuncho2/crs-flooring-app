@@ -23,13 +23,20 @@ import {
 } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
 import { CalculationRowsTable } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
-import { PrimaryRecordFieldsGrid, RecordStaticFieldValue } from "@/features/flooring/shared/ui/record-items/record-primary-fields"
+import {
+  RecordPrimaryFieldCell,
+  RecordPrimaryFieldsGrid,
+  RecordPrimaryPane,
+  RecordPrimarySection,
+  RecordStaticFieldValue,
+} from "@/features/flooring/shared/ui/record-items/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
 import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import { RecordSection, RecordSectionStack } from "@/features/flooring/shared/ui/record-page/record-sections"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
 import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"
@@ -424,72 +431,107 @@ export function WorkOrderRecordPanel({
     <div className="space-y-6">
       <FormStatusNotices message={message} error={noticeError} loadingMessage={savingWorkOrder ? "Saving work order..." : ""} />
 
-      <PrimaryRecordFieldsGrid>
-        <RecordFormField label="Property">
-          <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="">Select property</option>
-            {propertyOptions.map((property) => (
-              <option key={property.id} value={property.id}>{property.name}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Warehouse">
-          <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="">No warehouse</option>
-            {warehouseOptions.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Status">
-          <select value={draft.status} onChange={(event) => setDraft((prev) => (prev ? { ...prev, status: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-              {WORK_ORDER_STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>{statusLabel(status)}</option>
-              ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Completion">
-          <select value={draft.isComplete ? "COMPLETE" : "OPEN"} onChange={(event) => setDraft((prev) => (prev ? { ...prev, isComplete: event.target.value === "COMPLETE" } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="OPEN">Open</option>
-            <option value="COMPLETE">Complete</option>
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Vacancy">
-          <select value={draft.vacancy} onChange={(event) => setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as DraftWorkOrder["vacancy"] } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-            <option value="">Select vacancy</option>
-            {vacancyOptions.map((vacancy) => (
-              <option key={vacancy} value={vacancy}>{vacancy}</option>
-            ))}
-          </select>
-        </RecordFormField>
-        <RecordFormField label="Address">
-          <RecordStaticFieldValue>
-            {selectedAddress(propertyOptions, draft, workOrder.propertyAddress) || "Select a property or enter a custom address"}
-          </RecordStaticFieldValue>
-        </RecordFormField>
-        <RecordFormField label="Custom Address">
-          <input value={draft.customAddress} onChange={(event) => setDraft((prev) => (prev ? { ...prev, customAddress: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Date">
-          <input type="date" value={draft.date} onChange={(event) => setDraft((prev) => (prev ? { ...prev, date: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Unit Type">
-          <RecordStaticFieldValue>{workOrder.unitType || "Filled by template sync"}</RecordStaticFieldValue>
-        </RecordFormField>
-        <RecordFormField label="Unit Label">
-          <input value={draft.unitText} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
-        <RecordFormField label="Notes">
-          <AutoGrowTextarea value={draft.notes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-        </RecordFormField>
-        <div className="md:col-span-2 xl:col-span-4">
-          <RecordFormField label="Instructions">
-            <AutoGrowTextarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-          </RecordFormField>
-        </div>
-      </PrimaryRecordFieldsGrid>
+      <RecordSectionStack>
+        <RecordSection>
+          <RecordPrimarySection>
+            <RecordPrimaryPane variant="side">
+              <RecordPrimaryFieldsGrid variant="side">
+                <RecordPrimaryFieldCell>
+                  <RecordFormField label="Warehouse">
+                    <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                      <option value="">No warehouse</option>
+                      {warehouseOptions.map((warehouse) => (
+                        <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                      ))}
+                    </select>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell>
+                  <RecordFormField label="Status">
+                    <select value={draft.status} onChange={(event) => setDraft((prev) => (prev ? { ...prev, status: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                        {WORK_ORDER_STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>{statusLabel(status)}</option>
+                        ))}
+                    </select>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell>
+                  <RecordFormField label="Completion">
+                    <select value={draft.isComplete ? "COMPLETE" : "OPEN"} onChange={(event) => setDraft((prev) => (prev ? { ...prev, isComplete: event.target.value === "COMPLETE" } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                      <option value="OPEN">Open</option>
+                      <option value="COMPLETE">Complete</option>
+                    </select>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell>
+                  <RecordFormField label="Vacancy">
+                    <select value={draft.vacancy} onChange={(event) => setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as DraftWorkOrder["vacancy"] } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                      <option value="">Select vacancy</option>
+                      {vacancyOptions.map((vacancy) => (
+                        <option key={vacancy} value={vacancy}>{vacancy}</option>
+                      ))}
+                    </select>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+              </RecordPrimaryFieldsGrid>
+            </RecordPrimaryPane>
 
-      <MaterialItemsEditor
+            <RecordPrimaryPane variant="main">
+              <RecordPrimaryFieldsGrid>
+                <RecordPrimaryFieldCell size="md">
+                  <RecordFormField label="Property">
+                    <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
+                      <option value="">Select property</option>
+                      {propertyOptions.map((property) => (
+                        <option key={property.id} value={property.id}>{property.name}</option>
+                      ))}
+                    </select>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="lg">
+                  <RecordFormField label="Address">
+                    <RecordStaticFieldValue size="lg">
+                      {selectedAddress(propertyOptions, draft, workOrder.propertyAddress) || "Select a property or enter a custom address"}
+                    </RecordStaticFieldValue>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="lg">
+                  <RecordFormField label="Custom Address">
+                    <input value={draft.customAddress} onChange={(event) => setDraft((prev) => (prev ? { ...prev, customAddress: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="sm">
+                  <RecordFormField label="Date">
+                    <input type="date" value={draft.date} onChange={(event) => setDraft((prev) => (prev ? { ...prev, date: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="sm">
+                  <RecordFormField label="Unit Type">
+                    <RecordStaticFieldValue>{workOrder.unitType || "Filled by template sync"}</RecordStaticFieldValue>
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="sm">
+                  <RecordFormField label="Unit Label">
+                    <input value={draft.unitText} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="lg">
+                  <RecordFormField label="Notes">
+                    <AutoGrowTextarea value={draft.notes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+                <RecordPrimaryFieldCell size="lg">
+                  <RecordFormField label="Instructions">
+                    <AutoGrowTextarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
+                  </RecordFormField>
+                </RecordPrimaryFieldCell>
+              </RecordPrimaryFieldsGrid>
+            </RecordPrimaryPane>
+          </RecordPrimarySection>
+        </RecordSection>
+
+        <RecordSection>
+          <MaterialItemsEditor
         title="Material Items"
         items={lineItems.materialItems}
         draft={lineItems.materialDraft}
@@ -546,9 +588,11 @@ export function WorkOrderRecordPanel({
             onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
           />
         )}
-      />
+          />
+        </RecordSection>
 
-      <ServiceItemsEditor
+        <RecordSection>
+          <ServiceItemsEditor
         title="Service Items"
         items={lineItems.serviceItems}
         draft={lineItems.serviceDraft}
@@ -566,9 +610,11 @@ export function WorkOrderRecordPanel({
         onItemFieldChange={lineItems.handleServiceItemFieldChange}
         onSaveItem={(item) => void lineItems.saveServiceItem(item)}
         onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
-      />
+          />
+        </RecordSection>
 
-      <SalesRepItemsEditor
+        <RecordSection>
+          <SalesRepItemsEditor
         title="Sales Reps"
         items={salesRepLines.salesReps}
         draft={salesRepLines.draft}
@@ -586,13 +632,17 @@ export function WorkOrderRecordPanel({
         onItemFieldChange={salesRepLines.handleItemFieldChange}
         onSaveItem={(item) => void salesRepLines.saveItem(item)}
         onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
-      />
+          />
+        </RecordSection>
 
-      <CalculationRowsTable
+        <RecordSection>
+          <CalculationRowsTable
         title="Calculations"
         items={calculationRows}
         loading={loadingCalculationRows}
-      />
+          />
+        </RecordSection>
+      </RecordSectionStack>
 
       <RecordPanelFooter
         deleteLabel="Delete Work Order"

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
 import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { RECORD_DETAIL_PANEL_WIDTH_CLASS } from "./record-panel-width"
 import { RecordDetailPageShell } from "./record-detail-page-shell"
 
 export function BasicRecordPage({
@@ -22,7 +23,7 @@ export function BasicRecordPage({
   onDelete,
   onClose,
   isSaving = false,
-  sizeClass = "max-w-6xl",
+  sizeClass = RECORD_DETAIL_PANEL_WIDTH_CLASS,
 }: {
   title: string
   backHref: string
