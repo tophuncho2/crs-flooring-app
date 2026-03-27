@@ -60,7 +60,7 @@ export function TableFilterControls({
   }
 
   return (
-    <div ref={rootRef} className={`relative ${className}`.trim()}>
+    <div ref={rootRef} className={`relative z-30 ${className}`.trim()}>
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
@@ -76,7 +76,7 @@ export function TableFilterControls({
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 z-20 mt-2 w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 shadow-xl">
+        <div className="absolute right-0 top-full z-[70] mt-2 w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 shadow-xl">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/60">Filters</p>
             {activeFilterCount > 0 ? (

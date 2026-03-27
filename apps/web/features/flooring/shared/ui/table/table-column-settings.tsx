@@ -169,7 +169,7 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative z-30">
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
@@ -180,7 +180,7 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 shadow-xl">
+        <div className="absolute right-0 top-full z-[70] mt-2 w-72 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 shadow-xl">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/60">Columns</p>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={columns.map((column) => column.key)} strategy={verticalListSortingStrategy}>
