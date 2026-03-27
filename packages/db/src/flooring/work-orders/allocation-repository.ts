@@ -1,9 +1,4 @@
 import { Prisma } from "@prisma/client"
-import {
-  buildWorkOrderItemAllocationSummary,
-  calculateAllocationRowTotal,
-  calculateInventoryPricePerUnit,
-} from "@builders/domain"
 import { db } from "../../client.js"
 
 type WorkOrderAllocationDbClient = Prisma.TransactionClient | typeof db
@@ -225,6 +220,52 @@ function toDecimalString(value: Prisma.Decimal | number | string | null | undefi
   }
 
   return typeof value === "string" ? value : value.toString()
+}
+
+function calculateInventoryPricePerUnit(input: {
+  stockCount: Prisma.Decimal | number | string | null | undefined
+  cost: Prisma.Decimal | number | string | null | undefined
+  freight: Prisma.Decimal | number | string | null | undefined
+}) {
+  const stockCount = toNumber(input.stockCount)
+  if (stockCount <= 0) {
+    return 0
+  }
+
+  return (toNumber(input.cost) + toNumber(input.freight)) / stockCount
+}
+
+function calculateAllocationRowTotal(input: {
+  quantity: Prisma.Decimal | number | string | null | undefined
+  unitCost: Prisma.Decimal | number | string | null | undefined
+}) {
+  return toNumber(input.quantity) * toNumber(input.unitCost)
+}
+
+function buildWorkOrderItemAllocationSummary(input: {
+  requiredQuantity: Prisma.Decimal | number | string | null | undefined
+  allocations: Array<{
+    quantity: Prisma.Decimal | number | string | null | undefined
+    unitCost: Prisma.Decimal | number | string | null | undefined
+  }>
+}) {
+  const allocatedQuantity = input.allocations.reduce(
+    (total, allocation) => total + toNumber(allocation.quantity),
+    0,
+  )
+  const requiredQuantity = toNumber(input.requiredQuantity)
+  const remainingQuantity = Math.max(0, requiredQuantity - allocatedQuantity)
+  const materialExpense = input.allocations.reduce(
+    (total, allocation) => total + calculateAllocationRowTotal(allocation),
+    0,
+  )
+
+  return {
+    allocatedQuantity,
+    remainingQuantity,
+    materialExpense,
+    hasAllocationShortage: remainingQuantity > 0,
+  }
 }
 
 function sumCutTotal(cutLogs: Array<{ cut: Prisma.Decimal }>) {
