@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
-import type { CutLogDraft } from "@/features/flooring/shared/ui/record-items/cut-logs-editor"
+import type { CutLogDraft } from "@/features/flooring/shared/line-items/cut-logs-editor"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   formatInventoryQuantity,

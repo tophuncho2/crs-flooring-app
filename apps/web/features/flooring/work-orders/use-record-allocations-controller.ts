@@ -10,7 +10,7 @@ import {
   setFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
-} from "@/features/flooring/shared/ui/record-items/record-field-errors"
+} from "@/features/flooring/shared/line-items/record-field-errors"
 import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import {
   validateAllocationFields,

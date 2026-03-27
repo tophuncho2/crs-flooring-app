@@ -1,4 +1,4 @@
-import type { EditableCutLog } from "@/features/flooring/shared/ui/record-items/cut-logs-editor"
+import type { EditableCutLog } from "@/features/flooring/shared/line-items/cut-logs-editor"
 import type { InventoryPageFilterState } from "@/features/flooring/inventory/domain/filters"
 
 export type CutLogRow = EditableCutLog & {

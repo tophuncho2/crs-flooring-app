@@ -1,5 +1,5 @@
-import type { EditableMaterialItem } from "@/features/flooring/shared/ui/record-items/material-items-editor"
-import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
+import type { EditableMaterialItem } from "@/features/flooring/shared/line-items/material-items-editor"
+import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
 import type { SalesRepContactOption } from "@/features/flooring/shared/domain/record-sales-reps"
 import type { EditableTemplateSalesRep } from "./domain/sales-reps"
 import type { TemplateExpenseSummary } from "./domain/expense-summary"

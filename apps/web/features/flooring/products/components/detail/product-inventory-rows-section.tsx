@@ -10,9 +10,9 @@ import {
 import { createInventoryChildFilterDefinitions } from "@/features/flooring/inventory/table-filters"
 import { calculateProductInventorySummary } from "@/features/flooring/products/domain/inventory-summary"
 import { useLocalTableFilters } from "@/features/flooring/shared/controllers/table/use-local-table-filters"
-import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
-import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/ui/record-items/record-child-table-section"
-import { TableEmptyRow, TableGroupRow, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { TableFilterControls } from "@/features/dashboard/shared/table/table-filter-controls"
+import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/line-items/record-child-table-section"
+import { TableEmptyRow, TableGroupRow, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 
 type InventoryRow = {
   id: string

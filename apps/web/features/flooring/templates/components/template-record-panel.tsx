@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/ui/feedback/feedback-states"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
 import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
@@ -13,17 +13,17 @@ import {
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemOption,
-} from "@/features/flooring/shared/ui/record-items/material-items-editor"
+} from "@/features/flooring/shared/line-items/material-items-editor"
 import {
   ServiceItemsEditor,
   type EditableServiceItem,
   type ServiceItemDraft,
   type ServiceOption,
   type UnitOption,
-} from "@/features/flooring/shared/ui/record-items/service-items-editor"
-import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
-import { CalculationRowsTable } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
-import { PrimaryRecordFieldsGrid } from "@/features/flooring/shared/ui/record-items/record-primary-fields"
+} from "@/features/flooring/shared/line-items/service-items-editor"
+import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
+import { CalculationRowsTable } from "@/features/flooring/shared/line-items/calculation-rows-table"
+import { PrimaryRecordFieldsGrid } from "@/features/dashboard/shared/record-view/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"

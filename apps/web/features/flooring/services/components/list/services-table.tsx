@@ -1,17 +1,16 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { DeleteRowButton } from "@/features/flooring/shared/table/row-action-buttons"
+import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
+import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
+import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
-  DashboardTableCell,
-  EmbeddedPageTableShell,
   TableEmptyRow,
-  TableGroupRow,
-  TableHead,
-  TableHeaderCell,
-} from "@/features/flooring/shared/table/table-shell"
+} from "@/features/dashboard/shared/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
+import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
 import type { ServiceRow } from "../../domain/types"
 
 export function ServicesTable({
@@ -33,47 +32,37 @@ export function ServicesTable({
 }) {
   function renderRow(row: ServiceRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      name: (columnIndex) => <DashboardTableCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardTableCell>,
-      unit: (columnIndex) => <DashboardTableCell key="unit" columnIndex={columnIndex}>{row.unitName}</DashboardTableCell>,
-      cost: (columnIndex) => <DashboardTableCell key="cost" columnIndex={columnIndex}>{row.baseCost}</DashboardTableCell>,
-      notes: (columnIndex) => <DashboardTableCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardTableCell>,
-      usage: (columnIndex) => <DashboardTableCell key="usage" columnIndex={columnIndex}>{row.usageCount}</DashboardTableCell>,
+      name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
+      unit: (columnIndex) => <DashboardListRowCell key="unit" columnIndex={columnIndex}>{row.unitName}</DashboardListRowCell>,
+      cost: (columnIndex) => <DashboardListRowCell key="cost" columnIndex={columnIndex}>{row.baseCost}</DashboardListRowCell>,
+      notes: (columnIndex) => <DashboardListRowCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardListRowCell>,
+      usage: (columnIndex) => <DashboardListRowCell key="usage" columnIndex={columnIndex}>{row.usageCount}</DashboardListRowCell>,
       delete: (columnIndex) => (
-        <DashboardTableCell key="delete" columnIndex={columnIndex}>
+        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Open service ${row.name}`} onClick={() => onOpen(row)}>
-        {visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
+        {renderDashboardRowCells(visibleColumns, cells)}
       </ClickableTableRow>
     )
   }
 
-  function renderGroupedRows(groups: GroupedRowTree<ServiceRow>[]): ReactNode[] {
-    return groups.flatMap((group) => [
-      <TableGroupRow key={`${group.depth}-${group.key}`} label={`${group.fieldLabel}: ${group.label}`} depth={group.depth} colSpan={visibleColumns.length} />,
-      ...(group.children.length > 0 ? renderGroupedRows(group.children) : group.rows.map((row) => renderRow(row))),
-    ])
-  }
-
   return (
-    <EmbeddedPageTableShell minWidthClass="min-w-[980px]">
-      <TableHead>
-        <tr>
-          {visibleColumns.map((column) => (
-            <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-          ))}
-        </tr>
-      </TableHead>
-      <tbody>
-        {isGroupingEnabled ? renderGroupedRows(groupedRows) : rows.map((row) => renderRow(row))}
-        {rows.length === 0 ? <TableEmptyRow message="No services found." colSpan={visibleColumns.length} /> : null}
-      </tbody>
-    </EmbeddedPageTableShell>
+    <DashboardListPageTable minWidthClass="min-w-[980px]" columns={visibleColumns}>
+      {isGroupingEnabled
+        ? renderGroupedTableRows({
+            groups: groupedRows,
+            colSpan: visibleColumns.length,
+            renderRow,
+          })
+        : rows.map((row) => renderRow(row))}
+      {rows.length === 0 ? <TableEmptyRow message="No services found." colSpan={visibleColumns.length} /> : null}
+    </DashboardListPageTable>
   )
 }

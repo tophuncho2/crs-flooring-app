@@ -1,13 +1,13 @@
 "use client"
 
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
-import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
-import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
+import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
+import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
+import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -135,18 +135,18 @@ export default function FlooringProductsClient({
   })
 
   return (
-    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <DashboardTableSurface
-        title="Flooring Products"
-        actions={
-          <TableActionsSummary count={filteredProducts.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              searchPlaceholder="Search product name"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={onToggleSort}
-            >
+    <>
+      <DashboardListPageScaffold
+        title={<DashboardCardTitle>Flooring Products</DashboardCardTitle>}
+        controls={
+          <DashboardListPageControls
+            count={filteredProducts.length}
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Search product name"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={onToggleSort}
+            columnSettingsSlot={
               <TableColumnSettings
                 columns={orderedProductColumns}
                 hiddenColumnKeys={hiddenProductColumnKeys}
@@ -157,35 +157,52 @@ export default function FlooringProductsClient({
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={onToggleGroupedColumn}
               />
+            }
+            primaryAction={
               <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
                 Product
               </button>
-            </TableControlsBar>
-          </TableActionsSummary>
+            }
+          />
         }
         notices={<FormStatusNotices message={message} error={error} />}
-      >
-        <ProductsTable
-          rows={sortedProducts}
-          groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
-          isGroupingEnabled={isGroupingEnabled}
-          visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
-          visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
-          pagination={pagination}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={filteredProducts.length}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
-          deletingProductId={deletingProductId}
-          onDeleteProduct={deleteProduct}
-          onOpenProduct={openProductRecord}
-        />
-      </DashboardTableSurface>
+        table={
+          <ProductsTable
+            rows={sortedProducts}
+            groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
+            isGroupingEnabled={isGroupingEnabled}
+            visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
+            visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
+            pagination={pagination}
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={filteredProducts.length}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+            deletingProductId={deletingProductId}
+            onDeleteProduct={deleteProduct}
+            onOpenProduct={openProductRecord}
+          />
+        }
+        pagination={
+          <TablePaginationControls
+            page={pagination?.page ?? page}
+            totalPages={pagination?.totalPages ?? totalPages}
+            pageSize={pagination?.pageSize ?? pageSize}
+            totalItems={pagination?.totalItems ?? filteredProducts.length}
+            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+            onPreviousPage={pagination ? undefined : goToPreviousPage}
+            onNextPage={pagination ? undefined : goToNextPage}
+            previousPageHref={pagination?.previousPageHref}
+            nextPageHref={pagination?.nextPageHref}
+          />
+        }
+      />
 
       <ProductsCreateModal
         isOpen={isCreateModalOpen}
@@ -208,6 +225,6 @@ export default function FlooringProductsClient({
         message=""
         error={error}
       />
-    </div>
+    </>
   )
 }

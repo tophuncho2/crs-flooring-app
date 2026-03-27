@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
 import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/flooring/shared/controllers/record-page/detail-routes"
 import { ManagementCompanyRecordPanel } from "./management-company-record-panel"

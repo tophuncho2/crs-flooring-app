@@ -1,20 +1,19 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
+import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
+import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
 import { formatStableDate } from "@/features/flooring/shared/domain/date-format"
-import { StatusPill } from "@/features/flooring/shared/ui/feedback/status-pill"
-import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { StatusPill } from "@/features/dashboard/shared/feedback/status-pill"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
-  DashboardTableCell,
-  EmbeddedPageTableShell,
   TableEmptyRow,
-  TableHead,
-  TableHeaderCell,
   TablePaginationControls,
-} from "@/features/flooring/shared/ui/table/table-shell"
+} from "@/features/dashboard/shared/table/table-shell"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
-import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
+import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
 import type { ImportRow } from "@/features/flooring/imports/controllers/use-imports-list-controller"
 import {
   formatImportStatus,
@@ -70,33 +69,33 @@ export function ImportsTable({
   function renderRow(row: ImportRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       importNumber: (columnIndex) => (
-        <DashboardTableCell key="importNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
+        <DashboardListRowCell key="importNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
           IMP-{String(row.importNumber).padStart(4, "0")}
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
-      tag: (columnIndex) => <DashboardTableCell key="tag" columnIndex={columnIndex}>{row.tag || "-"}</DashboardTableCell>,
+      tag: (columnIndex) => <DashboardListRowCell key="tag" columnIndex={columnIndex}>{row.tag || "-"}</DashboardListRowCell>,
       transport: (columnIndex) => (
-        <DashboardTableCell key="transport" columnIndex={columnIndex}>
+        <DashboardListRowCell key="transport" columnIndex={columnIndex}>
           <StatusPill label={formatTransportType(row.transportType)} toneClassName={getTransportTypeFieldClass(row.transportType)} />
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
       status: (columnIndex) => (
-        <DashboardTableCell key="status" columnIndex={columnIndex}>
+        <DashboardListRowCell key="status" columnIndex={columnIndex}>
           <StatusPill label={formatImportStatus(row.status)} toneClassName={getImportStatusFieldClass(row.status)} />
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
-      warehouse: (columnIndex) => <DashboardTableCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardTableCell>,
-      created: (columnIndex) => <DashboardTableCell key="created" columnIndex={columnIndex}>{formatStableDate(row.createdAt)}</DashboardTableCell>,
-      items: (columnIndex) => <DashboardTableCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardTableCell>,
+      warehouse: (columnIndex) => <DashboardListRowCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardListRowCell>,
+      created: (columnIndex) => <DashboardListRowCell key="created" columnIndex={columnIndex}>{formatStableDate(row.createdAt)}</DashboardListRowCell>,
+      items: (columnIndex) => <DashboardListRowCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardListRowCell>,
       delete: (columnIndex) => (
-        <DashboardTableCell key="delete" columnIndex={columnIndex}>
+        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton
             onClick={() => onDeleteImport(row.id)}
             disabled={deletingImportId === row.id}
           >
             {deletingImportId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
     }
 
@@ -106,32 +105,23 @@ export function ImportsTable({
         ariaLabel={`Open import ${String(row.importNumber).padStart(4, "0")}`}
         onClick={() => onOpenImport(row.id)}
       >
-        {visibleColumnKeys.map((columnKey, columnIndex) => cells[columnKey](columnIndex))}
+        {renderDashboardRowCells(visibleColumns, cells)}
       </ClickableTableRow>
     )
   }
 
   return (
     <>
-      <EmbeddedPageTableShell minWidthClass="min-w-[980px]">
-        <TableHead>
-          <tr>
-            {visibleColumns.map((column) => (
-              <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-            ))}
-          </tr>
-        </TableHead>
-        <tbody>
-          {isGroupingEnabled
-            ? renderGroupedTableRows({
-                groups: groupedRows,
-                colSpan: visibleColumnKeys.length,
-                renderRow,
-              })
-            : rows.map((row) => renderRow(row))}
-          {rows.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleColumnKeys.length} /> : null}
-        </tbody>
-      </EmbeddedPageTableShell>
+      <DashboardListPageTable minWidthClass="min-w-[980px]" columns={visibleColumns}>
+        {isGroupingEnabled
+          ? renderGroupedTableRows({
+              groups: groupedRows,
+              colSpan: visibleColumnKeys.length,
+              renderRow,
+            })
+          : rows.map((row) => renderRow(row))}
+        {rows.length === 0 ? <TableEmptyRow message="No imports logged yet." colSpan={visibleColumnKeys.length} /> : null}
+      </DashboardListPageTable>
       <TablePaginationControls
         page={pagination?.page ?? page}
         totalPages={pagination?.totalPages ?? totalPages}

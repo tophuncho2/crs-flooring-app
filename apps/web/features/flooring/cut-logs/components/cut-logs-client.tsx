@@ -3,22 +3,20 @@
 import { useState, type ReactNode } from "react"
 import { getClientErrorMessage } from "@/features/flooring/shared/transport/client-errors"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME } from "@/features/flooring/shared/ui/display/dashboard-card-title"
-import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
-import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
-import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
+import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
+import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
+import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
+import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
+import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
+import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
-  DashboardTableCell,
-  EmbeddedPageTableShell,
-  TableActionsSummary,
   TableEmptyRow,
-  TableHead,
-  TableHeaderCell,
   TablePaginationControls,
-} from "@/features/flooring/shared/ui/table/table-shell"
+} from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -117,66 +115,56 @@ export default function CutLogsClient({
 
   function renderRow(log: CutLogPageRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      created: (columnIndex) => <DashboardTableCell key="created" columnIndex={columnIndex}>{formatStableDateTime(log.createdAt)}</DashboardTableCell>,
-      product: (columnIndex) => <DashboardTableCell key="product" columnIndex={columnIndex}>{log.productName}</DashboardTableCell>,
-      itemNumber: (columnIndex) => <DashboardTableCell key="itemNumber" columnIndex={columnIndex}>{log.itemNumber}</DashboardTableCell>,
-      location: (columnIndex) => <DashboardTableCell key="location" columnIndex={columnIndex}>{log.locationLabel}</DashboardTableCell>,
-      before: (columnIndex) => <DashboardTableCell key="before" columnIndex={columnIndex}>{log.before}</DashboardTableCell>,
-      cut: (columnIndex) => <DashboardTableCell key="cut" columnIndex={columnIndex}>{log.cut}</DashboardTableCell>,
-      after: (columnIndex) => <DashboardTableCell key="after" columnIndex={columnIndex}>{log.after}</DashboardTableCell>,
-      notes: (columnIndex) => <DashboardTableCell key="notes" columnIndex={columnIndex}>{log.notes || "-"}</DashboardTableCell>,
+      created: (columnIndex) => <DashboardListRowCell key="created" columnIndex={columnIndex}>{formatStableDateTime(log.createdAt)}</DashboardListRowCell>,
+      product: (columnIndex) => <DashboardListRowCell key="product" columnIndex={columnIndex}>{log.productName}</DashboardListRowCell>,
+      itemNumber: (columnIndex) => <DashboardListRowCell key="itemNumber" columnIndex={columnIndex}>{log.itemNumber}</DashboardListRowCell>,
+      location: (columnIndex) => <DashboardListRowCell key="location" columnIndex={columnIndex}>{log.locationLabel}</DashboardListRowCell>,
+      before: (columnIndex) => <DashboardListRowCell key="before" columnIndex={columnIndex}>{log.before}</DashboardListRowCell>,
+      cut: (columnIndex) => <DashboardListRowCell key="cut" columnIndex={columnIndex}>{log.cut}</DashboardListRowCell>,
+      after: (columnIndex) => <DashboardListRowCell key="after" columnIndex={columnIndex}>{log.after}</DashboardListRowCell>,
+      notes: (columnIndex) => <DashboardListRowCell key="notes" columnIndex={columnIndex}>{log.notes || "-"}</DashboardListRowCell>,
       delete: (columnIndex) => (
-        <DashboardTableCell key="delete" columnIndex={columnIndex}>
+        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void deleteLog(log.id)} disabled={deletingId === log.id}>
             {deletingId === log.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
     }
 
-    return <tr key={log.id} className="border-t border-[var(--panel-border)]">{visibleColumns.map((column, columnIndex) => cells[column.key](columnIndex))}</tr>
+    return <tr key={log.id} className="border-t border-[var(--panel-border)]">{renderDashboardRowCells(visibleColumns, cells)}</tr>
   }
 
   return (
-    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <DashboardTableSurface
-        title="Cut Logs"
-        actions={(
-          <TableActionsSummary count={filteredRows.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              searchPlaceholder="Search product, item #, location, or notes"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={onToggleSort}
-              ascendingSortLabel="Old-New"
-              descendingSortLabel="New-Old"
-            >
-              <TableColumnSettings
-                columns={allColumns}
-                hiddenColumnKeys={hiddenColumnKeys}
-                onToggleColumn={toggleColumnVisibility}
-                onMoveColumn={moveColumn}
-                onSetColumnOrder={setColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            </TableControlsBar>
-          </TableActionsSummary>
-        )}
-        notices={<FormStatusNotices message={message} error={error} />}
-      >
-
-        <EmbeddedPageTableShell minWidthClass="min-w-[1180px]">
-        <TableHead>
-          <tr>
-            {visibleColumns.map((column) => (
-              <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-            ))}
-          </tr>
-        </TableHead>
-        <tbody>
+    <DashboardListPageScaffold
+      title={<DashboardCardTitle>Cut Logs</DashboardCardTitle>}
+      controls={
+        <DashboardListPageControls
+          count={filteredRows.length}
+          searchQuery={searchQuery}
+          onSearchQueryChange={onSearchQueryChange}
+          searchPlaceholder="Search product, item #, location, or notes"
+          isAscendingSort={isAscendingSort}
+          onToggleSort={onToggleSort}
+          ascendingSortLabel="Old-New"
+          descendingSortLabel="New-Old"
+          columnSettingsSlot={
+            <TableColumnSettings
+              columns={allColumns}
+              hiddenColumnKeys={hiddenColumnKeys}
+              onToggleColumn={toggleColumnVisibility}
+              onMoveColumn={moveColumn}
+              onSetColumnOrder={setColumnOrder}
+              groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+              maxGroupFields={MAX_GROUP_FIELDS}
+              onToggleGroupedColumn={onToggleGroupedColumn}
+            />
+          }
+        />
+      }
+      notices={<FormStatusNotices message={message} error={error} />}
+      table={
+        <DashboardListPageTable minWidthClass="min-w-[1180px]" columns={visibleColumns}>
           {isGroupingEnabled
             ? renderGroupedTableRows({
                 groups: groupedRowTree as GroupedRowTree<CutLogPageRow>[],
@@ -185,9 +173,9 @@ export default function CutLogsClient({
               })
             : sortedRows.map((log) => renderRow(log))}
           {sortedRows.length === 0 ? <TableEmptyRow message="No cut logs yet." colSpan={visibleColumns.length} /> : null}
-        </tbody>
-        </EmbeddedPageTableShell>
-
+        </DashboardListPageTable>
+      }
+      pagination={
         <TablePaginationControls
           page={page}
           totalPages={totalPages}
@@ -198,7 +186,7 @@ export default function CutLogsClient({
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
         />
-      </DashboardTableSurface>
-    </div>
+      }
+    />
   )
 }

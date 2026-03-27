@@ -1,14 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import type { TableColumnDefinition } from "@/features/dashboard/shared/table/table-column-definition"
 import type { TablePreferencePayload } from "./table-preferences"
 
-export type TableColumnDefinition = {
-  key: string
-  label: string
-  defaultHidden?: boolean
-  groupable?: boolean
-}
+export type { TableColumnDefinition } from "@/features/dashboard/shared/table/table-column-definition"
 
 const DEFAULT_MAX_GROUP_FIELDS = 3
 

@@ -2,30 +2,28 @@
 
 import { type ReactNode, useState } from "react"
 import { Plus } from "lucide-react"
-import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
+import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import { buildFullAddress, normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "@/features/flooring/shared/ui/display/dashboard-card-title"
-import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
-import { ErrorNotice, FormStatusNotices, SuccessNotice } from "@/features/flooring/shared/ui/feedback/notices"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME, FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
+import { ErrorNotice, FormStatusNotices, SuccessNotice } from "@/features/dashboard/shared/feedback/notices"
+import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
+import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
+import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
+import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
+import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
-import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
-import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
-import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
+import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
   ClickableTableRow,
-  DashboardTableCell,
-  EmbeddedPageTableShell,
-  TableActionsSummary,
   TableEmptyRow,
-  TableHead,
-  TableHeaderCell,
   TablePaginationControls,
-} from "@/features/flooring/shared/ui/table/table-shell"
-import { renderGroupedTableRows } from "@/features/flooring/shared/ui/table/render-grouped-table-rows"
+} from "@/features/dashboard/shared/table/table-shell"
+import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 
 type ManagementCompanyRow = {
@@ -235,54 +233,54 @@ export default function ManagementCompaniesClient({
     const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       company: (columnIndex) => (
-        <DashboardTableCell key="company" columnIndex={columnIndex} className="font-medium text-blue-500">
+        <DashboardListRowCell key="company" columnIndex={columnIndex} className="font-medium text-blue-500">
           {row.name}
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
-      street: (columnIndex) => <DashboardTableCell key="street" columnIndex={columnIndex}>{row.streetAddress || "-"}</DashboardTableCell>,
-      city: (columnIndex) => <DashboardTableCell key="city" columnIndex={columnIndex}>{row.city || "-"}</DashboardTableCell>,
-      state: (columnIndex) => <DashboardTableCell key="state" columnIndex={columnIndex}>{row.state || "-"}</DashboardTableCell>,
-      zip: (columnIndex) => <DashboardTableCell key="zip" columnIndex={columnIndex}>{row.zip || "-"}</DashboardTableCell>,
-      phone: (columnIndex) => <DashboardTableCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardTableCell>,
-      email: (columnIndex) => <DashboardTableCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardTableCell>,
-      fullAddress: (columnIndex) => <DashboardTableCell key="fullAddress" columnIndex={columnIndex}>{row.fullAddress || "-"}</DashboardTableCell>,
+      street: (columnIndex) => <DashboardListRowCell key="street" columnIndex={columnIndex}>{row.streetAddress || "-"}</DashboardListRowCell>,
+      city: (columnIndex) => <DashboardListRowCell key="city" columnIndex={columnIndex}>{row.city || "-"}</DashboardListRowCell>,
+      state: (columnIndex) => <DashboardListRowCell key="state" columnIndex={columnIndex}>{row.state || "-"}</DashboardListRowCell>,
+      zip: (columnIndex) => <DashboardListRowCell key="zip" columnIndex={columnIndex}>{row.zip || "-"}</DashboardListRowCell>,
+      phone: (columnIndex) => <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>,
+      email: (columnIndex) => <DashboardListRowCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardListRowCell>,
+      fullAddress: (columnIndex) => <DashboardListRowCell key="fullAddress" columnIndex={columnIndex}>{row.fullAddress || "-"}</DashboardListRowCell>,
       properties: (columnIndex) => (
-        <DashboardTableCell key="properties" columnIndex={columnIndex}>
+        <DashboardListRowCell key="properties" columnIndex={columnIndex}>
           <p className="text-xs text-[var(--foreground)]/70">
             {linkedProperties}
             {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
           </p>
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
       delete: (columnIndex) => (
-        <DashboardTableCell key="delete" columnIndex={columnIndex}>
+        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
             {deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Edit management company ${row.name}`} onClick={() => companyNavigation.openRecord(row.id)}>
-        {visibleCompanyColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
+        {renderDashboardRowCells(visibleCompanyColumns, cells)}
       </ClickableTableRow>
     )
   }
 
   return (
-    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <DashboardTableSurface
+    <>
+      <DashboardListPageScaffold
         title={<DashboardCardTitle>Management Companies</DashboardCardTitle>}
-        actions={
-          <TableActionsSummary count={filteredCompanies.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              searchPlaceholder="Search company or property"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={onToggleSort}
-            >
+        controls={
+          <DashboardListPageControls
+            count={filteredCompanies.length}
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Search company or property"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={onToggleSort}
+            columnSettingsSlot={
               <TableColumnSettings
                 columns={orderedCompanyColumns}
                 hiddenColumnKeys={hiddenCompanyColumnKeys}
@@ -293,6 +291,8 @@ export default function ManagementCompaniesClient({
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={onToggleGroupedColumn}
               />
+            }
+            primaryAction={
               <button
                 type="button"
                 onClick={() => {
@@ -306,8 +306,8 @@ export default function ManagementCompaniesClient({
                 <Plus size={16} />
                 Company
               </button>
-            </TableControlsBar>
-          </TableActionsSummary>
+            }
+          />
         }
         notices={
           <>
@@ -315,16 +315,8 @@ export default function ManagementCompaniesClient({
             {!isCreateModalOpen && error ? <ErrorNotice>{error}</ErrorNotice> : null}
           </>
         }
-      >
-        <EmbeddedPageTableShell minWidthClass="min-w-[1320px]">
-          <TableHead>
-            <tr>
-              {visibleCompanyColumns.map((column) => (
-                <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-              ))}
-            </tr>
-          </TableHead>
-          <tbody>
+        table={
+          <DashboardListPageTable minWidthClass="min-w-[1320px]" columns={visibleCompanyColumns}>
             {isGroupingEnabled
               ? renderGroupedTableRows({
                   groups: groupedCompanies as GroupedRowTree<ManagementCompanyRow>[],
@@ -334,21 +326,23 @@ export default function ManagementCompaniesClient({
               : sortedCompanies.map((row) => renderCompanyRow(row))}
 
             {filteredCompanies.length === 0 ? <TableEmptyRow message="No management companies found." colSpan={visibleCompanyColumns.length} /> : null}
-          </tbody>
-        </EmbeddedPageTableShell>
-        <TablePaginationControls
-          page={pagination?.page ?? page}
-          totalPages={pagination?.totalPages ?? totalPages}
-          pageSize={pagination?.pageSize ?? pageSize}
-          totalItems={pagination?.totalItems ?? filteredCompanies.length}
-          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-          onPreviousPage={pagination ? undefined : goToPreviousPage}
-          onNextPage={pagination ? undefined : goToNextPage}
-          previousPageHref={pagination?.previousPageHref}
-          nextPageHref={pagination?.nextPageHref}
-        />
-      </DashboardTableSurface>
+          </DashboardListPageTable>
+        }
+        pagination={
+          <TablePaginationControls
+            page={pagination?.page ?? page}
+            totalPages={pagination?.totalPages ?? totalPages}
+            pageSize={pagination?.pageSize ?? pageSize}
+            totalItems={pagination?.totalItems ?? filteredCompanies.length}
+            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+            onPreviousPage={pagination ? undefined : goToPreviousPage}
+            onNextPage={pagination ? undefined : goToNextPage}
+            previousPageHref={pagination?.previousPageHref}
+            nextPageHref={pagination?.nextPageHref}
+          />
+        }
+      />
 
       {isCreateModalOpen ? (
         <ModalShell title="New Management Company" onClose={() => !isSavingNew && setIsCreateModalOpen(false)}>
@@ -394,6 +388,6 @@ export default function ManagementCompaniesClient({
           </div>
         </ModalShell>
       ) : null}
-    </div>
+    </>
   )
 }

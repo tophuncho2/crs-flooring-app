@@ -2,10 +2,10 @@
 
 import { useCallback } from "react"
 import { RecordLineSummary } from "@/features/flooring/shared/ui/display/record-line-summary"
-import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
-import type { EditableMaterialItem, MaterialItemOption } from "@/features/flooring/shared/ui/record-items/material-items-editor"
-import type { EditableServiceItem, ServiceOption, UnitOption } from "@/features/flooring/shared/ui/record-items/service-items-editor"
+import type { EditableMaterialItem, MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
+import type { EditableServiceItem, ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
 import { TemplateRecordPanel } from "./template-record-panel"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 

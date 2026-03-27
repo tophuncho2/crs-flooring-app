@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/forms/record-form"
-import { FormStatusNotices } from "@/features/flooring/shared/feedback/notices"
-import { RecordPanelFooter } from "@/features/flooring/shared/forms/record-panel-footer"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 
 export function UnitOfMeasuresCreateModal({
   name,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useCanonicalDetailNavigation } from "@/features/flooring/shared/controllers/navigation/use-canonical-detail-navigation"
+import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import { useRecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"

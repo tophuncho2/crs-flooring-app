@@ -1,8 +1,8 @@
 "use client"
 
 import { Save, Upload, X } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
 import type {
   CategoryOption,

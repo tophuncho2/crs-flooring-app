@@ -1,9 +1,9 @@
 "use client"
 
-import { DeleteRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { InlineAddRowButton } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { RecordChildTableSection, ModalTableHead } from "@/features/flooring/shared/ui/record-items/record-child-table-section"
-import { TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordChildTableSection, ModalTableHead } from "@/features/flooring/shared/line-items/record-child-table-section"
+import { TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 
 type ProductOption = {
   id: string

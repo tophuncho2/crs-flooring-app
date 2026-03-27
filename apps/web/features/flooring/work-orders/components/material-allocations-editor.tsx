@@ -2,11 +2,11 @@
 
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
-import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/ui/record-items/record-child-table-section"
-import { TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
-import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "@/features/flooring/shared/ui/record-items/record-field-errors"
+import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/line-items/record-child-table-section"
+import { TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
+import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "@/features/flooring/shared/line-items/record-field-errors"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow, WorkOrderMaterialItem } from "../types"
 
 export type AllocationDraft = {

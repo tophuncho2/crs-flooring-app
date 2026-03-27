@@ -1,14 +1,14 @@
 "use client"
 
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
-import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
-import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
-import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
+import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
+import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
+import { TableFilterControls } from "@/features/dashboard/shared/table/table-filter-controls"
+import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -138,21 +138,21 @@ export default function ImportsClient({
     initialPreferences: initialTablePreferences,
   })
   return (
-    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <DashboardTableSurface
-        title="Imports"
-        actions={
-          <TableActionsSummary count={filteredImports.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              searchPlaceholder="Search import # or tag"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={onToggleSort}
-              ascendingSortLabel="1-9"
-              descendingSortLabel="9-1"
-            >
-              <TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />
+    <>
+      <DashboardListPageScaffold
+        title={<DashboardCardTitle>Imports</DashboardCardTitle>}
+        controls={
+          <DashboardListPageControls
+            count={filteredImports.length}
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Search import # or tag"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={onToggleSort}
+            ascendingSortLabel="1-9"
+            descendingSortLabel="9-1"
+            filtersSlot={<TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />}
+            columnSettingsSlot={
               <TableColumnSettings
                 columns={orderedImportColumns}
                 hiddenColumnKeys={hiddenImportColumnKeys}
@@ -163,6 +163,8 @@ export default function ImportsClient({
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={onToggleGroupedColumn}
               />
+            }
+            primaryAction={
               <button
                 type="button"
                 onClick={openCreateModal}
@@ -171,31 +173,46 @@ export default function ImportsClient({
                 <Plus size={16} />
                 Import
               </button>
-            </TableControlsBar>
-          </TableActionsSummary>
+            }
+          />
         }
         notices={<FormStatusNotices message={message} error={pageError} />}
-      >
-        <ImportsTable
-          rows={sortedImports}
-          groupedRows={groupedRowTree as GroupedRowTree<ImportRow>[]}
-          isGroupingEnabled={isGroupingEnabled}
-          visibleColumnKeys={visibleImportColumns.map((column) => column.key)}
-          visibleColumns={visibleImportColumns.map((column) => ({ key: column.key, label: column.label }))}
-          pagination={pagination}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={filteredImports.length}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
-          deletingImportId={deletingId}
-          onDeleteImport={deleteImport}
-          onOpenImport={openImport}
-        />
-      </DashboardTableSurface>
+        table={
+          <ImportsTable
+            rows={sortedImports}
+            groupedRows={groupedRowTree as GroupedRowTree<ImportRow>[]}
+            isGroupingEnabled={isGroupingEnabled}
+            visibleColumnKeys={visibleImportColumns.map((column) => column.key)}
+            visibleColumns={visibleImportColumns.map((column) => ({ key: column.key, label: column.label }))}
+            pagination={pagination}
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={filteredImports.length}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+            deletingImportId={deletingId}
+            onDeleteImport={deleteImport}
+            onOpenImport={openImport}
+          />
+        }
+        pagination={
+          <TablePaginationControls
+            page={pagination?.page ?? page}
+            totalPages={pagination?.totalPages ?? totalPages}
+            pageSize={pagination?.pageSize ?? pageSize}
+            totalItems={pagination?.totalItems ?? filteredImports.length}
+            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+            onPreviousPage={pagination ? undefined : goToPreviousPage}
+            onNextPage={pagination ? undefined : goToNextPage}
+            previousPageHref={pagination?.previousPageHref}
+            nextPageHref={pagination?.nextPageHref}
+          />
+        }
+      />
 
       <ImportsCreateModal
         isOpen={isCreateModalOpen}
@@ -215,6 +232,6 @@ export default function ImportsClient({
         isLoadingOptions={isLoadingOptions}
         error={createModalError}
       />
-    </div>
+    </>
   )
 }

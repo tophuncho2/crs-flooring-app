@@ -1,12 +1,12 @@
 "use client"
 
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardHeader } from "@/features/flooring/shared/ui/display/dashboard-card-title"
-import { DashboardTableSurface } from "@/features/flooring/shared/ui/display/dashboard-table-surface"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { TableColumnSettings } from "@/features/flooring/shared/ui/table/table-column-settings"
-import TableControlsBar from "@/features/flooring/shared/ui/table/table-controls-bar"
-import { TableFilterControls } from "@/features/flooring/shared/ui/table/table-filter-controls"
-import { TableActionsSummary } from "@/features/flooring/shared/ui/table/table-shell"
+import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
+import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
+import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
+import { TableFilterControls } from "@/features/dashboard/shared/table/table-filter-controls"
+import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -124,38 +124,35 @@ export default function InventoryClient({
   })
 
   return (
-    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <DashboardTableSurface
-        title="Inventory"
-        actions={
-          <TableActionsSummary count={filteredRows.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              searchPlaceholder="Search product, item #, import, section, or location"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={onToggleSort}
-              ascendingSortLabel="A-Z"
-              descendingSortLabel="Z-A"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <TableFilterControls groups={filterGroups} panelKey="inventory-main-filters" />
-                <TableColumnSettings
-                  columns={allColumns}
-                  hiddenColumnKeys={hiddenColumnKeys}
-                  onToggleColumn={toggleColumnVisibility}
-                  onMoveColumn={moveColumn}
-                  onSetColumnOrder={setColumnOrder}
-                  groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                  maxGroupFields={MAX_GROUP_FIELDS}
-                  onToggleGroupedColumn={onToggleGroupedColumn}
-                />
-              </div>
-            </TableControlsBar>
-          </TableActionsSummary>
-        }
-        notices={<FormStatusNotices message={notices.message} error={notices.error} />}
-      >
+    <DashboardListPageScaffold
+      title={<DashboardCardTitle>Inventory</DashboardCardTitle>}
+      controls={
+        <DashboardListPageControls
+          count={filteredRows.length}
+          searchQuery={searchQuery}
+          onSearchQueryChange={onSearchQueryChange}
+          searchPlaceholder="Search product, item #, import, section, or location"
+          isAscendingSort={isAscendingSort}
+          onToggleSort={onToggleSort}
+          ascendingSortLabel="A-Z"
+          descendingSortLabel="Z-A"
+          filtersSlot={<TableFilterControls groups={filterGroups} panelKey="inventory-main-filters" />}
+          columnSettingsSlot={
+            <TableColumnSettings
+              columns={allColumns}
+              hiddenColumnKeys={hiddenColumnKeys}
+              onToggleColumn={toggleColumnVisibility}
+              onMoveColumn={moveColumn}
+              onSetColumnOrder={setColumnOrder}
+              groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+              maxGroupFields={MAX_GROUP_FIELDS}
+              onToggleGroupedColumn={onToggleGroupedColumn}
+            />
+          }
+        />
+      }
+      notices={<FormStatusNotices message={notices.message} error={notices.error} />}
+      table={
         <InventoryTable
           rows={sortedRows}
           groupedRows={groupedRowTree as GroupedRowTree<InventoryRow>[]}
@@ -175,7 +172,21 @@ export default function InventoryClient({
           onDeleteInventory={deleteInventory}
           onOpenInventory={openInventory}
         />
-      </DashboardTableSurface>
-    </div>
+      }
+      pagination={
+        <TablePaginationControls
+          page={pagination?.page ?? page}
+          totalPages={pagination?.totalPages ?? totalPages}
+          pageSize={pagination?.pageSize ?? pageSize}
+          totalItems={pagination?.totalItems ?? filteredRows.length}
+          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+          onPreviousPage={pagination ? undefined : goToPreviousPage}
+          onNextPage={pagination ? undefined : goToNextPage}
+          previousPageHref={pagination?.previousPageHref}
+          nextPageHref={pagination?.nextPageHref}
+        />
+      }
+    />
   )
 }

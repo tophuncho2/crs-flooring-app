@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { RecordOptionsMenu } from "@/features/flooring/shared/ui/display/record-options-menu"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { RecordOptionsMenu } from "@/features/dashboard/shared/record-view/record-options-menu"
 import {
   RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField as FormField,
 } from "@/features/flooring/shared/ui/forms/record-form"
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { RecordMetricSummary } from "@/features/flooring/shared/ui/display/record-metric-summary"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { requestJson } from "@/features/flooring/shared/transport/http"

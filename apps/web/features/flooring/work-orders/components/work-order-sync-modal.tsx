@@ -1,7 +1,7 @@
 "use client"
 
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/ui/forms/record-form"
 import type { PropertyOption, TemplateOption } from "../types"
 

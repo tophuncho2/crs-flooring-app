@@ -1,4 +1,4 @@
-import { StatusPill } from "@/features/flooring/shared/ui/feedback/status-pill"
+import { StatusPill } from "@/features/dashboard/shared/feedback/status-pill"
 import type { InventoryRow } from "@/features/flooring/inventory/domain/types"
 import {
   formatImportStatus,

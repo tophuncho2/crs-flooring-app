@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
   RECORD_CURRENCY_PREFIX,
   RECORD_FIELD_CONTROL_CLASS_NAME,
@@ -12,9 +12,9 @@ import {
   RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
 } from "@/features/flooring/shared/ui/forms/record-form"
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
-import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
-import { CutLogsEditor } from "@/features/flooring/shared/ui/record-items/cut-logs-editor"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
+import { CutLogsEditor } from "@/features/flooring/shared/line-items/cut-logs-editor"
 import { useInventoryRecordController } from "@/features/flooring/inventory/controllers/use-inventory-record-controller"
 import type { InventoryRow, LocationOption } from "@/features/flooring/inventory/domain/types"
 import { InventoryHeaderActions } from "./inventory-header-actions"

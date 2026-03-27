@@ -1,10 +1,10 @@
 "use client"
 
-import { FormStatusNotices } from "@/features/flooring/shared/feedback/notices"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { RecordSummaryCard } from "@/features/flooring/shared/display/record-summary-card"
 import { RecordSummaryGrid } from "@/features/flooring/shared/display/record-summary-grid"
-import { RecordDetailPageShell } from "@/features/flooring/shared/record-page/record-detail-page-shell"
-import { RecordPanelFooter } from "@/features/flooring/shared/forms/record-panel-footer"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { RecordFormField } from "@/features/flooring/shared/forms/record-form"
 import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
 import type { UnitOfMeasureRow } from "../../domain/types"

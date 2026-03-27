@@ -2,10 +2,10 @@
 
 import { type ChangeEvent, useEffect, useMemo, useState } from "react"
 import { Upload, X } from "lucide-react"
-import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { RecordFormField as FormField } from "@/features/flooring/shared/ui/forms/record-form"
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"

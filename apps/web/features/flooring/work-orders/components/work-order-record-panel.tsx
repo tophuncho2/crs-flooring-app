@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/ui/feedback/feedback-states"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
   MaterialItemsEditor,
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemOption,
-} from "@/features/flooring/shared/ui/record-items/material-items-editor"
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+} from "@/features/flooring/shared/line-items/material-items-editor"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
@@ -20,23 +20,23 @@ import {
   type ServiceItemDraft,
   type ServiceOption,
   type UnitOption,
-} from "@/features/flooring/shared/ui/record-items/service-items-editor"
-import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
-import { CalculationRowsTable } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
+} from "@/features/flooring/shared/line-items/service-items-editor"
+import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
+import { CalculationRowsTable } from "@/features/flooring/shared/line-items/calculation-rows-table"
 import {
   RecordPrimaryFieldCell,
   RecordPrimaryFieldsGrid,
   RecordPrimaryPane,
   RecordPrimarySection,
   RecordStaticFieldValue,
-} from "@/features/flooring/shared/ui/record-items/record-primary-fields"
+} from "@/features/dashboard/shared/record-view/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
 import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
-import { RecordSection, RecordSectionStack } from "@/features/flooring/shared/ui/record-page/record-sections"
+import { RecordSection, RecordSectionStack } from "@/features/dashboard/shared/record-view/record-sections"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
 import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"

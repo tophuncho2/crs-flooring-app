@@ -1,20 +1,20 @@
 "use client"
 
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
-import { CenteredErrorState, CenteredLoadingState } from "@/features/flooring/shared/ui/feedback/feedback-states"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { getSharedFormFieldClass } from "@/features/flooring/shared/ui/forms/form-field-styles"
 import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { RecordLinkedChildTableSection } from "@/features/flooring/shared/ui/record-page/record-linked-child-table-section"
-import { RecordSection, RecordSectionStack } from "@/features/flooring/shared/ui/record-page/record-sections"
+import { RecordSection, RecordSectionStack } from "@/features/dashboard/shared/record-view/record-sections"
 import {
   RecordPrimaryFieldCell,
   RecordPrimaryFieldsGrid,
   RecordPrimaryPane,
   RecordPrimarySection,
   RecordStaticFieldValue,
-} from "@/features/flooring/shared/ui/record-items/record-primary-fields"
+} from "@/features/dashboard/shared/record-view/record-primary-fields"
 import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import type { PropertyDetailRecord, PropertyTemplateDraft } from "../controllers/use-property-record-controller"
 

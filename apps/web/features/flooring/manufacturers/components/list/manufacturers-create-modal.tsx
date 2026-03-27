@@ -1,8 +1,8 @@
 "use client"
 
-import { RecordPanelFooter } from "@/features/flooring/shared/forms/record-panel-footer"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/forms/record-form"
-import { FormStatusNotices } from "@/features/flooring/shared/feedback/notices"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import type { ManufacturerForm } from "../../domain/types"
 
 export function ManufacturersCreateModal({

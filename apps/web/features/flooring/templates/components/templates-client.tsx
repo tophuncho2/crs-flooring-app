@@ -2,28 +2,26 @@
 
 import { type ReactNode } from "react"
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "../../shared/accent-styles"
-import { DASHBOARD_PAGE_SHELL_CLASS_NAME, DashboardCardTitle } from "../../shared/dashboard-card-title"
-import { DashboardTableSurface } from "../../shared/display/dashboard-table-surface"
-import { FormStatusNotices } from "../../shared/ui/feedback/notices"
-import { DeleteRowButton } from "../../shared/row-action-buttons"
-import { TableColumnSettings } from "../../shared/table-column-settings"
-import TableControlsBar from "../../shared/table-controls-bar"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
+import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
+import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
+import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
+import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
+import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
+import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
+import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
   ClickableTableRow,
-  DashboardTableCell,
-  EmbeddedPageTableShell,
-  TableActionsSummary,
   TableEmptyRow,
-  TableHead,
-  TableHeaderCell,
   TablePaginationControls,
-} from "../../shared/table-shell"
-import { renderGroupedTableRows } from "../../shared/ui/table/render-grouped-table-rows"
-import { useCanonicalDetailNavigation } from "../../shared/use-canonical-detail-navigation"
-import { useConfiguredTableState } from "../../shared/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "../../shared/use-table-controls"
-import type { TablePreferencePayload } from "../../shared/controllers/table/table-preferences"
+} from "@/features/dashboard/shared/table/table-shell"
+import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
+import { useConfiguredTableState } from "@/features/flooring/shared/use-configured-table-state"
+import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/use-table-controls"
+import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import type { PadProductOption, PropertyOption, ServerPaginationState, ServerTableState, TemplateRow, WarehouseOption } from "../types"
 import { useTemplatesClientController } from "../use-templates-client-controller"
 import { TemplateCreateModal } from "./template-create-modal"
@@ -100,45 +98,45 @@ export default function TemplatesClient({
   function renderTemplateRow(row: TemplateRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       templateNumber: (columnIndex) => (
-        <DashboardTableCell key="templateNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
+        <DashboardListRowCell key="templateNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
           {row.templateNumber}
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
-      templateTag: (columnIndex) => <DashboardTableCell key="templateTag" columnIndex={columnIndex}>{row.templateTag}</DashboardTableCell>,
-      property: (columnIndex) => <DashboardTableCell key="property" columnIndex={columnIndex}>{row.propertyName}</DashboardTableCell>,
-      warehouse: (columnIndex) => <DashboardTableCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardTableCell>,
-      instructions: (columnIndex) => <DashboardTableCell key="instructions" columnIndex={columnIndex}>{row.instructions || "-"}</DashboardTableCell>,
-      padType: (columnIndex) => <DashboardTableCell key="padType" columnIndex={columnIndex}>{row.padTypeLabel || "-"}</DashboardTableCell>,
-      templateNotes: (columnIndex) => <DashboardTableCell key="templateNotes" columnIndex={columnIndex}>{row.templateNotes || "-"}</DashboardTableCell>,
+      templateTag: (columnIndex) => <DashboardListRowCell key="templateTag" columnIndex={columnIndex}>{row.templateTag}</DashboardListRowCell>,
+      property: (columnIndex) => <DashboardListRowCell key="property" columnIndex={columnIndex}>{row.propertyName}</DashboardListRowCell>,
+      warehouse: (columnIndex) => <DashboardListRowCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardListRowCell>,
+      instructions: (columnIndex) => <DashboardListRowCell key="instructions" columnIndex={columnIndex}>{row.instructions || "-"}</DashboardListRowCell>,
+      padType: (columnIndex) => <DashboardListRowCell key="padType" columnIndex={columnIndex}>{row.padTypeLabel || "-"}</DashboardListRowCell>,
+      templateNotes: (columnIndex) => <DashboardListRowCell key="templateNotes" columnIndex={columnIndex}>{row.templateNotes || "-"}</DashboardListRowCell>,
       delete: (columnIndex) => (
-        <DashboardTableCell key="delete" columnIndex={columnIndex}>
+        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
           <DeleteRowButton onClick={() => void controller.deleteTemplate(row.id)} disabled={controller.deletingId === row.id}>
             {controller.deletingId === row.id ? "Deleting..." : "Delete"}
           </DeleteRowButton>
-        </DashboardTableCell>
+        </DashboardListRowCell>
       ),
     }
 
     return (
       <ClickableTableRow key={row.id} ariaLabel={`Edit template ${row.templateNumber}`} onClick={() => templateNavigation.openRecord(row.id)}>
-        {visibleTemplateColumns.map((column, columnIndex) => cells[column.key](columnIndex))}
+        {renderDashboardRowCells(visibleTemplateColumns, cells)}
       </ClickableTableRow>
     )
   }
 
   return (
-    <div className={DASHBOARD_PAGE_SHELL_CLASS_NAME}>
-      <DashboardTableSurface
+    <>
+      <DashboardListPageScaffold
         title={<DashboardCardTitle>Templates</DashboardCardTitle>}
-        actions={
-          <TableActionsSummary count={filteredTemplates.length}>
-            <TableControlsBar
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              searchPlaceholder="Search property"
-              isAscendingSort={isAscendingSort}
-              onToggleSort={onToggleSort}
-            >
+        controls={
+          <DashboardListPageControls
+            count={filteredTemplates.length}
+            searchQuery={searchQuery}
+            onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Search property"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={onToggleSort}
+            columnSettingsSlot={
               <TableColumnSettings
                 columns={orderedTemplateColumns}
                 hiddenColumnKeys={hiddenTemplateColumnKeys}
@@ -149,6 +147,8 @@ export default function TemplatesClient({
                 maxGroupFields={MAX_GROUP_FIELDS}
                 onToggleGroupedColumn={onToggleGroupedColumn}
               />
+            }
+            primaryAction={
               <button
                 type="button"
                 onClick={controller.openCreateModal}
@@ -157,48 +157,42 @@ export default function TemplatesClient({
                 <Plus size={16} />
                 Template
               </button>
-            </TableControlsBar>
-          </TableActionsSummary>
+            }
+          />
         }
         notices={
           !controller.isCreateModalOpen ? (
             <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
           ) : null
         }
-      >
-        <EmbeddedPageTableShell minWidthClass="min-w-[1260px]">
-            <TableHead>
-              <tr>
-                {visibleTemplateColumns.map((column) => (
-                  <TableHeaderCell key={column.key}>{column.label}</TableHeaderCell>
-                ))}
-              </tr>
-            </TableHead>
-            <tbody>
-              {isGroupingEnabled
-                ? renderGroupedTableRows({
-                    groups: groupedTemplates as GroupedRowTree<TemplateRow>[],
-                    colSpan: visibleTemplateColumns.length,
-                    renderRow: renderTemplateRow,
-                  })
-                : sortedTemplates.map((row) => renderTemplateRow(row))}
+        table={
+          <DashboardListPageTable minWidthClass="min-w-[1260px]" columns={visibleTemplateColumns}>
+            {isGroupingEnabled
+              ? renderGroupedTableRows({
+                  groups: groupedTemplates as GroupedRowTree<TemplateRow>[],
+                  colSpan: visibleTemplateColumns.length,
+                  renderRow: renderTemplateRow,
+                })
+              : sortedTemplates.map((row) => renderTemplateRow(row))}
 
-              {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
-            </tbody>
-        </EmbeddedPageTableShell>
-        <TablePaginationControls
-          page={pagination?.page ?? page}
-          totalPages={pagination?.totalPages ?? totalPages}
-          pageSize={pagination?.pageSize ?? pageSize}
-          totalItems={pagination?.totalItems ?? filteredTemplates.length}
-          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-          onPreviousPage={pagination ? undefined : goToPreviousPage}
-          onNextPage={pagination ? undefined : goToNextPage}
-          previousPageHref={pagination?.previousPageHref}
-          nextPageHref={pagination?.nextPageHref}
-        />
-      </DashboardTableSurface>
+            {filteredTemplates.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleTemplateColumns.length} /> : null}
+          </DashboardListPageTable>
+        }
+        pagination={
+          <TablePaginationControls
+            page={pagination?.page ?? page}
+            totalPages={pagination?.totalPages ?? totalPages}
+            pageSize={pagination?.pageSize ?? pageSize}
+            totalItems={pagination?.totalItems ?? filteredTemplates.length}
+            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+            onPreviousPage={pagination ? undefined : goToPreviousPage}
+            onNextPage={pagination ? undefined : goToNextPage}
+            previousPageHref={pagination?.previousPageHref}
+            nextPageHref={pagination?.nextPageHref}
+          />
+        }
+      />
 
       {controller.isCreateModalOpen ? (
         <TemplateCreateModal
@@ -219,6 +213,6 @@ export default function TemplatesClient({
           }}
         />
       ) : null}
-    </div>
+    </>
   )
 }

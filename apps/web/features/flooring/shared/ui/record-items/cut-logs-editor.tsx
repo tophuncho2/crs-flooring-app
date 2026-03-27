@@ -2,8 +2,8 @@
 
 import { formatStableDateTime } from "@/features/flooring/shared/domain/date-format"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
-import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
+import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { CUT_LOGS_TABLE_MIN_WIDTH_CLASS, CUT_LOGS_WITH_ACTIONS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type EditableCutLog = {

@@ -1,12 +1,12 @@
 "use client"
 
-import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
+import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { calculateRecordSalesRepLineAmount } from "@/features/flooring/shared/domain/record-sales-reps"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
-import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type SalesRepOption = {

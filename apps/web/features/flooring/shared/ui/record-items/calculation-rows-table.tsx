@@ -2,7 +2,7 @@
 
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
 import { CollapsibleTableSection } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type DisplayCalculationRow = {

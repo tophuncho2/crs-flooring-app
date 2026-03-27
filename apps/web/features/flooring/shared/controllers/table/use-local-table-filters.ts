@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type { TableFilterGroup } from "@/features/flooring/shared/ui/table/table-filter-controls"
+import type { TableFilterGroup } from "@/features/dashboard/shared/table/table-filter-controls"
 import { createInitialTableFilterState, type TableFilterDefinition, type TableFilterState } from "./table-filter-state"
 
 export function useLocalTableFilters({

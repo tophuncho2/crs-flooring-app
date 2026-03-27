@@ -1,8 +1,8 @@
 "use client"
 
-import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/ui/forms/record-form"
-import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notices"
+import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { CONTACT_TYPE_LABELS, CONTACT_TYPE_OPTIONS, type ContactForm } from "../../domain/types"
 
 export function ContactsCreateModal({
