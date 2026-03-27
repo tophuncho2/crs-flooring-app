@@ -8,7 +8,6 @@ import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-pa
 import { RecordSummaryCard } from "@/features/flooring/shared/ui/display/record-summary-card"
 import { RecordSummaryGrid } from "@/features/flooring/shared/ui/display/record-summary-grid"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import type { LocationRow, SectionRow, WarehouseRow } from "../types"
 import { useWarehouseRecordController } from "../use-warehouse-record-controller"
 import { WarehouseLocationsSection } from "./warehouse-locations-section"
@@ -44,7 +43,6 @@ export function WarehouseDetailClient({
       title={`Warehouse ${controller.warehouse.name}`}
       backHref={backHref}
       onBack={closePage}
-      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <div className="space-y-6">
         <FormStatusNotices

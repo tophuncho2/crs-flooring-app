@@ -9,6 +9,7 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
 
 export const PAGE_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--panel-hover)] text-left"
 export const MODAL_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-header-background)] text-left"
+export const RECORD_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-background)] text-left"
 export const PAGE_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[var(--panel-border)] bg-[var(--panel-hover)]"
 export const MODAL_TABLE_GROUP_ROW_TONE_CLASS_NAME = "border-t border-[color:var(--subpanel-border)] bg-[var(--subpanel-header-background)]"
 
@@ -22,7 +23,33 @@ export function TableShell({
   className?: string
 }) {
   return (
-    <div className={joinClasses("overflow-x-auto rounded-lg border border-[var(--panel-border)]", className)}>
+    <div
+      className={joinClasses(
+        "w-full overflow-x-auto rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
+        className,
+      )}
+    >
+      <table className={joinClasses("w-full text-sm", minWidthClass)}>{children}</table>
+    </div>
+  )
+}
+
+export function RecordTableShell({
+  children,
+  minWidthClass,
+  className,
+}: {
+  children: ReactNode
+  minWidthClass: string
+  className?: string
+}) {
+  return (
+    <div
+      className={joinClasses(
+        "w-full overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+        className,
+      )}
+    >
       <table className={joinClasses("w-full text-sm", minWidthClass)}>{children}</table>
     </div>
   )
@@ -50,11 +77,15 @@ export function ModalTableShell({
 }
 
 export function TableHead({ children, className }: { children: ReactNode; className?: string }) {
-  return <thead className={joinClasses(PAGE_TABLE_HEAD_TONE_CLASS_NAME, className)}>{children}</thead>
+  return <thead className={joinClasses(PAGE_TABLE_HEAD_TONE_CLASS_NAME, "shadow-[inset_0_-1px_0_var(--panel-border)]", className)}>{children}</thead>
 }
 
 export function ModalTableHead({ children, className }: { children: ReactNode; className?: string }) {
   return <thead className={joinClasses(MODAL_TABLE_HEAD_TONE_CLASS_NAME, className)}>{children}</thead>
+}
+
+export function RecordTableHead({ children, className }: { children: ReactNode; className?: string }) {
+  return <thead className={joinClasses(RECORD_TABLE_HEAD_TONE_CLASS_NAME, "shadow-[inset_0_-1px_0_var(--subpanel-border)]", className)}>{children}</thead>
 }
 
 export function TableHeaderCell({ children, className }: { children: ReactNode; className?: string }) {

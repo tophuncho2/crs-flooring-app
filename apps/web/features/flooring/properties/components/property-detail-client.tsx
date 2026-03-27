@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
 import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/flooring/shared/controllers/record-page/detail-routes"
@@ -58,7 +57,6 @@ export function PropertyDetailClient({
       title={controller.property.name}
       backHref={backHref}
       onBack={closePage}
-      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <PropertyRecordPanel
         property={controller.property}

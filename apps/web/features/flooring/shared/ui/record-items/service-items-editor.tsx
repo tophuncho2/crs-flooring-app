@@ -5,7 +5,7 @@ import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from 
 import { formatCurrencyValue, formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
-import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type ServiceOption = {
@@ -126,8 +126,8 @@ export function ServiceItemsEditor({
       title={title}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
     >
-      <ModalTableShell minWidthClass={SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS}>
-        <ModalTableHead>
+      <RecordTableShell minWidthClass={SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+        <RecordTableHead>
           <tr>
             <TableHeaderCell>Service</TableHeaderCell>
             <TableHeaderCell>Name</TableHeaderCell>
@@ -139,7 +139,7 @@ export function ServiceItemsEditor({
             {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
             <TableHeaderCell>Delete</TableHeaderCell>
           </tr>
-        </ModalTableHead>
+        </RecordTableHead>
         <tbody>
           {loading ? (
             <tr>
@@ -327,7 +327,7 @@ export function ServiceItemsEditor({
             </tr>
           ) : null}
         </tbody>
-      </ModalTableShell>
+      </RecordTableShell>
     </CollapsibleTableSection>
   )
 }

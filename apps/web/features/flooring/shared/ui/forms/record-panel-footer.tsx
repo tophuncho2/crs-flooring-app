@@ -2,7 +2,11 @@
 
 import type { ReactNode } from "react"
 import { confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/ui/display/accent-styles"
+import {
+  RecordFooterDestructiveButton,
+  RecordFooterNeutralButton,
+  RecordFooterPrimaryButton,
+} from "@/features/flooring/shared/ui/record-page/record-action-buttons"
 
 export { confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
 
@@ -46,23 +50,18 @@ export function RecordPanelFooter({
       <div className="flex gap-2">
         {leftExtra}
         {onDelete && deleteLabel ? (
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isSaving}
-            className="rounded border border-rose-500/40 px-4 py-2 text-sm text-rose-500 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <RecordFooterDestructiveButton onClick={handleDelete} disabled={isSaving}>
             {deleteLabel}
-          </button>
+          </RecordFooterDestructiveButton>
         ) : null}
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onClose} disabled={isSaving} className="rounded border border-[var(--panel-border)] px-4 py-2 text-sm">
+        <RecordFooterNeutralButton onClick={onClose} disabled={isSaving}>
           {closeLabel}
-        </button>
-        <button type="button" onClick={onSave} disabled={isSaving} className={FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME}>
+        </RecordFooterNeutralButton>
+        <RecordFooterPrimaryButton onClick={onSave} disabled={isSaving}>
           {isSaving ? savingLabel : saveLabel}
-        </button>
+        </RecordFooterPrimaryButton>
       </div>
     </div>
   )

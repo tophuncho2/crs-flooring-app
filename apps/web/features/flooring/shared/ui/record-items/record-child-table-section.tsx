@@ -35,7 +35,9 @@ export function RecordChildTableSection({
     >
       <div className="space-y-4">
         {beforeTable}
-        <ModalTableShell minWidthClass={minWidthClass}>{children}</ModalTableShell>
+        <ModalTableShell minWidthClass={minWidthClass} className="w-full">
+          {children}
+        </ModalTableShell>
         {afterTable}
       </div>
     </CollapsibleTableSection>

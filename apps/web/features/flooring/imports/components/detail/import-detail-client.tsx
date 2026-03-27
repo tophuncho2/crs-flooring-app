@@ -12,7 +12,6 @@ import {
 import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
 import { RecordMetricSummary } from "@/features/flooring/shared/ui/display/record-metric-summary"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
@@ -250,7 +249,6 @@ export function ImportDetailClient({
       title={`Import IMP-${String(currentRecord.importNumber).padStart(4, "0")}`}
       backHref={backHref}
       onBack={closePage}
-      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
       headerMeta={
         <RecordMetricSummary
           variant="header"

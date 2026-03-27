@@ -6,7 +6,7 @@ import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-tota
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { calculateRecordSalesRepLineAmount } from "@/features/flooring/shared/domain/record-sales-reps"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
-import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
 export type SalesRepOption = {
@@ -105,8 +105,8 @@ export function SalesRepItemsEditor({
       title={title}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
     >
-      <ModalTableShell minWidthClass={SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS}>
-        <ModalTableHead>
+      <RecordTableShell minWidthClass={SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+        <RecordTableHead>
           <tr>
             <TableHeaderCell>Sales Rep</TableHeaderCell>
             <TableHeaderCell>Percent</TableHeaderCell>
@@ -114,7 +114,7 @@ export function SalesRepItemsEditor({
             <TableHeaderCell>Save</TableHeaderCell>
             <TableHeaderCell>Delete</TableHeaderCell>
           </tr>
-        </ModalTableHead>
+        </RecordTableHead>
         <tbody>
           {loading ? (
             <tr>
@@ -223,7 +223,7 @@ export function SalesRepItemsEditor({
             </tr>
           ) : null}
         </tbody>
-      </ModalTableShell>
+      </RecordTableShell>
     </CollapsibleTableSection>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback } from "react"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { RecordLineSummary } from "@/features/flooring/shared/ui/display/record-line-summary"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
@@ -46,7 +45,6 @@ export function TemplateDetailClient({
       backHref={backHref}
       onBack={closePage}
       headerMeta={<RecordLineSummary materialItems={page.summary.materialItems} serviceItems={page.summary.serviceItems} variant="header" />}
-      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <TemplateRecordPanel
         templateId={template.id}

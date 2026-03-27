@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
+import { RecordHeaderActionButton } from "@/features/flooring/shared/ui/record-page/record-action-buttons"
 
 type RecordOptionsMenuItem = {
   label: string
@@ -32,14 +33,15 @@ export function RecordOptionsMenu({
 
   return (
     <div ref={containerRef} className="relative">
-      <button
-        type="button"
+      <RecordHeaderActionButton
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
         onClick={() => setIsOpen((current) => !current)}
-        className="inline-flex items-center gap-2 rounded border border-blue-500/40 px-4 py-2 text-sm text-blue-500 hover:bg-blue-500/10"
+        className="pr-3"
       >
         <span>{buttonLabel}</span>
         <ChevronDown size={16} className={isOpen ? "rotate-180 transition" : "transition"} />
-      </button>
+      </RecordHeaderActionButton>
 
       {isOpen ? (
         <div className="absolute right-0 top-full z-20 mt-2 min-w-[180px] rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] p-1 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">

@@ -6,7 +6,7 @@ import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from 
 import { formatCurrencyValue, formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
-import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
+import { RecordTableHead, RecordTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 import { RecordNestedChildRowSection } from "./record-nested-child-row-section"
 
@@ -122,8 +122,8 @@ export function MaterialItemsEditor({
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
       actions={actions}
     >
-      <ModalTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
-        <ModalTableHead>
+      <RecordTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+        <RecordTableHead>
           <tr>
             <TableHeaderCell>Product</TableHeaderCell>
             <TableHeaderCell>Qty</TableHeaderCell>
@@ -135,7 +135,7 @@ export function MaterialItemsEditor({
             {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
             <TableHeaderCell>Delete</TableHeaderCell>
           </tr>
-        </ModalTableHead>
+        </RecordTableHead>
         <tbody>
           {loading ? (
             <tr>
@@ -279,7 +279,7 @@ export function MaterialItemsEditor({
             </tr>
           ) : null}
         </tbody>
-      </ModalTableShell>
+      </RecordTableShell>
     </CollapsibleTableSection>
   )
 }

@@ -1,8 +1,7 @@
-import Link from "next/link"
 import type { ReactNode } from "react"
-import { ArrowLeft } from "lucide-react"
 import { DASHBOARD_PAGE_SHELL_WIDE_CLASS_NAME } from "@/features/flooring/shared/ui/display/dashboard-card-title"
 import { RECORD_DETAIL_PANEL_WIDTH_CLASS } from "./record-panel-width"
+import { RecordBackButton } from "./record-action-buttons"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -46,22 +45,9 @@ export function RecordDetailPageShell({
                   </div>
                 </div>
                 {onBack ? (
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="inline-flex items-center gap-2 rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm text-[var(--foreground)]/80 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-                  >
-                    <ArrowLeft size={16} />
-                    <span>{backLabel}</span>
-                  </button>
+                  <RecordBackButton onClick={onBack} label={backLabel} />
                 ) : (
-                  <Link
-                    href={backHref}
-                    className="inline-flex items-center gap-2 rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm text-[var(--foreground)]/80 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)]"
-                  >
-                    <ArrowLeft size={16} />
-                    <span>{backLabel}</span>
-                  </Link>
+                  <RecordBackButton href={backHref} label={backLabel} />
                 )}
               </div>
             </div>

@@ -7,7 +7,6 @@ import { FormStatusNotices } from "@/features/flooring/shared/ui/feedback/notice
 import { RecordFormField as FormField } from "@/features/flooring/shared/ui/forms/record-form"
 import { RecordPanelFooter } from "@/features/flooring/shared/ui/forms/record-panel-footer"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
 import { ProductInventoryRowsSection } from "./product-inventory-rows-section"
@@ -271,7 +270,7 @@ export function ProductDetailClient({
   }
 
   return (
-    <RecordDetailPageShell title={product.name || "Product"} backHref={backHref} onBack={closePage} sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}>
+    <RecordDetailPageShell title={product.name || "Product"} backHref={backHref} onBack={closePage}>
       <div className="space-y-6">
         <FormStatusNotices
           message={notices.message}

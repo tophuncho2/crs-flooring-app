@@ -2,7 +2,6 @@
 
 import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { PRIMARY_RECORD_PANEL_WIDTH_CLASS } from "@/features/flooring/shared/ui/record-page/record-panel-width"
 import { RecordOptionsMenu } from "@/features/flooring/shared/ui/display/record-options-menu"
 import { RecordDetailPageShell } from "@/features/flooring/shared/ui/record-page/record-detail-page-shell"
 import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
@@ -156,7 +155,6 @@ export default function WorkOrderDetailClient({
           ]}
         />
       }
-      sizeClass={PRIMARY_RECORD_PANEL_WIDTH_CLASS}
     >
       <WorkOrderRecordPanel
         workOrderId={workOrder.id}
