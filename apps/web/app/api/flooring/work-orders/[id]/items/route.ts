@@ -51,14 +51,11 @@ export async function POST(request: Request, { params }: RouteContext) {
       route: "/api/flooring/work-orders/[id]/items",
       entityType: "flooringWorkOrderItem",
       entityId: item.id,
-      details: { workOrderId: id, productId: item.productId, linkedInventoryId: item.linkedInventoryId ?? null },
+      details: { workOrderId: id, productId: item.productId },
     })
     return routeJson(access, { item }, { status: 201 })
   } catch (error) {
     let normalizedError = error
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      normalizedError = createAppError("That inventory row is already linked to another work order item", { status: 409, field: "linkedInventoryId" })
-    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       normalizedError = createAppError("The selected product or work order does not exist", { status: 404, field: "productId" })
     }

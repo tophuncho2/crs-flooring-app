@@ -28,9 +28,12 @@ export type InventoryRow = {
   sectionName: string
   stockCount: string
   cutTotal: string
+  reservedStockCount: string
+  availableToAllocate: string
   runningBalance: string
   cost: string
   freight: string
+  pricePerUnit: string
   notes: string
   createdAt: string
   updatedAt: string

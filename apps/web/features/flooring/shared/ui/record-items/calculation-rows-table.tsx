@@ -1,12 +1,18 @@
 "use client"
 
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
-import type { CalculationRow } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { CollapsibleTableSection } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { ModalTableHead, ModalTableShell, TableHeaderCell } from "@/features/flooring/shared/ui/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 
-function formatCalculationValue(row: CalculationRow) {
+export type DisplayCalculationRow = {
+  key: string
+  label: string
+  value: number
+  format: "currency" | "percentage"
+}
+
+function formatCalculationValue(row: DisplayCalculationRow) {
   if (row.format === "percentage") {
     return `${(row.value * 100).toFixed(2)}%`
   }
@@ -20,7 +26,7 @@ export function CalculationRowsTable({
   loading,
 }: {
   title: string
-  items: CalculationRow[]
+  items: DisplayCalculationRow[]
   loading: boolean
 }) {
   return (

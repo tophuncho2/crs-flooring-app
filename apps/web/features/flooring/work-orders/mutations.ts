@@ -1,4 +1,10 @@
-import { Prisma, prisma } from "@builders/db"
+import {
+  Prisma,
+  clearAllocationsForWorkOrder,
+  deleteAllAllocationsForWorkOrderItem,
+  prisma,
+  recalculateWorkOrderItemAllocationStatus,
+} from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
 import { buildInvoiceInvalidationFields } from "./invoice-state"
@@ -31,6 +37,52 @@ const workOrderInclude = {
     select: { items: true, serviceItems: true },
   },
 } as const
+
+const workOrderItemInclude = Prisma.validator<Prisma.FlooringWorkOrderItemInclude>()({
+  product: {
+    select: {
+      name: true,
+      style: true,
+      color: true,
+      category: { select: { sendUnit: { select: { name: true } } } },
+    },
+  },
+  allocations: {
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    include: {
+      inventory: {
+        select: {
+          itemNumber: true,
+          dyeLot: true,
+          product: {
+            select: {
+              category: {
+                select: {
+                  stockUnit: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          location: {
+            select: {
+              locationCode: true,
+              warehouse: { select: { name: true } },
+            },
+          },
+          importEntry: {
+            select: {
+              warehouse: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  },
+})
 
 async function resolveWorkOrderProperty(input: CreateWorkOrderInput, tx: Prisma.TransactionClient) {
   if (input.templateId) {
@@ -168,11 +220,10 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
     const materialItems = await Promise.all(
       input.items.map(async (item) => ({
         productId: item.productId,
-        linkedInventoryId: item.linkedInventoryId,
         quantity: item.quantity,
         unitPrice: item.unitPrice ?? (await resolveMaterialUnitPrice(item, tx)),
         notes: item.notes,
-        changeOrderStatus: item.changeOrderStatus,
+        changeOrderStatus: "SHORTAGE" as const,
       })),
     )
 
@@ -180,7 +231,6 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
       await tx.flooringWorkOrderItem.create({
         data: {
           workOrderId: workOrder.id,
-          linkedInventoryId: item.linkedInventoryId,
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -253,10 +303,23 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
     Object.assign(data, buildInvoiceInvalidationFields())
   }
 
-  const workOrder = await prisma.flooringWorkOrder.update({
-    where: { id },
-    data,
-    include: workOrderInclude,
+  const workOrder = await prisma.$transaction(async (tx) => {
+    const existing = await tx.flooringWorkOrder.findUniqueOrThrow({
+      where: { id },
+      select: {
+        warehouseId: true,
+      },
+    })
+
+    if (input.warehouseId !== undefined && input.warehouseId !== existing.warehouseId) {
+      await clearAllocationsForWorkOrder(id, tx)
+    }
+
+    return tx.flooringWorkOrder.update({
+      where: { id },
+      data,
+      include: workOrderInclude,
+    })
   })
 
   return normalizeWorkOrder(workOrder)
@@ -264,6 +327,7 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
 
 export async function deleteWorkOrder(id: string) {
   await prisma.$transaction(async (tx) => {
+    await clearAllocationsForWorkOrder(id, tx)
     await tx.flooringWorkOrderSalesRep.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderServiceItem.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderItem.deleteMany({ where: { workOrderId: id } })
@@ -278,34 +342,12 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
       data: {
         workOrderId,
         productId: input.productId,
-        linkedInventoryId: input.linkedInventoryId,
         quantity: input.quantity,
         unitPrice: await resolveMaterialUnitPrice(input, tx),
         notes: input.notes,
-        changeOrderStatus: input.changeOrderStatus,
+        changeOrderStatus: "SHORTAGE",
       },
-      include: {
-        product: {
-          select: {
-            name: true,
-            style: true,
-            color: true,
-            category: { select: { sendUnit: { select: { name: true } } } },
-          },
-        },
-        linkedInventory: {
-          select: {
-            itemNumber: true,
-            dyeLot: true,
-            location: {
-              select: {
-                locationCode: true,
-                warehouse: { select: { name: true } },
-              },
-            },
-          },
-        },
-      },
+      include: workOrderItemInclude,
     })
 
     await tx.flooringWorkOrder.update({
@@ -321,39 +363,31 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
 
 export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrderMaterialItemInput>) {
   const updated = await prisma.$transaction(async (tx) => {
+    const current = await tx.flooringWorkOrderItem.findUniqueOrThrow({
+      where: { id: itemId },
+      select: {
+        workOrderId: true,
+        productId: true,
+      },
+    })
+
+    if (input.productId !== undefined && input.productId !== current.productId) {
+      await deleteAllAllocationsForWorkOrderItem(itemId, tx)
+    }
+
     const item = await tx.flooringWorkOrderItem.update({
       where: { id: itemId },
       data: {
         productId: input.productId,
-        linkedInventoryId: input.linkedInventoryId,
         quantity: input.quantity,
         unitPrice: input.unitPrice ?? undefined,
         notes: input.notes,
-        changeOrderStatus: input.changeOrderStatus,
+        changeOrderStatus: "SHORTAGE",
       },
-      include: {
-        product: {
-          select: {
-            name: true,
-            style: true,
-            color: true,
-            category: { select: { sendUnit: { select: { name: true } } } },
-          },
-        },
-        linkedInventory: {
-          select: {
-            itemNumber: true,
-            dyeLot: true,
-            location: {
-              select: {
-                locationCode: true,
-                warehouse: { select: { name: true } },
-              },
-            },
-          },
-        },
-      },
+      include: workOrderItemInclude,
     })
+
+    await recalculateWorkOrderItemAllocationStatus(tx, item.id)
 
     await tx.flooringWorkOrder.update({
       where: { id: item.workOrderId },
@@ -368,6 +402,7 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
 
 export async function deleteWorkOrderItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
+    await deleteAllAllocationsForWorkOrderItem(itemId, tx)
     const deleted = await tx.flooringWorkOrderItem.delete({
       where: { id: itemId },
       select: { workOrderId: true },

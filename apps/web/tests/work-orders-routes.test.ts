@@ -106,9 +106,24 @@ describe("work-order child routes", () => {
   })
 
   it("child item routes list, create, patch, and delete material items", async () => {
-    listWorkOrderItemsMock.mockResolvedValue([{ id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "", linkedInventoryId: "", linkedInventoryLabel: "", changeOrderStatus: "SUFFICIENT", createdAt: "2026-03-19T00:00:00.000Z" }])
-    createWorkOrderItemMock.mockResolvedValue({ id: "item-2", productId: "prod-1", linkedInventoryId: null })
-    updateWorkOrderItemMock.mockResolvedValue({ id: "item-1", quantity: "3", productId: "prod-1", linkedInventoryId: null })
+    listWorkOrderItemsMock.mockResolvedValue([{
+      id: "item-1",
+      productId: "prod-1",
+      productName: "Pad",
+      sendUnit: "SF",
+      quantity: "2",
+      unitPrice: "4.00",
+      notes: "",
+      allocations: [],
+      allocatedQuantity: 0,
+      remainingQuantity: 2,
+      materialExpense: 0,
+      hasAllocationShortage: true,
+      changeOrderStatus: "SUFFICIENT",
+      createdAt: "2026-03-19T00:00:00.000Z",
+    }])
+    createWorkOrderItemMock.mockResolvedValue({ id: "item-2", productId: "prod-1", allocations: [] })
+    updateWorkOrderItemMock.mockResolvedValue({ id: "item-1", quantity: "3", productId: "prod-1", allocations: [] })
 
     const listResponse = await GET_ITEMS(new Request("http://localhost/api/flooring/work-orders/wo-1/items"), {
       params: Promise.resolve({ id: "wo-1" }),

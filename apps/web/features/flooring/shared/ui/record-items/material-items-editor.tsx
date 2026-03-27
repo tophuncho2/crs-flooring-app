@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment, type ReactNode } from "react"
 import { DeleteRowButton, SaveRowButton } from "@/features/flooring/shared/ui/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
 import { formatCurrencyValue, formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
@@ -77,6 +78,10 @@ export function MaterialItemsEditor({
   onItemFieldChange,
   onSaveItem,
   onDeleteItem,
+  expandedItemIds,
+  onToggleExpandedRow,
+  renderExpandedRow,
+  actions,
 }: {
   title: string
   items: EditableMaterialItem[]
@@ -94,8 +99,13 @@ export function MaterialItemsEditor({
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
   onSaveItem?: (item: EditableMaterialItem) => void
   onDeleteItem: (itemId: string) => void
+  expandedItemIds?: string[]
+  onToggleExpandedRow?: (itemId: string) => void
+  renderExpandedRow?: (item: EditableMaterialItem) => ReactNode
+  actions?: ReactNode
 }) {
-  const colSpan = onSaveItem ? 8 : 7
+  const hasExpandableRows = Boolean(renderExpandedRow && onToggleExpandedRow)
+  const colSpan = (onSaveItem ? 8 : 7) + (hasExpandableRows ? 1 : 0)
   const addRow = useInlineCreateRow(false)
 
   async function handleAdd() {
@@ -109,6 +119,7 @@ export function MaterialItemsEditor({
     <CollapsibleTableSection
       title={title}
       titleMeta={typeof totalAmount === "number" ? formatCurrencyValue(totalAmount) : undefined}
+      actions={actions}
     >
       <ModalTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
         <ModalTableHead>
@@ -119,6 +130,7 @@ export function MaterialItemsEditor({
             <TableHeaderCell>Unit Price</TableHeaderCell>
             <TableHeaderCell>Total</TableHeaderCell>
             <TableHeaderCell>Notes</TableHeaderCell>
+            {hasExpandableRows ? <TableHeaderCell>Allocations</TableHeaderCell> : null}
             {onSaveItem ? <TableHeaderCell>Save</TableHeaderCell> : null}
             <TableHeaderCell>Delete</TableHeaderCell>
           </tr>
@@ -130,8 +142,9 @@ export function MaterialItemsEditor({
             </tr>
           ) : (
             items.map((item) => (
-              <tr key={item.id} className={`border-t border-[var(--panel-border)] ${hasFieldErrors(itemErrors[item.id]) ? "bg-rose-500/[0.04]" : ""}`}>
-                <td className="px-3 py-2">
+              <Fragment key={item.id}>
+                <tr className={`border-t border-[var(--panel-border)] ${hasFieldErrors(itemErrors[item.id]) ? "bg-rose-500/[0.04]" : ""}`}>
+                  <td className="px-3 py-2">
                   <div className="space-y-1">
                     <select
                       value={item.productId}
@@ -169,20 +182,39 @@ export function MaterialItemsEditor({
                 <td className="px-3 py-2 font-medium">{formatLineTotal(item)}</td>
                 <td className="px-3 py-2">
                   <input value={item.notes} onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
-                </td>
-                {onSaveItem ? (
-                  <td className="px-3 py-2">
-                    <SaveRowButton onClick={() => onSaveItem(item)} disabled={savingItemId === item.id}>
-                      {savingItemId === item.id ? "Saving..." : "Save"}
-                    </SaveRowButton>
                   </td>
+                  {hasExpandableRows ? (
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => onToggleExpandedRow?.(item.id)}
+                        className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
+                      >
+                        {expandedItemIds?.includes(item.id) ? "Hide" : "Show"}
+                      </button>
+                    </td>
+                  ) : null}
+                  {onSaveItem ? (
+                    <td className="px-3 py-2">
+                      <SaveRowButton onClick={() => onSaveItem(item)} disabled={savingItemId === item.id}>
+                        {savingItemId === item.id ? "Saving..." : "Save"}
+                      </SaveRowButton>
+                    </td>
+                  ) : null}
+                  <td className="px-3 py-2">
+                    <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
+                      {deletingItemId === item.id ? "Deleting..." : "Delete"}
+                    </DeleteRowButton>
+                  </td>
+                </tr>
+                {hasExpandableRows && expandedItemIds?.includes(item.id) ? (
+                  <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/10">
+                    <td colSpan={colSpan} className="px-3 py-3">
+                      {renderExpandedRow?.(item)}
+                    </td>
+                  </tr>
                 ) : null}
-                <td className="px-3 py-2">
-                  <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
-                    {deletingItemId === item.id ? "Deleting..." : "Delete"}
-                  </DeleteRowButton>
-                </td>
-              </tr>
+              </Fragment>
             ))
           )}
           {!loading && !addRow.isOpen ? (
@@ -234,6 +266,7 @@ export function MaterialItemsEditor({
               <td className="px-3 py-2">
                 <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
               </td>
+              {hasExpandableRows ? <td className="px-3 py-2" /> : null}
               {onSaveItem ? <td className="px-3 py-2" /> : null}
               <td className="px-3 py-2">
                 <button type="button" onClick={() => void handleAdd()} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">

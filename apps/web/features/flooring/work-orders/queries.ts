@@ -1,6 +1,6 @@
 import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { buildRecordCalculationRows } from "@/features/flooring/shared/domain/record-calculation-rows"
+import { buildWorkOrderItemAllocationSummary } from "@builders/domain"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/transport/record-detail-options"
 import {
   type WorkOrderPageFilterState,
@@ -8,7 +8,21 @@ import {
   parseWorkOrderWarehouseFilter,
   parseWorkOrderStatusFilter,
 } from "./domain/filters"
-import { normalizeWorkOrder, normalizeWorkOrderExpenseTotals, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
+import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseTotals } from "./domain/expense-summary"
+import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
+
+function hasAllocationShortageForItem(item: {
+  quantity: { toString(): string }
+  allocations: Array<{ quantity: { toString(): string }; unitCost: { toString(): string } }>
+}) {
+  return buildWorkOrderItemAllocationSummary({
+    requiredQuantity: item.quantity.toString(),
+    allocations: item.allocations.map((allocation) => ({
+      quantity: allocation.quantity.toString(),
+      unitCost: allocation.unitCost.toString(),
+    })),
+  }).hasAllocationShortage
+}
 
 type WorkOrderDbClient = Prisma.TransactionClient | typeof prisma
 
@@ -132,9 +146,15 @@ export async function listWorkOrders(
         select: { items: true, serviceItems: true },
       },
       items: {
-        where: { changeOrderStatus: "SHORTAGE" },
-        select: { id: true },
-        take: 1,
+        select: {
+          quantity: true,
+          allocations: {
+            select: {
+              quantity: true,
+              unitCost: true,
+            },
+          },
+        },
       },
     },
     where: buildCombinedWorkOrderWhere(tableState.searchQuery, filters),
@@ -145,7 +165,7 @@ export async function listWorkOrders(
   return workOrders.map((workOrder) =>
     normalizeWorkOrder({
       ...workOrder,
-      hasShortage: workOrder.items.length > 0,
+      hasShortage: workOrder.items.some(hasAllocationShortageForItem),
     }),
   )
 }
@@ -180,14 +200,33 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
               },
             },
           },
-          linkedInventory: {
-            select: {
-              itemNumber: true,
-              dyeLot: true,
-              location: {
+          allocations: {
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            include: {
+              inventory: {
                 select: {
-                  locationCode: true,
-                  warehouse: { select: { name: true } },
+                  itemNumber: true,
+                  dyeLot: true,
+                  product: {
+                    select: {
+                      category: {
+                        select: {
+                          stockUnit: { select: { name: true } },
+                        },
+                      },
+                    },
+                  },
+                  location: {
+                    select: {
+                      locationCode: true,
+                      warehouse: { select: { name: true } },
+                    },
+                  },
+                  importEntry: {
+                    select: {
+                      warehouse: { select: { name: true } },
+                    },
+                  },
                 },
               },
             },
@@ -227,7 +266,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
       return {
         ...normalizeWorkOrder({
           ...workOrder,
-          hasShortage: workOrder.items.some((item) => item.changeOrderStatus === "SHORTAGE"),
+          hasShortage: workOrder.items.some(hasAllocationShortageForItem),
         }),
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
@@ -236,7 +275,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
           items: normalizedItems,
           serviceItems: normalizedServiceItems,
         }),
-        expenseSummary: normalizeWorkOrderExpenseTotals({
+        financialSummary: normalizeWorkOrderExpenseTotals({
           items: normalizedItems,
           serviceItems: normalizedServiceItems,
           salesReps: normalizedSalesReps,
@@ -262,14 +301,37 @@ export async function listWorkOrderItems(workOrderId: string) {
           category: { select: { sendUnit: { select: { name: true } } } },
         },
       },
-      linkedInventory: {
-        select: {
-          itemNumber: true,
-          dyeLot: true,
-          location: {
+      allocations: {
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        include: {
+          inventory: {
             select: {
-              locationCode: true,
-              warehouse: { select: { name: true } },
+              itemNumber: true,
+              dyeLot: true,
+              product: {
+                select: {
+                  category: {
+                    select: {
+                      stockUnit: {
+                        select: {
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              location: {
+                select: {
+                  locationCode: true,
+                  warehouse: { select: { name: true } },
+                },
+              },
+              importEntry: {
+                select: {
+                  warehouse: { select: { name: true } },
+                },
+              },
             },
           },
         },
@@ -321,6 +383,12 @@ export async function listWorkOrderCalculationRows(workOrderId: string) {
       select: {
         quantity: true,
         unitPrice: true,
+        allocations: {
+          select: {
+            quantity: true,
+            unitCost: true,
+          },
+        },
       },
     }),
     prisma.flooringWorkOrderServiceItem.findMany({
@@ -338,19 +406,26 @@ export async function listWorkOrderCalculationRows(workOrderId: string) {
     }),
   ])
 
-  return buildRecordCalculationRows({
-    items: items.map((item) => ({
-      quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString(),
-    })),
-    serviceItems: serviceItems.map((item) => ({
-      quantity: item.quantity.toString(),
-      unitPrice: item.unitPrice.toString(),
-    })),
-    salesReps: salesReps.map((item) => ({
-      percent: item.percent.toString(),
-    })),
-  })
+  return buildWorkOrderCalculationRowsFromSummary(
+    normalizeWorkOrderExpenseTotals({
+      items: items.map((item) => ({
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice.toString(),
+        materialExpense: item.allocations.reduce(
+          (total, allocation) =>
+            total + Number(allocation.quantity.toString()) * Number(allocation.unitCost.toString()),
+          0,
+        ),
+      })),
+      serviceItems: serviceItems.map((item) => ({
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice.toString(),
+      })),
+      salesReps: salesReps.map((item) => ({
+        percent: item.percent.toString(),
+      })),
+    }),
+  )
 }
 
 export async function listWorkOrdersPageFilterOptions() {

@@ -28,12 +28,21 @@ import { useChildCollection } from "@/features/flooring/shared/controllers/recor
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
-import { buildRecordCalculationRowsFromSummary, type CalculationRow } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
-import { normalizeWorkOrderExpenseSummary } from "@/features/flooring/work-orders/domain/expense-summary"
-import type { DraftWorkOrder, PropertyOption, SalesRepContactOption, WorkOrderDetail, WorkOrderExpenseSummary, WarehouseOption } from "@/features/flooring/work-orders/types"
+import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
+import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"
+import { useRecordAllocationsController } from "@/features/flooring/work-orders/use-record-allocations-controller"
+import type {
+  DraftWorkOrder,
+  PropertyOption,
+  SalesRepContactOption,
+  WarehouseOption,
+  WorkOrderDetail,
+  WorkOrderExpenseSummary,
+  WorkOrderMaterialItem,
+} from "@/features/flooring/work-orders/types"
 
 const defaultMaterialDraft: MaterialItemDraft = {
   productId: "",
@@ -144,15 +153,15 @@ export function WorkOrderRecordPanel({
     payloadKey: "workOrder",
   })
 
-  const materialCollection = useChildCollection<EditableMaterialItem, MaterialItemDraft, EditableMaterialItem>({
+  const materialCollection = useChildCollection<WorkOrderMaterialItem, MaterialItemDraft, WorkOrderMaterialItem | EditableMaterialItem>({
     listUrl: `/api/flooring/work-orders/${workOrderId}/items`,
     createUrl: `/api/flooring/work-orders/${workOrderId}/items`,
     updateUrl: (itemId) => `/api/flooring/work-orders/${workOrderId}/items/${itemId}`,
     deleteUrl: (itemId) => `/api/flooring/work-orders/${workOrderId}/items/${itemId}`,
-    mapItems: (payload) => (payload.items as EditableMaterialItem[] | undefined) ?? [],
+    mapItems: (payload) => (payload.items as WorkOrderMaterialItem[] | undefined) ?? [],
     getItemId: (item) => item.id,
-    pickCreatedItem: (payload) => payload.item as EditableMaterialItem,
-    pickUpdatedItem: (payload) => payload.item as EditableMaterialItem,
+    pickCreatedItem: (payload) => payload.item as WorkOrderMaterialItem,
+    pickUpdatedItem: (payload) => payload.item as WorkOrderMaterialItem,
     serializeCreate: (input) => input,
     serializeUpdate: (item) => ({
       productId: item.productId,
@@ -192,12 +201,12 @@ export function WorkOrderRecordPanel({
     skipReloadAfterMutation: true,
   })
   const initialCalculationRows = useMemo(
-    () => buildRecordCalculationRowsFromSummary(initialWorkOrderDetail.expenseSummary),
-    [initialWorkOrderDetail.expenseSummary],
+    () => buildWorkOrderCalculationRowsFromSummary(initialWorkOrderDetail.financialSummary),
+    [initialWorkOrderDetail.financialSummary],
   )
-  const calculationRowsCollection = useReadOnlyChildCollection<CalculationRow>({
+  const calculationRowsCollection = useReadOnlyChildCollection<WorkOrderCalculationRow>({
     listUrl: `/api/flooring/work-orders/${workOrderId}/calculations`,
-    mapItems: (payload) => (payload.items as CalculationRow[] | undefined) ?? [],
+    mapItems: (payload) => (payload.items as WorkOrderCalculationRow[] | undefined) ?? [],
     initialItems: initialCalculationRows,
   })
   const {
@@ -235,7 +244,7 @@ export function WorkOrderRecordPanel({
     try {
       const nextWorkOrder = await refreshRecord()
       publishWorkOrder(nextWorkOrder)
-      onExpenseSummaryChangeRef.current?.(nextWorkOrder.expenseSummary)
+      onExpenseSummaryChangeRef.current?.(nextWorkOrder.financialSummary)
       return nextWorkOrder
     } finally {
     }
@@ -249,21 +258,21 @@ export function WorkOrderRecordPanel({
     initialDraft: defaultSalesRepDraft,
     getItemsFromRecord: (record: WorkOrderDetail) => record.salesReps ?? [],
     onItemsChanged: ({ record, salesReps }) => {
-      const nextWorkOrder: WorkOrderDetail = {
+      const nextWorkOrder = {
         ...record,
         salesReps,
-        expenseSummary: normalizeWorkOrderExpenseSummary({
+        financialSummary: normalizeWorkOrderExpenseSummary({
           items: materialCollection.items,
           serviceItems: serviceCollection.items,
           salesReps,
         }),
-      }
+      } as WorkOrderDetail
 
       publishWorkOrder(nextWorkOrder)
     },
   })
 
-  const lineItems = useRecordLineItemsController<WorkOrderDetail, EditableMaterialItem, EditableServiceItem>({
+  const lineItems = useRecordLineItemsController<WorkOrderDetail, WorkOrderMaterialItem, EditableServiceItem>({
     record: workOrder,
     notices: noticeController,
     clearParentError: () => setError(""),
@@ -276,9 +285,9 @@ export function WorkOrderRecordPanel({
       serviceItems: record.serviceItems ?? [],
     }),
     onCollectionsChanged: ({ record, materialItems, serviceItems }) => {
-      const nextWorkOrder: WorkOrderDetail = {
+      const nextWorkOrder = {
         ...record,
-        hasShortage: record.hasShortage,
+        hasShortage: materialItems.some((item) => item.hasAllocationShortage),
         items: materialItems,
         serviceItems,
         salesReps: salesRepCollection.items,
@@ -286,14 +295,44 @@ export function WorkOrderRecordPanel({
           materialItems,
           serviceItems,
         }),
-        expenseSummary: normalizeWorkOrderExpenseSummary({
+        financialSummary: normalizeWorkOrderExpenseSummary({
           items: materialItems,
           serviceItems,
           salesReps: salesRepCollection.items,
         }),
-      }
+      } as WorkOrderDetail
 
       publishWorkOrder(nextWorkOrder)
+    },
+  })
+
+  const allocations = useRecordAllocationsController({
+    workOrderId,
+    materialItems: lineItems.materialItems,
+    setMaterialItems: materialCollection.setItems,
+    notices: noticeController,
+    onMaterialItemsChanged: (materialItems) => {
+      const nextWorkOrder = {
+        ...workOrder,
+        hasShortage: materialItems.some((item) => item.hasAllocationShortage),
+        items: materialItems,
+        serviceItems: lineItems.serviceItems,
+        salesReps: salesRepLines.salesReps,
+        summary: buildRecordSummary({
+          materialItems,
+          serviceItems: lineItems.serviceItems,
+        }),
+        financialSummary: normalizeWorkOrderExpenseSummary({
+          items: materialItems,
+          serviceItems: lineItems.serviceItems,
+          salesReps: salesRepLines.salesReps,
+        }),
+      } as WorkOrderDetail
+
+      publishWorkOrder(nextWorkOrder)
+    },
+    onAutoAllocationCompleted: async () => {
+      await refreshWorkOrderDetail()
     },
   })
 
@@ -317,7 +356,7 @@ export function WorkOrderRecordPanel({
     [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps],
   )
   const currentCalculationRows = useMemo(
-    () => buildRecordCalculationRowsFromSummary(currentExpenseSummary),
+    () => buildWorkOrderCalculationRowsFromSummary(currentExpenseSummary),
     [currentExpenseSummary],
   )
 
@@ -341,7 +380,7 @@ export function WorkOrderRecordPanel({
     clearNotices()
 
     try {
-      await requestJson<{ workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "salesReps" | "summary" | "expenseSummary"> }>(`/api/flooring/work-orders/${workOrder.id}`, {
+      await requestJson<{ workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "salesReps" | "summary" | "financialSummary"> }>(`/api/flooring/work-orders/${workOrder.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft),
@@ -455,7 +494,7 @@ export function WorkOrderRecordPanel({
         items={lineItems.materialItems}
         draft={lineItems.materialDraft}
         productOptions={productOptions}
-        totalAmount={currentExpenseSummary.materialTotal}
+        totalAmount={workOrder.summary.materialTotal}
         loading={loading || lineItems.materialCollection.loading}
         adding={lineItems.materialCollection.adding}
         savingItemId={lineItems.materialCollection.savingItemId}
@@ -467,6 +506,46 @@ export function WorkOrderRecordPanel({
         onItemFieldChange={lineItems.handleMaterialItemFieldChange}
         onSaveItem={(item) => void lineItems.saveMaterialItem(item)}
         onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
+        expandedItemIds={allocations.expandedItemIds}
+        onToggleExpandedRow={allocations.toggleExpandedItem}
+        actions={
+          <button
+            type="button"
+            onClick={() => void allocations.requestAutoAllocation()}
+            disabled={allocations.isAutoAllocating || lineItems.materialItems.length === 0}
+            className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+          >
+            {allocations.isAutoAllocating ? "Auto Allocating..." : "Auto Allocate"}
+          </button>
+        }
+        renderExpandedRow={(item) => (
+          <MaterialAllocationsEditor
+            item={item as WorkOrderMaterialItem}
+            allocations={(item as WorkOrderMaterialItem).allocations}
+            draft={
+              allocations.draftsByItemId[item.id] ?? {
+                inventoryId: "",
+                quantity: "",
+                cutSize: "",
+                notes: "",
+              }
+            }
+            allocationOptions={allocations.optionsByItemId[item.id] ?? []}
+            loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
+            adding={allocations.addingItemId === item.id}
+            savingAllocationId={allocations.savingAllocationId}
+            deletingAllocationId={allocations.deletingAllocationId}
+            draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
+            itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
+            onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
+            onAdd={() => allocations.addAllocation(item.id)}
+            onAllocationFieldChange={(allocationId, field, value) =>
+              allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
+            }
+            onSaveAllocation={(allocation) => void allocations.saveAllocation(item.id, allocation)}
+            onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
+          />
+        )}
       />
 
       <ServiceItemsEditor
@@ -475,7 +554,7 @@ export function WorkOrderRecordPanel({
         draft={lineItems.serviceDraft}
         serviceOptions={serviceOptions}
         unitOptions={unitOptions}
-        totalAmount={currentExpenseSummary.serviceTotal}
+        totalAmount={workOrder.summary.serviceTotal}
         loading={loading || lineItems.serviceCollection.loading}
         adding={lineItems.serviceCollection.adding}
         savingItemId={lineItems.serviceCollection.savingItemId}

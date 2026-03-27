@@ -1,4 +1,5 @@
 import { Prisma, prisma, type PrismaClient } from "@builders/db"
+import { calculateInventoryPricePerUnit } from "@builders/domain"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
@@ -48,6 +49,7 @@ export function normalizeInventoryRow(row: {
   itemNumber: string
   dyeLot: string | null
   stockCount: { toString(): string }
+  reservedStockCount?: { toString(): string } | null
   cost: { toString(): string } | null
   freight: { toString(): string } | null
   notes: string | null
@@ -93,6 +95,13 @@ export function normalizeInventoryRow(row: {
       ? Number(row.cutTotal)
       : cutLogs.reduce((total, log) => total + Number(log.cut), 0)
   const runningBalance = Number(row.stockCount) - cutTotal
+  const reservedStockCount = Number(row.reservedStockCount?.toString() ?? 0)
+  const availableToAllocate = Math.max(0, Number(row.stockCount) - cutTotal - reservedStockCount)
+  const pricePerUnit = calculateInventoryPricePerUnit({
+    stockCount: row.stockCount.toString(),
+    cost: row.cost?.toString() ?? null,
+    freight: row.freight?.toString() ?? null,
+  })
   const filterRow = {
     importEntryId: row.importEntryId,
     importStatus: row.importEntry?.status ?? "FINAL",
@@ -121,9 +130,12 @@ export function normalizeInventoryRow(row: {
     sectionName: row.location?.section?.name ?? "",
     stockCount: row.stockCount.toString(),
     cutTotal: cutTotal.toFixed(2),
+    reservedStockCount: reservedStockCount.toFixed(2),
+    availableToAllocate: availableToAllocate.toFixed(2),
     runningBalance: runningBalance.toFixed(2),
     cost: row.cost?.toString() ?? "",
     freight: row.freight?.toString() ?? "",
+    pricePerUnit: pricePerUnit.toFixed(2),
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

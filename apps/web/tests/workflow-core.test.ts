@@ -318,7 +318,23 @@ describe("workflow core", () => {
 
   it("deletes work-order rows without extra lookup work", async () => {
     const tx = {
-      flooringWorkOrderItem: { delete: vi.fn().mockResolvedValue({ workOrderId: "wo-1" }) },
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      flooringWorkOrderItemAllocation: {
+        findMany: vi.fn().mockResolvedValue([]),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      flooringInventory: {
+        update: vi.fn().mockResolvedValue({}),
+      },
+      flooringWorkOrderItem: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "item-1",
+          quantity: { toString: () => "1" },
+          allocations: [],
+        }),
+        update: vi.fn().mockResolvedValue({}),
+        delete: vi.fn().mockResolvedValue({ workOrderId: "wo-1" }),
+      },
       flooringWorkOrderServiceItem: { delete: vi.fn().mockResolvedValue({ workOrderId: "wo-1" }) },
       flooringWorkOrder: { update: vi.fn().mockResolvedValue({}) },
     }

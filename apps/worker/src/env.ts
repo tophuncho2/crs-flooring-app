@@ -9,6 +9,8 @@ const workerEnvironmentSchema = z.object({
   AWS_ENDPOINT_URL: z.string().url("AWS_ENDPOINT_URL must be a valid URL"),
   AWS_S3_BUCKET_NAME: z.string().min(1, "AWS_S3_BUCKET_NAME is required"),
   AWS_SECRET_ACCESS_KEY: z.string().min(1, "AWS_SECRET_ACCESS_KEY is required"),
+  AUTO_ALLOCATION_WORKER_CONCURRENCY: z.coerce.number().int().positive().default(1),
+  AUTO_ALLOCATION_WORKER_LOCK_DURATION_MS: z.coerce.number().int().positive().default(300_000),
   INVOICE_WORKER_CONCURRENCY: z.coerce.number().int().positive().default(2),
   INVOICE_WORKER_LOCK_DURATION_MS: z.coerce.number().int().positive().default(300_000),
   RAILWAY_ENVIRONMENT_NAME: z.string().min(1).optional(),
@@ -25,6 +27,8 @@ const workerEnvironmentSchema = z.object({
 
 export type WorkerEnvironment = {
   queueRedisUrl: string
+  autoAllocationWorkerConcurrency: number
+  autoAllocationWorkerLockDurationMs: number
   invoiceWorkerConcurrency: number
   invoiceWorkerLockDurationMs: number
   environmentName: string
@@ -41,6 +45,8 @@ export function getWorkerEnvironment(source: NodeJS.ProcessEnv = process.env): W
     AWS_ENDPOINT_URL: source.AWS_ENDPOINT_URL,
     AWS_S3_BUCKET_NAME: source.AWS_S3_BUCKET_NAME,
     AWS_SECRET_ACCESS_KEY: source.AWS_SECRET_ACCESS_KEY,
+    AUTO_ALLOCATION_WORKER_CONCURRENCY: source.AUTO_ALLOCATION_WORKER_CONCURRENCY,
+    AUTO_ALLOCATION_WORKER_LOCK_DURATION_MS: source.AUTO_ALLOCATION_WORKER_LOCK_DURATION_MS,
     INVOICE_WORKER_CONCURRENCY: source.INVOICE_WORKER_CONCURRENCY,
     INVOICE_WORKER_LOCK_DURATION_MS: source.INVOICE_WORKER_LOCK_DURATION_MS,
     RAILWAY_ENVIRONMENT_NAME: source.RAILWAY_ENVIRONMENT_NAME,
@@ -49,6 +55,8 @@ export function getWorkerEnvironment(source: NodeJS.ProcessEnv = process.env): W
 
   return {
     queueRedisUrl: parsed.QUEUE_REDIS_URL ?? parsed.REDIS_URL!,
+    autoAllocationWorkerConcurrency: parsed.AUTO_ALLOCATION_WORKER_CONCURRENCY,
+    autoAllocationWorkerLockDurationMs: parsed.AUTO_ALLOCATION_WORKER_LOCK_DURATION_MS,
     invoiceWorkerConcurrency: parsed.INVOICE_WORKER_CONCURRENCY,
     invoiceWorkerLockDurationMs: parsed.INVOICE_WORKER_LOCK_DURATION_MS,
     environmentName: parsed.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? "development",

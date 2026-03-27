@@ -4,11 +4,11 @@ import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-tota
 import type { WorkOrderExpenseSummary } from "../types"
 
 const EMPTY_EXPENSE_SUMMARY: WorkOrderExpenseSummary = {
-  materialTotal: 0,
-  serviceTotal: 0,
   customerCost: 0,
+  materialExpense: 0,
+  serviceExpense: 0,
   salesRepExpense: 0,
-  expenses: 0,
+  companyExpenses: 0,
   profit: 0,
   profitMargin: 0,
 }
@@ -28,7 +28,7 @@ export function WorkOrderExpenseSummaryHeader({
       </div>
       <div>
         <p className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/60">Expenses</p>
-        <p className="mt-1 text-base font-semibold">{formatCurrencyValue(safeSummary.expenses)}</p>
+        <p className="mt-1 text-base font-semibold">{formatCurrencyValue(safeSummary.companyExpenses)}</p>
       </div>
     </div>
   )

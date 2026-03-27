@@ -39,7 +39,7 @@ export default function WorkOrderDetailClient({
   })
   const [workOrder, setWorkOrder] = useState(initialWorkOrder)
   const [expenseSummary, setExpenseSummary] = useState(
-    initialWorkOrder.expenseSummary ??
+    initialWorkOrder.financialSummary ??
       normalizeWorkOrderExpenseSummary({
         items: initialWorkOrder.items ?? [],
         serviceItems: initialWorkOrder.serviceItems ?? [],
@@ -97,8 +97,8 @@ export default function WorkOrderDetailClient({
         ...previous,
         ...payload.workOrder,
       }))
-      if (payload.workOrder.expenseSummary) {
-        setExpenseSummary(payload.workOrder.expenseSummary)
+      if (payload.workOrder.financialSummary) {
+        setExpenseSummary(payload.workOrder.financialSummary)
       }
       setRefreshNonce((current) => current + 1)
       page.notices.showSuccess("Work order marked complete")
@@ -182,7 +182,7 @@ export default function WorkOrderDetailClient({
             ...previous,
             ...savedWorkOrder,
           }))
-          setExpenseSummary(savedWorkOrder.expenseSummary)
+          setExpenseSummary(savedWorkOrder.financialSummary)
         }}
         onWorkOrderDeleted={() => {
           page.redirectToBack()

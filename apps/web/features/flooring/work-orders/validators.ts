@@ -5,7 +5,6 @@ import { vacancyStatuses, workOrderStatuses } from "./services"
 
 export type WorkOrderMaterialItemInput = {
   productId: string
-  linkedInventoryId: string | null
   quantity: Prisma.Decimal
   unitPrice: Prisma.Decimal | null
   notes: string | null
@@ -25,6 +24,15 @@ export type WorkOrderSalesRepInput = {
   contactId: string
   percent: Prisma.Decimal
 }
+
+export type WorkOrderItemAllocationInput = {
+  inventoryId: string
+  quantity: Prisma.Decimal
+  cutSize: string | null
+  notes: string | null
+}
+
+export type UpdateWorkOrderItemAllocationInput = Partial<WorkOrderItemAllocationInput>
 
 export type CreateWorkOrderInput = {
   propertyId: string | null
@@ -115,7 +123,6 @@ export function validateWorkOrderMaterialItemInput(body: Record<string, unknown>
 
   return {
     productId: parseRequiredString(body.productId, "productId"),
-    linkedInventoryId: parseOptionalString(body.linkedInventoryId),
     quantity,
     unitPrice,
     notes: parseOptionalString(body.notes),
@@ -160,11 +167,30 @@ export function validateWorkOrderSalesRepInput(body: Record<string, unknown>): W
   }
 }
 
+export function validateWorkOrderItemAllocationInput(body: Record<string, unknown>): WorkOrderItemAllocationInput {
+  return {
+    inventoryId: parseRequiredString(body.inventoryId, "inventoryId"),
+    quantity: requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity"),
+    cutSize: parseOptionalString(body.cutSize),
+    notes: parseOptionalString(body.notes),
+  }
+}
+
+export function validateUpdateWorkOrderItemAllocationInput(body: Record<string, unknown>): UpdateWorkOrderItemAllocationInput {
+  const input: UpdateWorkOrderItemAllocationInput = {}
+
+  if ("inventoryId" in body) input.inventoryId = parseRequiredString(body.inventoryId, "inventoryId")
+  if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
+  if ("cutSize" in body) input.cutSize = parseOptionalString(body.cutSize)
+  if ("notes" in body) input.notes = parseOptionalString(body.notes)
+
+  return input
+}
+
 export function validateUpdateWorkOrderMaterialItemInput(body: Record<string, unknown>): UpdateWorkOrderMaterialItemInput {
   const input: UpdateWorkOrderMaterialItemInput = {}
 
   if ("productId" in body) input.productId = parseRequiredString(body.productId, "productId")
-  if ("linkedInventoryId" in body) input.linkedInventoryId = parseOptionalString(body.linkedInventoryId)
   if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
   if ("unitPrice" in body) input.unitPrice = requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
   if ("notes" in body) input.notes = parseOptionalString(body.notes)

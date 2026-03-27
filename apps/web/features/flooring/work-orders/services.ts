@@ -2,6 +2,10 @@ import { buildFlooringProductDisplayName } from "@/features/flooring/shared/doma
 import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import type { PricingLine } from "@/features/flooring/templates/services"
+import {
+  buildWorkOrderItemAllocationSummary,
+  calculateAllocationRowTotal,
+} from "@builders/domain"
 import { normalizeWorkOrderExpenseSummary } from "./domain/expense-summary"
 import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import {
@@ -110,7 +114,7 @@ export function normalizeWorkOrderSummary(input: {
 }
 
 export function normalizeWorkOrderExpenseTotals(input: {
-  items: LineTotalInput[]
+  items: Array<LineTotalInput & { materialExpense?: string | number | null }>
   serviceItems: LineTotalInput[]
   salesReps: Array<{ percent: string | number }>
 }) {
@@ -127,7 +131,6 @@ export function normalizeWorkOrderItem(item: {
   quantity: { toString(): string }
   unitPrice: { toString(): string }
   notes: string | null
-  linkedInventoryId: string | null
   changeOrderStatus: "SUFFICIENT" | "SHORTAGE" | null
   product: {
     name: string
@@ -135,12 +138,75 @@ export function normalizeWorkOrderItem(item: {
     color: string | null
     category: { sendUnit: { name: string } | null }
   }
-  linkedInventory: {
-    itemNumber: string
-    dyeLot: string | null
-    location: { locationCode: string; warehouse: { name: string } } | null
-  } | null
+  allocations?: Array<{
+    id: string
+    workOrderItemId: string
+    inventoryId: string
+    quantity: { toString(): string }
+    cutSize: string | null
+    unitCost: { toString(): string }
+    method: "MANUAL" | "AUTO"
+    notes: string | null
+    createdAt: Date
+    updatedAt: Date
+    inventory: {
+      itemNumber: string
+      dyeLot: string | null
+      product: {
+        category: {
+          stockUnit: {
+            name: string
+          } | null
+        }
+      }
+      location: {
+        locationCode: string
+        warehouse: {
+          name: string
+        }
+      } | null
+      importEntry: {
+        warehouse: {
+          name: string
+        } | null
+      } | null
+    }
+  }>
 }) {
+  const allocations = (item.allocations ?? []).map((allocation) => ({
+    id: allocation.id,
+    workOrderItemId: allocation.workOrderItemId,
+    inventoryId: allocation.inventoryId,
+    quantity: allocation.quantity.toString(),
+    cutSize: allocation.cutSize ?? "",
+    unitCost: allocation.unitCost.toString(),
+    totalCost: calculateAllocationRowTotal({
+      quantity: allocation.quantity.toString(),
+      unitCost: allocation.unitCost.toString(),
+    }),
+    method: allocation.method,
+    notes: allocation.notes ?? "",
+    createdAt: allocation.createdAt.toISOString(),
+    updatedAt: allocation.updatedAt.toISOString(),
+    inventory: {
+      itemNumber: allocation.inventory.itemNumber,
+      dyeLot: allocation.inventory.dyeLot ?? "",
+      locationCode: allocation.inventory.location?.locationCode ?? "Unassigned",
+      warehouseName:
+        allocation.inventory.location?.warehouse.name ??
+        allocation.inventory.importEntry?.warehouse?.name ??
+        "",
+      stockUnit: allocation.inventory.product.category.stockUnit?.name ?? "",
+    },
+  }))
+  const allocationSummary = buildWorkOrderItemAllocationSummary({
+    requiredQuantity: item.quantity.toString(),
+    allocations: allocations.map((allocation) => ({
+      quantity: allocation.quantity,
+      unitCost: allocation.unitCost,
+    })),
+  })
+
   return {
     id: item.id,
     productId: item.productId,
@@ -149,10 +215,11 @@ export function normalizeWorkOrderItem(item: {
     quantity: item.quantity.toString(),
     unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
-    linkedInventoryId: item.linkedInventoryId ?? "",
-    linkedInventoryLabel: item.linkedInventory
-      ? `${item.linkedInventory.location ? `${item.linkedInventory.location.warehouse.name} / ${item.linkedInventory.location.locationCode}` : "No location"} / Item ${item.linkedInventory.itemNumber}${item.linkedInventory.dyeLot ? ` / Dye ${item.linkedInventory.dyeLot}` : ""}`
-      : "",
+    allocations,
+    allocatedQuantity: allocationSummary.allocatedQuantity,
+    remainingQuantity: allocationSummary.remainingQuantity,
+    materialExpense: allocationSummary.materialExpense,
+    hasAllocationShortage: allocationSummary.hasAllocationShortage,
     changeOrderStatus: item.changeOrderStatus ?? "SUFFICIENT",
   }
 }
