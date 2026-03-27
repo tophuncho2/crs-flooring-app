@@ -1,0 +1,23 @@
+{
+  "name": "@builders/relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && node ../../run-with-root-env.mjs dist/bootstrap.js",
+    "start": "node ../../run-with-root-env.mjs dist/bootstrap.js",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@builders/db": "file:../../packages/db",
+    "@builders/domain": "file:../../packages/domain",
+    "@builders/lib": "file:../../packages/lib",
+    "bullmq": "^5.61.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
+}

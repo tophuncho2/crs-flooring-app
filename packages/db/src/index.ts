@@ -1,6 +1,7 @@
 export * from "@prisma/client"
-export { db, prisma } from "./client.js"
+export { db, prisma, withDatabaseTransaction } from "./client.js"
 export * from "./env.js"
 export * from "./errors.js"
 export * from "./flooring/work-orders/invoice-repository.js"
+export * from "./queues/outbox-repository.js"
 export * from "./types.js"

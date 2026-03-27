@@ -83,25 +83,36 @@ describe("platform environment", () => {
     })
   })
 
-  it("requires REDIS_URL for rate limiting in staging and production", () => {
+  it("requires RATE_LIMIT_REDIS_URL for rate limiting in staging and production", () => {
     expect(() =>
       validateRateLimitEnvironment({
         RAILWAY_ENVIRONMENT_NAME: "staging",
       }),
-    ).toThrow("REDIS_URL is required in staging and production")
+    ).toThrow("RATE_LIMIT_REDIS_URL is required in staging and production")
 
     expect(() =>
       validateRateLimitEnvironment({
         RAILWAY_ENVIRONMENT_NAME: "production",
       }),
-    ).toThrow("REDIS_URL is required in staging and production")
+    ).toThrow("RATE_LIMIT_REDIS_URL is required in staging and production")
   })
 
-  it("rejects invalid REDIS_URL values when provided", () => {
+  it("rejects invalid RATE_LIMIT_REDIS_URL values when provided", () => {
     expect(() =>
       validateRateLimitEnvironment({
-        REDIS_URL: "not-a-url",
+        RATE_LIMIT_REDIS_URL: "not-a-url",
       }),
-    ).toThrow("REDIS_URL must be a valid URL")
+    ).toThrow("RATE_LIMIT_REDIS_URL must be a valid URL")
+  })
+
+  it("falls back to REDIS_URL during the migration window", () => {
+    expect(
+      validateRateLimitEnvironment({
+        REDIS_URL: "redis://localhost:6379",
+      }),
+    ).toEqual({
+      redisUrl: "redis://localhost:6379",
+      prefix: "builderswebapp",
+    })
   })
 })

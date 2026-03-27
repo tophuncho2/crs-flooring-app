@@ -1,5 +1,6 @@
 import {
   buildBucketObjectUrl,
+  createBucketObjectPresignedUrl,
   getBucketObject,
   type StorageEnvironment,
   uploadBucketObject,
@@ -28,6 +29,10 @@ export function buildBucketFileUrl(fileName: string) {
 
 export function buildBucketObjectUrlForKey(key: string) {
   return buildBucketObjectUrl(getEnv(), key)
+}
+
+export function createPresignedBucketObjectUrlForKey(key: string, options?: { expiresInSeconds?: number }) {
+  return createBucketObjectPresignedUrl(getEnv(), key, options)
 }
 
 export function isBucketFileUrl(url: string) {

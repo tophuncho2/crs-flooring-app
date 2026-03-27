@@ -1,6 +1,5 @@
 import type { EditableMaterialItem } from "@/features/flooring/shared/ui/record-items/material-items-editor"
 import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
-import type { WorkOrderInvoiceStatus } from "./contracts"
 import type { WorkOrderExpenseSummary } from "./domain/expense-summary"
 import type { WorkOrderPageFilterState } from "./domain/filters"
 import type { EditableWorkOrderSalesRep, SalesRepContactOption, WorkOrderSalesRepDraft } from "./domain/sales-reps"
@@ -26,12 +25,6 @@ export type WorkOrderRow = {
   instructions: string
   notes: string
   workOrderImageUrl: string
-  invoiceStatus: WorkOrderInvoiceStatus
-  invoiceRequestedAt: string | null
-  invoiceGeneratedAt: string | null
-  invoiceFailedAt: string | null
-  invoiceError: string
-  hasInvoice: boolean
   itemsCount: number
   createdAt: string
   updatedAt: string

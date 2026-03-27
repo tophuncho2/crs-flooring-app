@@ -20,10 +20,8 @@ export const WORK_ORDER_STATUS_LABELS: Record<string, string> = {
 
 export const VACANCY_OPTIONS = ["VACANT", "OCCUPIED"] as const
 export const SYNC_TEMPLATE_MODES = ["overwrite", "append"] as const
-export const WORK_ORDER_INVOICE_STATUS_OPTIONS = ["IDLE", "QUEUED", "PROCESSING", "READY", "FAILED"] as const
 
 export type SyncTemplateMode = (typeof SYNC_TEMPLATE_MODES)[number]
-export type WorkOrderInvoiceStatus = (typeof WORK_ORDER_INVOICE_STATUS_OPTIONS)[number]
 
 export const TEMPLATE_SYNC_POLICY = {
   headerFields: {

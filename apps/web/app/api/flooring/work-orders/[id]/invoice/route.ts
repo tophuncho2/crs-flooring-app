@@ -41,13 +41,17 @@ export async function POST(request: Request, { params }: RouteContext) {
     const invoice = await withMutationTelemetry(
       access,
       {
-        message: "Invoice generation queued",
-        action: "workOrders.invoice.queue",
+        message: "Invoice generation requested",
+        action: "workOrders.invoice.request",
         route: "/api/flooring/work-orders/[id]/invoice",
         entityType: "flooringWorkOrder",
         entityId: id,
       },
-      () => queueWorkOrderInvoiceUseCase(id, access.user.id),
+      () => queueWorkOrderInvoiceUseCase({
+        workOrderId: id,
+        triggeredByUserId: access.user.id,
+        requestId: access.requestId,
+      }),
     )
 
     return routeJson(access, buildWorkOrderInvoiceStatusResponse(id, invoice))

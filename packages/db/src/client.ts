@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { type Prisma, PrismaClient } from "@prisma/client"
 import { getDatabaseEnvironment } from "./env.js"
 
 declare global {
@@ -39,3 +39,7 @@ export const prisma = new Proxy({} as PrismaClient, {
 }) as PrismaClient
 
 export const db = prisma
+
+export function withDatabaseTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>) {
+  return db.$transaction(callback)
+}

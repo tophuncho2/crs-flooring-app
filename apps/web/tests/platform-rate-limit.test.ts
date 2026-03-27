@@ -3,6 +3,7 @@ import { buildRateLimitResponse, consumeRateLimit, resetRateLimitStateForTests }
 
 describe("consumeRateLimit", () => {
   beforeEach(() => {
+    delete process.env.RATE_LIMIT_REDIS_URL
     delete process.env.REDIS_URL
     delete process.env.RATE_LIMIT_PREFIX
     resetRateLimitStateForTests()

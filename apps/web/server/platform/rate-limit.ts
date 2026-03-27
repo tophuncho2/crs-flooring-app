@@ -10,7 +10,7 @@ import {
 } from "@/server/platform/request-context"
 
 // Failure policy:
-// - Prefer Redis-backed counters when REDIS_URL is configured and healthy.
+// - Prefer Redis-backed counters when RATE_LIMIT_REDIS_URL is configured and healthy.
 // - If Redis is missing, unavailable, or throws during a request, fail open to the
 //   process-local fixed-window store for that request.
 // - Redis client state is invalidated after command failures so the next request
@@ -76,7 +76,7 @@ async function connectRedisClient() {
       hasWarnedMissingRedis = true
       logEvent({
         level: "warn",
-        message: "REDIS_URL is not configured; falling back to process-local rate limiting",
+        message: "RATE_LIMIT_REDIS_URL is not configured; falling back to process-local rate limiting",
         action: "rateLimit.redis.missing",
         route: RATE_LIMIT_MODULE_ROUTE,
       })

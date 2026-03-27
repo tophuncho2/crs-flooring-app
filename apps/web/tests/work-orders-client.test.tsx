@@ -109,12 +109,6 @@ type WorkOrderRow = {
   instructions: string
   notes: string
   workOrderImageUrl: string
-  invoiceStatus: "IDLE" | "QUEUED" | "PROCESSING" | "READY" | "FAILED"
-  invoiceRequestedAt: string | null
-  invoiceGeneratedAt: string | null
-  invoiceFailedAt: string | null
-  invoiceError: string
-  hasInvoice: boolean
   itemsCount: number
   createdAt: string
   updatedAt: string
@@ -142,12 +136,6 @@ function workOrderRow(overrides: Partial<WorkOrderRow> = {}): WorkOrderRow {
     instructions: "",
     notes: "",
     workOrderImageUrl: "",
-    invoiceStatus: "IDLE",
-    invoiceRequestedAt: null,
-    invoiceGeneratedAt: null,
-    invoiceFailedAt: null,
-    invoiceError: "",
-    hasInvoice: false,
     itemsCount: 0,
     createdAt: "2026-03-19T00:00:00.000Z",
     updatedAt: "2026-03-19T00:00:00.000Z",
@@ -300,7 +288,7 @@ describe("WorkOrdersClient", () => {
   })
 
   it("removes Sync Template from the canonical detail options menu", () => {
-    requestJsonMock.mockResolvedValue({ invoice: { status: "IDLE", canOpen: false, requestedAt: null, generatedAt: null, failedAt: null, error: "", downloadUrl: null } })
+    requestJsonMock.mockResolvedValue({ sourceVersion: "", generation: null, artifact: null, canOpen: false })
 
     render(
       <WorkOrderDetailClient
@@ -309,6 +297,7 @@ describe("WorkOrdersClient", () => {
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
         serviceOptions={[]}
+        salesRepOptions={[]}
         unitOptions={[]}
         backHref="/dashboard/flooring/work-orders"
       />,
@@ -327,26 +316,25 @@ describe("WorkOrdersClient", () => {
 
     requestJsonMock
       .mockResolvedValueOnce({
-        invoice: {
-          status: "IDLE",
-          canOpen: false,
-          requestedAt: null,
-          generatedAt: null,
-          failedAt: null,
-          error: "",
-          downloadUrl: null,
-        },
+        sourceVersion: "",
+        generation: null,
+        artifact: null,
+        canOpen: false,
       })
       .mockResolvedValueOnce({
-        invoice: {
-          status: "QUEUED",
-          canOpen: false,
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        generation: {
+          id: "gen-1",
+          status: "REQUESTED",
           requestedAt: "2026-03-26T12:00:00.000Z",
-          generatedAt: null,
+          queuedAt: null,
+          startedAt: null,
+          completedAt: null,
           failedAt: null,
           error: "",
-          downloadUrl: null,
         },
+        artifact: null,
+        canOpen: false,
       })
 
     render(
@@ -356,6 +344,7 @@ describe("WorkOrdersClient", () => {
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
         serviceOptions={[]}
+        salesRepOptions={[]}
         unitOptions={[]}
         backHref="/dashboard/flooring/work-orders"
       />,
@@ -373,7 +362,7 @@ describe("WorkOrdersClient", () => {
       }))
     })
 
-    expect(await screen.findByText("Invoice generation queued")).toBeTruthy()
+    expect(await screen.findByText("Invoice generation requested")).toBeTruthy()
     expect((within(optionsMenu).getByRole("button", { name: "Invoice" }) as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -394,6 +383,7 @@ describe("WorkOrdersClient", () => {
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
         serviceOptions={[]}
+        salesRepOptions={[]}
         unitOptions={[]}
         backHref="/dashboard/flooring/work-orders"
       />,
@@ -421,6 +411,7 @@ describe("WorkOrdersClient", () => {
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
         serviceOptions={[]}
+        salesRepOptions={[]}
         unitOptions={[]}
         backHref="/dashboard/flooring/work-orders"
       />,
@@ -443,6 +434,7 @@ describe("WorkOrdersClient", () => {
         warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
         productOptions={[]}
         serviceOptions={[]}
+        salesRepOptions={[]}
         unitOptions={[]}
         backHref="/dashboard/flooring/work-orders"
       />,

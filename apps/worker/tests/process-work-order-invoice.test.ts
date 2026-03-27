@@ -4,9 +4,11 @@ import { renderWorkOrderInvoicePdf } from "../src/render/render-work-order-invoi
 
 describe("createWorkOrderInvoiceProcessor", () => {
   const env = {
-    redisUrl: "redis://localhost:6379",
+    queueRedisUrl: "redis://localhost:6379",
     invoiceWorkerConcurrency: 2,
     invoiceWorkerLockDurationMs: 300000,
+    environmentName: "test",
+    serviceName: "worker",
     storage: {
       accessKeyId: "key",
       defaultRegion: "us-east-1",
@@ -22,6 +24,24 @@ describe("createWorkOrderInvoiceProcessor", () => {
 
   it("generates and uploads the invoice when the job is current", async () => {
     const processor = createWorkOrderInvoiceProcessor({
+      getInvoiceGeneration: vi.fn().mockResolvedValue({
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        status: "QUEUED",
+        requestId: "req-1",
+        queueJobId: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: null,
+        completedAt: null,
+        failedAt: null,
+        supersededAt: null,
+        failureCode: null,
+        failureMessage: null,
+      }),
       getInvoiceSource: vi.fn().mockResolvedValue({
         workOrderId: "wo-1",
         workOrderNumber: "WO-00001",
@@ -37,14 +57,14 @@ describe("createWorkOrderInvoiceProcessor", () => {
         customAddress: "",
         instructions: "",
         notes: "",
-        invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
-        invoiceIdempotencyKey: "invoice:v1:wo-1:2026-03-26T12:00:00.000Z",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
         items: [{ id: "item-1", name: "Pad", style: null, color: null, sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" }],
         serviceItems: [{ id: "svc-1", name: "Install", unitName: "SF", quantity: "1", unitPrice: "9.00", notes: "" }],
       }),
       startInvoiceGeneration: vi.fn().mockResolvedValue(true),
-      completeInvoiceGeneration: vi.fn().mockResolvedValue(true),
+      supersedeInvoiceGeneration: vi.fn().mockResolvedValue(true),
       failInvoiceGeneration: vi.fn().mockResolvedValue(true),
+      persistCompletedInvoice: vi.fn().mockResolvedValue(undefined),
       renderInvoicePdf: vi.fn().mockResolvedValue(Buffer.from("pdf")),
       uploadInvoicePdf: vi.fn().mockResolvedValue("https://storage.example.com/builders/invoices/wo-1/invoice.pdf"),
     })
@@ -52,25 +72,46 @@ describe("createWorkOrderInvoiceProcessor", () => {
     const result = await processor({
       version: "v1",
       jobName: "generate-work-order-invoice",
-      idempotencyKey: "invoice:v1:wo-1:2026-03-26T12:00:00.000Z",
-      createdAt: "2026-03-26T12:01:00.000Z",
+      requestId: "req-1",
+      generationId: "gen-1",
       workOrderId: "wo-1",
-      triggeredByUserId: "user-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
+      requestedByUserId: "user-1",
+      idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      queuedAt: "2026-03-26T12:00:01.000Z",
     }, env)
 
     expect(result).toEqual({
       status: "completed",
-      fileKey: "invoices/wo-1/invoice:v1:wo-1:2026-03-26T12:00:00.000Z.pdf",
+      fileKey: "invoices/wo-1/invoice:v2:wo-1:2026-03-26T12:00:00.000Z.pdf",
     })
   })
 
-  it("skips processing when a newer invoice request superseded the job", async () => {
+  it("skips processing when the generation cannot be claimed", async () => {
     const processor = createWorkOrderInvoiceProcessor({
+      getInvoiceGeneration: vi.fn().mockResolvedValue({
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        status: "SUPERSEDED",
+        requestId: "req-1",
+        queueJobId: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: null,
+        completedAt: null,
+        failedAt: null,
+        supersededAt: "2026-03-26T12:00:30.000Z",
+        failureCode: null,
+        failureMessage: null,
+      }),
       getInvoiceSource: vi.fn(),
       startInvoiceGeneration: vi.fn().mockResolvedValue(false),
-      completeInvoiceGeneration: vi.fn(),
+      supersedeInvoiceGeneration: vi.fn(),
       failInvoiceGeneration: vi.fn(),
+      persistCompletedInvoice: vi.fn(),
       renderInvoicePdf: vi.fn(),
       uploadInvoicePdf: vi.fn(),
     })
@@ -78,22 +119,42 @@ describe("createWorkOrderInvoiceProcessor", () => {
     const result = await processor({
       version: "v1",
       jobName: "generate-work-order-invoice",
-      idempotencyKey: "invoice:v1:wo-1:2026-03-26T12:00:00.000Z",
-      createdAt: "2026-03-26T12:01:00.000Z",
+      requestId: "req-1",
+      generationId: "gen-1",
       workOrderId: "wo-1",
-      triggeredByUserId: "user-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
+      requestedByUserId: "user-1",
+      idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      queuedAt: "2026-03-26T12:00:01.000Z",
     }, env)
 
     expect(result).toEqual({
       status: "skipped",
-      reason: "invoice-generation-superseded",
+      reason: "invoice-generation-unavailable",
     })
   })
 
-  it("marks the invoice as failed when rendering throws", async () => {
-    const failInvoiceGeneration = vi.fn().mockResolvedValue(true)
+  it("supersedes the generation when the work-order source version changed", async () => {
+    const supersedeInvoiceGeneration = vi.fn().mockResolvedValue(true)
     const processor = createWorkOrderInvoiceProcessor({
+      getInvoiceGeneration: vi.fn().mockResolvedValue({
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        status: "QUEUED",
+        requestId: "req-1",
+        queueJobId: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: null,
+        completedAt: null,
+        failedAt: null,
+        supersededAt: null,
+        failureCode: null,
+        failureMessage: null,
+      }),
       getInvoiceSource: vi.fn().mockResolvedValue({
         workOrderId: "wo-1",
         workOrderNumber: "WO-00001",
@@ -109,14 +170,83 @@ describe("createWorkOrderInvoiceProcessor", () => {
         customAddress: "",
         instructions: "",
         notes: "",
-        invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
-        invoiceIdempotencyKey: "invoice:v1:wo-1:2026-03-26T12:00:00.000Z",
+        sourceVersion: "2026-03-26T12:05:00.000Z",
         items: [],
         serviceItems: [],
       }),
       startInvoiceGeneration: vi.fn().mockResolvedValue(true),
-      completeInvoiceGeneration: vi.fn(),
+      supersedeInvoiceGeneration,
+      failInvoiceGeneration: vi.fn(),
+      persistCompletedInvoice: vi.fn(),
+      renderInvoicePdf: vi.fn(),
+      uploadInvoicePdf: vi.fn(),
+    })
+
+    const result = await processor({
+      version: "v1",
+      jobName: "generate-work-order-invoice",
+      requestId: "req-1",
+      generationId: "gen-1",
+      workOrderId: "wo-1",
+      requestedByUserId: "user-1",
+      idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      queuedAt: "2026-03-26T12:00:01.000Z",
+    }, env)
+
+    expect(result).toEqual({
+      status: "skipped",
+      reason: "invoice-source-changed",
+    })
+    expect(supersedeInvoiceGeneration).toHaveBeenCalledWith({
+      generationId: "gen-1",
+    })
+  })
+
+  it("marks the generation as failed when rendering throws", async () => {
+    const failInvoiceGeneration = vi.fn().mockResolvedValue(true)
+    const processor = createWorkOrderInvoiceProcessor({
+      getInvoiceGeneration: vi.fn().mockResolvedValue({
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        status: "QUEUED",
+        requestId: "req-1",
+        queueJobId: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: null,
+        completedAt: null,
+        failedAt: null,
+        supersededAt: null,
+        failureCode: null,
+        failureMessage: null,
+      }),
+      getInvoiceSource: vi.fn().mockResolvedValue({
+        workOrderId: "wo-1",
+        workOrderNumber: "WO-00001",
+        propertyName: "Oak Apartments",
+        propertyAddress: "123 Main St",
+        warehouseName: "Main Warehouse",
+        status: "BUILDING_ORDER",
+        isComplete: false,
+        vacancy: null,
+        scheduledFor: "2026-03-26T00:00:00.000Z",
+        unitText: "101",
+        unitType: "Turn",
+        customAddress: "",
+        instructions: "",
+        notes: "",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        items: [],
+        serviceItems: [],
+      }),
+      startInvoiceGeneration: vi.fn().mockResolvedValue(true),
+      supersedeInvoiceGeneration: vi.fn().mockResolvedValue(true),
       failInvoiceGeneration,
+      persistCompletedInvoice: vi.fn(),
       renderInvoicePdf: vi.fn().mockRejectedValue(new Error("PDF render failed")),
       uploadInvoicePdf: vi.fn(),
     })
@@ -124,16 +254,19 @@ describe("createWorkOrderInvoiceProcessor", () => {
     await expect(processor({
       version: "v1",
       jobName: "generate-work-order-invoice",
-      idempotencyKey: "invoice:v1:wo-1:2026-03-26T12:00:00.000Z",
-      createdAt: "2026-03-26T12:01:00.000Z",
+      requestId: "req-1",
+      generationId: "gen-1",
       workOrderId: "wo-1",
-      triggeredByUserId: "user-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
+      requestedByUserId: "user-1",
+      idempotencyKey: "invoice:v2:wo-1:2026-03-26T12:00:00.000Z",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      queuedAt: "2026-03-26T12:00:01.000Z",
     }, env)).rejects.toThrow("PDF render failed")
 
-    expect(failInvoiceGeneration).toHaveBeenCalledWith("wo-1", {
-      idempotencyKey: "invoice:v1:wo-1:2026-03-26T12:00:00.000Z",
-      errorMessage: "PDF render failed",
+    expect(failInvoiceGeneration).toHaveBeenCalledWith({
+      generationId: "gen-1",
+      failureCode: "INVOICE_PROCESSING_FAILED",
+      failureMessage: "PDF render failed",
     })
   })
 })

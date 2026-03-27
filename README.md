@@ -5,7 +5,8 @@ This repository is organized as an npm-workspaces monorepo.
 ## Workspace Layout
 
 - `apps/web`: Next.js web application
-- `apps/worker`: background worker scaffold and queue runtime entrypoint
+- `apps/relay`: outbox dispatcher that publishes validated jobs to BullMQ
+- `apps/worker`: background worker runtime that executes published jobs
 - `packages/db`: Prisma schema, migrations, generated client boundary, and DB scripts
 - `packages/domain`: shared queue contracts and pure cross-runtime domain code
 - `packages/lib`: shared runtime utilities
@@ -19,9 +20,12 @@ Run these from the repository root:
 ```bash
 npm install
 npm run dev
+npm run dev:relay
 npm run dev:worker
 npm run build:web
 npm run start:web
+npm run build:relay
+npm run start:relay
 npm run build:worker
 npm run start:worker
 npm run guard:prisma
@@ -49,15 +53,20 @@ Copy values from `.env.example` into the repo-root `.env` before starting local 
 Local development uses the repo-root `.env` as the single source of truth for:
 
 - `apps/web`
+- `apps/relay`
 - `apps/worker`
 - `packages/db`
 
 - `DATABASE_URL` is required for all DB-backed workspaces
 - `NEXTAUTH_*` variables are only required when auth/session flows are used
 - `AWS_*` variables are only required when storage/file flows are used
-- `REDIS_URL` enables shared rate limiting and the worker queue connection
+- `RATE_LIMIT_REDIS_URL` configures web-only rate limiting
+- `QUEUE_REDIS_URL` configures BullMQ for `apps/relay` and `apps/worker`
+- temporary migration fallback:
+  - `apps/web` may fall back from `RATE_LIMIT_REDIS_URL` to `REDIS_URL`
+  - `apps/relay` and `apps/worker` may fall back from `QUEUE_REDIS_URL` to `REDIS_URL`
 
-If `REDIS_URL` is omitted, `apps/worker` starts in a non-destructive scaffold mode and exits after reporting the registered processors.
+The worker no longer supports scaffold mode. If queue Redis is required and unavailable, `apps/worker` fails startup.
 
 ## Deployment
 
@@ -73,5 +82,13 @@ For Railway or similar multi-service deployment, use service-specific commands:
 
 - web build: `npm run build:web`
 - web start: `npm run start:web`
+- relay build: `npm run build:relay`
+- relay start: `npm run start:relay`
 - worker build: `npm run build:worker`
 - worker start: `npm run start:worker`
+
+Current async invoice flow:
+
+- `apps/web` authenticates the request, validates the command, writes invoice generation state, and inserts an outbox row in one DB transaction.
+- `apps/relay` claims pending outbox rows, validates the payload, publishes BullMQ jobs, and marks dispatch state.
+- `apps/worker` consumes BullMQ jobs, loads work-order source data, renders the invoice PDF, uploads it to storage, and writes generation/artifact completion state.

@@ -51,6 +51,7 @@ function readStorageEnvironment(source: NodeJS.ProcessEnv) {
 function readRateLimitEnvironment(source: NodeJS.ProcessEnv) {
   return {
     RAILWAY_ENVIRONMENT_NAME: optionalTrimmed(source.RAILWAY_ENVIRONMENT_NAME),
+    RATE_LIMIT_REDIS_URL: optionalTrimmed(source.RATE_LIMIT_REDIS_URL),
     REDIS_URL: optionalTrimmed(source.REDIS_URL),
     RATE_LIMIT_PREFIX: optionalTrimmed(source.RATE_LIMIT_PREFIX),
   }
@@ -77,16 +78,17 @@ const storageEnvironmentSchema = z.object({
 const rateLimitEnvironmentSchema = z
   .object({
     RAILWAY_ENVIRONMENT_NAME: z.string().min(1).optional(),
+    RATE_LIMIT_REDIS_URL: z.string().url("RATE_LIMIT_REDIS_URL must be a valid URL").optional(),
     REDIS_URL: z.string().url("REDIS_URL must be a valid URL").optional(),
     RATE_LIMIT_PREFIX: z.string().min(1, "RATE_LIMIT_PREFIX cannot be empty").optional(),
   })
   .superRefine((env, context) => {
     const runtimeLabel = env.RAILWAY_ENVIRONMENT_NAME?.toLowerCase()
-    if ((runtimeLabel === "staging" || runtimeLabel === "production") && !env.REDIS_URL) {
+    if ((runtimeLabel === "staging" || runtimeLabel === "production") && !env.RATE_LIMIT_REDIS_URL && !env.REDIS_URL) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "REDIS_URL is required in staging and production",
-        path: ["REDIS_URL"],
+        message: "RATE_LIMIT_REDIS_URL is required in staging and production",
+        path: ["RATE_LIMIT_REDIS_URL"],
       })
     }
   })
@@ -161,7 +163,7 @@ export function validateRateLimitEnvironment(source: NodeJS.ProcessEnv = process
   const parsed = parseEnvironment("rate limit", rateLimitEnvironmentSchema, readRateLimitEnvironment(source))
 
   return {
-    redisUrl: parsed.REDIS_URL,
+    redisUrl: parsed.RATE_LIMIT_REDIS_URL ?? parsed.REDIS_URL,
     prefix: parsed.RATE_LIMIT_PREFIX ?? "builderswebapp",
   }
 }

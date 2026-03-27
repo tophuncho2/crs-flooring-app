@@ -3,16 +3,52 @@ import { db } from "../../client.js"
 
 type WorkOrderInvoiceDbClient = Prisma.TransactionClient | typeof db
 
-export type WorkOrderInvoiceStatusRecord = {
+export type InvoiceGenerationStatusRecord =
+  | "REQUESTED"
+  | "QUEUED"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED"
+  | "SUPERSEDED"
+
+export type InvoiceGenerationRecord = {
+  id: string
   workOrderId: string
-  invoiceSourceUpdatedAt: string
-  invoiceStatus: "IDLE" | "QUEUED" | "PROCESSING" | "READY" | "FAILED"
-  invoiceFileKey: string | null
-  invoiceRequestedAt: string | null
-  invoiceGeneratedAt: string | null
-  invoiceFailedAt: string | null
-  invoiceError: string | null
-  invoiceIdempotencyKey: string | null
+  requestedByUserId: string
+  sourceVersion: string
+  idempotencyKey: string
+  status: InvoiceGenerationStatusRecord
+  requestId: string | null
+  queueJobId: string | null
+  requestedAt: string
+  queuedAt: string | null
+  startedAt: string | null
+  completedAt: string | null
+  failedAt: string | null
+  supersededAt: string | null
+  failureCode: string | null
+  failureMessage: string | null
+}
+
+export type InvoiceArtifactRecord = {
+  id: string
+  generationId: string
+  workOrderId: string
+  bucketName: string
+  storageKey: string
+  fileName: string
+  contentType: string
+  checksum: string
+  sizeBytes: number
+  createdAt: string
+  deletedAt: string | null
+}
+
+export type WorkOrderInvoiceViewRecord = {
+  workOrderId: string
+  sourceVersion: string
+  generation: InvoiceGenerationRecord | null
+  artifact: InvoiceArtifactRecord | null
 }
 
 export type WorkOrderInvoiceSourceRecord = {
@@ -30,8 +66,7 @@ export type WorkOrderInvoiceSourceRecord = {
   customAddress: string
   instructions: string
   notes: string
-  invoiceSourceUpdatedAt: string
-  invoiceIdempotencyKey: string | null
+  sourceVersion: string
   items: Array<{
     id: string
     name: string
@@ -52,6 +87,39 @@ export type WorkOrderInvoiceSourceRecord = {
   }>
 }
 
+const invoiceGenerationSelect = {
+  id: true,
+  workOrderId: true,
+  requestedByUserId: true,
+  sourceVersion: true,
+  idempotencyKey: true,
+  status: true,
+  requestId: true,
+  queueJobId: true,
+  requestedAt: true,
+  queuedAt: true,
+  startedAt: true,
+  completedAt: true,
+  failedAt: true,
+  supersededAt: true,
+  failureCode: true,
+  failureMessage: true,
+} as const
+
+const invoiceArtifactSelect = {
+  id: true,
+  generationId: true,
+  workOrderId: true,
+  bucketName: true,
+  storageKey: true,
+  fileName: true,
+  contentType: true,
+  checksum: true,
+  sizeBytes: true,
+  createdAt: true,
+  deletedAt: true,
+} as const
+
 function normalizeAddress(value: {
   streetAddress: string | null
   city: string | null
@@ -61,50 +129,139 @@ function normalizeAddress(value: {
   return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
 }
 
-function toStatusRecord(workOrder: {
+function toInvoiceGenerationRecord(generation: {
   id: string
-  invoiceSourceUpdatedAt: Date
-  invoiceStatus: "IDLE" | "QUEUED" | "PROCESSING" | "READY" | "FAILED"
-  invoiceFileKey: string | null
-  invoiceRequestedAt: Date | null
-  invoiceGeneratedAt: Date | null
-  invoiceFailedAt: Date | null
-  invoiceError: string | null
-  invoiceIdempotencyKey: string | null
-}): WorkOrderInvoiceStatusRecord {
+  workOrderId: string
+  requestedByUserId: string
+  sourceVersion: Date
+  idempotencyKey: string
+  status: InvoiceGenerationStatusRecord
+  requestId: string | null
+  queueJobId: string | null
+  requestedAt: Date
+  queuedAt: Date | null
+  startedAt: Date | null
+  completedAt: Date | null
+  failedAt: Date | null
+  supersededAt: Date | null
+  failureCode: string | null
+  failureMessage: string | null
+}): InvoiceGenerationRecord {
   return {
-    workOrderId: workOrder.id,
-    invoiceSourceUpdatedAt: workOrder.invoiceSourceUpdatedAt.toISOString(),
-    invoiceStatus: workOrder.invoiceStatus,
-    invoiceFileKey: workOrder.invoiceFileKey,
-    invoiceRequestedAt: workOrder.invoiceRequestedAt?.toISOString() ?? null,
-    invoiceGeneratedAt: workOrder.invoiceGeneratedAt?.toISOString() ?? null,
-    invoiceFailedAt: workOrder.invoiceFailedAt?.toISOString() ?? null,
-    invoiceError: workOrder.invoiceError,
-    invoiceIdempotencyKey: workOrder.invoiceIdempotencyKey,
+    id: generation.id,
+    workOrderId: generation.workOrderId,
+    requestedByUserId: generation.requestedByUserId,
+    sourceVersion: generation.sourceVersion.toISOString(),
+    idempotencyKey: generation.idempotencyKey,
+    status: generation.status,
+    requestId: generation.requestId,
+    queueJobId: generation.queueJobId,
+    requestedAt: generation.requestedAt.toISOString(),
+    queuedAt: generation.queuedAt?.toISOString() ?? null,
+    startedAt: generation.startedAt?.toISOString() ?? null,
+    completedAt: generation.completedAt?.toISOString() ?? null,
+    failedAt: generation.failedAt?.toISOString() ?? null,
+    supersededAt: generation.supersededAt?.toISOString() ?? null,
+    failureCode: generation.failureCode,
+    failureMessage: generation.failureMessage,
   }
 }
 
-export async function getWorkOrderInvoiceStatus(workOrderId: string, client: WorkOrderInvoiceDbClient = db) {
+function toInvoiceArtifactRecord(artifact: {
+  id: string
+  generationId: string
+  workOrderId: string
+  bucketName: string
+  storageKey: string
+  fileName: string
+  contentType: string
+  checksum: string
+  sizeBytes: number
+  createdAt: Date
+  deletedAt: Date | null
+}): InvoiceArtifactRecord {
+  return {
+    id: artifact.id,
+    generationId: artifact.generationId,
+    workOrderId: artifact.workOrderId,
+    bucketName: artifact.bucketName,
+    storageKey: artifact.storageKey,
+    fileName: artifact.fileName,
+    contentType: artifact.contentType,
+    checksum: artifact.checksum,
+    sizeBytes: artifact.sizeBytes,
+    createdAt: artifact.createdAt.toISOString(),
+    deletedAt: artifact.deletedAt?.toISOString() ?? null,
+  }
+}
+
+async function getCurrentSourceVersion(workOrderId: string, client: WorkOrderInvoiceDbClient) {
   const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
     where: { id: workOrderId },
     select: {
       id: true,
-      invoiceSourceUpdatedAt: true,
-      invoiceStatus: true,
-      invoiceFileKey: true,
-      invoiceRequestedAt: true,
-      invoiceGeneratedAt: true,
-      invoiceFailedAt: true,
-      invoiceError: true,
-      invoiceIdempotencyKey: true,
+      invoiceSourceVersion: true,
     },
   })
 
-  return toStatusRecord(workOrder)
+  return {
+    workOrderId: workOrder.id,
+    sourceVersion: workOrder.invoiceSourceVersion,
+  }
 }
 
-export async function getWorkOrderInvoiceSource(workOrderId: string, client: WorkOrderInvoiceDbClient = db): Promise<WorkOrderInvoiceSourceRecord> {
+export async function getWorkOrderInvoiceView(
+  workOrderId: string,
+  client: WorkOrderInvoiceDbClient = db,
+): Promise<WorkOrderInvoiceViewRecord> {
+  const { sourceVersion } = await getCurrentSourceVersion(workOrderId, client)
+
+  const [generation, artifact] = await Promise.all([
+    client.flooringInvoiceGeneration.findUnique({
+      where: {
+        workOrderId_sourceVersion: {
+          workOrderId,
+          sourceVersion,
+        },
+      },
+      select: invoiceGenerationSelect,
+    }),
+    client.flooringInvoiceArtifact.findFirst({
+      where: {
+        workOrderId,
+        deletedAt: null,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: invoiceArtifactSelect,
+    }),
+  ])
+
+  return {
+    workOrderId,
+    sourceVersion: sourceVersion.toISOString(),
+    generation: generation ? toInvoiceGenerationRecord(generation) : null,
+    artifact: artifact ? toInvoiceArtifactRecord(artifact) : null,
+  }
+}
+
+export async function getWorkOrderInvoiceGenerationById(
+  generationId: string,
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const generation = await client.flooringInvoiceGeneration.findUniqueOrThrow({
+    where: { id: generationId },
+    select: invoiceGenerationSelect,
+  })
+
+  return toInvoiceGenerationRecord(generation)
+}
+
+export async function getWorkOrderInvoiceSource(
+  workOrderId: string,
+  client: WorkOrderInvoiceDbClient = db,
+): Promise<WorkOrderInvoiceSourceRecord> {
   const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
     where: { id: workOrderId },
     include: {
@@ -180,8 +337,7 @@ export async function getWorkOrderInvoiceSource(workOrderId: string, client: Wor
     customAddress: workOrder.customAddress ?? "",
     instructions: workOrder.instructions ?? "",
     notes: workOrder.notes ?? "",
-    invoiceSourceUpdatedAt: workOrder.invoiceSourceUpdatedAt.toISOString(),
-    invoiceIdempotencyKey: workOrder.invoiceIdempotencyKey,
+    sourceVersion: workOrder.invoiceSourceVersion.toISOString(),
     items: workOrder.items.map((item) => ({
       id: item.id,
       name: item.product.name,
@@ -203,106 +359,200 @@ export async function getWorkOrderInvoiceSource(workOrderId: string, client: Wor
   }
 }
 
-export async function queueWorkOrderInvoiceGeneration(
-  workOrderId: string,
+export async function createInvoiceGeneration(
   input: {
+    workOrderId: string
+    requestedByUserId: string
+    sourceVersion: Date
     idempotencyKey: string
+    requestId?: string | null
     requestedAt?: Date
   },
   client: WorkOrderInvoiceDbClient = db,
 ) {
-  const workOrder = await client.flooringWorkOrder.update({
-    where: { id: workOrderId },
+  const generation = await client.flooringInvoiceGeneration.create({
     data: {
-      invoiceStatus: "QUEUED",
-      invoiceRequestedAt: input.requestedAt ?? new Date(),
-      invoiceGeneratedAt: null,
-      invoiceFailedAt: null,
-      invoiceError: null,
-      invoiceIdempotencyKey: input.idempotencyKey,
+      workOrderId: input.workOrderId,
+      requestedByUserId: input.requestedByUserId,
+      sourceVersion: input.sourceVersion,
+      idempotencyKey: input.idempotencyKey,
+      status: "REQUESTED",
+      requestId: input.requestId ?? null,
+      requestedAt: input.requestedAt ?? new Date(),
     },
-    select: {
-      id: true,
-      invoiceSourceUpdatedAt: true,
-      invoiceStatus: true,
-      invoiceFileKey: true,
-      invoiceRequestedAt: true,
-      invoiceGeneratedAt: true,
-      invoiceFailedAt: true,
-      invoiceError: true,
-      invoiceIdempotencyKey: true,
-    },
+    select: invoiceGenerationSelect,
   })
 
-  return toStatusRecord(workOrder)
+  return toInvoiceGenerationRecord(generation)
 }
 
-export async function startWorkOrderInvoiceGeneration(
-  workOrderId: string,
-  idempotencyKey: string,
-  client: WorkOrderInvoiceDbClient = db,
-) {
-  const result = await client.flooringWorkOrder.updateMany({
-    where: {
-      id: workOrderId,
-      invoiceIdempotencyKey: idempotencyKey,
-    },
-    data: {
-      invoiceStatus: "PROCESSING",
-      invoiceFailedAt: null,
-      invoiceError: null,
-    },
-  })
-
-  return result.count > 0
-}
-
-export async function completeWorkOrderInvoiceGeneration(
-  workOrderId: string,
+export async function supersedePendingInvoiceGenerations(
   input: {
-    idempotencyKey: string
-    fileKey: string
-    generatedAt?: Date
+    workOrderId: string
+    supersededAt?: Date
   },
   client: WorkOrderInvoiceDbClient = db,
 ) {
-  const result = await client.flooringWorkOrder.updateMany({
+  return client.flooringInvoiceGeneration.updateMany({
     where: {
-      id: workOrderId,
-      invoiceIdempotencyKey: input.idempotencyKey,
+      workOrderId: input.workOrderId,
+      status: {
+        in: ["REQUESTED", "QUEUED", "PROCESSING"],
+      },
     },
     data: {
-      invoiceStatus: "READY",
-      invoiceFileKey: input.fileKey,
-      invoiceGeneratedAt: input.generatedAt ?? new Date(),
-      invoiceFailedAt: null,
-      invoiceError: null,
+      status: "SUPERSEDED",
+      supersededAt: input.supersededAt ?? new Date(),
+    },
+  })
+}
+
+export async function queueInvoiceGeneration(
+  input: {
+    generationId: string
+    queueJobId: string
+    queuedAt?: Date
+  },
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const result = await client.flooringInvoiceGeneration.updateMany({
+    where: {
+      id: input.generationId,
+      status: "REQUESTED",
+    },
+    data: {
+      status: "QUEUED",
+      queueJobId: input.queueJobId,
+      queuedAt: input.queuedAt ?? new Date(),
     },
   })
 
   return result.count > 0
 }
 
-export async function failWorkOrderInvoiceGeneration(
-  workOrderId: string,
+export async function startInvoiceGeneration(
+  generationId: string,
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const result = await client.flooringInvoiceGeneration.updateMany({
+    where: {
+      id: generationId,
+      status: "QUEUED",
+    },
+    data: {
+      status: "PROCESSING",
+      startedAt: new Date(),
+      failedAt: null,
+      failureCode: null,
+      failureMessage: null,
+    },
+  })
+
+  return result.count > 0
+}
+
+export async function completeInvoiceGeneration(
   input: {
-    idempotencyKey: string
-    errorMessage: string
+    generationId: string
+    completedAt?: Date
+  },
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const result = await client.flooringInvoiceGeneration.updateMany({
+    where: {
+      id: input.generationId,
+      status: "PROCESSING",
+    },
+    data: {
+      status: "COMPLETED",
+      completedAt: input.completedAt ?? new Date(),
+      failedAt: null,
+      failureCode: null,
+      failureMessage: null,
+    },
+  })
+
+  return result.count > 0
+}
+
+export async function supersedeInvoiceGeneration(
+  input: {
+    generationId: string
+    supersededAt?: Date
+  },
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const result = await client.flooringInvoiceGeneration.updateMany({
+    where: {
+      id: input.generationId,
+      status: {
+        in: ["REQUESTED", "QUEUED", "PROCESSING"],
+      },
+    },
+    data: {
+      status: "SUPERSEDED",
+      supersededAt: input.supersededAt ?? new Date(),
+    },
+  })
+
+  return result.count > 0
+}
+
+export async function failInvoiceGeneration(
+  input: {
+    generationId: string
+    failureCode?: string | null
+    failureMessage: string
     failedAt?: Date
   },
   client: WorkOrderInvoiceDbClient = db,
 ) {
-  const result = await client.flooringWorkOrder.updateMany({
+  const result = await client.flooringInvoiceGeneration.updateMany({
     where: {
-      id: workOrderId,
-      invoiceIdempotencyKey: input.idempotencyKey,
+      id: input.generationId,
+      status: {
+        in: ["REQUESTED", "QUEUED", "PROCESSING"],
+      },
     },
     data: {
-      invoiceStatus: "FAILED",
-      invoiceFailedAt: input.failedAt ?? new Date(),
-      invoiceError: input.errorMessage,
+      status: "FAILED",
+      failedAt: input.failedAt ?? new Date(),
+      failureCode: input.failureCode ?? null,
+      failureMessage: input.failureMessage,
     },
   })
 
   return result.count > 0
+}
+
+export async function insertInvoiceArtifact(
+  input: {
+    generationId: string
+    workOrderId: string
+    bucketName: string
+    storageKey: string
+    fileName: string
+    contentType: string
+    checksum: string
+    sizeBytes: number
+    createdAt?: Date
+  },
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const artifact = await client.flooringInvoiceArtifact.create({
+    data: {
+      generationId: input.generationId,
+      workOrderId: input.workOrderId,
+      bucketName: input.bucketName,
+      storageKey: input.storageKey,
+      fileName: input.fileName,
+      contentType: input.contentType,
+      checksum: input.checksum,
+      sizeBytes: input.sizeBytes,
+      createdAt: input.createdAt ?? new Date(),
+    },
+    select: invoiceArtifactSelect,
+  })
+
+  return toInvoiceArtifactRecord(artifact)
 }

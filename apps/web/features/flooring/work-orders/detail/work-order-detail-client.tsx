@@ -48,8 +48,8 @@ export default function WorkOrderDetailClient({
   )
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [refreshNonce, setRefreshNonce] = useState(0)
-  const invoice = useWorkOrderInvoiceController(workOrder)
-  const previousInvoiceStatusRef = useRef(invoice.invoice.status)
+  const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`)
+  const previousInvoiceStatusRef = useRef(invoice.invoice.generation?.status ?? null)
 
   const closePage = useCallback(() => {
     page.closePage()
@@ -57,18 +57,24 @@ export default function WorkOrderDetailClient({
 
   useEffect(() => {
     const previousStatus = previousInvoiceStatusRef.current
-    const currentStatus = invoice.invoice.status
+    const currentStatus = invoice.invoice.generation?.status ?? null
 
-    if ((previousStatus === "QUEUED" || previousStatus === "PROCESSING") && currentStatus === "READY") {
+    if (
+      (previousStatus === "REQUESTED" || previousStatus === "QUEUED" || previousStatus === "PROCESSING") &&
+      currentStatus === "COMPLETED"
+    ) {
       page.notices.showSuccess("Invoice ready")
     }
 
-    if ((previousStatus === "QUEUED" || previousStatus === "PROCESSING") && currentStatus === "FAILED") {
-      page.notices.showError(invoice.invoice.error || "Invoice generation failed")
+    if (
+      (previousStatus === "REQUESTED" || previousStatus === "QUEUED" || previousStatus === "PROCESSING") &&
+      currentStatus === "FAILED"
+    ) {
+      page.notices.showError(invoice.invoice.generation?.error || "Invoice generation failed")
     }
 
     previousInvoiceStatusRef.current = currentStatus
-  }, [invoice.invoice.error, invoice.invoice.status, page.notices])
+  }, [invoice.invoice.generation, page.notices])
 
   async function markWorkOrderComplete() {
     if (workOrder.isComplete) return
@@ -105,10 +111,21 @@ export default function WorkOrderDetailClient({
     page.notices.clearNotices()
 
     try {
-      await invoice.queueInvoice()
-      page.notices.showSuccess("Invoice generation queued")
+      const nextInvoice = await invoice.queueInvoice()
+
+      if (nextInvoice.generation?.status === "COMPLETED") {
+        page.notices.showSuccess("Invoice already available")
+        return
+      }
+
+      if (nextInvoice.generation?.status === "FAILED") {
+        page.notices.showError(nextInvoice.generation.error || "Invoice generation failed")
+        return
+      }
+
+      page.notices.showSuccess("Invoice generation requested")
     } catch (invoiceError) {
-      page.notices.showError(invoiceError instanceof Error ? invoiceError.message : "Failed to queue invoice generation")
+      page.notices.showError(invoiceError instanceof Error ? invoiceError.message : "Failed to request invoice generation")
     }
   }
 

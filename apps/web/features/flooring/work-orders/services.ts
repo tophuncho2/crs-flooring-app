@@ -7,7 +7,6 @@ import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import {
   TEMPLATE_SYNC_POLICY,
   VACANCY_OPTIONS,
-  WORK_ORDER_INVOICE_STATUS_OPTIONS,
   WORK_ORDER_STATUS_LABELS,
   WORK_ORDER_STATUS_OPTIONS,
   getWorkOrderStatusLabel,
@@ -15,7 +14,6 @@ import {
 
 export const workOrderStatuses = new Set(WORK_ORDER_STATUS_OPTIONS)
 export const vacancyStatuses = new Set(VACANCY_OPTIONS)
-export const workOrderInvoiceStatuses = new Set(WORK_ORDER_INVOICE_STATUS_OPTIONS)
 export const workOrderStatusLabels = WORK_ORDER_STATUS_LABELS
 export const templateSyncPolicy = TEMPLATE_SYNC_POLICY
 
@@ -62,22 +60,12 @@ export function normalizeWorkOrder(workOrder: {
   notes: string | null
   googleDriveSlip: string | null
   googleDocUrl: string | null
-  invoiceStatus?: string | null
-  invoiceRequestedAt?: Date | null
-  invoiceGeneratedAt?: Date | null
-  invoiceFailedAt?: Date | null
-  invoiceError?: string | null
-  invoiceFileKey?: string | null
   createdAt: Date
   updatedAt: Date
   _count?: { items: number; serviceItems: number }
   hasShortage?: boolean
 }) {
   const hasShortage = workOrder.hasShortage ?? false
-  const normalizedInvoiceStatus =
-    typeof workOrder.invoiceStatus === "string" && workOrderInvoiceStatuses.has(workOrder.invoiceStatus as "IDLE" | "QUEUED" | "PROCESSING" | "READY" | "FAILED")
-      ? (workOrder.invoiceStatus as "IDLE" | "QUEUED" | "PROCESSING" | "READY" | "FAILED")
-      : "IDLE"
 
   return {
     id: workOrder.id,
@@ -104,12 +92,6 @@ export function normalizeWorkOrder(workOrder: {
     instructions: workOrder.instructions ?? "",
     notes: workOrder.notes ?? "",
     workOrderImageUrl: workOrder.googleDriveSlip ?? "",
-    invoiceStatus: normalizedInvoiceStatus,
-    invoiceRequestedAt: workOrder.invoiceRequestedAt?.toISOString() ?? null,
-    invoiceGeneratedAt: workOrder.invoiceGeneratedAt?.toISOString() ?? null,
-    invoiceFailedAt: workOrder.invoiceFailedAt?.toISOString() ?? null,
-    invoiceError: workOrder.invoiceError ?? "",
-    hasInvoice: Boolean(workOrder.invoiceFileKey),
     unitDoc: workOrder.googleDocUrl ?? "",
     itemsCount: workOrder._count ? workOrder._count.items + workOrder._count.serviceItems : undefined,
     createdAt: workOrder.createdAt.toISOString(),

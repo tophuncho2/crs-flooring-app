@@ -1,8 +1,13 @@
+import { createHash } from "node:crypto"
 import {
-  completeWorkOrderInvoiceGeneration,
-  failWorkOrderInvoiceGeneration,
+  completeInvoiceGeneration,
+  failInvoiceGeneration,
+  getWorkOrderInvoiceGenerationById,
   getWorkOrderInvoiceSource,
-  startWorkOrderInvoiceGeneration,
+  insertInvoiceArtifact,
+  startInvoiceGeneration,
+  supersedeInvoiceGeneration,
+  withDatabaseTransaction,
 } from "@builders/db"
 import {
   buildWorkOrderInvoiceDocument,
@@ -13,20 +18,55 @@ import type { WorkerEnvironment } from "../env.js"
 import { renderWorkOrderInvoicePdf } from "../render/render-work-order-invoice.js"
 
 export type WorkOrderInvoiceProcessorDependencies = {
+  getInvoiceGeneration: typeof getWorkOrderInvoiceGenerationById
   getInvoiceSource: typeof getWorkOrderInvoiceSource
-  startInvoiceGeneration: typeof startWorkOrderInvoiceGeneration
-  completeInvoiceGeneration: typeof completeWorkOrderInvoiceGeneration
-  failInvoiceGeneration: typeof failWorkOrderInvoiceGeneration
+  startInvoiceGeneration: typeof startInvoiceGeneration
+  supersedeInvoiceGeneration: typeof supersedeInvoiceGeneration
+  failInvoiceGeneration: typeof failInvoiceGeneration
+  persistCompletedInvoice: (input: {
+    generationId: string
+    workOrderId: string
+    bucketName: string
+    storageKey: string
+    fileName: string
+    contentType: string
+    checksum: string
+    sizeBytes: number
+  }) => Promise<void>
   renderInvoicePdf: typeof renderWorkOrderInvoicePdf
   uploadInvoicePdf: (env: StorageEnvironment, input: { data: Buffer; key: string; contentType: string }) => Promise<string>
 }
 
 function defaultDependencies(): WorkOrderInvoiceProcessorDependencies {
   return {
+    getInvoiceGeneration: getWorkOrderInvoiceGenerationById,
     getInvoiceSource: getWorkOrderInvoiceSource,
-    startInvoiceGeneration: startWorkOrderInvoiceGeneration,
-    completeInvoiceGeneration: completeWorkOrderInvoiceGeneration,
-    failInvoiceGeneration: failWorkOrderInvoiceGeneration,
+    startInvoiceGeneration,
+    supersedeInvoiceGeneration,
+    failInvoiceGeneration,
+    persistCompletedInvoice: async (input) => {
+      await withDatabaseTransaction(async (tx) => {
+        await insertInvoiceArtifact(
+          {
+            generationId: input.generationId,
+            workOrderId: input.workOrderId,
+            bucketName: input.bucketName,
+            storageKey: input.storageKey,
+            fileName: input.fileName,
+            contentType: input.contentType,
+            checksum: input.checksum,
+            sizeBytes: input.sizeBytes,
+          },
+          tx,
+        )
+        await completeInvoiceGeneration(
+          {
+            generationId: input.generationId,
+          },
+          tx,
+        )
+      })
+    },
     renderInvoicePdf: renderWorkOrderInvoicePdf,
     uploadInvoicePdf: (env, input) =>
       uploadBucketObject(env, {
@@ -41,20 +81,40 @@ export function createWorkOrderInvoiceProcessor(
   dependencies: WorkOrderInvoiceProcessorDependencies = defaultDependencies(),
 ) {
   return async function processWorkOrderInvoice(job: GenerateWorkOrderInvoiceJobV1, env: WorkerEnvironment) {
-    const claimed = await dependencies.startInvoiceGeneration(job.workOrderId, job.idempotencyKey)
+    const generation = await dependencies.getInvoiceGeneration(job.generationId)
+    const claimed = await dependencies.startInvoiceGeneration(job.generationId)
+
     if (!claimed) {
       return {
         status: "skipped" as const,
-        reason: "invoice-generation-superseded",
+        reason: "invoice-generation-unavailable",
       }
     }
 
     try {
-      const source = await dependencies.getInvoiceSource(job.workOrderId)
       if (
-        source.invoiceIdempotencyKey !== job.idempotencyKey ||
-        source.invoiceSourceUpdatedAt !== job.invoiceSourceUpdatedAt
+        generation.workOrderId !== job.workOrderId ||
+        generation.idempotencyKey !== job.idempotencyKey ||
+        generation.sourceVersion !== job.sourceVersion
       ) {
+        await dependencies.failInvoiceGeneration({
+          generationId: job.generationId,
+          failureCode: "INVALID_JOB_PAYLOAD",
+          failureMessage: "Invoice generation payload did not match the stored generation state",
+        })
+
+        return {
+          status: "skipped" as const,
+          reason: "invoice-generation-invalid-payload",
+        }
+      }
+
+      const source = await dependencies.getInvoiceSource(job.workOrderId)
+      if (source.sourceVersion !== job.sourceVersion) {
+        await dependencies.supersedeInvoiceGeneration({
+          generationId: job.generationId,
+        })
+
         return {
           status: "skipped" as const,
           reason: "invoice-source-changed",
@@ -64,6 +124,8 @@ export function createWorkOrderInvoiceProcessor(
       const document = buildWorkOrderInvoiceDocument(source)
       const pdf = await dependencies.renderInvoicePdf(source.workOrderNumber, document)
       const fileKey = `invoices/${source.workOrderId}/${job.idempotencyKey}.pdf`
+      const fileName = `${source.workOrderNumber}.pdf`
+      const checksum = createHash("sha256").update(pdf).digest("hex")
 
       await dependencies.uploadInvoicePdf(env.storage, {
         data: pdf,
@@ -71,9 +133,15 @@ export function createWorkOrderInvoiceProcessor(
         contentType: "application/pdf",
       })
 
-      await dependencies.completeInvoiceGeneration(job.workOrderId, {
-        idempotencyKey: job.idempotencyKey,
-        fileKey,
+      await dependencies.persistCompletedInvoice({
+        generationId: job.generationId,
+        workOrderId: source.workOrderId,
+        bucketName: env.storage.bucketName,
+        storageKey: fileKey,
+        fileName,
+        contentType: "application/pdf",
+        checksum,
+        sizeBytes: pdf.byteLength,
       })
 
       return {
@@ -82,9 +150,10 @@ export function createWorkOrderInvoiceProcessor(
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invoice generation failed"
-      await dependencies.failInvoiceGeneration(job.workOrderId, {
-        idempotencyKey: job.idempotencyKey,
-        errorMessage: message,
+      await dependencies.failInvoiceGeneration({
+        generationId: job.generationId,
+        failureCode: "INVOICE_PROCESSING_FAILED",
+        failureMessage: message,
       })
       throw error
     }

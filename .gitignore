@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/apps/*/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -21,6 +22,7 @@
 
 # production
 /build
+/apps/*/dist/
 /apps/worker/dist/
 /packages/*/dist/
 

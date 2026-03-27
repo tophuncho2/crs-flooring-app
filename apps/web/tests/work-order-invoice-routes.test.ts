@@ -8,14 +8,14 @@ const {
   queueWorkOrderInvoiceUseCaseMock,
   getWorkOrderInvoiceStatusUseCaseMock,
   withMutationTelemetryMock,
-  buildBucketObjectUrlForKeyMock,
+  createPresignedBucketObjectUrlForKeyMock,
 } = vi.hoisted(() => ({
   authorizeWorkOrdersRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   queueWorkOrderInvoiceUseCaseMock: vi.fn(),
   getWorkOrderInvoiceStatusUseCaseMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
-  buildBucketObjectUrlForKeyMock: vi.fn(),
+  createPresignedBucketObjectUrlForKeyMock: vi.fn(),
 }))
 
 vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
@@ -44,7 +44,7 @@ vi.mock("@/features/flooring/work-orders/application/invoice", () => ({
 }))
 
 vi.mock("@/server/storage/s3", () => ({
-  buildBucketObjectUrlForKey: buildBucketObjectUrlForKeyMock,
+  createPresignedBucketObjectUrlForKey: createPresignedBucketObjectUrlForKeyMock,
 }))
 
 describe("work-order invoice routes", () => {
@@ -59,17 +59,41 @@ describe("work-order invoice routes", () => {
     withMutationTelemetryMock.mockImplementation(async (_access, _event, operation) => operation())
   })
 
-  it("returns the current invoice status", async () => {
+  it("returns the current invoice generation and artifact status", async () => {
     getWorkOrderInvoiceStatusUseCaseMock.mockResolvedValue({
       workOrderId: "wo-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
-      invoiceStatus: "READY",
-      invoiceFileKey: "invoices/wo-1/invoice.pdf",
-      invoiceRequestedAt: "2026-03-26T12:00:00.000Z",
-      invoiceGeneratedAt: "2026-03-26T12:01:00.000Z",
-      invoiceFailedAt: null,
-      invoiceError: null,
-      invoiceIdempotencyKey: "invoice-key",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: {
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice-key",
+        status: "COMPLETED",
+        requestId: "req-1",
+        queueJobId: "invoice-key",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: "2026-03-26T12:00:02.000Z",
+        completedAt: "2026-03-26T12:01:00.000Z",
+        failedAt: null,
+        supersededAt: null,
+        failureCode: null,
+        failureMessage: null,
+      },
+      artifact: {
+        id: "artifact-1",
+        generationId: "gen-1",
+        workOrderId: "wo-1",
+        bucketName: "builders",
+        storageKey: "invoices/wo-1/invoice.pdf",
+        fileName: "WO-00001.pdf",
+        contentType: "application/pdf",
+        checksum: "abc",
+        sizeBytes: 123,
+        createdAt: "2026-03-26T12:01:00.000Z",
+        deletedAt: null,
+      },
     })
 
     const response = await GET_INVOICE(new Request("http://localhost/api/flooring/work-orders/wo-1/invoice"), {
@@ -78,28 +102,51 @@ describe("work-order invoice routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload.invoice).toEqual({
-      status: "READY",
+    expect(payload).toEqual({
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: {
+        id: "gen-1",
+        status: "COMPLETED",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: "2026-03-26T12:00:02.000Z",
+        completedAt: "2026-03-26T12:01:00.000Z",
+        failedAt: null,
+        error: "",
+      },
+      artifact: {
+        id: "artifact-1",
+        fileName: "WO-00001.pdf",
+        createdAt: "2026-03-26T12:01:00.000Z",
+        downloadUrl: "/api/flooring/work-orders/wo-1/invoice/download",
+      },
       canOpen: true,
-      requestedAt: "2026-03-26T12:00:00.000Z",
-      generatedAt: "2026-03-26T12:01:00.000Z",
-      failedAt: null,
-      error: "",
-      downloadUrl: "/api/flooring/work-orders/wo-1/invoice/download",
     })
   })
 
-  it("queues invoice generation through the use case", async () => {
+  it("requests invoice generation through the use case", async () => {
     queueWorkOrderInvoiceUseCaseMock.mockResolvedValue({
       workOrderId: "wo-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
-      invoiceStatus: "QUEUED",
-      invoiceFileKey: null,
-      invoiceRequestedAt: "2026-03-26T12:00:00.000Z",
-      invoiceGeneratedAt: null,
-      invoiceFailedAt: null,
-      invoiceError: null,
-      invoiceIdempotencyKey: "invoice-key",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: {
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice-key",
+        status: "REQUESTED",
+        requestId: "req-1",
+        queueJobId: null,
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: null,
+        startedAt: null,
+        completedAt: null,
+        failedAt: null,
+        supersededAt: null,
+        failureCode: null,
+        failureMessage: null,
+      },
+      artifact: null,
     })
 
     const response = await POST_INVOICE(new Request("http://localhost/api/flooring/work-orders/wo-1/invoice", {
@@ -110,22 +157,38 @@ describe("work-order invoice routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(queueWorkOrderInvoiceUseCaseMock).toHaveBeenCalledWith("wo-1", "user-1")
-    expect(payload.invoice.status).toBe("QUEUED")
-    expect(payload.invoice.canOpen).toBe(false)
+    expect(queueWorkOrderInvoiceUseCaseMock).toHaveBeenCalledWith({
+      workOrderId: "wo-1",
+      triggeredByUserId: "user-1",
+      requestId: "req-1",
+    })
+    expect(payload.generation.status).toBe("REQUESTED")
+    expect(payload.canOpen).toBe(false)
   })
 
-  it("returns 409 when the invoice is not ready yet", async () => {
+  it("returns 409 when no invoice artifact exists yet", async () => {
     getWorkOrderInvoiceStatusUseCaseMock.mockResolvedValue({
       workOrderId: "wo-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
-      invoiceStatus: "PROCESSING",
-      invoiceFileKey: null,
-      invoiceRequestedAt: "2026-03-26T12:00:00.000Z",
-      invoiceGeneratedAt: null,
-      invoiceFailedAt: null,
-      invoiceError: null,
-      invoiceIdempotencyKey: "invoice-key",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: {
+        id: "gen-1",
+        workOrderId: "wo-1",
+        requestedByUserId: "user-1",
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        idempotencyKey: "invoice-key",
+        status: "PROCESSING",
+        requestId: "req-1",
+        queueJobId: "invoice-key",
+        requestedAt: "2026-03-26T12:00:00.000Z",
+        queuedAt: "2026-03-26T12:00:01.000Z",
+        startedAt: "2026-03-26T12:00:02.000Z",
+        completedAt: null,
+        failedAt: null,
+        supersededAt: null,
+        failureCode: null,
+        failureMessage: null,
+      },
+      artifact: null,
     })
 
     const response = await GET_INVOICE_DOWNLOAD(new Request("http://localhost/api/flooring/work-orders/wo-1/invoice/download"), {
@@ -137,25 +200,32 @@ describe("work-order invoice routes", () => {
     expect(payload.error).toBe("Invoice is not ready yet")
   })
 
-  it("redirects to the invoice file when it exists", async () => {
+  it("redirects to a presigned invoice url when an artifact exists", async () => {
     getWorkOrderInvoiceStatusUseCaseMock.mockResolvedValue({
       workOrderId: "wo-1",
-      invoiceSourceUpdatedAt: "2026-03-26T12:00:00.000Z",
-      invoiceStatus: "READY",
-      invoiceFileKey: "invoices/wo-1/invoice.pdf",
-      invoiceRequestedAt: "2026-03-26T12:00:00.000Z",
-      invoiceGeneratedAt: "2026-03-26T12:01:00.000Z",
-      invoiceFailedAt: null,
-      invoiceError: null,
-      invoiceIdempotencyKey: "invoice-key",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: null,
+      artifact: {
+        id: "artifact-1",
+        generationId: "gen-1",
+        workOrderId: "wo-1",
+        bucketName: "builders",
+        storageKey: "invoices/wo-1/invoice.pdf",
+        fileName: "WO-00001.pdf",
+        contentType: "application/pdf",
+        checksum: "abc",
+        sizeBytes: 123,
+        createdAt: "2026-03-26T12:01:00.000Z",
+        deletedAt: null,
+      },
     })
-    buildBucketObjectUrlForKeyMock.mockReturnValue("https://storage.example.com/builders/invoices/wo-1/invoice.pdf")
+    createPresignedBucketObjectUrlForKeyMock.mockResolvedValue("https://storage.example.com/presigned")
 
     const response = await GET_INVOICE_DOWNLOAD(new Request("http://localhost/api/flooring/work-orders/wo-1/invoice/download"), {
       params: Promise.resolve({ id: "wo-1" }),
     })
 
     expect(response.status).toBe(302)
-    expect(response.headers.get("location")).toBe("https://storage.example.com/builders/invoices/wo-1/invoice.pdf")
+    expect(response.headers.get("location")).toBe("https://storage.example.com/presigned")
   })
 })

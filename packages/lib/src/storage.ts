@@ -1,4 +1,5 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 export type StorageEnvironment = {
   accessKeyId: string
@@ -83,4 +84,21 @@ export async function getBucketObject(env: StorageEnvironment, key: string) {
     data: Buffer.from(bytes),
     contentType: result.ContentType ?? "application/octet-stream",
   }
+}
+
+export async function createBucketObjectPresignedUrl(
+  env: StorageEnvironment,
+  key: string,
+  options: { expiresInSeconds?: number } = {},
+) {
+  return getSignedUrl(
+    getStorageClient(env),
+    new GetObjectCommand({
+      Bucket: env.bucketName,
+      Key: key,
+    }),
+    {
+      expiresIn: options.expiresInSeconds ?? 300,
+    },
+  )
 }

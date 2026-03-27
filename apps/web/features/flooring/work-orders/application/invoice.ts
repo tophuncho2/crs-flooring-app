@@ -1,56 +1,83 @@
 import {
-  failWorkOrderInvoiceGeneration,
-  getWorkOrderInvoiceStatus,
-  queueWorkOrderInvoiceGeneration,
+  createInvoiceGeneration,
+  createQueueOutboxEvent,
+  getWorkOrderInvoiceView,
+  supersedePendingInvoiceGenerations,
+  withDatabaseTransaction,
 } from "@builders/db"
 import {
-  GENERATE_WORK_ORDER_INVOICE_JOB,
-  type GenerateWorkOrderInvoiceJobV1,
+  buildInvoiceGenerationIdempotencyKey,
+  INVOICE_GENERATION_AGGREGATE_TYPE,
+  INVOICE_GENERATION_REQUESTED_OUTBOX_TOPIC,
+  type InvoiceGenerationRequestedOutboxEventV1,
 } from "@builders/domain"
-import { enqueueWorkOrderInvoiceJob } from "@/server/queues/invoice-queue"
-
-function buildInvoiceIdempotencyKey(workOrderId: string, invoiceSourceUpdatedAt: string) {
-  return `invoice:v1:${workOrderId}:${invoiceSourceUpdatedAt}`
-}
 
 export async function getWorkOrderInvoiceStatusUseCase(workOrderId: string) {
-  return getWorkOrderInvoiceStatus(workOrderId)
+  return getWorkOrderInvoiceView(workOrderId)
 }
 
-export async function queueWorkOrderInvoiceUseCase(workOrderId: string, triggeredByUserId: string) {
-  const current = await getWorkOrderInvoiceStatus(workOrderId)
-  const idempotencyKey = buildInvoiceIdempotencyKey(workOrderId, current.invoiceSourceUpdatedAt)
+export async function queueWorkOrderInvoiceUseCase(input: {
+  workOrderId: string
+  triggeredByUserId: string
+  requestId: string
+}) {
+  return withDatabaseTransaction(async (tx) => {
+    const current = await getWorkOrderInvoiceView(input.workOrderId, tx)
 
-  if (
-    current.invoiceIdempotencyKey === idempotencyKey &&
-    (current.invoiceStatus === "QUEUED" || current.invoiceStatus === "PROCESSING" || current.invoiceStatus === "READY")
-  ) {
-    return current
-  }
+    if (current.generation) {
+      return current
+    }
 
-  const queued = await queueWorkOrderInvoiceGeneration(workOrderId, {
-    idempotencyKey,
-  })
+    const now = new Date()
+    const idempotencyKey = buildInvoiceGenerationIdempotencyKey(input.workOrderId, current.sourceVersion)
 
-  const payload: GenerateWorkOrderInvoiceJobV1 = {
-    version: "v1",
-    jobName: GENERATE_WORK_ORDER_INVOICE_JOB,
-    idempotencyKey,
-    createdAt: new Date().toISOString(),
-    workOrderId,
-    triggeredByUserId,
-    invoiceSourceUpdatedAt: queued.invoiceSourceUpdatedAt,
-  }
+    await supersedePendingInvoiceGenerations(
+      {
+        workOrderId: input.workOrderId,
+        supersededAt: now,
+      },
+      tx,
+    )
 
-  try {
-    await enqueueWorkOrderInvoiceJob(payload)
-    return queued
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to enqueue invoice generation"
-    await failWorkOrderInvoiceGeneration(workOrderId, {
+    const generation = await createInvoiceGeneration(
+      {
+        workOrderId: input.workOrderId,
+        requestedByUserId: input.triggeredByUserId,
+        sourceVersion: new Date(current.sourceVersion),
+        idempotencyKey,
+        requestId: input.requestId,
+        requestedAt: now,
+      },
+      tx,
+    )
+
+    const outboxPayload: InvoiceGenerationRequestedOutboxEventV1 = {
+      version: "v1",
+      topic: INVOICE_GENERATION_REQUESTED_OUTBOX_TOPIC,
+      requestId: input.requestId,
+      generationId: generation.id,
+      workOrderId: input.workOrderId,
+      requestedByUserId: input.triggeredByUserId,
       idempotencyKey,
-      errorMessage: message,
-    })
-    throw error
-  }
+      sourceVersion: current.sourceVersion,
+      requestedAt: now.toISOString(),
+    }
+
+    await createQueueOutboxEvent(
+      {
+        topic: INVOICE_GENERATION_REQUESTED_OUTBOX_TOPIC,
+        aggregateType: INVOICE_GENERATION_AGGREGATE_TYPE,
+        aggregateId: generation.id,
+        idempotencyKey,
+        payloadJson: outboxPayload,
+        availableAt: now,
+      },
+      tx,
+    )
+
+    return {
+      ...current,
+      generation,
+    }
+  })
 }

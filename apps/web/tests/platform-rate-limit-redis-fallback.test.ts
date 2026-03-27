@@ -7,6 +7,7 @@ describe("consumeRateLimit Redis fallback", () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    delete process.env.RATE_LIMIT_REDIS_URL
     process.env.REDIS_URL = "redis://localhost:6379"
     delete process.env.RATE_LIMIT_PREFIX
 
@@ -20,6 +21,7 @@ describe("consumeRateLimit Redis fallback", () => {
   })
 
   afterEach(() => {
+    delete process.env.RATE_LIMIT_REDIS_URL
     delete process.env.REDIS_URL
     delete process.env.RATE_LIMIT_PREFIX
     vi.resetModules()
