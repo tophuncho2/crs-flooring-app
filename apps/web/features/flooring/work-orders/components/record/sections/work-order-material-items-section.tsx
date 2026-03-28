@@ -11,6 +11,7 @@ import { RecordNestedArea } from "@/features/dashboard/shared/record-view/sectio
 import { RecordSectionMetric } from "@/features/dashboard/shared/record-view/sections/record-section-metric"
 import { RecordSectionShell } from "@/features/dashboard/shared/record-view/sections/record-section-shell"
 import { RECORD_SECTION_BORDER_CLASS_NAME } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
+import { RecordOptionsMenu } from "@/features/dashboard/shared/record-view/shell/record-options-menu"
 import {
   InlineAddRowButton,
   useInlineCreateRow,
@@ -358,14 +359,16 @@ export function WorkOrderMaterialItemsSection({
         <RecordSectionMetric key={metric.label} label={metric.label} value={metric.value} />
       ))}
       actions={
-        <button
-          type="button"
-          onClick={onRequestAutoAllocation}
-          disabled={isAutoAllocating || items.length === 0}
-          className="rounded-lg border border-blue-500/25 bg-[var(--panel-background)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
-        >
-          {isAutoAllocating ? "Auto Allocating..." : "Auto Allocate"}
-        </button>
+        <RecordOptionsMenu
+          buttonLabel="Options"
+          items={[
+            {
+              label: isAutoAllocating ? "Auto Allocating..." : "Auto Allocate",
+              onSelect: onRequestAutoAllocation,
+              disabled: isAutoAllocating || items.length === 0,
+            },
+          ]}
+        />
       }
     >
       {loading ? (
