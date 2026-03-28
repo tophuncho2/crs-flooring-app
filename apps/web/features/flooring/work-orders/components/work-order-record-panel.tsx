@@ -468,52 +468,54 @@ export function WorkOrderRecordPanel({
           />
         ) : null}
 
-        <WorkOrderMaterialItemsSection
-          title="Material Items"
-          items={lineItems.materialItems}
-          draft={lineItems.materialDraft}
-          productOptions={productOptions}
-          loading={loading || lineItems.materialCollection.loading}
-          adding={lineItems.materialCollection.adding}
-          savingItemId={lineItems.materialCollection.savingItemId}
-          deletingItemId={lineItems.materialCollection.deletingItemId}
-          draftErrors={lineItems.materialDraftErrors}
-          itemErrors={lineItems.materialItemErrors}
-          expandedItemIds={allocations.expandedItemIds}
-          onToggleExpandedItem={allocations.toggleExpandedItem}
-          onDraftChange={lineItems.handleMaterialDraftChange}
-          onAdd={() => lineItems.addMaterialItem()}
-          onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-          onSaveItem={handleSaveMaterialItemSection}
-          onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
-          onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
-          isAutoAllocating={allocations.isAutoAllocating}
-          renderAllocationSection={(item: WorkOrderMaterialItem) => (
-            <MaterialAllocationsEditor
-              allocations={item.allocations}
-              draft={
-                allocations.draftsByItemId[item.id] ?? {
-                  inventoryId: "",
-                  quantity: "",
-                  notes: "",
+        <div className={showPrimaryFields ? "pt-2" : undefined}>
+          <WorkOrderMaterialItemsSection
+            title="Material Items"
+            items={lineItems.materialItems}
+            draft={lineItems.materialDraft}
+            productOptions={productOptions}
+            loading={loading || lineItems.materialCollection.loading}
+            adding={lineItems.materialCollection.adding}
+            savingItemId={lineItems.materialCollection.savingItemId}
+            deletingItemId={lineItems.materialCollection.deletingItemId}
+            draftErrors={lineItems.materialDraftErrors}
+            itemErrors={lineItems.materialItemErrors}
+            expandedItemIds={allocations.expandedItemIds}
+            onToggleExpandedItem={allocations.toggleExpandedItem}
+            onDraftChange={lineItems.handleMaterialDraftChange}
+            onAdd={() => lineItems.addMaterialItem()}
+            onItemFieldChange={lineItems.handleMaterialItemFieldChange}
+            onSaveItem={handleSaveMaterialItemSection}
+            onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
+            onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
+            isAutoAllocating={allocations.isAutoAllocating}
+            renderAllocationSection={(item: WorkOrderMaterialItem) => (
+              <MaterialAllocationsEditor
+                allocations={item.allocations}
+                draft={
+                  allocations.draftsByItemId[item.id] ?? {
+                    inventoryId: "",
+                    quantity: "",
+                    notes: "",
+                  }
                 }
-              }
-              allocationOptions={allocations.optionsByItemId[item.id] ?? []}
-              loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
-              adding={allocations.addingItemId === item.id}
-              deletingAllocationId={allocations.deletingAllocationId}
-              draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
-              itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
-              onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
-              onAdd={() => allocations.addAllocation(item.id)}
-              onAllocationFieldChange={(allocationId, field, value) =>
-                allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
-              }
-              onSaveAllocation={(allocation) => allocations.saveAllocation(item.id, allocation)}
-              onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
-            />
-          )}
-        />
+                allocationOptions={allocations.optionsByItemId[item.id] ?? []}
+                loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
+                adding={allocations.addingItemId === item.id}
+                deletingAllocationId={allocations.deletingAllocationId}
+                draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
+                itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
+                onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
+                onAdd={() => allocations.addAllocation(item.id)}
+                onAllocationFieldChange={(allocationId, field, value) =>
+                  allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
+                }
+                onSaveAllocation={(allocation) => allocations.saveAllocation(item.id, allocation)}
+                onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
+              />
+            )}
+          />
+        </div>
 
         <WorkOrderServiceItemsSection
           title="Service Items"
