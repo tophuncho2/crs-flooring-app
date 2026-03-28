@@ -29,6 +29,8 @@ export type InventoryRow = {
   stockCount: string
   cutTotal: string
   reservedStockCount: string
+  totalAllocated: string
+  unreservedTotal: string
   availableToAllocate: string
   runningBalance: string
   cost: string

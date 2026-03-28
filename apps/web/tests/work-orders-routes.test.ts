@@ -184,6 +184,8 @@ describe("work-order child routes", () => {
       remainingQuantity: 2,
       materialExpense: 0,
       hasAllocationShortage: true,
+      allocationStatus: "SHORTAGE",
+      isAllocationDone: true,
       changeOrderStatus: "SUFFICIENT",
       createdAt: "2026-03-19T00:00:00.000Z",
     }])

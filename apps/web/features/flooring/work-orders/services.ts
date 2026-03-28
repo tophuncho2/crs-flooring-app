@@ -132,6 +132,7 @@ export function normalizeWorkOrderItem(item: {
   quantity: { toString(): string }
   unitPrice: { toString(): string }
   notes: string | null
+  allocationStatus: WorkOrderMaterialAllocationStatus
   changeOrderStatus: "SUFFICIENT" | "SHORTAGE" | null
   updatedAt: Date
   product: {
@@ -215,8 +216,10 @@ export function normalizeWorkOrderItem(item: {
     hasPendingAllocationRun: options?.hasPendingAllocationRun,
     hasEligibleInventoryRemaining: options?.hasEligibleInventoryRemaining,
   })
-  const allocationStatus = options?.allocationStatus ?? allocationSummary.allocationStatus
+  const allocationStatus = options?.allocationStatus ?? item.allocationStatus ?? allocationSummary.allocationStatus
   const isAllocationDone = options?.isAllocationDone ?? allocationSummary.isDone
+  const changeOrderStatus: "SUFFICIENT" | "SHORTAGE" =
+    allocationStatus === "SHORTAGE" ? "SHORTAGE" : "SUFFICIENT"
 
   return {
     id: item.id,
@@ -234,10 +237,7 @@ export function normalizeWorkOrderItem(item: {
     hasAllocationShortage: allocationSummary.hasAllocationShortage,
     allocationStatus,
     isAllocationDone,
-    changeOrderStatus:
-      allocationStatus === "SHORTAGE"
-        ? "SHORTAGE"
-        : (item.changeOrderStatus ?? "SUFFICIENT"),
+    changeOrderStatus,
   }
 }
 

@@ -129,6 +129,13 @@ enum FlooringChangeOrderStatus {
   SUFFICIENT
 }
 
+enum FlooringWorkOrderItemAllocationStatus {
+  NOT_STARTED
+  PARTIALLY_ALLOCATED
+  FULLY_ALLOCATED
+  SHORTAGE
+}
+
 enum FlooringStoreCode {
   DARBY
   COLUMBIA
@@ -551,12 +558,14 @@ model FlooringWorkOrderItem {
   unitPrice         Decimal                    @db.Decimal(10, 2)
   notes             String?
   changeOrderStatus FlooringChangeOrderStatus? @default(SUFFICIENT)
+  allocationStatus  FlooringWorkOrderItemAllocationStatus @default(NOT_STARTED)
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
   cutLogs           FlooringCutLog[]
   allocations       FlooringWorkOrderItemAllocation[]
 
   @@index([workOrderId])
+  @@index([workOrderId, allocationStatus])
   @@index([workOrderId, createdAt])
   @@index([productId])
   @@index([sourceTemplateItemId])

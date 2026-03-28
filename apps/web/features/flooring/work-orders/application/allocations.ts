@@ -16,6 +16,7 @@ import {
   lockWorkOrderAllocationScope,
   listInventoryAllocationOptionsForWorkOrderItem,
   listWorkOrderItemAllocations,
+  syncWorkOrderAllocationStatuses,
   supersedePendingWorkOrderAllocationRuns,
   updateWorkOrderItemAllocation,
   withDatabaseTransaction,
@@ -51,6 +52,8 @@ export async function createWorkOrderItemAllocationUseCase(input: {
       data: buildInvoiceInvalidationFields(),
     })
 
+    await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
+
     return allocation
   })
 }
@@ -72,6 +75,8 @@ export async function updateWorkOrderItemAllocationUseCase(input: {
       data: buildInvoiceInvalidationFields(),
     })
 
+    await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
+
     return allocation
   })
 }
@@ -88,6 +93,8 @@ export async function deleteWorkOrderItemAllocationUseCase(input: {
       where: { id: input.workOrderId },
       data: buildInvoiceInvalidationFields(),
     })
+
+    await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
   })
 }
 

@@ -1,5 +1,5 @@
 import { Prisma, prisma, type PrismaClient } from "@builders/db"
-import { calculateInventoryPricePerUnit } from "@builders/domain"
+import { buildInventoryAllocationTotals, calculateInventoryPricePerUnit } from "@builders/domain"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
@@ -112,9 +112,11 @@ export function normalizeInventoryRow(row: {
     row.cutTotal !== undefined && row.cutTotal !== null
       ? Number(row.cutTotal)
       : cutLogs.reduce((total, log) => total + Number(log.cut), 0)
-  const runningBalance = Number(row.stockCount) - cutTotal
-  const reservedStockCount = Number(row.reservedStockCount?.toString() ?? 0)
-  const availableToAllocate = Math.max(0, Number(row.stockCount) - cutTotal - reservedStockCount)
+  const allocationTotals = buildInventoryAllocationTotals({
+    stockCount: row.stockCount.toString(),
+    cutTotal,
+    reservedStockCount: row.reservedStockCount?.toString() ?? 0,
+  })
   const pricePerUnit = calculateInventoryPricePerUnit({
     stockCount: row.stockCount.toString(),
     cost: row.cost?.toString() ?? null,
@@ -147,10 +149,12 @@ export function normalizeInventoryRow(row: {
     warehouseName: row.location?.warehouse.name ?? "",
     sectionName: row.location?.section?.name ?? "",
     stockCount: row.stockCount.toString(),
-    cutTotal: cutTotal.toFixed(2),
-    reservedStockCount: reservedStockCount.toFixed(2),
-    availableToAllocate: availableToAllocate.toFixed(2),
-    runningBalance: runningBalance.toFixed(2),
+    cutTotal: allocationTotals.cutTotal.toFixed(2),
+    reservedStockCount: allocationTotals.totalAllocated.toFixed(2),
+    totalAllocated: allocationTotals.totalAllocated.toFixed(2),
+    unreservedTotal: allocationTotals.unreservedTotal.toFixed(2),
+    availableToAllocate: allocationTotals.availableToAllocate.toFixed(2),
+    runningBalance: allocationTotals.runningBalance.toFixed(2),
     cost: row.cost?.toString() ?? "",
     freight: row.freight?.toString() ?? "",
     pricePerUnit: pricePerUnit.toFixed(2),

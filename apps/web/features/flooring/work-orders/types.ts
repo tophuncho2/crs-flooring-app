@@ -96,6 +96,8 @@ export type InventoryAllocationOption = {
   stockCount: string
   cutTotal: number
   reservedStockCount: string
+  totalAllocated: string
+  unreservedTotal: string
   availableToAllocate: number
   pricePerUnit: number
   label: string

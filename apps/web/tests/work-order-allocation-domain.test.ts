@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  buildInventoryAllocationTotals,
   buildWorkOrderAllocationPlan,
   buildWorkOrderAllocationWorkflowSummary,
   buildWorkOrderItemAllocationSummary,
@@ -117,6 +118,23 @@ describe("work order allocation domain", () => {
     ).toEqual({
       hasPendingRun: true,
       isDone: false,
+    })
+  })
+
+  it("derives inventory allocation totals in one shared place", () => {
+    expect(
+      buildInventoryAllocationTotals({
+        stockCount: 20,
+        cutTotal: 4,
+        reservedStockCount: 3,
+      }),
+    ).toEqual({
+      stockTotal: 20,
+      cutTotal: 4,
+      totalAllocated: 3,
+      runningBalance: 16,
+      unreservedTotal: 16,
+      availableToAllocate: 13,
     })
   })
 })

@@ -201,7 +201,7 @@ export async function listWorkOrders(
       },
       items: {
         select: {
-          changeOrderStatus: true,
+          allocationStatus: true,
         },
       },
     },
@@ -213,7 +213,7 @@ export async function listWorkOrders(
   return workOrders.map((workOrder) =>
     normalizeWorkOrder({
       ...workOrder,
-      hasShortage: workOrder.items.some((item) => item.changeOrderStatus === "SHORTAGE"),
+      hasShortage: workOrder.items.some((item) => item.allocationStatus === "SHORTAGE"),
     }),
   )
 }

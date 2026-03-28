@@ -1,4 +1,11 @@
 import { Prisma } from "@prisma/client"
+import {
+  buildInventoryAllocationTotals,
+  buildWorkOrderAllocationPlan,
+  buildWorkOrderItemAllocationSummary as buildDomainWorkOrderItemAllocationSummary,
+  isWorkOrderAutoAllocationPendingStatus,
+  type WorkOrderMaterialAllocationStatus,
+} from "@builders/domain"
 import { db } from "../../client.js"
 
 type WorkOrderAllocationDbClient = Prisma.TransactionClient | typeof db
@@ -11,6 +18,8 @@ export type WorkOrderAllocationRunStatusRecord =
   | "COMPLETED"
   | "FAILED"
   | "SUPERSEDED"
+
+type PersistedWorkOrderItemAllocationStatus = WorkOrderMaterialAllocationStatus
 
 export type WorkOrderItemAllocationRecord = {
   id: string
@@ -46,6 +55,8 @@ export type InventoryAllocationOptionRecord = {
   stockCount: string
   cutTotal: number
   reservedStockCount: string
+  totalAllocated: string
+  unreservedTotal: string
   availableToAllocate: number
   pricePerUnit: number
   label: string
@@ -95,6 +106,13 @@ export type WorkOrderAutoAllocationSourceRecord = {
     autoAllocations: WorkOrderItemAllocationRecord[]
   }>
   inventoryCandidates: Array<InventoryAllocationOptionRecord>
+}
+
+function buildPersistedWorkOrderItemAllocationStateUpdate(status: PersistedWorkOrderItemAllocationStatus) {
+  return {
+    allocationStatus: status,
+    changeOrderStatus: status === "SHORTAGE" ? "SHORTAGE" : "SUFFICIENT",
+  } satisfies Prisma.FlooringWorkOrderItemUpdateInput
 }
 
 type InventoryForAllocation = {
@@ -324,11 +342,11 @@ function toInventoryAllocationOptionRecord(inventory: InventoryForAllocation): I
     return null
   }
 
-  const cutTotal = sumCutTotal(inventory.cutLogs)
-  const availableToAllocate = Math.max(
-    0,
-    toNumber(inventory.stockCount) - cutTotal - toNumber(inventory.reservedStockCount),
-  )
+  const allocationTotals = buildInventoryAllocationTotals({
+    stockCount: inventory.stockCount.toString(),
+    cutTotal: sumCutTotal(inventory.cutLogs),
+    reservedStockCount: inventory.reservedStockCount.toString(),
+  })
   const pricePerUnit = calculateInventoryPricePerUnit({
     stockCount: inventory.stockCount.toString(),
     cost: inventory.cost?.toString() ?? null,
@@ -348,9 +366,11 @@ function toInventoryAllocationOptionRecord(inventory: InventoryForAllocation): I
     locationCode,
     stockUnit,
     stockCount: inventory.stockCount.toString(),
-    cutTotal,
+    cutTotal: allocationTotals.cutTotal,
     reservedStockCount: inventory.reservedStockCount.toString(),
-    availableToAllocate,
+    totalAllocated: allocationTotals.totalAllocated.toFixed(2),
+    unreservedTotal: allocationTotals.unreservedTotal.toFixed(2),
+    availableToAllocate: allocationTotals.availableToAllocate,
     pricePerUnit,
     label: buildInventoryAllocationLabel({
       stockCount: inventory.stockCount.toString(),
@@ -649,14 +669,17 @@ export async function recalculateWorkOrderItemAllocationStatus(
       unitCost: allocation.unitCost.toString(),
     })),
   })
+  const allocationStatus = buildDomainWorkOrderItemAllocationSummary({
+    requiredQuantity: item.quantity.toString(),
+    allocations: item.allocations.map((allocation) => ({
+      quantity: allocation.quantity.toString(),
+      unitCost: allocation.unitCost.toString(),
+    })),
+  }).allocationStatus
 
   await client.flooringWorkOrderItem.update({
     where: { id: workOrderItemId },
-    data: {
-      // Shortage is a terminal allocation workflow result, not a user-editable field.
-      // Manual edits and intermediate allocation changes reset the coarse persisted flag.
-      changeOrderStatus: "SUFFICIENT",
-    },
+    data: buildPersistedWorkOrderItemAllocationStateUpdate(allocationStatus),
   })
 
   return summary
@@ -670,34 +693,136 @@ export async function updateWorkOrderItemShortageStatuses(
   client: WorkOrderAllocationDbClient = db,
 ) {
   const shortageItemIds = Array.from(new Set(input.shortageItemIds.filter(Boolean)))
-
-  await client.flooringWorkOrderItem.updateMany({
-    where: {
-      workOrderId: input.workOrderId,
-      id: {
-        notIn: shortageItemIds.length > 0 ? shortageItemIds : undefined,
+  const shortageItemIdSet = new Set(shortageItemIds)
+  const items = await client.flooringWorkOrderItem.findMany({
+    where: { workOrderId: input.workOrderId },
+    select: {
+      id: true,
+      quantity: true,
+      allocations: {
+        select: {
+          quantity: true,
+          unitCost: true,
+        },
       },
-    },
-    data: {
-      changeOrderStatus: "SUFFICIENT",
     },
   })
 
-  if (shortageItemIds.length === 0) {
-    return
+  const itemIdsByStatus = new Map<PersistedWorkOrderItemAllocationStatus, string[]>()
+
+  for (const item of items) {
+    const allocationStatus = buildDomainWorkOrderItemAllocationSummary({
+      requiredQuantity: item.quantity.toString(),
+      allocations: item.allocations.map((allocation) => ({
+        quantity: allocation.quantity.toString(),
+        unitCost: allocation.unitCost.toString(),
+      })),
+      hasPendingAllocationRun: false,
+      hasEligibleInventoryRemaining: !shortageItemIdSet.has(item.id),
+    }).allocationStatus
+    const existingIds = itemIdsByStatus.get(allocationStatus) ?? []
+    existingIds.push(item.id)
+    itemIdsByStatus.set(allocationStatus, existingIds)
   }
 
-  await client.flooringWorkOrderItem.updateMany({
-    where: {
-      workOrderId: input.workOrderId,
-      id: {
-        in: shortageItemIds,
+  for (const [status, itemIds] of itemIdsByStatus.entries()) {
+    await client.flooringWorkOrderItem.updateMany({
+      where: {
+        id: {
+          in: itemIds,
+        },
+      },
+      data: buildPersistedWorkOrderItemAllocationStateUpdate(status),
+    })
+  }
+}
+
+export async function syncWorkOrderAllocationStatuses(
+  workOrderId: string,
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
+    where: { id: workOrderId },
+    select: {
+      id: true,
+      warehouseId: true,
+      updatedAt: true,
+      items: {
+        select: {
+          id: true,
+          productId: true,
+          quantity: true,
+          allocations: {
+            select: {
+              quantity: true,
+              unitCost: true,
+            },
+          },
+        },
       },
     },
-    data: {
-      changeOrderStatus: "SHORTAGE",
-    },
   })
+
+  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, workOrder.updatedAt, client)
+  const hasPendingRun = Boolean(currentRun && isWorkOrderAutoAllocationPendingStatus(currentRun.status))
+  const canDeclareShortage = currentRun?.status === "COMPLETED"
+  const shortageItemIds = new Set<string>()
+
+  if (canDeclareShortage && workOrder.warehouseId) {
+    const inventoryCandidates = await listAutoAllocationInventoryCandidates(workOrder.id, client)
+    const allocationPlan = buildWorkOrderAllocationPlan({
+      warehouseId: workOrder.warehouseId,
+      items: workOrder.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        requiredQuantity: item.quantity.toString(),
+        allocatedQuantity: item.allocations.reduce(
+          (total, allocation) => total + Number(allocation.quantity.toString()),
+          0,
+        ),
+      })),
+      candidates: inventoryCandidates.map((candidate) => ({
+        id: candidate.id,
+        productId: candidate.productId,
+        warehouseId: candidate.warehouseId,
+        availableQuantity: candidate.availableToAllocate,
+        fifoReceivedAt: candidate.fifoReceivedAt,
+        itemNumber: candidate.itemNumber,
+      })),
+    })
+
+    for (const shortage of allocationPlan.shortages) {
+      shortageItemIds.add(shortage.workOrderItemId)
+    }
+  }
+
+  const itemIdsByStatus = new Map<PersistedWorkOrderItemAllocationStatus, string[]>()
+
+  for (const item of workOrder.items) {
+    const allocationStatus = buildDomainWorkOrderItemAllocationSummary({
+      requiredQuantity: item.quantity.toString(),
+      allocations: item.allocations.map((allocation) => ({
+        quantity: allocation.quantity.toString(),
+        unitCost: allocation.unitCost.toString(),
+      })),
+      hasPendingAllocationRun: hasPendingRun,
+      hasEligibleInventoryRemaining: canDeclareShortage ? !shortageItemIds.has(item.id) : undefined,
+    }).allocationStatus
+    const existingIds = itemIdsByStatus.get(allocationStatus) ?? []
+    existingIds.push(item.id)
+    itemIdsByStatus.set(allocationStatus, existingIds)
+  }
+
+  for (const [status, itemIds] of itemIdsByStatus.entries()) {
+    await client.flooringWorkOrderItem.updateMany({
+      where: {
+        id: {
+          in: itemIds,
+        },
+      },
+      data: buildPersistedWorkOrderItemAllocationStateUpdate(status),
+    })
+  }
 }
 
 function assertInventoryCompatible(input: {
@@ -971,7 +1096,7 @@ export async function createWorkOrderItemAllocation(
     })
 
     await refreshInventoryReservedStockCount(tx, inventory.id)
-    await recalculateWorkOrderItemAllocationStatus(tx, item.id)
+    await syncWorkOrderAllocationStatuses(item.workOrder.id, tx)
 
     return toWorkOrderItemAllocationRecord(allocation)
   })
@@ -1053,7 +1178,7 @@ export async function updateWorkOrderItemAllocation(
     if (nextInventoryId !== existing.inventoryId) {
       await refreshInventoryReservedStockCount(tx, nextInventoryId)
     }
-    await recalculateWorkOrderItemAllocationStatus(tx, item.id)
+    await syncWorkOrderAllocationStatuses(item.workOrder.id, tx)
 
     return loadAllocationRecord(tx, existing.id)
   })
@@ -1088,7 +1213,7 @@ export async function deleteWorkOrderItemAllocation(
     })
 
     await refreshInventoryReservedStockCount(tx, allocation.inventoryId)
-    await recalculateWorkOrderItemAllocationStatus(tx, item.id)
+    await syncWorkOrderAllocationStatuses(item.workOrder.id, tx)
   })
 }
 
@@ -1097,6 +1222,12 @@ export async function deleteAllAllocationsForWorkOrderItem(
   client: WorkOrderAllocationDbClient = db,
 ) {
   return withAllocationTransaction(client, async (tx) => {
+    const workOrderItem = await tx.flooringWorkOrderItem.findUniqueOrThrow({
+      where: { id: workOrderItemId },
+      select: {
+        workOrderId: true,
+      },
+    })
     const allocations = await tx.flooringWorkOrderItemAllocation.findMany({
       where: { workOrderItemId },
       select: {
@@ -1114,7 +1245,7 @@ export async function deleteAllAllocationsForWorkOrderItem(
       await refreshInventoryReservedStockCount(tx, inventoryId)
     }
 
-    await recalculateWorkOrderItemAllocationStatus(tx, workOrderItemId)
+    await syncWorkOrderAllocationStatuses(workOrderItem.workOrderId, tx)
   })
 }
 
@@ -1138,7 +1269,6 @@ export async function deleteAllAutoAllocationsForWorkOrder(
     })
 
     const inventoryIds = Array.from(new Set(allocations.map((allocation) => allocation.inventoryId)))
-    const workOrderItemIds = Array.from(new Set(allocations.map((allocation) => allocation.workOrderItemId)))
 
     await lockInventoryRows(tx, inventoryIds)
     await tx.flooringWorkOrderItemAllocation.deleteMany({
@@ -1152,9 +1282,7 @@ export async function deleteAllAutoAllocationsForWorkOrder(
     for (const inventoryId of inventoryIds) {
       await refreshInventoryReservedStockCount(tx, inventoryId)
     }
-    for (const itemId of workOrderItemIds) {
-      await recalculateWorkOrderItemAllocationStatus(tx, itemId)
-    }
+    await syncWorkOrderAllocationStatuses(workOrderId, tx)
   })
 }
 
@@ -1177,7 +1305,6 @@ export async function clearAllocationsForWorkOrder(
     })
 
     const inventoryIds = Array.from(new Set(allocations.map((allocation) => allocation.inventoryId)))
-    const workOrderItemIds = Array.from(new Set(allocations.map((allocation) => allocation.workOrderItemId)))
 
     await lockInventoryRows(tx, inventoryIds)
     await tx.flooringWorkOrderItemAllocation.deleteMany({
@@ -1191,9 +1318,7 @@ export async function clearAllocationsForWorkOrder(
     for (const inventoryId of inventoryIds) {
       await refreshInventoryReservedStockCount(tx, inventoryId)
     }
-    for (const itemId of workOrderItemIds) {
-      await recalculateWorkOrderItemAllocationStatus(tx, itemId)
-    }
+    await syncWorkOrderAllocationStatuses(workOrderId, tx)
   })
 }
 

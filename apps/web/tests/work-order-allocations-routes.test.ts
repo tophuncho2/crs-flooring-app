@@ -309,6 +309,8 @@ describe("work-order allocation routes", () => {
         stockCount: "20.00",
         cutTotal: 4,
         reservedStockCount: "3.00",
+        totalAllocated: "3.00",
+        unreservedTotal: "16.00",
         availableToAllocate: 13,
         pricePerUnit: 2.5,
         label: "A-1 / INV-100",

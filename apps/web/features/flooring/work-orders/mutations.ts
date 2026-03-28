@@ -6,6 +6,7 @@ import {
   deleteAllAllocationsForWorkOrderItem,
   prisma,
   recalculateWorkOrderItemAllocationStatus,
+  syncWorkOrderAllocationStatuses,
   updateWorkOrderItemAllocation,
 } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
@@ -257,6 +258,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           notes: item.notes,
+          allocationStatus: "NOT_STARTED",
           changeOrderStatus: "SUFFICIENT",
         },
       })
@@ -367,6 +369,7 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
         quantity: input.quantity,
         unitPrice: await resolveMaterialUnitPrice(input, tx),
         notes: input.notes,
+        allocationStatus: "NOT_STARTED",
         changeOrderStatus: "SUFFICIENT",
       },
       include: workOrderItemInclude,
@@ -376,6 +379,8 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
       where: { id: workOrderId },
       data: buildInvoiceInvalidationFields(),
     })
+
+    await syncWorkOrderAllocationStatuses(workOrderId, tx)
 
     return item
   })
@@ -404,6 +409,7 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
         quantity: input.quantity,
         unitPrice: input.unitPrice ?? undefined,
         notes: input.notes,
+        allocationStatus: "NOT_STARTED",
         changeOrderStatus: "SUFFICIENT",
       },
       include: workOrderItemInclude,
@@ -416,7 +422,12 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
       data: buildInvoiceInvalidationFields(),
     })
 
-    return item
+    await syncWorkOrderAllocationStatuses(item.workOrderId, tx)
+
+    return tx.flooringWorkOrderItem.findUniqueOrThrow({
+      where: { id: itemId },
+      include: workOrderItemInclude,
+    })
   })
 
   return normalizeWorkOrderItem(updated)
@@ -433,6 +444,8 @@ export async function deleteWorkOrderItem(itemId: string) {
       where: { id: deleted.workOrderId },
       data: buildInvoiceInvalidationFields(),
     })
+
+    await syncWorkOrderAllocationStatuses(deleted.workOrderId, tx)
   })
 }
 
@@ -708,17 +721,16 @@ export async function saveWorkOrderMaterialSection(
 
     await recalculateWorkOrderItemAllocationStatus(tx, itemId)
 
-    const item = await tx.flooringWorkOrderItem.findUniqueOrThrow({
-      where: { id: itemId },
-      include: workOrderItemInclude,
-    })
-
     await tx.flooringWorkOrder.update({
       where: { id: workOrderId },
       data: buildInvoiceInvalidationFields(),
     })
+    await syncWorkOrderAllocationStatuses(workOrderId, tx)
 
-    return item
+    return tx.flooringWorkOrderItem.findUniqueOrThrow({
+      where: { id: itemId },
+      include: workOrderItemInclude,
+    })
   })
 
   return normalizeWorkOrderItem(updated)

@@ -382,6 +382,7 @@ export async function applyTemplateSnapshotToNewWorkOrder(args: {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           notes: item.notes,
+          allocationStatus: "NOT_STARTED",
           changeOrderStatus: item.changeOrderStatus,
         },
       })
@@ -454,6 +455,7 @@ export async function applyTemplateSync(args: {
           quantity: item.snapshot.quantity,
           unitPrice: item.snapshot.unitPrice,
           notes: item.snapshot.notes,
+          allocationStatus: "NOT_STARTED",
           changeOrderStatus: item.snapshot.changeOrderStatus,
         },
       })
@@ -518,6 +520,7 @@ export async function applyTemplateSync(args: {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         notes: item.notes,
+        allocationStatus: "NOT_STARTED",
         changeOrderStatus: item.changeOrderStatus,
       })),
     })
