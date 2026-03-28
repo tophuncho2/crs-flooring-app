@@ -407,17 +407,12 @@ export function WorkOrderMaterialItemsSection({
             aria-label={materialSection.isOpen ? `Collapse ${title}` : `Expand ${title}`}
             className="group absolute inset-0 z-0 w-full text-left transition-all duration-200 hover:bg-[var(--panel-hover)]/45 hover:shadow-[0_0_22px_rgba(59,130,246,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
           />
-          <div className="relative z-[1] flex items-center gap-4 px-5 py-5">
-            <div className="pointer-events-none flex min-w-0 flex-1 items-center justify-between gap-4 pr-40">
-              <div className="min-w-0 flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--panel-border)] bg-[var(--panel-background)] text-[var(--foreground)]/72 transition group-hover:border-blue-500/25 group-hover:text-[var(--foreground)]">
-                  {materialSection.isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                </span>
-                <div className="min-w-0">
-                  <div className="text-base font-semibold text-[var(--foreground)]">{title}</div>
-                  <div className="text-xs text-[var(--foreground)]/55">
-                    {items.length} {items.length === 1 ? "item" : "items"}
-                  </div>
+          <div className="pointer-events-none relative z-[1] flex items-center gap-4 px-5 py-5">
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-4 pr-40">
+              <div className="min-w-0">
+                <div className="text-base font-semibold text-[var(--foreground)]">{title}</div>
+                <div className="text-xs text-[var(--foreground)]/55">
+                  {items.length} {items.length === 1 ? "item" : "items"}
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -425,7 +420,7 @@ export function WorkOrderMaterialItemsSection({
                 <MaterialSectionMetric label="Allocated Cost" value={formatCurrencyValue(totalAllocatedCost)} />
               </div>
             </div>
-            <div className="relative z-[2] ml-auto flex items-center">
+            <div className="pointer-events-auto relative z-[2] ml-auto flex items-center">
               <button
                 type="button"
                 onClick={onRequestAutoAllocation}
