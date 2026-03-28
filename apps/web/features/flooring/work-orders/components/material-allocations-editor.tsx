@@ -251,7 +251,7 @@ export function MaterialAllocationsEditor({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {allocations.map((allocation) => {
         return (
           <AllocationEditorRow
@@ -268,7 +268,7 @@ export function MaterialAllocationsEditor({
       })}
 
       {!addRow.isOpen ? (
-        <div className="pt-1">
+        <div className="pt-0">
           <InlineAddRowButton label="Add allocation" onClick={addRow.open} />
         </div>
       ) : null}

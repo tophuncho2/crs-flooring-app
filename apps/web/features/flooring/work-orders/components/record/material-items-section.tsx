@@ -405,7 +405,7 @@ export function WorkOrderMaterialItemsSection({
             onClick={materialSection.toggle}
             aria-expanded={materialSection.isOpen}
             aria-label={materialSection.isOpen ? `Collapse ${title}` : `Expand ${title}`}
-            className="group absolute inset-0 z-0 w-full text-left transition-all duration-200 hover:bg-[var(--panel-hover)]/45 hover:shadow-[0_0_22px_rgba(59,130,246,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+            className="group absolute inset-0 z-0 w-full text-left transition-all duration-200 hover:bg-[rgba(58,58,58,0.72)] hover:shadow-[0_0_22px_rgba(59,130,246,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
           />
           <div className="pointer-events-none relative z-[1] flex items-center gap-4 px-5 py-5">
             <div className="flex min-w-0 flex-1 items-center justify-between gap-4 pr-40">
@@ -453,7 +453,7 @@ export function WorkOrderMaterialItemsSection({
                         isExpanded && "shadow-[0_12px_24px_rgba(0,0,0,0.1)]",
                       )}
                     >
-                      <div className="space-y-4 p-4">
+                      <div className="space-y-3 p-4">
                         <MaterialItemEditorCard
                           item={item}
                           productOptions={productOptions}
@@ -467,7 +467,7 @@ export function WorkOrderMaterialItemsSection({
                           onToggleAllocations={() => onToggleExpandedItem(item.id)}
                         />
                         {isExpanded ? (
-                          <div className="pt-4">
+                          <div className="pt-1">
                             {renderAllocationSection(item)}
                           </div>
                         ) : null}
