@@ -49,6 +49,11 @@ export default function WorkOrderDetailClient({
   const [refreshNonce, setRefreshNonce] = useState(0)
   const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
   const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
+  const [autoAllocateOption, setAutoAllocateOption] = useState<{
+    label: string
+    disabled: boolean
+    onSelect: () => void
+  } | null>(null)
   const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`, {
     enabled: isInvoiceSectionOpen,
   })
@@ -148,6 +153,15 @@ export default function WorkOrderDetailClient({
               onSelect: () => void markWorkOrderComplete(),
               disabled: workOrder.isComplete,
             },
+            ...(autoAllocateOption
+              ? [
+                  {
+                    label: autoAllocateOption.label,
+                    onSelect: autoAllocateOption.onSelect,
+                    disabled: autoAllocateOption.disabled,
+                  },
+                ]
+              : []),
           ]}
         />
       }
@@ -168,6 +182,7 @@ export default function WorkOrderDetailClient({
         onQueueInvoice={() => void queueInvoiceGeneration()}
         onOpenInvoice={invoice.openInvoice}
         onInvoiceSectionOpenChange={setIsInvoiceSectionOpen}
+        onAutoAllocateOptionsChange={setAutoAllocateOption}
         onClose={closePage}
         refreshNonce={refreshNonce}
         onExpenseSummaryChange={(nextSummary) => {

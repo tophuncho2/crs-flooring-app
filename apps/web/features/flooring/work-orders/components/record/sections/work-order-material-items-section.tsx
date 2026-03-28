@@ -11,7 +11,6 @@ import { RecordNestedArea } from "@/features/dashboard/shared/record-view/sectio
 import { RecordSectionMetric } from "@/features/dashboard/shared/record-view/sections/record-section-metric"
 import { RecordSectionShell } from "@/features/dashboard/shared/record-view/sections/record-section-shell"
 import { RECORD_SECTION_BORDER_CLASS_NAME } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
-import { RecordOptionsMenu } from "@/features/dashboard/shared/record-view/shell/record-options-menu"
 import {
   InlineAddRowButton,
   useInlineCreateRow,
@@ -316,8 +315,6 @@ export function WorkOrderMaterialItemsSection({
   onItemFieldChange,
   onSaveItem,
   onDeleteItem,
-  onRequestAutoAllocation,
-  isAutoAllocating,
   renderAllocationSection,
 }: {
   title: string
@@ -337,8 +334,6 @@ export function WorkOrderMaterialItemsSection({
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
   onSaveItem: (item: EditableMaterialItem) => Promise<boolean> | boolean
   onDeleteItem: (itemId: string) => void
-  onRequestAutoAllocation: () => void
-  isAutoAllocating: boolean
   renderAllocationSection: (item: WorkOrderMaterialItem) => ReactNode
 }) {
   const addRow = useInlineCreateRow(false)
@@ -358,18 +353,6 @@ export function WorkOrderMaterialItemsSection({
       metrics={metrics.map((metric) => (
         <RecordSectionMetric key={metric.label} label={metric.label} value={metric.value} />
       ))}
-      actions={
-        <RecordOptionsMenu
-          buttonLabel="Options"
-          items={[
-            {
-              label: isAutoAllocating ? "Auto Allocating..." : "Auto Allocate",
-              onSelect: onRequestAutoAllocation,
-              disabled: isAutoAllocating || items.length === 0,
-            },
-          ]}
-        />
-      }
     >
       {loading ? (
         <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>

@@ -108,6 +108,7 @@ export function WorkOrderRecordPanel({
   onQueueInvoice,
   onOpenInvoice,
   onInvoiceSectionOpenChange,
+  onAutoAllocateOptionsChange,
   onClose,
   refreshNonce = 0,
   onWorkOrderSaved,
@@ -131,6 +132,7 @@ export function WorkOrderRecordPanel({
   onQueueInvoice: () => void
   onOpenInvoice: () => void
   onInvoiceSectionOpenChange?: (open: boolean) => void
+  onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
   onClose: () => void
   refreshNonce?: number
   onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
@@ -346,6 +348,25 @@ export function WorkOrderRecordPanel({
     },
   })
 
+  useEffect(() => {
+    onAutoAllocateOptionsChange?.({
+      label: allocations.isAutoAllocating ? "Auto Allocating..." : "Auto Allocate",
+      disabled: allocations.isAutoAllocating || lineItems.materialItems.length === 0,
+      onSelect: () => {
+        void allocations.requestAutoAllocation()
+      },
+    })
+
+    return () => {
+      onAutoAllocateOptionsChange?.(null)
+    }
+  }, [
+    allocations.isAutoAllocating,
+    allocations.requestAutoAllocation,
+    lineItems.materialItems.length,
+    onAutoAllocateOptionsChange,
+  ])
+
   const handleSaveMaterialItemSection = useCallback(
     async (item: EditableMaterialItem) => {
       const didSaveItem = await lineItems.saveMaterialItem(item, { suppressSuccess: true })
@@ -469,9 +490,9 @@ export function WorkOrderRecordPanel({
         ) : null}
 
         <div className={showPrimaryFields ? "pt-2" : undefined}>
-          <WorkOrderMaterialItemsSection
-            title="Material Items"
-            items={lineItems.materialItems}
+        <WorkOrderMaterialItemsSection
+          title="Material Items"
+          items={lineItems.materialItems}
             draft={lineItems.materialDraft}
             productOptions={productOptions}
             loading={loading || lineItems.materialCollection.loading}
@@ -482,15 +503,13 @@ export function WorkOrderRecordPanel({
             itemErrors={lineItems.materialItemErrors}
             expandedItemIds={allocations.expandedItemIds}
             onToggleExpandedItem={allocations.toggleExpandedItem}
-            onDraftChange={lineItems.handleMaterialDraftChange}
-            onAdd={() => lineItems.addMaterialItem()}
-            onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-            onSaveItem={handleSaveMaterialItemSection}
-            onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
-            onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
-            isAutoAllocating={allocations.isAutoAllocating}
-            renderAllocationSection={(item: WorkOrderMaterialItem) => (
-              <MaterialAllocationsEditor
+          onDraftChange={lineItems.handleMaterialDraftChange}
+          onAdd={() => lineItems.addMaterialItem()}
+          onItemFieldChange={lineItems.handleMaterialItemFieldChange}
+          onSaveItem={handleSaveMaterialItemSection}
+          onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
+          renderAllocationSection={(item: WorkOrderMaterialItem) => (
+            <MaterialAllocationsEditor
                 allocations={item.allocations}
                 draft={
                   allocations.draftsByItemId[item.id] ?? {

@@ -21,6 +21,7 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     onQueueInvoice,
     onOpenInvoice,
     onInvoiceSectionOpenChange,
+    onAutoAllocateOptionsChange,
   }: {
     workOrderId: string
     notices?: { message?: string; error?: string }
@@ -29,19 +30,41 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     onQueueInvoice?: () => void
     onOpenInvoice?: () => void
     onInvoiceSectionOpenChange?: (open: boolean) => void
+    onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
   }) => (
-    <div>
-      <div>{`Panel ${workOrderId}`}</div>
-      {notices?.message ? <div>{notices.message}</div> : null}
-      {notices?.error ? <div>{notices.error}</div> : null}
-      <button type="button" onClick={() => onInvoiceSectionOpenChange?.(true)}>Open Invoice Section</button>
-      <button type="button" onClick={() => onQueueInvoice?.()}>Generate Invoice</button>
-      <button type="button" onClick={() => onOpenInvoice?.()} disabled={!invoice?.canOpen}>Open Invoice</button>
-      <button type="button" onClick={() => onDirtyChange?.(true)}>Mark Dirty</button>
-      <button type="button" onClick={() => onDirtyChange?.(false)}>Clear Dirty</button>
-    </div>
+    <>
+      <AutoAllocateOptionBridge onAutoAllocateOptionsChange={onAutoAllocateOptionsChange} />
+      <div>
+        <div>{`Panel ${workOrderId}`}</div>
+        {notices?.message ? <div>{notices.message}</div> : null}
+        {notices?.error ? <div>{notices.error}</div> : null}
+        <button type="button" onClick={() => onInvoiceSectionOpenChange?.(true)}>Open Invoice Section</button>
+        <button type="button" onClick={() => onQueueInvoice?.()}>Generate Invoice</button>
+        <button type="button" onClick={() => onOpenInvoice?.()} disabled={!invoice?.canOpen}>Open Invoice</button>
+        <button type="button" onClick={() => onDirtyChange?.(true)}>Mark Dirty</button>
+        <button type="button" onClick={() => onDirtyChange?.(false)}>Clear Dirty</button>
+      </div>
+    </>
   ),
 }))
+
+function AutoAllocateOptionBridge({
+  onAutoAllocateOptionsChange,
+}: {
+  onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
+}) {
+  React.useEffect(() => {
+    onAutoAllocateOptionsChange?.({
+      label: "Auto Allocate",
+      disabled: false,
+      onSelect: vi.fn(),
+    })
+
+    return () => onAutoAllocateOptionsChange?.(null)
+  }, [onAutoAllocateOptionsChange])
+
+  return null
+}
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({
@@ -316,6 +339,7 @@ describe("WorkOrdersClient", () => {
 
     expect(within(optionsMenu).queryByRole("button", { name: "Sync Template" })).toBeNull()
     expect(within(optionsMenu).getByRole("button", { name: "Complete" })).toBeTruthy()
+    expect(within(optionsMenu).getByRole("button", { name: "Auto Allocate" })).toBeTruthy()
     expect(within(optionsMenu).queryByRole("button", { name: "Invoice" })).toBeNull()
     expect(within(optionsMenu).queryByRole("button", { name: "Open Invoice" })).toBeNull()
   })
