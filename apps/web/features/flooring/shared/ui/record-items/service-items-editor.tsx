@@ -7,6 +7,7 @@ import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/feature
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
+import { LineItemPriceField, LineItemQuantityField, LineItemTotalField } from "./line-item-table-cells"
 
 export type ServiceOption = {
   id: string
@@ -132,7 +133,6 @@ export function ServiceItemsEditor({
             <tr>
               <TableHeaderCell>Service</TableHeaderCell>
               <TableHeaderCell>Name</TableHeaderCell>
-              <TableHeaderCell>Unit</TableHeaderCell>
               <TableHeaderCell>Qty</TableHeaderCell>
               <TableHeaderCell>Unit Price</TableHeaderCell>
               <TableHeaderCell>Total</TableHeaderCell>
@@ -183,56 +183,70 @@ export function ServiceItemsEditor({
                 </td>
                 <td className="px-3 py-2">
                   <div className="space-y-1">
-                    <select
-                      value={item.unitId}
-                      onChange={(event) => {
-                        const nextUnitId = event.target.value
-                        const selected = unitOptions.find((unit) => unit.id === nextUnitId)
-                        onItemFieldChange(item.id, "unitId", nextUnitId)
-                        onItemFieldChange(item.id, "unitName", selected?.name ?? "")
-                      }}
-                      className={getFieldControlClassName("w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[item.id]?.unitId))}
-                    >
-                      <option value="">Select unit</option>
-                      {unitOptions.map((unit) => (
-                        <option key={unit.id} value={unit.id}>{unit.name}</option>
-                      ))}
-                    </select>
+                    <LineItemQuantityField
+                      className={getFieldControlClassName("", Boolean(itemErrors[item.id]?.quantity || itemErrors[item.id]?.unitId))}
+                      input={
+                        <input
+                          value={item.quantity}
+                          inputMode="decimal"
+                          spellCheck={false}
+                          placeholder="Qty"
+                          onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
+                          className="w-16 bg-transparent outline-none"
+                        />
+                      }
+                      unit={
+                        <select
+                          value={item.unitId}
+                          onChange={(event) => {
+                            const nextUnitId = event.target.value
+                            const selected = unitOptions.find((unit) => unit.id === nextUnitId)
+                            onItemFieldChange(item.id, "unitId", nextUnitId)
+                            onItemFieldChange(item.id, "unitName", selected?.name ?? "")
+                          }}
+                          className="max-w-[7rem] bg-transparent text-xs outline-none"
+                        >
+                          <option value="">Unit</option>
+                          {unitOptions.map((unit) => (
+                            <option key={unit.id} value={unit.id}>{unit.name}</option>
+                          ))}
+                        </select>
+                      }
+                    />
+                    {itemErrors[item.id]?.quantity ? <FieldErrorText>{itemErrors[item.id]?.quantity}</FieldErrorText> : null}
                     {itemErrors[item.id]?.unitId ? <FieldErrorText>{itemErrors[item.id]?.unitId}</FieldErrorText> : null}
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <div className="space-y-1">
-                    <input
-                      value={item.quantity}
-                      inputMode="decimal"
-                      spellCheck={false}
-                      onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                      className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[item.id]?.quantity))}
-                    />
-                    {itemErrors[item.id]?.quantity ? <FieldErrorText>{itemErrors[item.id]?.quantity}</FieldErrorText> : null}
-                  </div>
-                </td>
-                <td className="px-3 py-2">
-                  <div className={getFieldControlClassName("flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(itemErrors[item.id]?.unitPrice))}>
-                    <span className="text-[var(--foreground)]/60">$</span>
-                    <input value={item.unitPrice} inputMode="decimal" spellCheck={false} onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))} className="w-20 bg-transparent outline-none" />
-                    <span className="text-xs text-[var(--foreground)]/50">/ {item.unitName || "unit"}</span>
-                  </div>
+                  <LineItemPriceField
+                    className={getFieldControlClassName("", Boolean(itemErrors[item.id]?.unitPrice))}
+                    input={
+                      <input
+                        value={item.unitPrice}
+                        inputMode="decimal"
+                        spellCheck={false}
+                        onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
+                        className="w-16 bg-transparent outline-none"
+                      />
+                    }
+                    unit={item.unitName || "unit"}
+                  />
                   {itemErrors[item.id]?.unitPrice ? <FieldErrorText>{itemErrors[item.id]?.unitPrice}</FieldErrorText> : null}
                 </td>
-                <td className="px-3 py-2 font-medium">{formatLineTotal(item)}</td>
                 <td className="px-3 py-2">
-                  <input value={item.notes} onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                  <LineItemTotalField value={formatLineTotal(item)} />
+                </td>
+                <td className="px-3 py-2">
+                  <input value={item.notes} onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                 </td>
                 {onSaveItem ? (
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <SaveRowButton onClick={() => onSaveItem(item)} disabled={savingItemId === item.id}>
                       {savingItemId === item.id ? "Saving..." : "Save"}
                     </SaveRowButton>
                   </td>
                 ) : null}
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
                     {deletingItemId === item.id ? "Deleting..." : "Delete"}
                   </DeleteRowButton>
@@ -282,45 +296,59 @@ export function ServiceItemsEditor({
               </td>
               <td className="px-3 py-2">
                 <div className="space-y-1">
-                  <select
-                    value={draft.unitId}
-                    onChange={(event) => onDraftChange("unitId", event.target.value)}
-                    className={getFieldControlClassName("w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.unitId))}
-                  >
-                    <option value="">Select unit</option>
-                    {unitOptions.map((unit) => (
-                      <option key={unit.id} value={unit.id}>{unit.name}</option>
-                    ))}
-                  </select>
+                  <LineItemQuantityField
+                    className={getFieldControlClassName("", Boolean(draftErrors.quantity || draftErrors.unitId))}
+                    input={
+                      <input
+                        value={draft.quantity}
+                        inputMode="decimal"
+                        spellCheck={false}
+                        placeholder="Qty"
+                        onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
+                        className="w-16 bg-transparent outline-none"
+                      />
+                    }
+                    unit={
+                      <select
+                        value={draft.unitId}
+                        onChange={(event) => onDraftChange("unitId", event.target.value)}
+                        className="max-w-[7rem] bg-transparent text-xs outline-none"
+                      >
+                        <option value="">Unit</option>
+                        {unitOptions.map((unit) => (
+                          <option key={unit.id} value={unit.id}>{unit.name}</option>
+                        ))}
+                      </select>
+                    }
+                  />
+                  {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
                   {draftErrors.unitId ? <FieldErrorText>{draftErrors.unitId}</FieldErrorText> : null}
                 </div>
               </td>
               <td className="px-3 py-2">
-                <div className="space-y-1">
-                  <input
-                    value={draft.quantity}
-                    inputMode="decimal"
-                    spellCheck={false}
-                    onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
-                    className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
-                  />
-                  {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
-                </div>
-              </td>
-              <td className="px-3 py-2">
-                <div className={getFieldControlClassName("flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(draftErrors.unitPrice))}>
-                  <span className="text-[var(--foreground)]/60">$</span>
-                  <input value={draft.unitPrice} inputMode="decimal" spellCheck={false} onChange={(event) => onDraftChange("unitPrice", normalizeEditableDecimalInput(event.target.value))} className="w-20 bg-transparent outline-none" />
-                  <span className="text-xs text-[var(--foreground)]/50">/ {unitOptions.find((unit) => unit.id === draft.unitId)?.name || "unit"}</span>
-                </div>
+                <LineItemPriceField
+                  className={getFieldControlClassName("", Boolean(draftErrors.unitPrice))}
+                  input={
+                    <input
+                      value={draft.unitPrice}
+                      inputMode="decimal"
+                      spellCheck={false}
+                      onChange={(event) => onDraftChange("unitPrice", normalizeEditableDecimalInput(event.target.value))}
+                      className="w-16 bg-transparent outline-none"
+                    />
+                  }
+                  unit={unitOptions.find((unit) => unit.id === draft.unitId)?.name || "unit"}
+                />
                 {draftErrors.unitPrice ? <FieldErrorText>{draftErrors.unitPrice}</FieldErrorText> : null}
               </td>
-              <td className="px-3 py-2 font-medium">{formatLineTotal(draft)}</td>
               <td className="px-3 py-2">
-                <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                <LineItemTotalField value={formatLineTotal(draft)} />
               </td>
-              {onSaveItem ? <td className="px-3 py-2" /> : null}
               <td className="px-3 py-2">
+                <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              {onSaveItem ? <td className="px-2 py-2" /> : null}
+              <td className="px-2 py-2">
                 <button type="button" onClick={() => void handleAdd()} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
                   {adding ? "Adding..." : "Add"}
                 </button>

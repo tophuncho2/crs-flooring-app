@@ -8,6 +8,7 @@ import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/feature
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
 import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
+import { LineItemPriceField, LineItemQuantityField, LineItemTotalField } from "./line-item-table-cells"
 import { RecordNestedChildRowSection } from "./record-nested-child-row-section"
 
 export type MaterialItemOption = {
@@ -106,7 +107,7 @@ export function MaterialItemsEditor({
   actions?: ReactNode
 }) {
   const hasExpandableRows = Boolean(renderExpandedRow && onToggleExpandedRow)
-  const colSpan = (onSaveItem ? 8 : 7) + (hasExpandableRows ? 1 : 0)
+  const colSpan = (onSaveItem ? 7 : 6) + (hasExpandableRows ? 1 : 0)
   const addRow = useInlineCreateRow(false)
 
   async function handleAdd() {
@@ -128,7 +129,6 @@ export function MaterialItemsEditor({
             <tr>
               <TableHeaderCell>Product</TableHeaderCell>
               <TableHeaderCell>Qty</TableHeaderCell>
-              <TableHeaderCell>Unit</TableHeaderCell>
               <TableHeaderCell>Unit Price</TableHeaderCell>
               <TableHeaderCell>Total</TableHeaderCell>
               <TableHeaderCell>Notes</TableHeaderCell>
@@ -162,31 +162,51 @@ export function MaterialItemsEditor({
                 </td>
                 <td className="px-3 py-2">
                   <div className="space-y-1">
-                    <input
-                      value={item.quantity}
-                      inputMode="decimal"
-                      spellCheck={false}
-                      onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                      className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[item.id]?.quantity))}
+                    <LineItemQuantityField
+                      className={getFieldControlClassName("", Boolean(itemErrors[item.id]?.quantity))}
+                      input={
+                        <input
+                          value={item.quantity}
+                          inputMode="decimal"
+                          spellCheck={false}
+                          placeholder="Qty"
+                          onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
+                          className="w-16 bg-transparent outline-none"
+                        />
+                      }
+                      unit={
+                        <span className="whitespace-nowrap">
+                          {productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "-"}
+                        </span>
+                      }
                     />
                     {itemErrors[item.id]?.quantity ? <FieldErrorText>{itemErrors[item.id]?.quantity}</FieldErrorText> : null}
                   </div>
                 </td>
-                <td className="px-3 py-2">{productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "-"}</td>
                 <td className="px-3 py-2">
-                  <div className={getFieldControlClassName("flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(itemErrors[item.id]?.unitPrice))}>
-                    <span className="text-[var(--foreground)]/60">$</span>
-                    <input value={item.unitPrice} inputMode="decimal" spellCheck={false} onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))} className="w-20 bg-transparent outline-none" />
-                    <span className="text-xs text-[var(--foreground)]/50">/ {productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "unit"}</span>
-                  </div>
+                  <LineItemPriceField
+                    className={getFieldControlClassName("", Boolean(itemErrors[item.id]?.unitPrice))}
+                    input={
+                      <input
+                        value={item.unitPrice}
+                        inputMode="decimal"
+                        spellCheck={false}
+                        onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
+                        className="w-16 bg-transparent outline-none"
+                      />
+                    }
+                    unit={productOptions.find((product) => product.id === item.productId)?.sendUnit || item.sendUnit || "unit"}
+                  />
                   {itemErrors[item.id]?.unitPrice ? <FieldErrorText>{itemErrors[item.id]?.unitPrice}</FieldErrorText> : null}
                 </td>
-                <td className="px-3 py-2 font-medium">{formatLineTotal(item)}</td>
                 <td className="px-3 py-2">
-                  <input value={item.notes} onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                  <LineItemTotalField value={formatLineTotal(item)} />
+                </td>
+                <td className="px-3 py-2">
+                  <input value={item.notes} onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
                   </td>
                   {hasExpandableRows ? (
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <button
                         type="button"
                         onClick={() => onToggleExpandedRow?.(item.id)}
@@ -197,13 +217,13 @@ export function MaterialItemsEditor({
                     </td>
                   ) : null}
                   {onSaveItem ? (
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <SaveRowButton onClick={() => onSaveItem(item)} disabled={savingItemId === item.id}>
                         {savingItemId === item.id ? "Saving..." : "Save"}
                       </SaveRowButton>
                     </td>
                   ) : null}
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
                       {deletingItemId === item.id ? "Deleting..." : "Delete"}
                     </DeleteRowButton>
@@ -211,8 +231,8 @@ export function MaterialItemsEditor({
                 </tr>
                 {hasExpandableRows && expandedItemIds?.includes(item.id) ? (
                   <tr className="border-t border-[var(--panel-border)]">
-                    <td colSpan={colSpan} className="pt-3 pr-0 pb-3 pl-6">
-                      <RecordNestedChildRowSection>
+                    <td colSpan={colSpan} className="p-0">
+                      <RecordNestedChildRowSection className="w-full">
                         {renderExpandedRow?.(item)}
                       </RecordNestedChildRowSection>
                     </td>
@@ -247,32 +267,48 @@ export function MaterialItemsEditor({
               </td>
               <td className="px-3 py-2">
                 <div className="space-y-1">
-                  <input
-                    value={draft.quantity}
-                    inputMode="decimal"
-                    spellCheck={false}
-                    onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
-                    className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
+                  <LineItemQuantityField
+                    className={getFieldControlClassName("", Boolean(draftErrors.quantity))}
+                    input={
+                      <input
+                        value={draft.quantity}
+                        inputMode="decimal"
+                        spellCheck={false}
+                        placeholder="Qty"
+                        onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
+                        className="w-16 bg-transparent outline-none"
+                      />
+                    }
+                    unit={<span className="whitespace-nowrap">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</span>}
                   />
                   {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
                 </div>
               </td>
-              <td className="px-3 py-2">{productOptions.find((product) => product.id === draft.productId)?.sendUnit || "-"}</td>
               <td className="px-3 py-2">
-                <div className={getFieldControlClassName("flex items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1", Boolean(draftErrors.unitPrice))}>
-                  <span className="text-[var(--foreground)]/60">$</span>
-                  <input value={draft.unitPrice} inputMode="decimal" spellCheck={false} onChange={(event) => onDraftChange("unitPrice", normalizeEditableDecimalInput(event.target.value))} className="w-20 bg-transparent outline-none" />
-                  <span className="text-xs text-[var(--foreground)]/50">/ {productOptions.find((product) => product.id === draft.productId)?.sendUnit || "unit"}</span>
-                </div>
+                <LineItemPriceField
+                  className={getFieldControlClassName("", Boolean(draftErrors.unitPrice))}
+                  input={
+                    <input
+                      value={draft.unitPrice}
+                      inputMode="decimal"
+                      spellCheck={false}
+                      onChange={(event) => onDraftChange("unitPrice", normalizeEditableDecimalInput(event.target.value))}
+                      className="w-16 bg-transparent outline-none"
+                    />
+                  }
+                  unit={productOptions.find((product) => product.id === draft.productId)?.sendUnit || "unit"}
+                />
                 {draftErrors.unitPrice ? <FieldErrorText>{draftErrors.unitPrice}</FieldErrorText> : null}
               </td>
-              <td className="px-3 py-2 font-medium">{formatLineTotal(draft)}</td>
               <td className="px-3 py-2">
-                <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-56 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+                <LineItemTotalField value={formatLineTotal(draft)} />
               </td>
-              {hasExpandableRows ? <td className="px-3 py-2" /> : null}
-              {onSaveItem ? <td className="px-3 py-2" /> : null}
               <td className="px-3 py-2">
+                <input value={draft.notes} onChange={(event) => onDraftChange("notes", event.target.value)} className="w-52 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1" />
+              </td>
+              {hasExpandableRows ? <td className="px-2 py-2" /> : null}
+              {onSaveItem ? <td className="px-2 py-2" /> : null}
+              <td className="px-2 py-2">
                 <button type="button" onClick={() => void handleAdd()} disabled={adding} className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60">
                   {adding ? "Adding..." : "Add"}
                 </button>

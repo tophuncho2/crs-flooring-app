@@ -4,8 +4,7 @@ import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-tota
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { ModalTableHead, RecordChildTableShell } from "@/features/flooring/shared/line-items/record-child-table-section"
-import { TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
+import { RecordChildTableShell } from "@/features/flooring/shared/line-items/record-child-table-section"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "@/features/flooring/shared/line-items/record-field-errors"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "../types"
 
@@ -57,6 +56,21 @@ function allocationCellClassName(columnIndex: number, className?: string) {
   )
 }
 
+function AllocationValueCell({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="rounded border border-[var(--panel-border)] px-2 py-1">
+      <div className="text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">{label}</div>
+      <div className="whitespace-nowrap text-sm">{value}</div>
+    </div>
+  )
+}
+
 export function MaterialAllocationsEditor({
   allocations,
   draft,
@@ -98,38 +112,28 @@ export function MaterialAllocationsEditor({
   }
 
   return (
-    <div className="space-y-3">
-      <RecordChildTableShell minWidthClass="min-w-[64rem]" bleedVariant="none" surface="plain">
-        <ModalTableHead>
-          <tr>
-            <TableHeaderCell>Inventory</TableHeaderCell>
-            <TableHeaderCell>Qty</TableHeaderCell>
-            <TableHeaderCell>Cut Size</TableHeaderCell>
-            <TableHeaderCell>Unit Cost</TableHeaderCell>
-            <TableHeaderCell>Total Cost</TableHeaderCell>
-            <TableHeaderCell>Method</TableHeaderCell>
-            <TableHeaderCell>Notes</TableHeaderCell>
-            <TableHeaderCell>Save</TableHeaderCell>
-            <TableHeaderCell>Delete</TableHeaderCell>
-          </tr>
-        </ModalTableHead>
+    <div className="space-y-0">
+      <RecordChildTableShell minWidthClass="min-w-[56rem]" bleedVariant="none" surface="plain">
         <tbody>
-          {allocations.map((allocation) => {
+          {allocations.map((allocation, index) => {
             const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
             const quantityValue = Number(allocation.quantity || 0)
             return (
               <tr
                 key={allocation.id}
-                className={`border-t border-[var(--panel-border)] ${hasFieldErrors(itemErrors[allocation.id]) ? "bg-rose-500/[0.04]" : ""}`}
+                className={joinClasses(
+                  index > 0 && "border-t border-[var(--panel-border)]",
+                  hasFieldErrors(itemErrors[allocation.id]) && "bg-rose-500/[0.04]",
+                )}
               >
                 <td className={allocationCellClassName(0)}>
                   <div className="space-y-1">
                     <select
                       value={allocation.inventoryId}
                       onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
-                      className={getFieldControlClassName("w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.inventoryId))}
+                      className={getFieldControlClassName("w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.inventoryId))}
                     >
-                      <option value="">Select inventory</option>
+                      <option value="">Inventory</option>
                       {allocationOptions.map((option) => (
                         <option key={option.id} value={option.id}>
                           {option.label}
@@ -145,8 +149,9 @@ export function MaterialAllocationsEditor({
                       value={allocation.quantity}
                       inputMode="decimal"
                       spellCheck={false}
+                      placeholder="Qty"
                       onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                      className={getFieldControlClassName("w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.quantity))}
+                      className={getFieldControlClassName("w-16 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.quantity))}
                     />
                     {itemErrors[allocation.id]?.quantity ? <FieldErrorText>{itemErrors[allocation.id]?.quantity}</FieldErrorText> : null}
                   </div>
@@ -154,18 +159,26 @@ export function MaterialAllocationsEditor({
                 <td className={allocationCellClassName(2)}>
                   <input
                     value={allocation.cutSize}
+                    placeholder="Cut Size"
                     onChange={(event) => onAllocationFieldChange(allocation.id, "cutSize", event.target.value)}
-                    className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                    className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                   />
                 </td>
-                <td className={allocationCellClassName(3, "whitespace-nowrap")}>{formatCurrencyValue(rowPricePerUnit)}</td>
-                <td className={allocationCellClassName(4, "whitespace-nowrap")}>{formatCurrencyValue(quantityValue * rowPricePerUnit)}</td>
-                <td className={allocationCellClassName(5, "text-sm")}>{allocation.method}</td>
+                <td className={allocationCellClassName(3)}>
+                  <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
+                </td>
+                <td className={allocationCellClassName(4)}>
+                  <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
+                </td>
+                <td className={allocationCellClassName(5)}>
+                  <AllocationValueCell label="Method" value={allocation.method} />
+                </td>
                 <td className={allocationCellClassName(6)}>
                   <input
                     value={allocation.notes}
+                    placeholder="Notes"
                     onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
-                    className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                    className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                   />
                 </td>
                 <td className={allocationCellClassName(7)}>
@@ -183,23 +196,27 @@ export function MaterialAllocationsEditor({
           })}
 
           {!addRow.isOpen ? (
-            <tr className="border-t border-[var(--panel-border)]">
-              <td colSpan={9} className="px-2 py-3">
+            <tr className={joinClasses(allocations.length > 0 && "border-t border-[var(--panel-border)]")}>
+              <td colSpan={9} className="px-2 py-1.5">
                 <InlineAddRowButton label="Add allocation" onClick={addRow.open} />
               </td>
             </tr>
           ) : null}
 
           {addRow.isOpen ? (
-            <tr className={`border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20 ${hasFieldErrors(draftErrors) ? "bg-rose-500/[0.05]" : ""}`}>
+            <tr className={joinClasses(
+              allocations.length > 0 && "border-t border-[var(--panel-border)]",
+              "bg-[var(--panel-hover)]/20",
+              hasFieldErrors(draftErrors) && "bg-rose-500/[0.05]",
+            )}>
               <td className={allocationCellClassName(0)}>
                 <div className="space-y-1">
                   <select
                     value={draft.inventoryId}
                     onChange={(event) => onDraftChange("inventoryId", event.target.value)}
-                    className={getFieldControlClassName("w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.inventoryId))}
+                    className={getFieldControlClassName("w-64 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.inventoryId))}
                   >
-                    <option value="">Select inventory</option>
+                    <option value="">Inventory</option>
                     {allocationOptions.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.label}
@@ -215,8 +232,9 @@ export function MaterialAllocationsEditor({
                     value={draft.quantity}
                     inputMode="decimal"
                     spellCheck={false}
+                    placeholder="Qty"
                     onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
-                    className={getFieldControlClassName("w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
+                    className={getFieldControlClassName("w-16 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
                   />
                   {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
                 </div>
@@ -224,20 +242,29 @@ export function MaterialAllocationsEditor({
               <td className={allocationCellClassName(2)}>
                 <input
                   value={draft.cutSize}
+                  placeholder="Cut Size"
                   onChange={(event) => onDraftChange("cutSize", event.target.value)}
-                  className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                  className="w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                 />
               </td>
-              <td className={allocationCellClassName(3, "whitespace-nowrap")}>{formatCurrencyValue(readPricePerUnit(allocationOptions, draft.inventoryId))}</td>
-              <td className={allocationCellClassName(4, "whitespace-nowrap")}>
-                {formatCurrencyValue(Number(draft.quantity || 0) * readPricePerUnit(allocationOptions, draft.inventoryId))}
+              <td className={allocationCellClassName(3)}>
+                <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(readPricePerUnit(allocationOptions, draft.inventoryId))} />
               </td>
-              <td className={allocationCellClassName(5, "text-sm")}>MANUAL</td>
+              <td className={allocationCellClassName(4)}>
+                <AllocationValueCell
+                  label="Total"
+                  value={formatCurrencyValue(Number(draft.quantity || 0) * readPricePerUnit(allocationOptions, draft.inventoryId))}
+                />
+              </td>
+              <td className={allocationCellClassName(5)}>
+                <AllocationValueCell label="Method" value="MANUAL" />
+              </td>
               <td className={allocationCellClassName(6)}>
                 <input
                   value={draft.notes}
+                  placeholder="Notes"
                   onChange={(event) => onDraftChange("notes", event.target.value)}
-                  className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                  className="w-32 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                 />
               </td>
               <td className={allocationCellClassName(7)} />
@@ -256,11 +283,6 @@ export function MaterialAllocationsEditor({
         </tbody>
       </RecordChildTableShell>
 
-      {allocationOptions.length === 0 && !loadingOptions ? (
-        <p className="text-sm text-[var(--foreground)]/60">
-          No eligible inventory rows are currently available for this material item.
-        </p>
-      ) : null}
       {loadingOptions ? <p className="text-sm text-[var(--foreground)]/60">Loading inventory options...</p> : null}
       {!loadingOptions && draft.inventoryId ? (
         <p className="text-xs text-[var(--foreground)]/55">
