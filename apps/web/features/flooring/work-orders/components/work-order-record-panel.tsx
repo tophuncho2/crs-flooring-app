@@ -562,7 +562,6 @@ export function WorkOrderRecordPanel({
         }
         renderExpandedRow={(item) => (
           <MaterialAllocationsEditor
-            item={item as WorkOrderMaterialItem}
             allocations={(item as WorkOrderMaterialItem).allocations}
             draft={
               allocations.draftsByItemId[item.id] ?? {

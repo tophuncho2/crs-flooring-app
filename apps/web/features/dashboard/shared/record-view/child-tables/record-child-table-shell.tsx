@@ -4,28 +4,41 @@ import type { ReactNode } from "react"
 import { CollapsibleTableSection } from "@/features/dashboard/shared/record-view/child-tables/collapsible-table-section"
 import { ModalTableHead, ModalTableShell, TableBleed, type TableBleedVariant } from "@/features/dashboard/shared/table/table-shell"
 
+function joinClasses(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(" ")
+}
+
 export function RecordChildTableShell({
   minWidthClass = "min-w-full",
   bleedVariant = "nested",
+  surface = "card",
+  className,
   children,
 }: {
   minWidthClass?: string
   bleedVariant?: TableBleedVariant | "none"
+  surface?: "card" | "plain"
+  className?: string
   children: ReactNode
 }) {
-  if (bleedVariant === "none") {
-    return (
-      <ModalTableShell minWidthClass={minWidthClass} className="w-full">
+  const content =
+    surface === "plain" ? (
+      <div className={joinClasses("w-full overflow-x-auto", className)}>
+        <table className={joinClasses("w-full text-sm", minWidthClass)}>{children}</table>
+      </div>
+    ) : (
+      <ModalTableShell minWidthClass={minWidthClass} className={joinClasses("w-full", className)}>
         {children}
       </ModalTableShell>
     )
+
+  if (bleedVariant === "none") {
+    return content
   }
 
   return (
     <TableBleed variant={bleedVariant}>
-      <ModalTableShell minWidthClass={minWidthClass} className="w-full">
-        {children}
-      </ModalTableShell>
+      {content}
     </TableBleed>
   )
 }

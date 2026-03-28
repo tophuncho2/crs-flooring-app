@@ -210,8 +210,8 @@ export function MaterialItemsEditor({
                   </td>
                 </tr>
                 {hasExpandableRows && expandedItemIds?.includes(item.id) ? (
-                  <tr className="border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/10">
-                    <td colSpan={colSpan} className="px-3 py-3">
+                  <tr className="border-t border-[var(--panel-border)]">
+                    <td colSpan={colSpan} className="pt-3 pr-0 pb-3 pl-6">
                       <RecordNestedChildRowSection>
                         {renderExpandedRow?.(item)}
                       </RecordNestedChildRowSection>

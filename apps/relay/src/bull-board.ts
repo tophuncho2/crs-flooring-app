@@ -64,6 +64,12 @@ export async function startBullBoardServer({
     response.status(200).json({ ok: true })
   })
 
+  if (env.bullBoard.basePath !== "/") {
+    app.get("/", (_request: any, response: any) => {
+      response.redirect(env.bullBoard.basePath)
+    })
+  }
+
   if (env.bullBoard.username && env.bullBoard.password) {
     app.use(env.bullBoard.basePath, createBasicAuthMiddleware(env.bullBoard.username, env.bullBoard.password), serverAdapter.getRouter())
   } else {

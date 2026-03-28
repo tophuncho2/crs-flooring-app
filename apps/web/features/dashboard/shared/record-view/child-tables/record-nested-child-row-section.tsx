@@ -13,14 +13,5 @@ export function RecordNestedChildRowSection({
   children: ReactNode
   className?: string
 }) {
-  return (
-    <div
-      className={joinClasses(
-        "rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.16)]",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  )
+  return <div className={joinClasses("w-full", className)}>{children}</div>
 }

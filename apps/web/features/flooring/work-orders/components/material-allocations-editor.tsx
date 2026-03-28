@@ -4,10 +4,10 @@ import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-tota
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { InlineAddRowButton, useInlineCreateRow } from "@/features/flooring/shared/ui/table/collapsible-table-section"
-import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/line-items/record-child-table-section"
+import { ModalTableHead, RecordChildTableShell } from "@/features/flooring/shared/line-items/record-child-table-section"
 import { TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "@/features/flooring/shared/line-items/record-field-errors"
-import type { InventoryAllocationOption, WorkOrderItemAllocationRow, WorkOrderMaterialItem } from "../types"
+import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "../types"
 
 export type AllocationDraft = {
   inventoryId: string
@@ -45,8 +45,19 @@ function readInventoryLabel(options: InventoryAllocationOption[], inventoryId: s
   return options.find((option) => option.id === inventoryId)?.label ?? ""
 }
 
+function joinClasses(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(" ")
+}
+
+function allocationCellClassName(columnIndex: number, className?: string) {
+  return joinClasses(
+    "px-2 py-2 align-top",
+    columnIndex > 0 && "border-l border-[var(--panel-border)]",
+    className,
+  )
+}
+
 export function MaterialAllocationsEditor({
-  item,
   allocations,
   draft,
   allocationOptions,
@@ -62,7 +73,6 @@ export function MaterialAllocationsEditor({
   onSaveAllocation,
   onDeleteAllocation,
 }: {
-  item: WorkOrderMaterialItem
   allocations: WorkOrderItemAllocationRow[]
   draft: AllocationDraft
   allocationOptions: InventoryAllocationOption[]
@@ -88,42 +98,8 @@ export function MaterialAllocationsEditor({
   }
 
   return (
-    <RecordChildTableSection
-      title="Allocations"
-      collapsible={false}
-      minWidthClass="min-w-[72rem]"
-      beforeTable={
-        <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--foreground)]/70">
-          <span>Allocated: {item.allocatedQuantity.toFixed(2)}</span>
-          <span>Remaining: {item.remainingQuantity.toFixed(2)}</span>
-          <span>Material Expense: {formatCurrencyValue(item.materialExpense)}</span>
-          {item.hasAllocationShortage ? (
-            <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-200">
-              Shortage
-            </span>
-          ) : (
-            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
-              Fully Allocated
-            </span>
-          )}
-        </div>
-      }
-      afterTable={
-        <>
-          {allocationOptions.length === 0 && !loadingOptions ? (
-            <p className="text-sm text-[var(--foreground)]/60">
-              No eligible inventory rows are currently available for this material item.
-            </p>
-          ) : null}
-          {loadingOptions ? <p className="text-sm text-[var(--foreground)]/60">Loading inventory options...</p> : null}
-          {!loadingOptions && draft.inventoryId ? (
-            <p className="text-xs text-[var(--foreground)]/55">
-              Selected inventory: {readInventoryLabel(allocationOptions, draft.inventoryId)}
-            </p>
-          ) : null}
-        </>
-      }
-    >
+    <div className="space-y-3">
+      <RecordChildTableShell minWidthClass="min-w-[64rem]" bleedVariant="none" surface="plain">
         <ModalTableHead>
           <tr>
             <TableHeaderCell>Inventory</TableHeaderCell>
@@ -146,12 +122,12 @@ export function MaterialAllocationsEditor({
                 key={allocation.id}
                 className={`border-t border-[var(--panel-border)] ${hasFieldErrors(itemErrors[allocation.id]) ? "bg-rose-500/[0.04]" : ""}`}
               >
-                <td className="px-3 py-2">
+                <td className={allocationCellClassName(0)}>
                   <div className="space-y-1">
                     <select
                       value={allocation.inventoryId}
                       onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
-                      className={getFieldControlClassName("w-80 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.inventoryId))}
+                      className={getFieldControlClassName("w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.inventoryId))}
                     >
                       <option value="">Select inventory</option>
                       {allocationOptions.map((option) => (
@@ -163,41 +139,41 @@ export function MaterialAllocationsEditor({
                     {itemErrors[allocation.id]?.inventoryId ? <FieldErrorText>{itemErrors[allocation.id]?.inventoryId}</FieldErrorText> : null}
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className={allocationCellClassName(1)}>
                   <div className="space-y-1">
                     <input
                       value={allocation.quantity}
                       inputMode="decimal"
                       spellCheck={false}
                       onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                      className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.quantity))}
+                      className={getFieldControlClassName("w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(itemErrors[allocation.id]?.quantity))}
                     />
                     {itemErrors[allocation.id]?.quantity ? <FieldErrorText>{itemErrors[allocation.id]?.quantity}</FieldErrorText> : null}
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className={allocationCellClassName(2)}>
                   <input
                     value={allocation.cutSize}
                     onChange={(event) => onAllocationFieldChange(allocation.id, "cutSize", event.target.value)}
-                    className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                    className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                   />
                 </td>
-                <td className="px-3 py-2">{formatCurrencyValue(rowPricePerUnit)}</td>
-                <td className="px-3 py-2">{formatCurrencyValue(quantityValue * rowPricePerUnit)}</td>
-                <td className="px-3 py-2 text-sm">{allocation.method}</td>
-                <td className="px-3 py-2">
+                <td className={allocationCellClassName(3, "whitespace-nowrap")}>{formatCurrencyValue(rowPricePerUnit)}</td>
+                <td className={allocationCellClassName(4, "whitespace-nowrap")}>{formatCurrencyValue(quantityValue * rowPricePerUnit)}</td>
+                <td className={allocationCellClassName(5, "text-sm")}>{allocation.method}</td>
+                <td className={allocationCellClassName(6)}>
                   <input
                     value={allocation.notes}
                     onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
-                    className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                    className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                   />
                 </td>
-                <td className="px-3 py-2">
+                <td className={allocationCellClassName(7)}>
                   <SaveRowButton onClick={() => onSaveAllocation(allocation)} disabled={savingAllocationId === allocation.id}>
                     {savingAllocationId === allocation.id ? "Saving..." : "Save"}
                   </SaveRowButton>
                 </td>
-                <td className="px-3 py-2">
+                <td className={allocationCellClassName(8)}>
                   <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} disabled={deletingAllocationId === allocation.id}>
                     {deletingAllocationId === allocation.id ? "Deleting..." : "Delete"}
                   </DeleteRowButton>
@@ -208,7 +184,7 @@ export function MaterialAllocationsEditor({
 
           {!addRow.isOpen ? (
             <tr className="border-t border-[var(--panel-border)]">
-              <td colSpan={9} className="px-3 py-3">
+              <td colSpan={9} className="px-2 py-3">
                 <InlineAddRowButton label="Add allocation" onClick={addRow.open} />
               </td>
             </tr>
@@ -216,12 +192,12 @@ export function MaterialAllocationsEditor({
 
           {addRow.isOpen ? (
             <tr className={`border-t border-[var(--panel-border)] bg-[var(--panel-hover)]/20 ${hasFieldErrors(draftErrors) ? "bg-rose-500/[0.05]" : ""}`}>
-              <td className="px-3 py-2">
+              <td className={allocationCellClassName(0)}>
                 <div className="space-y-1">
                   <select
                     value={draft.inventoryId}
                     onChange={(event) => onDraftChange("inventoryId", event.target.value)}
-                    className={getFieldControlClassName("w-80 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.inventoryId))}
+                    className={getFieldControlClassName("w-72 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.inventoryId))}
                   >
                     <option value="">Select inventory</option>
                     {allocationOptions.map((option) => (
@@ -233,39 +209,39 @@ export function MaterialAllocationsEditor({
                   {draftErrors.inventoryId ? <FieldErrorText>{draftErrors.inventoryId}</FieldErrorText> : null}
                 </div>
               </td>
-              <td className="px-3 py-2">
+              <td className={allocationCellClassName(1)}>
                 <div className="space-y-1">
                   <input
                     value={draft.quantity}
                     inputMode="decimal"
                     spellCheck={false}
                     onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
-                    className={getFieldControlClassName("w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
+                    className={getFieldControlClassName("w-20 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
                   />
                   {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
                 </div>
               </td>
-              <td className="px-3 py-2">
+              <td className={allocationCellClassName(2)}>
                 <input
                   value={draft.cutSize}
                   onChange={(event) => onDraftChange("cutSize", event.target.value)}
-                  className="w-28 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                  className="w-24 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                 />
               </td>
-              <td className="px-3 py-2">{formatCurrencyValue(readPricePerUnit(allocationOptions, draft.inventoryId))}</td>
-              <td className="px-3 py-2">
+              <td className={allocationCellClassName(3, "whitespace-nowrap")}>{formatCurrencyValue(readPricePerUnit(allocationOptions, draft.inventoryId))}</td>
+              <td className={allocationCellClassName(4, "whitespace-nowrap")}>
                 {formatCurrencyValue(Number(draft.quantity || 0) * readPricePerUnit(allocationOptions, draft.inventoryId))}
               </td>
-              <td className="px-3 py-2 text-sm">MANUAL</td>
-              <td className="px-3 py-2">
+              <td className={allocationCellClassName(5, "text-sm")}>MANUAL</td>
+              <td className={allocationCellClassName(6)}>
                 <input
                   value={draft.notes}
                   onChange={(event) => onDraftChange("notes", event.target.value)}
-                  className="w-44 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+                  className="w-36 rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
                 />
               </td>
-              <td className="px-3 py-2" />
-              <td className="px-3 py-2">
+              <td className={allocationCellClassName(7)} />
+              <td className={allocationCellClassName(8)}>
                 <button
                   type="button"
                   onClick={() => void handleAdd()}
@@ -278,6 +254,19 @@ export function MaterialAllocationsEditor({
             </tr>
           ) : null}
         </tbody>
-    </RecordChildTableSection>
+      </RecordChildTableShell>
+
+      {allocationOptions.length === 0 && !loadingOptions ? (
+        <p className="text-sm text-[var(--foreground)]/60">
+          No eligible inventory rows are currently available for this material item.
+        </p>
+      ) : null}
+      {loadingOptions ? <p className="text-sm text-[var(--foreground)]/60">Loading inventory options...</p> : null}
+      {!loadingOptions && draft.inventoryId ? (
+        <p className="text-xs text-[var(--foreground)]/55">
+          Selected inventory: {readInventoryLabel(allocationOptions, draft.inventoryId)}
+        </p>
+      ) : null}
+    </div>
   )
 }
