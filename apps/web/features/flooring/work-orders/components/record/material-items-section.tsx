@@ -38,10 +38,6 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-function formatQuantitySummary(value: string, unit: string) {
-  return `${value || "0"} ${unit || ""}`.trim()
-}
-
 function readProductLabel(options: MaterialItemOption[], productId: string, fallback: string) {
   return options.find((product) => product.id === productId)?.label || fallback || "Untitled Material"
 }
@@ -58,10 +54,10 @@ function MaterialSectionMetric({
   value: string
 }) {
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-[var(--foreground)]/72">
-      <span className="font-medium text-[var(--foreground)]/55">{label}</span>
-      <span>{value}</span>
-    </span>
+    <div className="min-w-[8rem] rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--foreground)]/45">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-[var(--foreground)]">{value}</div>
+    </div>
   )
 }
 
@@ -75,24 +71,27 @@ function MaterialCardCell({
   className?: string
 }) {
   return (
-    <div className={joinClasses("min-w-0 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2", className)}>
-      <div className="mb-1 text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">{label}</div>
+    <div
+      className={joinClasses(
+        "min-w-0 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]",
+        className,
+      )}
+    >
+      <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45">{label}</div>
       <div>{children}</div>
     </div>
   )
 }
 
-function MaterialActionCell({
-  label,
+function MaterialActionsPanel({
   children,
 }: {
-  label: string
   children: ReactNode
 }) {
   return (
-    <div className="flex min-w-0 items-end">
-      <MaterialCardCell label={label} className="w-full">
-        <div className="flex justify-start">{children}</div>
+    <div className="flex min-w-0 items-stretch">
+      <MaterialCardCell label="Actions" className="w-full">
+        <div className="flex h-full flex-col gap-2">{children}</div>
       </MaterialCardCell>
     </div>
   )
@@ -139,7 +138,7 @@ function MaterialItemEditorCard({
   return (
     <div
       {...autosave.focusLeaveProps}
-      className="grid gap-3 xl:grid-cols-[minmax(15rem,1.6fr)_minmax(10rem,.9fr)_minmax(10rem,.9fr)_minmax(8rem,.8fr)_minmax(16rem,1.3fr)_auto_auto_auto]"
+      className="grid gap-3 xl:grid-cols-[minmax(16rem,1.9fr)_minmax(10.5rem,.95fr)_minmax(10.5rem,.95fr)_minmax(8.5rem,.85fr)_minmax(16rem,1.3fr)_minmax(12rem,.9fr)]"
     >
       <MaterialCardCell label="Product">
         <div className="space-y-1">
@@ -204,28 +203,26 @@ function MaterialItemEditorCard({
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
       </MaterialCardCell>
-      <MaterialActionCell label="Save">
-        <SaveRowButton onClick={() => void onSaveItem(item)} disabled={savingItemId === item.id}>
-          {savingItemId === item.id ? "Saving..." : "Save"}
-        </SaveRowButton>
-      </MaterialActionCell>
-      <MaterialActionCell label="Allocations">
+      <MaterialActionsPanel>
         <button
           type="button"
           onClick={onToggleAllocations}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
-          className="inline-flex items-center gap-2 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-sm text-[var(--foreground)]/75 transition hover:bg-[var(--panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
         >
           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          <span>{isExpanded ? "Hide" : "Show"}</span>
+          <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
         </button>
-      </MaterialActionCell>
-      <MaterialActionCell label="Delete">
-        <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
-          {deletingItemId === item.id ? "Deleting..." : "Delete"}
-        </DeleteRowButton>
-      </MaterialActionCell>
+        <div className="grid grid-cols-2 gap-2">
+          <SaveRowButton onClick={() => void onSaveItem(item)} disabled={savingItemId === item.id}>
+            {savingItemId === item.id ? "Saving..." : "Save"}
+          </SaveRowButton>
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
+            {deletingItemId === item.id ? "Deleting..." : "Delete"}
+          </DeleteRowButton>
+        </div>
+      </MaterialActionsPanel>
     </div>
   )
 }
@@ -246,7 +243,7 @@ function MaterialDraftCard({
   onAdd: () => void
 }) {
   return (
-    <div className={joinClasses("grid gap-3 xl:grid-cols-[minmax(15rem,1.6fr)_minmax(10rem,.9fr)_minmax(10rem,.9fr)_minmax(8rem,.8fr)_minmax(16rem,1.3fr)_auto]", hasFieldErrors(draftErrors) && "bg-rose-500/[0.03]")}>
+    <div className={joinClasses("grid gap-3 xl:grid-cols-[minmax(16rem,1.9fr)_minmax(10.5rem,.95fr)_minmax(10.5rem,.95fr)_minmax(8.5rem,.85fr)_minmax(16rem,1.3fr)_minmax(12rem,.9fr)]", hasFieldErrors(draftErrors) && "bg-rose-500/[0.03]")}>
       <MaterialCardCell label="Product">
         <div className="space-y-1">
           <select
@@ -321,16 +318,16 @@ function MaterialDraftCard({
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
       </MaterialCardCell>
-      <MaterialActionCell label="Add">
+      <MaterialActionsPanel>
         <button
           type="button"
           onClick={onAdd}
           disabled={adding}
-          className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+          className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
         >
           {adding ? "Adding..." : "Add"}
         </button>
-      </MaterialActionCell>
+      </MaterialActionsPanel>
     </div>
   )
 }
@@ -395,32 +392,37 @@ export function WorkOrderMaterialItemsSection({
 
   return (
     <TableBleed variant="record">
-      <section className="overflow-hidden rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
-        <div className={joinClasses("flex items-stretch gap-3 px-4", materialSection.isOpen && "border-b border-[color:var(--subpanel-border)]")}>
+      <section className="overflow-hidden rounded-2xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.16)]">
+        <div className={joinClasses("flex items-stretch gap-3 px-5", materialSection.isOpen && "border-b border-[color:var(--subpanel-border)]")}>
           <button
             type="button"
             onClick={materialSection.toggle}
             aria-expanded={materialSection.isOpen}
             aria-label={materialSection.isOpen ? `Collapse ${title}` : `Expand ${title}`}
-            className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-4 text-left transition-all duration-200 hover:bg-[var(--panel-hover)]/55 hover:shadow-[0_0_18px_rgba(59,130,246,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+            className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-5 text-left transition-all duration-200 hover:bg-[var(--panel-hover)]/45 hover:shadow-[0_0_22px_rgba(59,130,246,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
           >
-            <div className="min-w-0 flex-1">
-              <div className="text-base font-semibold">{title}</div>
+            <div className="min-w-0 flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--panel-border)] bg-[var(--panel-background)] text-[var(--foreground)]/72 transition group-hover:border-blue-500/25 group-hover:text-[var(--foreground)]">
+                {materialSection.isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+              </span>
+              <div className="min-w-0">
+                <div className="text-base font-semibold text-[var(--foreground)]">{title}</div>
+                <div className="text-xs text-[var(--foreground)]/55">
+                  {items.length} {items.length === 1 ? "item" : "items"}
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <MaterialSectionMetric label="Material Cost" value={formatCurrencyValue(totalMaterialCost)} />
               <MaterialSectionMetric label="Allocated Cost" value={formatCurrencyValue(totalAllocatedCost)} />
             </div>
-            <span className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition group-hover:bg-[var(--panel-hover)] group-hover:text-[var(--foreground)]">
-              {materialSection.isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </span>
           </button>
-          <div className="flex items-center py-4">
+          <div className="flex items-center py-5">
             <button
               type="button"
               onClick={onRequestAutoAllocation}
               disabled={isAutoAllocating || items.length === 0}
-              className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              className="rounded-lg border border-blue-500/25 bg-[var(--panel-background)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
             >
               {isAutoAllocating ? "Auto Allocating..." : "Auto Allocate"}
             </button>
@@ -428,9 +430,9 @@ export function WorkOrderMaterialItemsSection({
         </div>
 
         {materialSection.isOpen ? (
-          <div className="space-y-4 p-4">
+          <div className="space-y-4 p-5">
             {loading ? (
-              <div className="rounded-xl border border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/70">
+              <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-background)] px-4 py-8 text-center text-[var(--foreground)]/70">
                 Loading items...
               </div>
             ) : null}
@@ -440,8 +442,14 @@ export function WorkOrderMaterialItemsSection({
                   const isExpanded = expandedItemIds.includes(item.id)
 
                   return (
-                    <section key={item.id} className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-transparent">
-                      <div className="space-y-3 bg-transparent p-4">
+                    <section
+                      key={item.id}
+                      className={joinClasses(
+                        "overflow-hidden rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_8px_18px_rgba(0,0,0,0.08)] transition-shadow",
+                        isExpanded && "shadow-[0_12px_24px_rgba(0,0,0,0.1)]",
+                      )}
+                    >
+                      <div className="space-y-4 p-4">
                         <MaterialItemEditorCard
                           item={item}
                           productOptions={productOptions}
@@ -455,7 +463,7 @@ export function WorkOrderMaterialItemsSection({
                           onToggleAllocations={() => onToggleExpandedItem(item.id)}
                         />
                         {isExpanded ? (
-                          <div className="border-t border-[var(--panel-border)] pt-3">
+                          <div className="rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-3">
                             {renderAllocationSection(item)}
                           </div>
                         ) : null}
@@ -466,13 +474,13 @@ export function WorkOrderMaterialItemsSection({
               : null}
 
             {!loading && !addRow.isOpen ? (
-              <div className="rounded-xl border border-[var(--panel-border)] px-4 py-3">
+              <div className="rounded-2xl border border-dashed border-[var(--panel-border)] bg-[var(--panel-background)] px-4 py-4">
                 <InlineAddRowButton label="Add Material Item" onClick={addRow.open} />
               </div>
             ) : null}
 
             {!loading && addRow.isOpen ? (
-              <div className="rounded-xl border border-[var(--panel-border)] bg-transparent p-4">
+              <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
                 <MaterialDraftCard
                   draft={draft}
                   productOptions={productOptions}

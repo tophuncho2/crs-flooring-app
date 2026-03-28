@@ -61,8 +61,8 @@ function AllocationCell({
   className?: string
 }) {
   return (
-    <div className={joinClasses("min-w-0 px-3 py-2", className)}>
-      <div className="mb-1 text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">{label}</div>
+    <div className={joinClasses("min-w-0 px-3 py-3", className)}>
+      <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45">{label}</div>
       <div>{children}</div>
     </div>
   )
@@ -77,7 +77,19 @@ function AllocationValueCell({
 }) {
   return (
     <AllocationCell label={label}>
-      <div className="rounded border border-[var(--panel-border)] px-2 py-1 text-sm">{value}</div>
+      <div className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-2 text-sm">{value}</div>
+    </AllocationCell>
+  )
+}
+
+function AllocationActionsPanel({
+  children,
+}: {
+  children: ReactNode
+}) {
+  return (
+    <AllocationCell label="Actions" className="h-full">
+      <div className="flex h-full flex-col gap-2">{children}</div>
     </AllocationCell>
   )
 }
@@ -92,7 +104,7 @@ function AllocationRowShell({
   return (
     <div
       className={joinClasses(
-        "grid overflow-hidden rounded-lg border border-[var(--panel-border)] bg-transparent xl:grid-cols-[minmax(18rem,1.9fr)_minmax(6.5rem,.7fr)_minmax(7rem,.75fr)_minmax(8rem,.75fr)_minmax(8rem,.75fr)_minmax(7.5rem,.7fr)_minmax(12rem,1.2fr)_auto_auto]",
+        "grid overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] xl:grid-cols-[minmax(18rem,1.95fr)_minmax(6.75rem,.75fr)_minmax(7.5rem,.8fr)_minmax(8rem,.8fr)_minmax(8rem,.8fr)_minmax(7rem,.72fr)_minmax(12rem,1.15fr)_minmax(12rem,.9fr)]",
         "[&>*+*]:border-l [&>*+*]:border-[var(--panel-border)]",
         className,
       )}
@@ -197,16 +209,14 @@ function AllocationEditorRow({
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
       </AllocationCell>
-      <AllocationCell label="Save">
+      <AllocationActionsPanel>
         <SaveRowButton onClick={() => void onSaveAllocation(allocation)} disabled={savingAllocationId === allocation.id}>
           {savingAllocationId === allocation.id ? "Saving..." : "Save"}
         </SaveRowButton>
-      </AllocationCell>
-      <AllocationCell label="Delete">
         <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} disabled={deletingAllocationId === allocation.id}>
           {deletingAllocationId === allocation.id ? "Deleting..." : "Delete"}
         </DeleteRowButton>
-      </AllocationCell>
+      </AllocationActionsPanel>
     </AllocationRowShell>
   )
 }
@@ -253,6 +263,16 @@ export function MaterialAllocationsEditor({
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--subpanel-border)] pb-3">
+        <div>
+          <div className="text-sm font-semibold text-[var(--foreground)]">Allocations</div>
+          <div className="text-xs text-[var(--foreground)]/55">
+            {allocations.length} {allocations.length === 1 ? "linked row" : "linked rows"}
+          </div>
+        </div>
+        {!addRow.isOpen ? <InlineAddRowButton label="Add allocation" onClick={addRow.open} /> : null}
+      </div>
+
       {allocations.map((allocation) => {
         return (
           <AllocationEditorRow
@@ -268,12 +288,6 @@ export function MaterialAllocationsEditor({
           />
         )
       })}
-
-      {!addRow.isOpen ? (
-        <div className="pt-1">
-          <InlineAddRowButton label="Add allocation" onClick={addRow.open} />
-        </div>
-      ) : null}
 
       {addRow.isOpen ? (
         <AllocationRowShell className={hasFieldErrors(draftErrors) ? "bg-rose-500/[0.05]" : undefined}>
@@ -329,17 +343,16 @@ export function MaterialAllocationsEditor({
               className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
             />
           </AllocationCell>
-          <AllocationCell label="Save" />
-          <AllocationCell label="Add">
+          <AllocationActionsPanel>
             <button
               type="button"
               onClick={() => void handleAdd()}
               disabled={adding || loadingOptions}
-              className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
             >
               {loadingOptions ? "Loading..." : adding ? "Adding..." : "Add"}
             </button>
-          </AllocationCell>
+          </AllocationActionsPanel>
         </AllocationRowShell>
       ) : null}
     </div>
