@@ -1,49 +1,13 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import {
-  type EditableMaterialItem,
-  type MaterialItemField,
-  type MaterialItemOption,
-  validateMaterialItemFields,
-} from "@/features/flooring/shared/line-items/material-items-editor"
-import {
-  type EditableServiceItem,
-  type ServiceItemField,
-  type ServiceOption,
-  type UnitOption,
-  validateServiceItemFields,
-} from "@/features/flooring/shared/line-items/service-items-editor"
-import {
-  type EditableSalesRepItem,
-  type SalesRepField,
-  type SalesRepOption,
-  validateSalesRepFields,
-} from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import {
-  clearRowFieldError,
-  setRowFieldErrors,
-  type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
 import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
-import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
-import { useRecordSectionController } from "@/features/dashboard/shared/record-view/client/use-record-section-controller"
-import {
-  formatRecordSectionWorkflowPhase,
-  useRecordSectionWorkflow,
-} from "@/features/dashboard/shared/record-view/client/use-record-section-workflow"
-import {
-  buildRecordSectionDraftKey,
-  clearRecordSectionDraft,
-  readRecordSectionDraft,
-  writeRecordSectionDraft,
-} from "@/features/dashboard/shared/record-view/client/record-section-drafts"
 import { useRecordNotices, type RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { RecordSectionStack } from "@/features/dashboard/shared/record-view/sections/record-section-stack"
 import {
@@ -59,97 +23,41 @@ import {
   buildDeleteConfirmationMessage,
   confirmRecordDelete,
 } from "@/features/flooring/shared/ui/table/confirm-delete"
-import {
-  MaterialAllocationsEditor,
-  type AllocationField,
-  validateAllocationFields,
-} from "@/features/flooring/work-orders/components/material-allocations-editor"
+import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"
 import { WorkOrderMaterialItemsSection } from "@/features/flooring/work-orders/components/record/material-items-section"
 import { WorkOrderCalculationsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-calculations-section"
 import { WorkOrderInvoiceSection } from "@/features/flooring/work-orders/components/record/sections/work-order-invoice-section"
 import { WorkOrderPrimaryFieldsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-primary-fields-section"
 import { WorkOrderSalesRepsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-sales-reps-section"
 import { WorkOrderServiceItemsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-service-items-section"
+import {
+  formatRecordSectionWorkflowPhase,
+} from "@/features/dashboard/shared/record-view/client/use-record-section-workflow"
+import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
+import { selectedAddress, toWorkOrderDraft } from "@/features/flooring/work-orders/controllers/record-panel/shared"
+import { useWorkOrderAutoAllocationWorkflow } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-auto-allocation-workflow"
+import { useWorkOrderMaterialSection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-material-section"
+import { useWorkOrderPrimarySection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-primary-section"
+import { useWorkOrderSalesRepsSection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-sales-reps-section"
+import { useWorkOrderServiceSection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-service-section"
 import type { WorkOrderInvoiceStatusResponse } from "@/features/flooring/work-orders/transport/invoice"
-import type { WorkOrderAutoAllocationStatusResponse } from "@/features/flooring/work-orders/transport/allocations"
 import type {
   DraftWorkOrder,
-  InventoryAllocationOption,
   PropertyOption,
   SalesRepContactOption,
   WarehouseOption,
-  WorkOrderAutoAllocationRun,
   WorkOrderDetail,
   WorkOrderExpenseSummary,
-  WorkOrderItemAllocationRow,
-  WorkOrderMaterialItem,
   WorkOrderReconciliationStatus,
 } from "@/features/flooring/work-orders/types"
-
-type MaterialSectionDraftState = WorkOrderMaterialItem[]
-type ServiceSectionDraftState = EditableServiceItem[]
-type SalesRepSectionDraftState = WorkOrderDetail["salesReps"]
-
-function createLocalRowId(scope: string) {
-  const randomId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
-  return `temp:${scope}:${randomId}`
-}
-
-function isLocalOnlyRow(id: string) {
-  return id.startsWith("temp:")
-}
-
-function cloneDraftWorkOrder(draft: DraftWorkOrder): DraftWorkOrder {
-  return { ...draft }
-}
-
-function cloneServiceItems(items: EditableServiceItem[]) {
-  return items.map((item) => ({ ...item }))
-}
-
-function cloneSalesRepItems(items: WorkOrderDetail["salesReps"]) {
-  return items.map((item) => ({ ...item }))
-}
-
-function cloneMaterialItems(items: WorkOrderMaterialItem[]) {
-  return items.map((item) => ({
-    ...item,
-    allocations: item.allocations.map((allocation) => ({
-      ...allocation,
-      inventory: { ...allocation.inventory },
-    })),
-  }))
-}
-
-function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
-  return {
-    propertyId: workOrder.propertyId,
-    templateId: workOrder.templateId,
-    warehouseId: workOrder.warehouseId,
-    status: workOrder.status,
-    isComplete: workOrder.isComplete,
-    vacancy: workOrder.vacancy ?? "",
-    date: workOrder.date ? workOrder.date.split("T")[0] : "",
-    unitText: workOrder.unitText,
-    customAddress: workOrder.customAddress,
-    instructions: workOrder.instructions,
-    notes: workOrder.notes,
-    workOrderImageUrl: workOrder.workOrderImageUrl,
-  }
-}
-
-function selectedAddress(propertyOptions: PropertyOption[], draft: DraftWorkOrder, fallbackAddress: string) {
-  if (draft.customAddress.trim()) {
-    return draft.customAddress
-  }
-
-  return propertyOptions.find((property) => property.id === draft.propertyId)?.address ?? fallbackAddress
-}
+import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
+import type { SalesRepOption } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
 
 function buildWorkOrderReconciliationKey(input: {
   updatedAt: string
   autoAllocationRun?: WorkOrderDetail["autoAllocationRun"] | WorkOrderReconciliationStatus["autoAllocationRun"]
-  invoiceStatus?: WorkOrderDetail["invoiceStatus"] | WorkOrderReconciliationStatus["invoiceStatus"]
+  invoiceStatus?: WorkOrderDetail["invoiceStatus"] | WorkOrderReconciliationStatus["invoiceStatus"] | WorkOrderInvoiceStatusResponse
 }) {
   return [
     input.updatedAt,
@@ -161,107 +69,6 @@ function buildWorkOrderReconciliationKey(input: {
     input.invoiceStatus?.generation?.status ?? "",
     input.invoiceStatus?.artifact?.id ?? "",
   ].join(":")
-}
-
-function createEmptyServiceItem(): EditableServiceItem {
-  return {
-    id: createLocalRowId("service"),
-    serviceId: "",
-    name: "",
-    unitId: "",
-    unitName: "",
-    quantity: "",
-    unitPrice: "",
-    notes: "",
-    updatedAt: "",
-  }
-}
-
-function createEmptySalesRepItem(): EditableSalesRepItem {
-  return {
-    id: createLocalRowId("sales-rep"),
-    contactId: "",
-    contactName: "",
-    percent: "",
-    updatedAt: "",
-  }
-}
-
-function createEmptyAllocationRow(workOrderItemId: string): WorkOrderItemAllocationRow {
-  return {
-    id: createLocalRowId("allocation"),
-    workOrderItemId,
-    inventoryId: "",
-    quantity: "",
-    cutSize: "",
-    unitCost: "0",
-    totalCost: 0,
-    method: "MANUAL",
-    notes: "",
-    createdAt: "",
-    updatedAt: "",
-    inventory: {
-      itemNumber: "",
-      dyeLot: "",
-      locationCode: "",
-      warehouseName: "",
-      stockUnit: "",
-    },
-  }
-}
-
-function createEmptyMaterialItem(): WorkOrderMaterialItem {
-  const id = createLocalRowId("material")
-  return {
-    id,
-    productId: "",
-    productName: "",
-    sendUnit: "",
-    quantity: "",
-    unitPrice: "",
-    notes: "",
-    updatedAt: "",
-    allocations: [],
-    allocatedQuantity: 0,
-    remainingQuantity: 0,
-    materialExpense: 0,
-    hasAllocationShortage: false,
-    allocationStatus: "NOT_STARTED",
-    isAllocationDone: false,
-    changeOrderStatus: "SUFFICIENT",
-  }
-}
-
-function normalizeNumericValue(value: string) {
-  return Number.isFinite(Number(value)) ? Number(value) : 0
-}
-
-function reconcileMaterialItemDraft(item: WorkOrderMaterialItem): WorkOrderMaterialItem {
-  const requiredQuantity = normalizeNumericValue(item.quantity)
-  const allocatedQuantity = item.allocations.reduce((total, allocation) => total + normalizeNumericValue(allocation.quantity), 0)
-  const materialExpense = item.allocations.reduce(
-    (total, allocation) => total + normalizeNumericValue(allocation.quantity) * normalizeNumericValue(allocation.unitCost),
-    0,
-  )
-  const remainingQuantity = Math.max(requiredQuantity - allocatedQuantity, 0)
-  const nextAllocationStatus =
-    item.allocationStatus === "SHORTAGE" && allocatedQuantity < requiredQuantity
-      ? "SHORTAGE"
-      : allocatedQuantity <= 0
-        ? "NOT_STARTED"
-        : allocatedQuantity >= requiredQuantity
-          ? "FULLY_ALLOCATED"
-          : "PARTIALLY_ALLOCATED"
-
-  return {
-    ...item,
-    allocatedQuantity,
-    remainingQuantity,
-    materialExpense,
-    allocationStatus: nextAllocationStatus,
-    isAllocationDone: nextAllocationStatus === "FULLY_ALLOCATED" || nextAllocationStatus === "SHORTAGE",
-    hasAllocationShortage: nextAllocationStatus === "SHORTAGE",
-  }
 }
 
 function buildPrimarySectionStatus(input: {
@@ -354,64 +161,40 @@ export function WorkOrderRecordPanel({
   const noticeController = notices ?? localNotices
   const { message, error: noticeError, showSuccess, showError, clearNotices } = noticeController
   const [remoteReconciliation, setRemoteReconciliation] = useState<WorkOrderReconciliationStatus | null>(null)
-  const [materialItemErrors, setMaterialItemErrors] = useState<RowFieldErrors<MaterialItemField>>({})
-  const [materialAllocationErrorsByItemId, setMaterialAllocationErrorsByItemId] = useState<
-    Record<string, RowFieldErrors<AllocationField>>
-  >({})
-  const [serviceItemErrors, setServiceItemErrors] = useState<RowFieldErrors<ServiceItemField>>({})
-  const [salesRepItemErrors, setSalesRepItemErrors] = useState<RowFieldErrors<SalesRepField>>({})
-  const [expandedMaterialItemIds, setExpandedMaterialItemIds] = useState<string[]>([])
-  const [allocationOptionsByItemId, setAllocationOptionsByItemId] = useState<Record<string, InventoryAllocationOption[]>>({})
-  const [loadingAllocationOptionsByItemId, setLoadingAllocationOptionsByItemId] = useState<Record<string, boolean>>({})
 
   const {
     record: workOrder,
     loading,
     error,
-    setError,
     publishRecord,
     refreshRecord,
     clearRecordCache,
-  } = useRecordDetailController<WorkOrderDetail, DraftWorkOrder>({
+  } = useRecordDetailController<WorkOrderDetail, ReturnType<typeof toWorkOrderDraft>>({
     scope: "workOrder",
     id: workOrderId,
     initialRecord: initialWorkOrderDetail,
-    toDraft,
+    toDraft: toWorkOrderDraft,
     url: `/api/flooring/work-orders/${workOrderId}`,
     payloadKey: "workOrder",
   })
 
-  const onExpenseSummaryChangeRef = useRef(onExpenseSummaryChange)
-  const onWorkOrderChangeRef = useRef(onWorkOrderChange)
-  const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
-
-  useEffect(() => {
-    onExpenseSummaryChangeRef.current = onExpenseSummaryChange
-  }, [onExpenseSummaryChange])
-
-  useEffect(() => {
-    onWorkOrderChangeRef.current = onWorkOrderChange
-  }, [onWorkOrderChange])
-
-  useEffect(() => {
-    onWorkOrderSavedRef.current = onWorkOrderSaved
-  }, [onWorkOrderSaved])
+  const currentWorkOrder = workOrder ?? initialWorkOrderDetail
 
   const publishWorkOrder = useCallback(
     (nextWorkOrder: WorkOrderDetail) => {
       publishRecord(nextWorkOrder)
-      onWorkOrderChangeRef.current?.(nextWorkOrder)
+      onWorkOrderChange?.(nextWorkOrder)
     },
-    [publishRecord],
+    [onWorkOrderChange, publishRecord],
   )
 
   const refreshWorkOrderDetail = useCallback(async () => {
     const nextWorkOrder = await refreshRecord()
     setRemoteReconciliation(null)
     publishWorkOrder(nextWorkOrder)
-    onExpenseSummaryChangeRef.current?.(nextWorkOrder.financialSummary)
+    onExpenseSummaryChange?.(nextWorkOrder.financialSummary)
     return nextWorkOrder
-  }, [publishWorkOrder, refreshRecord])
+  }, [onExpenseSummaryChange, publishWorkOrder, refreshRecord])
 
   const applyConflictWorkOrderSnapshot = useCallback(
     (saveError: unknown) => {
@@ -426,349 +209,64 @@ export function WorkOrderRecordPanel({
     [publishWorkOrder],
   )
 
-  const primarySection = useRecordSectionController<DraftWorkOrder, DraftWorkOrder>({
-    serverValue: toDraft(workOrder ?? initialWorkOrderDetail),
-    createLocalValue: cloneDraftWorkOrder,
-    onSave: async (nextDraft) => {
-      const currentWorkOrder = workOrder ?? initialWorkOrderDetail
-      clearNotices()
+  const confirmDelete = useCallback((entityLabel: string) => {
+    return confirmRecordDelete(buildDeleteConfirmationMessage(entityLabel))
+  }, [])
 
-      try {
-        const payload = await requestJson<{ workOrder: WorkOrderDetail }>(`/api/flooring/work-orders/${currentWorkOrder.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(withMutationMeta(nextDraft, currentWorkOrder.updatedAt)),
-        })
-        publishWorkOrder(payload.workOrder)
-        onWorkOrderSavedRef.current?.(payload.workOrder)
-        showSuccess("Work order fields saved")
-        return toDraft(payload.workOrder)
-      } catch (saveError) {
-        applyConflictWorkOrderSnapshot(saveError)
-        throw saveError instanceof Error ? saveError : new Error("Failed to save work order")
-      }
-    },
+  const primarySection = useWorkOrderPrimarySection({
+    currentUserId,
+    workOrderId,
+    workOrder: currentWorkOrder,
+    publishWorkOrder,
+    onWorkOrderSaved,
+    clearNotices,
+    showSuccess,
+    applyConflictWorkOrderSnapshot,
   })
 
-  const serviceSection = useRecordSectionController<EditableServiceItem[], EditableServiceItem[]>({
-    serverValue: workOrder?.serviceItems ?? initialWorkOrderDetail.serviceItems,
-    createLocalValue: cloneServiceItems,
-    onSave: async (items) => {
-      const nextErrors: RowFieldErrors<ServiceItemField> = {}
-
-      for (const item of items) {
-        const rowErrors = validateServiceItemFields({
-          serviceId: item.serviceId,
-          name: item.name,
-          unitId: item.unitId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })
-        if (Object.keys(rowErrors).length > 0) {
-          nextErrors[item.id] = rowErrors
-        }
-      }
-
-      setServiceItemErrors(nextErrors)
-      if (Object.keys(nextErrors).length > 0) {
-        throw new Error("Fix the highlighted service item fields before saving.")
-      }
-
-      const currentWorkOrder = workOrder ?? initialWorkOrderDetail
-      clearNotices()
-
-      try {
-        const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
-          `/api/flooring/work-orders/${currentWorkOrder.id}/service-items/section`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(
-              withMutationMeta(
-                {
-                  items: items.map((item) => ({
-                    id: isLocalOnlyRow(item.id) ? null : item.id,
-                    expectedUpdatedAt: isLocalOnlyRow(item.id) ? null : item.updatedAt,
-                    item: {
-                      serviceId: item.serviceId || null,
-                      name: item.name || null,
-                      unitId: item.unitId,
-                      quantity: item.quantity,
-                      unitPrice: item.unitPrice,
-                      notes: item.notes || null,
-                    },
-                  })),
-                },
-                currentWorkOrder.updatedAt,
-              ),
-            ),
-          },
-        )
-        setServiceItemErrors({})
-        publishWorkOrder(payload.workOrder)
-        showSuccess("Service section saved")
-        return payload.workOrder.serviceItems
-      } catch (saveError) {
-        applyConflictWorkOrderSnapshot(saveError)
-        throw saveError instanceof Error ? saveError : new Error("Failed to save service section")
-      }
-    },
+  const serviceSection = useWorkOrderServiceSection({
+    currentUserId,
+    workOrderId,
+    workOrder: currentWorkOrder,
+    publishWorkOrder,
+    clearNotices,
+    showSuccess,
+    applyConflictWorkOrderSnapshot,
+    confirmDelete,
   })
 
-  const salesRepSection = useRecordSectionController<WorkOrderDetail["salesReps"], WorkOrderDetail["salesReps"]>({
-    serverValue: workOrder?.salesReps ?? initialWorkOrderDetail.salesReps,
-    createLocalValue: cloneSalesRepItems,
-    onSave: async (items) => {
-      const nextErrors: RowFieldErrors<SalesRepField> = {}
-
-      for (const item of items) {
-        const rowErrors = validateSalesRepFields({
-          contactId: item.contactId,
-          percent: item.percent,
-        })
-        if (Object.keys(rowErrors).length > 0) {
-          nextErrors[item.id] = rowErrors
-        }
-      }
-
-      setSalesRepItemErrors(nextErrors)
-      if (Object.keys(nextErrors).length > 0) {
-        throw new Error("Fix the highlighted sales rep fields before saving.")
-      }
-
-      const currentWorkOrder = workOrder ?? initialWorkOrderDetail
-      clearNotices()
-
-      try {
-        const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
-          `/api/flooring/work-orders/${currentWorkOrder.id}/sales-reps/section`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(
-              withMutationMeta(
-                {
-                  items: items.map((item) => ({
-                    id: isLocalOnlyRow(item.id) ? null : item.id,
-                    expectedUpdatedAt: isLocalOnlyRow(item.id) ? null : item.updatedAt,
-                    item: {
-                      contactId: item.contactId,
-                      percent: item.percent,
-                    },
-                  })),
-                },
-                currentWorkOrder.updatedAt,
-              ),
-            ),
-          },
-        )
-        setSalesRepItemErrors({})
-        publishWorkOrder(payload.workOrder)
-        showSuccess("Sales rep section saved")
-        return payload.workOrder.salesReps
-      } catch (saveError) {
-        applyConflictWorkOrderSnapshot(saveError)
-        throw saveError instanceof Error ? saveError : new Error("Failed to save sales rep section")
-      }
-    },
+  const salesRepSection = useWorkOrderSalesRepsSection({
+    currentUserId,
+    workOrderId,
+    workOrder: currentWorkOrder,
+    publishWorkOrder,
+    clearNotices,
+    showSuccess,
+    applyConflictWorkOrderSnapshot,
+    confirmDelete,
   })
 
-  const materialSection = useRecordSectionController<WorkOrderMaterialItem[], WorkOrderMaterialItem[]>({
-    serverValue: workOrder?.items ?? initialWorkOrderDetail.items,
-    createLocalValue: cloneMaterialItems,
-    onSave: async (items) => {
-      const nextItemErrors: RowFieldErrors<MaterialItemField> = {}
-      const nextAllocationErrors: Record<string, RowFieldErrors<AllocationField>> = {}
-
-      for (const item of items) {
-        const rowErrors = validateMaterialItemFields({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })
-        if (Object.keys(rowErrors).length > 0) {
-          nextItemErrors[item.id] = rowErrors
-        }
-
-        const allocationErrors: RowFieldErrors<AllocationField> = {}
-        for (const allocation of item.allocations) {
-          const rowAllocationErrors = validateAllocationFields({
-            inventoryId: allocation.inventoryId,
-            quantity: allocation.quantity,
-          })
-          if (Object.keys(rowAllocationErrors).length > 0) {
-            allocationErrors[allocation.id] = rowAllocationErrors
-          }
-        }
-
-        if (Object.keys(allocationErrors).length > 0) {
-          nextAllocationErrors[item.id] = allocationErrors
-        }
-      }
-
-      setMaterialItemErrors(nextItemErrors)
-      setMaterialAllocationErrorsByItemId(nextAllocationErrors)
-
-      if (Object.keys(nextItemErrors).length > 0 || Object.keys(nextAllocationErrors).length > 0) {
-        throw new Error("Fix the highlighted material item and allocation fields before saving.")
-      }
-
-      const currentWorkOrder = workOrder ?? initialWorkOrderDetail
-      clearNotices()
-
-      try {
-        const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
-          `/api/flooring/work-orders/${currentWorkOrder.id}/items/section`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(
-              withMutationMeta(
-                {
-                  items: items.map((item) => ({
-                    id: isLocalOnlyRow(item.id) ? null : item.id,
-                    expectedUpdatedAt: isLocalOnlyRow(item.id) ? null : item.updatedAt,
-                    item: {
-                      productId: item.productId,
-                      quantity: item.quantity,
-                      unitPrice: item.unitPrice,
-                      notes: item.notes || null,
-                    },
-                    allocations: item.allocations.map((allocation) => ({
-                      id: isLocalOnlyRow(allocation.id) ? null : allocation.id,
-                      expectedUpdatedAt: isLocalOnlyRow(allocation.id) ? null : allocation.updatedAt,
-                      input: {
-                        inventoryId: allocation.inventoryId,
-                        quantity: allocation.quantity,
-                        cutSize: allocation.cutSize || null,
-                        notes: allocation.notes || null,
-                      },
-                    })),
-                  })),
-                },
-                currentWorkOrder.updatedAt,
-              ),
-            ),
-          },
-        )
-        setMaterialItemErrors({})
-        setMaterialAllocationErrorsByItemId({})
-        publishWorkOrder(payload.workOrder)
-        showSuccess("Material section saved")
-        return payload.workOrder.items
-      } catch (saveError) {
-        applyConflictWorkOrderSnapshot(saveError)
-        throw saveError instanceof Error ? saveError : new Error("Failed to save material section")
-      }
-    },
+  const materialSection = useWorkOrderMaterialSection({
+    currentUserId,
+    workOrderId,
+    workOrder: currentWorkOrder,
+    productOptions,
+    publishWorkOrder,
+    clearNotices,
+    showSuccess,
+    showError,
+    applyConflictWorkOrderSnapshot,
+    confirmDelete,
   })
 
-  const autoAllocationWorkflow = useRecordSectionWorkflow<WorkOrderAutoAllocationRun | null>({
-    value: workOrder?.autoAllocationRun ?? initialWorkOrderDetail.autoAllocationRun ?? null,
-    getSyncKey: (value) => (value ? `${value.id}:${value.status}:${value.sourceVersion}` : "none"),
-    readStatus: (value) => value?.status,
-    refresh: async () => {
-      const payload = await requestJson<WorkOrderAutoAllocationStatusResponse>(
-        `/api/flooring/work-orders/${workOrderId}/auto-allocation`,
-        { cache: "no-store" },
-      )
-      return payload.run
-    },
-    getTerminalKey: (value) => (value ? `${value.id}:${value.status}` : null),
-    onTerminal: async (value) => {
-      if (!value) {
-        return
-      }
-
-      if (value.status === "COMPLETED") {
-        await refreshWorkOrderDetail()
-        showSuccess("Auto allocation completed")
-      }
-
-      if (value.status === "FAILED") {
-        showError(value.failureMessage || "Auto allocation failed")
-      }
-
-      if (value.status === "SUPERSEDED") {
-        showError("Auto allocation was superseded by a newer work order version")
-      }
-    },
+  const autoAllocationWorkflow = useWorkOrderAutoAllocationWorkflow({
+    workOrder: currentWorkOrder,
+    refreshWorkOrderDetail,
+    clearNotices,
+    showSuccess,
+    showError,
+    applyConflictWorkOrderSnapshot,
   })
-
-  const sectionDraftKeys = useMemo(
-    () => ({
-      primary: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "primary" }),
-      material: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "material" }),
-      service: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "service" }),
-      sales: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "sales" }),
-    }),
-    [currentUserId, workOrderId],
-  )
-  const hasRestoredSectionDraftsRef = useRef(false)
-
-  useEffect(() => {
-    if (hasRestoredSectionDraftsRef.current) {
-      return
-    }
-
-    hasRestoredSectionDraftsRef.current = true
-
-    const primaryDraft = readRecordSectionDraft<DraftWorkOrder>(sectionDraftKeys.primary)
-    if (primaryDraft) {
-      primarySection.setLocalValue(primaryDraft)
-    }
-
-    const materialDraftState = readRecordSectionDraft<MaterialSectionDraftState>(sectionDraftKeys.material)
-    if (materialDraftState) {
-      materialSection.setLocalValue(cloneMaterialItems(materialDraftState))
-    }
-
-    const serviceDraftState = readRecordSectionDraft<ServiceSectionDraftState>(sectionDraftKeys.service)
-    if (serviceDraftState) {
-      serviceSection.setLocalValue(cloneServiceItems(serviceDraftState))
-    }
-
-    const salesDraftState = readRecordSectionDraft<SalesRepSectionDraftState>(sectionDraftKeys.sales)
-    if (salesDraftState) {
-      salesRepSection.setLocalValue(cloneSalesRepItems(salesDraftState))
-    }
-  }, [materialSection, primarySection, salesRepSection, sectionDraftKeys, serviceSection])
-
-  useEffect(() => {
-    if (primarySection.isDirty) {
-      writeRecordSectionDraft(sectionDraftKeys.primary, primarySection.localValue)
-      return
-    }
-
-    clearRecordSectionDraft(sectionDraftKeys.primary)
-  }, [primarySection.isDirty, primarySection.localValue, sectionDraftKeys.primary])
-
-  useEffect(() => {
-    if (materialSection.isDirty) {
-      writeRecordSectionDraft(sectionDraftKeys.material, materialSection.localValue)
-      return
-    }
-
-    clearRecordSectionDraft(sectionDraftKeys.material)
-  }, [materialSection.isDirty, materialSection.localValue, sectionDraftKeys.material])
-
-  useEffect(() => {
-    if (serviceSection.isDirty) {
-      writeRecordSectionDraft(sectionDraftKeys.service, serviceSection.localValue)
-      return
-    }
-
-    clearRecordSectionDraft(sectionDraftKeys.service)
-  }, [serviceSection.isDirty, serviceSection.localValue, sectionDraftKeys.service])
-
-  useEffect(() => {
-    if (salesRepSection.isDirty) {
-      writeRecordSectionDraft(sectionDraftKeys.sales, salesRepSection.localValue)
-      return
-    }
-
-    clearRecordSectionDraft(sectionDraftKeys.sales)
-  }, [salesRepSection.isDirty, salesRepSection.localValue, sectionDraftKeys.sales])
 
   const dirtySections = useMemo(
     () =>
@@ -801,9 +299,9 @@ export function WorkOrderRecordPanel({
 
         const nextReconciliation = payload.workOrder
         const currentKey = buildWorkOrderReconciliationKey({
-          updatedAt: workOrder?.updatedAt ?? initialWorkOrderDetail.updatedAt,
-          autoAllocationRun: workOrder?.autoAllocationRun ?? initialWorkOrderDetail.autoAllocationRun,
-          invoiceStatus: workOrder?.invoiceStatus ?? invoice,
+          updatedAt: currentWorkOrder.updatedAt,
+          autoAllocationRun: autoAllocationWorkflow.value ?? currentWorkOrder.autoAllocationRun,
+          invoiceStatus: invoice,
         })
         const nextKey = buildWorkOrderReconciliationKey(nextReconciliation)
 
@@ -836,17 +334,7 @@ export function WorkOrderRecordPanel({
       cancelled = true
       window.clearInterval(interval)
     }
-  }, [
-    dirtySections.length,
-    initialWorkOrderDetail.autoAllocationRun,
-    initialWorkOrderDetail.updatedAt,
-    invoice,
-    refreshWorkOrderDetail,
-    workOrder?.autoAllocationRun,
-    workOrder?.invoiceStatus,
-    workOrder?.updatedAt,
-    workOrderId,
-  ])
+  }, [autoAllocationWorkflow.value, currentWorkOrder.autoAllocationRun, currentWorkOrder.updatedAt, dirtySections.length, invoice, refreshWorkOrderDetail, workOrderId])
 
   const currentExpenseSummary = useMemo(
     () =>
@@ -859,8 +347,8 @@ export function WorkOrderRecordPanel({
   )
 
   useEffect(() => {
-    onExpenseSummaryChangeRef.current?.(currentExpenseSummary)
-  }, [currentExpenseSummary])
+    onExpenseSummaryChange?.(currentExpenseSummary)
+  }, [currentExpenseSummary, onExpenseSummaryChange])
 
   const currentCalculationRows = useMemo<WorkOrderCalculationRow[]>(
     () => buildWorkOrderCalculationRowsFromSummary(currentExpenseSummary),
@@ -876,284 +364,7 @@ export function WorkOrderRecordPanel({
     [materialSection.localValue, serviceSection.localValue],
   )
 
-  const loadAllocationOptions = useCallback(
-    async (itemId: string, productId: string) => {
-      if (!productId) {
-        setAllocationOptionsByItemId((previous) => ({ ...previous, [itemId]: [] }))
-        return []
-      }
-
-      setLoadingAllocationOptionsByItemId((previous) => ({ ...previous, [itemId]: true }))
-      try {
-        const payload = await requestJson<{ options: InventoryAllocationOption[] }>(
-          `/api/flooring/work-orders/${workOrderId}/allocation-options?productId=${productId}`,
-          { cache: "no-store" },
-        )
-        setAllocationOptionsByItemId((previous) => ({ ...previous, [itemId]: payload.options }))
-        return payload.options
-      } finally {
-        setLoadingAllocationOptionsByItemId((previous) => ({ ...previous, [itemId]: false }))
-      }
-    },
-    [workOrderId],
-  )
-
-  const handleToggleExpandedMaterialItem = useCallback(
-    (itemId: string) => {
-      setExpandedMaterialItemIds((previous) => {
-        const isExpanded = previous.includes(itemId)
-        if (isExpanded) {
-          return previous.filter((value) => value !== itemId)
-        }
-
-        const item = materialSection.localValue.find((value) => value.id === itemId)
-        if (item?.productId) {
-          void loadAllocationOptions(itemId, item.productId)
-        }
-
-        return [...previous, itemId]
-      })
-    },
-    [loadAllocationOptions, materialSection.localValue],
-  )
-
-  function handleAddServiceItem() {
-    serviceSection.setLocalValue((previous) => [...previous, createEmptyServiceItem()])
-  }
-
-  function handleAddSalesRepItem() {
-    salesRepSection.setLocalValue((previous) => [...previous, createEmptySalesRepItem()])
-  }
-
-  function handleAddMaterialItem() {
-    const nextItem = createEmptyMaterialItem()
-    materialSection.setLocalValue((previous) => [...previous, nextItem])
-    setExpandedMaterialItemIds((previous) => (previous.includes(nextItem.id) ? previous : [...previous, nextItem.id]))
-  }
-
-  function handleServiceItemFieldChange(itemId: string, field: keyof EditableServiceItem, value: string) {
-    serviceSection.setLocalValue((previous) =>
-      previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-    )
-
-    if (field === "name" || field === "unitId" || field === "quantity" || field === "unitPrice") {
-      setServiceItemErrors((previous) => clearRowFieldError(previous, itemId, field))
-    }
-  }
-
-  function handleSalesRepFieldChange(itemId: string, field: keyof EditableSalesRepItem, value: string) {
-    salesRepSection.setLocalValue((previous) =>
-      previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-    )
-
-    if (field === "contactId" || field === "percent") {
-      setSalesRepItemErrors((previous) => clearRowFieldError(previous, itemId, field))
-    }
-  }
-
-  function handleMaterialItemFieldChange(itemId: string, field: keyof EditableMaterialItem, value: string) {
-    materialSection.setLocalValue((previous) =>
-      previous.map((item) => {
-        if (item.id !== itemId) {
-          return item
-        }
-
-        if (field === "productId") {
-          const selectedProduct = productOptions.find((product) => product.id === value)
-          setAllocationOptionsByItemId((current) => ({ ...current, [itemId]: [] }))
-          setMaterialAllocationErrorsByItemId((current) => {
-            const next = { ...current }
-            delete next[itemId]
-            return next
-          })
-          return reconcileMaterialItemDraft({
-            ...item,
-            productId: value,
-            productName: selectedProduct?.label ?? "",
-            sendUnit: selectedProduct?.sendUnit ?? "",
-            allocations: [],
-          })
-        }
-
-        return reconcileMaterialItemDraft({
-          ...item,
-          [field]: value,
-        })
-      }),
-    )
-
-    if (field === "productId" || field === "quantity" || field === "unitPrice") {
-      setMaterialItemErrors((previous) => clearRowFieldError(previous, itemId, field))
-    }
-  }
-
-  async function handleAddAllocation(itemId: string) {
-    const item = materialSection.localValue.find((value) => value.id === itemId)
-    if (!item) {
-      return
-    }
-
-    if (!item.productId) {
-      showError("Select a product before adding allocations.")
-      return
-    }
-
-    await loadAllocationOptions(item.id, item.productId)
-    materialSection.setLocalValue((previous) =>
-      previous.map((value) =>
-        value.id === itemId
-          ? reconcileMaterialItemDraft({
-              ...value,
-              allocations: [...value.allocations, createEmptyAllocationRow(itemId)],
-            })
-          : value,
-      ),
-    )
-  }
-
-  function handleAllocationFieldChange(itemId: string, allocationId: string, field: keyof WorkOrderItemAllocationRow, value: string) {
-    const options = allocationOptionsByItemId[itemId] ?? []
-
-    materialSection.setLocalValue((previous) =>
-      previous.map((item) => {
-        if (item.id !== itemId) {
-          return item
-        }
-
-        const allocations = item.allocations.map((allocation) => {
-          if (allocation.id !== allocationId) {
-            return allocation
-          }
-
-          if (field === "inventoryId") {
-            const selectedOption = options.find((option) => option.id === value)
-            return {
-              ...allocation,
-              inventoryId: value,
-              unitCost: String(selectedOption?.pricePerUnit ?? allocation.unitCost),
-              inventory: {
-                itemNumber: selectedOption?.itemNumber ?? "",
-                dyeLot: selectedOption?.dyeLot ?? "",
-                locationCode: selectedOption?.locationCode ?? "",
-                warehouseName: selectedOption?.warehouseName ?? "",
-                stockUnit: selectedOption?.stockUnit ?? "",
-              },
-            }
-          }
-
-          return {
-            ...allocation,
-            [field]: value,
-          }
-        })
-
-        return reconcileMaterialItemDraft({
-          ...item,
-          allocations,
-        })
-      }),
-    )
-
-    if (field === "inventoryId" || field === "quantity") {
-      setMaterialAllocationErrorsByItemId((previous) => ({
-        ...previous,
-        [itemId]: clearRowFieldError(previous[itemId] ?? {}, allocationId, field),
-      }))
-    }
-  }
-
-  function handleDeleteServiceItem(itemId: string) {
-    if (!confirmRecordDelete(buildDeleteConfirmationMessage("service item"))) {
-      return
-    }
-
-    serviceSection.setLocalValue((previous) => previous.filter((item) => item.id !== itemId))
-    setServiceItemErrors((previous) => {
-      const next = { ...previous }
-      delete next[itemId]
-      return next
-    })
-  }
-
-  function handleDeleteSalesRepItem(itemId: string) {
-    if (!confirmRecordDelete(buildDeleteConfirmationMessage("sales rep"))) {
-      return
-    }
-
-    salesRepSection.setLocalValue((previous) => previous.filter((item) => item.id !== itemId))
-    setSalesRepItemErrors((previous) => {
-      const next = { ...previous }
-      delete next[itemId]
-      return next
-    })
-  }
-
-  function handleDeleteMaterialItem(itemId: string) {
-    if (!confirmRecordDelete(buildDeleteConfirmationMessage("material item"))) {
-      return
-    }
-
-    materialSection.setLocalValue((previous) => previous.filter((item) => item.id !== itemId))
-    setMaterialItemErrors((previous) => {
-      const next = { ...previous }
-      delete next[itemId]
-      return next
-    })
-    setMaterialAllocationErrorsByItemId((previous) => {
-      const next = { ...previous }
-      delete next[itemId]
-      return next
-    })
-    setAllocationOptionsByItemId((previous) => {
-      const next = { ...previous }
-      delete next[itemId]
-      return next
-    })
-    setExpandedMaterialItemIds((previous) => previous.filter((value) => value !== itemId))
-  }
-
-  function handleDeleteAllocation(itemId: string, allocationId: string) {
-    materialSection.setLocalValue((previous) =>
-      previous.map((item) =>
-        item.id === itemId
-          ? reconcileMaterialItemDraft({
-              ...item,
-              allocations: item.allocations.filter((allocation) => allocation.id !== allocationId),
-            })
-          : item,
-      ),
-    )
-
-    setMaterialAllocationErrorsByItemId((previous) => ({
-      ...previous,
-      [itemId]: setRowFieldErrors(previous[itemId] ?? {}, allocationId, {}),
-    }))
-  }
-
-  async function requestAutoAllocation() {
-    const currentWorkOrder = workOrder ?? initialWorkOrderDetail
-    clearNotices()
-
-    try {
-      const payload = await requestJson<WorkOrderAutoAllocationStatusResponse>(
-        `/api/flooring/work-orders/${currentWorkOrder.id}/auto-allocation`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(withMutationMeta({}, currentWorkOrder.updatedAt)),
-        },
-      )
-      autoAllocationWorkflow.setValue(payload.run)
-      showSuccess("Auto allocation requested")
-    } catch (allocationError) {
-      applyConflictWorkOrderSnapshot(allocationError)
-      showError(allocationError instanceof Error ? allocationError.message : "Failed to request auto allocation")
-    }
-  }
-
-  async function deleteWorkOrder() {
-    const currentWorkOrder = workOrder ?? initialWorkOrderDetail
-    setError("")
+  const deleteWorkOrder = useCallback(async () => {
     clearNotices()
 
     try {
@@ -1168,7 +379,7 @@ export function WorkOrderRecordPanel({
     } catch (deleteError) {
       showError(deleteError instanceof Error ? deleteError.message : "Failed to delete work order")
     }
-  }
+  }, [clearNotices, clearRecordCache, currentWorkOrder.id, currentWorkOrder.updatedAt, onClose, onWorkOrderDeleted, showError])
 
   if (loading && !workOrder) {
     return <CenteredLoadingState label="Loading work order..." />
@@ -1220,8 +431,8 @@ export function WorkOrderRecordPanel({
             draft={primarySection.localValue}
             propertyOptions={propertyOptions}
             warehouseOptions={warehouseOptions}
-            selectedAddressValue={selectedAddress(propertyOptions, primarySection.localValue, workOrder.propertyAddress)}
-            unitType={workOrder.unitType}
+            selectedAddressValue={selectedAddress(propertyOptions, primarySection.localValue, currentWorkOrder.propertyAddress)}
+            unitType={currentWorkOrder.unitType}
             setDraft={(value) => {
               primarySection.setLocalValue((previous) => {
                 const nextValue =
@@ -1299,14 +510,14 @@ export function WorkOrderRecordPanel({
                   <>
                     <button
                       type="button"
-                      onClick={handleAddMaterialItem}
+                      onClick={materialSection.addItem}
                       className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
                     >
                       Add Material Item
                     </button>
                     <button
                       type="button"
-                      onClick={() => void requestAutoAllocation()}
+                      onClick={() => void autoAllocationWorkflow.requestAutoAllocation()}
                       disabled={autoAllocationWorkflow.isPending || materialSection.localValue.length === 0}
                       className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
                     >
@@ -1332,22 +543,22 @@ export function WorkOrderRecordPanel({
                 }
               />
             }
-            itemErrors={materialItemErrors}
-            expandedItemIds={expandedMaterialItemIds}
-            onToggleExpandedItem={handleToggleExpandedMaterialItem}
-            onItemFieldChange={handleMaterialItemFieldChange}
-            onDeleteItem={handleDeleteMaterialItem}
+            itemErrors={materialSection.itemErrors}
+            expandedItemIds={materialSection.expandedItemIds}
+            onToggleExpandedItem={materialSection.toggleExpandedItem}
+            onItemFieldChange={materialSection.changeItemField}
+            onDeleteItem={materialSection.deleteItem}
             renderAllocationSection={(item) => (
               <MaterialAllocationsEditor
                 allocations={item.allocations}
-                allocationOptions={allocationOptionsByItemId[item.id] ?? []}
-                loadingOptions={loadingAllocationOptionsByItemId[item.id] ?? false}
-                onAddAllocation={() => void handleAddAllocation(item.id)}
-                itemErrors={materialAllocationErrorsByItemId[item.id] ?? {}}
+                allocationOptions={materialSection.allocationOptionsByItemId[item.id] ?? []}
+                loadingOptions={materialSection.loadingAllocationOptionsByItemId[item.id] ?? false}
+                onAddAllocation={() => void materialSection.addAllocation(item.id)}
+                itemErrors={materialSection.allocationErrorsByItemId[item.id] ?? {}}
                 onAllocationFieldChange={(allocationId, field, value) =>
-                  handleAllocationFieldChange(item.id, allocationId, field, value)
+                  materialSection.changeAllocationField(item.id, allocationId, field, value)
                 }
-                onDeleteAllocation={(allocationId) => handleDeleteAllocation(item.id, allocationId)}
+                onDeleteAllocation={(allocationId) => materialSection.deleteAllocation(item.id, allocationId)}
               />
             )}
           />
@@ -1373,7 +584,7 @@ export function WorkOrderRecordPanel({
                 <>
                   <button
                     type="button"
-                    onClick={handleAddServiceItem}
+                    onClick={serviceSection.addItem}
                     className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
                   >
                     Add Service Item
@@ -1398,9 +609,9 @@ export function WorkOrderRecordPanel({
               }
             />
           }
-          itemErrors={serviceItemErrors}
-          onItemFieldChange={handleServiceItemFieldChange}
-          onDeleteItem={handleDeleteServiceItem}
+          itemErrors={serviceSection.itemErrors}
+          onItemFieldChange={serviceSection.changeField}
+          onDeleteItem={serviceSection.deleteItem}
         />
 
         <WorkOrderSalesRepsSection
@@ -1423,7 +634,7 @@ export function WorkOrderRecordPanel({
                 <>
                   <button
                     type="button"
-                    onClick={handleAddSalesRepItem}
+                    onClick={salesRepSection.addItem}
                     className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
                   >
                     Add Sales Rep
@@ -1448,9 +659,9 @@ export function WorkOrderRecordPanel({
               }
             />
           }
-          itemErrors={salesRepItemErrors}
-          onItemFieldChange={handleSalesRepFieldChange}
-          onDeleteItem={handleDeleteSalesRepItem}
+          itemErrors={salesRepSection.itemErrors}
+          onItemFieldChange={salesRepSection.changeField}
+          onDeleteItem={salesRepSection.deleteItem}
         />
 
         <WorkOrderCalculationsSection title="Calculations" items={currentCalculationRows} loading={false} />

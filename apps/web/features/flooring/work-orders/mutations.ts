@@ -621,6 +621,12 @@ export async function saveWorkOrderServiceItemsSection(
       where: { workOrderId },
       select: {
         id: true,
+        serviceId: true,
+        name: true,
+        unitId: true,
+        quantity: true,
+        unitPrice: true,
+        notes: true,
         updatedAt: true,
       },
     })
@@ -657,19 +663,33 @@ export async function saveWorkOrderServiceItemsSection(
 
       assertVersionMatch(current.updatedAt, row.expectedUpdatedAt ?? "", "Service item changed before save completed. Refresh and try again.")
 
+      const nextServiceId = row.item.serviceId || null
+      const nextNotes = row.item.notes || null
+      const isUnchanged =
+        current.serviceId === nextServiceId &&
+        current.name === resolved.name &&
+        current.unitId === row.item.unitId &&
+        String(current.quantity) === String(row.item.quantity) &&
+        String(current.unitPrice) === String(resolved.unitPrice) &&
+        (current.notes ?? null) === nextNotes
+
+      seenItemIds.add(row.id)
+      if (isUnchanged) {
+        continue
+      }
+
       await tx.flooringWorkOrderServiceItem.update({
         where: { id: row.id },
         data: {
-          serviceId: row.item.serviceId,
+          serviceId: nextServiceId,
           name: resolved.name,
           unitId: row.item.unitId,
           quantity: row.item.quantity,
           unitPrice: resolved.unitPrice,
-          notes: row.item.notes,
+          notes: nextNotes,
         },
       })
 
-      seenItemIds.add(row.id)
       didChange = true
     }
 
@@ -700,6 +720,8 @@ export async function saveWorkOrderSalesRepsSection(
       where: { workOrderId },
       select: {
         id: true,
+        contactId: true,
+        percent: true,
         updatedAt: true,
       },
     })
@@ -743,6 +765,11 @@ export async function saveWorkOrderSalesRepsSection(
       assertVersionMatch(current.updatedAt, row.expectedUpdatedAt ?? "", "Sales rep changed before save completed. Refresh and try again.")
       await ensureUniqueWorkOrderSalesRep(workOrderId, contact.id, tx, row.id)
 
+      seenItemIds.add(row.id)
+      if (current.contactId === contact.id && String(current.percent) === String(row.item.percent)) {
+        continue
+      }
+
       await tx.flooringWorkOrderSalesRep.update({
         where: { id: row.id },
         data: {
@@ -751,7 +778,6 @@ export async function saveWorkOrderSalesRepsSection(
         },
       })
 
-      seenItemIds.add(row.id)
       didChange = true
     }
 

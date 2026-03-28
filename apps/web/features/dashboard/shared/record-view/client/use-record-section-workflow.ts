@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePendingWorkflowPolling } from "@/features/dashboard/shared/record-view/client/use-pending-workflow-polling"
 
 export type RecordSectionWorkflowPhase =
@@ -52,13 +52,23 @@ export function useRecordSectionWorkflow<TValue>({
 }) {
   const [value, setValue] = useState(seedValue)
   const [error, setError] = useState<string | null>(null)
+  const getSyncKeyRef = useRef(getSyncKey)
+  const readStatusRef = useRef(readStatus)
   const syncKey = getSyncKey(seedValue)
 
   useEffect(() => {
-    setValue((current) => (getSyncKey(current) === syncKey ? current : seedValue))
-  }, [getSyncKey, seedValue, syncKey])
+    getSyncKeyRef.current = getSyncKey
+  }, [getSyncKey])
 
-  const phase = useMemo(() => normalizeRecordSectionWorkflowPhase(readStatus(value)), [readStatus, value])
+  useEffect(() => {
+    readStatusRef.current = readStatus
+  }, [readStatus])
+
+  useEffect(() => {
+    setValue((current) => (getSyncKeyRef.current(current) === syncKey ? current : seedValue))
+  }, [seedValue, syncKey])
+
+  const phase = useMemo(() => normalizeRecordSectionWorkflowPhase(readStatusRef.current(value)), [value])
 
   const refreshValue = useCallback(async () => {
     try {
@@ -78,11 +88,11 @@ export function useRecordSectionWorkflow<TValue>({
     isPending: isPendingRecordSectionWorkflowPhase(phase),
     refresh: refreshValue,
     getTerminalKey: (nextValue) => {
-      if (!isTerminalRecordSectionWorkflowPhase(normalizeRecordSectionWorkflowPhase(readStatus(nextValue)))) {
+      if (!isTerminalRecordSectionWorkflowPhase(normalizeRecordSectionWorkflowPhase(readStatusRef.current(nextValue)))) {
         return null
       }
 
-      return getTerminalKey?.(nextValue) ?? getSyncKey(nextValue)
+      return getTerminalKey?.(nextValue) ?? getSyncKeyRef.current(nextValue)
     },
     onTerminal,
   })

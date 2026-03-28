@@ -94,10 +94,7 @@ export default function WorkOrderDetailClient({
         throw new Error("Failed to complete work order")
       }
 
-      setWorkOrder((previous) => ({
-        ...previous,
-        ...payload.workOrder,
-      }))
+      setWorkOrder(payload.workOrder)
       if (payload.workOrder.financialSummary) {
         setExpenseSummary(payload.workOrder.financialSummary)
       }
@@ -181,10 +178,7 @@ export default function WorkOrderDetailClient({
         }}
         onWorkOrderSaved={(savedWorkOrder) => {
           page.setIsDirty(false)
-          setWorkOrder((previous) => ({
-            ...previous,
-            ...savedWorkOrder,
-          }))
+          setWorkOrder(savedWorkOrder)
           setExpenseSummary(savedWorkOrder.financialSummary)
         }}
         onWorkOrderDeleted={() => {

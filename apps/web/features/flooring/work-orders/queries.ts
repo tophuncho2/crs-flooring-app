@@ -244,7 +244,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
       },
       warehouse: { select: { id: true, name: true } },
       items: {
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
         include: {
           product: {
             select: {
@@ -292,7 +292,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
         },
       },
       serviceItems: {
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
         include: {
           unit: {
             select: {
@@ -303,7 +303,7 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
         },
       },
       salesReps: {
-        orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }],
+        orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }, { id: "asc" }],
         include: {
           contact: {
             select: {
@@ -448,7 +448,7 @@ export async function listWorkOrderItems(workOrderId: string) {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
   })
 
   return items.map((item) => normalizeWorkOrderItem(item))
@@ -465,7 +465,7 @@ export async function listWorkOrderServiceItems(workOrderId: string) {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
   })
 
   return items.map(normalizeWorkOrderServiceItem)
@@ -481,7 +481,7 @@ export async function listWorkOrderSalesReps(workOrderId: string) {
         },
       },
     },
-    orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }],
+    orderBy: [{ createdAt: "desc" }, { contact: { name: "asc" } }, { id: "asc" }],
   })
 
   return items.map(normalizeWorkOrderSalesRep)
