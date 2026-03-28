@@ -6,6 +6,7 @@ import {
   TableHead,
   TableHeaderCell,
 } from "@/features/dashboard/shared/table/table-shell"
+import { buildDashboardListTableMinWidth } from "@/features/dashboard/shared/list-page/dashboard-list-page-table-layout"
 
 export type DashboardListPageColumn = {
   key: string
@@ -15,17 +16,28 @@ export type DashboardListPageColumn = {
 
 export function DashboardListPageTable({
   minWidthClass,
+  columnWidthRem,
+  minimumColumns,
   columns,
   children,
   className,
 }: {
-  minWidthClass: string
+  minWidthClass?: string
+  columnWidthRem?: number
+  minimumColumns?: number
   columns: DashboardListPageColumn[]
   children: ReactNode
   className?: string
 }) {
+  const tableMinWidth = minWidthClass
+    ? undefined
+    : buildDashboardListTableMinWidth(columns.length, {
+        minimumColumns,
+        columnWidthRem,
+      })
+
   return (
-    <EmbeddedPageTableShell minWidthClass={minWidthClass} className={className}>
+    <EmbeddedPageTableShell minWidthClass={minWidthClass} tableStyle={tableMinWidth ? { minWidth: tableMinWidth } : undefined} className={className}>
       <TableHead>
         <tr>
           {columns.map((column) => (

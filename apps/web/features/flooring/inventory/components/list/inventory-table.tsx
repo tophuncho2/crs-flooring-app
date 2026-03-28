@@ -126,7 +126,7 @@ export function InventoryTable({
 
   return (
     <>
-      <DashboardListPageTable minWidthClass="min-w-[2160px]" columns={visibleColumns}>
+      <DashboardListPageTable columns={visibleColumns} columnWidthRem={10}>
         {isGroupingEnabled
           ? renderGroupedTableRows({
               groups: groupedRows,

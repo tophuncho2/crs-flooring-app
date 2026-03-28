@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { type ReactNode } from "react"
+import { type CSSProperties, type ReactNode } from "react"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -44,15 +44,21 @@ export function TableBleed({
 export function EmbeddedPageTableShell({
   children,
   minWidthClass,
+  tableStyle,
   className,
 }: {
   children: ReactNode
-  minWidthClass: string
+  minWidthClass?: string
+  tableStyle?: CSSProperties
   className?: string
 }) {
   return (
-    <TableBleed variant="dashboard">
-      <TableShell minWidthClass={minWidthClass} className={joinClasses(EMBEDDED_PAGE_TABLE_SHELL_CLASS_NAME, className)}>
+    <TableBleed variant="dashboard" className="overflow-x-auto overscroll-x-contain">
+      <TableShell
+        minWidthClass={minWidthClass}
+        tableStyle={tableStyle}
+        className={joinClasses(EMBEDDED_PAGE_TABLE_SHELL_CLASS_NAME, className)}
+      >
         {children}
       </TableShell>
     </TableBleed>
@@ -62,10 +68,12 @@ export function EmbeddedPageTableShell({
 export function TableShell({
   children,
   minWidthClass,
+  tableStyle,
   className,
 }: {
   children: ReactNode
-  minWidthClass: string
+  minWidthClass?: string
+  tableStyle?: CSSProperties
   className?: string
 }) {
   return (
@@ -75,7 +83,9 @@ export function TableShell({
         className,
       )}
     >
-      <table className={joinClasses("min-w-full w-max table-auto text-sm", minWidthClass)}>{children}</table>
+      <table className={joinClasses("min-w-full w-max table-auto text-sm", minWidthClass)} style={tableStyle}>
+        {children}
+      </table>
     </div>
   )
 }
