@@ -286,12 +286,27 @@ function deriveInventoryWarehouse(inventory: InventoryForAllocation) {
   return inventory.importEntry?.warehouse ?? null
 }
 
-function deriveInventoryLocationCode(inventory: InventoryForAllocation) {
-  return inventory.location?.locationCode ?? "Unassigned"
-}
-
 function deriveInventoryStockUnit(inventory: InventoryForAllocation) {
   return inventory.product.category.stockUnit?.name ?? ""
+}
+
+function buildInventoryAllocationLabel(input: {
+  stockCount: string
+  stockUnit: string
+  itemNumber: string
+  locationCode: string
+  dyeLot: string
+}) {
+  const stockSummary = [input.stockCount, input.stockUnit].filter(Boolean).join(" ").trim()
+
+  return [
+    stockSummary,
+    input.itemNumber ? `Item ${input.itemNumber}` : "",
+    input.locationCode,
+    input.dyeLot ? `Dye ${input.dyeLot}` : "",
+  ]
+    .filter(Boolean)
+    .join(" - ")
 }
 
 function toInventoryAllocationOptionRecord(inventory: InventoryForAllocation): InventoryAllocationOptionRecord | null {
@@ -310,7 +325,7 @@ function toInventoryAllocationOptionRecord(inventory: InventoryForAllocation): I
     cost: inventory.cost?.toString() ?? null,
     freight: inventory.freight?.toString() ?? null,
   })
-  const locationCode = deriveInventoryLocationCode(inventory)
+  const locationCode = inventory.location?.locationCode ?? ""
   const stockUnit = deriveInventoryStockUnit(inventory)
 
   return {
@@ -327,7 +342,13 @@ function toInventoryAllocationOptionRecord(inventory: InventoryForAllocation): I
     reservedStockCount: inventory.reservedStockCount.toString(),
     availableToAllocate,
     pricePerUnit,
-    label: `${warehouse.name} / ${locationCode} / Item ${inventory.itemNumber}${inventory.dyeLot ? ` / Dye ${inventory.dyeLot}` : ""}`,
+    label: buildInventoryAllocationLabel({
+      stockCount: inventory.stockCount.toString(),
+      stockUnit,
+      itemNumber: inventory.itemNumber,
+      locationCode,
+      dyeLot: inventory.dyeLot ?? "",
+    }),
   }
 }
 

@@ -3,10 +3,10 @@
 import { Fragment, type ReactNode, useMemo } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
-import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
+import { RecordTableHead, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import {
-  CollapsibleTableSection,
   InlineAddRowButton,
+  useCollapsibleSection,
   useInlineCreateRow,
 } from "@/features/dashboard/shared/record-view/child-tables/collapsible-table-section"
 import {
@@ -253,6 +253,7 @@ export function WorkOrderMaterialItemsSection({
   renderAllocationSection: (item: WorkOrderMaterialItem) => ReactNode
 }) {
   const addRow = useInlineCreateRow(false)
+  const materialSection = useCollapsibleSection(true)
   const colSpan = 7
   const totalMaterialCost = useMemo(() => sumLineTotals(items), [items])
   const totalAllocatedCost = useMemo(
@@ -268,27 +269,47 @@ export function WorkOrderMaterialItemsSection({
   }
 
   return (
-    <CollapsibleTableSection
-      title={title}
-      titleMeta={
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <MaterialSectionMetric label="Material Cost" value={formatCurrencyValue(totalMaterialCost)} />
-          <MaterialSectionMetric label="Allocated Cost" value={formatCurrencyValue(totalAllocatedCost)} />
-        </div>
-      }
-      actions={
-        <button
-          type="button"
-          onClick={onRequestAutoAllocation}
-          disabled={isAutoAllocating || items.length === 0}
-          className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+    <TableBleed variant="record">
+      <section className="overflow-hidden rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
+        <div
+          className={joinClasses(
+            "flex items-stretch gap-3 px-4",
+            materialSection.isOpen && "border-b border-[color:var(--subpanel-border)]",
+          )}
         >
-          {isAutoAllocating ? "Auto Allocating..." : "Auto Allocate"}
-        </button>
-      }
-    >
-      <TableBleed variant="record">
-        <RecordTableShell minWidthClass={MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS}>
+          <button
+            type="button"
+            onClick={materialSection.toggle}
+            aria-expanded={materialSection.isOpen}
+            aria-label={materialSection.isOpen ? `Collapse ${title}` : `Expand ${title}`}
+            className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-4 text-left transition-all duration-200 hover:bg-[var(--panel-hover)]/55 hover:shadow-[0_0_18px_rgba(59,130,246,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-base font-semibold">{title}</div>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+              <MaterialSectionMetric label="Material Cost" value={formatCurrencyValue(totalMaterialCost)} />
+              <MaterialSectionMetric label="Allocated Cost" value={formatCurrencyValue(totalAllocatedCost)} />
+            </div>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition group-hover:bg-[var(--panel-hover)] group-hover:text-[var(--foreground)]">
+              {materialSection.isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </span>
+          </button>
+          <div className="flex items-center py-4">
+            <button
+              type="button"
+              onClick={onRequestAutoAllocation}
+              disabled={isAutoAllocating || items.length === 0}
+              className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
+            >
+              {isAutoAllocating ? "Auto Allocating..." : "Auto Allocate"}
+            </button>
+          </div>
+        </div>
+
+        {materialSection.isOpen ? (
+          <div className="w-full overflow-x-auto">
+            <table className={joinClasses("w-full text-sm", MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS)}>
           <RecordTableHead>
             <tr>
               <TableHeaderCell>Product</TableHeaderCell>
@@ -437,8 +458,10 @@ export function WorkOrderMaterialItemsSection({
               </tr>
             ) : null}
           </tbody>
-        </RecordTableShell>
-      </TableBleed>
-    </CollapsibleTableSection>
+            </table>
+          </div>
+        ) : null}
+      </section>
+    </TableBleed>
   )
 }
