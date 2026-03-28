@@ -47,10 +47,10 @@ export default function WorkOrderDetailClient({
   )
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [refreshNonce, setRefreshNonce] = useState(0)
-  const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
   const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
+  const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
   const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`, {
-    enabled: isOptionsMenuOpen,
+    enabled: isInvoiceSectionOpen,
   })
   const previousInvoiceStatusRef = useRef(invoice.invoice.generation?.status ?? null)
 
@@ -142,22 +142,11 @@ export default function WorkOrderDetailClient({
       headerMeta={<WorkOrderExpenseSummaryHeader summary={deferredExpenseSummary} />}
       headerActions={
         <RecordOptionsMenu
-          onOpenChange={setIsOptionsMenuOpen}
           items={[
             {
               label: "Complete",
               onSelect: () => void markWorkOrderComplete(),
               disabled: workOrder.isComplete,
-            },
-            {
-              label: "Invoice",
-              onSelect: () => void queueInvoiceGeneration(),
-              disabled: invoice.isGenerating,
-            },
-            {
-              label: "Open Invoice",
-              onSelect: invoice.openInvoice,
-              disabled: !invoice.invoice.canOpen,
             },
           ]}
         />
@@ -173,6 +162,12 @@ export default function WorkOrderDetailClient({
         serviceOptions={serviceOptions}
         salesRepOptions={salesRepOptions}
         unitOptions={unitOptions}
+        invoice={invoice.invoice}
+        invoiceLoading={invoice.isLoading}
+        invoiceGenerating={invoice.isGenerating}
+        onQueueInvoice={() => void queueInvoiceGeneration()}
+        onOpenInvoice={invoice.openInvoice}
+        onInvoiceSectionOpenChange={setIsInvoiceSectionOpen}
         onClose={closePage}
         refreshNonce={refreshNonce}
         onExpenseSummaryChange={(nextSummary) => {

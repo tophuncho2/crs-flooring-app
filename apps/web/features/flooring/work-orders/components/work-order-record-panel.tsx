@@ -31,9 +31,11 @@ import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/compo
 import { useRecordAllocationsController } from "@/features/flooring/work-orders/use-record-allocations-controller"
 import { WorkOrderMaterialItemsSection } from "@/features/flooring/work-orders/components/record/material-items-section"
 import { WorkOrderCalculationsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-calculations-section"
+import { WorkOrderInvoiceSection } from "@/features/flooring/work-orders/components/record/sections/work-order-invoice-section"
 import { WorkOrderPrimaryFieldsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-primary-fields-section"
 import { WorkOrderSalesRepsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-sales-reps-section"
 import { WorkOrderServiceItemsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-service-items-section"
+import type { WorkOrderInvoiceStatusResponse } from "@/features/flooring/work-orders/transport/invoice"
 import type {
   DraftWorkOrder,
   PropertyOption,
@@ -100,6 +102,12 @@ export function WorkOrderRecordPanel({
   serviceOptions,
   salesRepOptions,
   unitOptions,
+  invoice,
+  invoiceLoading = false,
+  invoiceGenerating = false,
+  onQueueInvoice,
+  onOpenInvoice,
+  onInvoiceSectionOpenChange,
   onClose,
   refreshNonce = 0,
   onWorkOrderSaved,
@@ -117,6 +125,12 @@ export function WorkOrderRecordPanel({
   serviceOptions: ServiceOption[]
   salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
+  invoice: WorkOrderInvoiceStatusResponse
+  invoiceLoading?: boolean
+  invoiceGenerating?: boolean
+  onQueueInvoice: () => void
+  onOpenInvoice: () => void
+  onInvoiceSectionOpenChange?: (open: boolean) => void
   onClose: () => void
   refreshNonce?: number
   onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
@@ -545,6 +559,15 @@ export function WorkOrderRecordPanel({
           title="Calculations"
           items={calculationRows as DisplayCalculationRow[]}
           loading={loadingCalculationRows}
+        />
+
+        <WorkOrderInvoiceSection
+          invoice={invoice}
+          isLoading={invoiceLoading}
+          isGenerating={invoiceGenerating}
+          onQueueInvoice={onQueueInvoice}
+          onOpenInvoice={onOpenInvoice}
+          onOpenChange={onInvoiceSectionOpenChange}
         />
       </RecordSectionStack>
 

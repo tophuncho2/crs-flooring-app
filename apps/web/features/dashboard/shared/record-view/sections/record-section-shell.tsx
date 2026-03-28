@@ -14,6 +14,7 @@ export function RecordSectionShell({
   metrics,
   actions,
   defaultOpen = true,
+  onOpenChange,
   bodyClassName,
   className,
 }: {
@@ -22,6 +23,7 @@ export function RecordSectionShell({
   metrics?: ReactNode
   actions?: ReactNode
   defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
   bodyClassName?: string
   className?: string
 }) {
@@ -33,7 +35,13 @@ export function RecordSectionShell({
         <RecordSectionHeader
           title={title}
           isOpen={isOpen}
-          onToggle={() => setIsOpen((current) => !current)}
+          onToggle={() =>
+            setIsOpen((current) => {
+              const next = !current
+              onOpenChange?.(next)
+              return next
+            })
+          }
           metrics={metrics}
           actions={actions}
         />

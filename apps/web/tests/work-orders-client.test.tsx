@@ -17,15 +17,26 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     workOrderId,
     notices,
     onDirtyChange,
+    invoice,
+    onQueueInvoice,
+    onOpenInvoice,
+    onInvoiceSectionOpenChange,
   }: {
     workOrderId: string
     notices?: { message?: string; error?: string }
     onDirtyChange?: (value: boolean) => void
+    invoice?: { canOpen?: boolean }
+    onQueueInvoice?: () => void
+    onOpenInvoice?: () => void
+    onInvoiceSectionOpenChange?: (open: boolean) => void
   }) => (
     <div>
       <div>{`Panel ${workOrderId}`}</div>
       {notices?.message ? <div>{notices.message}</div> : null}
       {notices?.error ? <div>{notices.error}</div> : null}
+      <button type="button" onClick={() => onInvoiceSectionOpenChange?.(true)}>Open Invoice Section</button>
+      <button type="button" onClick={() => onQueueInvoice?.()}>Generate Invoice</button>
+      <button type="button" onClick={() => onOpenInvoice?.()} disabled={!invoice?.canOpen}>Open Invoice</button>
       <button type="button" onClick={() => onDirtyChange?.(true)}>Mark Dirty</button>
       <button type="button" onClick={() => onDirtyChange?.(false)}>Clear Dirty</button>
     </div>
@@ -288,8 +299,6 @@ describe("WorkOrdersClient", () => {
   })
 
   it("removes Sync Template from the canonical detail options menu", () => {
-    requestJsonMock.mockResolvedValue({ sourceVersion: "", generation: null, artifact: null, canOpen: false })
-
     render(
       <WorkOrderDetailClient
         workOrder={workOrderRow()}
@@ -307,14 +316,27 @@ describe("WorkOrdersClient", () => {
 
     expect(within(optionsMenu).queryByRole("button", { name: "Sync Template" })).toBeNull()
     expect(within(optionsMenu).getByRole("button", { name: "Complete" })).toBeTruthy()
-    expect(within(optionsMenu).getByRole("button", { name: "Invoice" })).toBeTruthy()
-    expect(within(optionsMenu).getByRole("button", { name: "Open Invoice" })).toBeTruthy()
+    expect(within(optionsMenu).queryByRole("button", { name: "Invoice" })).toBeNull()
+    expect(within(optionsMenu).queryByRole("button", { name: "Open Invoice" })).toBeNull()
   })
 
-  it("queues invoice generation and keeps Open Invoice disabled until a file exists", async () => {
+  it("queues invoice generation from the invoice section and keeps Open Invoice disabled until a file exists", async () => {
     const user = userEvent.setup()
 
+    requestJsonMock.mockReset()
     requestJsonMock
+      .mockResolvedValueOnce({
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        generation: null,
+        artifact: null,
+        canOpen: false,
+      })
+      .mockResolvedValueOnce({
+        sourceVersion: "2026-03-26T12:00:00.000Z",
+        generation: null,
+        artifact: null,
+        canOpen: false,
+      })
       .mockResolvedValueOnce({
         sourceVersion: "2026-03-26T12:00:00.000Z",
         generation: {
@@ -344,11 +366,18 @@ describe("WorkOrdersClient", () => {
       />,
     )
 
-    const optionsMenu = screen.getByTestId("record-options-menu")
-    const openInvoiceButton = within(optionsMenu).getByRole("button", { name: "Open Invoice" }) as HTMLButtonElement
+    await user.click(screen.getByRole("button", { name: "Open Invoice Section" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders/wo-1/invoice", expect.objectContaining({
+        cache: "no-store",
+      }))
+    })
+
+    const openInvoiceButton = screen.getByRole("button", { name: "Open Invoice" }) as HTMLButtonElement
     expect(openInvoiceButton.disabled).toBe(true)
 
-    await user.click(within(optionsMenu).getByRole("button", { name: "Invoice" }))
+    await user.click(screen.getByRole("button", { name: "Generate Invoice" }))
 
     await waitFor(() => {
       expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders/wo-1/invoice", expect.objectContaining({
@@ -357,7 +386,6 @@ describe("WorkOrdersClient", () => {
     })
 
     expect(await screen.findByText("Invoice generation requested")).toBeTruthy()
-    expect((within(optionsMenu).getByRole("button", { name: "Invoice" }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it("shows completion success inside the canonical detail notice area", async () => {

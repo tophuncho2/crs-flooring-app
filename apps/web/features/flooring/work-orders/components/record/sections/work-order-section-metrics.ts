@@ -41,5 +41,6 @@ export function buildSalesRepSectionMetrics(
 }
 
 export function buildCalculationSectionMetrics(items: DisplayCalculationRow[]): WorkOrderSectionMetricValue[] {
-  return [{ label: "Rows", value: `${items.length}` }]
+  void items
+  return []
 }

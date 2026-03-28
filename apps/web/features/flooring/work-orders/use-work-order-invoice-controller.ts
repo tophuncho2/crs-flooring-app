@@ -22,9 +22,11 @@ export function useWorkOrderInvoiceController(
   const initialInvoice = useMemo(() => EMPTY_INVOICE_STATE, [])
   const [invoice, setInvoice] = useState<InvoiceStatusView>(initialInvoice)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const refreshInvoice = useCallback(
     async (options?: { suppressErrors?: boolean }) => {
+      setIsLoading(true)
       try {
         const payload = await requestJson<WorkOrderInvoiceStatusResponse>(`/api/flooring/work-orders/${workOrderId}/invoice`, {
           cache: "no-store",
@@ -37,6 +39,8 @@ export function useWorkOrderInvoiceController(
         if (!options?.suppressErrors) {
           throw error
         }
+      } finally {
+        setIsLoading(false)
       }
 
       return null
@@ -90,6 +94,7 @@ export function useWorkOrderInvoiceController(
   return {
     invoice,
     hasLoadedOnce,
+    isLoading,
     isGenerating:
       invoice.generation?.status === "REQUESTED" ||
       invoice.generation?.status === "QUEUED" ||
