@@ -348,13 +348,21 @@ export function WorkOrderRecordPanel({
     },
   })
 
+  const requestAutoAllocationRef = useRef(allocations.requestAutoAllocation)
+
+  useEffect(() => {
+    requestAutoAllocationRef.current = allocations.requestAutoAllocation
+  }, [allocations.requestAutoAllocation])
+
+  const handleAutoAllocateFromMenu = useCallback(() => {
+    void requestAutoAllocationRef.current()
+  }, [])
+
   useEffect(() => {
     onAutoAllocateOptionsChange?.({
       label: allocations.isAutoAllocating ? "Auto Allocating..." : "Auto Allocate",
       disabled: allocations.isAutoAllocating || lineItems.materialItems.length === 0,
-      onSelect: () => {
-        void allocations.requestAutoAllocation()
-      },
+      onSelect: handleAutoAllocateFromMenu,
     })
 
     return () => {
@@ -362,7 +370,7 @@ export function WorkOrderRecordPanel({
     }
   }, [
     allocations.isAutoAllocating,
-    allocations.requestAutoAllocation,
+    handleAutoAllocateFromMenu,
     lineItems.materialItems.length,
     onAutoAllocateOptionsChange,
   ])
