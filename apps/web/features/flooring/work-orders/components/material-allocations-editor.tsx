@@ -47,6 +47,8 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
+const DARK_SECTION_OUTLINE_CLASS_NAME = "border-[rgba(58,58,58,0.72)]"
+
 function readPricePerUnit(options: InventoryAllocationOption[], inventoryId: string) {
   return options.find((option) => option.id === inventoryId)?.pricePerUnit ?? 0
 }
@@ -63,7 +65,7 @@ function AllocationCell({
   return (
     <div
       className={joinClasses(
-        "min-w-0 rounded-lg border border-orange-500/25 bg-orange-500/[0.08] px-3 py-2",
+        "min-w-0 rounded-lg border border-[rgba(58,58,58,0.72)] bg-orange-500/[0.08] px-3 py-2",
         className,
       )}
     >
@@ -82,7 +84,7 @@ function AllocationValueCell({
 }) {
   return (
     <AllocationCell label={label}>
-      <div className="rounded-md border border-orange-500/20 bg-[var(--panel-background)] px-2 py-1.5 text-sm text-[var(--foreground)]">
+      <div className="rounded-md border border-[rgba(58,58,58,0.72)] bg-[var(--panel-background)] px-2 py-1.5 text-sm text-[var(--foreground)]">
         {value}
       </div>
     </AllocationCell>
@@ -269,7 +271,11 @@ export function MaterialAllocationsEditor({
 
       {!addRow.isOpen ? (
         <div className="pt-0">
-          <InlineAddRowButton label="Add allocation" onClick={addRow.open} />
+          <InlineAddRowButton
+            label="Add allocation"
+            onClick={addRow.open}
+            className={DARK_SECTION_OUTLINE_CLASS_NAME}
+          />
         </div>
       ) : null}
 

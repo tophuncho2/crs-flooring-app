@@ -32,10 +32,12 @@ export function InlineAddRowButton({
   label,
   onClick,
   disabled = false,
+  className,
 }: {
   label: string
   onClick: () => void
   disabled?: boolean
+  className?: string
 }) {
   return (
     <button
@@ -43,7 +45,10 @@ export function InlineAddRowButton({
       onClick={onClick}
       aria-label={label}
       disabled={disabled}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[var(--foreground)]/70"
+      className={joinClasses(
+        "inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition hover:bg-[var(--panel-hover)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[var(--foreground)]/70",
+        className,
+      )}
     >
       <Plus size={16} />
     </button>
