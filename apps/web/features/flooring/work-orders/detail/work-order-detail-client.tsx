@@ -48,6 +48,7 @@ export default function WorkOrderDetailClient({
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [refreshNonce, setRefreshNonce] = useState(0)
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
+  const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
   const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`, {
     enabled: isOptionsMenuOpen,
   })
@@ -136,6 +137,8 @@ export default function WorkOrderDetailClient({
       title={`Work Order ${workOrder.workOrderNumber}`}
       backHref={backHref}
       onBack={closePage}
+      onHeaderToggle={() => setIsPrimaryFieldsOpen((current) => !current)}
+      isHeaderExpanded={isPrimaryFieldsOpen}
       headerMeta={<WorkOrderExpenseSummaryHeader summary={deferredExpenseSummary} />}
       headerActions={
         <RecordOptionsMenu
@@ -163,6 +166,7 @@ export default function WorkOrderDetailClient({
       <WorkOrderRecordPanel
         workOrderId={workOrder.id}
         initialWorkOrder={workOrder}
+        showPrimaryFields={isPrimaryFieldsOpen}
         propertyOptions={propertyOptions}
         warehouseOptions={warehouseOptions}
         productOptions={productOptions}

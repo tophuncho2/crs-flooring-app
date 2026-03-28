@@ -11,36 +11,29 @@ import {
 } from "@/features/flooring/shared/line-items/material-items-editor"
 import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
-import { RecordFormField } from "@/features/dashboard/shared/record-view/forms/record-form"
-import { AutoGrowTextarea } from "@/features/dashboard/shared/record-view/forms/auto-grow-textarea"
 import {
-  ServiceItemsEditor,
   type EditableServiceItem,
   type ServiceItemDraft,
   type ServiceOption,
   type UnitOption,
 } from "@/features/flooring/shared/line-items/service-items-editor"
-import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import { CalculationRowsTable } from "@/features/flooring/shared/line-items/calculation-rows-table"
-import {
-  RecordPrimaryFieldCell,
-  RecordPrimaryFieldsGrid,
-  RecordPrimaryPane,
-  RecordPrimarySection,
-  RecordStaticFieldValue,
-} from "@/features/dashboard/shared/record-view/shell/record-primary-fields"
+import { type DisplayCalculationRow } from "@/features/flooring/shared/line-items/calculation-rows-table"
+import { type SalesRepDraft } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
 import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
 import { useRecordNotices, type RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
-import { RecordSection, RecordSectionStack } from "@/features/dashboard/shared/record-view/shell/record-sections"
-import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
+import { RecordSectionStack } from "@/features/dashboard/shared/record-view/sections/record-section-stack"
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
 import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"
 import { useRecordAllocationsController } from "@/features/flooring/work-orders/use-record-allocations-controller"
 import { WorkOrderMaterialItemsSection } from "@/features/flooring/work-orders/components/record/material-items-section"
+import { WorkOrderCalculationsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-calculations-section"
+import { WorkOrderPrimaryFieldsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-primary-fields-section"
+import { WorkOrderSalesRepsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-sales-reps-section"
+import { WorkOrderServiceItemsSection } from "@/features/flooring/work-orders/components/record/sections/work-order-service-items-section"
 import type {
   DraftWorkOrder,
   PropertyOption,
@@ -72,8 +65,6 @@ const defaultSalesRepDraft: SalesRepDraft = {
   percent: "",
 }
 
-const vacancyOptions: Array<"VACANT" | "OCCUPIED"> = ["VACANT", "OCCUPIED"]
-
 function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
   return {
     propertyId: workOrder.propertyId,
@@ -91,10 +82,6 @@ function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
   }
 }
 
-function statusLabel(value: string) {
-  return getWorkOrderStatusLabel({ status: value, isComplete: false })
-}
-
 function selectedAddress(propertyOptions: PropertyOption[], draft: DraftWorkOrder, fallbackAddress: string) {
   if (draft.customAddress.trim()) {
     return draft.customAddress
@@ -106,6 +93,7 @@ function selectedAddress(propertyOptions: PropertyOption[], draft: DraftWorkOrde
 export function WorkOrderRecordPanel({
   workOrderId,
   initialWorkOrder,
+  showPrimaryFields = true,
   propertyOptions,
   warehouseOptions,
   productOptions,
@@ -122,6 +110,7 @@ export function WorkOrderRecordPanel({
 }: {
   workOrderId: string
   initialWorkOrder: WorkOrderDetail
+  showPrimaryFields?: boolean
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   productOptions: MaterialItemOption[]
@@ -454,204 +443,109 @@ export function WorkOrderRecordPanel({
       <FormStatusNotices message={message} error={noticeError} loadingMessage={savingWorkOrder ? "Saving work order..." : ""} />
 
       <RecordSectionStack>
-        <RecordSection>
-          <RecordPrimarySection>
-            <RecordPrimaryPane variant="side">
-              <RecordPrimaryFieldsGrid variant="side">
-                <RecordPrimaryFieldCell>
-                  <RecordFormField label="Warehouse">
-                    <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                      <option value="">No warehouse</option>
-                      {warehouseOptions.map((warehouse) => (
-                        <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                      ))}
-                    </select>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell>
-                  <RecordFormField label="Status">
-                    <select value={draft.status} onChange={(event) => setDraft((prev) => (prev ? { ...prev, status: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                        {WORK_ORDER_STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>{statusLabel(status)}</option>
-                        ))}
-                    </select>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell>
-                  <RecordFormField label="Completion">
-                    <select value={draft.isComplete ? "COMPLETE" : "OPEN"} onChange={(event) => setDraft((prev) => (prev ? { ...prev, isComplete: event.target.value === "COMPLETE" } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                      <option value="OPEN">Open</option>
-                      <option value="COMPLETE">Complete</option>
-                    </select>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell>
-                  <RecordFormField label="Vacancy">
-                    <select value={draft.vacancy} onChange={(event) => setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as DraftWorkOrder["vacancy"] } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                      <option value="">Select vacancy</option>
-                      {vacancyOptions.map((vacancy) => (
-                        <option key={vacancy} value={vacancy}>{vacancy}</option>
-                      ))}
-                    </select>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-              </RecordPrimaryFieldsGrid>
-            </RecordPrimaryPane>
+        {showPrimaryFields ? (
+          <WorkOrderPrimaryFieldsSection
+            draft={draft}
+            propertyOptions={propertyOptions}
+            warehouseOptions={warehouseOptions}
+            selectedAddressValue={selectedAddress(propertyOptions, draft, workOrder.propertyAddress)}
+            unitType={workOrder.unitType}
+            setDraft={setDraft}
+          />
+        ) : null}
 
-            <RecordPrimaryPane variant="main">
-              <RecordPrimaryFieldsGrid>
-                <RecordPrimaryFieldCell size="md">
-                  <RecordFormField label="Property">
-                    <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                      <option value="">Select property</option>
-                      {propertyOptions.map((property) => (
-                        <option key={property.id} value={property.id}>{property.name}</option>
-                      ))}
-                    </select>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="lg">
-                  <RecordFormField label="Address">
-                    <RecordStaticFieldValue size="lg">
-                      {selectedAddress(propertyOptions, draft, workOrder.propertyAddress) || "Select a property or enter a custom address"}
-                    </RecordStaticFieldValue>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="lg">
-                  <RecordFormField label="Custom Address">
-                    <input value={draft.customAddress} onChange={(event) => setDraft((prev) => (prev ? { ...prev, customAddress: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="sm">
-                  <RecordFormField label="Date">
-                    <input type="date" value={draft.date} onChange={(event) => setDraft((prev) => (prev ? { ...prev, date: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="sm">
-                  <RecordFormField label="Unit Type">
-                    <RecordStaticFieldValue>{workOrder.unitType || "Filled by template sync"}</RecordStaticFieldValue>
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="sm">
-                  <RecordFormField label="Unit Label">
-                    <input value={draft.unitText} onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="lg">
-                  <RecordFormField label="Notes">
-                    <AutoGrowTextarea value={draft.notes} onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-                <RecordPrimaryFieldCell size="lg">
-                  <RecordFormField label="Instructions">
-                    <AutoGrowTextarea value={draft.instructions} onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-                  </RecordFormField>
-                </RecordPrimaryFieldCell>
-              </RecordPrimaryFieldsGrid>
-            </RecordPrimaryPane>
-          </RecordPrimarySection>
-        </RecordSection>
-
-        <RecordSection>
-          <WorkOrderMaterialItemsSection
-            title="Material Items"
-            items={lineItems.materialItems}
-            draft={lineItems.materialDraft}
-            productOptions={productOptions}
-            loading={loading || lineItems.materialCollection.loading}
-            adding={lineItems.materialCollection.adding}
-            savingItemId={lineItems.materialCollection.savingItemId}
-            deletingItemId={lineItems.materialCollection.deletingItemId}
-            draftErrors={lineItems.materialDraftErrors}
-            itemErrors={lineItems.materialItemErrors}
-            expandedItemIds={allocations.expandedItemIds}
-            onToggleExpandedItem={allocations.toggleExpandedItem}
-            onDraftChange={lineItems.handleMaterialDraftChange}
-            onAdd={() => lineItems.addMaterialItem()}
-            onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-            onSaveItem={handleSaveMaterialItemSection}
-            onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
-            onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
-            isAutoAllocating={allocations.isAutoAllocating}
-            renderAllocationSection={(item: WorkOrderMaterialItem) => (
-              <MaterialAllocationsEditor
-                allocations={item.allocations}
-                draft={
-                  allocations.draftsByItemId[item.id] ?? {
-                    inventoryId: "",
-                    quantity: "",
-                    notes: "",
-                  }
+        <WorkOrderMaterialItemsSection
+          title="Material Items"
+          items={lineItems.materialItems}
+          draft={lineItems.materialDraft}
+          productOptions={productOptions}
+          loading={loading || lineItems.materialCollection.loading}
+          adding={lineItems.materialCollection.adding}
+          savingItemId={lineItems.materialCollection.savingItemId}
+          deletingItemId={lineItems.materialCollection.deletingItemId}
+          draftErrors={lineItems.materialDraftErrors}
+          itemErrors={lineItems.materialItemErrors}
+          expandedItemIds={allocations.expandedItemIds}
+          onToggleExpandedItem={allocations.toggleExpandedItem}
+          onDraftChange={lineItems.handleMaterialDraftChange}
+          onAdd={() => lineItems.addMaterialItem()}
+          onItemFieldChange={lineItems.handleMaterialItemFieldChange}
+          onSaveItem={handleSaveMaterialItemSection}
+          onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
+          onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
+          isAutoAllocating={allocations.isAutoAllocating}
+          renderAllocationSection={(item: WorkOrderMaterialItem) => (
+            <MaterialAllocationsEditor
+              allocations={item.allocations}
+              draft={
+                allocations.draftsByItemId[item.id] ?? {
+                  inventoryId: "",
+                  quantity: "",
+                  notes: "",
                 }
-                allocationOptions={allocations.optionsByItemId[item.id] ?? []}
-                loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
-                adding={allocations.addingItemId === item.id}
-                deletingAllocationId={allocations.deletingAllocationId}
-                draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
-                itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
-                onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
-                onAdd={() => allocations.addAllocation(item.id)}
-                onAllocationFieldChange={(allocationId, field, value) =>
-                  allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
-                }
-                onSaveAllocation={(allocation) => allocations.saveAllocation(item.id, allocation)}
-                onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
-              />
-            )}
-          />
-        </RecordSection>
+              }
+              allocationOptions={allocations.optionsByItemId[item.id] ?? []}
+              loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
+              adding={allocations.addingItemId === item.id}
+              deletingAllocationId={allocations.deletingAllocationId}
+              draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
+              itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
+              onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
+              onAdd={() => allocations.addAllocation(item.id)}
+              onAllocationFieldChange={(allocationId, field, value) =>
+                allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
+              }
+              onSaveAllocation={(allocation) => allocations.saveAllocation(item.id, allocation)}
+              onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
+            />
+          )}
+        />
 
-        <RecordSection>
-          <ServiceItemsEditor
-        title="Service Items"
-        items={lineItems.serviceItems}
-        draft={lineItems.serviceDraft}
-        serviceOptions={serviceOptions}
-        unitOptions={unitOptions}
-        totalAmount={workOrder.summary.serviceTotal}
-        loading={loading || lineItems.serviceCollection.loading}
-        adding={lineItems.serviceCollection.adding}
-        savingItemId={lineItems.serviceCollection.savingItemId}
-        deletingItemId={lineItems.serviceCollection.deletingItemId}
-        draftErrors={lineItems.serviceDraftErrors}
-        itemErrors={lineItems.serviceItemErrors}
-        onDraftChange={lineItems.handleServiceDraftChange}
-        onAdd={() => lineItems.addServiceItem()}
-        onItemFieldChange={lineItems.handleServiceItemFieldChange}
-        onSaveItem={(item) => void lineItems.saveServiceItem(item)}
-        onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
-          />
-        </RecordSection>
+        <WorkOrderServiceItemsSection
+          title="Service Items"
+          items={lineItems.serviceItems}
+          draft={lineItems.serviceDraft}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          totalAmount={workOrder.summary.serviceTotal}
+          loading={loading || lineItems.serviceCollection.loading}
+          adding={lineItems.serviceCollection.adding}
+          savingItemId={lineItems.serviceCollection.savingItemId}
+          deletingItemId={lineItems.serviceCollection.deletingItemId}
+          draftErrors={lineItems.serviceDraftErrors}
+          itemErrors={lineItems.serviceItemErrors}
+          onDraftChange={lineItems.handleServiceDraftChange}
+          onAdd={() => lineItems.addServiceItem()}
+          onItemFieldChange={lineItems.handleServiceItemFieldChange}
+          onSaveItem={(item) => void lineItems.saveServiceItem(item)}
+          onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
+        />
 
-        <RecordSection>
-          <SalesRepItemsEditor
-        title="Sales Reps"
-        items={salesRepLines.salesReps}
-        draft={salesRepLines.draft}
-        salesRepOptions={salesRepOptions}
-        customerCost={currentExpenseSummary.customerCost}
-        totalAmount={currentExpenseSummary.salesRepExpense}
-        loading={loading || salesRepLines.salesRepCollection.loading}
-        adding={salesRepLines.salesRepCollection.adding}
-        savingItemId={salesRepLines.salesRepCollection.savingItemId}
-        deletingItemId={salesRepLines.salesRepCollection.deletingItemId}
-        draftErrors={salesRepLines.draftErrors}
-        itemErrors={salesRepLines.itemErrors}
-        onDraftChange={salesRepLines.handleDraftChange}
-        onAdd={() => salesRepLines.addItem()}
-        onItemFieldChange={salesRepLines.handleItemFieldChange}
-        onSaveItem={(item) => void salesRepLines.saveItem(item)}
-        onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
-          />
-        </RecordSection>
+        <WorkOrderSalesRepsSection
+          title="Sales Reps"
+          items={salesRepLines.salesReps}
+          draft={salesRepLines.draft}
+          salesRepOptions={salesRepOptions}
+          customerCost={currentExpenseSummary.customerCost}
+          totalAmount={currentExpenseSummary.salesRepExpense}
+          loading={loading || salesRepLines.salesRepCollection.loading}
+          adding={salesRepLines.salesRepCollection.adding}
+          savingItemId={salesRepLines.salesRepCollection.savingItemId}
+          deletingItemId={salesRepLines.salesRepCollection.deletingItemId}
+          draftErrors={salesRepLines.draftErrors}
+          itemErrors={salesRepLines.itemErrors}
+          onDraftChange={salesRepLines.handleDraftChange}
+          onAdd={() => salesRepLines.addItem()}
+          onItemFieldChange={salesRepLines.handleItemFieldChange}
+          onSaveItem={(item) => void salesRepLines.saveItem(item)}
+          onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
+        />
 
-        <RecordSection>
-          <CalculationRowsTable
-        title="Calculations"
-        items={calculationRows}
-        loading={loadingCalculationRows}
-          />
-        </RecordSection>
+        <WorkOrderCalculationsSection
+          title="Calculations"
+          items={calculationRows as DisplayCalculationRow[]}
+          loading={loadingCalculationRows}
+        />
       </RecordSectionStack>
 
       <RecordPanelFooter

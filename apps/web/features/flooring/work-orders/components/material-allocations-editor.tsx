@@ -1,6 +1,9 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { RecordInlineActionsCell } from "@/features/dashboard/shared/record-view/sections/record-inline-actions-cell"
+import { RecordItemCell } from "@/features/dashboard/shared/record-view/sections/record-item-cell"
+import { RECORD_SECTION_BORDER_CLASS_NAME } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
@@ -47,8 +50,6 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-const DARK_SECTION_OUTLINE_CLASS_NAME = "border-[rgba(58,58,58,0.72)]"
-
 function readPricePerUnit(options: InventoryAllocationOption[], inventoryId: string) {
   return options.find((option) => option.id === inventoryId)?.pricePerUnit ?? 0
 }
@@ -63,15 +64,13 @@ function AllocationCell({
   className?: string
 }) {
   return (
-    <div
-      className={joinClasses(
-        "min-w-0 rounded-lg border border-[rgba(58,58,58,0.72)] bg-orange-500/[0.08] px-3 py-2",
-        className,
-      )}
+    <RecordItemCell
+      label={label}
+      className={joinClasses("bg-orange-500/[0.08] px-3 py-2", className)}
+      labelClassName="text-[var(--foreground)]/55"
     >
-      <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/55">{label}</div>
-      <div>{children}</div>
-    </div>
+      {children}
+    </RecordItemCell>
   )
 }
 
@@ -97,9 +96,7 @@ function AllocationActionsPanel({
   children: ReactNode
 }) {
   return (
-    <AllocationCell label="Actions" className="h-full">
-      <div className="flex h-full flex-col gap-2">{children}</div>
-    </AllocationCell>
+    <RecordInlineActionsCell className="h-full bg-orange-500/[0.08] px-3 py-2">{children}</RecordInlineActionsCell>
   )
 }
 
@@ -281,7 +278,7 @@ export function MaterialAllocationsEditor({
           <InlineAddRowButton
             label="Add allocation"
             onClick={addRow.open}
-            className={DARK_SECTION_OUTLINE_CLASS_NAME}
+            className={RECORD_SECTION_BORDER_CLASS_NAME}
           />
         </div>
       ) : null}
