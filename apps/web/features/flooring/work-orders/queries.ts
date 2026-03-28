@@ -1,7 +1,9 @@
 import {
   Prisma,
   createPrismaPageLoadIssue,
+  findActiveWorkOrderAllocationRun,
   findWorkOrderAllocationRunBySourceVersion,
+  getWorkOrderInvoiceView,
   isPrismaNotFoundError,
   listAutoAllocationInventoryCandidates,
   prisma,
@@ -22,7 +24,14 @@ import {
   parseWorkOrderStatusFilter,
 } from "./domain/filters"
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseTotals } from "./domain/expense-summary"
-import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
+import {
+  normalizeWorkOrder,
+  normalizeWorkOrderInvoiceStatus,
+  normalizeWorkOrderItem,
+  normalizeWorkOrderSalesRep,
+  normalizeWorkOrderServiceItem,
+  normalizeWorkOrderSummary,
+} from "./services"
 
 async function deriveWorkOrderAllocationState(
   db: WorkOrderDbClient,
@@ -73,6 +82,7 @@ async function deriveWorkOrderAllocationState(
   }
 
   return {
+    currentRun,
     hasPendingRun,
     shortageItemIds,
   }
@@ -305,7 +315,11 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
     },
   })
 
-  const allocationState = await deriveWorkOrderAllocationState(db, workOrder)
+  const [allocationState, activeAllocationRun, invoiceStatus] = await Promise.all([
+    deriveWorkOrderAllocationState(db, workOrder),
+    findActiveWorkOrderAllocationRun(workOrder.id, db),
+    getWorkOrderInvoiceView(workOrder.id, db).then((invoice) => normalizeWorkOrderInvoiceStatus(workOrder.id, invoice)),
+  ])
 
   return {
     ...(() => {
@@ -327,6 +341,8 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
           ...workOrder,
           hasShortage: normalizedItems.some((item) => item.allocationStatus === "SHORTAGE"),
         }),
+        autoAllocationRun: allocationState.currentRun ?? activeAllocationRun,
+        invoiceStatus,
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
         salesReps: normalizedSalesReps,
@@ -347,6 +363,41 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
 
 export async function getWorkOrderById(id: string) {
   return getWorkOrderByIdWithClient(prisma, id)
+}
+
+export async function getWorkOrderReconciliationByIdWithClient(db: WorkOrderDbClient, id: string) {
+  const workOrder = await db.flooringWorkOrder.findUniqueOrThrow({
+    where: { id },
+    select: {
+      id: true,
+      updatedAt: true,
+      items: {
+        select: {
+          allocationStatus: true,
+        },
+      },
+    },
+  })
+
+  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, workOrder.updatedAt, db)
+  const activeRun = currentRun ?? (await findActiveWorkOrderAllocationRun(workOrder.id, db))
+  const allocationWorkflow = buildWorkOrderAllocationWorkflowSummary({
+    itemStatuses: workOrder.items.map((item) => item.allocationStatus),
+    hasPendingRun: isWorkOrderAutoAllocationPendingStatus(activeRun?.status),
+  })
+  const invoice = await getWorkOrderInvoiceView(workOrder.id, db)
+
+  return {
+    updatedAt: workOrder.updatedAt.toISOString(),
+    hasShortage: workOrder.items.some((item) => item.allocationStatus === "SHORTAGE"),
+    allocationIsDone: allocationWorkflow.isDone,
+    autoAllocationRun: activeRun,
+    invoiceStatus: normalizeWorkOrderInvoiceStatus(workOrder.id, invoice),
+  }
+}
+
+export async function getWorkOrderReconciliationById(id: string) {
+  return getWorkOrderReconciliationByIdWithClient(prisma, id)
 }
 
 export async function listWorkOrderItems(workOrderId: string) {

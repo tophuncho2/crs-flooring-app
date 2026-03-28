@@ -35,8 +35,6 @@ import type {
   MaterialItemFieldErrors,
   MaterialItemOption,
 } from "@/features/flooring/shared/line-items/material-items-editor"
-import { validateMaterialItemFields } from "@/features/flooring/shared/line-items/material-items-editor"
-import { useRowAutosave } from "@/features/flooring/shared/line-items/use-row-autosave"
 import {
   WORK_ORDER_MATERIAL_GRID_CLASS_NAME,
 } from "@/features/flooring/work-orders/components/record/sections/work-order-line-item-grid"
@@ -83,22 +81,9 @@ function MaterialItemEditorRow({
 }) {
   const rowErrors = itemErrors[item.id]
   const productLabel = readProductLabel(productOptions, item.productId, item.productName)
-  const autosave = useRowAutosave({
-    rowId: item.id,
-    value: item,
-    serialize: (currentItem) =>
-      JSON.stringify({
-        productId: currentItem.productId,
-        quantity: currentItem.quantity,
-        unitPrice: currentItem.unitPrice,
-        notes: currentItem.notes,
-      }),
-    canAutosave: Object.keys(validateMaterialItemFields(item)).length === 0,
-    onSave: onSaveItem,
-  })
 
   return (
-    <div {...autosave.focusLeaveProps} className={WORK_ORDER_MATERIAL_GRID_CLASS_NAME}>
+    <div className={WORK_ORDER_MATERIAL_GRID_CLASS_NAME}>
       <RecordItemCell label="Product">
         <div className="space-y-1">
           <select

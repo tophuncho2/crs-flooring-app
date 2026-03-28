@@ -18,12 +18,16 @@ function readInvoiceStatusLabel(invoice: WorkOrderInvoiceStatusResponse) {
 
 export function WorkOrderInvoiceSection({
   invoice,
+  error,
+  isLoading,
   isGenerating,
   onQueueInvoice,
   onOpenInvoice,
   onOpenChange,
 }: {
   invoice: WorkOrderInvoiceStatusResponse
+  error?: string | null
+  isLoading?: boolean
   isGenerating: boolean
   onQueueInvoice: () => void
   onOpenInvoice: () => void
@@ -59,6 +63,14 @@ export function WorkOrderInvoiceSection({
           </div>
         ) : null}
       </div>
+      {isLoading ? (
+        <p className="text-sm text-[var(--foreground)]/70">Loading invoice status...</p>
+      ) : null}
+      {error ? (
+        <div className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+          {error}
+        </div>
+      ) : null}
       <p className="text-sm text-[var(--foreground)]/70">
         Use <span className="font-medium text-[var(--foreground)]">Open Invoice</span> to view a generated invoice.
       </p>

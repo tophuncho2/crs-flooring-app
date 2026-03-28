@@ -17,14 +17,44 @@ const EMPTY_INVOICE_STATE: InvoiceStatusView = {
 
 export function useWorkOrderInvoiceController(
   workOrderId: string,
-  refreshToken: string,
-  options?: { enabled?: boolean },
+  options?: {
+    enabled?: boolean
+    initialInvoice?: WorkOrderInvoiceStatusResponse | null
+    refreshToken?: string
+  },
 ) {
   const enabled = options?.enabled ?? false
-  const initialInvoice = useMemo(() => EMPTY_INVOICE_STATE, [])
+  const initialInvoice = useMemo(
+    () => options?.initialInvoice ?? EMPTY_INVOICE_STATE,
+    [options?.initialInvoice],
+  )
   const [invoice, setInvoice] = useState<InvoiceStatusView>(initialInvoice)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setInvoice((current) => {
+      if (!options?.initialInvoice) {
+        return current
+      }
+
+      const currentKey = [
+        current.sourceVersion,
+        current.generation?.id ?? "",
+        current.generation?.status ?? "",
+        current.artifact?.id ?? "",
+      ].join(":")
+      const nextKey = [
+        options.initialInvoice.sourceVersion,
+        options.initialInvoice.generation?.id ?? "",
+        options.initialInvoice.generation?.status ?? "",
+        options.initialInvoice.artifact?.id ?? "",
+      ].join(":")
+
+      return currentKey === nextKey ? current : options.initialInvoice
+    })
+  }, [options?.initialInvoice])
 
   const refreshInvoice = useCallback(
     async (options?: { suppressErrors?: boolean }) => {
@@ -36,10 +66,13 @@ export function useWorkOrderInvoiceController(
 
         setInvoice(payload)
         setHasLoadedOnce(true)
+        setError(null)
         return payload
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load invoice status"
+        setError(message)
         if (!options?.suppressErrors) {
-          throw error
+          throw new Error(message)
         }
       } finally {
         setIsLoading(false)
@@ -56,7 +89,7 @@ export function useWorkOrderInvoiceController(
     }
 
     void refreshInvoice({ suppressErrors: true })
-  }, [enabled, hasLoadedOnce, refreshInvoice, refreshToken])
+  }, [enabled, hasLoadedOnce, refreshInvoice, options?.refreshToken])
 
   usePendingWorkflowPolling({
     isPending:
@@ -74,6 +107,7 @@ export function useWorkOrderInvoiceController(
     })
 
     setInvoice(payload)
+    setError(null)
     return payload
   }, [workOrderId])
 
@@ -87,6 +121,7 @@ export function useWorkOrderInvoiceController(
 
   return {
     invoice,
+    error,
     hasLoadedOnce,
     isLoading,
     isGenerating:

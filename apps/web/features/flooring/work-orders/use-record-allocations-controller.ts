@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePendingWorkflowPolling } from "@/features/dashboard/shared/record-view/client/use-pending-workflow-polling"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
+import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
   clearFieldError,
   clearRowFieldError,
@@ -37,6 +37,7 @@ const defaultAllocationDraft: AllocationDraft = {
 export function useRecordAllocationsController({
   workOrderId,
   workOrderUpdatedAt,
+  initialAutoAllocationRun,
   materialItems,
   setMaterialItems,
   notices,
@@ -46,6 +47,7 @@ export function useRecordAllocationsController({
 }: {
   workOrderId: string
   workOrderUpdatedAt: string
+  initialAutoAllocationRun?: WorkOrderAutoAllocationRun | null
   materialItems: WorkOrderMaterialItem[]
   setMaterialItems: (value: WorkOrderMaterialItem[] | ((previous: WorkOrderMaterialItem[]) => WorkOrderMaterialItem[])) => void
   notices: Pick<RecordNotices, "clearNotices" | "showSuccess" | "showError">
@@ -62,7 +64,7 @@ export function useRecordAllocationsController({
   const [addingItemId, setAddingItemId] = useState<string | null>(null)
   const [savingAllocationId, setSavingAllocationId] = useState<string | null>(null)
   const [deletingAllocationId, setDeletingAllocationId] = useState<string | null>(null)
-  const [autoAllocationRun, setAutoAllocationRun] = useState<WorkOrderAutoAllocationRun | null>(null)
+  const [autoAllocationRun, setAutoAllocationRun] = useState<WorkOrderAutoAllocationRun | null>(initialAutoAllocationRun ?? null)
   const materialItemsRef = useRef(materialItems)
   const workOrderUpdatedAtRef = useRef(workOrderUpdatedAt)
   const onAutoAllocationCompletedRef = useRef(onAutoAllocationCompleted)
@@ -88,6 +90,18 @@ export function useRecordAllocationsController({
   useEffect(() => {
     onWorkOrderChangeRef.current = onWorkOrderChange
   }, [onWorkOrderChange])
+
+  useEffect(() => {
+    if (!initialAutoAllocationRun) {
+      return
+    }
+
+    setAutoAllocationRun((current) => {
+      const currentKey = current ? `${current.id}:${current.status}:${current.sourceVersion}` : ""
+      const nextKey = `${initialAutoAllocationRun.id}:${initialAutoAllocationRun.status}:${initialAutoAllocationRun.sourceVersion}`
+      return currentKey === nextKey ? current : initialAutoAllocationRun
+    })
+  }, [initialAutoAllocationRun])
 
   const isAutoAllocating = useMemo(
     () =>
@@ -144,6 +158,10 @@ export function useRecordAllocationsController({
 
       if (payload.run.status === "FAILED") {
         notices.showError(payload.run.failureMessage || "Auto allocation failed")
+      }
+
+      if (payload.run.status === "SUPERSEDED") {
+        notices.showError("Auto allocation was superseded by a newer work order version")
       }
     },
   })
@@ -401,16 +419,30 @@ export function useRecordAllocationsController({
 
   async function requestAutoAllocation() {
     notices.clearNotices()
-    const payload = await requestJson<WorkOrderAutoAllocationStatusResponse>(
-      `/api/flooring/work-orders/${workOrderId}/auto-allocation`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(withMutationMeta({}, workOrderUpdatedAtRef.current)),
-      },
-    )
-    setAutoAllocationRun(payload.run)
-    return payload
+    try {
+      const payload = await requestJson<WorkOrderAutoAllocationStatusResponse>(
+        `/api/flooring/work-orders/${workOrderId}/auto-allocation`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(withMutationMeta({}, workOrderUpdatedAtRef.current)),
+        },
+      )
+      setAutoAllocationRun(payload.run)
+      notices.showSuccess(
+        payload.run?.status === "COMPLETED" ? "Auto allocation already complete" : "Auto allocation requested",
+      )
+      return payload
+    } catch (error) {
+      const conflictSnapshot = getConflictSnapshot<{ workOrder?: WorkOrderDetail }>(error)
+      if (conflictSnapshot?.workOrder) {
+        onWorkOrderChangeRef.current?.(conflictSnapshot.workOrder)
+      }
+
+      const fieldError = getRequestFieldError(error)
+      notices.showError(fieldError.message || "Failed to request auto allocation")
+      throw error
+    }
   }
 
   function clearAllocationErrors(itemId: string) {

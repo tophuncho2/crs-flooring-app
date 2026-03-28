@@ -15,7 +15,6 @@ import {
   type FieldErrorMap,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import { useRowAutosave } from "@/features/flooring/shared/line-items/use-row-autosave"
 import { WORK_ORDER_MATERIAL_GRID_CLASS_NAME } from "@/features/flooring/work-orders/components/material-grid-layout"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "../types"
 
@@ -125,7 +124,6 @@ function AllocationEditorRow({
   deletingAllocationId,
   rowErrors,
   onAllocationFieldChange,
-  onSaveAllocation,
   onDeleteAllocation,
 }: {
   allocation: WorkOrderItemAllocationRow
@@ -133,33 +131,13 @@ function AllocationEditorRow({
   deletingAllocationId: string | null
   rowErrors: FieldErrorMap<AllocationField> | undefined
   onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
-  onSaveAllocation: (allocation: WorkOrderItemAllocationRow) => Promise<boolean> | boolean
   onDeleteAllocation: (allocationId: string) => void
 }) {
   const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
   const quantityValue = Number(allocation.quantity || 0)
-  const autosave = useRowAutosave({
-    rowId: allocation.id,
-    value: allocation,
-    serialize: (currentAllocation) =>
-      JSON.stringify({
-        inventoryId: currentAllocation.inventoryId,
-        quantity: currentAllocation.quantity,
-        notes: currentAllocation.notes,
-      }),
-    canAutosave:
-      Object.keys(
-        validateAllocationFields({
-          inventoryId: allocation.inventoryId,
-          quantity: allocation.quantity,
-        }),
-      ).length === 0,
-    onSave: onSaveAllocation,
-  })
 
   return (
     <AllocationRowShell
-      {...autosave.focusLeaveProps}
       className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}
     >
       <AllocationCell label="Inventory">
@@ -223,7 +201,6 @@ export function MaterialAllocationsEditor({
   onDraftChange,
   onAdd,
   onAllocationFieldChange,
-  onSaveAllocation,
   onDeleteAllocation,
 }: {
   allocations: WorkOrderItemAllocationRow[]
@@ -237,7 +214,6 @@ export function MaterialAllocationsEditor({
   onDraftChange: (field: keyof AllocationDraft, value: string) => void
   onAdd: () => Promise<boolean> | boolean
   onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
-  onSaveAllocation: (allocation: WorkOrderItemAllocationRow) => Promise<boolean> | boolean
   onDeleteAllocation: (allocationId: string) => void
 }) {
   const addRow = useInlineCreateRow(false)
@@ -267,7 +243,6 @@ export function MaterialAllocationsEditor({
             deletingAllocationId={deletingAllocationId}
             rowErrors={itemErrors[allocation.id]}
             onAllocationFieldChange={onAllocationFieldChange}
-            onSaveAllocation={onSaveAllocation}
             onDeleteAllocation={onDeleteAllocation}
           />
         )

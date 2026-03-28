@@ -49,7 +49,6 @@ export default function WorkOrderDetailClient({
       }),
   )
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
-  const [refreshNonce, setRefreshNonce] = useState(0)
   const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
   const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
   const [autoAllocateOption, setAutoAllocateOption] = useState<{
@@ -57,8 +56,10 @@ export default function WorkOrderDetailClient({
     disabled: boolean
     onSelect: () => void
   } | null>(null)
-  const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`, {
+  const invoice = useWorkOrderInvoiceController(workOrder.id, {
     enabled: isInvoiceSectionOpen,
+    initialInvoice: workOrder.invoiceStatus ?? null,
+    refreshToken: workOrder.updatedAt,
   })
   const previousInvoiceStatusRef = useRef(invoice.invoice.generation?.status ?? null)
 
@@ -111,7 +112,6 @@ export default function WorkOrderDetailClient({
       if (payload.workOrder.financialSummary) {
         setExpenseSummary(payload.workOrder.financialSummary)
       }
-      setRefreshNonce((current) => current + 1)
       page.notices.showSuccess("Work order marked complete")
     } catch (completeError) {
       page.notices.showError(completeError instanceof Error ? completeError.message : "Failed to complete work order")
@@ -181,13 +181,14 @@ export default function WorkOrderDetailClient({
         salesRepOptions={salesRepOptions}
         unitOptions={unitOptions}
         invoice={invoice.invoice}
+        invoiceError={invoice.error}
+        invoiceLoading={invoice.isLoading}
         invoiceGenerating={invoice.isGenerating}
         onQueueInvoice={() => void queueInvoiceGeneration()}
         onOpenInvoice={invoice.openInvoice}
         onInvoiceSectionOpenChange={setIsInvoiceSectionOpen}
         onAutoAllocateOptionsChange={setAutoAllocateOption}
         onClose={closePage}
-        refreshNonce={refreshNonce}
         onExpenseSummaryChange={(nextSummary) => {
           startTransition(() => {
             setExpenseSummary(nextSummary)

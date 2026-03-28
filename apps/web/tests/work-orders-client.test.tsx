@@ -18,6 +18,8 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     notices,
     onDirtySectionsChange,
     invoice,
+    invoiceError,
+    invoiceLoading,
     onQueueInvoice,
     onOpenInvoice,
     onInvoiceSectionOpenChange,
@@ -27,6 +29,8 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     notices?: { message?: string; error?: string }
     onDirtySectionsChange?: (value: string[]) => void
     invoice?: { canOpen?: boolean }
+    invoiceError?: string | null
+    invoiceLoading?: boolean
     onQueueInvoice?: () => void
     onOpenInvoice?: () => void
     onInvoiceSectionOpenChange?: (open: boolean) => void
@@ -38,6 +42,8 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
         <div>{`Panel ${workOrderId}`}</div>
         {notices?.message ? <div>{notices.message}</div> : null}
         {notices?.error ? <div>{notices.error}</div> : null}
+        {invoiceLoading ? <div>Loading invoice status...</div> : null}
+        {invoiceError ? <div>{invoiceError}</div> : null}
         <button type="button" onClick={() => onInvoiceSectionOpenChange?.(true)}>Open Invoice Section</button>
         <button type="button" onClick={() => onQueueInvoice?.()}>Generate Invoice</button>
         <button type="button" onClick={() => onOpenInvoice?.()} disabled={!invoice?.canOpen}>Open Invoice</button>
@@ -410,6 +416,30 @@ describe("WorkOrdersClient", () => {
     })
 
     expect(await screen.findByText("Invoice generation requested")).toBeTruthy()
+  })
+
+  it("surfaces invoice section load errors in the detail experience", async () => {
+    const user = userEvent.setup()
+
+    requestJsonMock.mockReset()
+    requestJsonMock.mockRejectedValueOnce(new Error("Invoice status unavailable"))
+
+    render(
+      <WorkOrderDetailClient
+        workOrder={workOrderRow()}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        productOptions={[]}
+        serviceOptions={[]}
+        salesRepOptions={[]}
+        unitOptions={[]}
+        backHref="/dashboard/flooring/work-orders"
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Open Invoice Section" }))
+
+    expect(await screen.findByText("Invoice status unavailable")).toBeTruthy()
   })
 
   it("shows completion success inside the canonical detail notice area", async () => {

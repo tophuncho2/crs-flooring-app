@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
+import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
@@ -52,6 +52,7 @@ import type {
   WorkOrderExpenseSummary,
   WorkOrderItemAllocationRow,
   WorkOrderMaterialItem,
+  WorkOrderReconciliationStatus,
 } from "@/features/flooring/work-orders/types"
 import type { AllocationDraft } from "@/features/flooring/work-orders/components/material-allocations-editor"
 
@@ -196,6 +197,23 @@ function selectedAddress(propertyOptions: PropertyOption[], draft: DraftWorkOrde
   return propertyOptions.find((property) => property.id === draft.propertyId)?.address ?? fallbackAddress
 }
 
+function buildWorkOrderReconciliationKey(input: {
+  updatedAt: string
+  autoAllocationRun?: WorkOrderDetail["autoAllocationRun"] | WorkOrderReconciliationStatus["autoAllocationRun"]
+  invoiceStatus?: WorkOrderDetail["invoiceStatus"] | WorkOrderReconciliationStatus["invoiceStatus"]
+}) {
+  return [
+    input.updatedAt,
+    input.autoAllocationRun?.id ?? "",
+    input.autoAllocationRun?.sourceVersion ?? "",
+    input.autoAllocationRun?.status ?? "",
+    input.invoiceStatus?.sourceVersion ?? "",
+    input.invoiceStatus?.generation?.id ?? "",
+    input.invoiceStatus?.generation?.status ?? "",
+    input.invoiceStatus?.artifact?.id ?? "",
+  ].join(":")
+}
+
 export function WorkOrderRecordPanel({
   currentUserId,
   workOrderId,
@@ -208,13 +226,14 @@ export function WorkOrderRecordPanel({
   salesRepOptions,
   unitOptions,
   invoice,
+  invoiceError,
+  invoiceLoading = false,
   invoiceGenerating = false,
   onQueueInvoice,
   onOpenInvoice,
   onInvoiceSectionOpenChange,
   onAutoAllocateOptionsChange,
   onClose,
-  refreshNonce = 0,
   onWorkOrderChange,
   onWorkOrderSaved,
   onWorkOrderDeleted,
@@ -234,13 +253,14 @@ export function WorkOrderRecordPanel({
   salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
   invoice: WorkOrderInvoiceStatusResponse
+  invoiceError?: string | null
+  invoiceLoading?: boolean
   invoiceGenerating?: boolean
   onQueueInvoice: () => void
   onOpenInvoice: () => void
   onInvoiceSectionOpenChange?: (open: boolean) => void
   onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
   onClose: () => void
-  refreshNonce?: number
   onWorkOrderChange?: (workOrder: WorkOrderDetail) => void
   onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
@@ -344,7 +364,7 @@ export function WorkOrderRecordPanel({
   const onExpenseSummaryChangeRef = useRef(onExpenseSummaryChange)
   const onWorkOrderChangeRef = useRef(onWorkOrderChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
-  const hasMountedRefreshRef = useRef(false)
+  const [remoteReconciliation, setRemoteReconciliation] = useState<WorkOrderReconciliationStatus | null>(null)
   const { message, error: noticeError, showSuccess, showError, clearNotices } = noticeController
 
   useEffect(() => {
@@ -370,12 +390,26 @@ export function WorkOrderRecordPanel({
   const refreshWorkOrderDetail = useCallback(async () => {
     try {
       const nextWorkOrder = await refreshRecord()
+      setRemoteReconciliation(null)
       publishWorkOrder(nextWorkOrder)
       onExpenseSummaryChangeRef.current?.(nextWorkOrder.financialSummary)
       return nextWorkOrder
     } finally {
     }
   }, [publishWorkOrder, refreshRecord])
+
+  const applyConflictWorkOrderSnapshot = useCallback(
+    (error: unknown) => {
+      const conflictSnapshot = getConflictSnapshot<{ workOrder?: WorkOrderDetail }>(error)
+      if (conflictSnapshot?.workOrder) {
+        publishWorkOrder(conflictSnapshot.workOrder)
+        return conflictSnapshot.workOrder
+      }
+
+      return null
+    },
+    [publishWorkOrder],
+  )
 
   const salesRepLines = useRecordSalesRepsController({
     record: workOrder,
@@ -452,6 +486,7 @@ export function WorkOrderRecordPanel({
   const allocations = useRecordAllocationsController({
     workOrderId,
     workOrderUpdatedAt: workOrder?.updatedAt ?? initialWorkOrderDetail.updatedAt,
+    initialAutoAllocationRun: workOrder?.autoAllocationRun ?? initialWorkOrderDetail.autoAllocationRun ?? null,
     materialItems: lineItems.materialItems,
     setMaterialItems: materialCollection.setItems,
     notices: noticeController,
@@ -559,6 +594,69 @@ export function WorkOrderRecordPanel({
     onDirtyChange?.(dirtySections.length > 0)
     onDirtySectionsChange?.(dirtySections)
   }, [dirtySections, onDirtyChange, onDirtySectionsChange])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function refreshReconciliation() {
+      try {
+        const payload = await requestJson<{ workOrder: WorkOrderReconciliationStatus }>(
+          `/api/flooring/work-orders/${workOrderId}/reconciliation`,
+          { cache: "no-store" },
+        )
+        if (cancelled) {
+          return
+        }
+
+        const nextReconciliation = payload.workOrder
+        const currentKey = buildWorkOrderReconciliationKey({
+          updatedAt: workOrder?.updatedAt ?? initialWorkOrderDetail.updatedAt,
+          autoAllocationRun: workOrder?.autoAllocationRun ?? initialWorkOrderDetail.autoAllocationRun,
+          invoiceStatus: workOrder?.invoiceStatus ?? invoice,
+        })
+        const nextKey = buildWorkOrderReconciliationKey(nextReconciliation)
+
+        if (currentKey === nextKey) {
+          setRemoteReconciliation(null)
+          return
+        }
+
+        if (dirtySections.length === 0) {
+          setRemoteReconciliation(null)
+          await refreshWorkOrderDetail()
+          return
+        }
+
+        setRemoteReconciliation(nextReconciliation)
+      } catch {
+        // Reconciliation polling is advisory; keep the current panel state if the check fails.
+      }
+    }
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "hidden") {
+        return
+      }
+
+      void refreshReconciliation()
+    }, 15000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [
+    dirtySections.length,
+    initialWorkOrderDetail.autoAllocationRun,
+    initialWorkOrderDetail.updatedAt,
+    invoice,
+    refreshWorkOrderDetail,
+    workOrder?.autoAllocationRun,
+    workOrder?.id,
+    workOrder?.invoiceStatus,
+    workOrder?.updatedAt,
+    workOrderId,
+  ])
 
   useEffect(() => {
     if (primarySectionDirty && draft) {
@@ -720,11 +818,12 @@ export function WorkOrderRecordPanel({
         noticeController.showSuccess("Material item and allocations saved")
         return true
       } catch (error) {
+        applyConflictWorkOrderSnapshot(error)
         noticeController.showError(error instanceof Error ? error.message : "Failed to save material item and allocations")
         return false
       }
     },
-    [allocations, lineItems, noticeController, publishWorkOrder, workOrder],
+    [allocations, applyConflictWorkOrderSnapshot, lineItems, noticeController, publishWorkOrder, workOrder],
   )
 
   useEffect(() => {
@@ -755,15 +854,6 @@ export function WorkOrderRecordPanel({
     setCalculationRows(currentCalculationRows)
   }, [currentCalculationRows, setCalculationRows])
 
-  useEffect(() => {
-    if (!hasMountedRefreshRef.current) {
-      hasMountedRefreshRef.current = true
-      return
-    }
-
-    void refreshWorkOrderDetail()
-  }, [refreshNonce, refreshWorkOrderDetail])
-
   async function saveWorkOrder() {
     if (!draft || !workOrder) return
     setSavingWorkOrder(true)
@@ -783,6 +873,7 @@ export function WorkOrderRecordPanel({
       onWorkOrderSavedRef.current?.(payload.workOrder)
       showSuccess("Work order saved")
     } catch (saveError) {
+      applyConflictWorkOrderSnapshot(saveError)
       showError(saveError instanceof Error ? saveError.message : "Failed to save work order")
     } finally {
       setSavingWorkOrder(false)
@@ -822,6 +913,34 @@ export function WorkOrderRecordPanel({
   return (
     <div className="space-y-6">
       <FormStatusNotices message={message} error={noticeError} loadingMessage={savingWorkOrder ? "Saving work order..." : ""} />
+
+      {remoteReconciliation ? (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+          <div className="font-medium text-amber-800">This work order changed on the server while you were editing it.</div>
+          <div className="mt-1 text-amber-900/80">
+            Reload the latest server snapshot before saving, or keep editing and save manually after reconciling the differences.
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setRemoteReconciliation(null)
+                void refreshWorkOrderDetail()
+              }}
+              className="rounded-md border border-amber-600/40 px-3 py-2 font-medium hover:bg-amber-500/10"
+            >
+              Reload Latest
+            </button>
+            <button
+              type="button"
+              onClick={() => setRemoteReconciliation(null)}
+              className="rounded-md border border-[var(--panel-border)] px-3 py-2 font-medium hover:bg-[var(--panel-hover)]"
+            >
+              Keep Editing
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <RecordSectionStack>
         {showPrimaryFields ? (
@@ -875,7 +994,6 @@ export function WorkOrderRecordPanel({
                 onAllocationFieldChange={(allocationId, field, value) =>
                   allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
                 }
-                onSaveAllocation={(allocation) => allocations.saveAllocation(item.id, allocation)}
                 onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
               />
             )}
@@ -930,6 +1048,8 @@ export function WorkOrderRecordPanel({
 
         <WorkOrderInvoiceSection
           invoice={invoice}
+          error={invoiceError}
+          isLoading={invoiceLoading}
           isGenerating={invoiceGenerating}
           onQueueInvoice={onQueueInvoice}
           onOpenInvoice={onOpenInvoice}

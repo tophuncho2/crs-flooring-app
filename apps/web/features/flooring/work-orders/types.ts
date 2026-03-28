@@ -123,6 +123,35 @@ export type WorkOrderAutoAllocationRun = {
   shortageCount: number
 }
 
+export type WorkOrderInvoiceStatus = {
+  sourceVersion: string
+  generation: {
+    id: string
+    status: "REQUESTED" | "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED" | "SUPERSEDED"
+    requestedAt: string
+    queuedAt: string | null
+    startedAt: string | null
+    completedAt: string | null
+    failedAt: string | null
+    error: string
+  } | null
+  artifact: {
+    id: string
+    fileName: string
+    createdAt: string
+    downloadUrl: string
+  } | null
+  canOpen: boolean
+}
+
+export type WorkOrderReconciliationStatus = {
+  updatedAt: string
+  hasShortage: boolean
+  allocationIsDone: boolean
+  autoAllocationRun: WorkOrderAutoAllocationRun | null
+  invoiceStatus: WorkOrderInvoiceStatus
+}
+
 export type WorkOrderMaterialItem = EditableMaterialItem & {
   allocations: WorkOrderItemAllocationRow[]
   allocatedQuantity: number
@@ -138,6 +167,8 @@ export type WorkOrderDetail = Omit<WorkOrderRow, "itemsCount"> & {
   items: WorkOrderMaterialItem[]
   serviceItems: EditableServiceItem[]
   salesReps: EditableWorkOrderSalesRep[]
+  autoAllocationRun?: WorkOrderAutoAllocationRun | null
+  invoiceStatus?: WorkOrderInvoiceStatus
   capabilities?: {
     canWrite: boolean
     canDelete: boolean
