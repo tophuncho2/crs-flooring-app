@@ -252,6 +252,13 @@ export function MaterialAllocationsEditor({
     }
   }
 
+  function handleCancel() {
+    onDraftChange("inventoryId", "")
+    onDraftChange("quantity", "")
+    onDraftChange("notes", "")
+    addRow.close()
+  }
+
   return (
     <div className="space-y-2">
       {allocations.map((allocation) => {
@@ -325,14 +332,24 @@ export function MaterialAllocationsEditor({
             />
           </AllocationCell>
           <AllocationActionsPanel>
-            <button
-              type="button"
-              onClick={() => void handleAdd()}
-              disabled={adding || loadingOptions}
-              className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-            >
-              {loadingOptions ? "Loading..." : adding ? "Adding..." : "Add"}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={adding}
+                className="rounded-md border border-[rgba(58,58,58,0.72)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleAdd()}
+                disabled={adding || loadingOptions}
+                className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+              >
+                {loadingOptions ? "Loading..." : adding ? "Adding..." : "Add"}
+              </button>
+            </div>
           </AllocationActionsPanel>
         </AllocationRowShell>
       ) : null}

@@ -57,7 +57,7 @@ function MaterialSectionMetric({
   value: string
 }) {
   return (
-    <div className="min-w-[8rem] rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2">
+    <div className="min-w-[8rem] rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-background)] px-3 py-2">
       <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--foreground)]/45">{label}</div>
       <div className="mt-1 text-sm font-semibold text-[var(--foreground)]">{value}</div>
     </div>
