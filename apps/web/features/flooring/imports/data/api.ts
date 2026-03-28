@@ -273,6 +273,7 @@ export async function createImportEntry(body: Record<string, unknown>, db: RootD
           freight: item.freight,
           notes: item.notes,
           locationId: item.locationId,
+          fifoReceivedAt: entry.createdAt,
         },
       })
     }
@@ -291,7 +292,7 @@ export async function updateImportEntry(id: string, body: Record<string, unknown
     const warehouseId = parseOptionalString(body.warehouseId)
     const validatedItems = await validateImportLocationIds(tx, warehouseId, parsedItems)
 
-    await tx.flooringImportEntry.update({
+    const entry = await tx.flooringImportEntry.update({
       where: { id },
       data: {
         orderNumber: parseOptionalString(body.orderNumber),
@@ -300,6 +301,10 @@ export async function updateImportEntry(id: string, body: Record<string, unknown
         status: parseImportStatus(body.status),
         notes: parseOptionalString(body.notes),
         warehouseId,
+      },
+      select: {
+        id: true,
+        createdAt: true,
       },
     })
 
@@ -317,12 +322,13 @@ export async function updateImportEntry(id: string, body: Record<string, unknown
           freight: item.freight,
           notes: item.notes,
           locationId: item.locationId,
+          fifoReceivedAt: entry.createdAt,
         },
       })
     }
 
     return tx.flooringImportEntry.findUniqueOrThrow({
-      where: { id },
+      where: { id: entry.id },
       include: importEntryInclude(),
     })
   })

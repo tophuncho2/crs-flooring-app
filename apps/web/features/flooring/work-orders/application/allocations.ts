@@ -10,16 +10,20 @@ import {
   createWorkOrderItemAllocation,
   deleteWorkOrderItemAllocation,
   findActiveWorkOrderAllocationRun,
+  findWorkOrderAllocationRunBySourceVersion,
   getLatestWorkOrderAllocationRun,
   getWorkOrderAllocationRunById,
+  lockWorkOrderAllocationScope,
   listInventoryAllocationOptionsForWorkOrderItem,
   listWorkOrderItemAllocations,
+  supersedePendingWorkOrderAllocationRuns,
   updateWorkOrderItemAllocation,
   withDatabaseTransaction,
   db,
 } from "@builders/db"
-import { randomUUID } from "node:crypto"
 import type { Prisma } from "@builders/db"
+import { createAppError } from "@/server/http/api-helpers"
+import { buildInvoiceInvalidationFields } from "../invoice-state"
 
 export async function listWorkOrderItemAllocationsUseCase(workOrderId: string, workOrderItemId: string) {
   return listWorkOrderItemAllocations(workOrderId, workOrderItemId)
@@ -37,9 +41,18 @@ export async function createWorkOrderItemAllocationUseCase(input: {
   cutSize?: string | null
   notes?: string | null
 }) {
-  return createWorkOrderItemAllocation({
-    ...input,
-    method: "MANUAL",
+  return withDatabaseTransaction(async (tx) => {
+    const allocation = await createWorkOrderItemAllocation({
+      ...input,
+      method: "MANUAL",
+    }, tx)
+
+    await tx.flooringWorkOrder.update({
+      where: { id: input.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+
+    return allocation
   })
 }
 
@@ -52,7 +65,16 @@ export async function updateWorkOrderItemAllocationUseCase(input: {
   cutSize?: string | null
   notes?: string | null
 }) {
-  return updateWorkOrderItemAllocation(input)
+  return withDatabaseTransaction(async (tx) => {
+    const allocation = await updateWorkOrderItemAllocation(input, tx)
+
+    await tx.flooringWorkOrder.update({
+      where: { id: input.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+
+    return allocation
+  })
 }
 
 export async function deleteWorkOrderItemAllocationUseCase(input: {
@@ -60,7 +82,14 @@ export async function deleteWorkOrderItemAllocationUseCase(input: {
   workOrderItemId: string
   allocationId: string
 }) {
-  return deleteWorkOrderItemAllocation(input)
+  return withDatabaseTransaction(async (tx) => {
+    await deleteWorkOrderItemAllocation(input, tx)
+
+    await tx.flooringWorkOrder.update({
+      where: { id: input.workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+  })
 }
 
 export async function getWorkOrderAutoAllocationStatusUseCase(workOrderId: string) {
@@ -73,10 +102,7 @@ export async function requestWorkOrderAutoAllocationUseCase(input: {
   requestId: string
 }) {
   return withDatabaseTransaction(async (tx) => {
-    const activeRun = await findActiveWorkOrderAllocationRun(input.workOrderId, tx)
-    if (activeRun) {
-      return activeRun
-    }
+    await lockWorkOrderAllocationScope(tx, input.workOrderId)
 
     const workOrder = await tx.flooringWorkOrder.findUniqueOrThrow({
       where: { id: input.workOrderId },
@@ -85,23 +111,58 @@ export async function requestWorkOrderAutoAllocationUseCase(input: {
         updatedAt: true,
       },
     })
+    const sourceVersion = workOrder.updatedAt
+    const sourceVersionIso = sourceVersion.toISOString()
+    const existingRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, sourceVersion, tx)
+    if (existingRun) {
+      return existingRun
+    }
+
+    const activeRun = await findActiveWorkOrderAllocationRun(input.workOrderId, tx)
+    if (activeRun) {
+      if (activeRun.sourceVersion === sourceVersionIso) {
+        return activeRun
+      }
+
+      if (activeRun.status === "PROCESSING") {
+        throw createAppError(
+          "Auto allocation is already processing for an older work order version. Wait for it to finish and retry.",
+          { status: 409, field: "updatedAt", payload: { run: activeRun } },
+        )
+      }
+
+      await supersedePendingWorkOrderAllocationRuns({
+        workOrderId: input.workOrderId,
+        excludeSourceVersion: sourceVersion,
+      }, tx)
+    }
 
     const now = new Date()
-    const allocationRunId = randomUUID()
-    const idempotencyKey = buildWorkOrderAutoAllocationIdempotencyKey(allocationRunId)
+    const idempotencyKey = buildWorkOrderAutoAllocationIdempotencyKey(workOrder.id, sourceVersionIso)
+    let run
 
-    const run = await createWorkOrderAllocationRun(
-      {
-        id: allocationRunId,
-        workOrderId: workOrder.id,
-        requestedByUserId: input.triggeredByUserId,
-        sourceVersion: workOrder.updatedAt,
-        idempotencyKey,
-        requestId: input.requestId,
-        requestedAt: now,
-      },
-      tx,
-    )
+    try {
+      run = await createWorkOrderAllocationRun(
+        {
+          workOrderId: workOrder.id,
+          requestedByUserId: input.triggeredByUserId,
+          sourceVersion,
+          idempotencyKey,
+          requestId: input.requestId,
+          requestedAt: now,
+        },
+        tx,
+      )
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        const replayRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, sourceVersion, tx)
+        if (replayRun) {
+          return replayRun
+        }
+      }
+
+      throw error
+    }
 
     const outboxPayload: WorkOrderAutoAllocationRequestedOutboxEventV1 = {
       version: "v1",

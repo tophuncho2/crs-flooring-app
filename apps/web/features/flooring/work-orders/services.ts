@@ -5,6 +5,7 @@ import type { PricingLine } from "@/features/flooring/templates/services"
 import {
   buildWorkOrderItemAllocationSummary,
   calculateAllocationRowTotal,
+  type WorkOrderMaterialAllocationStatus,
 } from "@builders/domain"
 import { normalizeWorkOrderExpenseSummary } from "./domain/expense-summary"
 import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
@@ -173,6 +174,11 @@ export function normalizeWorkOrderItem(item: {
       } | null
     }
   }>
+}, options?: {
+  hasPendingAllocationRun?: boolean
+  hasEligibleInventoryRemaining?: boolean
+  allocationStatus?: WorkOrderMaterialAllocationStatus
+  isAllocationDone?: boolean
 }) {
   const allocations = (item.allocations ?? []).map((allocation) => ({
     id: allocation.id,
@@ -206,7 +212,11 @@ export function normalizeWorkOrderItem(item: {
       quantity: allocation.quantity,
       unitCost: allocation.unitCost,
     })),
+    hasPendingAllocationRun: options?.hasPendingAllocationRun,
+    hasEligibleInventoryRemaining: options?.hasEligibleInventoryRemaining,
   })
+  const allocationStatus = options?.allocationStatus ?? allocationSummary.allocationStatus
+  const isAllocationDone = options?.isAllocationDone ?? allocationSummary.isDone
 
   return {
     id: item.id,
@@ -222,7 +232,12 @@ export function normalizeWorkOrderItem(item: {
     remainingQuantity: allocationSummary.remainingQuantity,
     materialExpense: allocationSummary.materialExpense,
     hasAllocationShortage: allocationSummary.hasAllocationShortage,
-    changeOrderStatus: item.changeOrderStatus ?? "SUFFICIENT",
+    allocationStatus,
+    isAllocationDone,
+    changeOrderStatus:
+      allocationStatus === "SHORTAGE"
+        ? "SHORTAGE"
+        : (item.changeOrderStatus ?? "SUFFICIENT"),
   }
 }
 

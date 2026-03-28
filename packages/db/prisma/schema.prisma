@@ -109,6 +109,7 @@ enum FlooringWorkOrderAllocationRunStatus {
   PROCESSING
   COMPLETED
   FAILED
+  SUPERSEDED
 }
 
 enum QueueOutboxEventStatus {
@@ -311,6 +312,7 @@ model FlooringInventory {
   cost                Decimal?               @db.Decimal(10, 2)
   freight             Decimal?               @db.Decimal(10, 2)
   notes               String?
+  fifoReceivedAt      DateTime
   cutLogs             FlooringCutLog[]
   allocations         FlooringWorkOrderItemAllocation[]
   createdAt           DateTime               @default(now())
@@ -320,6 +322,7 @@ model FlooringInventory {
   @@index([importEntryId])
   @@index([productId])
   @@index([locationId])
+  @@index([productId, fifoReceivedAt, itemNumber, id])
   @@map("flooring_inventory")
 }
 
@@ -575,7 +578,9 @@ model FlooringWorkOrderItemAllocation {
   updatedAt     DateTime                  @updatedAt
 
   @@index([workOrderItemId])
+  @@index([workOrderItemId, createdAt, id])
   @@index([inventoryId])
+  @@index([inventoryId, method])
   @@index([method])
   @@map("flooring_work_order_item_allocation")
 }
@@ -694,6 +699,7 @@ model FlooringWorkOrderAllocationRun {
   createdAt         DateTime                             @default(now())
   updatedAt         DateTime                             @updatedAt
 
+  @@unique([workOrderId, sourceVersion])
   @@index([workOrderId, requestedAt])
   @@index([status, requestedAt])
   @@map("flooring_work_order_allocation_run")
@@ -717,6 +723,7 @@ model QueueOutboxEvent {
   updatedAt     DateTime               @updatedAt
 
   @@index([status, availableAt])
+  @@index([status, availableAt, lockedAt, createdAt])
   @@index([aggregateType, aggregateId])
   @@map("queue_outbox_event")
 }

@@ -106,7 +106,7 @@ export type WorkOrderAutoAllocationRun = {
   requestedByUserId: string
   sourceVersion: string
   idempotencyKey: string
-  status: "REQUESTED" | "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED"
+  status: "REQUESTED" | "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED" | "SUPERSEDED"
   requestId: string | null
   queueJobId: string | null
   requestedAt: string
@@ -126,6 +126,8 @@ export type WorkOrderMaterialItem = EditableMaterialItem & {
   remainingQuantity: number
   materialExpense: number
   hasAllocationShortage: boolean
+  allocationStatus: "NOT_STARTED" | "PARTIALLY_ALLOCATED" | "FULLY_ALLOCATED" | "SHORTAGE"
+  isAllocationDone: boolean
   changeOrderStatus: "SUFFICIENT" | "SHORTAGE"
 }
 
@@ -149,6 +151,7 @@ export type WorkOrderDetail = Omit<WorkOrderRow, "itemsCount"> & {
     grandTotal: number
   }
   financialSummary: WorkOrderExpenseSummary
+  allocationIsDone?: boolean
 }
 
 export type ServerPaginationState = {

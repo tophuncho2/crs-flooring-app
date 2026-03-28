@@ -21,6 +21,7 @@ export const WORK_ORDER_AUTO_ALLOCATION_STATUS_VALUES = [
   "PROCESSING",
   "COMPLETED",
   "FAILED",
+  "SUPERSEDED",
 ] as const
 
 export type WorkOrderAutoAllocationStatus = (typeof WORK_ORDER_AUTO_ALLOCATION_STATUS_VALUES)[number]
@@ -31,8 +32,17 @@ export function isWorkOrderAutoAllocationPendingStatus(
   return status === "REQUESTED" || status === "QUEUED" || status === "PROCESSING"
 }
 
-export function buildWorkOrderAutoAllocationIdempotencyKey(runId: string) {
-  return `work-order-allocation:v1:${runId}`
+export function isWorkOrderAutoAllocationTerminalStatus(
+  status: WorkOrderAutoAllocationStatus | null | undefined,
+) {
+  return status === "COMPLETED" || status === "FAILED" || status === "SUPERSEDED"
+}
+
+export function buildWorkOrderAutoAllocationIdempotencyKey(
+  workOrderId: string,
+  sourceVersion: string,
+) {
+  return `work-order-allocation:v2:${workOrderId}:${sourceVersion}`
 }
 
 const isoTimestamp = z.string().min(1)

@@ -7,6 +7,24 @@ import { canCreateInventoryCutLogs, getInventoryCutLogBlockedReason } from "@/fe
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 
+async function resolveInventoryFifoReceivedAt(
+  db: DbClient,
+  importEntryId: string | null | undefined,
+) {
+  if (!importEntryId) {
+    return new Date()
+  }
+
+  const importEntry = await db.flooringImportEntry.findUniqueOrThrow({
+    where: { id: importEntryId },
+    select: {
+      createdAt: true,
+    },
+  })
+
+  return importEntry.createdAt
+}
+
 function inventoryInclude() {
   return {
     product: {
@@ -215,9 +233,13 @@ export async function createInventoryRow(db: DbClient = prisma, body: Record<str
     importEntryId: data.importEntryId,
     locationId: data.locationId,
   })
+  const fifoReceivedAt = await resolveInventoryFifoReceivedAt(db, data.importEntryId)
 
   const inventory = await db.flooringInventory.create({
-    data,
+    data: {
+      ...data,
+      fifoReceivedAt,
+    },
     include: inventoryInclude(),
   })
 
@@ -230,10 +252,14 @@ export async function updateInventoryRow(db: DbClient = prisma, id: string, body
     importEntryId: data.importEntryId,
     locationId: data.locationId,
   })
+  const fifoReceivedAt = await resolveInventoryFifoReceivedAt(db, data.importEntryId)
 
   const inventory = await db.flooringInventory.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      fifoReceivedAt,
+    },
     include: inventoryInclude(),
   })
 

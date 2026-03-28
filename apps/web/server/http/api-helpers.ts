@@ -47,6 +47,18 @@ export function parseRequiredString(value: unknown, field: string): string {
   return value.trim()
 }
 
+export function parseUuidParam(value: unknown, field: string): string {
+  const parsed = parseRequiredString(value, field)
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+  if (!uuidPattern.test(parsed)) {
+    throw createAppError(`${field} must be a valid UUID`, { field, status: 400 })
+  }
+
+  return parsed
+}
+
 export function parseOptionalString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null

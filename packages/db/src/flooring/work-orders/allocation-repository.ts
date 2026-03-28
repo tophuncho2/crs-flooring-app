@@ -4,7 +4,13 @@ import { db } from "../../client.js"
 type WorkOrderAllocationDbClient = Prisma.TransactionClient | typeof db
 
 export type WorkOrderItemAllocationMethodRecord = "MANUAL" | "AUTO"
-export type WorkOrderAllocationRunStatusRecord = "REQUESTED" | "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED"
+export type WorkOrderAllocationRunStatusRecord =
+  | "REQUESTED"
+  | "QUEUED"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED"
+  | "SUPERSEDED"
 
 export type WorkOrderItemAllocationRecord = {
   id: string
@@ -32,6 +38,7 @@ export type InventoryAllocationOptionRecord = {
   productId: string
   warehouseId: string
   warehouseName: string
+  fifoReceivedAt: string
   itemNumber: string
   dyeLot: string
   locationCode: string
@@ -99,6 +106,7 @@ type InventoryForAllocation = {
   reservedStockCount: Prisma.Decimal
   cost: Prisma.Decimal | null
   freight: Prisma.Decimal | null
+  fifoReceivedAt: Date
   createdAt: Date
   cutLogs: Array<{ cut: Prisma.Decimal }>
   location: {
@@ -195,8 +203,9 @@ const allocationRunSelect = {
 } as const
 
 const fifoInventoryOrderBy = [
-  { createdAt: "asc" as const },
+  { fifoReceivedAt: "asc" as const },
   { itemNumber: "asc" as const },
+  { id: "asc" as const },
 ]
 
 function withAllocationTransaction<T>(
@@ -333,6 +342,7 @@ function toInventoryAllocationOptionRecord(inventory: InventoryForAllocation): I
     productId: inventory.productId,
     warehouseId: warehouse.id,
     warehouseName: warehouse.name,
+    fifoReceivedAt: inventory.fifoReceivedAt.toISOString(),
     itemNumber: inventory.itemNumber,
     dyeLot: inventory.dyeLot ?? "",
     locationCode,
@@ -465,6 +475,15 @@ async function lockInventoryRows(client: WorkOrderAllocationDbClient, inventoryI
   )
 }
 
+export async function lockWorkOrderAllocationScope(
+  client: WorkOrderAllocationDbClient,
+  workOrderId: string,
+) {
+  await client.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "flooring_work_order" WHERE "id" = ${workOrderId} FOR UPDATE`,
+  )
+}
+
 async function getWorkOrderItemWithContext(
   client: WorkOrderAllocationDbClient,
   workOrderId: string,
@@ -505,6 +524,7 @@ async function getInventoryForAllocation(
       reservedStockCount: true,
       cost: true,
       freight: true,
+      fifoReceivedAt: true,
       createdAt: true,
       cutLogs: {
         select: {
@@ -782,6 +802,18 @@ export async function listInventoryAllocationOptionsForWorkOrderItem(
   const inventories = await client.flooringInventory.findMany({
     where: {
       productId: item.productId,
+      OR: [
+        {
+          location: {
+            warehouseId: item.workOrder.warehouseId,
+          },
+        },
+        {
+          importEntry: {
+            warehouseId: item.workOrder.warehouseId,
+          },
+        },
+      ],
     },
     orderBy: fifoInventoryOrderBy,
     select: {
@@ -793,6 +825,7 @@ export async function listInventoryAllocationOptionsForWorkOrderItem(
       reservedStockCount: true,
       cost: true,
       freight: true,
+      fifoReceivedAt: true,
       createdAt: true,
       cutLogs: {
         select: {
@@ -839,10 +872,7 @@ export async function listInventoryAllocationOptionsForWorkOrderItem(
   return inventories
     .map((inventory) => toInventoryAllocationOptionRecord(inventory))
     .filter((inventory): inventory is InventoryAllocationOptionRecord => Boolean(inventory))
-    .filter(
-      (inventory) =>
-        inventory.warehouseId === item.workOrder.warehouseId && inventory.availableToAllocate > 0,
-    )
+    .filter((inventory) => inventory.availableToAllocate > 0)
 }
 
 export async function createWorkOrderItemAllocation(
@@ -1157,6 +1187,18 @@ export async function listAutoAllocationInventoryCandidates(
       productId: {
         in: productIds,
       },
+      OR: [
+        {
+          location: {
+            warehouseId: workOrder.warehouseId,
+          },
+        },
+        {
+          importEntry: {
+            warehouseId: workOrder.warehouseId,
+          },
+        },
+      ],
     },
     orderBy: fifoInventoryOrderBy,
     select: {
@@ -1168,6 +1210,7 @@ export async function listAutoAllocationInventoryCandidates(
       reservedStockCount: true,
       cost: true,
       freight: true,
+      fifoReceivedAt: true,
       createdAt: true,
       cutLogs: {
         select: {
@@ -1214,10 +1257,7 @@ export async function listAutoAllocationInventoryCandidates(
   return inventories
     .map((inventory) => toInventoryAllocationOptionRecord(inventory))
     .filter((inventory): inventory is InventoryAllocationOptionRecord => Boolean(inventory))
-    .filter(
-      (inventory) =>
-        inventory.warehouseId === workOrder.warehouseId && inventory.availableToAllocate > 0,
-    )
+    .filter((inventory) => inventory.availableToAllocate > 0)
 }
 
 export async function findActiveWorkOrderAllocationRun(
@@ -1233,6 +1273,24 @@ export async function findActiveWorkOrderAllocationRun(
     },
     orderBy: {
       requestedAt: "desc",
+    },
+    select: allocationRunSelect,
+  })
+
+  return run ? toWorkOrderAllocationRunRecord(run) : null
+}
+
+export async function findWorkOrderAllocationRunBySourceVersion(
+  workOrderId: string,
+  sourceVersion: Date,
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const run = await client.flooringWorkOrderAllocationRun.findUnique({
+    where: {
+      workOrderId_sourceVersion: {
+        workOrderId,
+        sourceVersion,
+      },
     },
     select: allocationRunSelect,
   })
@@ -1379,6 +1437,62 @@ export async function failWorkOrderAllocationRun(
   })
 
   return result.count > 0
+}
+
+export async function supersedeWorkOrderAllocationRun(
+  input: {
+    allocationRunId: string
+  },
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const result = await client.flooringWorkOrderAllocationRun.updateMany({
+    where: {
+      id: input.allocationRunId,
+      status: {
+        in: ["REQUESTED", "QUEUED", "PROCESSING"],
+      },
+    },
+    data: {
+      status: "SUPERSEDED",
+      failedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      completedAt: null,
+    },
+  })
+
+  return result.count > 0
+}
+
+export async function supersedePendingWorkOrderAllocationRuns(
+  input: {
+    workOrderId: string
+    excludeSourceVersion?: Date
+  },
+  client: WorkOrderAllocationDbClient = db,
+) {
+  return client.flooringWorkOrderAllocationRun.updateMany({
+    where: {
+      workOrderId: input.workOrderId,
+      status: {
+        in: ["REQUESTED", "QUEUED"],
+      },
+      ...(input.excludeSourceVersion
+        ? {
+            sourceVersion: {
+              not: input.excludeSourceVersion,
+            },
+          }
+        : {}),
+    },
+    data: {
+      status: "SUPERSEDED",
+      failedAt: null,
+      failureCode: null,
+      failureMessage: null,
+      completedAt: null,
+    },
+  })
 }
 
 export async function getWorkOrderAllocationRunById(
