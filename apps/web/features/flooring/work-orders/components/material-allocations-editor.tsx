@@ -13,6 +13,7 @@ import {
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
 import { useRowAutosave } from "@/features/flooring/shared/line-items/use-row-autosave"
+import { WORK_ORDER_MATERIAL_GRID_CLASS_NAME } from "@/features/flooring/work-orders/components/material-grid-layout"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "../types"
 
 export type AllocationDraft = {
@@ -110,7 +111,7 @@ function AllocationRowShell({
   return (
     <div
       className={joinClasses(
-        "grid gap-2 xl:grid-cols-[minmax(18rem,2fr)_minmax(6.75rem,.75fr)_minmax(8rem,.8fr)_minmax(8rem,.8fr)_minmax(12rem,1.15fr)_minmax(9rem,.78fr)]",
+        WORK_ORDER_MATERIAL_GRID_CLASS_NAME,
         className,
       )}
     >
