@@ -206,12 +206,17 @@ export function useRecordLineItemsController<
     }
   }
 
-  async function saveMaterialItem(item: EditableMaterialItem) {
+  async function saveMaterialItem(
+    item: EditableMaterialItem,
+    options?: { suppressClear?: boolean; suppressSuccess?: boolean },
+  ) {
     if (!recordRef.current) {
       return false
     }
 
-    clearMutationState()
+    if (!options?.suppressClear) {
+      clearMutationState()
+    }
     const validationErrors = validateMaterialItemFields(item)
     if (Object.keys(validationErrors).length > 0) {
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, validationErrors))
@@ -223,7 +228,9 @@ export function useRecordLineItemsController<
       const nextMaterialItems = await materialCollection.updateItem(item.id, item)
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
       publishCollections("material", "save", nextMaterialItems, serviceItemsRef.current)
-      notices.showSuccess("Material item saved")
+      if (!options?.suppressSuccess) {
+        notices.showSuccess("Material item saved")
+      }
       return true
     } catch (error) {
       const fieldError = getRequestFieldError(error)

@@ -463,7 +463,7 @@ export function WorkOrderMaterialItemsSection({
                           onToggleAllocations={() => onToggleExpandedItem(item.id)}
                         />
                         {isExpanded ? (
-                          <div className="rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-3">
+                          <div className="border-t border-[var(--panel-border)] pt-4">
                             {renderAllocationSection(item)}
                           </div>
                         ) : null}

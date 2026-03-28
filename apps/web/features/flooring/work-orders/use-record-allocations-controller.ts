@@ -29,7 +29,6 @@ import type { WorkOrderAutoAllocationStatusResponse } from "./transport/allocati
 const defaultAllocationDraft: AllocationDraft = {
   inventoryId: "",
   quantity: "",
-  cutSize: "",
   notes: "",
 }
 
@@ -291,8 +290,14 @@ export function useRecordAllocationsController({
     }
   }
 
-  async function saveAllocation(itemId: string, allocation: WorkOrderItemAllocationRow) {
-    notices.clearNotices()
+  async function saveAllocation(
+    itemId: string,
+    allocation: WorkOrderItemAllocationRow,
+    options?: { suppressClear?: boolean; suppressSuccess?: boolean },
+  ) {
+    if (!options?.suppressClear) {
+      notices.clearNotices()
+    }
     const validationErrors = validateAllocationFields({
       inventoryId: allocation.inventoryId,
       quantity: allocation.quantity,
@@ -338,7 +343,9 @@ export function useRecordAllocationsController({
         ...previous,
         [itemId]: setRowFieldErrors(previous[itemId] ?? {}, allocation.id, {}),
       }))
-      notices.showSuccess("Allocation saved")
+      if (!options?.suppressSuccess) {
+        notices.showSuccess("Allocation saved")
+      }
       return true
     } catch (error) {
       const fieldError = getRequestFieldError(error)
@@ -358,6 +365,37 @@ export function useRecordAllocationsController({
     } finally {
       setSavingAllocationId(null)
     }
+  }
+
+  async function saveAllocationsForItem(
+    itemId: string,
+    options?: { suppressClear?: boolean; suppressSuccess?: boolean },
+  ) {
+    const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
+    if (!currentItem) {
+      return false
+    }
+
+    if (!options?.suppressClear) {
+      notices.clearNotices()
+    }
+
+    for (const allocation of currentItem.allocations) {
+      const didSave = await saveAllocation(itemId, allocation, {
+        suppressClear: true,
+        suppressSuccess: true,
+      })
+
+      if (!didSave) {
+        return false
+      }
+    }
+
+    if (!options?.suppressSuccess) {
+      notices.showSuccess("Allocations saved")
+    }
+
+    return true
   }
 
   async function deleteAllocation(itemId: string, allocationId: string) {
@@ -414,6 +452,7 @@ export function useRecordAllocationsController({
     handleAllocationFieldChange,
     addAllocation,
     saveAllocation,
+    saveAllocationsForItem,
     deleteAllocation,
     requestAutoAllocation,
   }

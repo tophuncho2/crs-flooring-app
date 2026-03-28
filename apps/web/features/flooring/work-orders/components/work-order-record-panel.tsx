@@ -343,6 +343,28 @@ export function WorkOrderRecordPanel({
     },
   })
 
+  const handleSaveMaterialItemSection = useCallback(
+    async (item: EditableMaterialItem) => {
+      const didSaveItem = await lineItems.saveMaterialItem(item, { suppressSuccess: true })
+      if (!didSaveItem) {
+        return false
+      }
+
+      const didSaveAllocations = await allocations.saveAllocationsForItem(item.id, {
+        suppressClear: true,
+        suppressSuccess: true,
+      })
+      if (!didSaveAllocations) {
+        return false
+      }
+
+      noticeController.clearNotices()
+      noticeController.showSuccess("Material item and allocations saved")
+      return true
+    },
+    [allocations, lineItems, noticeController],
+  )
+
   useEffect(() => {
     onExpenseSummaryChangeRef.current?.(
       normalizeWorkOrderExpenseSummary({
@@ -547,7 +569,7 @@ export function WorkOrderRecordPanel({
             onDraftChange={lineItems.handleMaterialDraftChange}
             onAdd={() => lineItems.addMaterialItem()}
             onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-            onSaveItem={(item) => lineItems.saveMaterialItem(item)}
+            onSaveItem={handleSaveMaterialItemSection}
             onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
             onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
             isAutoAllocating={allocations.isAutoAllocating}
@@ -558,14 +580,12 @@ export function WorkOrderRecordPanel({
                   allocations.draftsByItemId[item.id] ?? {
                     inventoryId: "",
                     quantity: "",
-                    cutSize: "",
                     notes: "",
                   }
                 }
                 allocationOptions={allocations.optionsByItemId[item.id] ?? []}
                 loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
                 adding={allocations.addingItemId === item.id}
-                savingAllocationId={allocations.savingAllocationId}
                 deletingAllocationId={allocations.deletingAllocationId}
                 draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
                 itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}

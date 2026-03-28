@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
-import { DeleteRowButton, SaveRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
+import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { InlineAddRowButton, useInlineCreateRow } from "@/features/dashboard/shared/record-view/child-tables/collapsible-table-section"
 import {
   FieldErrorText,
@@ -18,7 +18,6 @@ import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "../t
 export type AllocationDraft = {
   inventoryId: string
   quantity: string
-  cutSize: string
   notes: string
 }
 
@@ -61,8 +60,13 @@ function AllocationCell({
   className?: string
 }) {
   return (
-    <div className={joinClasses("min-w-0 px-3 py-3", className)}>
-      <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45">{label}</div>
+    <div
+      className={joinClasses(
+        "min-w-0 rounded-lg border border-orange-500/25 bg-orange-500/[0.08] px-3 py-2",
+        className,
+      )}
+    >
+      <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/55">{label}</div>
       <div>{children}</div>
     </div>
   )
@@ -77,7 +81,9 @@ function AllocationValueCell({
 }) {
   return (
     <AllocationCell label={label}>
-      <div className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-2 text-sm">{value}</div>
+      <div className="rounded-md border border-orange-500/20 bg-[var(--panel-background)] px-2 py-1.5 text-sm text-[var(--foreground)]">
+        {value}
+      </div>
     </AllocationCell>
   )
 }
@@ -104,8 +110,7 @@ function AllocationRowShell({
   return (
     <div
       className={joinClasses(
-        "grid overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] xl:grid-cols-[minmax(18rem,1.95fr)_minmax(6.75rem,.75fr)_minmax(7.5rem,.8fr)_minmax(8rem,.8fr)_minmax(8rem,.8fr)_minmax(7rem,.72fr)_minmax(12rem,1.15fr)_minmax(12rem,.9fr)]",
-        "[&>*+*]:border-l [&>*+*]:border-[var(--panel-border)]",
+        "grid gap-2 xl:grid-cols-[minmax(18rem,2fr)_minmax(6.75rem,.75fr)_minmax(8rem,.8fr)_minmax(8rem,.8fr)_minmax(12rem,1.15fr)_minmax(9rem,.78fr)]",
         className,
       )}
     >
@@ -117,7 +122,6 @@ function AllocationRowShell({
 function AllocationEditorRow({
   allocation,
   allocationOptions,
-  savingAllocationId,
   deletingAllocationId,
   rowErrors,
   onAllocationFieldChange,
@@ -126,7 +130,6 @@ function AllocationEditorRow({
 }: {
   allocation: WorkOrderItemAllocationRow
   allocationOptions: InventoryAllocationOption[]
-  savingAllocationId: string | null
   deletingAllocationId: string | null
   rowErrors: FieldErrorMap<AllocationField> | undefined
   onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
@@ -142,7 +145,6 @@ function AllocationEditorRow({
       JSON.stringify({
         inventoryId: currentAllocation.inventoryId,
         quantity: currentAllocation.quantity,
-        cutSize: currentAllocation.cutSize,
         notes: currentAllocation.notes,
       }),
     canAutosave:
@@ -165,7 +167,7 @@ function AllocationEditorRow({
           <select
             value={allocation.inventoryId}
             onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
-            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(rowErrors?.inventoryId))}
+            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(rowErrors?.inventoryId))}
           >
             <option value="">Select inventory</option>
             {allocationOptions.map((option) => (
@@ -185,34 +187,22 @@ function AllocationEditorRow({
             spellCheck={false}
             placeholder="Qty"
             onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(rowErrors?.quantity))}
+            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(rowErrors?.quantity))}
           />
           {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
         </div>
       </AllocationCell>
-      <AllocationCell label="Cut Size">
-        <input
-          value={allocation.cutSize}
-          placeholder="Cut Size"
-          onChange={(event) => onAllocationFieldChange(allocation.id, "cutSize", event.target.value)}
-          className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-        />
-      </AllocationCell>
       <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
       <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
-      <AllocationValueCell label="Method" value={allocation.method} />
       <AllocationCell label="Notes">
         <input
           value={allocation.notes}
           placeholder="Notes"
           onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
-          className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+          className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
         />
       </AllocationCell>
       <AllocationActionsPanel>
-        <SaveRowButton onClick={() => void onSaveAllocation(allocation)} disabled={savingAllocationId === allocation.id}>
-          {savingAllocationId === allocation.id ? "Saving..." : "Save"}
-        </SaveRowButton>
         <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} disabled={deletingAllocationId === allocation.id}>
           {deletingAllocationId === allocation.id ? "Deleting..." : "Delete"}
         </DeleteRowButton>
@@ -227,7 +217,6 @@ export function MaterialAllocationsEditor({
   allocationOptions,
   loadingOptions,
   adding,
-  savingAllocationId,
   deletingAllocationId,
   draftErrors = {},
   itemErrors = {},
@@ -242,7 +231,6 @@ export function MaterialAllocationsEditor({
   allocationOptions: InventoryAllocationOption[]
   loadingOptions: boolean
   adding: boolean
-  savingAllocationId: string | null
   deletingAllocationId: string | null
   draftErrors?: AllocationFieldErrors
   itemErrors?: RowFieldErrors<AllocationField>
@@ -263,23 +251,12 @@ export function MaterialAllocationsEditor({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--subpanel-border)] pb-3">
-        <div>
-          <div className="text-sm font-semibold text-[var(--foreground)]">Allocations</div>
-          <div className="text-xs text-[var(--foreground)]/55">
-            {allocations.length} {allocations.length === 1 ? "linked row" : "linked rows"}
-          </div>
-        </div>
-        {!addRow.isOpen ? <InlineAddRowButton label="Add allocation" onClick={addRow.open} /> : null}
-      </div>
-
       {allocations.map((allocation) => {
         return (
           <AllocationEditorRow
             key={allocation.id}
             allocation={allocation}
             allocationOptions={allocationOptions}
-            savingAllocationId={savingAllocationId}
             deletingAllocationId={deletingAllocationId}
             rowErrors={itemErrors[allocation.id]}
             onAllocationFieldChange={onAllocationFieldChange}
@@ -289,6 +266,12 @@ export function MaterialAllocationsEditor({
         )
       })}
 
+      {!addRow.isOpen ? (
+        <div className="pt-1">
+          <InlineAddRowButton label="Add allocation" onClick={addRow.open} />
+        </div>
+      ) : null}
+
       {addRow.isOpen ? (
         <AllocationRowShell className={hasFieldErrors(draftErrors) ? "bg-rose-500/[0.05]" : undefined}>
           <AllocationCell label="Inventory">
@@ -296,7 +279,7 @@ export function MaterialAllocationsEditor({
               <select
                 value={draft.inventoryId}
                 onChange={(event) => onDraftChange("inventoryId", event.target.value)}
-                className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.inventoryId))}
+                className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(draftErrors.inventoryId))}
               >
                 <option value="">Select inventory</option>
                 {allocationOptions.map((option) => (
@@ -316,31 +299,22 @@ export function MaterialAllocationsEditor({
                 spellCheck={false}
                 placeholder="Qty"
                 onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
-                className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(draftErrors.quantity))}
+                className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(draftErrors.quantity))}
               />
               {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
             </div>
-          </AllocationCell>
-          <AllocationCell label="Cut Size">
-            <input
-              value={draft.cutSize}
-              placeholder="Cut Size"
-              onChange={(event) => onDraftChange("cutSize", event.target.value)}
-              className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-            />
           </AllocationCell>
           <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(readPricePerUnit(allocationOptions, draft.inventoryId))} />
           <AllocationValueCell
             label="Total"
             value={formatCurrencyValue(Number(draft.quantity || 0) * readPricePerUnit(allocationOptions, draft.inventoryId))}
           />
-          <AllocationValueCell label="Method" value="MANUAL" />
           <AllocationCell label="Notes">
             <input
               value={draft.notes}
               placeholder="Notes"
               onChange={(event) => onDraftChange("notes", event.target.value)}
-              className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+              className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
             />
           </AllocationCell>
           <AllocationActionsPanel>
