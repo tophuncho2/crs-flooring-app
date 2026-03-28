@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-
-import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -23,7 +21,6 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     onQueueInvoice,
     onOpenInvoice,
     onInvoiceSectionOpenChange,
-    onAutoAllocateOptionsChange,
   }: {
     workOrderId: string
     notices?: { message?: string; error?: string }
@@ -34,10 +31,8 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     onQueueInvoice?: () => void
     onOpenInvoice?: () => void
     onInvoiceSectionOpenChange?: (open: boolean) => void
-    onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
   }) => (
     <>
-      <AutoAllocateOptionBridge onAutoAllocateOptionsChange={onAutoAllocateOptionsChange} />
       <div>
         <div>{`Panel ${workOrderId}`}</div>
         {notices?.message ? <div>{notices.message}</div> : null}
@@ -53,24 +48,6 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     </>
   ),
 }))
-
-function AutoAllocateOptionBridge({
-  onAutoAllocateOptionsChange,
-}: {
-  onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
-}) {
-  React.useEffect(() => {
-    onAutoAllocateOptionsChange?.({
-      label: "Auto Allocate",
-      disabled: false,
-      onSelect: vi.fn(),
-    })
-
-    return () => onAutoAllocateOptionsChange?.(null)
-  }, [onAutoAllocateOptionsChange])
-
-  return null
-}
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({
@@ -345,7 +322,7 @@ describe("WorkOrdersClient", () => {
 
     expect(within(optionsMenu).queryByRole("button", { name: "Sync Template" })).toBeNull()
     expect(within(optionsMenu).getByRole("button", { name: "Complete" })).toBeTruthy()
-    expect(within(optionsMenu).getByRole("button", { name: "Auto Allocate" })).toBeTruthy()
+    expect(within(optionsMenu).queryByRole("button", { name: "Auto Allocate" })).toBeNull()
     expect(within(optionsMenu).queryByRole("button", { name: "Invoice" })).toBeNull()
     expect(within(optionsMenu).queryByRole("button", { name: "Open Invoice" })).toBeNull()
   })

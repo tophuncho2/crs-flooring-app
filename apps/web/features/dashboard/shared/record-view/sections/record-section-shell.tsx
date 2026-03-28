@@ -13,6 +13,7 @@ export function RecordSectionShell({
   children,
   metrics,
   actions,
+  statusPanel,
   defaultOpen = true,
   onOpenChange,
   bodyClassName,
@@ -22,6 +23,7 @@ export function RecordSectionShell({
   children: ReactNode
   metrics?: ReactNode
   actions?: ReactNode
+  statusPanel?: ReactNode
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   bodyClassName?: string
@@ -46,9 +48,12 @@ export function RecordSectionShell({
           actions={actions}
         />
         {isOpen ? (
-          <div className={joinRecordSectionClasses("px-5 py-5", RECORD_SECTION_BODY_SURFACE_CLASS_NAME, bodyClassName)}>
-            {children}
-          </div>
+          <>
+            {statusPanel}
+            <div className={joinRecordSectionClasses("px-5 py-5", RECORD_SECTION_BODY_SURFACE_CLASS_NAME, bodyClassName)}>
+              {children}
+            </div>
+          </>
         ) : null}
       </section>
     </TableBleed>

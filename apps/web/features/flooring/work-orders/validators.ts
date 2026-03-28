@@ -79,6 +79,43 @@ export type UpdateWorkOrderMaterialSectionInput = {
   itemExpectedUpdatedAt: string
   allocationOperations: WorkOrderMaterialSectionAllocationOperation[]
 }
+
+export type WorkOrderServiceSectionRowInput = {
+  id: string | null
+  expectedUpdatedAt: string | null
+  item: WorkOrderServiceItemInput
+}
+
+export type UpdateWorkOrderServiceSectionInput = {
+  items: WorkOrderServiceSectionRowInput[]
+}
+
+export type WorkOrderSalesRepSectionRowInput = {
+  id: string | null
+  expectedUpdatedAt: string | null
+  item: WorkOrderSalesRepInput
+}
+
+export type UpdateWorkOrderSalesRepSectionInput = {
+  items: WorkOrderSalesRepSectionRowInput[]
+}
+
+export type WorkOrderMaterialSectionRowAllocationInput = {
+  id: string | null
+  expectedUpdatedAt: string | null
+  input: WorkOrderItemAllocationInput
+}
+
+export type WorkOrderMaterialItemsSectionRowInput = {
+  id: string | null
+  expectedUpdatedAt: string | null
+  item: WorkOrderMaterialItemInput
+  allocations: WorkOrderMaterialSectionRowAllocationInput[]
+}
+
+export type UpdateWorkOrderMaterialItemsSectionInput = {
+  items: WorkOrderMaterialItemsSectionRowInput[]
+}
 export type SyncTemplateToWorkOrderInput = {
   templateId: string
   mode: "overwrite" | "append"
@@ -289,6 +326,113 @@ export function validateUpdateWorkOrderMaterialSectionInput(body: Record<string,
       }
 
       throw { message: `allocationOperations[${index}].type must be create, update, or delete`, field: `allocationOperations[${index}].type` }
+    }),
+  }
+}
+
+function parseOptionalSectionId(value: unknown, field: string) {
+  const parsed = parseOptionalString(value)
+  if (!parsed) {
+    return null
+  }
+
+  return parseRequiredString(parsed, field)
+}
+
+function parseOptionalExpectedUpdatedAt(value: unknown) {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return null
+  }
+
+  return parseExpectedUpdatedAt(value, "expectedUpdatedAt")
+}
+
+function requireExpectedUpdatedAtForExistingRow(id: string | null, expectedUpdatedAt: string | null, field: string) {
+  if (id && !expectedUpdatedAt) {
+    throw { message: `${field} is required for existing rows`, field }
+  }
+}
+
+export function validateUpdateWorkOrderServiceSectionInput(body: Record<string, unknown>): UpdateWorkOrderServiceSectionInput {
+  const items = Array.isArray(body.items) ? body.items : []
+
+  return {
+    items: items.map((item, index) => {
+      const value = asRecord(item, `items[${index}]`)
+      const id = parseOptionalSectionId(value.id, `items[${index}].id`)
+      const expectedUpdatedAt = parseOptionalExpectedUpdatedAt(value.expectedUpdatedAt)
+      requireExpectedUpdatedAtForExistingRow(id, expectedUpdatedAt, `items[${index}].expectedUpdatedAt`)
+
+      return {
+        id,
+        expectedUpdatedAt,
+        item: validateWorkOrderServiceItemInput(asRecord(value.item ?? value, `items[${index}].item`)),
+      }
+    }),
+  }
+}
+
+export function validateUpdateWorkOrderSalesRepSectionInput(body: Record<string, unknown>): UpdateWorkOrderSalesRepSectionInput {
+  const items = Array.isArray(body.items) ? body.items : []
+
+  return {
+    items: items.map((item, index) => {
+      const value = asRecord(item, `items[${index}]`)
+      const id = parseOptionalSectionId(value.id, `items[${index}].id`)
+      const expectedUpdatedAt = parseOptionalExpectedUpdatedAt(value.expectedUpdatedAt)
+      requireExpectedUpdatedAtForExistingRow(id, expectedUpdatedAt, `items[${index}].expectedUpdatedAt`)
+
+      return {
+        id,
+        expectedUpdatedAt,
+        item: validateWorkOrderSalesRepInput(asRecord(value.item ?? value, `items[${index}].item`)),
+      }
+    }),
+  }
+}
+
+export function validateUpdateWorkOrderMaterialItemsSectionInput(
+  body: Record<string, unknown>,
+): UpdateWorkOrderMaterialItemsSectionInput {
+  const items = Array.isArray(body.items) ? body.items : []
+
+  return {
+    items: items.map((item, index) => {
+      const value = asRecord(item, `items[${index}]`)
+      const id = parseOptionalSectionId(value.id, `items[${index}].id`)
+      const expectedUpdatedAt = parseOptionalExpectedUpdatedAt(value.expectedUpdatedAt)
+      requireExpectedUpdatedAtForExistingRow(id, expectedUpdatedAt, `items[${index}].expectedUpdatedAt`)
+      const allocations = Array.isArray(value.allocations) ? value.allocations : []
+
+      return {
+        id,
+        expectedUpdatedAt,
+        item: validateWorkOrderMaterialItemInput(asRecord(value.item ?? value, `items[${index}].item`)),
+        allocations: allocations.map((allocation, allocationIndex) => {
+          const allocationValue = asRecord(allocation, `items[${index}].allocations[${allocationIndex}]`)
+          const allocationId = parseOptionalSectionId(
+            allocationValue.id,
+            `items[${index}].allocations[${allocationIndex}].id`,
+          )
+          const allocationExpectedUpdatedAt = parseOptionalExpectedUpdatedAt(allocationValue.expectedUpdatedAt)
+          requireExpectedUpdatedAtForExistingRow(
+            allocationId,
+            allocationExpectedUpdatedAt,
+            `items[${index}].allocations[${allocationIndex}].expectedUpdatedAt`,
+          )
+
+          return {
+            id: allocationId,
+            expectedUpdatedAt: allocationExpectedUpdatedAt,
+            input: validateWorkOrderItemAllocationInput(
+              asRecord(
+                allocationValue.input ?? allocationValue,
+                `items[${index}].allocations[${allocationIndex}].input`,
+              ),
+            ),
+          }
+        }),
+      }
     }),
   }
 }

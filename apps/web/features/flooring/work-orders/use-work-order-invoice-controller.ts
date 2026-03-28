@@ -1,7 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { usePendingWorkflowPolling } from "@/features/dashboard/shared/record-view/client/use-pending-workflow-polling"
+import {
+  useRecordSectionWorkflow,
+  type RecordSectionWorkflowPhase,
+} from "@/features/dashboard/shared/record-view/client/use-record-section-workflow"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { WorkOrderInvoiceStatusResponse } from "./transport/invoice"
@@ -13,6 +16,25 @@ const EMPTY_INVOICE_STATE: InvoiceStatusView = {
   generation: null,
   artifact: null,
   canOpen: false,
+}
+
+function buildInvoiceSyncKey(invoice: InvoiceStatusView | null | undefined) {
+  if (!invoice) {
+    return "invoice:empty"
+  }
+
+  return [
+    invoice.sourceVersion,
+    invoice.generation?.id ?? "",
+    invoice.generation?.status ?? "",
+    invoice.artifact?.id ?? "",
+    invoice.artifact?.createdAt ?? "",
+    invoice.canOpen ? "open" : "closed",
+  ].join(":")
+}
+
+function readInvoiceWorkflowStatus(invoice: InvoiceStatusView | null | undefined) {
+  return invoice?.generation?.status ?? (invoice?.canOpen ? "COMPLETED" : null)
 }
 
 export function useWorkOrderInvoiceController(
@@ -28,76 +50,38 @@ export function useWorkOrderInvoiceController(
     () => options?.initialInvoice ?? EMPTY_INVOICE_STATE,
     [options?.initialInvoice],
   )
-  const [invoice, setInvoice] = useState<InvoiceStatusView>(initialInvoice)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const refreshInvoiceState = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const payload = await requestJson<WorkOrderInvoiceStatusResponse>(`/api/flooring/work-orders/${workOrderId}/invoice`, {
+        cache: "no-store",
+      })
+      setHasLoadedOnce(true)
+      return payload
+    } finally {
+      setIsLoading(false)
+    }
+  }, [workOrderId])
 
-  useEffect(() => {
-    setInvoice((current) => {
-      if (!options?.initialInvoice) {
-        return current
-      }
-
-      const currentKey = [
-        current.sourceVersion,
-        current.generation?.id ?? "",
-        current.generation?.status ?? "",
-        current.artifact?.id ?? "",
-      ].join(":")
-      const nextKey = [
-        options.initialInvoice.sourceVersion,
-        options.initialInvoice.generation?.id ?? "",
-        options.initialInvoice.generation?.status ?? "",
-        options.initialInvoice.artifact?.id ?? "",
-      ].join(":")
-
-      return currentKey === nextKey ? current : options.initialInvoice
-    })
-  }, [options?.initialInvoice])
-
-  const refreshInvoice = useCallback(
-    async (options?: { suppressErrors?: boolean }) => {
-      setIsLoading(true)
-      try {
-        const payload = await requestJson<WorkOrderInvoiceStatusResponse>(`/api/flooring/work-orders/${workOrderId}/invoice`, {
-          cache: "no-store",
-        })
-
-        setInvoice(payload)
-        setHasLoadedOnce(true)
-        setError(null)
-        return payload
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to load invoice status"
-        setError(message)
-        if (!options?.suppressErrors) {
-          throw new Error(message)
-        }
-      } finally {
-        setIsLoading(false)
-      }
-
-      return null
-    },
-    [workOrderId],
-  )
+  const workflow = useRecordSectionWorkflow<InvoiceStatusView | null>({
+    value: initialInvoice,
+    getSyncKey: buildInvoiceSyncKey,
+    readStatus: readInvoiceWorkflowStatus,
+    refresh: refreshInvoiceState,
+    getTerminalKey: (invoice) =>
+      invoice?.generation ? `${invoice.generation.id}:${invoice.generation.status}` : invoice?.artifact?.id ?? null,
+  })
+  const { refresh, setValue, setError, value, error, phase, isPending } = workflow
 
   useEffect(() => {
     if (!enabled && !hasLoadedOnce) {
       return
     }
 
-    void refreshInvoice({ suppressErrors: true })
-  }, [enabled, hasLoadedOnce, refreshInvoice, options?.refreshToken])
-
-  usePendingWorkflowPolling({
-    isPending:
-      invoice.generation?.status === "REQUESTED" ||
-      invoice.generation?.status === "QUEUED" ||
-      invoice.generation?.status === "PROCESSING",
-    refresh: () => refreshInvoice({ suppressErrors: true }),
-  })
+    void refresh()
+  }, [enabled, hasLoadedOnce, options?.refreshToken, refresh])
 
   const queueInvoice = useCallback(async (expectedUpdatedAt: string) => {
     const payload = await requestJson<WorkOrderInvoiceStatusResponse>(`/api/flooring/work-orders/${workOrderId}/invoice`, {
@@ -106,30 +90,28 @@ export function useWorkOrderInvoiceController(
       body: JSON.stringify(withMutationMeta({}, expectedUpdatedAt)),
     })
 
-    setInvoice(payload)
+    setValue(payload)
     setError(null)
     return payload
-  }, [workOrderId])
+  }, [setError, setValue, workOrderId])
 
   const openInvoice = useCallback(() => {
-    if (!invoice.artifact?.downloadUrl) {
+    if (!value?.artifact?.downloadUrl) {
       return
     }
 
-    window.open(invoice.artifact.downloadUrl, "_blank", "noopener")
-  }, [invoice.artifact?.downloadUrl])
+    window.open(value.artifact.downloadUrl, "_blank", "noopener")
+  }, [value?.artifact?.downloadUrl])
 
   return {
-    invoice,
+    invoice: value ?? EMPTY_INVOICE_STATE,
     error,
+    phase: phase as RecordSectionWorkflowPhase,
     hasLoadedOnce,
     isLoading,
-    isGenerating:
-      invoice.generation?.status === "REQUESTED" ||
-      invoice.generation?.status === "QUEUED" ||
-      invoice.generation?.status === "PROCESSING",
+    isGenerating: isPending,
     queueInvoice,
     openInvoice,
-    refreshInvoice,
+    refreshInvoice: refresh,
   }
 }

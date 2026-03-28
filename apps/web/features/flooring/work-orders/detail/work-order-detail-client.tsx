@@ -51,42 +51,31 @@ export default function WorkOrderDetailClient({
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
   const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
-  const [autoAllocateOption, setAutoAllocateOption] = useState<{
-    label: string
-    disabled: boolean
-    onSelect: () => void
-  } | null>(null)
   const invoice = useWorkOrderInvoiceController(workOrder.id, {
     enabled: isInvoiceSectionOpen,
     initialInvoice: workOrder.invoiceStatus ?? null,
     refreshToken: workOrder.updatedAt,
   })
-  const previousInvoiceStatusRef = useRef(invoice.invoice.generation?.status ?? null)
+  const previousInvoicePhaseRef = useRef(invoice.phase)
 
   const closePage = useCallback(() => {
     page.closePage()
   }, [page])
 
   useEffect(() => {
-    const previousStatus = previousInvoiceStatusRef.current
-    const currentStatus = invoice.invoice.generation?.status ?? null
+    const previousPhase = previousInvoicePhaseRef.current
+    const currentPhase = invoice.phase
 
-    if (
-      (previousStatus === "REQUESTED" || previousStatus === "QUEUED" || previousStatus === "PROCESSING") &&
-      currentStatus === "COMPLETED"
-    ) {
+    if ((previousPhase === "requested" || previousPhase === "queued" || previousPhase === "processing") && currentPhase === "completed") {
       page.notices.showSuccess("Invoice ready")
     }
 
-    if (
-      (previousStatus === "REQUESTED" || previousStatus === "QUEUED" || previousStatus === "PROCESSING") &&
-      currentStatus === "FAILED"
-    ) {
+    if ((previousPhase === "requested" || previousPhase === "queued" || previousPhase === "processing") && currentPhase === "failed") {
       page.notices.showError(invoice.invoice.generation?.error || "Invoice generation failed")
     }
 
-    previousInvoiceStatusRef.current = currentStatus
-  }, [invoice.invoice.generation, page.notices])
+    previousInvoicePhaseRef.current = currentPhase
+  }, [invoice.invoice.generation?.error, invoice.phase, page.notices])
 
   async function markWorkOrderComplete() {
     if (workOrder.isComplete) return
@@ -156,15 +145,6 @@ export default function WorkOrderDetailClient({
               onSelect: () => void markWorkOrderComplete(),
               disabled: workOrder.isComplete,
             },
-            ...(autoAllocateOption
-              ? [
-                  {
-                    label: autoAllocateOption.label,
-                    onSelect: autoAllocateOption.onSelect,
-                    disabled: autoAllocateOption.disabled,
-                  },
-                ]
-              : []),
           ]}
         />
       }
@@ -183,11 +163,10 @@ export default function WorkOrderDetailClient({
         invoice={invoice.invoice}
         invoiceError={invoice.error}
         invoiceLoading={invoice.isLoading}
-        invoiceGenerating={invoice.isGenerating}
+        invoiceWorkflowPhase={invoice.phase}
         onQueueInvoice={() => void queueInvoiceGeneration()}
         onOpenInvoice={invoice.openInvoice}
         onInvoiceSectionOpenChange={setIsInvoiceSectionOpen}
-        onAutoAllocateOptionsChange={setAutoAllocateOption}
         onClose={closePage}
         onExpenseSummaryChange={(nextSummary) => {
           startTransition(() => {

@@ -1,13 +1,12 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { RecordInlineActionsCell } from "@/features/dashboard/shared/record-view/sections/record-inline-actions-cell"
 import { RecordItemCell } from "@/features/dashboard/shared/record-view/sections/record-item-cell"
-import { RECORD_SECTION_BORDER_CLASS_NAME } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
+import { RecordSectionItem } from "@/features/dashboard/shared/record-view/sections/record-section-item"
+import { RecordSectionStatusBadge } from "@/features/dashboard/shared/record-view/sections/record-section-action-panel"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
-import { InlineAddRowButton, useInlineCreateRow } from "@/features/dashboard/shared/record-view/child-tables/collapsible-table-section"
 import {
   FieldErrorText,
   getFieldControlClassName,
@@ -89,58 +88,42 @@ function AllocationValueCell({
   )
 }
 
-function AllocationActionsPanel({
-  children,
-}: {
-  children: ReactNode
-}) {
-  return (
-    <RecordInlineActionsCell className="h-full bg-orange-500/[0.08] px-3 py-2">{children}</RecordInlineActionsCell>
-  )
-}
-
-function AllocationRowShell({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <div
-      className={joinClasses(
-        WORK_ORDER_MATERIAL_GRID_CLASS_NAME,
-        className,
-      )}
-    >
-      {children}
-    </div>
-  )
-}
-
 function AllocationEditorRow({
   allocation,
   allocationOptions,
-  deletingAllocationId,
   rowErrors,
   onAllocationFieldChange,
   onDeleteAllocation,
 }: {
   allocation: WorkOrderItemAllocationRow
   allocationOptions: InventoryAllocationOption[]
-  deletingAllocationId: string | null
   rowErrors: FieldErrorMap<AllocationField> | undefined
   onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
   onDeleteAllocation: (allocationId: string) => void
 }) {
   const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
   const quantityValue = Number(allocation.quantity || 0)
+  const isLocalOnlyRow = allocation.id.startsWith("temp:")
 
   return (
-    <AllocationRowShell
-      className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}
+    <RecordSectionItem
+      className="rounded-xl shadow-none"
+      status={
+        <>
+          <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
+            {isLocalOnlyRow ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+        </>
+      }
+      actions={
+        <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
+          Remove
+        </DeleteRowButton>
+      }
     >
-      <AllocationCell label="Inventory">
+      <div className={joinClasses(WORK_ORDER_MATERIAL_GRID_CLASS_NAME, hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined)}>
+        <AllocationCell label="Inventory">
         <div className="space-y-1">
           <select
             value={allocation.inventoryId}
@@ -156,8 +139,8 @@ function AllocationEditorRow({
           </select>
           {rowErrors?.inventoryId ? <FieldErrorText>{rowErrors.inventoryId}</FieldErrorText> : null}
         </div>
-      </AllocationCell>
-      <AllocationCell label="Qty">
+        </AllocationCell>
+        <AllocationCell label="Qty">
         <div className="space-y-1">
           <input
             value={allocation.quantity}
@@ -169,78 +152,47 @@ function AllocationEditorRow({
           />
           {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
         </div>
-      </AllocationCell>
-      <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
-      <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
-      <AllocationCell label="Notes">
+        </AllocationCell>
+        <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
+        <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
+        <AllocationCell label="Notes">
         <input
           value={allocation.notes}
           placeholder="Notes"
           onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
           className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
         />
-      </AllocationCell>
-      <AllocationActionsPanel>
-        <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} disabled={deletingAllocationId === allocation.id}>
-          {deletingAllocationId === allocation.id ? "Deleting..." : "Delete"}
-        </DeleteRowButton>
-      </AllocationActionsPanel>
-    </AllocationRowShell>
+        </AllocationCell>
+      </div>
+    </RecordSectionItem>
   )
 }
 
 export function MaterialAllocationsEditor({
   allocations,
-  draft,
   allocationOptions,
   loadingOptions,
-  adding,
-  deletingAllocationId,
-  draftErrors = {},
+  onAddAllocation,
   itemErrors = {},
-  onDraftChange,
-  onAdd,
   onAllocationFieldChange,
   onDeleteAllocation,
 }: {
   allocations: WorkOrderItemAllocationRow[]
-  draft: AllocationDraft
   allocationOptions: InventoryAllocationOption[]
   loadingOptions: boolean
-  adding: boolean
-  deletingAllocationId: string | null
-  draftErrors?: AllocationFieldErrors
+  onAddAllocation: () => void
   itemErrors?: RowFieldErrors<AllocationField>
-  onDraftChange: (field: keyof AllocationDraft, value: string) => void
-  onAdd: () => Promise<boolean> | boolean
   onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
   onDeleteAllocation: (allocationId: string) => void
 }) {
-  const addRow = useInlineCreateRow(false)
-
-  async function handleAdd() {
-    const didAdd = await onAdd()
-    if (didAdd !== false) {
-      addRow.close()
-    }
-  }
-
-  function handleCancel() {
-    onDraftChange("inventoryId", "")
-    onDraftChange("quantity", "")
-    onDraftChange("notes", "")
-    addRow.close()
-  }
-
   return (
-    <div className="space-y-0">
+    <div className="space-y-3">
       {allocations.map((allocation) => {
         return (
           <AllocationEditorRow
             key={allocation.id}
             allocation={allocation}
             allocationOptions={allocationOptions}
-            deletingAllocationId={deletingAllocationId}
             rowErrors={itemErrors[allocation.id]}
             onAllocationFieldChange={onAllocationFieldChange}
             onDeleteAllocation={onDeleteAllocation}
@@ -248,83 +200,14 @@ export function MaterialAllocationsEditor({
         )
       })}
 
-      {!addRow.isOpen ? (
-        <div>
-          <InlineAddRowButton
-            label="Add allocation"
-            onClick={addRow.open}
-            className={RECORD_SECTION_BORDER_CLASS_NAME}
-          />
-        </div>
-      ) : null}
-
-      {addRow.isOpen ? (
-        <AllocationRowShell className={hasFieldErrors(draftErrors) ? "bg-rose-500/[0.05]" : undefined}>
-          <AllocationCell label="Inventory">
-            <div className="space-y-1">
-              <select
-                value={draft.inventoryId}
-                onChange={(event) => onDraftChange("inventoryId", event.target.value)}
-                className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(draftErrors.inventoryId))}
-              >
-                <option value="">Select inventory</option>
-                {allocationOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {draftErrors.inventoryId ? <FieldErrorText>{draftErrors.inventoryId}</FieldErrorText> : null}
-            </div>
-          </AllocationCell>
-          <AllocationCell label="Qty">
-            <div className="space-y-1">
-              <input
-                value={draft.quantity}
-                inputMode="decimal"
-                spellCheck={false}
-                placeholder="Qty"
-                onChange={(event) => onDraftChange("quantity", normalizeEditableDecimalInput(event.target.value))}
-                className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(draftErrors.quantity))}
-              />
-              {draftErrors.quantity ? <FieldErrorText>{draftErrors.quantity}</FieldErrorText> : null}
-            </div>
-          </AllocationCell>
-          <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(readPricePerUnit(allocationOptions, draft.inventoryId))} />
-          <AllocationValueCell
-            label="Total"
-            value={formatCurrencyValue(Number(draft.quantity || 0) * readPricePerUnit(allocationOptions, draft.inventoryId))}
-          />
-          <AllocationCell label="Notes">
-            <input
-              value={draft.notes}
-              placeholder="Notes"
-              onChange={(event) => onDraftChange("notes", event.target.value)}
-              className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
-            />
-          </AllocationCell>
-          <AllocationActionsPanel>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={adding}
-                className="rounded-md border border-[rgba(58,58,58,0.72)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleAdd()}
-                disabled={adding || loadingOptions}
-                className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-              >
-                {loadingOptions ? "Loading..." : adding ? "Adding..." : "Add"}
-              </button>
-            </div>
-          </AllocationActionsPanel>
-        </AllocationRowShell>
-      ) : null}
+      <button
+        type="button"
+        onClick={onAddAllocation}
+        disabled={loadingOptions}
+        className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+      >
+        {loadingOptions ? "Loading inventory..." : "Add Allocation"}
+      </button>
     </div>
   )
 }

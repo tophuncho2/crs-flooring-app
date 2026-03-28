@@ -1040,6 +1040,98 @@ export async function listInventoryAllocationOptionsForWorkOrderItem(
     .filter((inventory) => inventory.availableToAllocate > 0)
 }
 
+export async function listInventoryAllocationOptionsForWorkOrderProduct(
+  workOrderId: string,
+  productId: string,
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
+    where: { id: workOrderId },
+    select: {
+      warehouseId: true,
+    },
+  })
+
+  if (!workOrder.warehouseId) {
+    return []
+  }
+
+  const inventories = await client.flooringInventory.findMany({
+    where: {
+      productId,
+      OR: [
+        {
+          location: {
+            warehouseId: workOrder.warehouseId,
+          },
+        },
+        {
+          importEntry: {
+            warehouseId: workOrder.warehouseId,
+          },
+        },
+      ],
+    },
+    orderBy: fifoInventoryOrderBy,
+    select: {
+      id: true,
+      productId: true,
+      itemNumber: true,
+      dyeLot: true,
+      stockCount: true,
+      reservedStockCount: true,
+      cost: true,
+      freight: true,
+      fifoReceivedAt: true,
+      createdAt: true,
+      cutLogs: {
+        select: {
+          cut: true,
+        },
+      },
+      location: {
+        select: {
+          locationCode: true,
+          warehouse: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      importEntry: {
+        select: {
+          warehouse: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      product: {
+        select: {
+          category: {
+            select: {
+              stockUnit: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  return inventories
+    .map((inventory) => toInventoryAllocationOptionRecord(inventory))
+    .filter((inventory): inventory is InventoryAllocationOptionRecord => Boolean(inventory))
+    .filter((inventory) => inventory.availableToAllocate > 0)
+}
+
 export async function createWorkOrderItemAllocation(
   input: {
     workOrderId: string

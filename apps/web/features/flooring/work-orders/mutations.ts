@@ -16,11 +16,14 @@ import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceIt
 import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import type {
   CreateWorkOrderInput,
+  UpdateWorkOrderMaterialItemsSectionInput,
   UpdateWorkOrderInput,
   UpdateWorkOrderItemAllocationInput,
   UpdateWorkOrderMaterialSectionInput,
+  UpdateWorkOrderSalesRepSectionInput,
   WorkOrderMaterialItemInput,
   WorkOrderSalesRepInput,
+  UpdateWorkOrderServiceSectionInput,
   WorkOrderServiceItemInput,
   UpdateWorkOrderSalesRepInput,
 } from "./validators"
@@ -606,6 +609,341 @@ export async function updateWorkOrderSalesRep(repId: string, input: UpdateWorkOr
 export async function deleteWorkOrderSalesRep(repId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.flooringWorkOrderSalesRep.delete({ where: { id: repId } })
+  })
+}
+
+export async function saveWorkOrderServiceItemsSection(
+  workOrderId: string,
+  input: UpdateWorkOrderServiceSectionInput,
+) {
+  await prisma.$transaction(async (tx) => {
+    const currentItems = await tx.flooringWorkOrderServiceItem.findMany({
+      where: { workOrderId },
+      select: {
+        id: true,
+        updatedAt: true,
+      },
+    })
+    const currentItemsById = new Map(currentItems.map((item) => [item.id, item]))
+    const seenItemIds = new Set<string>()
+    let didChange = currentItems.length !== input.items.length
+
+    for (const row of input.items) {
+      const resolved = await resolveServiceNameAndPrice(row.item, tx)
+
+      if (!row.id) {
+        await tx.flooringWorkOrderServiceItem.create({
+          data: {
+            workOrderId,
+            serviceId: row.item.serviceId,
+            name: resolved.name,
+            unitId: row.item.unitId,
+            quantity: row.item.quantity,
+            unitPrice: resolved.unitPrice,
+            notes: row.item.notes,
+          },
+        })
+        didChange = true
+        continue
+      }
+
+      const current = currentItemsById.get(row.id)
+      if (!current) {
+        throw createAppError("Service item does not belong to this work order", {
+          status: 404,
+          field: "id",
+        })
+      }
+
+      assertVersionMatch(current.updatedAt, row.expectedUpdatedAt ?? "", "Service item changed before save completed. Refresh and try again.")
+
+      await tx.flooringWorkOrderServiceItem.update({
+        where: { id: row.id },
+        data: {
+          serviceId: row.item.serviceId,
+          name: resolved.name,
+          unitId: row.item.unitId,
+          quantity: row.item.quantity,
+          unitPrice: resolved.unitPrice,
+          notes: row.item.notes,
+        },
+      })
+
+      seenItemIds.add(row.id)
+      didChange = true
+    }
+
+    for (const current of currentItems) {
+      if (seenItemIds.has(current.id)) {
+        continue
+      }
+
+      await tx.flooringWorkOrderServiceItem.delete({ where: { id: current.id } })
+      didChange = true
+    }
+
+    if (didChange) {
+      await tx.flooringWorkOrder.update({
+        where: { id: workOrderId },
+        data: buildInvoiceInvalidationFields(),
+      })
+    }
+  })
+}
+
+export async function saveWorkOrderSalesRepsSection(
+  workOrderId: string,
+  input: UpdateWorkOrderSalesRepSectionInput,
+) {
+  await prisma.$transaction(async (tx) => {
+    const currentItems = await tx.flooringWorkOrderSalesRep.findMany({
+      where: { workOrderId },
+      select: {
+        id: true,
+        updatedAt: true,
+      },
+    })
+    const currentItemsById = new Map(currentItems.map((item) => [item.id, item]))
+    const seenItemIds = new Set<string>()
+    const seenContactIds = new Set<string>()
+    let didChange = currentItems.length !== input.items.length
+
+    for (const row of input.items) {
+      if (seenContactIds.has(row.item.contactId)) {
+        throw createAppError("Each sales rep can only appear once in the section", {
+          status: 409,
+          field: "contactId",
+        })
+      }
+      seenContactIds.add(row.item.contactId)
+
+      const contact = await resolveSalesRepContact(row.item, tx)
+
+      if (!row.id) {
+        await ensureUniqueWorkOrderSalesRep(workOrderId, contact.id, tx)
+        await tx.flooringWorkOrderSalesRep.create({
+          data: {
+            workOrderId,
+            contactId: contact.id,
+            percent: row.item.percent,
+          },
+        })
+        didChange = true
+        continue
+      }
+
+      const current = currentItemsById.get(row.id)
+      if (!current) {
+        throw createAppError("Sales rep row does not belong to this work order", {
+          status: 404,
+          field: "id",
+        })
+      }
+
+      assertVersionMatch(current.updatedAt, row.expectedUpdatedAt ?? "", "Sales rep changed before save completed. Refresh and try again.")
+      await ensureUniqueWorkOrderSalesRep(workOrderId, contact.id, tx, row.id)
+
+      await tx.flooringWorkOrderSalesRep.update({
+        where: { id: row.id },
+        data: {
+          contactId: contact.id,
+          percent: row.item.percent,
+        },
+      })
+
+      seenItemIds.add(row.id)
+      didChange = true
+    }
+
+    for (const current of currentItems) {
+      if (seenItemIds.has(current.id)) {
+        continue
+      }
+
+      await tx.flooringWorkOrderSalesRep.delete({ where: { id: current.id } })
+      didChange = true
+    }
+
+    if (didChange) {
+      await tx.flooringWorkOrder.update({
+        where: { id: workOrderId },
+        data: buildInvoiceInvalidationFields(),
+      })
+    }
+  })
+}
+
+export async function saveWorkOrderMaterialItemsSection(
+  workOrderId: string,
+  input: UpdateWorkOrderMaterialItemsSectionInput,
+) {
+  await prisma.$transaction(async (tx) => {
+    const currentItems = await tx.flooringWorkOrderItem.findMany({
+      where: { workOrderId },
+      select: {
+        id: true,
+        productId: true,
+        updatedAt: true,
+        allocations: {
+          select: {
+            id: true,
+            updatedAt: true,
+          },
+        },
+      },
+    })
+    const currentItemsById = new Map(currentItems.map((item) => [item.id, item]))
+    const seenItemIds = new Set<string>()
+    let didChange = currentItems.length !== input.items.length
+
+    for (const row of input.items) {
+      let nextItemId = row.id
+      let existingAllocations = [] as Array<{ id: string; updatedAt: Date }>
+      const current = row.id ? currentItemsById.get(row.id) : null
+
+      if (!row.id) {
+        const created = await tx.flooringWorkOrderItem.create({
+          data: {
+            workOrderId,
+            productId: row.item.productId,
+            quantity: row.item.quantity,
+            unitPrice: row.item.unitPrice ?? (await resolveMaterialUnitPrice(row.item, tx)),
+            notes: row.item.notes,
+            allocationStatus: "NOT_STARTED",
+            changeOrderStatus: "SUFFICIENT",
+          },
+          select: { id: true },
+        })
+        nextItemId = created.id
+        didChange = true
+      } else {
+        if (!current) {
+          throw createAppError("Material item does not belong to this work order", {
+            status: 404,
+            field: "id",
+          })
+        }
+
+        assertVersionMatch(current.updatedAt, row.expectedUpdatedAt ?? "", "Material item changed before save completed. Refresh and try again.")
+
+        if (current.productId !== row.item.productId) {
+          await deleteAllAllocationsForWorkOrderItem(row.id, tx)
+          didChange = true
+        } else {
+          existingAllocations = current.allocations
+        }
+
+        await tx.flooringWorkOrderItem.update({
+          where: { id: row.id },
+          data: {
+            productId: row.item.productId,
+            quantity: row.item.quantity,
+            unitPrice: row.item.unitPrice ?? undefined,
+            notes: row.item.notes,
+            allocationStatus: "NOT_STARTED",
+            changeOrderStatus: "SUFFICIENT",
+          },
+        })
+
+        seenItemIds.add(row.id)
+        didChange = true
+      }
+
+      const allocationIdsById = new Map(existingAllocations.map((allocation) => [allocation.id, allocation]))
+      const seenAllocationIds = new Set<string>()
+
+      for (const allocation of row.allocations) {
+        if (allocation.id) {
+          const currentAllocation = allocationIdsById.get(allocation.id)
+          if (!currentAllocation) {
+            throw createAppError("Allocation does not belong to the selected material item", {
+              status: 404,
+              field: "allocationId",
+            })
+          }
+
+          assertVersionMatch(
+            currentAllocation.updatedAt,
+            allocation.expectedUpdatedAt ?? "",
+            "Allocation changed before save completed. Refresh and try again.",
+          )
+
+          await updateWorkOrderItemAllocation(
+            {
+              workOrderId,
+              workOrderItemId: nextItemId ?? "",
+              allocationId: allocation.id,
+              inventoryId: allocation.input.inventoryId,
+              quantity: allocation.input.quantity,
+              cutSize: allocation.input.cutSize,
+              notes: allocation.input.notes,
+            },
+            tx,
+          )
+          seenAllocationIds.add(allocation.id)
+          didChange = true
+          continue
+        }
+
+        await createWorkOrderItemAllocation(
+          {
+            workOrderId,
+            workOrderItemId: nextItemId ?? "",
+            inventoryId: allocation.input.inventoryId,
+            quantity: allocation.input.quantity,
+            cutSize: allocation.input.cutSize,
+            notes: allocation.input.notes,
+            method: "MANUAL",
+          },
+          tx,
+        )
+        didChange = true
+      }
+
+      for (const currentAllocation of existingAllocations) {
+        if (seenAllocationIds.has(currentAllocation.id)) {
+          continue
+        }
+
+        await deleteWorkOrderItemAllocation(
+          {
+            workOrderId,
+            workOrderItemId: nextItemId ?? "",
+            allocationId: currentAllocation.id,
+          },
+          tx,
+        )
+        didChange = true
+      }
+
+      if (!nextItemId) {
+        throw createAppError("Material section save failed to resolve the target item", {
+          status: 500,
+          field: "id",
+        })
+      }
+
+      await recalculateWorkOrderItemAllocationStatus(tx, nextItemId)
+      seenItemIds.add(nextItemId)
+    }
+
+    for (const current of currentItems) {
+      if (seenItemIds.has(current.id)) {
+        continue
+      }
+
+      await deleteAllAllocationsForWorkOrderItem(current.id, tx)
+      await tx.flooringWorkOrderItem.delete({ where: { id: current.id } })
+      didChange = true
+    }
+
+    if (didChange) {
+      await tx.flooringWorkOrder.update({
+        where: { id: workOrderId },
+        data: buildInvoiceInvalidationFields(),
+      })
+      await syncWorkOrderAllocationStatuses(workOrderId, tx)
+    }
   })
 }
 

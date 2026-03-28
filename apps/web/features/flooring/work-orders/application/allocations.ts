@@ -14,6 +14,7 @@ import {
   findWorkOrderAllocationRunBySourceVersion,
   getWorkOrderAllocationRunById,
   lockWorkOrderAllocationScope,
+  listInventoryAllocationOptionsForWorkOrderProduct,
   listInventoryAllocationOptionsForWorkOrderItem,
   listWorkOrderItemAllocations,
   syncWorkOrderAllocationStatuses,
@@ -31,6 +32,10 @@ export async function listWorkOrderItemAllocationsUseCase(workOrderId: string, w
 
 export async function listInventoryAllocationOptionsUseCase(workOrderId: string, workOrderItemId: string) {
   return listInventoryAllocationOptionsForWorkOrderItem(workOrderId, workOrderItemId)
+}
+
+export async function listInventoryAllocationOptionsForProductUseCase(workOrderId: string, productId: string) {
+  return listInventoryAllocationOptionsForWorkOrderProduct(workOrderId, productId)
 }
 
 export async function createWorkOrderItemAllocationUseCase(input: {
