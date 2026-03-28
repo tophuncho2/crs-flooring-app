@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { isValidElement, type ReactNode } from "react"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -52,11 +52,18 @@ export function DashboardCardHeader({
   title: ReactNode
   actions?: ReactNode
 }) {
+  const resolvedTitle =
+    typeof title === "string" || typeof title === "number" ? (
+      <DashboardCardTitle>{title}</DashboardCardTitle>
+    ) : isValidElement(title) ? (
+      title
+    ) : (
+      <DashboardCardTitle>{title}</DashboardCardTitle>
+    )
+
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div>
-        <DashboardCardTitle>{title}</DashboardCardTitle>
-      </div>
+      <div>{resolvedTitle}</div>
       {actions ? <div>{actions}</div> : null}
     </div>
   )
