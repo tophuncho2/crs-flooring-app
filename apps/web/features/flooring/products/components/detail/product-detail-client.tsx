@@ -1,11 +1,16 @@
 "use client"
 
-import { type ChangeEvent, useEffect, useMemo, useState } from "react"
-import { Upload, X } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/shell/record-detail-page-shell"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { RecordFormField as FormField } from "@/features/dashboard/shared/record-view/forms/record-form"
 import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
+import {
+  RecordPrimaryFieldCell,
+  RecordPrimaryFieldsGrid,
+  RecordPrimaryPane,
+  RecordPrimarySection,
+} from "@/features/dashboard/shared/record-view/shell/record-primary-fields"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { useRecordPageController } from "@/features/dashboard/shared/record-view/client/use-record-page-controller"
@@ -156,7 +161,6 @@ export function ProductDetailClient({
   const [product, setProduct] = useState(initialProduct)
   const [productForm, setProductForm] = useState<ProductForm>(toProductForm(initialProduct))
   const [isSaving, setIsSaving] = useState(false)
-  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false)
   const [newBaseColor, setNewBaseColor] = useState("")
   const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
 
@@ -221,46 +225,6 @@ export function ProductDetailClient({
     }
   }
 
-  async function handlePhotoUpload(event: ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files
-    if (!files || files.length === 0) return
-
-    notices.clearNotices()
-    setIsUploadingPhotos(true)
-
-    try {
-      const uploadedUrls: string[] = []
-
-      for (const file of Array.from(files)) {
-        const formData = new FormData()
-        formData.append("file", file)
-        const payload = await requestJson<{ url: string }>("/api/flooring/product-photos", {
-          method: "POST",
-          body: formData,
-        })
-        uploadedUrls.push(payload.url)
-      }
-
-      setProductForm((prev) => ({
-        ...prev,
-        photoUrls: Array.from(new Set([...prev.photoUrls, ...uploadedUrls])),
-      }))
-      notices.showSuccess(`${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"} uploaded`)
-    } catch (uploadError) {
-      notices.showError(uploadError instanceof Error ? uploadError.message : "Failed to upload photos")
-    } finally {
-      setIsUploadingPhotos(false)
-      event.target.value = ""
-    }
-  }
-
-  function removePhotoUrl(url: string) {
-    setProductForm((prev) => ({
-      ...prev,
-      photoUrls: prev.photoUrls.filter((photoUrl) => photoUrl !== url),
-    }))
-  }
-
   function addBaseColorOption() {
     const trimmed = newBaseColor.trim()
     if (!trimmed) return
@@ -275,159 +239,160 @@ export function ProductDetailClient({
         <FormStatusNotices
           message={notices.message}
           error={notices.error}
-          loadingMessage={isSaving ? "Saving product..." : isUploadingPhotos ? "Uploading photos..." : ""}
+          loadingMessage={isSaving ? "Saving product..." : ""}
         />
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <FormField label="Category Link">
-            <select
-              value={productForm.categoryId}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, categoryId: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            >
-              <option value="">Select a category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Coverage Unit">
-            <input
-              value={selectedCategory?.itemCoverageUnit ?? ""}
-              readOnly
-              className="rounded-lg border border-[var(--panel-border)] bg-[var(--panel-hover)] px-3 py-2 text-[var(--foreground)]/75"
-            />
-          </FormField>
-          <FormField label="Coverage Per Unit">
-            <input
-              value={productForm.coveragePerUnit}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, coveragePerUnit: event.target.value }))}
-              placeholder="0.0000"
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Manufacturer Link">
-            <select
-              value={productForm.manufacturerId}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, manufacturerId: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            >
-              <option value="">Select a manufacturer</option>
-              {manufacturerOptions.map((manufacturer) => (
-                <option key={manufacturer.id} value={manufacturer.id}>
-                  {manufacturer.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Style">
-            <input
-              value={productForm.style}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, style: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Color">
-            <input
-              value={productForm.color}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, color: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Base Color">
-            <select
-              value={productForm.baseColor}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, baseColor: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            >
-              <option value="">Select a base color</option>
-              {baseColorOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Add Base Color Option">
-            <div className="flex gap-2">
-              <input
-                value={newBaseColor}
-                onChange={(event) => setNewBaseColor(event.target.value)}
-                className="flex-1 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-              />
-              <button type="button" onClick={addBaseColorOption} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
-                Add
-              </button>
-            </div>
-          </FormField>
-          <FormField label="Width">
-            <input
-              value={productForm.width}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, width: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Sheet Size">
-            <input
-              value={productForm.sheetSize}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, sheetSize: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Thickness">
-            <input
-              value={productForm.thickness}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, thickness: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Unit Weight">
-            <input
-              value={productForm.unitWeight}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, unitWeight: event.target.value }))}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Notes">
-            <textarea
-              value={productForm.notes}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, notes: event.target.value }))}
-              className="h-24 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2 md:col-span-2 xl:col-span-3"
-            />
-          </FormField>
-          <FormField label="Photos">
-            <div className="space-y-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm hover:bg-[var(--panel-hover)]">
-                <Upload size={16} />
-                Upload Photos
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
-              </label>
-              {productForm.photoUrls.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {productForm.photoUrls.map((url, index) => (
-                    <div key={url} className="overflow-hidden rounded-xl border border-[var(--panel-border)]">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- Product photo previews use runtime-configured bucket URLs that are not statically known to next/image. */}
-                      <img
-                        src={url}
-                        alt={`Product photo ${index + 1}`}
-                        className="h-40 w-full bg-[var(--panel-hover)] object-cover"
-                        loading="lazy"
-                      />
-                      <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
-                        <span className="min-w-0 flex-1 truncate">{url}</span>
-                        <button type="button" onClick={() => removePhotoUrl(url)} className="rounded p-1 hover:bg-[var(--panel-hover)]">
-                          <X size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </FormField>
-        </div>
+        <RecordPrimarySection>
+          <RecordPrimaryPane variant="side">
+            <RecordPrimaryFieldsGrid variant="side">
+              <RecordPrimaryFieldCell>
+                <FormField label="Category">
+                  <select
+                    value={productForm.categoryId}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, categoryId: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell>
+                <FormField label="Manufacturer">
+                  <select
+                    value={productForm.manufacturerId}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, manufacturerId: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  >
+                    <option value="">Select a manufacturer</option>
+                    {manufacturerOptions.map((manufacturer) => (
+                      <option key={manufacturer.id} value={manufacturer.id}>
+                        {manufacturer.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell>
+                <FormField label="Style">
+                  <input
+                    value={productForm.style}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, style: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell>
+                <FormField label="Color">
+                  <input
+                    value={productForm.color}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, color: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+            </RecordPrimaryFieldsGrid>
+          </RecordPrimaryPane>
+
+          <RecordPrimaryPane variant="main">
+            <RecordPrimaryFieldsGrid>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Base Color">
+                  <select
+                    value={productForm.baseColor}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, baseColor: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  >
+                    <option value="">Select a base color</option>
+                    {baseColorOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="md">
+                <FormField label="Add Base Color">
+                  <div className="flex gap-2">
+                    <input
+                      value={newBaseColor}
+                      onChange={(event) => setNewBaseColor(event.target.value)}
+                      className="flex-1 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                    />
+                    <button type="button" onClick={addBaseColorOption} className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm">
+                      Add
+                    </button>
+                  </div>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="md">
+                <FormField label="Coverage Per Unit">
+                  <div className="flex w-full overflow-hidden rounded-lg border border-[var(--panel-border)] bg-transparent">
+                    <input
+                      value={productForm.coveragePerUnit}
+                      onChange={(event) => setProductForm((prev) => ({ ...prev, coveragePerUnit: event.target.value }))}
+                      placeholder="0.0000"
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2 outline-none"
+                    />
+                    <span className="inline-flex shrink-0 items-center border-l border-[var(--panel-border)] px-3 text-[var(--foreground)]/75">
+                      {selectedCategory?.itemCoverageUnit ?? "Unit"}
+                    </span>
+                  </div>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Width">
+                  <input
+                    value={productForm.width}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, width: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Thickness">
+                  <input
+                    value={productForm.thickness}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, thickness: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Unit Weight">
+                  <input
+                    value={productForm.unitWeight}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, unitWeight: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Sheet Size">
+                  <input
+                    value={productForm.sheetSize}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, sheetSize: event.target.value }))}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="lg">
+                <FormField label="Notes">
+                  <textarea
+                    value={productForm.notes}
+                    onChange={(event) => setProductForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    className="h-24 rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+            </RecordPrimaryFieldsGrid>
+          </RecordPrimaryPane>
+        </RecordPrimarySection>
 
         <RecordPanelFooter
           deleteLabel="Delete Product"
@@ -437,7 +402,7 @@ export function ProductDetailClient({
           saveLabel="Save Product"
           savingLabel="Saving..."
           onSave={() => void saveProduct()}
-          isSaving={isSaving || isUploadingPhotos}
+          isSaving={isSaving}
         />
 
         <ProductInventoryRowsSection inventoryRows={inventoryRows} />

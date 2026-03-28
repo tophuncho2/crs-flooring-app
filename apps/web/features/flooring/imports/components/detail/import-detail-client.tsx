@@ -10,6 +10,12 @@ import {
   RecordFormField as FormField,
 } from "@/features/dashboard/shared/record-view/forms/record-form"
 import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
+import {
+  RecordPrimaryFieldCell,
+  RecordPrimaryFieldsGrid,
+  RecordPrimaryPane,
+  RecordPrimarySection,
+} from "@/features/dashboard/shared/record-view/shell/record-primary-fields"
 import { RecordMetricSummary } from "@/features/flooring/shared/ui/display/record-metric-summary"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { requestJson } from "@/features/flooring/shared/transport/http"
@@ -276,76 +282,99 @@ export function ImportDetailClient({
       <div className="space-y-6">
         <FormStatusNotices message={notices.message} error={notices.error || error} />
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <FormField label="Order Number">
-            <input
-              value={currentDraft.orderNumber}
-              onChange={(event) => setDraftField("orderNumber", event.target.value)}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Tag">
-            <input
-              value={currentDraft.tag}
-              onChange={(event) => setDraftField("tag", event.target.value)}
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            />
-          </FormField>
-          <FormField label="Transport Type">
-            <select
-              value={currentDraft.transportType}
-              onChange={(event) => setDraftField("transportType", event.target.value)}
-              className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(currentDraft.transportType)}`}
-            >
-              {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Import Status">
-            <select
-              value={currentDraft.status}
-              onChange={(event) => setDraftField("status", event.target.value)}
-              className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(currentDraft.status)}`}
-            >
-              {IMPORT_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Import Warehouse">
-            <select
-              value={currentDraft.warehouseId}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...(prev ?? currentDraft),
-                  warehouseId: event.target.value,
-                  items: (prev?.items ?? currentDraft.items).map((item) => applyDefaultLocationToItem(item, event.target.value, locationOptions)),
-                }))
-              }
-              className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
-            >
-              <option value="">Select Warehouse</option>
-              {warehouseOptions.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.id}>
-                  {warehouse.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Notes">
-            <textarea
-              value={currentDraft.notes}
-              onChange={(event) => setDraftField("notes", event.target.value)}
-              rows={1}
-              className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
-            />
-          </FormField>
-        </div>
+        <RecordPrimarySection>
+          <RecordPrimaryPane variant="side">
+            <RecordPrimaryFieldsGrid variant="side">
+              <RecordPrimaryFieldCell>
+                <FormField label="Transport Type">
+                  <select
+                    value={currentDraft.transportType}
+                    onChange={(event) => setDraftField("transportType", event.target.value)}
+                    className={`rounded-lg border px-3 py-2 ${getTransportTypeFieldClass(currentDraft.transportType)}`}
+                  >
+                    {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell>
+                <FormField label="Import Status">
+                  <select
+                    value={currentDraft.status}
+                    onChange={(event) => setDraftField("status", event.target.value)}
+                    className={`rounded-lg border px-3 py-2 ${getImportStatusFieldClass(currentDraft.status)}`}
+                  >
+                    {IMPORT_STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </RecordPrimaryFieldCell>
+            </RecordPrimaryFieldsGrid>
+          </RecordPrimaryPane>
+
+          <RecordPrimaryPane variant="main">
+            <RecordPrimaryFieldsGrid>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Order Number">
+                  <input
+                    value={currentDraft.orderNumber}
+                    onChange={(event) => setDraftField("orderNumber", event.target.value)}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="sm">
+                <FormField label="Tag">
+                  <input
+                    value={currentDraft.tag}
+                    onChange={(event) => setDraftField("tag", event.target.value)}
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="md">
+                <FormField label="Import Warehouse">
+                  <select
+                    value={currentDraft.warehouseId}
+                    onChange={(event) =>
+                      setDraft((prev) => ({
+                        ...(prev ?? currentDraft),
+                        warehouseId: event.target.value,
+                        items: (prev?.items ?? currentDraft.items).map((item) =>
+                          applyDefaultLocationToItem(item, event.target.value, locationOptions),
+                        ),
+                      }))
+                    }
+                    className="rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  >
+                    <option value="">Select Warehouse</option>
+                    {warehouseOptions.map((warehouse) => (
+                      <option key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </RecordPrimaryFieldCell>
+              <RecordPrimaryFieldCell size="lg">
+                <FormField label="Notes">
+                  <textarea
+                    value={currentDraft.notes}
+                    onChange={(event) => setDraftField("notes", event.target.value)}
+                    rows={1}
+                    className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
+                  />
+                </FormField>
+              </RecordPrimaryFieldCell>
+            </RecordPrimaryFieldsGrid>
+          </RecordPrimaryPane>
+        </RecordPrimarySection>
 
         <ImportInventoryRowsSection
           items={currentDraft.items}

@@ -28,7 +28,6 @@ export function ManufacturerRecordPanel({
         <FormStatusNotices message={controller.notices.message} error={controller.notices.error} loadingMessage={controller.isSaving ? "Saving manufacturer..." : ""} />
         <RecordSummaryGrid>
           <RecordSummaryCard label="Products">{controller.manufacturer.productsCount}</RecordSummaryCard>
-          <RecordSummaryCard label="Created">{formatStableDateTime(controller.manufacturer.createdAt)}</RecordSummaryCard>
           <RecordSummaryCard label="Updated">{formatStableDateTime(controller.manufacturer.updatedAt)}</RecordSummaryCard>
         </RecordSummaryGrid>
         <div className="grid gap-4 md:grid-cols-2">

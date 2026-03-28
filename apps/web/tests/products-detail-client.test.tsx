@@ -98,7 +98,11 @@ describe("ProductDetailClient", () => {
     expect(within(screen.getByRole("table")).getByText("Main Warehouse")).toBeTruthy()
     expect(within(screen.getByRole("table")).getByText("Cost")).toBeTruthy()
     expect(within(screen.getByRole("table")).getByText("Freight")).toBeTruthy()
-    expect(screen.getByAltText("Product photo 1")).toBeTruthy()
+    expect(screen.queryByAltText("Product photo 1")).toBeNull()
+    expect(screen.getByLabelText("Category")).toBeTruthy()
+    expect(screen.getByLabelText("Manufacturer")).toBeTruthy()
+    expect(screen.getByText("Coverage Per Unit")).toBeTruthy()
+    expect(screen.getByText("SF")).toBeTruthy()
 
     fireEvent.click(screen.getByText("A100"))
     expect(navigationMocks.push).not.toHaveBeenCalled()

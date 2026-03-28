@@ -30,7 +30,6 @@ export function ServiceRecordPanel({
         <FormStatusNotices message={controller.notices.message} error={controller.notices.error} loadingMessage={controller.isSaving ? "Saving service..." : ""} />
         <RecordSummaryGrid>
           <RecordSummaryCard label="Usage">{controller.service.usageCount}</RecordSummaryCard>
-          <RecordSummaryCard label="Created">{formatStableDateTime(controller.service.createdAt)}</RecordSummaryCard>
           <RecordSummaryCard label="Updated">{formatStableDateTime(controller.service.updatedAt)}</RecordSummaryCard>
         </RecordSummaryGrid>
         <div className="grid gap-4 md:grid-cols-2">
