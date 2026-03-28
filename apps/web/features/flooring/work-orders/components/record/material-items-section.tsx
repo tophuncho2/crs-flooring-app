@@ -98,68 +98,31 @@ function MaterialActionCell({
   )
 }
 
-function MaterialItemSectionHeader({
-  item,
-  productOptions,
-  isExpanded,
-  onToggle,
-}: {
-  item: WorkOrderMaterialItem
-  productOptions: MaterialItemOption[]
-  isExpanded: boolean
-  onToggle: () => void
-}) {
-  const unit = readProductUnit(productOptions, item.productId, item.sendUnit)
-  const productLabel = readProductLabel(productOptions, item.productId, item.productName)
-
-  return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold">{productLabel}</div>
-      </div>
-      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs text-[var(--foreground)]/68">
-        <MaterialSectionMetric label="Qty" value={formatQuantitySummary(item.quantity, unit)} />
-        <MaterialSectionMetric label="Material" value={formatLineTotal(item)} />
-        <MaterialSectionMetric label="Allocated" value={formatCurrencyValue(item.materialExpense)} />
-        <MaterialSectionMetric
-          label="Status"
-          value={item.hasAllocationShortage ? `Short ${item.remainingQuantity.toFixed(2)}` : `${item.allocations.length} Linked`}
-        />
-      </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isExpanded}
-        aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
-        className="inline-flex items-center gap-2 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-sm text-[var(--foreground)]/75 transition hover:bg-[var(--panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-      >
-        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
-      </button>
-    </div>
-  )
-}
-
 function MaterialItemEditorCard({
   item,
   productOptions,
+  isExpanded,
   savingItemId,
   deletingItemId,
   itemErrors = {},
   onItemFieldChange,
   onSaveItem,
   onDeleteItem,
+  onToggleAllocations,
 }: {
   item: WorkOrderMaterialItem
   productOptions: MaterialItemOption[]
+  isExpanded: boolean
   savingItemId: string | null
   deletingItemId: string | null
   itemErrors?: RowFieldErrors<MaterialItemField>
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
   onSaveItem: (item: EditableMaterialItem) => Promise<boolean> | boolean
   onDeleteItem: (itemId: string) => void
+  onToggleAllocations: () => void
 }) {
   const rowErrors = itemErrors[item.id]
+  const productLabel = readProductLabel(productOptions, item.productId, item.productName)
   const autosave = useRowAutosave({
     rowId: item.id,
     value: item,
@@ -176,7 +139,7 @@ function MaterialItemEditorCard({
   return (
     <div
       {...autosave.focusLeaveProps}
-      className="grid gap-3 xl:grid-cols-[minmax(15rem,1.6fr)_minmax(10rem,.9fr)_minmax(10rem,.9fr)_minmax(8rem,.8fr)_minmax(16rem,1.3fr)_auto_auto]"
+      className="grid gap-3 xl:grid-cols-[minmax(15rem,1.6fr)_minmax(10rem,.9fr)_minmax(10rem,.9fr)_minmax(8rem,.8fr)_minmax(16rem,1.3fr)_auto_auto_auto]"
     >
       <MaterialCardCell label="Product">
         <div className="space-y-1">
@@ -245,6 +208,18 @@ function MaterialItemEditorCard({
         <SaveRowButton onClick={() => void onSaveItem(item)} disabled={savingItemId === item.id}>
           {savingItemId === item.id ? "Saving..." : "Save"}
         </SaveRowButton>
+      </MaterialActionCell>
+      <MaterialActionCell label="Allocations">
+        <button
+          type="button"
+          onClick={onToggleAllocations}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-sm text-[var(--foreground)]/75 transition hover:bg-[var(--panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+        >
+          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <span>{isExpanded ? "Hide" : "Show"}</span>
+        </button>
       </MaterialActionCell>
       <MaterialActionCell label="Delete">
         <DeleteRowButton onClick={() => onDeleteItem(item.id)} disabled={deletingItemId === item.id}>
@@ -466,22 +441,18 @@ export function WorkOrderMaterialItemsSection({
 
                   return (
                     <section key={item.id} className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-transparent">
-                      <MaterialItemSectionHeader
-                        item={item}
-                        productOptions={productOptions}
-                        isExpanded={isExpanded}
-                        onToggle={() => onToggleExpandedItem(item.id)}
-                      />
-                      <div className="space-y-3 border-t border-[var(--panel-border)] bg-transparent p-4">
+                      <div className="space-y-3 bg-transparent p-4">
                         <MaterialItemEditorCard
                           item={item}
                           productOptions={productOptions}
+                          isExpanded={isExpanded}
                           savingItemId={savingItemId}
                           deletingItemId={deletingItemId}
                           itemErrors={itemErrors}
                           onItemFieldChange={onItemFieldChange}
                           onSaveItem={onSaveItem}
                           onDeleteItem={onDeleteItem}
+                          onToggleAllocations={() => onToggleExpandedItem(item.id)}
                         />
                         {isExpanded ? (
                           <div className="border-t border-[var(--panel-border)] pt-3">
