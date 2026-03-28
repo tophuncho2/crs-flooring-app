@@ -51,6 +51,13 @@ function readProductUnit(options: MaterialItemOption[], productId: string, fallb
   return options.find((product) => product.id === productId)?.sendUnit || fallback || "-"
 }
 
+function getAllocationStatusBadgeClassName(status: WorkOrderMaterialItem["allocationStatus"]) {
+  if (status === "FULLY_ALLOCATED") return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700"
+  if (status === "PARTIALLY_ALLOCATED") return "border-amber-500/35 bg-amber-500/10 text-amber-700"
+  if (status === "SHORTAGE") return "border-rose-500/35 bg-rose-500/10 text-rose-700"
+  return "border-[var(--panel-border)] bg-transparent text-[var(--foreground)]/75"
+}
+
 function MaterialItemEditorRow({
   item,
   productOptions,
@@ -159,6 +166,19 @@ function MaterialItemEditorRow({
         />
       </RecordItemCell>
       <RecordInlineActionsCell>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <span
+            className={[
+              "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
+              getAllocationStatusBadgeClassName(item.allocationStatus),
+            ].join(" ")}
+          >
+            {item.allocationStatus.replaceAll("_", " ")}
+          </span>
+          <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--foreground)]/55">
+            {item.isAllocationDone ? "Done" : "Pending"}
+          </span>
+        </div>
         <button
           type="button"
           onClick={onToggleAllocations}

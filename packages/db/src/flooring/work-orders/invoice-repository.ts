@@ -215,28 +215,29 @@ export async function getWorkOrderInvoiceView(
   client: WorkOrderInvoiceDbClient = db,
 ): Promise<WorkOrderInvoiceViewRecord> {
   const { sourceVersion } = await getCurrentSourceVersion(workOrderId, client)
-
-  const [generation, artifact] = await Promise.all([
-    client.flooringInvoiceGeneration.findUnique({
-      where: {
-        workOrderId_sourceVersion: {
-          workOrderId,
-          sourceVersion,
-        },
-      },
-      select: invoiceGenerationSelect,
-    }),
-    client.flooringInvoiceArtifact.findFirst({
-      where: {
+  const generation = await client.flooringInvoiceGeneration.findUnique({
+    where: {
+      workOrderId_sourceVersion: {
         workOrderId,
-        deletedAt: null,
+        sourceVersion,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: invoiceArtifactSelect,
-    }),
-  ])
+    },
+    select: invoiceGenerationSelect,
+  })
+
+  const artifact = generation
+    ? await client.flooringInvoiceArtifact.findFirst({
+        where: {
+          generationId: generation.id,
+          workOrderId,
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: invoiceArtifactSelect,
+      })
+    : null
 
   return {
     workOrderId,

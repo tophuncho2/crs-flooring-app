@@ -246,7 +246,6 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
         quantity: item.quantity,
         unitPrice: item.unitPrice ?? (await resolveMaterialUnitPrice(item, tx)),
         notes: item.notes,
-        changeOrderStatus: "SHORTAGE" as const,
       })),
     )
 
@@ -258,7 +257,7 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           notes: item.notes,
-          changeOrderStatus: item.changeOrderStatus,
+          changeOrderStatus: "SUFFICIENT",
         },
       })
     }
@@ -368,7 +367,7 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
         quantity: input.quantity,
         unitPrice: await resolveMaterialUnitPrice(input, tx),
         notes: input.notes,
-        changeOrderStatus: "SHORTAGE",
+        changeOrderStatus: "SUFFICIENT",
       },
       include: workOrderItemInclude,
     })
@@ -405,7 +404,7 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
         quantity: input.quantity,
         unitPrice: input.unitPrice ?? undefined,
         notes: input.notes,
-        changeOrderStatus: "SHORTAGE",
+        changeOrderStatus: "SUFFICIENT",
       },
       include: workOrderItemInclude,
     })
@@ -640,10 +639,6 @@ export async function saveWorkOrderMaterialSection(
     if (input.item.notes !== undefined) {
       itemUpdateData.notes = input.item.notes
     }
-    if (input.item.changeOrderStatus !== undefined) {
-      itemUpdateData.changeOrderStatus = input.item.changeOrderStatus
-    }
-
     await tx.flooringWorkOrderItem.update({
       where: { id: itemId },
       data: itemUpdateData,

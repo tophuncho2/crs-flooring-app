@@ -48,22 +48,29 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    withDatabaseTransactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback({}))
+    withDatabaseTransactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({
+        flooringWorkOrder: {
+          update: vi.fn().mockResolvedValue(undefined),
+        },
+      }),
+    )
   })
 
   it("allocates FIFO inventory, preserves manual rows, and records shortages all-or-nothing per item", async () => {
     const createAllocation = vi.fn().mockResolvedValue(undefined)
     const completeAllocationRun = vi.fn().mockResolvedValue(true)
+    const updateItemShortageStatuses = vi.fn().mockResolvedValue(undefined)
     const processor = createWorkOrderAutoAllocationProcessor({
       getAllocationRun: vi.fn().mockResolvedValue({
         id: "11111111-1111-4111-8111-111111111111",
         workOrderId: "22222222-2222-4222-8222-222222222222",
         requestedByUserId: "33333333-3333-4333-8333-333333333333",
         sourceVersion: "2026-03-27T00:00:00.000Z",
-        idempotencyKey: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+        idempotencyKey: "work-order-allocation:v2:22222222-2222-4222-8222-222222222222:2026-03-27T00:00:00.000Z",
         status: "QUEUED",
         requestId: "req-1",
-        queueJobId: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+        queueJobId: "work-order-allocation:v2:22222222-2222-4222-8222-222222222222:2026-03-27T00:00:00.000Z",
         requestedAt: "2026-03-27T00:00:00.000Z",
         queuedAt: "2026-03-27T00:00:01.000Z",
         startedAt: null,
@@ -75,10 +82,13 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
         shortageCount: 0,
       }),
       startAllocationRun: vi.fn().mockResolvedValue(true),
+      retryAllocationRun: vi.fn(),
       failAllocationRun: vi.fn(),
+      supersedeAllocationRun: vi.fn(),
       completeAllocationRun,
       deleteAutoAllocationsForWorkOrder: vi.fn().mockResolvedValue(undefined),
       createAllocation,
+      updateItemShortageStatuses,
       getAllocationSource: vi.fn().mockResolvedValue({
         allocationRun: {
           id: "11111111-1111-4111-8111-111111111111",
@@ -131,6 +141,7 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
             productId: "prod-1",
             warehouseId: "wh-1",
             warehouseName: "Main",
+            fifoReceivedAt: "2026-03-26T00:00:00.000Z",
             itemNumber: "INV-100",
             dyeLot: "",
             locationCode: "A-1",
@@ -147,6 +158,7 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
             productId: "prod-1",
             warehouseId: "wh-1",
             warehouseName: "Main",
+            fifoReceivedAt: "2026-03-27T00:00:00.000Z",
             itemNumber: "INV-101",
             dyeLot: "",
             locationCode: "A-2",
@@ -163,6 +175,7 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
             productId: "prod-2",
             warehouseId: "wh-1",
             warehouseName: "Main",
+            fifoReceivedAt: "2026-03-25T00:00:00.000Z",
             itemNumber: "INV-200",
             dyeLot: "",
             locationCode: "B-1",
@@ -185,14 +198,14 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
       allocationRunId: "11111111-1111-4111-8111-111111111111",
       workOrderId: "22222222-2222-4222-8222-222222222222",
       requestedByUserId: "33333333-3333-4333-8333-333333333333",
-      idempotencyKey: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+      idempotencyKey: "work-order-allocation:v2:22222222-2222-4222-8222-222222222222:2026-03-27T00:00:00.000Z",
       sourceVersion: "2026-03-27T00:00:00.000Z",
       queuedAt: "2026-03-27T00:00:01.000Z",
     }, env as never)
 
     expect(result).toEqual({
       status: "completed",
-      allocatedRowCount: 2,
+      allocatedRowCount: 3,
       shortageCount: 1,
     })
     expect(createAllocation).toHaveBeenNthCalledWith(
@@ -202,7 +215,7 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
         inventoryId: "inv-1",
         method: "AUTO",
       }),
-      {},
+      expect.any(Object),
     )
     expect(createAllocation).toHaveBeenNthCalledWith(
       2,
@@ -211,27 +224,44 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
         inventoryId: "inv-2",
         method: "AUTO",
       }),
-      {},
+      expect.any(Object),
+    )
+    expect(createAllocation).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        workOrderItemId: "item-2",
+        inventoryId: "inv-3",
+        method: "AUTO",
+      }),
+      expect.any(Object),
+    )
+    expect(updateItemShortageStatuses).toHaveBeenCalledWith(
+      {
+        workOrderId: "22222222-2222-4222-8222-222222222222",
+        shortageItemIds: ["item-2"],
+      },
+      expect.any(Object),
     )
     expect(completeAllocationRun).toHaveBeenCalledWith({
       allocationRunId: "11111111-1111-4111-8111-111111111111",
-      allocatedRowCount: 2,
+      allocatedRowCount: 3,
       shortageCount: 1,
-    }, {})
+    }, expect.any(Object))
   })
 
-  it("fails the run when the work-order source changed after the request", async () => {
+  it("supersedes the run when the work-order source changed after the request", async () => {
     const failAllocationRun = vi.fn().mockResolvedValue(true)
+    const supersedeAllocationRun = vi.fn().mockResolvedValue(true)
     const processor = createWorkOrderAutoAllocationProcessor({
       getAllocationRun: vi.fn().mockResolvedValue({
         id: "11111111-1111-4111-8111-111111111111",
         workOrderId: "22222222-2222-4222-8222-222222222222",
         requestedByUserId: "33333333-3333-4333-8333-333333333333",
         sourceVersion: "2026-03-27T00:00:00.000Z",
-        idempotencyKey: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+        idempotencyKey: "work-order-allocation:v2:22222222-2222-4222-8222-222222222222:2026-03-27T00:00:00.000Z",
         status: "QUEUED",
         requestId: "req-1",
-        queueJobId: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+        queueJobId: "work-order-allocation:v2:22222222-2222-4222-8222-222222222222:2026-03-27T00:00:00.000Z",
         requestedAt: "2026-03-27T00:00:00.000Z",
         queuedAt: "2026-03-27T00:00:01.000Z",
         startedAt: null,
@@ -243,10 +273,13 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
         shortageCount: 0,
       }),
       startAllocationRun: vi.fn().mockResolvedValue(true),
+      retryAllocationRun: vi.fn(),
       failAllocationRun,
+      supersedeAllocationRun,
       completeAllocationRun: vi.fn(),
       deleteAutoAllocationsForWorkOrder: vi.fn().mockResolvedValue(undefined),
       createAllocation: vi.fn(),
+      updateItemShortageStatuses: vi.fn(),
       getAllocationSource: vi.fn().mockResolvedValue({
         allocationRun: {
           id: "11111111-1111-4111-8111-111111111111",
@@ -268,15 +301,17 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
       allocationRunId: "11111111-1111-4111-8111-111111111111",
       workOrderId: "22222222-2222-4222-8222-222222222222",
       requestedByUserId: "33333333-3333-4333-8333-333333333333",
-      idempotencyKey: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+      idempotencyKey: "work-order-allocation:v2:22222222-2222-4222-8222-222222222222:2026-03-27T00:00:00.000Z",
       sourceVersion: "2026-03-27T00:00:00.000Z",
       queuedAt: "2026-03-27T00:00:01.000Z",
-    }, env as never)).rejects.toThrow("Work order changed after auto-allocation was requested")
-
-    expect(failAllocationRun).toHaveBeenCalledWith({
-      allocationRunId: "11111111-1111-4111-8111-111111111111",
-      failureCode: "AUTO_ALLOCATION_FAILED",
-      failureMessage: "Work order changed after auto-allocation was requested",
+    }, env as never)).resolves.toEqual({
+      status: "superseded",
+      reason: "AUTO_ALLOCATION_SUPERSEDED",
     })
+
+    expect(supersedeAllocationRun).toHaveBeenCalledWith({
+      allocationRunId: "11111111-1111-4111-8111-111111111111",
+    })
+    expect(failAllocationRun).not.toHaveBeenCalled()
   })
 })

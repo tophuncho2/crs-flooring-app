@@ -7,7 +7,7 @@ import {
 import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
 import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
 import { validateUpdateWorkOrderItemAllocationInput } from "@/features/flooring/work-orders/validators"
-import { createAppError } from "@/server/http/api-helpers"
+import { createAppError, parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -34,7 +34,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id, itemId, allocationId } = await params
+    const { id: rawId, itemId: rawItemId, allocationId: rawAllocationId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const itemId = parseUuidParam(rawItemId, "itemId")
+    const allocationId = parseUuidParam(rawAllocationId, "allocationId")
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(body, validateUpdateWorkOrderItemAllocationInput, {
       requireExpectedUpdatedAt: true,
@@ -108,7 +111,10 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id, itemId, allocationId } = await params
+    const { id: rawId, itemId: rawItemId, allocationId: rawAllocationId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const itemId = parseUuidParam(rawItemId, "itemId")
+    const allocationId = parseUuidParam(rawAllocationId, "allocationId")
     const body = (await request.json()) as Record<string, unknown>
     const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
       requireExpectedUpdatedAt: true,

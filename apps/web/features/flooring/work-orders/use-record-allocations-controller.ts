@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { buildWorkOrderItemAllocationSummary } from "@builders/domain"
+import { usePendingWorkflowPolling } from "@/features/dashboard/shared/record-view/client/use-pending-workflow-polling"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
@@ -32,25 +32,6 @@ const defaultAllocationDraft: AllocationDraft = {
   inventoryId: "",
   quantity: "",
   notes: "",
-}
-
-function hydrateMaterialItem(item: WorkOrderMaterialItem): WorkOrderMaterialItem {
-  const allocationSummary = buildWorkOrderItemAllocationSummary({
-    requiredQuantity: item.quantity,
-    allocations: item.allocations.map((allocation) => ({
-      quantity: allocation.quantity,
-      unitCost: allocation.unitCost,
-    })),
-  })
-
-  return {
-    ...item,
-    allocatedQuantity: allocationSummary.allocatedQuantity,
-    remainingQuantity: allocationSummary.remainingQuantity,
-    materialExpense: allocationSummary.materialExpense,
-    hasAllocationShortage: allocationSummary.hasAllocationShortage,
-    changeOrderStatus: allocationSummary.hasAllocationShortage ? "SHORTAGE" : "SUFFICIENT",
-  }
 }
 
 export function useRecordAllocationsController({
@@ -116,25 +97,6 @@ export function useRecordAllocationsController({
     [autoAllocationRun?.status],
   )
 
-  const syncItemAllocationState = useCallback(
-    (itemId: string, allocations: WorkOrderItemAllocationRow[]) => {
-      setMaterialItems((previous) => {
-        const nextItems = previous.map((item) =>
-          item.id === itemId
-            ? hydrateMaterialItem({
-                ...item,
-                allocations,
-              })
-            : item,
-        )
-
-        onMaterialItemsChangedRef.current?.(nextItems)
-        return nextItems
-      })
-    },
-    [setMaterialItems],
-  )
-
   const loadAllocationOptions = useCallback(async (itemId: string) => {
     setLoadingOptionsByItemId((previous) => ({ ...previous, [itemId]: true }))
     try {
@@ -170,32 +132,25 @@ export function useRecordAllocationsController({
     void refreshAutoAllocationRun({ suppressErrors: true })
   }, [refreshAutoAllocationRun])
 
-  useEffect(() => {
-    if (!isAutoAllocating) {
-      return undefined
-    }
+  usePendingWorkflowPolling({
+    isPending: isAutoAllocating,
+    refresh: () => refreshAutoAllocationRun({ suppressErrors: true }),
+    getTerminalKey: (payload) => (payload.run ? `${payload.run.id}:${payload.run.status}` : null),
+    onTerminal: async (payload) => {
+      if (!payload.run) {
+        return
+      }
 
-    const interval = window.setInterval(() => {
-      void refreshAutoAllocationRun({ suppressErrors: true }).then(async (payload) => {
-        if (!payload?.run) {
-          return
-        }
+      if (payload.run.status === "COMPLETED") {
+        await onAutoAllocationCompletedRef.current?.()
+        notices.showSuccess("Auto allocation completed")
+      }
 
-        if (payload.run.status === "COMPLETED") {
-          await onAutoAllocationCompletedRef.current?.()
-          notices.showSuccess("Auto allocation completed")
-        }
-
-        if (payload.run.status === "FAILED") {
-          notices.showError(payload.run.failureMessage || "Auto allocation failed")
-        }
-      })
-    }, 3000)
-
-    return () => {
-      window.clearInterval(interval)
-    }
-  }, [isAutoAllocating, notices, refreshAutoAllocationRun])
+      if (payload.run.status === "FAILED") {
+        notices.showError(payload.run.failureMessage || "Auto allocation failed")
+      }
+    },
+  })
 
   const toggleExpandedItem = useCallback(
     (itemId: string) => {
@@ -232,8 +187,8 @@ export function useRecordAllocationsController({
 
   const handleAllocationFieldChange = useCallback(
     (itemId: string, allocationId: string, field: keyof AllocationDraft, value: string) => {
-      setMaterialItems((previous) =>
-        previous.map((item) =>
+      setMaterialItems((previous) => {
+        const nextItems = previous.map((item) =>
           item.id === itemId
             ? {
                 ...item,
@@ -242,8 +197,10 @@ export function useRecordAllocationsController({
                 ),
               }
             : item,
-        ),
-      )
+        )
+        onMaterialItemsChangedRef.current?.(nextItems)
+        return nextItems
+      })
 
       if (field === "inventoryId" || field === "quantity") {
         setItemErrorsByItemId((previous) => ({
@@ -284,10 +241,7 @@ export function useRecordAllocationsController({
       if (payload.workOrder) {
         onWorkOrderChangeRef.current?.(payload.workOrder)
       } else {
-        const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
-        if (currentItem) {
-          syncItemAllocationState(itemId, [...currentItem.allocations, payload.allocation])
-        }
+        throw new Error("Allocation create response did not include the updated work order snapshot")
       }
       void loadAllocationOptions(itemId)
       setDraftsByItemId((previous) => ({ ...previous, [itemId]: defaultAllocationDraft }))
@@ -357,15 +311,7 @@ export function useRecordAllocationsController({
       if (payload.workOrder) {
         onWorkOrderChangeRef.current?.(payload.workOrder)
       } else {
-        const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
-        if (currentItem) {
-          syncItemAllocationState(
-            itemId,
-            currentItem.allocations.map((currentAllocation) =>
-              currentAllocation.id === allocation.id ? payload.allocation : currentAllocation,
-            ),
-          )
-        }
+        throw new Error("Allocation save response did not include the updated work order snapshot")
       }
       void loadAllocationOptions(itemId)
       setItemErrorsByItemId((previous) => ({
@@ -445,10 +391,7 @@ export function useRecordAllocationsController({
       if (payload.workOrder) {
         onWorkOrderChangeRef.current?.(payload.workOrder)
       } else if (currentItem) {
-        syncItemAllocationState(
-          itemId,
-          currentItem.allocations.filter((allocation) => allocation.id !== allocationId),
-        )
+        throw new Error("Allocation delete response did not include the updated work order snapshot")
       }
       void loadAllocationOptions(itemId)
       notices.showSuccess("Allocation deleted")

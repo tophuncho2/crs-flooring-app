@@ -7,6 +7,7 @@ import {
 import { buildWorkOrderAutoAllocationStatusResponse } from "@/features/flooring/work-orders/transport/allocations"
 import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
 import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
+import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -25,7 +26,8 @@ export async function GET(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id } = await params
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
     const run = await getWorkOrderAutoAllocationStatusUseCase(id)
     return routeJson(access, buildWorkOrderAutoAllocationStatusResponse(run))
   } catch (error) {
@@ -46,7 +48,8 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id } = await params
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
     const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
       requireExpectedUpdatedAt: true,

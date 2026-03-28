@@ -31,7 +31,11 @@ async function main() {
   )
   const autoAllocationWorker = new Worker<AutoAllocateWorkOrderJobV1>(
     WORK_ORDER_AUTO_ALLOCATION_QUEUE,
-    async (job) => processAutoAllocation(parseAutoAllocateWorkOrderJob(job.data), env),
+    async (job) =>
+      processAutoAllocation(parseAutoAllocateWorkOrderJob(job.data), env, {
+        attemptNumber: job.attemptsMade + 1,
+        maxAttempts: typeof job.opts.attempts === "number" ? job.opts.attempts : 1,
+      }),
     {
       connection,
       concurrency: env.autoAllocationWorkerConcurrency,

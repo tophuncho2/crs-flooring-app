@@ -8,7 +8,6 @@ export type WorkOrderMaterialItemInput = {
   quantity: Prisma.Decimal
   unitPrice: Prisma.Decimal | null
   notes: string | null
-  changeOrderStatus: "SUFFICIENT" | "SHORTAGE"
 }
 
 export type WorkOrderServiceItemInput = {
@@ -158,12 +157,6 @@ export function validateWorkOrderMaterialItemInput(body: Record<string, unknown>
     quantity,
     unitPrice,
     notes: parseOptionalString(body.notes),
-    changeOrderStatus:
-      String(body.changeOrderStatus ?? "SUFFICIENT")
-        .trim()
-        .toUpperCase() === "SHORTAGE"
-        ? "SHORTAGE"
-        : "SUFFICIENT",
   }
 }
 
@@ -226,14 +219,6 @@ export function validateUpdateWorkOrderMaterialItemInput(body: Record<string, un
   if ("quantity" in body) input.quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
   if ("unitPrice" in body) input.unitPrice = requireNonNegativeDecimal(parseDecimal(body.unitPrice, "unitPrice", 2), "unitPrice")
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
-  if ("changeOrderStatus" in body) {
-    input.changeOrderStatus =
-      String(body.changeOrderStatus ?? "SUFFICIENT")
-        .trim()
-        .toUpperCase() === "SHORTAGE"
-        ? "SHORTAGE"
-        : "SUFFICIENT"
-  }
 
   return input
 }

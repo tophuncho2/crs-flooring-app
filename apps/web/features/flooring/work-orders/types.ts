@@ -88,6 +88,7 @@ export type InventoryAllocationOption = {
   productId: string
   warehouseId: string
   warehouseName: string
+  fifoReceivedAt: string
   itemNumber: string
   dyeLot: string
   locationCode: string

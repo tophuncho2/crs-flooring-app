@@ -31,6 +31,8 @@ function buildItem(overrides: Partial<WorkOrderMaterialItem> = {}): WorkOrderMat
     remainingQuantity: 5,
     materialExpense: 40,
     hasAllocationShortage: true,
+    allocationStatus: "SHORTAGE",
+    isAllocationDone: true,
     changeOrderStatus: "SHORTAGE",
     ...overrides,
   }
@@ -63,6 +65,8 @@ function Harness() {
         materialExpense: 10,
         remainingQuantity: 0,
         hasAllocationShortage: false,
+        allocationStatus: "FULLY_ALLOCATED",
+        isAllocationDone: true,
         changeOrderStatus: "SUFFICIENT",
       }),
     ],

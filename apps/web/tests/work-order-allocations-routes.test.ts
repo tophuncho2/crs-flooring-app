@@ -4,6 +4,11 @@ import { DELETE as DELETE_ALLOCATION, PATCH as PATCH_ALLOCATION } from "@/app/ap
 import { GET as GET_ALLOCATION_OPTIONS } from "@/app/api/flooring/work-orders/[id]/items/[itemId]/allocation-options/route"
 import { GET as GET_AUTO_ALLOCATION, POST as POST_AUTO_ALLOCATION } from "@/app/api/flooring/work-orders/[id]/auto-allocation/route"
 
+const WORK_ORDER_ID = "11111111-1111-4111-8111-111111111111"
+const ITEM_ID = "22222222-2222-4222-8222-222222222222"
+const ALLOCATION_ID = "33333333-3333-4333-8333-333333333333"
+const RUN_ID = "44444444-4444-4444-8444-444444444444"
+
 const {
   authorizeWorkOrdersRouteMock,
   requireRouteAccessMock,
@@ -110,8 +115,8 @@ vi.mock("@/features/flooring/work-orders/transport/detail", () => ({
 
 function allocationRow() {
   return {
-    id: "alloc-1",
-    workOrderItemId: "item-1",
+    id: ALLOCATION_ID,
+    workOrderItemId: ITEM_ID,
     inventoryId: "inv-1",
     quantity: "4",
     cutSize: "12ft",
@@ -133,8 +138,8 @@ function allocationRow() {
 
 function allocationRun() {
   return {
-    id: "run-1",
-    workOrderId: "wo-1",
+    id: RUN_ID,
+    workOrderId: WORK_ORDER_ID,
     requestedByUserId: "user-1",
     sourceVersion: "2026-03-27T00:00:00.000Z",
     idempotencyKey: "allocation:v1:run-1",
@@ -171,11 +176,11 @@ describe("work-order allocation routes", () => {
     reserveAppMutationReceiptMock.mockResolvedValue(undefined)
     finalizeAppMutationReceiptMock.mockResolvedValue(undefined)
     getWorkOrderByIdMock.mockResolvedValue({
-      id: "wo-1",
+      id: WORK_ORDER_ID,
       updatedAt: "2026-03-27T00:00:00.000Z",
       items: [
         {
-          id: "item-1",
+          id: ITEM_ID,
           updatedAt: "2026-03-27T00:00:00.000Z",
           allocations: [allocationRow()],
         },
@@ -193,13 +198,13 @@ describe("work-order allocation routes", () => {
     createWorkOrderItemAllocationUseCaseMock.mockResolvedValue(allocationRow())
 
     const listResponse = await GET_ALLOCATIONS(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations"),
-      { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/items/${ITEM_ID}/allocations`),
+      { params: Promise.resolve({ id: WORK_ORDER_ID, itemId: ITEM_ID }) },
     )
     expect((await listResponse.json()).allocations).toHaveLength(1)
 
     const createResponse = await POST_ALLOCATIONS(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations", {
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/items/${ITEM_ID}/allocations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -209,14 +214,14 @@ describe("work-order allocation routes", () => {
           mutation: { idempotencyKey: "allocation-create-1" },
         }),
       }),
-      { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
+      { params: Promise.resolve({ id: WORK_ORDER_ID, itemId: ITEM_ID }) },
     )
 
     expect(createResponse.status).toBe(201)
     expect(createWorkOrderItemAllocationUseCaseMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        workOrderId: "wo-1",
-        workOrderItemId: "item-1",
+        workOrderId: WORK_ORDER_ID,
+        workOrderItemId: ITEM_ID,
         inventoryId: "inv-1",
       }),
     )
@@ -224,7 +229,7 @@ describe("work-order allocation routes", () => {
 
   it("returns field metadata for invalid allocation quantity", async () => {
     const response = await POST_ALLOCATIONS(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations", {
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/items/${ITEM_ID}/allocations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -233,7 +238,7 @@ describe("work-order allocation routes", () => {
           mutation: { idempotencyKey: "allocation-create-2" },
         }),
       }),
-      { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
+      { params: Promise.resolve({ id: WORK_ORDER_ID, itemId: ITEM_ID }) },
     )
 
     const payload = await response.json()
@@ -251,7 +256,7 @@ describe("work-order allocation routes", () => {
     })
 
     const patchResponse = await PATCH_ALLOCATION(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations/alloc-1", {
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/items/${ITEM_ID}/allocations/${ALLOCATION_ID}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -262,13 +267,13 @@ describe("work-order allocation routes", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "wo-1", itemId: "item-1", allocationId: "alloc-1" }) },
+      { params: Promise.resolve({ id: WORK_ORDER_ID, itemId: ITEM_ID, allocationId: ALLOCATION_ID }) },
     )
 
-    expect((await patchResponse.json()).allocation).toEqual(expect.objectContaining({ id: "alloc-1", quantity: "5" }))
+    expect((await patchResponse.json()).allocation).toEqual(expect.objectContaining({ id: ALLOCATION_ID, quantity: "5" }))
 
     const deleteResponse = await DELETE_ALLOCATION(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations/alloc-1", {
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/items/${ITEM_ID}/allocations/${ALLOCATION_ID}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -278,14 +283,14 @@ describe("work-order allocation routes", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "wo-1", itemId: "item-1", allocationId: "alloc-1" }) },
+      { params: Promise.resolve({ id: WORK_ORDER_ID, itemId: ITEM_ID, allocationId: ALLOCATION_ID }) },
     )
 
     expect((await deleteResponse.json()).ok).toBe(true)
     expect(deleteWorkOrderItemAllocationUseCaseMock).toHaveBeenCalledWith({
-      workOrderId: "wo-1",
-      workOrderItemId: "item-1",
-      allocationId: "alloc-1",
+      workOrderId: WORK_ORDER_ID,
+      workOrderItemId: ITEM_ID,
+      allocationId: ALLOCATION_ID,
     })
   })
 
@@ -296,6 +301,7 @@ describe("work-order allocation routes", () => {
         productId: "prod-1",
         warehouseId: "wh-1",
         warehouseName: "Main",
+        fifoReceivedAt: "2026-03-27T00:00:00.000Z",
         itemNumber: "INV-100",
         dyeLot: "D1",
         locationCode: "A-1",
@@ -312,19 +318,19 @@ describe("work-order allocation routes", () => {
     requestWorkOrderAutoAllocationUseCaseMock.mockResolvedValue(allocationRun())
 
     const optionsResponse = await GET_ALLOCATION_OPTIONS(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocation-options"),
-      { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/items/${ITEM_ID}/allocation-options`),
+      { params: Promise.resolve({ id: WORK_ORDER_ID, itemId: ITEM_ID }) },
     )
     expect((await optionsResponse.json()).options).toHaveLength(1)
 
     const statusResponse = await GET_AUTO_ALLOCATION(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/auto-allocation"),
-      { params: Promise.resolve({ id: "wo-1" }) },
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/auto-allocation`),
+      { params: Promise.resolve({ id: WORK_ORDER_ID }) },
     )
-    expect((await statusResponse.json()).run).toEqual(expect.objectContaining({ id: "run-1" }))
+    expect((await statusResponse.json()).run).toEqual(expect.objectContaining({ id: RUN_ID }))
 
     const requestResponse = await POST_AUTO_ALLOCATION(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/auto-allocation", {
+      new Request(`http://localhost/api/flooring/work-orders/${WORK_ORDER_ID}/auto-allocation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -334,11 +340,11 @@ describe("work-order allocation routes", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "wo-1" }) },
+      { params: Promise.resolve({ id: WORK_ORDER_ID }) },
     )
-    expect((await requestResponse.json()).run).toEqual(expect.objectContaining({ id: "run-1" }))
+    expect((await requestResponse.json()).run).toEqual(expect.objectContaining({ id: RUN_ID }))
     expect(requestWorkOrderAutoAllocationUseCaseMock).toHaveBeenCalledWith({
-      workOrderId: "wo-1",
+      workOrderId: WORK_ORDER_ID,
       triggeredByUserId: "user-1",
       requestId: "req-1",
     })

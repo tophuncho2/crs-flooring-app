@@ -3,6 +3,7 @@ import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
 import { saveWorkOrderMaterialSection } from "@/features/flooring/work-orders/mutations"
 import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
 import { validateUpdateWorkOrderMaterialSectionInput } from "@/features/flooring/work-orders/validators"
+import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -29,7 +30,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id, itemId } = await params
+    const { id: rawId, itemId: rawItemId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const itemId = parseUuidParam(rawItemId, "itemId")
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(body, validateUpdateWorkOrderMaterialSectionInput, {
       requireExpectedUpdatedAt: true,

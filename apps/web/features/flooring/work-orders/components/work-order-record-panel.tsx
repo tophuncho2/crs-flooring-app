@@ -705,7 +705,6 @@ export function WorkOrderRecordPanel({
                     quantity: currentItem.quantity,
                     unitPrice: currentItem.unitPrice,
                     notes: currentItem.notes,
-                    changeOrderStatus: currentItem.changeOrderStatus,
                   },
                   itemExpectedUpdatedAt: serverItem.updatedAt,
                   allocationOperations,

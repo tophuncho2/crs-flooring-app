@@ -5,13 +5,13 @@ import {
   type WorkOrderAutoAllocationRequestedOutboxEventV1,
 } from "@builders/domain"
 import {
+  Prisma,
   createQueueOutboxEvent,
   createWorkOrderAllocationRun,
   createWorkOrderItemAllocation,
   deleteWorkOrderItemAllocation,
   findActiveWorkOrderAllocationRun,
   findWorkOrderAllocationRunBySourceVersion,
-  getLatestWorkOrderAllocationRun,
   getWorkOrderAllocationRunById,
   lockWorkOrderAllocationScope,
   listInventoryAllocationOptionsForWorkOrderItem,
@@ -21,7 +21,6 @@ import {
   withDatabaseTransaction,
   db,
 } from "@builders/db"
-import type { Prisma } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { buildInvoiceInvalidationFields } from "../invoice-state"
 
@@ -93,7 +92,19 @@ export async function deleteWorkOrderItemAllocationUseCase(input: {
 }
 
 export async function getWorkOrderAutoAllocationStatusUseCase(workOrderId: string) {
-  return getLatestWorkOrderAllocationRun(workOrderId)
+  const workOrder = await db.flooringWorkOrder.findUniqueOrThrow({
+    where: { id: workOrderId },
+    select: {
+      updatedAt: true,
+    },
+  })
+
+  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrderId, workOrder.updatedAt)
+  if (currentRun) {
+    return currentRun
+  }
+
+  return findActiveWorkOrderAllocationRun(workOrderId)
 }
 
 export async function requestWorkOrderAutoAllocationUseCase(input: {

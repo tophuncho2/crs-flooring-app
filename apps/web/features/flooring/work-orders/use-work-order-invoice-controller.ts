@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { usePendingWorkflowPolling } from "@/features/dashboard/shared/record-view/client/use-pending-workflow-polling"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { WorkOrderInvoiceStatusResponse } from "./transport/invoice"
@@ -57,23 +58,13 @@ export function useWorkOrderInvoiceController(
     void refreshInvoice({ suppressErrors: true })
   }, [enabled, hasLoadedOnce, refreshInvoice, refreshToken])
 
-  useEffect(() => {
-    if (
-      invoice.generation?.status !== "REQUESTED" &&
-      invoice.generation?.status !== "QUEUED" &&
-      invoice.generation?.status !== "PROCESSING"
-    ) {
-      return undefined
-    }
-
-    const interval = window.setInterval(() => {
-      void refreshInvoice({ suppressErrors: true })
-    }, 3000)
-
-    return () => {
-      window.clearInterval(interval)
-    }
-  }, [invoice.generation?.status, refreshInvoice])
+  usePendingWorkflowPolling({
+    isPending:
+      invoice.generation?.status === "REQUESTED" ||
+      invoice.generation?.status === "QUEUED" ||
+      invoice.generation?.status === "PROCESSING",
+    refresh: () => refreshInvoice({ suppressErrors: true }),
+  })
 
   const queueInvoice = useCallback(async (expectedUpdatedAt: string) => {
     const payload = await requestJson<WorkOrderInvoiceStatusResponse>(`/api/flooring/work-orders/${workOrderId}/invoice`, {

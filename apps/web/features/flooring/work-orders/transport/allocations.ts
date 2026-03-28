@@ -3,6 +3,7 @@ import type {
   WorkOrderAllocationRunRecord,
   WorkOrderItemAllocationRecord,
 } from "@builders/db"
+import { isWorkOrderAutoAllocationPendingStatus } from "@builders/domain"
 
 export type WorkOrderItemAllocationListResponse = {
   allocations: WorkOrderItemAllocationRecord[]
@@ -34,9 +35,6 @@ export function buildWorkOrderAutoAllocationStatusResponse(
 ): WorkOrderAutoAllocationStatusResponse {
   return {
     run,
-    isPending:
-      run?.status === "REQUESTED" ||
-      run?.status === "QUEUED" ||
-      run?.status === "PROCESSING",
+    isPending: isWorkOrderAutoAllocationPendingStatus(run?.status),
   }
 }

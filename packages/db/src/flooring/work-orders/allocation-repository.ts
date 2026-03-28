@@ -653,11 +653,51 @@ export async function recalculateWorkOrderItemAllocationStatus(
   await client.flooringWorkOrderItem.update({
     where: { id: workOrderItemId },
     data: {
-      changeOrderStatus: summary.hasAllocationShortage ? "SHORTAGE" : "SUFFICIENT",
+      // Shortage is a terminal allocation workflow result, not a user-editable field.
+      // Manual edits and intermediate allocation changes reset the coarse persisted flag.
+      changeOrderStatus: "SUFFICIENT",
     },
   })
 
   return summary
+}
+
+export async function updateWorkOrderItemShortageStatuses(
+  input: {
+    workOrderId: string
+    shortageItemIds: string[]
+  },
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const shortageItemIds = Array.from(new Set(input.shortageItemIds.filter(Boolean)))
+
+  await client.flooringWorkOrderItem.updateMany({
+    where: {
+      workOrderId: input.workOrderId,
+      id: {
+        notIn: shortageItemIds.length > 0 ? shortageItemIds : undefined,
+      },
+    },
+    data: {
+      changeOrderStatus: "SUFFICIENT",
+    },
+  })
+
+  if (shortageItemIds.length === 0) {
+    return
+  }
+
+  await client.flooringWorkOrderItem.updateMany({
+    where: {
+      workOrderId: input.workOrderId,
+      id: {
+        in: shortageItemIds,
+      },
+    },
+    data: {
+      changeOrderStatus: "SHORTAGE",
+    },
+  })
 }
 
 function assertInventoryCompatible(input: {
@@ -1379,6 +1419,33 @@ export async function startWorkOrderAllocationRun(
       failedAt: null,
       failureCode: null,
       failureMessage: null,
+    },
+  })
+
+  return result.count > 0
+}
+
+export async function retryWorkOrderAllocationRun(
+  input: {
+    allocationRunId: string
+    queuedAt?: Date
+    failureCode?: string | null
+    failureMessage?: string | null
+  },
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const result = await client.flooringWorkOrderAllocationRun.updateMany({
+    where: {
+      id: input.allocationRunId,
+      status: "PROCESSING",
+    },
+    data: {
+      status: "QUEUED",
+      queuedAt: input.queuedAt ?? new Date(),
+      failureCode: input.failureCode ?? null,
+      failureMessage: input.failureMessage ?? null,
+      failedAt: null,
+      completedAt: null,
     },
   })
 

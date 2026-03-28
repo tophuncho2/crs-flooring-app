@@ -12,9 +12,13 @@ export type WorkOrderSectionMetricValue = {
 export function buildMaterialSectionMetrics(items: WorkOrderMaterialItem[]): WorkOrderSectionMetricValue[] {
   const totalMaterialCost = sumLineTotals(items)
   const totalAllocatedCost = items.reduce((total, item) => total + item.materialExpense, 0)
+  const completedCount = items.filter((item) => item.isAllocationDone).length
+  const shortageCount = items.filter((item) => item.allocationStatus === "SHORTAGE").length
 
   return [
     { label: "Items", value: `${items.length} ${items.length === 1 ? "item" : "items"}` },
+    { label: "Allocation", value: items.length === 0 ? "Done" : `${completedCount}/${items.length} done` },
+    { label: "Shortages", value: String(shortageCount) },
     { label: "Material Cost", value: formatCurrencyValue(totalMaterialCost) },
     { label: "Allocated Cost", value: formatCurrencyValue(totalAllocatedCost) },
   ]

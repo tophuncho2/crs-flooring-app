@@ -8,6 +8,7 @@ import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
 import { buildWorkOrderItemAllocationListResponse } from "@/features/flooring/work-orders/transport/allocations"
 import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
 import { validateWorkOrderItemAllocationInput } from "@/features/flooring/work-orders/validators"
+import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 
@@ -20,7 +21,9 @@ export async function GET(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id, itemId } = await params
+    const { id: rawId, itemId: rawItemId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const itemId = parseUuidParam(rawItemId, "itemId")
     const allocations = await listWorkOrderItemAllocationsUseCase(id, itemId)
     return routeJson(access, buildWorkOrderItemAllocationListResponse(allocations))
   } catch (error) {
@@ -41,7 +44,9 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id, itemId } = await params
+    const { id: rawId, itemId: rawItemId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const itemId = parseUuidParam(rawItemId, "itemId")
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(body, validateWorkOrderItemAllocationInput)
     const receipt = await enforceMutationReceipt({

@@ -20,6 +20,7 @@ import {
 import { logStructuredEvent } from "@builders/lib"
 import type { Queue } from "bullmq"
 import type { RelayEnvironment } from "../env.js"
+import { addBullMqJobIdempotently } from "./bullmq-idempotent-dispatch.js"
 import { toBullMqJobId } from "./bullmq-job-id.js"
 
 export type InvoiceOutboxDispatcherDependencies = {
@@ -144,7 +145,7 @@ export function createInvoiceOutboxDispatcher(
 
         try {
           const queueJobId = toBullMqJobId(jobPayload.idempotencyKey)
-          const job = await queue.add(jobPayload.jobName, jobPayload, {
+          const { job, wasDuplicate } = await addBullMqJobIdempotently(queue, jobPayload.jobName, jobPayload, {
             ...INVOICE_GENERATION_RETRY_POLICY,
             jobId: queueJobId,
           })
@@ -180,6 +181,7 @@ export function createInvoiceOutboxDispatcher(
             idempotencyKey: jobPayload.idempotencyKey,
             queueJobId: job.id ?? queueJobId,
             status: "QUEUED",
+            details: wasDuplicate ? { dispatchMode: "duplicate-job-reused" } : undefined,
           })
         } catch (error) {
           const wrappedError = error instanceof Error ? error : new Error("Failed to publish invoice job")

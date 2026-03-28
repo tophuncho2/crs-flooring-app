@@ -1,6 +1,19 @@
-import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
+import {
+  Prisma,
+  createPrismaPageLoadIssue,
+  findWorkOrderAllocationRunBySourceVersion,
+  isPrismaNotFoundError,
+  listAutoAllocationInventoryCandidates,
+  prisma,
+  withPrismaConnectivityHandling,
+  type PrismaDetailPageResult,
+} from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { buildWorkOrderItemAllocationSummary } from "@builders/domain"
+import {
+  buildWorkOrderAllocationPlan,
+  buildWorkOrderAllocationWorkflowSummary,
+  isWorkOrderAutoAllocationPendingStatus,
+} from "@builders/domain"
 import { loadSharedRecordDetailOptions } from "@/features/flooring/shared/transport/record-detail-options"
 import {
   type WorkOrderPageFilterState,
@@ -11,17 +24,58 @@ import {
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseTotals } from "./domain/expense-summary"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderSalesRep, normalizeWorkOrderServiceItem, normalizeWorkOrderSummary } from "./services"
 
-function hasAllocationShortageForItem(item: {
-  quantity: { toString(): string }
-  allocations: Array<{ quantity: { toString(): string }; unitCost: { toString(): string } }>
-}) {
-  return buildWorkOrderItemAllocationSummary({
-    requiredQuantity: item.quantity.toString(),
-    allocations: item.allocations.map((allocation) => ({
-      quantity: allocation.quantity.toString(),
-      unitCost: allocation.unitCost.toString(),
-    })),
-  }).hasAllocationShortage
+async function deriveWorkOrderAllocationState(
+  db: WorkOrderDbClient,
+  workOrder: {
+    id: string
+    warehouseId: string | null
+    updatedAt: Date
+    items: Array<{
+      id: string
+      productId: string
+      quantity: { toString(): string }
+      allocations: Array<{ quantity: { toString(): string }; unitCost: { toString(): string } }>
+    }>
+  },
+) {
+  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, workOrder.updatedAt, db)
+  const hasPendingRun = isWorkOrderAutoAllocationPendingStatus(currentRun?.status)
+  const canDeclareShortage = currentRun?.status === "COMPLETED"
+
+  const shortageItemIds = new Set<string>()
+
+  if (canDeclareShortage && workOrder.warehouseId) {
+    const inventoryCandidates = await listAutoAllocationInventoryCandidates(workOrder.id, db)
+    const allocationPlan = buildWorkOrderAllocationPlan({
+      warehouseId: workOrder.warehouseId,
+      items: workOrder.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        requiredQuantity: item.quantity.toString(),
+        allocatedQuantity: item.allocations.reduce(
+          (total, allocation) => total + Number(allocation.quantity.toString()),
+          0,
+        ),
+      })),
+      candidates: inventoryCandidates.map((candidate) => ({
+        id: candidate.id,
+        productId: candidate.productId,
+        warehouseId: candidate.warehouseId,
+        availableQuantity: candidate.availableToAllocate,
+        fifoReceivedAt: candidate.fifoReceivedAt,
+        itemNumber: candidate.itemNumber,
+      })),
+    })
+
+    for (const shortage of allocationPlan.shortages) {
+      shortageItemIds.add(shortage.workOrderItemId)
+    }
+  }
+
+  return {
+    hasPendingRun,
+    shortageItemIds,
+  }
 }
 
 type WorkOrderDbClient = Prisma.TransactionClient | typeof prisma
@@ -147,13 +201,7 @@ export async function listWorkOrders(
       },
       items: {
         select: {
-          quantity: true,
-          allocations: {
-            select: {
-              quantity: true,
-              unitCost: true,
-            },
-          },
+          changeOrderStatus: true,
         },
       },
     },
@@ -165,7 +213,7 @@ export async function listWorkOrders(
   return workOrders.map((workOrder) =>
     normalizeWorkOrder({
       ...workOrder,
-      hasShortage: workOrder.items.some(hasAllocationShortageForItem),
+      hasShortage: workOrder.items.some((item) => item.changeOrderStatus === "SHORTAGE"),
     }),
   )
 }
@@ -257,20 +305,32 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
     },
   })
 
+  const allocationState = await deriveWorkOrderAllocationState(db, workOrder)
+
   return {
     ...(() => {
-      const normalizedItems = workOrder.items.map(normalizeWorkOrderItem)
+      const normalizedItems = workOrder.items.map((item) =>
+        normalizeWorkOrderItem(item, {
+          hasPendingAllocationRun: allocationState.hasPendingRun,
+          hasEligibleInventoryRemaining: !allocationState.shortageItemIds.has(item.id),
+        }),
+      )
       const normalizedServiceItems = workOrder.serviceItems.map(normalizeWorkOrderServiceItem)
       const normalizedSalesReps = workOrder.salesReps.map(normalizeWorkOrderSalesRep)
+      const allocationWorkflow = buildWorkOrderAllocationWorkflowSummary({
+        itemStatuses: normalizedItems.map((item) => item.allocationStatus),
+        hasPendingRun: allocationState.hasPendingRun,
+      })
 
       return {
         ...normalizeWorkOrder({
           ...workOrder,
-          hasShortage: workOrder.items.some(hasAllocationShortageForItem),
+          hasShortage: normalizedItems.some((item) => item.allocationStatus === "SHORTAGE"),
         }),
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
         salesReps: normalizedSalesReps,
+        allocationIsDone: allocationWorkflow.isDone,
         summary: normalizeWorkOrderSummary({
           items: normalizedItems,
           serviceItems: normalizedServiceItems,
@@ -340,7 +400,7 @@ export async function listWorkOrderItems(workOrderId: string) {
     orderBy: { createdAt: "desc" },
   })
 
-  return items.map(normalizeWorkOrderItem)
+  return items.map((item) => normalizeWorkOrderItem(item))
 }
 
 export async function listWorkOrderServiceItems(workOrderId: string) {

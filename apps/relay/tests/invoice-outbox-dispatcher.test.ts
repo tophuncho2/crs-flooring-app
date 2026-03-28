@@ -94,6 +94,7 @@ describe("createInvoiceOutboxDispatcher", () => {
 
     const queue = {
       add: vi.fn().mockResolvedValue({ id: toBullMqJobId("invoice:v2:22222222-2222-4222-8222-222222222222:2026-03-26T12:00:00.000Z") }),
+      getJob: vi.fn().mockResolvedValue(null),
     }
 
     const result = await dispatcher.dispatchBatch(env, queue as never)
@@ -182,6 +183,7 @@ describe("createInvoiceOutboxDispatcher", () => {
 
     const queue = {
       add: vi.fn().mockRejectedValue(new Error("Redis unavailable")),
+      getJob: vi.fn().mockResolvedValue(null),
     }
 
     const result = await dispatcher.dispatchBatch(env, queue as never)
