@@ -120,7 +120,7 @@ export function useRecordAllocationsController({
     [setMaterialItems],
   )
 
-  async function loadAllocationOptions(itemId: string) {
+  const loadAllocationOptions = useCallback(async (itemId: string) => {
     setLoadingOptionsByItemId((previous) => ({ ...previous, [itemId]: true }))
     try {
       const payload = await requestJson<{ options: InventoryAllocationOption[] }>(
@@ -132,7 +132,7 @@ export function useRecordAllocationsController({
     } finally {
       setLoadingOptionsByItemId((previous) => ({ ...previous, [itemId]: false }))
     }
-  }
+  }, [workOrderId])
 
   const refreshAutoAllocationRun = useCallback(async (options?: { suppressErrors?: boolean }) => {
     try {
@@ -190,14 +190,12 @@ export function useRecordAllocationsController({
           return previous.filter((current) => current !== itemId)
         }
 
-        if (!optionsByItemId[itemId]) {
-          void loadAllocationOptions(itemId)
-        }
+        void loadAllocationOptions(itemId)
 
         return [...previous, itemId]
       })
     },
-    [optionsByItemId],
+    [loadAllocationOptions],
   )
 
   const handleDraftChange = useCallback((itemId: string, field: keyof AllocationDraft, value: string) => {
@@ -272,6 +270,7 @@ export function useRecordAllocationsController({
       if (currentItem) {
         syncItemAllocationState(itemId, [...currentItem.allocations, payload.allocation])
       }
+      void loadAllocationOptions(itemId)
       setDraftsByItemId((previous) => ({ ...previous, [itemId]: defaultAllocationDraft }))
       setDraftErrorsByItemId((previous) => ({ ...previous, [itemId]: {} }))
       notices.showSuccess("Allocation added")
@@ -334,6 +333,7 @@ export function useRecordAllocationsController({
           ),
         )
       }
+      void loadAllocationOptions(itemId)
       setItemErrorsByItemId((previous) => ({
         ...previous,
         [itemId]: setRowFieldErrors(previous[itemId] ?? {}, allocation.id, {}),
@@ -374,6 +374,7 @@ export function useRecordAllocationsController({
           currentItem.allocations.filter((allocation) => allocation.id !== allocationId),
         )
       }
+      void loadAllocationOptions(itemId)
       notices.showSuccess("Allocation deleted")
     } catch (error) {
       const fieldError = getRequestFieldError(error)

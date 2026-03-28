@@ -194,6 +194,11 @@ const allocationRunSelect = {
   shortageCount: true,
 } as const
 
+const fifoInventoryOrderBy = [
+  { createdAt: "asc" as const },
+  { itemNumber: "asc" as const },
+]
+
 function withAllocationTransaction<T>(
   client: WorkOrderAllocationDbClient,
   callback: (tx: Prisma.TransactionClient) => Promise<T>,
@@ -757,11 +762,7 @@ export async function listInventoryAllocationOptionsForWorkOrderItem(
     where: {
       productId: item.productId,
     },
-    orderBy: [
-      { createdAt: "asc" },
-      { location: { locationCode: "asc" } },
-      { itemNumber: "asc" },
-    ],
+    orderBy: fifoInventoryOrderBy,
     select: {
       id: true,
       productId: true,
@@ -1136,11 +1137,7 @@ export async function listAutoAllocationInventoryCandidates(
         in: productIds,
       },
     },
-    orderBy: [
-      { createdAt: "asc" },
-      { location: { locationCode: "asc" } },
-      { itemNumber: "asc" },
-    ],
+    orderBy: fifoInventoryOrderBy,
     select: {
       id: true,
       productId: true,

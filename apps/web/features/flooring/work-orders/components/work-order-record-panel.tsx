@@ -5,7 +5,6 @@ import { requestJson } from "@/features/flooring/shared/transport/http"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
-  MaterialItemsEditor,
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemOption,
@@ -41,6 +40,7 @@ import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/f
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
 import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"
 import { useRecordAllocationsController } from "@/features/flooring/work-orders/use-record-allocations-controller"
+import { WorkOrderMaterialItemsSection } from "@/features/flooring/work-orders/components/record/material-items-section"
 import type {
   DraftWorkOrder,
   PropertyOption,
@@ -531,62 +531,53 @@ export function WorkOrderRecordPanel({
         </RecordSection>
 
         <RecordSection>
-          <MaterialItemsEditor
-        title="Material Items"
-        items={lineItems.materialItems}
-        draft={lineItems.materialDraft}
-        productOptions={productOptions}
-        totalAmount={workOrder.summary.materialTotal}
-        loading={loading || lineItems.materialCollection.loading}
-        adding={lineItems.materialCollection.adding}
-        savingItemId={lineItems.materialCollection.savingItemId}
-        deletingItemId={lineItems.materialCollection.deletingItemId}
-        draftErrors={lineItems.materialDraftErrors}
-        itemErrors={lineItems.materialItemErrors}
-        onDraftChange={lineItems.handleMaterialDraftChange}
-        onAdd={() => lineItems.addMaterialItem()}
-        onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-        onSaveItem={(item) => void lineItems.saveMaterialItem(item)}
-        onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
-        expandedItemIds={allocations.expandedItemIds}
-        onToggleExpandedRow={allocations.toggleExpandedItem}
-        actions={
-          <button
-            type="button"
-            onClick={() => void allocations.requestAutoAllocation()}
-            disabled={allocations.isAutoAllocating || lineItems.materialItems.length === 0}
-            className="rounded border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)] disabled:opacity-60"
-          >
-            {allocations.isAutoAllocating ? "Auto Allocating..." : "Auto Allocate"}
-          </button>
-        }
-        renderExpandedRow={(item) => (
-          <MaterialAllocationsEditor
-            allocations={(item as WorkOrderMaterialItem).allocations}
-            draft={
-              allocations.draftsByItemId[item.id] ?? {
-                inventoryId: "",
-                quantity: "",
-                cutSize: "",
-                notes: "",
-              }
-            }
-            allocationOptions={allocations.optionsByItemId[item.id] ?? []}
-            loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
-            adding={allocations.addingItemId === item.id}
-            savingAllocationId={allocations.savingAllocationId}
-            deletingAllocationId={allocations.deletingAllocationId}
-            draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
-            itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
-            onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
-            onAdd={() => allocations.addAllocation(item.id)}
-            onAllocationFieldChange={(allocationId, field, value) =>
-              allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
-            }
-            onSaveAllocation={(allocation) => void allocations.saveAllocation(item.id, allocation)}
-            onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
-          />
-        )}
+          <WorkOrderMaterialItemsSection
+            title="Material Items"
+            items={lineItems.materialItems}
+            draft={lineItems.materialDraft}
+            productOptions={productOptions}
+            loading={loading || lineItems.materialCollection.loading}
+            adding={lineItems.materialCollection.adding}
+            savingItemId={lineItems.materialCollection.savingItemId}
+            deletingItemId={lineItems.materialCollection.deletingItemId}
+            draftErrors={lineItems.materialDraftErrors}
+            itemErrors={lineItems.materialItemErrors}
+            expandedItemIds={allocations.expandedItemIds}
+            onToggleExpandedItem={allocations.toggleExpandedItem}
+            onDraftChange={lineItems.handleMaterialDraftChange}
+            onAdd={() => lineItems.addMaterialItem()}
+            onItemFieldChange={lineItems.handleMaterialItemFieldChange}
+            onSaveItem={(item) => void lineItems.saveMaterialItem(item)}
+            onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
+            onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
+            isAutoAllocating={allocations.isAutoAllocating}
+            renderAllocationSection={(item: WorkOrderMaterialItem) => (
+              <MaterialAllocationsEditor
+                allocations={item.allocations}
+                draft={
+                  allocations.draftsByItemId[item.id] ?? {
+                    inventoryId: "",
+                    quantity: "",
+                    cutSize: "",
+                    notes: "",
+                  }
+                }
+                allocationOptions={allocations.optionsByItemId[item.id] ?? []}
+                loadingOptions={allocations.loadingOptionsByItemId[item.id] ?? false}
+                adding={allocations.addingItemId === item.id}
+                savingAllocationId={allocations.savingAllocationId}
+                deletingAllocationId={allocations.deletingAllocationId}
+                draftErrors={allocations.draftErrorsByItemId[item.id] ?? {}}
+                itemErrors={allocations.itemErrorsByItemId[item.id] ?? {}}
+                onDraftChange={(field, value) => allocations.handleDraftChange(item.id, field, value)}
+                onAdd={() => allocations.addAllocation(item.id)}
+                onAllocationFieldChange={(allocationId, field, value) =>
+                  allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
+                }
+                onSaveAllocation={(allocation) => void allocations.saveAllocation(item.id, allocation)}
+                onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
+              />
+            )}
           />
         </RecordSection>
 

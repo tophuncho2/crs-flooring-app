@@ -40,10 +40,6 @@ function readPricePerUnit(options: InventoryAllocationOption[], inventoryId: str
   return options.find((option) => option.id === inventoryId)?.pricePerUnit ?? 0
 }
 
-function readInventoryLabel(options: InventoryAllocationOption[], inventoryId: string) {
-  return options.find((option) => option.id === inventoryId)?.label ?? ""
-}
-
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
@@ -283,12 +279,6 @@ export function MaterialAllocationsEditor({
         </tbody>
       </RecordChildTableShell>
 
-      {loadingOptions ? <p className="text-sm text-[var(--foreground)]/60">Loading inventory options...</p> : null}
-      {!loadingOptions && draft.inventoryId ? (
-        <p className="text-xs text-[var(--foreground)]/55">
-          Selected inventory: {readInventoryLabel(allocationOptions, draft.inventoryId)}
-        </p>
-      ) : null}
     </div>
   )
 }
