@@ -13,12 +13,18 @@ type RecordOptionsMenuItem = {
 export function RecordOptionsMenu({
   items,
   buttonLabel = "Options",
+  onOpenChange,
 }: {
   items: RecordOptionsMenuItem[]
   buttonLabel?: string
+  onOpenChange?: (open: boolean) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    onOpenChange?.(isOpen)
+  }, [isOpen, onOpenChange])
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {

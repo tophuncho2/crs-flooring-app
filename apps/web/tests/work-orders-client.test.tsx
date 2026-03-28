@@ -316,12 +316,6 @@ describe("WorkOrdersClient", () => {
 
     requestJsonMock
       .mockResolvedValueOnce({
-        sourceVersion: "",
-        generation: null,
-        artifact: null,
-        canOpen: false,
-      })
-      .mockResolvedValueOnce({
         sourceVersion: "2026-03-26T12:00:00.000Z",
         generation: {
           id: "gen-1",

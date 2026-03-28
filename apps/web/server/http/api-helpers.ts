@@ -145,6 +145,10 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     if (prismaLikeError.code === "P2003") {
       return { status: 409, message: "This record is linked and cannot be modified" }
     }
+
+    if (prismaLikeError.code === "P2025") {
+      return { status: 404, message: "Record not found" }
+    }
   }
 
   const connectivityIssue = getPrismaConnectivityIssue(error)
@@ -166,6 +170,9 @@ export function normalizePrismaError(error: unknown): { status: number; message:
     }
     if (error.code === "P2011") {
       return { status: 400, message: "A required database field was missing" }
+    }
+    if (error.code === "P2025") {
+      return { status: 404, message: "Record not found" }
     }
   }
   if (error instanceof Prisma.PrismaClientRustPanicError) {

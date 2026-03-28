@@ -47,7 +47,10 @@ export default function WorkOrderDetailClient({
   )
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [refreshNonce, setRefreshNonce] = useState(0)
-  const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`)
+  const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
+  const invoice = useWorkOrderInvoiceController(workOrder.id, `${workOrder.updatedAt}:${refreshNonce}`, {
+    enabled: isOptionsMenuOpen,
+  })
   const previousInvoiceStatusRef = useRef(invoice.invoice.generation?.status ?? null)
 
   const closePage = useCallback(() => {
@@ -136,6 +139,7 @@ export default function WorkOrderDetailClient({
       headerMeta={<WorkOrderExpenseSummaryHeader summary={deferredExpenseSummary} />}
       headerActions={
         <RecordOptionsMenu
+          onOpenChange={setIsOptionsMenuOpen}
           items={[
             {
               label: "Complete",

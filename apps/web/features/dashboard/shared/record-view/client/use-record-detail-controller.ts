@@ -30,9 +30,10 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
   payloadKey: string
 }) {
   const cachedRecord = getCachedRecordDetail<TRecord>(scope, id, initialRecord.updatedAt)
-  const [record, setRecord] = useState<TRecord | null>(cachedRecord ?? initialRecord)
-  const [draft, setDraft] = useState<TDraft | null>(toDraft(cachedRecord ?? initialRecord))
-  const [loading, setLoading] = useState(!cachedRecord)
+  const seededRecord = cachedRecord ?? initialRecord
+  const [record, setRecord] = useState<TRecord | null>(seededRecord)
+  const [draft, setDraft] = useState<TDraft | null>(toDraft(seededRecord))
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   const syncRecord = useCallback(
@@ -63,38 +64,13 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
   }, [payloadKey, syncRecord, url])
 
   useEffect(() => {
-    if (cachedRecord) {
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    async function load() {
-      setLoading(true)
-      setError("")
-
-      try {
-        const nextRecord = await refreshRecord()
-        if (cancelled) return
-        setRecord(nextRecord)
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : `Failed to load ${scope}`)
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [cachedRecord, refreshRecord, scope])
+    const nextSeed = cachedRecord ?? initialRecord
+    setRecord(nextSeed)
+    setDraft(toDraft(nextSeed))
+    setLoading(false)
+    setError("")
+    setCachedRecordDetail(scope, nextSeed.id, nextSeed.updatedAt, nextSeed)
+  }, [cachedRecord, id, initialRecord, scope, toDraft])
 
   const clearRecordCache = useCallback(() => {
     clearCachedRecordDetail(scope, id)

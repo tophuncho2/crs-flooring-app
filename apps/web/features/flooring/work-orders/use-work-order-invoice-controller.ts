@@ -13,9 +13,15 @@ const EMPTY_INVOICE_STATE: InvoiceStatusView = {
   canOpen: false,
 }
 
-export function useWorkOrderInvoiceController(workOrderId: string, refreshToken: string) {
+export function useWorkOrderInvoiceController(
+  workOrderId: string,
+  refreshToken: string,
+  options?: { enabled?: boolean },
+) {
+  const enabled = options?.enabled ?? false
   const initialInvoice = useMemo(() => EMPTY_INVOICE_STATE, [])
   const [invoice, setInvoice] = useState<InvoiceStatusView>(initialInvoice)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
 
   const refreshInvoice = useCallback(
     async (options?: { suppressErrors?: boolean }) => {
@@ -25,6 +31,7 @@ export function useWorkOrderInvoiceController(workOrderId: string, refreshToken:
         })
 
         setInvoice(payload)
+        setHasLoadedOnce(true)
         return payload
       } catch (error) {
         if (!options?.suppressErrors) {
@@ -38,8 +45,12 @@ export function useWorkOrderInvoiceController(workOrderId: string, refreshToken:
   )
 
   useEffect(() => {
+    if (!enabled && !hasLoadedOnce) {
+      return
+    }
+
     void refreshInvoice({ suppressErrors: true })
-  }, [refreshInvoice, refreshToken])
+  }, [enabled, hasLoadedOnce, refreshInvoice, refreshToken])
 
   useEffect(() => {
     if (
@@ -78,6 +89,7 @@ export function useWorkOrderInvoiceController(workOrderId: string, refreshToken:
 
   return {
     invoice,
+    hasLoadedOnce,
     isGenerating:
       invoice.generation?.status === "REQUESTED" ||
       invoice.generation?.status === "QUEUED" ||
