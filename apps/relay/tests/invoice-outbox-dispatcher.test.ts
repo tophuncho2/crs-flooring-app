@@ -9,6 +9,7 @@ vi.mock("@builders/db", () => ({
 }))
 
 import { createInvoiceOutboxDispatcher } from "../src/dispatch/invoice-outbox-dispatcher.js"
+import { toBullMqJobId } from "../src/dispatch/bullmq-job-id.js"
 
 describe("createInvoiceOutboxDispatcher", () => {
   const env = {
@@ -92,7 +93,7 @@ describe("createInvoiceOutboxDispatcher", () => {
     })
 
     const queue = {
-      add: vi.fn().mockResolvedValue({ id: "invoice:v2:22222222-2222-4222-8222-222222222222:2026-03-26T12:00:00.000Z" }),
+      add: vi.fn().mockResolvedValue({ id: toBullMqJobId("invoice:v2:22222222-2222-4222-8222-222222222222:2026-03-26T12:00:00.000Z") }),
     }
 
     const result = await dispatcher.dispatchBatch(env, queue as never)
@@ -108,7 +109,7 @@ describe("createInvoiceOutboxDispatcher", () => {
         workOrderId: "22222222-2222-4222-8222-222222222222",
       }),
       expect.objectContaining({
-        jobId: "invoice:v2:22222222-2222-4222-8222-222222222222:2026-03-26T12:00:00.000Z",
+        jobId: toBullMqJobId("invoice:v2:22222222-2222-4222-8222-222222222222:2026-03-26T12:00:00.000Z"),
       }),
     )
   })

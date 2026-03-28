@@ -9,6 +9,7 @@ vi.mock("@builders/db", () => ({
 }))
 
 import { createWorkOrderAllocationOutboxDispatcher } from "../src/dispatch/work-order-allocation-outbox-dispatcher.js"
+import { toBullMqJobId } from "../src/dispatch/bullmq-job-id.js"
 
 describe("createWorkOrderAllocationOutboxDispatcher", () => {
   const env = {
@@ -92,7 +93,7 @@ describe("createWorkOrderAllocationOutboxDispatcher", () => {
     })
 
     const queue = {
-      add: vi.fn().mockResolvedValue({ id: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111" }),
+      add: vi.fn().mockResolvedValue({ id: toBullMqJobId("work-order-allocation:v1:11111111-1111-4111-8111-111111111111") }),
     }
 
     const result = await dispatcher.dispatchBatch(env, queue as never)
@@ -108,7 +109,7 @@ describe("createWorkOrderAllocationOutboxDispatcher", () => {
         workOrderId: "22222222-2222-4222-8222-222222222222",
       }),
       expect.objectContaining({
-        jobId: "work-order-allocation:v1:11111111-1111-4111-8111-111111111111",
+        jobId: toBullMqJobId("work-order-allocation:v1:11111111-1111-4111-8111-111111111111"),
       }),
     )
   })

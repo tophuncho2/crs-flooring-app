@@ -20,6 +20,7 @@ import {
 import { logStructuredEvent } from "@builders/lib"
 import type { Queue } from "bullmq"
 import type { RelayEnvironment } from "../env.js"
+import { toBullMqJobId } from "./bullmq-job-id.js"
 
 export type InvoiceOutboxDispatcherDependencies = {
   listClaimableEvents: typeof listClaimableQueueOutboxEvents
@@ -142,16 +143,17 @@ export function createInvoiceOutboxDispatcher(
         }
 
         try {
+          const queueJobId = toBullMqJobId(jobPayload.idempotencyKey)
           const job = await queue.add(jobPayload.jobName, jobPayload, {
             ...INVOICE_GENERATION_RETRY_POLICY,
-            jobId: jobPayload.idempotencyKey,
+            jobId: queueJobId,
           })
 
           await withDatabaseTransaction(async (tx) => {
             await dependencies.queueGeneration(
               {
                 generationId: jobPayload.generationId,
-                queueJobId: job.id ?? jobPayload.idempotencyKey,
+                queueJobId: job.id ?? queueJobId,
                 queuedAt: now,
               },
               tx,
@@ -176,7 +178,7 @@ export function createInvoiceOutboxDispatcher(
             workOrderId: jobPayload.workOrderId,
             generationId: jobPayload.generationId,
             idempotencyKey: jobPayload.idempotencyKey,
-            queueJobId: job.id ?? jobPayload.idempotencyKey,
+            queueJobId: job.id ?? queueJobId,
             status: "QUEUED",
           })
         } catch (error) {

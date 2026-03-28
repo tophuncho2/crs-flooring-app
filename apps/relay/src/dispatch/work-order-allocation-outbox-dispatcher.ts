@@ -20,6 +20,7 @@ import {
 import { logStructuredEvent } from "@builders/lib"
 import type { Queue } from "bullmq"
 import type { RelayEnvironment } from "../env.js"
+import { toBullMqJobId } from "./bullmq-job-id.js"
 
 export type WorkOrderAllocationOutboxDispatcherDependencies = {
   listClaimableEvents: typeof listClaimableQueueOutboxEvents
@@ -136,15 +137,16 @@ export function createWorkOrderAllocationOutboxDispatcher(
         }
 
         try {
+          const queueJobId = toBullMqJobId(jobPayload.idempotencyKey)
           const job = await queue.add(jobPayload.jobName, jobPayload, {
             ...WORK_ORDER_AUTO_ALLOCATION_RETRY_POLICY,
-            jobId: jobPayload.idempotencyKey,
+            jobId: queueJobId,
           })
 
           await withDatabaseTransaction(async (tx) => {
             await dependencies.queueRun({
               allocationRunId: jobPayload.allocationRunId,
-              queueJobId: job.id ?? jobPayload.idempotencyKey,
+              queueJobId: job.id ?? queueJobId,
               queuedAt: now,
             }, tx)
             await dependencies.markEventDispatched({
@@ -164,7 +166,7 @@ export function createWorkOrderAllocationOutboxDispatcher(
             workOrderId: jobPayload.workOrderId,
             generationId: jobPayload.allocationRunId,
             idempotencyKey: jobPayload.idempotencyKey,
-            queueJobId: job.id ?? jobPayload.idempotencyKey,
+            queueJobId: job.id ?? queueJobId,
             status: "QUEUED",
           })
         } catch (error) {

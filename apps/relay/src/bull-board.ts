@@ -60,7 +60,7 @@ export async function startBullBoardServer({
     serverAdapter,
   })
 
-  app.get("/healthz", (_request, response) => {
+  app.get("/healthz", (_request: any, response: any) => {
     response.status(200).json({ ok: true })
   })
 
