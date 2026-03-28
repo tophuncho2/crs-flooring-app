@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { getClientErrorMessage } from "@/features/flooring/shared/transport/client-errors"
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/table/confirm-delete"
 import { useRecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import type { DraftWorkOrder, PropertyOption, TemplateOption, WorkOrderRow } from "./types"
@@ -123,7 +124,7 @@ export function useWorkOrdersClientController({
       const payload = await requestJson<WorkOrderPayload>("/api/flooring/work-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createDraft),
+        body: JSON.stringify(withMutationMeta(createDraft)),
       })
 
       if (!payload.workOrder) {
@@ -159,11 +160,13 @@ export function useWorkOrdersClientController({
       const payload = await requestJson<WorkOrderPayload>("/api/flooring/work-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...defaultDraft,
-          propertyId: syncPropertyId,
-          templateId: selectedSyncTemplateId,
-        }),
+        body: JSON.stringify(
+          withMutationMeta({
+            ...defaultDraft,
+            propertyId: syncPropertyId,
+            templateId: selectedSyncTemplateId,
+          }),
+        ),
       })
 
       if (!payload.workOrder) {
@@ -194,6 +197,8 @@ export function useWorkOrdersClientController({
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/work-orders/${id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, rows.find((row) => row.id === id)?.updatedAt)),
       })
 
       setRows((previous) => previous.filter((row) => row.id !== id))

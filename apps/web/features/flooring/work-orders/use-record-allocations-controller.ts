@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { buildWorkOrderItemAllocationSummary } from "@builders/domain"
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
   clearFieldError,
   clearRowFieldError,
@@ -20,6 +21,7 @@ import {
 } from "./components/material-allocations-editor"
 import type {
   InventoryAllocationOption,
+  WorkOrderDetail,
   WorkOrderAutoAllocationRun,
   WorkOrderItemAllocationRow,
   WorkOrderMaterialItem,
@@ -53,18 +55,22 @@ function hydrateMaterialItem(item: WorkOrderMaterialItem): WorkOrderMaterialItem
 
 export function useRecordAllocationsController({
   workOrderId,
+  workOrderUpdatedAt,
   materialItems,
   setMaterialItems,
   notices,
   onAutoAllocationCompleted,
   onMaterialItemsChanged,
+  onWorkOrderChange,
 }: {
   workOrderId: string
+  workOrderUpdatedAt: string
   materialItems: WorkOrderMaterialItem[]
   setMaterialItems: (value: WorkOrderMaterialItem[] | ((previous: WorkOrderMaterialItem[]) => WorkOrderMaterialItem[])) => void
   notices: Pick<RecordNotices, "clearNotices" | "showSuccess" | "showError">
   onAutoAllocationCompleted?: () => void | Promise<void>
   onMaterialItemsChanged?: (nextItems: WorkOrderMaterialItem[]) => void
+  onWorkOrderChange?: (nextWorkOrder: WorkOrderDetail) => void
 }) {
   const [expandedItemIds, setExpandedItemIds] = useState<string[]>([])
   const [draftsByItemId, setDraftsByItemId] = useState<Record<string, AllocationDraft>>({})
@@ -77,12 +83,18 @@ export function useRecordAllocationsController({
   const [deletingAllocationId, setDeletingAllocationId] = useState<string | null>(null)
   const [autoAllocationRun, setAutoAllocationRun] = useState<WorkOrderAutoAllocationRun | null>(null)
   const materialItemsRef = useRef(materialItems)
+  const workOrderUpdatedAtRef = useRef(workOrderUpdatedAt)
   const onAutoAllocationCompletedRef = useRef(onAutoAllocationCompleted)
   const onMaterialItemsChangedRef = useRef(onMaterialItemsChanged)
+  const onWorkOrderChangeRef = useRef(onWorkOrderChange)
 
   useEffect(() => {
     materialItemsRef.current = materialItems
   }, [materialItems])
+
+  useEffect(() => {
+    workOrderUpdatedAtRef.current = workOrderUpdatedAt
+  }, [workOrderUpdatedAt])
 
   useEffect(() => {
     onAutoAllocationCompletedRef.current = onAutoAllocationCompleted
@@ -91,6 +103,10 @@ export function useRecordAllocationsController({
   useEffect(() => {
     onMaterialItemsChangedRef.current = onMaterialItemsChanged
   }, [onMaterialItemsChanged])
+
+  useEffect(() => {
+    onWorkOrderChangeRef.current = onWorkOrderChange
+  }, [onWorkOrderChange])
 
   const isAutoAllocating = useMemo(
     () =>
@@ -256,18 +272,22 @@ export function useRecordAllocationsController({
     setAddingItemId(itemId)
 
     try {
-      const payload = await requestJson<{ allocation: WorkOrderItemAllocationRow }>(
+      const payload = await requestJson<{ allocation: WorkOrderItemAllocationRow; workOrder?: WorkOrderDetail }>(
         `/api/flooring/work-orders/${workOrderId}/items/${itemId}/allocations`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(draft),
+          body: JSON.stringify(withMutationMeta(draft)),
         },
       )
 
-      const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
-      if (currentItem) {
-        syncItemAllocationState(itemId, [...currentItem.allocations, payload.allocation])
+      if (payload.workOrder) {
+        onWorkOrderChangeRef.current?.(payload.workOrder)
+      } else {
+        const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
+        if (currentItem) {
+          syncItemAllocationState(itemId, [...currentItem.allocations, payload.allocation])
+        }
       }
       void loadAllocationOptions(itemId)
       setDraftsByItemId((previous) => ({ ...previous, [itemId]: defaultAllocationDraft }))
@@ -315,28 +335,37 @@ export function useRecordAllocationsController({
     setSavingAllocationId(allocation.id)
 
     try {
-      const payload = await requestJson<{ allocation: WorkOrderItemAllocationRow }>(
+      const payload = await requestJson<{ allocation: WorkOrderItemAllocationRow; workOrder?: WorkOrderDetail }>(
         `/api/flooring/work-orders/${workOrderId}/items/${itemId}/allocations/${allocation.id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            inventoryId: allocation.inventoryId,
-            quantity: allocation.quantity,
-            cutSize: allocation.cutSize,
-            notes: allocation.notes,
-          }),
+          body: JSON.stringify(
+            withMutationMeta(
+              {
+                inventoryId: allocation.inventoryId,
+                quantity: allocation.quantity,
+                cutSize: allocation.cutSize,
+                notes: allocation.notes,
+              },
+              allocation.updatedAt,
+            ),
+          ),
         },
       )
 
-      const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
-      if (currentItem) {
-        syncItemAllocationState(
-          itemId,
-          currentItem.allocations.map((currentAllocation) =>
-            currentAllocation.id === allocation.id ? payload.allocation : currentAllocation,
-          ),
-        )
+      if (payload.workOrder) {
+        onWorkOrderChangeRef.current?.(payload.workOrder)
+      } else {
+        const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
+        if (currentItem) {
+          syncItemAllocationState(
+            itemId,
+            currentItem.allocations.map((currentAllocation) =>
+              currentAllocation.id === allocation.id ? payload.allocation : currentAllocation,
+            ),
+          )
+        }
       }
       void loadAllocationOptions(itemId)
       setItemErrorsByItemId((previous) => ({
@@ -403,12 +432,19 @@ export function useRecordAllocationsController({
     setDeletingAllocationId(allocationId)
 
     try {
-      await requestJson(
-        `/api/flooring/work-orders/${workOrderId}/items/${itemId}/allocations/${allocationId}`,
-        { method: "DELETE" },
-      )
       const currentItem = materialItemsRef.current.find((item) => item.id === itemId)
-      if (currentItem) {
+      const currentAllocation = currentItem?.allocations.find((allocation) => allocation.id === allocationId)
+      const payload = await requestJson<{ ok: boolean; workOrder?: WorkOrderDetail }>(
+        `/api/flooring/work-orders/${workOrderId}/items/${itemId}/allocations/${allocationId}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(withMutationMeta({}, currentAllocation?.updatedAt)),
+        },
+      )
+      if (payload.workOrder) {
+        onWorkOrderChangeRef.current?.(payload.workOrder)
+      } else if (currentItem) {
         syncItemAllocationState(
           itemId,
           currentItem.allocations.filter((allocation) => allocation.id !== allocationId),
@@ -428,15 +464,29 @@ export function useRecordAllocationsController({
     notices.clearNotices()
     const payload = await requestJson<WorkOrderAutoAllocationStatusResponse>(
       `/api/flooring/work-orders/${workOrderId}/auto-allocation`,
-      { method: "POST" },
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, workOrderUpdatedAtRef.current)),
+      },
     )
     setAutoAllocationRun(payload.run)
     return payload
   }
 
+  function clearAllocationErrors(itemId: string) {
+    setDraftErrorsByItemId((previous) => ({ ...previous, [itemId]: {} }))
+    setItemErrorsByItemId((previous) => ({ ...previous, [itemId]: {} }))
+  }
+
+  function clearAllocationDraft(itemId: string) {
+    setDraftsByItemId((previous) => ({ ...previous, [itemId]: defaultAllocationDraft }))
+  }
+
   return {
     expandedItemIds,
     draftsByItemId,
+    setDraftsByItemId,
     draftErrorsByItemId,
     itemErrorsByItemId,
     optionsByItemId,
@@ -455,5 +505,7 @@ export function useRecordAllocationsController({
     saveAllocationsForItem,
     deleteAllocation,
     requestAutoAllocation,
+    clearAllocationErrors,
+    clearAllocationDraft,
   }
 }

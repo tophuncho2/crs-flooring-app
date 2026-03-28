@@ -4,28 +4,63 @@ import {
   deleteWorkOrderItemAllocationUseCase,
   updateWorkOrderItemAllocationUseCase,
 } from "@/features/flooring/work-orders/application/allocations"
+import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
+import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
 import { validateUpdateWorkOrderItemAllocationInput } from "@/features/flooring/work-orders/validators"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
+import { createAppError } from "@/server/http/api-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import {
+  applyRoutePolicy,
+  assertExpectedUpdatedAt,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string; itemId: string; allocationId: string }>
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const access = await authorizeWorkOrdersRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "workOrders.allocations.write",
-    limit: 120,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/work-orders/[id]/items/[itemId]/allocations/[allocationId]",
+  const access = await applyRoutePolicy(request, {
+    capability: "workOrders.allocate",
+    rateLimit: {
+      scope: "workOrders.allocations.write",
+      limit: 120,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/work-orders/[id]/items/[itemId]/allocations/[allocationId]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id, itemId, allocationId } = await params
     const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateWorkOrderItemAllocationInput, {
+      requireExpectedUpdatedAt: true,
+    })
+    const currentSnapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
+    const currentItem = currentSnapshot.items.find((item) => item.id === itemId)
+    const currentAllocation = currentItem?.allocations.find((allocation) => allocation.id === allocationId)
+    if (!currentItem || !currentAllocation) {
+      throw createAppError("Record not found", { status: 404 })
+    }
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentAllocation.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { workOrder: currentSnapshot },
+      message: "Allocation changed before save completed. Refresh and try again.",
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "workOrders.allocations.update",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
     const allocation = await withMutationTelemetry(
       access,
       {
@@ -40,30 +75,66 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           workOrderId: id,
           workOrderItemId: itemId,
           allocationId,
-          ...validateUpdateWorkOrderItemAllocationInput(body),
+          ...input,
         }),
     )
-
-    return routeJson(access, { allocation })
+    const responseBody = {
+      allocation,
+      workOrder: withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role),
+    }
+    await finalizeMutationReceipt({
+      scope: "workOrders.allocations.update",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const access = await authorizeWorkOrdersRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "workOrders.allocations.delete",
-    limit: 80,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/work-orders/[id]/items/[itemId]/allocations/[allocationId]",
+  const access = await applyRoutePolicy(request, {
+    capability: "workOrders.allocate",
+    rateLimit: {
+      scope: "workOrders.allocations.delete",
+      limit: 80,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/work-orders/[id]/items/[itemId]/allocations/[allocationId]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id, itemId, allocationId } = await params
+    const body = (await request.json()) as Record<string, unknown>
+    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+      requireExpectedUpdatedAt: true,
+    })
+    const currentSnapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
+    const currentItem = currentSnapshot.items.find((item) => item.id === itemId)
+    const currentAllocation = currentItem?.allocations.find((allocation) => allocation.id === allocationId)
+    if (!currentItem || !currentAllocation) {
+      throw createAppError("Record not found", { status: 404 })
+    }
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentAllocation.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { workOrder: currentSnapshot },
+      message: "Allocation changed before delete completed. Refresh and try again.",
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "workOrders.allocations.delete",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
     await withMutationTelemetry(
       access,
       {
@@ -80,8 +151,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
           allocationId,
         }),
     )
-
-    return routeJson(access, { ok: true })
+    const responseBody = {
+      ok: true as const,
+      workOrder: withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role),
+    }
+    await finalizeMutationReceipt({
+      scope: "workOrders.allocations.delete",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }

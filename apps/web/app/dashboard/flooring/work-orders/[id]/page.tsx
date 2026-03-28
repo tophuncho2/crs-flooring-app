@@ -12,7 +12,7 @@ export default async function WorkOrderDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireWorkOrdersAccess()
+  const user = await requireWorkOrdersAccess()
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
@@ -39,6 +39,7 @@ export default async function WorkOrderDetailPage({
 
   return (
     <WorkOrderDetailClient
+      currentUserId={user.id}
       workOrder={result.data.workOrder}
       productOptions={result.data.productOptions}
       propertyOptions={result.data.propertyOptions}

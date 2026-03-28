@@ -132,6 +132,7 @@ export function normalizeWorkOrderItem(item: {
   unitPrice: { toString(): string }
   notes: string | null
   changeOrderStatus: "SUFFICIENT" | "SHORTAGE" | null
+  updatedAt: Date
   product: {
     name: string
     style: string | null
@@ -215,6 +216,7 @@ export function normalizeWorkOrderItem(item: {
     quantity: item.quantity.toString(),
     unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
+    updatedAt: item.updatedAt.toISOString(),
     allocations,
     allocatedQuantity: allocationSummary.allocatedQuantity,
     remainingQuantity: allocationSummary.remainingQuantity,
@@ -231,6 +233,7 @@ export function normalizeWorkOrderServiceItem(item: {
   quantity: { toString(): string }
   unitPrice: { toString(): string }
   notes: string | null
+  updatedAt: Date
   unit: { id: string; name: string }
 }) {
   return {
@@ -242,6 +245,7 @@ export function normalizeWorkOrderServiceItem(item: {
     quantity: item.quantity.toString(),
     unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
+    updatedAt: item.updatedAt.toISOString(),
   }
 }
 

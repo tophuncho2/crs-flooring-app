@@ -103,6 +103,7 @@ export function normalizeTemplateItem(item: {
   unitPrice: { toString(): string }
   notes: string | null
   createdAt: Date
+  updatedAt?: Date | null
   product: {
     name: string
     style: string | null
@@ -119,6 +120,7 @@ export function normalizeTemplateItem(item: {
     unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
     createdAt: item.createdAt.toISOString(),
+    updatedAt: (item.updatedAt ?? item.createdAt).toISOString(),
   }
 }
 
@@ -130,6 +132,7 @@ export function normalizeTemplateServiceItem(item: {
   unitPrice: { toString(): string }
   notes: string | null
   createdAt: Date
+  updatedAt?: Date | null
   unit: { id: string; name: string }
 }) {
   return {
@@ -142,6 +145,7 @@ export function normalizeTemplateServiceItem(item: {
     unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
     createdAt: item.createdAt.toISOString(),
+    updatedAt: (item.updatedAt ?? item.createdAt).toISOString(),
   }
 }
 

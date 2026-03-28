@@ -25,6 +25,7 @@ export type EditableMaterialItem = {
   quantity: string
   unitPrice: string
   notes: string
+  updatedAt: string
 }
 
 export type MaterialItemDraft = {

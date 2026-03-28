@@ -19,6 +19,7 @@ export type EditableSalesRepItem = {
   contactId: string
   contactName: string
   percent: string
+  updatedAt: string
 }
 
 export type SalesRepDraft = {

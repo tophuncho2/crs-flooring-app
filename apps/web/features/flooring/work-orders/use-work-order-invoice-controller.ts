@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { WorkOrderInvoiceStatusResponse } from "./transport/invoice"
 
 type InvoiceStatusView = WorkOrderInvoiceStatusResponse
@@ -74,9 +75,11 @@ export function useWorkOrderInvoiceController(
     }
   }, [invoice.generation?.status, refreshInvoice])
 
-  const queueInvoice = useCallback(async () => {
+  const queueInvoice = useCallback(async (expectedUpdatedAt: string) => {
     const payload = await requestJson<WorkOrderInvoiceStatusResponse>(`/api/flooring/work-orders/${workOrderId}/invoice`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta({}, expectedUpdatedAt)),
     })
 
     setInvoice(payload)

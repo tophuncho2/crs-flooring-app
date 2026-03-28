@@ -28,6 +28,7 @@ model User {
   requestedInvoiceGenerations FlooringInvoiceGeneration[]
   requestedAllocationRuns FlooringWorkOrderAllocationRun[]
   tablePreferences       UserTablePreference[]
+  mutationReceipts       AppMutationReceipt[]
 }
 
 model UserTablePreference {
@@ -57,6 +58,25 @@ model UserLoginActivity {
 
   @@index([loggedInAt])
   @@index([userEmail])
+}
+
+model AppMutationReceipt {
+  id             String   @id @default(uuid())
+  scope          String
+  userId         String
+  idempotencyKey String
+  requestHash    String
+  responseStatus Int?
+  responseBodyJson Json?
+  createdAt      DateTime @default(now())
+  completedAt    DateTime?
+  expiresAt      DateTime
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([scope, userId, idempotencyKey])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("app_mutation_receipt")
 }
 
 enum FlooringWorkOrderStatus {
@@ -529,6 +549,7 @@ model FlooringWorkOrderItem {
   notes             String?
   changeOrderStatus FlooringChangeOrderStatus? @default(SUFFICIENT)
   createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
   cutLogs           FlooringCutLog[]
   allocations       FlooringWorkOrderItemAllocation[]
 
@@ -573,6 +594,7 @@ model FlooringWorkOrderServiceItem {
   unitPrice   Decimal               @db.Decimal(10, 2)
   notes       String?
   createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
 
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
@@ -591,6 +613,7 @@ model FlooringWorkOrderSalesRep {
   contact                 FlooringContact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
   percent                 Decimal           @db.Decimal(5, 2)
   createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
   @@unique([workOrderId, contactId])
   @@index([workOrderId])

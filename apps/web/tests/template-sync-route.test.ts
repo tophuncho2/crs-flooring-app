@@ -2,27 +2,34 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { POST } from "@/app/api/flooring/work-orders/[id]/sync-template/route"
 
 const {
-  authorizeWorkOrdersRouteMock,
+  requireRouteAccessMock,
   enforceRouteRateLimitMock,
-  logRouteMutationSuccessMock,
-  logRouteMutationFailureMock,
-  syncTemplateToWorkOrderMock,
+  syncTemplateToWorkOrderUseCaseMock,
+  getAppMutationReceiptMock,
+  reserveAppMutationReceiptMock,
+  finalizeAppMutationReceiptMock,
 } = vi.hoisted(() => ({
-  authorizeWorkOrdersRouteMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
-  logRouteMutationSuccessMock: vi.fn(),
-  logRouteMutationFailureMock: vi.fn(),
-  syncTemplateToWorkOrderMock: vi.fn(),
+  syncTemplateToWorkOrderUseCaseMock: vi.fn(),
+  getAppMutationReceiptMock: vi.fn(),
+  reserveAppMutationReceiptMock: vi.fn(),
+  finalizeAppMutationReceiptMock: vi.fn(),
 }))
 
-vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
-  authorizeWorkOrdersRoute: authorizeWorkOrdersRouteMock,
-}))
+vi.mock("@builders/db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@builders/db")>()
+  return {
+    ...actual,
+    getAppMutationReceipt: getAppMutationReceiptMock,
+    reserveAppMutationReceipt: reserveAppMutationReceiptMock,
+    finalizeAppMutationReceipt: finalizeAppMutationReceiptMock,
+  }
+})
 
 vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
-  logRouteMutationSuccess: logRouteMutationSuccessMock,
-  logRouteMutationFailure: logRouteMutationFailureMock,
   routeJson: (_access: unknown, body: unknown, init?: ResponseInit) => Response.json(body, init),
   routeError: (_access: unknown, error: unknown) => {
     const maybeError = error as { message?: unknown; status?: unknown; field?: unknown; kind?: unknown }
@@ -45,23 +52,26 @@ vi.mock("@/server/http/route-helpers", () => ({
   },
 }))
 
-vi.mock("@/features/flooring/work-orders/domain/syncTemplate", () => ({
-  syncTemplateToWorkOrder: syncTemplateToWorkOrderMock,
+vi.mock("@/features/flooring/work-orders/application/sync-template", () => ({
+  syncTemplateToWorkOrderUseCase: syncTemplateToWorkOrderUseCaseMock,
 }))
 
 describe("template sync route", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    authorizeWorkOrdersRouteMock.mockResolvedValue({
+    requireRouteAccessMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
-      user: { id: "user-1", email: "owner@test.com" },
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
     })
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    getAppMutationReceiptMock.mockResolvedValue(null)
+    reserveAppMutationReceiptMock.mockResolvedValue(undefined)
+    finalizeAppMutationReceiptMock.mockResolvedValue(undefined)
   })
 
   it("uses warehouse auth and passes validated sync input to the domain", async () => {
-    syncTemplateToWorkOrderMock.mockResolvedValue({
+    syncTemplateToWorkOrderUseCaseMock.mockResolvedValue({
       mode: "overwrite",
       dryRun: true,
       policy: { rowBehavior: {} },
@@ -80,7 +90,10 @@ describe("template sync route", () => {
           templateId: "tpl-1",
           mode: "append",
           dryRun: true,
-          expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          mutation: {
+            idempotencyKey: "sync-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
         }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
@@ -88,8 +101,8 @@ describe("template sync route", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(authorizeWorkOrdersRouteMock).toHaveBeenCalledTimes(1)
-    expect(syncTemplateToWorkOrderMock).toHaveBeenCalledWith("wo-1", {
+    expect(requireRouteAccessMock).toHaveBeenCalledTimes(1)
+    expect(syncTemplateToWorkOrderUseCaseMock).toHaveBeenCalledWith("wo-1", {
       templateId: "tpl-1",
       mode: "append",
       dryRun: true,
@@ -106,6 +119,10 @@ describe("template sync route", () => {
         body: JSON.stringify({
           templateId: "tpl-1",
           mode: "sideways",
+          mutation: {
+            idempotencyKey: "sync-2",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
         }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
@@ -114,11 +131,11 @@ describe("template sync route", () => {
 
     expect(response.status).toBe(400)
     expect(payload.error).toBe("mode must be one of overwrite, append")
-    expect(syncTemplateToWorkOrderMock).not.toHaveBeenCalled()
+    expect(syncTemplateToWorkOrderUseCaseMock).not.toHaveBeenCalled()
   })
 
   it("normalizes domain conflicts", async () => {
-    syncTemplateToWorkOrderMock.mockRejectedValue({
+    syncTemplateToWorkOrderUseCaseMock.mockRejectedValue({
       message: "Work order changed before sync completed. Refresh and try again.",
       field: "updatedAt",
       status: 409,
@@ -131,6 +148,10 @@ describe("template sync route", () => {
         body: JSON.stringify({
           templateId: "tpl-1",
           mode: "overwrite",
+          mutation: {
+            idempotencyKey: "sync-3",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
         }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },

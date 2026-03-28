@@ -58,6 +58,28 @@ export type UpdateWorkOrderInput = Partial<Omit<CreateWorkOrderInput, "items" | 
 export type UpdateWorkOrderMaterialItemInput = Partial<WorkOrderMaterialItemInput>
 export type UpdateWorkOrderServiceItemInput = Partial<WorkOrderServiceItemInput>
 export type UpdateWorkOrderSalesRepInput = Partial<WorkOrderSalesRepInput>
+export type WorkOrderMaterialSectionAllocationOperation =
+  | {
+      type: "create"
+      input: WorkOrderItemAllocationInput
+    }
+  | {
+      type: "update"
+      allocationId: string
+      expectedUpdatedAt: string
+      input: UpdateWorkOrderItemAllocationInput
+    }
+  | {
+      type: "delete"
+      allocationId: string
+      expectedUpdatedAt: string
+    }
+
+export type UpdateWorkOrderMaterialSectionInput = {
+  item: UpdateWorkOrderMaterialItemInput
+  itemExpectedUpdatedAt: string
+  allocationOperations: WorkOrderMaterialSectionAllocationOperation[]
+}
 export type SyncTemplateToWorkOrderInput = {
   templateId: string
   mode: "overwrite" | "append"
@@ -115,6 +137,16 @@ function asRecord(value: unknown, field: string) {
   }
 
   return value as Record<string, unknown>
+}
+
+function parseExpectedUpdatedAt(value: unknown, field: string) {
+  const parsed = parseRequiredString(value, field)
+  const asDate = new Date(parsed)
+  if (Number.isNaN(asDate.getTime())) {
+    throw { message: `${field} must be a valid ISO date`, field }
+  }
+
+  return asDate.toISOString()
 }
 
 export function validateWorkOrderMaterialItemInput(body: Record<string, unknown>): WorkOrderMaterialItemInput {
@@ -229,6 +261,51 @@ export function validateUpdateWorkOrderSalesRepInput(body: Record<string, unknow
   if ("percent" in body) input.percent = requirePercentInRange(parseDecimal(body.percent, "percent", 2), "percent")
 
   return input
+}
+
+export function validateUpdateWorkOrderMaterialSectionInput(body: Record<string, unknown>): UpdateWorkOrderMaterialSectionInput {
+  const allocationOperationsInput = Array.isArray(body.allocationOperations) ? body.allocationOperations : []
+
+  return {
+    item: validateUpdateWorkOrderMaterialItemInput(asRecord(body.item ?? {}, "item")),
+    itemExpectedUpdatedAt: parseExpectedUpdatedAt(body.itemExpectedUpdatedAt, "itemExpectedUpdatedAt"),
+    allocationOperations: allocationOperationsInput.map((operation, index) => {
+      const value = asRecord(operation, `allocationOperations[${index}]`)
+      const type = parseRequiredString(value.type, `allocationOperations[${index}].type`).toLowerCase()
+
+      if (type === "create") {
+        return {
+          type: "create" as const,
+          input: validateWorkOrderItemAllocationInput(asRecord(value.input ?? value, `allocationOperations[${index}].input`)),
+        }
+      }
+
+      if (type === "update") {
+        return {
+          type: "update" as const,
+          allocationId: parseRequiredString(value.allocationId, `allocationOperations[${index}].allocationId`),
+          expectedUpdatedAt: parseExpectedUpdatedAt(
+            value.expectedUpdatedAt,
+            `allocationOperations[${index}].expectedUpdatedAt`,
+          ),
+          input: validateUpdateWorkOrderItemAllocationInput(asRecord(value.input ?? {}, `allocationOperations[${index}].input`)),
+        }
+      }
+
+      if (type === "delete") {
+        return {
+          type: "delete" as const,
+          allocationId: parseRequiredString(value.allocationId, `allocationOperations[${index}].allocationId`),
+          expectedUpdatedAt: parseExpectedUpdatedAt(
+            value.expectedUpdatedAt,
+            `allocationOperations[${index}].expectedUpdatedAt`,
+          ),
+        }
+      }
+
+      throw { message: `allocationOperations[${index}].type must be create, update, or delete`, field: `allocationOperations[${index}].type` }
+    }),
+  }
 }
 
 export function validateCreateWorkOrderInput(body: Record<string, unknown>): CreateWorkOrderInput {

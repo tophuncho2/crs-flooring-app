@@ -133,8 +133,7 @@ export function TemplateRecordPanel({
     createUrl: `/api/flooring/templates/${templateId}/items`,
     updateUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
     deleteUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
-    mapItems: (payload) =>
-      ((payload.items as Array<{ id: string; productId: string; productName: string; sendUnit: string; quantity: string; unitPrice: string; notes: string }> | undefined) ?? []),
+    mapItems: (payload) => (payload.items as TemplateMaterialItem[] | undefined) ?? [],
     getItemId: (item) => item.id,
     pickCreatedItem: (payload) => payload.item as TemplateMaterialItem,
     pickUpdatedItem: (payload) => payload.item as TemplateMaterialItem,

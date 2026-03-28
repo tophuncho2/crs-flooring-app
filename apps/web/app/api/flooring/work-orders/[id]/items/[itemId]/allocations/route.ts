@@ -4,16 +4,19 @@ import {
   createWorkOrderItemAllocationUseCase,
   listWorkOrderItemAllocationsUseCase,
 } from "@/features/flooring/work-orders/application/allocations"
+import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
 import { buildWorkOrderItemAllocationListResponse } from "@/features/flooring/work-orders/transport/allocations"
+import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
 import { validateWorkOrderItemAllocationInput } from "@/features/flooring/work-orders/validators"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string; itemId: string }>
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await authorizeWorkOrdersRoute(request)
+  const access = await authorizeWorkOrdersRoute(request, { capability: "workOrders.read" })
   if (access instanceof Response) return access
 
   try {
@@ -26,20 +29,31 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const access = await authorizeWorkOrdersRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "workOrders.allocations.write",
-    limit: 120,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/work-orders/[id]/items/[itemId]/allocations",
+  const access = await applyRoutePolicy(request, {
+    capability: "workOrders.allocate",
+    rateLimit: {
+      scope: "workOrders.allocations.write",
+      limit: 120,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/work-orders/[id]/items/[itemId]/allocations",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id, itemId } = await params
     const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, validateWorkOrderItemAllocationInput)
+    const receipt = await enforceMutationReceipt({
+      scope: "workOrders.allocations.create",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
     const allocation = await withMutationTelemetry(
       access,
       {
@@ -53,11 +67,21 @@ export async function POST(request: Request, { params }: RouteContext) {
         createWorkOrderItemAllocationUseCase({
           workOrderId: id,
           workOrderItemId: itemId,
-          ...validateWorkOrderItemAllocationInput(body),
+          ...input,
         }),
     )
-
-    return routeJson(access, { allocation }, { status: 201 })
+    const responseBody = {
+      allocation,
+      workOrder: withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role),
+    }
+    await finalizeMutationReceipt({
+      scope: "workOrders.allocations.create",
+      access,
+      mutation,
+      responseStatus: 201,
+      responseBody,
+    })
+    return routeJson(access, responseBody, { status: 201 })
   } catch (error) {
     return routeError(access, error)
   }

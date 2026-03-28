@@ -26,9 +26,9 @@ type CollectionHandle<TItem, TCreateInput, TUpdateInput> = {
   adding: boolean
   savingItemId: string | null
   deletingItemId: string | null
-  createItem: (input: TCreateInput) => Promise<TItem[]>
-  updateItem: (itemId: string, input: TUpdateInput) => Promise<TItem[]>
-  deleteItem: (itemId: string) => Promise<TItem[]>
+  createItem: (input: TCreateInput) => Promise<{ items: TItem[]; payload: Record<string, unknown> }>
+  updateItem: (itemId: string, input: TUpdateInput) => Promise<{ items: TItem[]; payload: Record<string, unknown> }>
+  deleteItem: (itemId: string) => Promise<{ items: TItem[]; payload: Record<string, unknown> }>
 }
 
 export function useRecordSalesRepsController<TRecord, TSalesRep extends EditableSalesRepItem>({
@@ -39,6 +39,7 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   initialDraft,
   getItemsFromRecord,
   onItemsChanged,
+  onMutationResult,
 }: {
   record: TRecord | null
   notices: Pick<RecordNotices, "clearNotices" | "showSuccess" | "showError">
@@ -47,6 +48,11 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   initialDraft: SalesRepDraft
   getItemsFromRecord: (record: TRecord) => TSalesRep[]
   onItemsChanged: (args: { record: TRecord; salesReps: TSalesRep[]; action: "add" | "save" | "delete" }) => void
+  onMutationResult?: (args: {
+    action: "add" | "save" | "delete"
+    payload: Record<string, unknown>
+    salesReps: TSalesRep[]
+  }) => boolean | void
 }) {
   const { items: salesRepItems, setItems: setSalesRepItems } = salesRepCollection
   const [draft, setDraft] = useState<SalesRepDraft>(initialDraft)
@@ -56,6 +62,7 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   const itemsRef = useRef(salesRepCollection.items)
   const onItemsChangedRef = useRef(onItemsChanged)
   const getItemsFromRecordRef = useRef(getItemsFromRecord)
+  const onMutationResultRef = useRef(onMutationResult)
 
   useEffect(() => {
     recordRef.current = record
@@ -72,6 +79,10 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
   useEffect(() => {
     getItemsFromRecordRef.current = getItemsFromRecord
   }, [getItemsFromRecord])
+
+  useEffect(() => {
+    onMutationResultRef.current = onMutationResult
+  }, [onMutationResult])
 
   useEffect(() => {
     if (!record) {
@@ -135,10 +146,17 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
     }
 
     try {
-      const nextItems = await salesRepCollection.createItem(draft)
+      const { items: nextItems, payload } = await salesRepCollection.createItem(draft)
       setDraft(initialDraft)
       setDraftErrors({})
-      publishItems("add", nextItems)
+      const mutationHandled = onMutationResultRef.current?.({
+        action: "add",
+        payload,
+        salesReps: nextItems,
+      })
+      if (!mutationHandled) {
+        publishItems("add", nextItems)
+      }
       notices.showSuccess("Sales rep added")
       return true
     } catch (error) {
@@ -166,9 +184,16 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
     }
 
     try {
-      const nextItems = await salesRepCollection.updateItem(item.id, item)
+      const { items: nextItems, payload } = await salesRepCollection.updateItem(item.id, item)
       setItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      publishItems("save", nextItems)
+      const mutationHandled = onMutationResultRef.current?.({
+        action: "save",
+        payload,
+        salesReps: nextItems,
+      })
+      if (!mutationHandled) {
+        publishItems("save", nextItems)
+      }
       notices.showSuccess("Sales rep saved")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
@@ -191,9 +216,16 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
 
     clearMutationState()
     try {
-      const nextItems = await salesRepCollection.deleteItem(itemId)
+      const { items: nextItems, payload } = await salesRepCollection.deleteItem(itemId)
       setItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      publishItems("delete", nextItems)
+      const mutationHandled = onMutationResultRef.current?.({
+        action: "delete",
+        payload,
+        salesReps: nextItems,
+      })
+      if (!mutationHandled) {
+        publishItems("delete", nextItems)
+      }
       notices.showSuccess("Sales rep deleted")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
@@ -203,6 +235,7 @@ export function useRecordSalesRepsController<TRecord, TSalesRep extends Editable
 
   return {
     draft,
+    setDraft,
     draftErrors,
     itemErrors,
     salesReps: salesRepCollection.items,

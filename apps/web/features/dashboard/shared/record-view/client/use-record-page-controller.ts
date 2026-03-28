@@ -23,7 +23,9 @@ const EMPTY_SUMMARY: RecordPageSummary = {
 export type RecordPageController = {
   notices: RecordNotices
   isDirty: boolean
+  dirtySections: string[]
   setIsDirty: (value: boolean) => void
+  setDirtySections: (value: string[]) => void
   summary: RecordPageSummary
   setSummary: (value: RecordPageSummary) => void
   closePage: () => void
@@ -40,12 +42,19 @@ export function useRecordPageController({
 }): RecordPageController {
   const router = useRouter()
   const notices = useRecordNotices()
-  const [isDirty, setIsDirty] = useState(false)
+  const [dirtySections, setDirtySections] = useState<string[]>([])
   const [summary, setSummary] = useState<RecordPageSummary>(EMPTY_SUMMARY)
   const guard = useRecordCloseGuard({
-    isDirty,
-    message: dirtyMessage,
+    isDirty: dirtySections.length > 0,
+    message:
+      dirtySections.length > 0
+        ? `${dirtyMessage}\n\nUnsaved sections: ${dirtySections.join(", ")}.`
+        : dirtyMessage,
   })
+
+  const setIsDirty = useCallback((value: boolean) => {
+    setDirtySections(value ? ["Record"] : [])
+  }, [])
 
   const closePage = useCallback(() => {
     guard.confirmNavigation(() => {
@@ -60,8 +69,10 @@ export function useRecordPageController({
 
   return {
     notices,
-    isDirty,
+    isDirty: dirtySections.length > 0,
+    dirtySections,
     setIsDirty,
+    setDirtySections,
     summary,
     setSummary,
     closePage,

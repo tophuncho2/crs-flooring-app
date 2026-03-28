@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
@@ -24,6 +25,12 @@ import { useRecordLineItemsController } from "@/features/flooring/shared/control
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
 import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
+import {
+  buildRecordSectionDraftKey,
+  clearRecordSectionDraft,
+  readRecordSectionDraft,
+  writeRecordSectionDraft,
+} from "@/features/dashboard/shared/record-view/client/record-section-drafts"
 import { useRecordNotices, type RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { RecordSectionStack } from "@/features/dashboard/shared/record-view/sections/record-section-stack"
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
@@ -43,8 +50,10 @@ import type {
   WarehouseOption,
   WorkOrderDetail,
   WorkOrderExpenseSummary,
+  WorkOrderItemAllocationRow,
   WorkOrderMaterialItem,
 } from "@/features/flooring/work-orders/types"
+import type { AllocationDraft } from "@/features/flooring/work-orders/components/material-allocations-editor"
 
 const defaultMaterialDraft: MaterialItemDraft = {
   productId: "",
@@ -65,6 +74,101 @@ const defaultServiceDraft: ServiceItemDraft = {
 const defaultSalesRepDraft: SalesRepDraft = {
   contactId: "",
   percent: "",
+}
+
+type MaterialSectionDraftState = {
+  items: WorkOrderMaterialItem[]
+  draft: MaterialItemDraft
+  allocationDraftsByItemId: Record<string, AllocationDraft>
+}
+
+type ServiceSectionDraftState = {
+  items: EditableServiceItem[]
+  draft: ServiceItemDraft
+}
+
+type SalesRepSectionDraftState = {
+  items: WorkOrderDetail["salesReps"]
+  draft: SalesRepDraft
+}
+
+function hasAllocationDraftChanges(draft: AllocationDraft | undefined) {
+  return Boolean(draft?.inventoryId || draft?.quantity || draft?.notes)
+}
+
+function hasMaterialItemSectionChanges(currentItem: EditableMaterialItem, serverItem: WorkOrderMaterialItem) {
+  return (
+    currentItem.productId !== serverItem.productId ||
+    currentItem.quantity !== serverItem.quantity ||
+    currentItem.unitPrice !== serverItem.unitPrice ||
+    currentItem.notes !== serverItem.notes
+  )
+}
+
+function hasAllocationRowChanges(currentAllocation: WorkOrderItemAllocationRow, serverAllocation: WorkOrderItemAllocationRow) {
+  return (
+    currentAllocation.inventoryId !== serverAllocation.inventoryId ||
+    currentAllocation.quantity !== serverAllocation.quantity ||
+    currentAllocation.cutSize !== serverAllocation.cutSize ||
+    currentAllocation.notes !== serverAllocation.notes
+  )
+}
+
+function buildMaterialSectionAllocationOperations(
+  currentItem: WorkOrderMaterialItem,
+  serverItem: WorkOrderMaterialItem,
+) {
+  const serverAllocationsById = new Map(serverItem.allocations.map((allocation) => [allocation.id, allocation]))
+  const currentAllocationIds = new Set(currentItem.allocations.map((allocation) => allocation.id))
+
+  const operations: Array<Record<string, unknown>> = []
+
+  for (const allocation of currentItem.allocations) {
+    const serverAllocation = serverAllocationsById.get(allocation.id)
+
+    if (!serverAllocation) {
+      operations.push({
+        type: "create",
+        input: {
+          inventoryId: allocation.inventoryId,
+          quantity: allocation.quantity,
+          cutSize: allocation.cutSize,
+          notes: allocation.notes,
+        },
+      })
+      continue
+    }
+
+    if (!hasAllocationRowChanges(allocation, serverAllocation)) {
+      continue
+    }
+
+    operations.push({
+      type: "update",
+      allocationId: allocation.id,
+      expectedUpdatedAt: serverAllocation.updatedAt,
+      input: {
+        inventoryId: allocation.inventoryId,
+        quantity: allocation.quantity,
+        cutSize: allocation.cutSize,
+        notes: allocation.notes,
+      },
+    })
+  }
+
+  for (const serverAllocation of serverItem.allocations) {
+    if (currentAllocationIds.has(serverAllocation.id)) {
+      continue
+    }
+
+    operations.push({
+      type: "delete",
+      allocationId: serverAllocation.id,
+      expectedUpdatedAt: serverAllocation.updatedAt,
+    })
+  }
+
+  return operations
 }
 
 function toDraft(workOrder: WorkOrderDetail): DraftWorkOrder {
@@ -93,6 +197,7 @@ function selectedAddress(propertyOptions: PropertyOption[], draft: DraftWorkOrde
 }
 
 export function WorkOrderRecordPanel({
+  currentUserId,
   workOrderId,
   initialWorkOrder,
   showPrimaryFields = true,
@@ -111,12 +216,15 @@ export function WorkOrderRecordPanel({
   onAutoAllocateOptionsChange,
   onClose,
   refreshNonce = 0,
+  onWorkOrderChange,
   onWorkOrderSaved,
   onWorkOrderDeleted,
   onExpenseSummaryChange,
   onDirtyChange,
+  onDirtySectionsChange,
   notices,
 }: {
+  currentUserId: string
   workOrderId: string
   initialWorkOrder: WorkOrderDetail
   showPrimaryFields?: boolean
@@ -135,10 +243,12 @@ export function WorkOrderRecordPanel({
   onAutoAllocateOptionsChange?: (value: { label: string; disabled: boolean; onSelect: () => void } | null) => void
   onClose: () => void
   refreshNonce?: number
+  onWorkOrderChange?: (workOrder: WorkOrderDetail) => void
   onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
   onWorkOrderDeleted?: (workOrderId: string) => void
   onExpenseSummaryChange?: (summary: WorkOrderExpenseSummary) => void
   onDirtyChange?: (value: boolean) => void
+  onDirtySectionsChange?: (sections: string[]) => void
   notices?: RecordNotices
 }) {
   const initialWorkOrderDetail = useMemo<WorkOrderDetail>(() => initialWorkOrder, [initialWorkOrder])
@@ -182,6 +292,8 @@ export function WorkOrderRecordPanel({
       notes: item.notes,
     }),
     skipReloadAfterMutation: true,
+    mutationMode: "envelope",
+    getItemUpdatedAt: (item) => item.updatedAt,
   })
   const serviceCollection = useChildCollection<EditableServiceItem, ServiceItemDraft, EditableServiceItem>({
     listUrl: `/api/flooring/work-orders/${workOrderId}/service-items`,
@@ -195,6 +307,8 @@ export function WorkOrderRecordPanel({
     serializeCreate: (input) => input,
     serializeUpdate: (item) => item,
     skipReloadAfterMutation: true,
+    mutationMode: "envelope",
+    getItemUpdatedAt: (item) => item.updatedAt,
   })
   const salesRepCollection = useChildCollection({
     listUrl: `/api/flooring/work-orders/${workOrderId}/sales-reps`,
@@ -211,6 +325,8 @@ export function WorkOrderRecordPanel({
       percent: item.percent,
     }),
     skipReloadAfterMutation: true,
+    mutationMode: "envelope",
+    getItemUpdatedAt: (item: WorkOrderDetail["salesReps"][number]) => item.updatedAt,
   })
   const initialCalculationRows = useMemo(
     () => buildWorkOrderCalculationRowsFromSummary(initialWorkOrderDetail.financialSummary),
@@ -228,6 +344,7 @@ export function WorkOrderRecordPanel({
   } = calculationRowsCollection
 
   const onExpenseSummaryChangeRef = useRef(onExpenseSummaryChange)
+  const onWorkOrderChangeRef = useRef(onWorkOrderChange)
   const onWorkOrderSavedRef = useRef(onWorkOrderSaved)
   const hasMountedRefreshRef = useRef(false)
   const { message, error: noticeError, showSuccess, showError, clearNotices } = noticeController
@@ -237,17 +354,17 @@ export function WorkOrderRecordPanel({
   }, [onExpenseSummaryChange])
 
   useEffect(() => {
-    onWorkOrderSavedRef.current = onWorkOrderSaved
-  }, [onWorkOrderSaved])
+    onWorkOrderChangeRef.current = onWorkOrderChange
+  }, [onWorkOrderChange])
 
   useEffect(() => {
-    onDirtyChange?.(isDirty)
-  }, [isDirty, onDirtyChange])
+    onWorkOrderSavedRef.current = onWorkOrderSaved
+  }, [onWorkOrderSaved])
 
   const publishWorkOrder = useCallback(
     (nextWorkOrder: WorkOrderDetail) => {
       publishRecord(nextWorkOrder)
-      onWorkOrderSavedRef.current?.(nextWorkOrder)
+      onWorkOrderChangeRef.current?.(nextWorkOrder)
     },
     [publishRecord],
   )
@@ -281,6 +398,14 @@ export function WorkOrderRecordPanel({
       } as WorkOrderDetail
 
       publishWorkOrder(nextWorkOrder)
+    },
+    onMutationResult: ({ payload }) => {
+      if (payload.workOrder) {
+        publishWorkOrder(payload.workOrder as WorkOrderDetail)
+        return true
+      }
+
+      return false
     },
   })
 
@@ -316,10 +441,19 @@ export function WorkOrderRecordPanel({
 
       publishWorkOrder(nextWorkOrder)
     },
+    onMutationResult: ({ payload }) => {
+      if (payload.workOrder) {
+        publishWorkOrder(payload.workOrder as WorkOrderDetail)
+        return true
+      }
+
+      return false
+    },
   })
 
   const allocations = useRecordAllocationsController({
     workOrderId,
+    workOrderUpdatedAt: workOrder?.updatedAt ?? initialWorkOrderDetail.updatedAt,
     materialItems: lineItems.materialItems,
     setMaterialItems: materialCollection.setItems,
     notices: noticeController,
@@ -346,7 +480,139 @@ export function WorkOrderRecordPanel({
     onAutoAllocationCompleted: async () => {
       await refreshWorkOrderDetail()
     },
+    onWorkOrderChange: publishWorkOrder,
   })
+
+  const sectionDraftKeys = useMemo(
+    () => ({
+      primary: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "primary" }),
+      material: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "material" }),
+      service: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "service" }),
+      sales: buildRecordSectionDraftKey({ userId: currentUserId, recordId: workOrderId, section: "sales" }),
+    }),
+    [currentUserId, workOrderId],
+  )
+  const hasRestoredSectionDraftsRef = useRef(false)
+
+  useEffect(() => {
+    if (hasRestoredSectionDraftsRef.current) {
+      return
+    }
+
+    hasRestoredSectionDraftsRef.current = true
+
+    const primaryDraft = readRecordSectionDraft<DraftWorkOrder>(sectionDraftKeys.primary)
+    if (primaryDraft) {
+      setDraft(primaryDraft)
+    }
+
+    const materialDraftState = readRecordSectionDraft<MaterialSectionDraftState>(sectionDraftKeys.material)
+    if (materialDraftState) {
+      lineItems.setMaterialItems(materialDraftState.items)
+      lineItems.setMaterialDraft(materialDraftState.draft)
+      allocations.setDraftsByItemId(materialDraftState.allocationDraftsByItemId ?? {})
+    }
+
+    const serviceDraftState = readRecordSectionDraft<ServiceSectionDraftState>(sectionDraftKeys.service)
+    if (serviceDraftState) {
+      lineItems.setServiceItems(serviceDraftState.items)
+      lineItems.setServiceDraft(serviceDraftState.draft)
+    }
+
+    const salesDraftState = readRecordSectionDraft<SalesRepSectionDraftState>(sectionDraftKeys.sales)
+    if (salesDraftState) {
+      salesRepLines.salesRepCollection.setItems(salesDraftState.items)
+      salesRepLines.setDraft(salesDraftState.draft)
+    }
+  }, [
+    allocations,
+    lineItems,
+    salesRepLines,
+    sectionDraftKeys.material,
+    sectionDraftKeys.primary,
+    sectionDraftKeys.sales,
+    sectionDraftKeys.service,
+    setDraft,
+  ])
+
+  const primarySectionDirty = isDirty
+  const materialSectionDirty =
+    JSON.stringify(lineItems.materialItems) !== JSON.stringify(workOrder?.items ?? []) ||
+    JSON.stringify(lineItems.materialDraft) !== JSON.stringify(defaultMaterialDraft) ||
+    Object.values(allocations.draftsByItemId).some((draft) => hasAllocationDraftChanges(draft))
+  const serviceSectionDirty =
+    JSON.stringify(lineItems.serviceItems) !== JSON.stringify(workOrder?.serviceItems ?? []) ||
+    JSON.stringify(lineItems.serviceDraft) !== JSON.stringify(defaultServiceDraft)
+  const salesSectionDirty =
+    JSON.stringify(salesRepLines.salesReps) !== JSON.stringify(workOrder?.salesReps ?? []) ||
+    JSON.stringify(salesRepLines.draft) !== JSON.stringify(defaultSalesRepDraft)
+  const dirtySections = useMemo(
+    () =>
+      [
+        primarySectionDirty ? "Work Order" : null,
+        materialSectionDirty ? "Material Items" : null,
+        serviceSectionDirty ? "Service Items" : null,
+        salesSectionDirty ? "Sales Reps" : null,
+      ].filter(Boolean) as string[],
+    [materialSectionDirty, primarySectionDirty, salesSectionDirty, serviceSectionDirty],
+  )
+
+  useEffect(() => {
+    onDirtyChange?.(dirtySections.length > 0)
+    onDirtySectionsChange?.(dirtySections)
+  }, [dirtySections, onDirtyChange, onDirtySectionsChange])
+
+  useEffect(() => {
+    if (primarySectionDirty && draft) {
+      writeRecordSectionDraft(sectionDraftKeys.primary, draft)
+      return
+    }
+
+    clearRecordSectionDraft(sectionDraftKeys.primary)
+  }, [draft, primarySectionDirty, sectionDraftKeys.primary])
+
+  useEffect(() => {
+    if (materialSectionDirty) {
+      writeRecordSectionDraft(sectionDraftKeys.material, {
+        items: lineItems.materialItems,
+        draft: lineItems.materialDraft,
+        allocationDraftsByItemId: allocations.draftsByItemId,
+      } satisfies MaterialSectionDraftState)
+      return
+    }
+
+    clearRecordSectionDraft(sectionDraftKeys.material)
+  }, [
+    allocations.draftsByItemId,
+    lineItems.materialDraft,
+    lineItems.materialItems,
+    materialSectionDirty,
+    sectionDraftKeys.material,
+  ])
+
+  useEffect(() => {
+    if (serviceSectionDirty) {
+      writeRecordSectionDraft(sectionDraftKeys.service, {
+        items: lineItems.serviceItems,
+        draft: lineItems.serviceDraft,
+      } satisfies ServiceSectionDraftState)
+      return
+    }
+
+    clearRecordSectionDraft(sectionDraftKeys.service)
+  }, [lineItems.serviceDraft, lineItems.serviceItems, sectionDraftKeys.service, serviceSectionDirty])
+
+  useEffect(() => {
+    if (salesSectionDirty) {
+      writeRecordSectionDraft(sectionDraftKeys.sales, {
+        items: salesRepLines.salesReps,
+        draft: salesRepLines.draft,
+      } satisfies SalesRepSectionDraftState)
+      return
+    }
+
+    clearRecordSectionDraft(sectionDraftKeys.sales)
+  }, [salesRepLines.draft, salesRepLines.salesReps, salesSectionDirty, sectionDraftKeys.sales])
 
   const requestAutoAllocationRef = useRef(allocations.requestAutoAllocation)
 
@@ -377,24 +643,91 @@ export function WorkOrderRecordPanel({
 
   const handleSaveMaterialItemSection = useCallback(
     async (item: EditableMaterialItem) => {
-      const didSaveItem = await lineItems.saveMaterialItem(item, { suppressSuccess: true })
-      if (!didSaveItem) {
+      if (!workOrder) {
         return false
       }
 
-      const didSaveAllocations = await allocations.saveAllocationsForItem(item.id, {
-        suppressClear: true,
-        suppressSuccess: true,
-      })
-      if (!didSaveAllocations) {
-        return false
+      const currentItem = lineItems.materialItems.find((current) => current.id === item.id)
+      const serverItem = workOrder.items.find((current) => current.id === item.id)
+
+      if (!currentItem || !serverItem) {
+        const didSaveItem = await lineItems.saveMaterialItem(item, { suppressSuccess: true })
+        if (!didSaveItem) {
+          return false
+        }
+
+        const didSaveAllocations = await allocations.saveAllocationsForItem(item.id, {
+          suppressClear: true,
+          suppressSuccess: true,
+        })
+        if (!didSaveAllocations) {
+          return false
+        }
+
+        noticeController.clearNotices()
+        noticeController.showSuccess("Material item and allocations saved")
+        return true
+      }
+
+      const allocationOperations = buildMaterialSectionAllocationOperations(currentItem, serverItem)
+      const allocationDraft = allocations.draftsByItemId[item.id]
+      if (hasAllocationDraftChanges(allocationDraft)) {
+        allocationOperations.push({
+          type: "create",
+          input: {
+            inventoryId: allocationDraft?.inventoryId ?? "",
+            quantity: allocationDraft?.quantity ?? "",
+            notes: allocationDraft?.notes ?? "",
+          },
+        })
+      }
+      const itemChanged = hasMaterialItemSectionChanges(currentItem, serverItem)
+
+      if (!itemChanged && allocationOperations.length === 0) {
+        noticeController.clearNotices()
+        noticeController.showSuccess("Material item and allocations are already up to date")
+        return true
       }
 
       noticeController.clearNotices()
-      noticeController.showSuccess("Material item and allocations saved")
-      return true
+
+      try {
+        const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
+          `/api/flooring/work-orders/${workOrder.id}/items/${item.id}/section`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              withMutationMeta(
+                {
+                  item: {
+                    productId: currentItem.productId,
+                    quantity: currentItem.quantity,
+                    unitPrice: currentItem.unitPrice,
+                    notes: currentItem.notes,
+                    changeOrderStatus: currentItem.changeOrderStatus,
+                  },
+                  itemExpectedUpdatedAt: serverItem.updatedAt,
+                  allocationOperations,
+                },
+                workOrder.updatedAt,
+              ),
+            ),
+          },
+        )
+
+        lineItems.clearMaterialItemErrors(item.id)
+        allocations.clearAllocationErrors(item.id)
+        allocations.clearAllocationDraft(item.id)
+        publishWorkOrder(payload.workOrder)
+        noticeController.showSuccess("Material item and allocations saved")
+        return true
+      } catch (error) {
+        noticeController.showError(error instanceof Error ? error.message : "Failed to save material item and allocations")
+        return false
+      }
     },
-    [allocations, lineItems, noticeController],
+    [allocations, lineItems, noticeController, publishWorkOrder, workOrder],
   )
 
   useEffect(() => {
@@ -441,12 +774,16 @@ export function WorkOrderRecordPanel({
     clearNotices()
 
     try {
-      await requestJson<{ workOrder: Omit<WorkOrderDetail, "items" | "serviceItems" | "salesReps" | "summary" | "financialSummary"> }>(`/api/flooring/work-orders/${workOrder.id}`, {
+      const payload = await requestJson<{ workOrder: WorkOrderDetail }>(`/api/flooring/work-orders/${workOrder.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(withMutationMeta(draft, workOrder.updatedAt)),
       })
-      await refreshWorkOrderDetail()
+      if (!payload.workOrder) {
+        throw new Error("Failed to save work order")
+      }
+      publishWorkOrder(payload.workOrder)
+      onWorkOrderSavedRef.current?.(payload.workOrder)
       showSuccess("Work order saved")
     } catch (saveError) {
       showError(saveError instanceof Error ? saveError.message : "Failed to save work order")
@@ -460,7 +797,11 @@ export function WorkOrderRecordPanel({
     setError("")
     clearNotices()
     try {
-      await requestJson(`/api/flooring/work-orders/${workOrder.id}`, { method: "DELETE" })
+      await requestJson(`/api/flooring/work-orders/${workOrder.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, workOrder.updatedAt)),
+      })
       clearRecordCache()
       onWorkOrderDeleted?.(workOrder.id)
       onClose()

@@ -9,10 +9,15 @@ import { DELETE as DELETE_SALES_REP, PATCH as PATCH_SALES_REP } from "@/app/api/
 
 const {
   authorizeWorkOrdersRouteMock,
+  requireRouteAccessMock,
   enforceRouteRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
+  getAppMutationReceiptMock,
+  reserveAppMutationReceiptMock,
+  finalizeAppMutationReceiptMock,
   listWorkOrderItemsMock,
+  getWorkOrderByIdMock,
   createWorkOrderItemMock,
   updateWorkOrderItemMock,
   deleteWorkOrderItemMock,
@@ -27,10 +32,15 @@ const {
   deleteWorkOrderSalesRepMock,
 } = vi.hoisted(() => ({
   authorizeWorkOrdersRouteMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
+  getAppMutationReceiptMock: vi.fn(),
+  reserveAppMutationReceiptMock: vi.fn(),
+  finalizeAppMutationReceiptMock: vi.fn(),
   listWorkOrderItemsMock: vi.fn(),
+  getWorkOrderByIdMock: vi.fn(),
   createWorkOrderItemMock: vi.fn(),
   updateWorkOrderItemMock: vi.fn(),
   deleteWorkOrderItemMock: vi.fn(),
@@ -45,11 +55,22 @@ const {
   deleteWorkOrderSalesRepMock: vi.fn(),
 }))
 
+vi.mock("@builders/db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@builders/db")>()
+  return {
+    ...actual,
+    getAppMutationReceipt: getAppMutationReceiptMock,
+    reserveAppMutationReceipt: reserveAppMutationReceiptMock,
+    finalizeAppMutationReceipt: finalizeAppMutationReceiptMock,
+  }
+})
+
 vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
   authorizeWorkOrdersRoute: authorizeWorkOrdersRouteMock,
 }))
 
 vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   logRouteMutationSuccess: logRouteMutationSuccessMock,
   logRouteMutationFailure: logRouteMutationFailureMock,
@@ -77,9 +98,23 @@ vi.mock("@/server/http/route-helpers", () => ({
 
 vi.mock("@/features/flooring/work-orders/queries", () => ({
   listWorkOrderItems: listWorkOrderItemsMock,
+  getWorkOrderById: getWorkOrderByIdMock,
   listWorkOrderServiceItems: listWorkOrderServiceItemsMock,
   listWorkOrderSalesReps: listWorkOrderSalesRepsMock,
   listWorkOrderCalculationRows: listWorkOrderCalculationRowsMock,
+}))
+
+vi.mock("@/features/flooring/work-orders/transport/detail", () => ({
+  withWorkOrderCapabilities: (workOrder: Record<string, unknown>) => ({
+    ...workOrder,
+    capabilities: {
+      canWrite: true,
+      canDelete: true,
+      canAllocate: true,
+      canSyncTemplate: true,
+      canGenerateInvoice: true,
+    },
+  }),
 }))
 
 vi.mock("@/features/flooring/work-orders/mutations", () => ({
@@ -100,9 +135,39 @@ describe("work-order child routes", () => {
     authorizeWorkOrdersRouteMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
-      user: { id: "user-1", email: "owner@test.com" },
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
+    })
+    requireRouteAccessMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
     })
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    getAppMutationReceiptMock.mockResolvedValue(null)
+    reserveAppMutationReceiptMock.mockResolvedValue(undefined)
+    finalizeAppMutationReceiptMock.mockResolvedValue(undefined)
+    getWorkOrderByIdMock.mockResolvedValue({
+      id: "wo-1",
+      updatedAt: "2026-03-19T00:00:00.000Z",
+      items: [
+        {
+          id: "item-1",
+          updatedAt: "2026-03-19T00:00:00.000Z",
+        },
+      ],
+      serviceItems: [
+        {
+          id: "svc-item-1",
+          updatedAt: "2026-03-19T00:00:00.000Z",
+        },
+      ],
+      salesReps: [
+        {
+          id: "rep-1",
+          updatedAt: "2026-03-19T00:00:00.000Z",
+        },
+      ],
+    })
   })
 
   it("child item routes list, create, patch, and delete material items", async () => {
@@ -134,7 +199,12 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: "prod-1", quantity: "2", unitPrice: "4.00" }),
+        body: JSON.stringify({
+          productId: "prod-1",
+          quantity: "2",
+          unitPrice: "4.00",
+          mutation: { idempotencyKey: "material-create-1" },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -145,15 +215,28 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: "3" }),
+        body: JSON.stringify({
+          quantity: "3",
+          mutation: {
+            idempotencyKey: "material-update-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
     )
     expect((await patchResponse.json()).item).toEqual(expect.objectContaining({ id: "item-1", quantity: "3" }))
 
-    const deleteResponse = await DELETE_ITEM(new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1"), {
-      params: Promise.resolve({ id: "wo-1", itemId: "item-1" }),
-    })
+    const deleteResponse = await DELETE_ITEM(new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mutation: {
+          idempotencyKey: "material-delete-1",
+          expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+        },
+      }),
+    }), { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) })
     expect((await deleteResponse.json()).ok).toBe(true)
     expect(deleteWorkOrderItemMock).toHaveBeenCalledWith("item-1")
   })
@@ -172,7 +255,13 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/service-items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceId: "svc-1", unitId: "unit-1", quantity: "1", unitPrice: "9.00" }),
+        body: JSON.stringify({
+          serviceId: "svc-1",
+          unitId: "unit-1",
+          quantity: "1",
+          unitPrice: "9.00",
+          mutation: { idempotencyKey: "service-create-1" },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -183,15 +272,28 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/service-items/svc-item-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: "2" }),
+        body: JSON.stringify({
+          quantity: "2",
+          mutation: {
+            idempotencyKey: "service-update-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1", itemId: "svc-item-1" }) },
     )
     expect((await patchResponse.json()).item).toEqual(expect.objectContaining({ id: "svc-item-1", quantity: "2" }))
 
-    const deleteResponse = await DELETE_SERVICE_ITEM(new Request("http://localhost/api/flooring/work-orders/wo-1/service-items/svc-item-1"), {
-      params: Promise.resolve({ id: "wo-1", itemId: "svc-item-1" }),
-    })
+    const deleteResponse = await DELETE_SERVICE_ITEM(new Request("http://localhost/api/flooring/work-orders/wo-1/service-items/svc-item-1", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mutation: {
+          idempotencyKey: "service-delete-1",
+          expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+        },
+      }),
+    }), { params: Promise.resolve({ id: "wo-1", itemId: "svc-item-1" }) })
     expect((await deleteResponse.json()).ok).toBe(true)
     expect(deleteWorkOrderServiceItemMock).toHaveBeenCalledWith("svc-item-1")
   })
@@ -201,7 +303,7 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: "prod-1", quantity: "0" }),
+        body: JSON.stringify({ productId: "prod-1", quantity: "0", mutation: { idempotencyKey: "material-create-2" } }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -217,7 +319,12 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: "prod-1", quantity: "1", unitPrice: "4.999" }),
+        body: JSON.stringify({
+          productId: "prod-1",
+          quantity: "1",
+          unitPrice: "4.999",
+          mutation: { idempotencyKey: "material-create-3" },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -233,7 +340,7 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/service-items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unitId: "unit-1", quantity: "1" }),
+        body: JSON.stringify({ unitId: "unit-1", quantity: "1", mutation: { idempotencyKey: "service-create-2" } }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -249,7 +356,13 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/service-items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceId: "svc-1", unitId: "unit-1", quantity: "1.999", unitPrice: "9.00" }),
+        body: JSON.stringify({
+          serviceId: "svc-1",
+          unitId: "unit-1",
+          quantity: "1.999",
+          unitPrice: "9.00",
+          mutation: { idempotencyKey: "service-create-3" },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -276,7 +389,7 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contactId: "contact-1", percent: "12.5" }),
+        body: JSON.stringify({ contactId: "contact-1", percent: "12.5", mutation: { idempotencyKey: "sales-create-1" } }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -287,13 +400,28 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps/rep-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ percent: "15" }),
+        body: JSON.stringify({
+          percent: "15",
+          mutation: {
+            idempotencyKey: "sales-update-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1", repId: "rep-1" }) },
     )
     expect((await patchResponse.json()).item).toEqual(expect.objectContaining({ id: "rep-1", percent: "15" }))
 
-    const deleteResponse = await DELETE_SALES_REP(new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps/rep-1"), {
+    const deleteResponse = await DELETE_SALES_REP(new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps/rep-1", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mutation: {
+          idempotencyKey: "sales-delete-1",
+          expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+        },
+      }),
+    }), {
       params: Promise.resolve({ id: "wo-1", repId: "rep-1" }),
     })
     expect((await deleteResponse.json()).ok).toBe(true)
@@ -305,7 +433,7 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contactId: "contact-1", percent: "120" }),
+        body: JSON.stringify({ contactId: "contact-1", percent: "120", mutation: { idempotencyKey: "sales-create-2" } }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )
@@ -326,7 +454,7 @@ describe("work-order child routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/sales-reps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contactId: "contact-1", percent: "10" }),
+        body: JSON.stringify({ contactId: "contact-1", percent: "10", mutation: { idempotencyKey: "sales-create-3" } }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )

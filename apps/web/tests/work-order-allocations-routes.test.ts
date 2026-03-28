@@ -6,8 +6,13 @@ import { GET as GET_AUTO_ALLOCATION, POST as POST_AUTO_ALLOCATION } from "@/app/
 
 const {
   authorizeWorkOrdersRouteMock,
+  requireRouteAccessMock,
   enforceRouteRateLimitMock,
   withMutationTelemetryMock,
+  getAppMutationReceiptMock,
+  reserveAppMutationReceiptMock,
+  finalizeAppMutationReceiptMock,
+  getWorkOrderByIdMock,
   listWorkOrderItemAllocationsUseCaseMock,
   createWorkOrderItemAllocationUseCaseMock,
   updateWorkOrderItemAllocationUseCaseMock,
@@ -17,8 +22,13 @@ const {
   requestWorkOrderAutoAllocationUseCaseMock,
 } = vi.hoisted(() => ({
   authorizeWorkOrdersRouteMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
+  getAppMutationReceiptMock: vi.fn(),
+  reserveAppMutationReceiptMock: vi.fn(),
+  finalizeAppMutationReceiptMock: vi.fn(),
+  getWorkOrderByIdMock: vi.fn(),
   listWorkOrderItemAllocationsUseCaseMock: vi.fn(),
   createWorkOrderItemAllocationUseCaseMock: vi.fn(),
   updateWorkOrderItemAllocationUseCaseMock: vi.fn(),
@@ -27,6 +37,16 @@ const {
   getWorkOrderAutoAllocationStatusUseCaseMock: vi.fn(),
   requestWorkOrderAutoAllocationUseCaseMock: vi.fn(),
 }))
+
+vi.mock("@builders/db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@builders/db")>()
+  return {
+    ...actual,
+    getAppMutationReceipt: getAppMutationReceiptMock,
+    reserveAppMutationReceipt: reserveAppMutationReceiptMock,
+    finalizeAppMutationReceipt: finalizeAppMutationReceiptMock,
+  }
+})
 
 vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
   authorizeWorkOrdersRoute: authorizeWorkOrdersRouteMock,
@@ -37,6 +57,7 @@ vi.mock("@/features/flooring/shared/application/mutation-telemetry", () => ({
 }))
 
 vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   routeJson: (_access: unknown, body: unknown, init?: ResponseInit) => Response.json(body, init),
   routeError: (_access: unknown, error: unknown) => {
@@ -68,6 +89,23 @@ vi.mock("@/features/flooring/work-orders/application/allocations", () => ({
   listInventoryAllocationOptionsUseCase: listInventoryAllocationOptionsUseCaseMock,
   getWorkOrderAutoAllocationStatusUseCase: getWorkOrderAutoAllocationStatusUseCaseMock,
   requestWorkOrderAutoAllocationUseCase: requestWorkOrderAutoAllocationUseCaseMock,
+}))
+
+vi.mock("@/features/flooring/work-orders/queries", () => ({
+  getWorkOrderById: getWorkOrderByIdMock,
+}))
+
+vi.mock("@/features/flooring/work-orders/transport/detail", () => ({
+  withWorkOrderCapabilities: (workOrder: Record<string, unknown>) => ({
+    ...workOrder,
+    capabilities: {
+      canWrite: true,
+      canDelete: true,
+      canAllocate: true,
+      canSyncTemplate: true,
+      canGenerateInvoice: true,
+    },
+  }),
 }))
 
 function allocationRow() {
@@ -121,9 +159,30 @@ describe("work-order allocation routes", () => {
     authorizeWorkOrdersRouteMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
-      user: { id: "user-1", email: "owner@test.com" },
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
+    })
+    requireRouteAccessMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
     })
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    getAppMutationReceiptMock.mockResolvedValue(null)
+    reserveAppMutationReceiptMock.mockResolvedValue(undefined)
+    finalizeAppMutationReceiptMock.mockResolvedValue(undefined)
+    getWorkOrderByIdMock.mockResolvedValue({
+      id: "wo-1",
+      updatedAt: "2026-03-27T00:00:00.000Z",
+      items: [
+        {
+          id: "item-1",
+          updatedAt: "2026-03-27T00:00:00.000Z",
+          allocations: [allocationRow()],
+        },
+      ],
+      serviceItems: [],
+      salesReps: [],
+    })
     withMutationTelemetryMock.mockImplementation(
       async (_access: unknown, _metadata: unknown, callback: () => Promise<unknown>) => callback(),
     )
@@ -143,7 +202,12 @@ describe("work-order allocation routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inventoryId: "inv-1", quantity: "4", cutSize: "12ft" }),
+        body: JSON.stringify({
+          inventoryId: "inv-1",
+          quantity: "4",
+          cutSize: "12ft",
+          mutation: { idempotencyKey: "allocation-create-1" },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
     )
@@ -163,7 +227,11 @@ describe("work-order allocation routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inventoryId: "inv-1", quantity: "0" }),
+        body: JSON.stringify({
+          inventoryId: "inv-1",
+          quantity: "0",
+          mutation: { idempotencyKey: "allocation-create-2" },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1", itemId: "item-1" }) },
     )
@@ -186,7 +254,13 @@ describe("work-order allocation routes", () => {
       new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations/alloc-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: "5" }),
+        body: JSON.stringify({
+          quantity: "5",
+          mutation: {
+            idempotencyKey: "allocation-update-1",
+            expectedUpdatedAt: "2026-03-27T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1", itemId: "item-1", allocationId: "alloc-1" }) },
     )
@@ -194,7 +268,16 @@ describe("work-order allocation routes", () => {
     expect((await patchResponse.json()).allocation).toEqual(expect.objectContaining({ id: "alloc-1", quantity: "5" }))
 
     const deleteResponse = await DELETE_ALLOCATION(
-      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations/alloc-1"),
+      new Request("http://localhost/api/flooring/work-orders/wo-1/items/item-1/allocations/alloc-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "allocation-delete-1",
+            expectedUpdatedAt: "2026-03-27T00:00:00.000Z",
+          },
+        }),
+      }),
       { params: Promise.resolve({ id: "wo-1", itemId: "item-1", allocationId: "alloc-1" }) },
     )
 
@@ -243,6 +326,13 @@ describe("work-order allocation routes", () => {
     const requestResponse = await POST_AUTO_ALLOCATION(
       new Request("http://localhost/api/flooring/work-orders/wo-1/auto-allocation", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "auto-allocation-1",
+            expectedUpdatedAt: "2026-03-27T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "wo-1" }) },
     )

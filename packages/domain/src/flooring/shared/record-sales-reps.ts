@@ -5,6 +5,7 @@ export type EditableRecordSalesRep = {
   contactId: string
   contactName: string
   percent: string
+  updatedAt: string
 }
 
 export type RecordSalesRepDraft = {
@@ -21,6 +22,7 @@ export function normalizeRecordSalesRep(item: {
   id: string
   contactId: string
   percent: { toString(): string }
+  updatedAt: Date
   contact: {
     name: string
   }
@@ -30,6 +32,7 @@ export function normalizeRecordSalesRep(item: {
     contactId: item.contactId,
     contactName: item.contact.name,
     percent: item.percent.toString(),
+    updatedAt: item.updatedAt.toISOString(),
   }
 }
 

@@ -4,25 +4,59 @@ import { GET as GET_INVOICE_DOWNLOAD } from "@/app/api/flooring/work-orders/[id]
 
 const {
   authorizeWorkOrdersRouteMock,
+  requireRouteAccessMock,
   enforceRouteRateLimitMock,
   queueWorkOrderInvoiceUseCaseMock,
   getWorkOrderInvoiceStatusUseCaseMock,
   withMutationTelemetryMock,
   createPresignedBucketObjectUrlForKeyMock,
+  getWorkOrderByIdMock,
+  getAppMutationReceiptMock,
+  reserveAppMutationReceiptMock,
+  finalizeAppMutationReceiptMock,
 } = vi.hoisted(() => ({
   authorizeWorkOrdersRouteMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   queueWorkOrderInvoiceUseCaseMock: vi.fn(),
   getWorkOrderInvoiceStatusUseCaseMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
   createPresignedBucketObjectUrlForKeyMock: vi.fn(),
+  getWorkOrderByIdMock: vi.fn(),
+  getAppMutationReceiptMock: vi.fn(),
+  reserveAppMutationReceiptMock: vi.fn(),
+  finalizeAppMutationReceiptMock: vi.fn(),
 }))
+
+vi.mock("@builders/db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@builders/db")>()
+  return {
+    ...actual,
+    getAppMutationReceipt: getAppMutationReceiptMock,
+    reserveAppMutationReceipt: reserveAppMutationReceiptMock,
+    finalizeAppMutationReceipt: finalizeAppMutationReceiptMock,
+  }
+})
 
 vi.mock("@/features/flooring/shared/access/templates-work-orders", () => ({
   authorizeWorkOrdersRoute: authorizeWorkOrdersRouteMock,
 }))
 
+vi.mock("@/features/flooring/work-orders/transport/detail", () => ({
+  withWorkOrderCapabilities: (workOrder: Record<string, unknown>) => ({
+    ...workOrder,
+    capabilities: {
+      canWrite: true,
+      canDelete: true,
+      canAllocate: true,
+      canSyncTemplate: true,
+      canGenerateInvoice: true,
+    },
+  }),
+}))
+
 vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   routeJson: (_access: unknown, body: unknown, init?: ResponseInit) => Response.json(body, init),
   routeError: (_access: unknown, error: unknown) => {
@@ -43,6 +77,10 @@ vi.mock("@/features/flooring/work-orders/application/invoice", () => ({
   getWorkOrderInvoiceStatusUseCase: getWorkOrderInvoiceStatusUseCaseMock,
 }))
 
+vi.mock("@/features/flooring/work-orders/queries", () => ({
+  getWorkOrderById: getWorkOrderByIdMock,
+}))
+
 vi.mock("@/server/storage/s3", () => ({
   createPresignedBucketObjectUrlForKey: createPresignedBucketObjectUrlForKeyMock,
 }))
@@ -53,9 +91,27 @@ describe("work-order invoice routes", () => {
     authorizeWorkOrdersRouteMock.mockResolvedValue({
       requestId: "req-1",
       clientIp: "127.0.0.1",
-      user: { id: "user-1", email: "owner@test.com" },
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
+    })
+    requireRouteAccessMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: { id: "user-1", email: "owner@test.com", role: "OWNER" },
     })
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    getAppMutationReceiptMock.mockResolvedValue(null)
+    reserveAppMutationReceiptMock.mockResolvedValue(undefined)
+    finalizeAppMutationReceiptMock.mockResolvedValue(undefined)
+    getWorkOrderByIdMock.mockResolvedValue({
+      id: "wo-1",
+      workOrderNumber: "WO-00001",
+      updatedAt: "2026-03-26T12:00:00.000Z",
+      items: [],
+      serviceItems: [],
+      salesReps: [],
+      summary: {},
+      financialSummary: {},
+    })
     withMutationTelemetryMock.mockImplementation(async (_access, _event, operation) => operation())
   })
 
@@ -151,6 +207,13 @@ describe("work-order invoice routes", () => {
 
     const response = await POST_INVOICE(new Request("http://localhost/api/flooring/work-orders/wo-1/invoice", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mutation: {
+          idempotencyKey: "invoice-request-1",
+          expectedUpdatedAt: "2026-03-26T12:00:00.000Z",
+        },
+      }),
     }), {
       params: Promise.resolve({ id: "wo-1" }),
     })

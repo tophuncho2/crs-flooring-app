@@ -5,14 +5,19 @@ export type AppError = {
   message: string
   status?: number
   field?: string
+  payload?: Record<string, unknown>
 }
 
-export function createAppError(message: string, options: { status?: number; field?: string } = {}): AppError {
+export function createAppError(
+  message: string,
+  options: { status?: number; field?: string; payload?: Record<string, unknown> } = {},
+): AppError {
   return {
     kind: "app",
     message,
     status: options.status,
     field: options.field,
+    payload: options.payload,
   }
 }
 
@@ -112,13 +117,19 @@ export function parseDecimalOrDefault(
   return parseDecimal(value, field, scale)
 }
 
-export function normalizePrismaError(error: unknown): { status: number; message: string; field?: string } {
+export function normalizePrismaError(error: unknown): {
+  status: number
+  message: string
+  field?: string
+  payload?: Record<string, unknown>
+} {
   if (isAppError(error)) {
     const appError = error as AppError
     return {
       status: typeof appError.status === "number" ? appError.status : 400,
       message: appError.message,
       field: typeof appError.field === "string" ? appError.field : undefined,
+      payload: appError.payload,
     }
   }
 

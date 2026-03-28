@@ -2,6 +2,7 @@
 
 import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/shell/record-detail-page-shell"
 import { RecordOptionsMenu } from "@/features/dashboard/shared/record-view/shell/record-options-menu"
 import { WorkOrderRecordPanel } from "../components/record/work-order-record-panel"
@@ -14,6 +15,7 @@ import { useWorkOrderInvoiceController } from "../use-work-order-invoice-control
 import type { PropertyOption, SalesRepContactOption, WarehouseOption, WorkOrderDetail } from "../types"
 
 export default function WorkOrderDetailClient({
+  currentUserId,
   workOrder: initialWorkOrder,
   productOptions,
   propertyOptions,
@@ -23,6 +25,7 @@ export default function WorkOrderDetailClient({
   unitOptions,
   backHref,
 }: {
+  currentUserId: string
   workOrder: WorkOrderDetail
   productOptions: MaterialItemOption[]
   propertyOptions: PropertyOption[]
@@ -94,7 +97,7 @@ export default function WorkOrderDetailClient({
       const payload = await requestJson<{ workOrder?: WorkOrderDetail }>(`/api/flooring/work-orders/${workOrder.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isComplete: true }),
+        body: JSON.stringify(withMutationMeta({ isComplete: true }, workOrder.updatedAt)),
       })
 
       if (!payload.workOrder) {
@@ -119,7 +122,7 @@ export default function WorkOrderDetailClient({
     page.notices.clearNotices()
 
     try {
-      const nextInvoice = await invoice.queueInvoice()
+      const nextInvoice = await invoice.queueInvoice(workOrder.updatedAt)
 
       if (nextInvoice.generation?.status === "COMPLETED") {
         page.notices.showSuccess("Invoice already available")
@@ -167,6 +170,7 @@ export default function WorkOrderDetailClient({
       }
     >
       <WorkOrderRecordPanel
+        currentUserId={currentUserId}
         workOrderId={workOrder.id}
         initialWorkOrder={workOrder}
         showPrimaryFields={isPrimaryFieldsOpen}
@@ -190,8 +194,12 @@ export default function WorkOrderDetailClient({
             setExpenseSummary(nextSummary)
           })
         }}
-        onDirtyChange={page.setIsDirty}
+        onDirtySectionsChange={page.setDirtySections}
         notices={page.notices}
+        onWorkOrderChange={(nextWorkOrder) => {
+          setWorkOrder(nextWorkOrder)
+          setExpenseSummary(nextWorkOrder.financialSummary)
+        }}
         onWorkOrderSaved={(savedWorkOrder) => {
           page.setIsDirty(false)
           setWorkOrder((previous) => ({

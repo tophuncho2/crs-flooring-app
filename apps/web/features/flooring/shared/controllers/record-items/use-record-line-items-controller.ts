@@ -33,9 +33,9 @@ type CollectionHandle<TItem, TCreateInput, TUpdateInput> = {
   adding: boolean
   savingItemId: string | null
   deletingItemId: string | null
-  createItem: (input: TCreateInput) => Promise<TItem[]>
-  updateItem: (itemId: string, input: TUpdateInput) => Promise<TItem[]>
-  deleteItem: (itemId: string) => Promise<TItem[]>
+  createItem: (input: TCreateInput) => Promise<{ items: TItem[]; payload: Record<string, unknown> }>
+  updateItem: (itemId: string, input: TUpdateInput) => Promise<{ items: TItem[]; payload: Record<string, unknown> }>
+  deleteItem: (itemId: string) => Promise<{ items: TItem[]; payload: Record<string, unknown> }>
 }
 
 type LineItemMutationKind = "material" | "service"
@@ -63,6 +63,7 @@ export function useRecordLineItemsController<
   initialServiceDraft,
   getCollectionsFromRecord,
   onCollectionsChanged,
+  onMutationResult,
 }: {
   record: TRecord | null
   notices: Pick<RecordNotices, "clearNotices" | "showSuccess" | "showError">
@@ -76,6 +77,13 @@ export function useRecordLineItemsController<
     serviceItems: TServiceItem[]
   }
   onCollectionsChanged: (args: PublishLineItemsArgs<TRecord, TMaterialItem, TServiceItem>) => void
+  onMutationResult?: (args: {
+    kind: LineItemMutationKind
+    action: LineItemMutationAction
+    payload: Record<string, unknown>
+    materialItems: TMaterialItem[]
+    serviceItems: TServiceItem[]
+  }) => boolean | void
 }) {
   const { items: materialItems, setItems: setMaterialItems } = materialCollection
   const { items: serviceItems, setItems: setServiceItems } = serviceCollection
@@ -91,6 +99,7 @@ export function useRecordLineItemsController<
   const serviceItemsRef = useRef(serviceCollection.items)
   const onCollectionsChangedRef = useRef(onCollectionsChanged)
   const getCollectionsFromRecordRef = useRef(getCollectionsFromRecord)
+  const onMutationResultRef = useRef(onMutationResult)
 
   useEffect(() => {
     recordRef.current = record
@@ -111,6 +120,10 @@ export function useRecordLineItemsController<
   useEffect(() => {
     getCollectionsFromRecordRef.current = getCollectionsFromRecord
   }, [getCollectionsFromRecord])
+
+  useEffect(() => {
+    onMutationResultRef.current = onMutationResult
+  }, [onMutationResult])
 
   useEffect(() => {
     if (!record) {
@@ -175,6 +188,10 @@ export function useRecordLineItemsController<
     }
   }
 
+  function clearMaterialItemErrors(itemId: string) {
+    setMaterialItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
+  }
+
   async function addMaterialItem() {
     if (!recordRef.current) {
       return false
@@ -189,10 +206,19 @@ export function useRecordLineItemsController<
     }
 
     try {
-      const nextMaterialItems = await materialCollection.createItem(materialDraft)
+      const { items: nextMaterialItems, payload } = await materialCollection.createItem(materialDraft)
       setMaterialDraft(initialMaterialDraft)
       setMaterialDraftErrors({})
-      publishCollections("material", "add", nextMaterialItems, serviceItemsRef.current)
+      const mutationHandled = onMutationResultRef.current?.({
+        kind: "material",
+        action: "add",
+        payload,
+        materialItems: nextMaterialItems,
+        serviceItems: serviceItemsRef.current,
+      })
+      if (!mutationHandled) {
+        publishCollections("material", "add", nextMaterialItems, serviceItemsRef.current)
+      }
       notices.showSuccess("Material item added")
       return true
     } catch (error) {
@@ -225,9 +251,18 @@ export function useRecordLineItemsController<
     }
 
     try {
-      const nextMaterialItems = await materialCollection.updateItem(item.id, item)
+      const { items: nextMaterialItems, payload } = await materialCollection.updateItem(item.id, item)
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      publishCollections("material", "save", nextMaterialItems, serviceItemsRef.current)
+      const mutationHandled = onMutationResultRef.current?.({
+        kind: "material",
+        action: "save",
+        payload,
+        materialItems: nextMaterialItems,
+        serviceItems: serviceItemsRef.current,
+      })
+      if (!mutationHandled) {
+        publishCollections("material", "save", nextMaterialItems, serviceItemsRef.current)
+      }
       if (!options?.suppressSuccess) {
         notices.showSuccess("Material item saved")
       }
@@ -256,9 +291,18 @@ export function useRecordLineItemsController<
 
     clearMutationState()
     try {
-      const nextMaterialItems = await materialCollection.deleteItem(itemId)
+      const { items: nextMaterialItems, payload } = await materialCollection.deleteItem(itemId)
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      publishCollections("material", "delete", nextMaterialItems, serviceItemsRef.current)
+      const mutationHandled = onMutationResultRef.current?.({
+        kind: "material",
+        action: "delete",
+        payload,
+        materialItems: nextMaterialItems,
+        serviceItems: serviceItemsRef.current,
+      })
+      if (!mutationHandled) {
+        publishCollections("material", "delete", nextMaterialItems, serviceItemsRef.current)
+      }
       notices.showSuccess("Material item deleted")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
@@ -297,10 +341,19 @@ export function useRecordLineItemsController<
     }
 
     try {
-      const nextServiceItems = await serviceCollection.createItem(serviceDraft)
+      const { items: nextServiceItems, payload } = await serviceCollection.createItem(serviceDraft)
       setServiceDraft(initialServiceDraft)
       setServiceDraftErrors({})
-      publishCollections("service", "add", materialItemsRef.current, nextServiceItems)
+      const mutationHandled = onMutationResultRef.current?.({
+        kind: "service",
+        action: "add",
+        payload,
+        materialItems: materialItemsRef.current,
+        serviceItems: nextServiceItems,
+      })
+      if (!mutationHandled) {
+        publishCollections("service", "add", materialItemsRef.current, nextServiceItems)
+      }
       notices.showSuccess("Service item added")
       return true
     } catch (error) {
@@ -328,9 +381,18 @@ export function useRecordLineItemsController<
     }
 
     try {
-      const nextServiceItems = await serviceCollection.updateItem(item.id, item)
+      const { items: nextServiceItems, payload } = await serviceCollection.updateItem(item.id, item)
       setServiceItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
-      publishCollections("service", "save", materialItemsRef.current, nextServiceItems)
+      const mutationHandled = onMutationResultRef.current?.({
+        kind: "service",
+        action: "save",
+        payload,
+        materialItems: materialItemsRef.current,
+        serviceItems: nextServiceItems,
+      })
+      if (!mutationHandled) {
+        publishCollections("service", "save", materialItemsRef.current, nextServiceItems)
+      }
       notices.showSuccess("Service item saved")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
@@ -355,9 +417,18 @@ export function useRecordLineItemsController<
 
     clearMutationState()
     try {
-      const nextServiceItems = await serviceCollection.deleteItem(itemId)
+      const { items: nextServiceItems, payload } = await serviceCollection.deleteItem(itemId)
       setServiceItemErrors((previous) => setRowFieldErrors(previous, itemId, {}))
-      publishCollections("service", "delete", materialItemsRef.current, nextServiceItems)
+      const mutationHandled = onMutationResultRef.current?.({
+        kind: "service",
+        action: "delete",
+        payload,
+        materialItems: materialItemsRef.current,
+        serviceItems: nextServiceItems,
+      })
+      if (!mutationHandled) {
+        publishCollections("service", "delete", materialItemsRef.current, nextServiceItems)
+      }
       notices.showSuccess("Service item deleted")
     } catch (error) {
       const fieldError = getRequestFieldError(error)
@@ -375,6 +446,7 @@ export function useRecordLineItemsController<
     materialCollection,
     handleMaterialDraftChange,
     handleMaterialItemFieldChange,
+    clearMaterialItemErrors,
     addMaterialItem,
     saveMaterialItem,
     deleteMaterialItem,

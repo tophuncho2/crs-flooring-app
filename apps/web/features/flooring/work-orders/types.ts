@@ -133,6 +133,13 @@ export type WorkOrderDetail = Omit<WorkOrderRow, "itemsCount"> & {
   items: WorkOrderMaterialItem[]
   serviceItems: EditableServiceItem[]
   salesReps: EditableWorkOrderSalesRep[]
+  capabilities?: {
+    canWrite: boolean
+    canDelete: boolean
+    canAllocate: boolean
+    canSyncTemplate: boolean
+    canGenerateInvoice: boolean
+  }
   summary: {
     materialItemsCount: number
     serviceItemsCount: number

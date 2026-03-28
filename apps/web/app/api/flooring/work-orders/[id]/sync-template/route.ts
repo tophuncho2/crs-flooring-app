@@ -1,31 +1,49 @@
 import { authorizeWorkOrdersRoute } from "@/features/flooring/shared/access/templates-work-orders"
-import { syncTemplateToWorkOrderUseCase } from "@/features/flooring/work-orders/application/sync-template"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { syncTemplateToWorkOrderUseCase } from "@/features/flooring/work-orders/application/sync-template"
+import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
+import { validateSyncTemplateToWorkOrderInput } from "@/features/flooring/work-orders/validators"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
-  enforceRouteRateLimit,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+  applyRoutePolicy,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const access = await authorizeWorkOrdersRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "workOrders.syncTemplate.write",
-    limit: 25,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/work-orders/[id]/sync-template",
+  const access = await applyRoutePolicy(request, {
+    capability: "workOrders.syncTemplate",
+    rateLimit: {
+      scope: "workOrders.syncTemplate.write",
+      limit: 25,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/work-orders/[id]/sync-template",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, validateSyncTemplateToWorkOrderInput, {
+      requireExpectedUpdatedAt: true,
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "workOrders.syncTemplate",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
+
     const result = await withMutationTelemetry(
       access,
       {
@@ -34,11 +52,28 @@ export async function POST(request: Request, { params }: RouteContext) {
         route: "/api/flooring/work-orders/[id]/sync-template",
         entityType: "flooringWorkOrder",
         entityId: id,
-        details: { templateId: typeof body.templateId === "string" ? body.templateId : null },
+        details: { templateId: input.templateId },
       },
-      () => syncTemplateToWorkOrderUseCase(id, body),
+      () =>
+        syncTemplateToWorkOrderUseCase(id, {
+          ...input,
+          expectedUpdatedAt: mutation.expectedUpdatedAt ? new Date(mutation.expectedUpdatedAt) : null,
+        }),
     )
-    return routeJson(access, result)
+
+    const responseBody = {
+      ...result,
+      workOrder: result.workOrder ? withWorkOrderCapabilities(result.workOrder, access.user.role) : null,
+    }
+    await finalizeMutationReceipt({
+      scope: "workOrders.syncTemplate",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }

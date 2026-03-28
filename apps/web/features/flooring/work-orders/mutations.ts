@@ -1,9 +1,12 @@
 import {
   Prisma,
   clearAllocationsForWorkOrder,
+  createWorkOrderItemAllocation,
+  deleteWorkOrderItemAllocation,
   deleteAllAllocationsForWorkOrderItem,
   prisma,
   recalculateWorkOrderItemAllocationStatus,
+  updateWorkOrderItemAllocation,
 } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
@@ -13,6 +16,8 @@ import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import type {
   CreateWorkOrderInput,
   UpdateWorkOrderInput,
+  UpdateWorkOrderItemAllocationInput,
+  UpdateWorkOrderMaterialSectionInput,
   WorkOrderMaterialItemInput,
   WorkOrderSalesRepInput,
   WorkOrderServiceItemInput,
@@ -173,6 +178,24 @@ async function ensureUniqueWorkOrderSalesRep(
       status: 409,
       field: "contactId",
     })
+  }
+}
+
+function assertVersionMatch(actualUpdatedAt: Date, expectedUpdatedAt: string, message: string) {
+  if (actualUpdatedAt.toISOString() !== expectedUpdatedAt) {
+    throw createAppError(message, {
+      status: 409,
+      field: "updatedAt",
+    })
+  }
+}
+
+function applyAllocationUpdatePatch(input: UpdateWorkOrderItemAllocationInput) {
+  return {
+    ...(input.inventoryId !== undefined ? { inventoryId: input.inventoryId } : {}),
+    ...(input.quantity !== undefined ? { quantity: input.quantity } : {}),
+    ...(input.cutSize !== undefined ? { cutSize: input.cutSize } : {}),
+    ...(input.notes !== undefined ? { notes: input.notes } : {}),
   }
 }
 
@@ -572,4 +595,136 @@ export async function deleteWorkOrderSalesRep(repId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.flooringWorkOrderSalesRep.delete({ where: { id: repId } })
   })
+}
+
+export async function saveWorkOrderMaterialSection(
+  workOrderId: string,
+  itemId: string,
+  input: UpdateWorkOrderMaterialSectionInput,
+) {
+  const updated = await prisma.$transaction(async (tx) => {
+    const current = await tx.flooringWorkOrderItem.findUniqueOrThrow({
+      where: { id: itemId },
+      select: {
+        id: true,
+        workOrderId: true,
+        productId: true,
+        updatedAt: true,
+      },
+    })
+
+    if (current.workOrderId !== workOrderId) {
+      throw createAppError("Material item does not belong to this work order", {
+        status: 404,
+        field: "itemId",
+      })
+    }
+
+    assertVersionMatch(current.updatedAt, input.itemExpectedUpdatedAt, "Material item changed before save completed. Refresh and try again.")
+
+    if (input.item.productId !== undefined && input.item.productId !== current.productId) {
+      await deleteAllAllocationsForWorkOrderItem(itemId, tx)
+    }
+
+    const itemUpdateData: Prisma.FlooringWorkOrderItemUncheckedUpdateInput = {}
+
+    if (input.item.productId !== undefined) {
+      itemUpdateData.productId = input.item.productId
+    }
+    if (input.item.quantity !== undefined) {
+      itemUpdateData.quantity = input.item.quantity
+    }
+    if (input.item.unitPrice !== undefined && input.item.unitPrice !== null) {
+      itemUpdateData.unitPrice = input.item.unitPrice
+    }
+    if (input.item.notes !== undefined) {
+      itemUpdateData.notes = input.item.notes
+    }
+    if (input.item.changeOrderStatus !== undefined) {
+      itemUpdateData.changeOrderStatus = input.item.changeOrderStatus
+    }
+
+    await tx.flooringWorkOrderItem.update({
+      where: { id: itemId },
+      data: itemUpdateData,
+    })
+
+    for (const operation of input.allocationOperations) {
+      if (operation.type === "create") {
+        await createWorkOrderItemAllocation(
+          {
+            workOrderId,
+            workOrderItemId: itemId,
+            inventoryId: operation.input.inventoryId,
+            quantity: operation.input.quantity,
+            cutSize: operation.input.cutSize,
+            notes: operation.input.notes,
+            method: "MANUAL",
+          },
+          tx,
+        )
+        continue
+      }
+
+      const allocation = await tx.flooringWorkOrderItemAllocation.findUniqueOrThrow({
+        where: { id: operation.allocationId },
+        select: {
+          id: true,
+          workOrderItemId: true,
+          updatedAt: true,
+        },
+      })
+
+      if (allocation.workOrderItemId !== itemId) {
+        throw createAppError("Allocation does not belong to the selected material item", {
+          status: 404,
+          field: "allocationId",
+        })
+      }
+
+      assertVersionMatch(
+        allocation.updatedAt,
+        operation.expectedUpdatedAt,
+        "Allocation changed before save completed. Refresh and try again.",
+      )
+
+      if (operation.type === "update") {
+        await updateWorkOrderItemAllocation(
+          {
+            workOrderId,
+            workOrderItemId: itemId,
+            allocationId: operation.allocationId,
+            ...applyAllocationUpdatePatch(operation.input),
+          },
+          tx,
+        )
+        continue
+      }
+
+      await deleteWorkOrderItemAllocation(
+        {
+          workOrderId,
+          workOrderItemId: itemId,
+          allocationId: operation.allocationId,
+        },
+        tx,
+      )
+    }
+
+    await recalculateWorkOrderItemAllocationStatus(tx, itemId)
+
+    const item = await tx.flooringWorkOrderItem.findUniqueOrThrow({
+      where: { id: itemId },
+      include: workOrderItemInclude,
+    })
+
+    await tx.flooringWorkOrder.update({
+      where: { id: workOrderId },
+      data: buildInvoiceInvalidationFields(),
+    })
+
+    return item
+  })
+
+  return normalizeWorkOrderItem(updated)
 }

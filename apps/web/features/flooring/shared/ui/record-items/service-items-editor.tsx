@@ -31,6 +31,7 @@ export type EditableServiceItem = {
   quantity: string
   unitPrice: string
   notes: string
+  updatedAt: string
 }
 
 export type ServiceItemDraft = {

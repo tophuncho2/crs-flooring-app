@@ -16,7 +16,7 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
   WorkOrderRecordPanel: ({
     workOrderId,
     notices,
-    onDirtyChange,
+    onDirtySectionsChange,
     invoice,
     onQueueInvoice,
     onOpenInvoice,
@@ -25,7 +25,7 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
   }: {
     workOrderId: string
     notices?: { message?: string; error?: string }
-    onDirtyChange?: (value: boolean) => void
+    onDirtySectionsChange?: (value: string[]) => void
     invoice?: { canOpen?: boolean }
     onQueueInvoice?: () => void
     onOpenInvoice?: () => void
@@ -41,8 +41,8 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
         <button type="button" onClick={() => onInvoiceSectionOpenChange?.(true)}>Open Invoice Section</button>
         <button type="button" onClick={() => onQueueInvoice?.()}>Generate Invoice</button>
         <button type="button" onClick={() => onOpenInvoice?.()} disabled={!invoice?.canOpen}>Open Invoice</button>
-        <button type="button" onClick={() => onDirtyChange?.(true)}>Mark Dirty</button>
-        <button type="button" onClick={() => onDirtyChange?.(false)}>Clear Dirty</button>
+        <button type="button" onClick={() => onDirtySectionsChange?.(["Work Order"])}>Mark Dirty</button>
+        <button type="button" onClick={() => onDirtySectionsChange?.([])}>Clear Dirty</button>
       </div>
     </>
   ),
@@ -489,7 +489,9 @@ describe("WorkOrdersClient", () => {
     await user.click(screen.getByRole("button", { name: "Mark Dirty" }))
     await user.click(screen.getByRole("button", { name: "Back" }))
 
-    expect(confirmMock).toHaveBeenCalledWith("You have unsaved work order changes. Leave this work order without saving?")
+    expect(confirmMock).toHaveBeenCalledWith(
+      "You have unsaved work order changes. Leave this work order without saving?\n\nUnsaved sections: Work Order.",
+    )
     expect(navigationMocks.push).toHaveBeenCalledWith("/dashboard/flooring/work-orders", { scroll: false })
   })
 })
