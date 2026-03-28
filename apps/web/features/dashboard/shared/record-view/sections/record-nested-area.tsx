@@ -8,5 +8,5 @@ export function RecordNestedArea({
   children: ReactNode
   className?: string
 }) {
-  return <div className={joinRecordSectionClasses("pt-1", className)}>{children}</div>
+  return <div className={joinRecordSectionClasses(className)}>{children}</div>
 }

@@ -379,7 +379,7 @@ export function WorkOrderMaterialItemsSection({
             const isExpanded = expandedItemIds.includes(item.id)
 
             return (
-              <div key={item.id} className="space-y-2">
+              <div key={item.id} className="space-y-0">
                 <MaterialItemEditorRow
                   item={item}
                   productOptions={productOptions}
