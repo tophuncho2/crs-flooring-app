@@ -208,7 +208,7 @@ export function useRecordLineItemsController<
 
   async function saveMaterialItem(item: EditableMaterialItem) {
     if (!recordRef.current) {
-      return
+      return false
     }
 
     clearMutationState()
@@ -216,7 +216,7 @@ export function useRecordLineItemsController<
     if (Object.keys(validationErrors).length > 0) {
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, validationErrors))
       notices.showError("Fix the highlighted material item fields before saving.")
-      return
+      return false
     }
 
     try {
@@ -224,6 +224,7 @@ export function useRecordLineItemsController<
       setMaterialItemErrors((previous) => setRowFieldErrors(previous, item.id, {}))
       publishCollections("material", "save", nextMaterialItems, serviceItemsRef.current)
       notices.showSuccess("Material item saved")
+      return true
     } catch (error) {
       const fieldError = getRequestFieldError(error)
       if (fieldError.field === "productId" || fieldError.field === "quantity" || fieldError.field === "unitPrice") {
@@ -233,6 +234,7 @@ export function useRecordLineItemsController<
         )
       }
       notices.showError(fieldError.message || "Failed to save material item")
+      return false
     }
   }
 

@@ -547,7 +547,7 @@ export function WorkOrderRecordPanel({
             onDraftChange={lineItems.handleMaterialDraftChange}
             onAdd={() => lineItems.addMaterialItem()}
             onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-            onSaveItem={(item) => void lineItems.saveMaterialItem(item)}
+            onSaveItem={(item) => lineItems.saveMaterialItem(item)}
             onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
             onRequestAutoAllocation={() => void allocations.requestAutoAllocation()}
             isAutoAllocating={allocations.isAutoAllocating}
@@ -574,7 +574,7 @@ export function WorkOrderRecordPanel({
                 onAllocationFieldChange={(allocationId, field, value) =>
                   allocations.handleAllocationFieldChange(item.id, allocationId, field, value)
                 }
-                onSaveAllocation={(allocation) => void allocations.saveAllocation(item.id, allocation)}
+                onSaveAllocation={(allocation) => allocations.saveAllocation(item.id, allocation)}
                 onDeleteAllocation={(allocationId) => void allocations.deleteAllocation(item.id, allocationId)}
               />
             )}

@@ -304,7 +304,7 @@ export function useRecordAllocationsController({
         [itemId]: setRowFieldErrors(previous[itemId] ?? {}, allocation.id, validationErrors),
       }))
       notices.showError("Fix the highlighted allocation fields before saving.")
-      return
+      return false
     }
 
     setSavingAllocationId(allocation.id)
@@ -339,6 +339,7 @@ export function useRecordAllocationsController({
         [itemId]: setRowFieldErrors(previous[itemId] ?? {}, allocation.id, {}),
       }))
       notices.showSuccess("Allocation saved")
+      return true
     } catch (error) {
       const fieldError = getRequestFieldError(error)
       if (fieldError.field === "inventoryId" || fieldError.field === "quantity") {
@@ -353,6 +354,7 @@ export function useRecordAllocationsController({
         }))
       }
       notices.showError(fieldError.message || "Failed to save allocation")
+      return false
     } finally {
       setSavingAllocationId(null)
     }

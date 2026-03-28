@@ -12,6 +12,7 @@ import {
   type FieldErrorMap,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
+import { useRowAutosave } from "@/features/flooring/shared/line-items/use-row-autosave"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "../types"
 
 export type AllocationDraft = {
@@ -101,6 +102,115 @@ function AllocationRowShell({
   )
 }
 
+function AllocationEditorRow({
+  allocation,
+  allocationOptions,
+  savingAllocationId,
+  deletingAllocationId,
+  rowErrors,
+  onAllocationFieldChange,
+  onSaveAllocation,
+  onDeleteAllocation,
+}: {
+  allocation: WorkOrderItemAllocationRow
+  allocationOptions: InventoryAllocationOption[]
+  savingAllocationId: string | null
+  deletingAllocationId: string | null
+  rowErrors: FieldErrorMap<AllocationField> | undefined
+  onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
+  onSaveAllocation: (allocation: WorkOrderItemAllocationRow) => Promise<boolean> | boolean
+  onDeleteAllocation: (allocationId: string) => void
+}) {
+  const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
+  const quantityValue = Number(allocation.quantity || 0)
+  const autosave = useRowAutosave({
+    rowId: allocation.id,
+    value: allocation,
+    serialize: (currentAllocation) =>
+      JSON.stringify({
+        inventoryId: currentAllocation.inventoryId,
+        quantity: currentAllocation.quantity,
+        cutSize: currentAllocation.cutSize,
+        notes: currentAllocation.notes,
+      }),
+    canAutosave:
+      Object.keys(
+        validateAllocationFields({
+          inventoryId: allocation.inventoryId,
+          quantity: allocation.quantity,
+        }),
+      ).length === 0,
+    onSave: onSaveAllocation,
+  })
+
+  return (
+    <AllocationRowShell
+      {...autosave.focusLeaveProps}
+      className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}
+    >
+      <AllocationCell label="Inventory">
+        <div className="space-y-1">
+          <select
+            value={allocation.inventoryId}
+            onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
+            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(rowErrors?.inventoryId))}
+          >
+            <option value="">Select inventory</option>
+            {allocationOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {rowErrors?.inventoryId ? <FieldErrorText>{rowErrors.inventoryId}</FieldErrorText> : null}
+        </div>
+      </AllocationCell>
+      <AllocationCell label="Qty">
+        <div className="space-y-1">
+          <input
+            value={allocation.quantity}
+            inputMode="decimal"
+            spellCheck={false}
+            placeholder="Qty"
+            onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
+            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(rowErrors?.quantity))}
+          />
+          {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
+        </div>
+      </AllocationCell>
+      <AllocationCell label="Cut Size">
+        <input
+          value={allocation.cutSize}
+          placeholder="Cut Size"
+          onChange={(event) => onAllocationFieldChange(allocation.id, "cutSize", event.target.value)}
+          className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+        />
+      </AllocationCell>
+      <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
+      <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
+      <AllocationValueCell label="Method" value={allocation.method} />
+      <AllocationCell label="Notes">
+        <input
+          value={allocation.notes}
+          placeholder="Notes"
+          onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
+          className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
+        />
+      </AllocationCell>
+      <AllocationCell label="Save">
+        <SaveRowButton onClick={() => void onSaveAllocation(allocation)} disabled={savingAllocationId === allocation.id}>
+          {savingAllocationId === allocation.id ? "Saving..." : "Save"}
+        </SaveRowButton>
+      </AllocationCell>
+      <AllocationCell label="Delete">
+        <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} disabled={deletingAllocationId === allocation.id}>
+          {deletingAllocationId === allocation.id ? "Deleting..." : "Delete"}
+        </DeleteRowButton>
+      </AllocationCell>
+    </AllocationRowShell>
+  )
+}
+
 export function MaterialAllocationsEditor({
   allocations,
   draft,
@@ -129,7 +239,7 @@ export function MaterialAllocationsEditor({
   onDraftChange: (field: keyof AllocationDraft, value: string) => void
   onAdd: () => Promise<boolean> | boolean
   onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
-  onSaveAllocation: (allocation: WorkOrderItemAllocationRow) => void
+  onSaveAllocation: (allocation: WorkOrderItemAllocationRow) => Promise<boolean> | boolean
   onDeleteAllocation: (allocationId: string) => void
 }) {
   const addRow = useInlineCreateRow(false)
@@ -144,75 +254,18 @@ export function MaterialAllocationsEditor({
   return (
     <div className="space-y-3">
       {allocations.map((allocation) => {
-        const rowErrors = itemErrors[allocation.id]
-        const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
-        const quantityValue = Number(allocation.quantity || 0)
-
         return (
-          <AllocationRowShell
+          <AllocationEditorRow
             key={allocation.id}
-            className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}
-          >
-            <AllocationCell label="Inventory">
-              <div className="space-y-1">
-                <select
-                  value={allocation.inventoryId}
-                  onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
-                  className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(rowErrors?.inventoryId))}
-                >
-                  <option value="">Select inventory</option>
-                  {allocationOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {rowErrors?.inventoryId ? <FieldErrorText>{rowErrors.inventoryId}</FieldErrorText> : null}
-              </div>
-            </AllocationCell>
-            <AllocationCell label="Qty">
-              <div className="space-y-1">
-                <input
-                  value={allocation.quantity}
-                  inputMode="decimal"
-                  spellCheck={false}
-                  placeholder="Qty"
-                  onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                  className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1", Boolean(rowErrors?.quantity))}
-                />
-                {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
-              </div>
-            </AllocationCell>
-            <AllocationCell label="Cut Size">
-              <input
-                value={allocation.cutSize}
-                placeholder="Cut Size"
-                onChange={(event) => onAllocationFieldChange(allocation.id, "cutSize", event.target.value)}
-                className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-              />
-            </AllocationCell>
-            <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
-            <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
-            <AllocationValueCell label="Method" value={allocation.method} />
-            <AllocationCell label="Notes">
-              <input
-                value={allocation.notes}
-                placeholder="Notes"
-                onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
-                className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
-              />
-            </AllocationCell>
-            <AllocationCell label="Save">
-              <SaveRowButton onClick={() => onSaveAllocation(allocation)} disabled={savingAllocationId === allocation.id}>
-                {savingAllocationId === allocation.id ? "Saving..." : "Save"}
-              </SaveRowButton>
-            </AllocationCell>
-            <AllocationCell label="Delete">
-              <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} disabled={deletingAllocationId === allocation.id}>
-                {deletingAllocationId === allocation.id ? "Deleting..." : "Delete"}
-              </DeleteRowButton>
-            </AllocationCell>
-          </AllocationRowShell>
+            allocation={allocation}
+            allocationOptions={allocationOptions}
+            savingAllocationId={savingAllocationId}
+            deletingAllocationId={deletingAllocationId}
+            rowErrors={itemErrors[allocation.id]}
+            onAllocationFieldChange={onAllocationFieldChange}
+            onSaveAllocation={onSaveAllocation}
+            onDeleteAllocation={onDeleteAllocation}
+          />
         )
       })}
 

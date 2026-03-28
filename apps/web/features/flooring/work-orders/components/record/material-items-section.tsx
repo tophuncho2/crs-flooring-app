@@ -30,6 +30,8 @@ import type {
   MaterialItemFieldErrors,
   MaterialItemOption,
 } from "@/features/flooring/shared/line-items/material-items-editor"
+import { validateMaterialItemFields } from "@/features/flooring/shared/line-items/material-items-editor"
+import { useRowAutosave } from "@/features/flooring/shared/line-items/use-row-autosave"
 import type { WorkOrderMaterialItem } from "@/features/flooring/work-orders/types"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
@@ -111,13 +113,7 @@ function MaterialItemSectionHeader({
   const productLabel = readProductLabel(productOptions, item.productId, item.productName)
 
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={isExpanded}
-      aria-label={isExpanded ? `Collapse ${productLabel}` : `Expand ${productLabel}`}
-      className="group flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-[var(--panel-hover)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-    >
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold">{productLabel}</div>
       </div>
@@ -130,10 +126,17 @@ function MaterialItemSectionHeader({
           value={item.hasAllocationShortage ? `Short ${item.remainingQuantity.toFixed(2)}` : `${item.allocations.length} Linked`}
         />
       </div>
-      <span className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] text-[var(--foreground)]/70 transition group-hover:bg-[var(--panel-hover)] group-hover:text-[var(--foreground)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
+        className="inline-flex items-center gap-2 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-sm text-[var(--foreground)]/75 transition hover:bg-[var(--panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+      >
         {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </span>
-    </button>
+        <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
+      </button>
+    </div>
   )
 }
 
@@ -153,13 +156,28 @@ function MaterialItemEditorCard({
   deletingItemId: string | null
   itemErrors?: RowFieldErrors<MaterialItemField>
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
-  onSaveItem: (item: EditableMaterialItem) => void
+  onSaveItem: (item: EditableMaterialItem) => Promise<boolean> | boolean
   onDeleteItem: (itemId: string) => void
 }) {
   const rowErrors = itemErrors[item.id]
+  const autosave = useRowAutosave({
+    rowId: item.id,
+    value: item,
+    serialize: (currentItem) => JSON.stringify({
+      productId: currentItem.productId,
+      quantity: currentItem.quantity,
+      unitPrice: currentItem.unitPrice,
+      notes: currentItem.notes,
+    }),
+    canAutosave: Object.keys(validateMaterialItemFields(item)).length === 0,
+    onSave: onSaveItem,
+  })
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(15rem,1.6fr)_minmax(10rem,.9fr)_minmax(10rem,.9fr)_minmax(8rem,.8fr)_minmax(16rem,1.3fr)_auto_auto]">
+    <div
+      {...autosave.focusLeaveProps}
+      className="grid gap-3 xl:grid-cols-[minmax(15rem,1.6fr)_minmax(10rem,.9fr)_minmax(10rem,.9fr)_minmax(8rem,.8fr)_minmax(16rem,1.3fr)_auto_auto]"
+    >
       <MaterialCardCell label="Product">
         <div className="space-y-1">
           <select
@@ -224,7 +242,7 @@ function MaterialItemEditorCard({
         />
       </MaterialCardCell>
       <MaterialActionCell label="Save">
-        <SaveRowButton onClick={() => onSaveItem(item)} disabled={savingItemId === item.id}>
+        <SaveRowButton onClick={() => void onSaveItem(item)} disabled={savingItemId === item.id}>
           {savingItemId === item.id ? "Saving..." : "Save"}
         </SaveRowButton>
       </MaterialActionCell>
@@ -379,7 +397,7 @@ export function WorkOrderMaterialItemsSection({
   onDraftChange: (field: keyof MaterialItemDraft, value: string) => void
   onAdd: () => Promise<boolean> | boolean
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
-  onSaveItem: (item: EditableMaterialItem) => void
+  onSaveItem: (item: EditableMaterialItem) => Promise<boolean> | boolean
   onDeleteItem: (itemId: string) => void
   onRequestAutoAllocation: () => void
   isAutoAllocating: boolean
@@ -454,21 +472,23 @@ export function WorkOrderMaterialItemsSection({
                         isExpanded={isExpanded}
                         onToggle={() => onToggleExpandedItem(item.id)}
                       />
-                      {isExpanded ? (
-                        <div className="space-y-3 border-t border-[var(--panel-border)] bg-transparent p-4">
-                          <MaterialItemEditorCard
-                            item={item}
-                            productOptions={productOptions}
-                            savingItemId={savingItemId}
-                            deletingItemId={deletingItemId}
-                            itemErrors={itemErrors}
-                            onItemFieldChange={onItemFieldChange}
-                            onSaveItem={onSaveItem}
-                            onDeleteItem={onDeleteItem}
-                          />
-                          {renderAllocationSection(item)}
-                        </div>
-                      ) : null}
+                      <div className="space-y-3 border-t border-[var(--panel-border)] bg-transparent p-4">
+                        <MaterialItemEditorCard
+                          item={item}
+                          productOptions={productOptions}
+                          savingItemId={savingItemId}
+                          deletingItemId={deletingItemId}
+                          itemErrors={itemErrors}
+                          onItemFieldChange={onItemFieldChange}
+                          onSaveItem={onSaveItem}
+                          onDeleteItem={onDeleteItem}
+                        />
+                        {isExpanded ? (
+                          <div className="border-t border-[var(--panel-border)] pt-3">
+                            {renderAllocationSection(item)}
+                          </div>
+                        ) : null}
+                      </div>
                     </section>
                   )
                 })

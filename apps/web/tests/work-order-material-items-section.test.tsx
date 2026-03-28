@@ -115,11 +115,11 @@ describe("WorkOrderMaterialItemsSection", () => {
 
     expect(screen.queryByText("Allocation rows for item-1")).toBeNull()
 
-    await user.click(screen.getByRole("button", { name: "Expand Broadloom" }))
+    await user.click(screen.getByRole("button", { name: "Show allocations for Broadloom" }))
     expect(screen.getByText("Allocation rows for item-1")).toBeTruthy()
     expect(screen.queryByText("Allocation rows for item-2")).toBeNull()
 
-    await user.click(screen.getByRole("button", { name: "Expand Pad" }))
+    await user.click(screen.getByRole("button", { name: "Show allocations for Pad" }))
     expect(screen.getByText("Allocation rows for item-2")).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: "Collapse Material Items" }))
