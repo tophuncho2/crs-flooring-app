@@ -7,6 +7,7 @@ import {
 } from "@builders/domain"
 import { logStructuredEvent, parseRedisConnectionUrl } from "@builders/lib"
 import { Queue } from "bullmq"
+import { startBullBoardServer } from "./bull-board.js"
 import { createInvoiceOutboxDispatcher } from "./dispatch/invoice-outbox-dispatcher.js"
 import { createWorkOrderAllocationOutboxDispatcher } from "./dispatch/work-order-allocation-outbox-dispatcher.js"
 import { getRelayEnvironment } from "./env.js"
@@ -31,6 +32,11 @@ async function main() {
   const allocationDispatcher = createWorkOrderAllocationOutboxDispatcher()
 
   await Promise.all([invoiceQueue.waitUntilReady(), autoAllocationQueue.waitUntilReady()])
+  const bullBoardServer = await startBullBoardServer({
+    env,
+    invoiceQueue,
+    autoAllocationQueue,
+  })
 
   logStructuredEvent({
     service: env.serviceName,
@@ -77,7 +83,7 @@ async function main() {
 
   process.off("SIGINT", shutdown)
   process.off("SIGTERM", shutdown)
-  await Promise.all([invoiceQueue.close(), autoAllocationQueue.close()])
+  await Promise.all([bullBoardServer?.close(), invoiceQueue.close(), autoAllocationQueue.close()])
 }
 
 main().catch((error) => {
