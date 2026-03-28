@@ -64,6 +64,10 @@ type InventoryRow = {
   sectionName: string
   stockCount: string
   cutTotal: string
+  reservedStockCount: string
+  totalAllocated: string
+  unreservedTotal: string
+  availableToAllocate: string
   runningBalance: string
   cost: string
   freight: string
@@ -107,6 +111,10 @@ function inventoryRow(overrides: Partial<InventoryRow> = {}): InventoryRow {
     sectionName: "Showroom",
     stockCount: "12.00",
     cutTotal: "2.00",
+    reservedStockCount: "3.00",
+    totalAllocated: "3.00",
+    unreservedTotal: "10.00",
+    availableToAllocate: "7.00",
     runningBalance: "10.00",
     cost: "10.00",
     freight: "5.00",
@@ -156,6 +164,10 @@ describe("InventoryClient", () => {
     expect(screen.getByRole("button", { name: "Open inventory item 1001" })).toBeTruthy()
     expect(screen.getByText("Purchase Order").className).toContain("bg-violet-200")
     expect(within(screen.getByRole("table")).getByText("Pending").className).toContain("bg-sky-200")
+    expect(screen.getByText("Allocated Inventory")).toBeTruthy()
+    expect(screen.getByText("Open Inventory")).toBeTruthy()
+    expect(screen.getByText("3 SF")).toBeTruthy()
+    expect(screen.getByText("7 SF")).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: "Open inventory item 1001" }))
 

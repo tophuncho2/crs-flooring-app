@@ -180,11 +180,11 @@ export function TableColumnSettings<TColumn extends TableColumnDefinition>({
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full z-[70] mt-2 w-72 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 shadow-xl">
+        <div className="absolute right-0 top-full z-[70] mt-2 w-[min(92vw,28rem)] overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 shadow-xl">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/60">Columns</p>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={columns.map((column) => column.key)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
+              <div className="max-h-[min(70vh,32rem)] space-y-2 overflow-y-auto pr-1">
                 {columns.map((column) => {
                   const groupOrder = groupedColumnKeys.indexOf(column.key)
                   return (

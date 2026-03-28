@@ -128,10 +128,6 @@ export function useRecordAllocationsController({
     return null
   }, [workOrderId])
 
-  useEffect(() => {
-    void refreshAutoAllocationRun({ suppressErrors: true })
-  }, [refreshAutoAllocationRun])
-
   usePendingWorkflowPolling({
     isPending: isAutoAllocating,
     refresh: () => refreshAutoAllocationRun({ suppressErrors: true }),

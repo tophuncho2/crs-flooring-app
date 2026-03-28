@@ -93,6 +93,8 @@ export default function InventoryClient({
       { key: "itemNumber", label: "Item #", getValue: (row) => row.itemNumber, groupable: false },
       { key: "stockCount", label: "Starting Stock", getValue: (row) => row.stockCount, groupable: false },
       { key: "cutTotal", label: "Cuts Total", getValue: (row) => row.cutTotal, groupable: false },
+      { key: "allocatedInventory", label: "Allocated Inventory", getValue: (row) => row.totalAllocated, groupable: false },
+      { key: "openInventory", label: "Open Inventory", getValue: (row) => row.availableToAllocate, groupable: false },
       { key: "runningBalance", label: "Running Balance", getValue: (row) => row.runningBalance, groupable: false },
       { key: "section", label: "Section", getValue: (row) => row.sectionName, groupable: true },
       { key: "location", label: "Location", getValue: (row) => row.locationCode, groupable: true },

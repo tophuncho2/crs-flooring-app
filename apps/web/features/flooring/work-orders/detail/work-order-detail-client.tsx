@@ -181,7 +181,6 @@ export default function WorkOrderDetailClient({
         salesRepOptions={salesRepOptions}
         unitOptions={unitOptions}
         invoice={invoice.invoice}
-        invoiceLoading={invoice.isLoading}
         invoiceGenerating={invoice.isGenerating}
         onQueueInvoice={() => void queueInvoiceGeneration()}
         onOpenInvoice={invoice.openInvoice}

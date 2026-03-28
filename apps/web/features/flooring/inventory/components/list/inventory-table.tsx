@@ -89,6 +89,16 @@ export function InventoryTable({
       itemNumber: (columnIndex) => <DashboardListRowCell key="itemNumber" columnIndex={columnIndex}>{row.itemNumber}</DashboardListRowCell>,
       stockCount: (columnIndex) => <DashboardListRowCell key="stockCount" columnIndex={columnIndex}>{formatInventoryQuantity(row.stockCount, row.stockUnit)}</DashboardListRowCell>,
       cutTotal: (columnIndex) => <DashboardListRowCell key="cutTotal" columnIndex={columnIndex}>{formatInventoryQuantity(row.cutTotal, row.stockUnit)}</DashboardListRowCell>,
+      allocatedInventory: (columnIndex) => (
+        <DashboardListRowCell key="allocatedInventory" columnIndex={columnIndex}>
+          {formatInventoryQuantity(row.totalAllocated, row.stockUnit)}
+        </DashboardListRowCell>
+      ),
+      openInventory: (columnIndex) => (
+        <DashboardListRowCell key="openInventory" columnIndex={columnIndex} className="font-semibold">
+          {formatInventoryQuantity(row.availableToAllocate, row.stockUnit)}
+        </DashboardListRowCell>
+      ),
       runningBalance: (columnIndex) => <DashboardListRowCell key="runningBalance" columnIndex={columnIndex} className="font-semibold">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</DashboardListRowCell>,
       section: (columnIndex) => <DashboardListRowCell key="section" columnIndex={columnIndex}>{row.sectionName || "-"}</DashboardListRowCell>,
       location: (columnIndex) => <DashboardListRowCell key="location" columnIndex={columnIndex}>{row.locationCode || "-"}</DashboardListRowCell>,
@@ -116,7 +126,7 @@ export function InventoryTable({
 
   return (
     <>
-      <DashboardListPageTable minWidthClass="min-w-[1680px]" columns={visibleColumns}>
+      <DashboardListPageTable minWidthClass="min-w-[2160px]" columns={visibleColumns}>
         {isGroupingEnabled
           ? renderGroupedTableRows({
               groups: groupedRows,

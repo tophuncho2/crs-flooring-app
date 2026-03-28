@@ -18,14 +18,12 @@ function readInvoiceStatusLabel(invoice: WorkOrderInvoiceStatusResponse) {
 
 export function WorkOrderInvoiceSection({
   invoice,
-  isLoading,
   isGenerating,
   onQueueInvoice,
   onOpenInvoice,
   onOpenChange,
 }: {
   invoice: WorkOrderInvoiceStatusResponse
-  isLoading: boolean
   isGenerating: boolean
   onQueueInvoice: () => void
   onOpenInvoice: () => void
@@ -61,27 +59,9 @@ export function WorkOrderInvoiceSection({
           </div>
         ) : null}
       </div>
-
-      <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} overflow-hidden border bg-[var(--panel-background)]`}>
-        <div className="border-b border-[rgba(58,58,58,0.72)] px-4 py-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45">
-          Preview
-        </div>
-        {isLoading ? (
-          <div className="flex h-[28rem] items-center justify-center px-6 py-6 text-sm text-[var(--foreground)]/70">
-            Loading invoice preview...
-          </div>
-        ) : invoice.artifact?.downloadUrl ? (
-          <iframe
-            title="Invoice preview"
-            src={invoice.artifact.downloadUrl}
-            className="h-[34rem] w-full bg-white"
-          />
-        ) : (
-          <div className="flex h-[28rem] items-center justify-center px-6 py-6 text-sm text-[var(--foreground)]/70">
-            Invoice preview will appear here once an invoice has been generated.
-          </div>
-        )}
-      </div>
+      <p className="text-sm text-[var(--foreground)]/70">
+        Use <span className="font-medium text-[var(--foreground)]">Open Invoice</span> to view a generated invoice.
+      </p>
     </RecordSectionShell>
   )
 }

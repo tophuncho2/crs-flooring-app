@@ -71,11 +71,11 @@ export function TableShell({
   return (
     <div
       className={joinClasses(
-        "w-full overflow-x-auto rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
+        "w-full overflow-x-auto overscroll-x-contain rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
         className,
       )}
     >
-      <table className={joinClasses("w-full text-sm", minWidthClass)}>{children}</table>
+      <table className={joinClasses("min-w-full w-max table-auto text-sm", minWidthClass)}>{children}</table>
     </div>
   )
 }
@@ -92,11 +92,11 @@ export function RecordTableShell({
   return (
     <div
       className={joinClasses(
-        "w-full overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+        "w-full overflow-x-auto overscroll-x-contain rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
         className,
       )}
     >
-      <table className={joinClasses("w-full text-sm", minWidthClass)}>{children}</table>
+      <table className={joinClasses("min-w-full w-max table-auto text-sm", minWidthClass)}>{children}</table>
     </div>
   )
 }
@@ -113,11 +113,11 @@ export function ModalTableShell({
   return (
     <div
       className={joinClasses(
-        "overflow-x-auto rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]",
+        "overflow-x-auto overscroll-x-contain rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]",
         className,
       )}
     >
-      <table className={joinClasses("w-full text-sm", minWidthClass)}>{children}</table>
+      <table className={joinClasses("min-w-full w-max table-auto text-sm", minWidthClass)}>{children}</table>
     </div>
   )
 }

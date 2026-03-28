@@ -208,7 +208,6 @@ export function WorkOrderRecordPanel({
   salesRepOptions,
   unitOptions,
   invoice,
-  invoiceLoading = false,
   invoiceGenerating = false,
   onQueueInvoice,
   onOpenInvoice,
@@ -235,7 +234,6 @@ export function WorkOrderRecordPanel({
   salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
   invoice: WorkOrderInvoiceStatusResponse
-  invoiceLoading?: boolean
   invoiceGenerating?: boolean
   onQueueInvoice: () => void
   onOpenInvoice: () => void
@@ -932,7 +930,6 @@ export function WorkOrderRecordPanel({
 
         <WorkOrderInvoiceSection
           invoice={invoice}
-          isLoading={invoiceLoading}
           isGenerating={invoiceGenerating}
           onQueueInvoice={onQueueInvoice}
           onOpenInvoice={onOpenInvoice}
