@@ -2,19 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/shell/record-detail-page-shell"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordOptionsMenu } from "@/features/dashboard/shared/record-view/record-options-menu"
+import { RecordOptionsMenu } from "@/features/dashboard/shared/record-view/shell/record-options-menu"
 import {
   RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField as FormField,
-} from "@/features/flooring/shared/ui/forms/record-form"
-import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
+} from "@/features/dashboard/shared/record-view/forms/record-form"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 import { RecordMetricSummary } from "@/features/flooring/shared/ui/display/record-metric-summary"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
-import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
+import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
+import { useRecordPageController } from "@/features/dashboard/shared/record-view/client/use-record-page-controller"
 import {
   IMPORT_STATUS_OPTIONS,
   IMPORT_TRANSPORT_TYPE_OPTIONS,

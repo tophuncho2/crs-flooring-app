@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
-import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
+import type { RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 
 export type PropertyManagementCompany = {

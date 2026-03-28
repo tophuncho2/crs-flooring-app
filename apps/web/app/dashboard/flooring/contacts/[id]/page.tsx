@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireContactsAccess } from "@/features/flooring/shared/access/lookup-domains"
-import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { ContactDetailClient } from "@/features/flooring/contacts/components/detail/contact-detail-client"
 import { getContactDetailPageData } from "@/features/flooring/contacts/data/queries"
 

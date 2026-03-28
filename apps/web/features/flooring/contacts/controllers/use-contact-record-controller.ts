@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
+import { useRecordPageController } from "@/features/dashboard/shared/record-view/client/use-record-page-controller"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { deleteContactRequest, updateContactRequest } from "../data/mutations"
 import { toContactForm, validateContactForm, type ContactDetail } from "../domain/types"

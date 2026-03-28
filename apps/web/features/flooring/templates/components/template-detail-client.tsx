@@ -1,12 +1,10 @@
 "use client"
 
-import { useCallback } from "react"
 import { RecordLineSummary } from "@/features/flooring/shared/ui/display/record-line-summary"
-import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
-import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
+import { RecordDetailClientScaffold } from "@/features/dashboard/shared/record-view/client/record-detail-client-scaffold"
 import type { EditableMaterialItem, MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
 import type { EditableServiceItem, ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
-import { TemplateRecordPanel } from "./template-record-panel"
+import { TemplateRecordPanel } from "./record/template-record-panel"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 
 export function TemplateDetailClient({
@@ -30,39 +28,36 @@ export function TemplateDetailClient({
   unitOptions: UnitOption[]
   backHref: string
 }) {
-  const page = useRecordPageController({
-    backHref,
-    dirtyMessage: "You have unsaved template changes. Leave this template without saving?",
-  })
-
-  const closePage = useCallback(() => {
-    page.closePage()
-  }, [page])
-
   return (
-    <RecordDetailPageShell
+    <RecordDetailClientScaffold
       title={`Template ${template.templateNumber}`}
       backHref={backHref}
-      onBack={closePage}
-      headerMeta={<RecordLineSummary materialItems={page.summary.materialItems} serviceItems={page.summary.serviceItems} variant="header" />}
+      dirtyMessage="You have unsaved template changes. Leave this template without saving?"
+      headerMeta={({ summary }) => (
+        <RecordLineSummary materialItems={summary.materialItems} serviceItems={summary.serviceItems} variant="header" />
+      )}
     >
-      <TemplateRecordPanel
-        templateId={template.id}
-        initialTemplate={template}
-        propertyOptions={propertyOptions}
-        warehouseOptions={warehouseOptions}
-        padProductOptions={padProductOptions}
-        productOptions={productOptions}
-        serviceOptions={serviceOptions}
-        salesRepOptions={salesRepOptions}
-        unitOptions={unitOptions}
-        onClose={closePage}
-        onSummaryChange={page.setSummary as (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void}
-        onDirtyChange={page.setIsDirty}
-        onTemplateDeleted={() => {
-          page.redirectToBack()
-        }}
-      />
-    </RecordDetailPageShell>
+      {(page) => {
+        return (
+          <TemplateRecordPanel
+            templateId={template.id}
+            initialTemplate={template}
+            propertyOptions={propertyOptions}
+            warehouseOptions={warehouseOptions}
+            padProductOptions={padProductOptions}
+            productOptions={productOptions}
+            serviceOptions={serviceOptions}
+            salesRepOptions={salesRepOptions}
+            unitOptions={unitOptions}
+            onClose={page.closePage}
+            onSummaryChange={page.setSummary as (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void}
+            onDirtyChange={page.setIsDirty}
+            onTemplateDeleted={() => {
+              page.redirectToBack()
+            }}
+          />
+        )
+      }}
+    </RecordDetailClientScaffold>
   )
 }

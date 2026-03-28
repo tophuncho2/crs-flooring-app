@@ -2,7 +2,7 @@
 
 import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/forms/record-form"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 
 export function UnitOfMeasuresCreateModal({
   name,

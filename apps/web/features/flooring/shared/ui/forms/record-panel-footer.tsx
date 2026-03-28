@@ -1,1 +1,1 @@
-export * from "@/features/dashboard/shared/record-view/record-panel-footer"
+export * from "@/features/dashboard/shared/record-view/shell/record-panel-footer"

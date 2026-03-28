@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { getTemplateDetailPageData } from "@/features/flooring/templates/queries"
-import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { requireTemplatesAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { TemplateDetailClient } from "@/features/flooring/templates/components/template-detail-client"
 

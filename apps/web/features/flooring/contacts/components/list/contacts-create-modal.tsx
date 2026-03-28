@@ -1,7 +1,7 @@
 "use client"
 
-import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
-import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/ui/forms/record-form"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
+import { RecordFormField, RecordModalShell } from "@/features/dashboard/shared/record-view/forms/record-form"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { CONTACT_TYPE_LABELS, CONTACT_TYPE_OPTIONS, type ContactForm } from "../../domain/types"
 

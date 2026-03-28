@@ -2,13 +2,13 @@
 
 import { type ChangeEvent, useEffect, useMemo, useState } from "react"
 import { Upload, X } from "lucide-react"
-import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/record-detail-page-shell"
+import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/shell/record-detail-page-shell"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordFormField as FormField } from "@/features/flooring/shared/ui/forms/record-form"
-import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
+import { RecordFormField as FormField } from "@/features/dashboard/shared/record-view/forms/record-form"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { useRecordPageController } from "@/features/flooring/shared/controllers/record-page/use-record-page-controller"
+import { useRecordPageController } from "@/features/dashboard/shared/record-view/client/use-record-page-controller"
 import { ProductInventoryRowsSection } from "./product-inventory-rows-section"
 
 type CategoryOption = {

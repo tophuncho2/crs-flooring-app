@@ -16,7 +16,7 @@ import {
   type SalesRepField,
   type SalesRepFieldErrors,
 } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import type { RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
 
 type CollectionHandle<TItem, TCreateInput, TUpdateInput> = {

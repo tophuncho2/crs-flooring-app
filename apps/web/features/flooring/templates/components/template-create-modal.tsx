@@ -2,7 +2,7 @@
 
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/ui/forms/record-form"
+import { RecordFormField, RecordModalShell } from "@/features/dashboard/shared/record-view/forms/record-form"
 import type { DraftTemplate, PadProductOption, PropertyOption, WarehouseOption } from "../types"
 
 export function TemplateCreateModal({

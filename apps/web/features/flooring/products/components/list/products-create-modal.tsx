@@ -3,7 +3,7 @@
 import { Save, Upload, X } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
+import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/dashboard/shared/record-view/forms/record-form"
 import type {
   CategoryOption,
   ManufacturerOption,

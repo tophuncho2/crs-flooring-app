@@ -12,7 +12,7 @@ import { navigationMocks } from "./helpers/next-navigation-mock"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
 import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
 
-vi.mock("@/features/flooring/work-orders/components/work-order-record-panel", () => ({
+vi.mock("@/features/flooring/work-orders/components/record/work-order-record-panel", () => ({
   WorkOrderRecordPanel: ({
     workOrderId,
     notices,
@@ -67,7 +67,7 @@ vi.mock("@/features/flooring/shared/record-line-summary", () => ({
   RecordLineSummary: () => null,
 }))
 
-vi.mock("@/features/dashboard/shared/record-view/record-options-menu", () => ({
+vi.mock("@/features/dashboard/shared/record-view/shell/record-options-menu", () => ({
   RecordOptionsMenu: ({
     items,
   }: {

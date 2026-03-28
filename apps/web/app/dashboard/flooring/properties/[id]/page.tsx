@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getPropertyDetailPageData } from "@/features/flooring/properties/data/queries"
 import { PropertyDetailClient } from "@/features/flooring/properties/components/detail/property-detail-client"
 

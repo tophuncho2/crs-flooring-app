@@ -2,7 +2,7 @@
 
 import { TableEmptyRow, TableHeaderCell } from "@/features/flooring/shared/table-shell"
 import { DeleteRowButton } from "@/features/flooring/shared/row-action-buttons"
-import { confirmRecordDelete } from "@/features/dashboard/shared/record-view/record-panel-footer"
+import { confirmRecordDelete } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 import { ModalTableHead, RecordChildTableSection } from "@/features/flooring/shared/line-items/record-child-table-section"
 import type { SectionRow } from "../types"
 

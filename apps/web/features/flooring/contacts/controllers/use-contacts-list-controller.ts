@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import { useRecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { createContactRequest, deleteContactRequest } from "../data/mutations"
 import { EMPTY_CONTACT_FORM, validateContactForm, type ContactForm, type ContactRow } from "../domain/types"

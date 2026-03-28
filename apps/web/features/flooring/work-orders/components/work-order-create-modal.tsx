@@ -2,8 +2,8 @@
 
 import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordFormField, RecordModalShell } from "@/features/flooring/shared/ui/forms/record-form"
-import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
+import { RecordFormField, RecordModalShell } from "@/features/dashboard/shared/record-view/forms/record-form"
+import { AutoGrowTextarea } from "@/features/dashboard/shared/record-view/forms/auto-grow-textarea"
 import type { DraftWorkOrder, PropertyOption, WarehouseOption } from "../types"
 import { VACANCY_OPTIONS, WORK_ORDER_STATUS_OPTIONS, getVacancyFieldClass, getWorkOrderStatusFieldClass, getWorkOrderStatusLabel } from "../contracts"
 

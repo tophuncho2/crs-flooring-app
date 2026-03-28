@@ -1,1 +1,1 @@
-export * from "@/features/dashboard/shared/record-view/record-form"
+export * from "@/features/dashboard/shared/record-view/forms/record-form"

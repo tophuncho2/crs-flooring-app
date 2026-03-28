@@ -11,7 +11,7 @@ import {
   setRowFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import type { RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
+import type { RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import {
   validateAllocationFields,
   type AllocationDraft,

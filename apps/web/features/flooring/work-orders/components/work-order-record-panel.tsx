@@ -10,10 +10,10 @@ import {
   type MaterialItemDraft,
   type MaterialItemOption,
 } from "@/features/flooring/shared/line-items/material-items-editor"
-import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/record-panel-footer"
+import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
-import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
-import { AutoGrowTextarea } from "@/features/flooring/shared/ui/forms/auto-grow-textarea"
+import { RecordFormField } from "@/features/dashboard/shared/record-view/forms/record-form"
+import { AutoGrowTextarea } from "@/features/dashboard/shared/record-view/forms/auto-grow-textarea"
 import {
   ServiceItemsEditor,
   type EditableServiceItem,
@@ -29,14 +29,14 @@ import {
   RecordPrimaryPane,
   RecordPrimarySection,
   RecordStaticFieldValue,
-} from "@/features/dashboard/shared/record-view/record-primary-fields"
+} from "@/features/dashboard/shared/record-view/shell/record-primary-fields"
 import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
 import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
 import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
 import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
-import { useRecordDetailController } from "@/features/flooring/shared/controllers/record-page/use-record-detail-controller"
-import { useRecordNotices, type RecordNotices } from "@/features/flooring/shared/controllers/record-page/use-record-notices"
-import { RecordSection, RecordSectionStack } from "@/features/dashboard/shared/record-view/record-sections"
+import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
+import { useRecordNotices, type RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
+import { RecordSection, RecordSectionStack } from "@/features/dashboard/shared/record-view/shell/record-sections"
 import { WORK_ORDER_STATUS_OPTIONS, getWorkOrderStatusLabel } from "@/features/flooring/work-orders/contracts"
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseSummary, type WorkOrderCalculationRow } from "@/features/flooring/work-orders/domain/expense-summary"
 import { MaterialAllocationsEditor } from "@/features/flooring/work-orders/components/material-allocations-editor"

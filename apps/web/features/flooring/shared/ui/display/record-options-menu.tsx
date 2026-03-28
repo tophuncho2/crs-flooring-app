@@ -1,1 +1,1 @@
-export * from "@/features/dashboard/shared/record-view/record-options-menu"
+export * from "@/features/dashboard/shared/record-view/shell/record-options-menu"

@@ -5,8 +5,8 @@ import {
   FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME,
 } from "@/features/dashboard/shared/display/accent-styles"
 import { ErrorNotice } from "@/features/dashboard/shared/feedback/notices"
-import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/flooring/shared/ui/forms/record-form"
-import { getSharedFormFieldClass } from "@/features/flooring/shared/ui/forms/form-field-styles"
+import { RecordFormField as FormField, RecordModalShell as ModalShell } from "@/features/dashboard/shared/record-view/forms/record-form"
+import { getSharedFormFieldClass } from "@/features/dashboard/shared/record-view/forms/form-field-styles"
 import { StatusPill } from "@/features/dashboard/shared/feedback/status-pill"
 import { IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 import { CollapsibleTableSection, InlineAddRowButton } from "@/features/flooring/shared/ui/table/collapsible-table-section"

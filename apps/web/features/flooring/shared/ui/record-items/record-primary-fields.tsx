@@ -1,1 +1,1 @@
-export * from "@/features/dashboard/shared/record-view/record-primary-fields"
+export * from "@/features/dashboard/shared/record-view/shell/record-primary-fields"

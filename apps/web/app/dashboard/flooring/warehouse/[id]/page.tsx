@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveReturnTo } from "@/features/flooring/shared/controllers/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getWarehouseDetailPageData } from "@/features/flooring/warehouse/queries"
 import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/warehouse-detail-client"
 

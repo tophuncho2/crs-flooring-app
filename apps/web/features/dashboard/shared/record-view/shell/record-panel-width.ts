@@ -1,0 +1,4 @@
+"use client"
+
+export const RECORD_DETAIL_PANEL_WIDTH_CLASS = "max-w-none"
+export const PRIMARY_RECORD_PANEL_WIDTH_CLASS = RECORD_DETAIL_PANEL_WIDTH_CLASS
