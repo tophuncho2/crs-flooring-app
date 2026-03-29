@@ -119,7 +119,12 @@ export function useRecordSectionController<TServer, TLocal>({
   }, [compare, createLocalValue, serverRevisionKey, serverValue])
 
   const setLocalValue = useCallback((value: MaybeUpdater<TLocal>) => {
-    setLocalValueState((previous) => (typeof value === "function" ? (value as (previous: TLocal) => TLocal)(previous) : value))
+    setLocalValueState((previous) => {
+      const nextValue =
+        typeof value === "function" ? (value as (previous: TLocal) => TLocal)(previous) : value
+      localValueRef.current = nextValue
+      return nextValue
+    })
   }, [])
 
   const setError = useCallback((value: RecordSectionError | string | Error | null) => {

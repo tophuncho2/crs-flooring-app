@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { canEditCategories } from "@/server/auth/access-control"
 import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
-import { CategoryDetailClient } from "@/features/flooring/categories/components/detail/category-detail-client"
+import { CategoryDetailClient } from "@/features/flooring/categories/record/detail/category-detail-client"
 import { getCategoryDetailPageData } from "@/features/flooring/categories/data/queries"
 
 export default async function CategoryDetailPage({

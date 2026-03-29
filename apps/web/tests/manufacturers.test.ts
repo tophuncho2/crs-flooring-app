@@ -8,24 +8,38 @@ import { DELETE, PATCH } from "@/app/api/flooring/manufacturers/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
 const {
-  createManufacturerMock,
-  updateManufacturerMock,
-  deleteManufacturerMock,
-  listManufacturersMock,
+  prismaMock,
   requireRouteAccessMock,
   enforceRouteRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
 } = vi.hoisted(() => ({
-  createManufacturerMock: vi.fn(),
-  updateManufacturerMock: vi.fn(),
-  deleteManufacturerMock: vi.fn(),
-  listManufacturersMock: vi.fn(),
+  prismaMock: {
+    flooringManufacturer: {
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    flooringProduct: {
+      count: vi.fn(),
+    },
+  },
   requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
 }))
+
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    prisma: prismaMock,
+    db: prismaMock,
+  }
+})
 
 const routeAccess = {
   requestId: "req-1",
@@ -48,27 +62,19 @@ vi.mock("@/server/http/route-helpers", () => ({
   logRouteMutationFailure: logRouteMutationFailureMock,
 }))
 
-vi.mock("@/features/flooring/manufacturers/mutations", () => ({
-  createManufacturer: createManufacturerMock,
-  updateManufacturer: updateManufacturerMock,
-  deleteManufacturer: deleteManufacturerMock,
-}))
-
-vi.mock("@/features/flooring/manufacturers/queries", () => ({
-  listManufacturers: listManufacturersMock,
-}))
-
-function manufacturerRecord(overrides: Partial<{
-  id: string
-  companyName: string
-  agentName: string | null
-  website: string | null
-  phone: string | null
-  email: string | null
-  createdAt: Date
-  updatedAt: Date
-  _count: { products: number }
-}> = {}) {
+function manufacturerRecord(
+  overrides: Partial<{
+    id: string
+    companyName: string
+    agentName: string | null
+    website: string | null
+    phone: string | null
+    email: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: { products: number }
+  }> = {},
+) {
   return {
     id: "mfg-1",
     companyName: "Acme Flooring",
@@ -91,13 +97,13 @@ describe("manufacturers", () => {
   })
 
   it("manufacturer POST route accepts missing agentName and returns normalized payload", async () => {
-    const normalizedManufacturer = normalizeManufacturer(
+    prismaMock.flooringManufacturer.findFirst.mockResolvedValue(null)
+    prismaMock.flooringManufacturer.create.mockResolvedValue(
       manufacturerRecord({
         companyName: "Acme Flooring",
         agentName: null,
       }),
     )
-    createManufacturerMock.mockResolvedValue(normalizedManufacturer)
 
     const response = await POST(
       new Request("http://localhost/api/flooring/manufacturers", {
@@ -115,28 +121,33 @@ describe("manufacturers", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(201)
-    expect(createManufacturerMock).toHaveBeenCalledWith({
-      companyName: "Acme Flooring",
-      agentName: null,
-      website: null,
-      phone: null,
-      email: null,
+    expect(prismaMock.flooringManufacturer.create).toHaveBeenCalledWith({
+      data: {
+        companyName: "Acme Flooring",
+        agentName: null,
+        website: null,
+        phone: null,
+        email: null,
+      },
+      include: { _count: { select: { products: true } } },
     })
-    expect(payload.manufacturer).toEqual(normalizedManufacturer)
+    expect(payload.manufacturer).toEqual(normalizeManufacturer(manufacturerRecord()))
   })
 
   it("manufacturer GET route returns normalized payload", async () => {
-    const normalizedManufacturers = [
+    prismaMock.flooringManufacturer.findMany.mockResolvedValue([
       manufacturerRecord(),
       manufacturerRecord({ id: "mfg-2", companyName: "Zen Floors", _count: { products: 3 } }),
-    ].map(normalizeManufacturer)
-    listManufacturersMock.mockResolvedValue(normalizedManufacturers)
+    ])
 
     const response = await GET(new Request("http://localhost/api/flooring/manufacturers"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload.manufacturers).toEqual(normalizedManufacturers)
+    expect(payload.manufacturers).toEqual([
+      normalizeManufacturer(manufacturerRecord()),
+      normalizeManufacturer(manufacturerRecord({ id: "mfg-2", companyName: "Zen Floors", _count: { products: 3 } })),
+    ])
     expect(requireRouteAccessMock).toHaveBeenCalled()
   })
 
@@ -158,17 +169,11 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(400)
     expect(payload.error).toBe("companyName is required")
-    expect(createManufacturerMock).not.toHaveBeenCalled()
+    expect(prismaMock.flooringManufacturer.create).not.toHaveBeenCalled()
   })
 
-  it("returns a company-name specific message when the company name is not unique", async () => {
-    createManufacturerMock.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`companyName`)", {
-        code: "P2002",
-        clientVersion: "5.22.0",
-        meta: { target: ["companyName"] },
-      }),
-    )
+  it("enforces case-insensitive company-name uniqueness before create", async () => {
+    prismaMock.flooringManufacturer.findFirst.mockResolvedValue({ id: "mfg-2" })
 
     const response = await POST(
       new Request("http://localhost/api/flooring/manufacturers", {
@@ -186,11 +191,13 @@ describe("manufacturers", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("Company Name must be unique")
+    expect(payload.error).toBe("Company name must be unique")
+    expect(prismaMock.flooringManufacturer.create).not.toHaveBeenCalled()
   })
 
   it("PATCH route updates a manufacturer and returns normalized payload", async () => {
-    const normalizedManufacturer = normalizeManufacturer(
+    prismaMock.flooringManufacturer.findFirst.mockResolvedValue(null)
+    prismaMock.flooringManufacturer.update.mockResolvedValue(
       manufacturerRecord({
         companyName: "Acme Flooring",
         agentName: "Jamie Agent",
@@ -199,7 +206,6 @@ describe("manufacturers", () => {
         email: "jamie@example.com",
       }),
     )
-    updateManufacturerMock.mockResolvedValue(normalizedManufacturer)
 
     const response = await PATCH(
       new Request("http://localhost/api/flooring/manufacturers/mfg-1", {
@@ -218,14 +224,28 @@ describe("manufacturers", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(updateManufacturerMock).toHaveBeenCalledWith("mfg-1", {
-      companyName: "Acme Flooring",
-      agentName: "Jamie Agent",
-      website: "https://example.com",
-      phone: "555-1111",
-      email: "jamie@example.com",
+    expect(prismaMock.flooringManufacturer.update).toHaveBeenCalledWith({
+      where: { id: "mfg-1" },
+      data: {
+        companyName: "Acme Flooring",
+        agentName: "Jamie Agent",
+        website: "https://example.com",
+        phone: "555-1111",
+        email: "jamie@example.com",
+      },
+      include: { _count: { select: { products: true } } },
     })
-    expect(payload.manufacturer).toEqual(normalizedManufacturer)
+    expect(payload.manufacturer).toEqual(
+      normalizeManufacturer(
+        manufacturerRecord({
+          companyName: "Acme Flooring",
+          agentName: "Jamie Agent",
+          website: "https://example.com",
+          phone: "555-1111",
+          email: "jamie@example.com",
+        }),
+      ),
+    )
   })
 
   it("PATCH requires companyName", async () => {
@@ -245,7 +265,7 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(400)
     expect(payload.error).toBe("companyName is required")
-    expect(updateManufacturerMock).not.toHaveBeenCalled()
+    expect(prismaMock.flooringManufacturer.update).not.toHaveBeenCalled()
   })
 
   it("validates company name presence and uniqueness in the manufacturer form", () => {
@@ -308,11 +328,7 @@ describe("manufacturers", () => {
   })
 
   it("prevents deleting a manufacturer that still has linked products", async () => {
-    deleteManufacturerMock.mockRejectedValue({
-      kind: "app",
-      message: "This manufacturer has linked products and cannot be deleted",
-      status: 409,
-    })
+    prismaMock.flooringProduct.count.mockResolvedValue(1)
 
     const response = await DELETE(new Request("http://localhost/api/flooring/manufacturers/mfg-1"), {
       params: Promise.resolve({ id: "mfg-1" }),
@@ -322,11 +338,12 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This manufacturer has linked products and cannot be deleted")
-    expect(deleteManufacturerMock).toHaveBeenCalledWith("mfg-1")
+    expect(prismaMock.flooringManufacturer.delete).not.toHaveBeenCalled()
   })
 
   it("deletes a manufacturer when there are no linked products", async () => {
-    deleteManufacturerMock.mockResolvedValue({ ok: true })
+    prismaMock.flooringProduct.count.mockResolvedValue(0)
+    prismaMock.flooringManufacturer.delete.mockResolvedValue({ id: "mfg-1" })
 
     const response = await DELETE(new Request("http://localhost/api/flooring/manufacturers/mfg-1"), {
       params: Promise.resolve({ id: "mfg-1" }),
@@ -336,6 +353,6 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteManufacturerMock).toHaveBeenCalledWith("mfg-1")
+    expect(prismaMock.flooringManufacturer.delete).toHaveBeenCalledWith({ where: { id: "mfg-1" } })
   })
 })

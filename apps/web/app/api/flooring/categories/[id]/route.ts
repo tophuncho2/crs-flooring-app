@@ -1,4 +1,8 @@
-import { deleteCategory, updateCategory } from "@/features/flooring/categories/data/queries"
+import {
+  deleteCategoryRecord,
+  replaceCategoryPrimarySection,
+  validateUpdateCategoryPrimarySectionInput,
+} from "@/features/flooring/categories/application/manage-category"
 import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
 import {
   enforceRouteRateLimit,
@@ -13,7 +17,7 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const access = await authorizeCategoriesRoute(request, { capability: "governance.access" })
+  const access = await authorizeCategoriesRoute(request, { capability: "categories.edit" })
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -27,7 +31,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const category = await updateCategory(id, body)
+    const category = await replaceCategoryPrimarySection(id, validateUpdateCategoryPrimarySectionInput(body))
     logRouteMutationSuccess(access, {
       message: "Category updated",
       action: "categories.update",
@@ -54,7 +58,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const access = await authorizeCategoriesRoute(request, { capability: "governance.access" })
+  const access = await authorizeCategoriesRoute(request, { capability: "categories.edit" })
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -67,7 +71,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    const result = await deleteCategory(id)
+    const result = await deleteCategoryRecord(id)
     logRouteMutationSuccess(access, {
       message: "Category deleted",
       action: "categories.delete",

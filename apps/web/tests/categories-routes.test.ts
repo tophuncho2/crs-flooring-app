@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { Prisma } from "@builders/db"
 import { GET, POST } from "@/app/api/flooring/categories/route"
 import { DELETE, PATCH } from "@/app/api/flooring/categories/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
@@ -8,11 +7,10 @@ const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock, logRouteM
   prismaMock: {
     flooringCategory: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
-      delete: vi.fn(),
-    },
-    flooringUnitOfMeasure: {
       delete: vi.fn(),
     },
   },
@@ -62,6 +60,7 @@ function categoryRecord(
     itemCoverageUnit: { id: string; name: string } | null
     serviceUnit: { id: string; name: string } | null
     createdAt: Date
+    updatedAt: Date
     _count: { products: number }
   }> = {},
 ) {
@@ -74,6 +73,7 @@ function categoryRecord(
     itemCoverageUnit: { id: "u-item", name: "SF" },
     serviceUnit: null,
     createdAt: new Date("2026-03-19T00:00:00Z"),
+    updatedAt: new Date("2026-03-19T00:00:00Z"),
     _count: { products: 2 },
     ...overrides,
   }
@@ -119,6 +119,7 @@ describe("categories routes", () => {
         serviceUnit: "",
         productCount: 2,
         createdAt: "2026-03-19T00:00:00.000Z",
+        updatedAt: "2026-03-19T00:00:00.000Z",
       },
       {
         id: "cat-2",
@@ -135,6 +136,7 @@ describe("categories routes", () => {
         serviceUnit: "Hour",
         productCount: 0,
         createdAt: "2026-03-19T00:00:00.000Z",
+        updatedAt: "2026-03-19T00:00:00.000Z",
       },
     ])
     expect(requireRouteAccessMock).toHaveBeenCalled()
@@ -271,6 +273,13 @@ describe("categories routes", () => {
   })
 
   it("DELETE succeeds on the happy path and does not affect unit-of-measure records", async () => {
+    prismaMock.flooringCategory.findUnique.mockResolvedValue({
+      id: "cat-1",
+      _count: {
+        products: 0,
+      },
+    })
+
     const response = await DELETE(new Request("http://localhost/api/flooring/categories/cat-1"), {
       params: Promise.resolve({ id: "cat-1" }),
     })
@@ -278,19 +287,41 @@ describe("categories routes", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ success: true })
+    expect(prismaMock.flooringCategory.findUnique).toHaveBeenCalledWith({
+      where: { id: "cat-1" },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            products: true,
+          },
+        },
+      },
+    })
     expect(prismaMock.flooringCategory.delete).toHaveBeenCalledWith({ where: { id: "cat-1" } })
-    expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
     expect(requireRouteAccessMock).toHaveBeenCalled()
   })
 
-  it("normalizes category unique conflicts", async () => {
-    prismaMock.flooringCategory.create.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`name`)", {
-        code: "P2002",
-        clientVersion: "5.22.0",
-        meta: { target: ["name"] },
-      }),
-    )
+  it("DELETE is blocked when the category is linked to products", async () => {
+    prismaMock.flooringCategory.findUnique.mockResolvedValue({
+      id: "cat-1",
+      _count: {
+        products: 2,
+      },
+    })
+
+    const response = await DELETE(new Request("http://localhost/api/flooring/categories/cat-1"), {
+      params: Promise.resolve({ id: "cat-1" }),
+    })
+    const payload = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(payload.error).toBe("This category is linked to products and cannot be deleted")
+    expect(prismaMock.flooringCategory.delete).not.toHaveBeenCalled()
+  })
+
+  it("enforces case-insensitive category uniqueness before create", async () => {
+    prismaMock.flooringCategory.findFirst.mockResolvedValue({ id: "cat-2" })
 
     const response = await POST(
       new Request("http://localhost/api/flooring/categories", {
@@ -302,6 +333,7 @@ describe("categories routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("Name must be unique")
+    expect(payload.error).toBe("Category name must be unique")
+    expect(prismaMock.flooringCategory.create).not.toHaveBeenCalled()
   })
 })

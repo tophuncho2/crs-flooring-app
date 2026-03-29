@@ -68,6 +68,16 @@ export function useRecordPageController({
     })
   }, [])
 
+  const updateDirtySections = useCallback((value: string[]) => {
+    setDirtySections((current) => {
+      if (current.length === value.length && current.every((section, index) => section === value[index])) {
+        return current
+      }
+
+      return value
+    })
+  }, [])
+
   const closePage = useCallback(() => {
     guard.confirmNavigation(() => {
       router.push(backHref, { scroll: false })
@@ -90,7 +100,7 @@ export function useRecordPageController({
       dirtySections,
       isPrimarySectionOpen,
       setIsDirty,
-      setDirtySections,
+      setDirtySections: updateDirtySections,
       setPrimarySectionOpen,
       togglePrimarySectionOpen,
       summary,
@@ -107,6 +117,7 @@ export function useRecordPageController({
       notices,
       redirectToBack,
       setIsDirty,
+      updateDirtySections,
       summary,
       togglePrimarySectionOpen,
     ],

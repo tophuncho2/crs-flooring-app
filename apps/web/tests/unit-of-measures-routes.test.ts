@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { Prisma } from "@builders/db"
 import { GET, POST } from "@/app/api/builder/unit-of-measures/route"
 import { DELETE, PATCH } from "@/app/api/builder/unit-of-measures/[id]/route"
 
@@ -7,6 +6,7 @@ const { prismaMock, applyRoutePolicyMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringUnitOfMeasure: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       findUnique: vi.fn(),
@@ -38,12 +38,14 @@ function unitRecord(
     id: string
     name: string
     createdAt: Date
+    updatedAt: Date
   }> = {},
 ) {
   return {
     id: "u-1",
     name: "Square Feet",
     createdAt: new Date("2026-03-19T00:00:00Z"),
+    updatedAt: new Date("2026-03-19T00:00:00Z"),
     ...overrides,
   }
 }
@@ -74,8 +76,13 @@ describe("unit-of-measures routes", () => {
 
     expect(response.status).toBe(200)
     expect(payload.unitOfMeasures).toEqual([
-      { id: "u-1", name: "Square Feet", createdAt: "2026-03-19T00:00:00.000Z" },
-      { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z" },
+      {
+        id: "u-1",
+        name: "Square Feet",
+        createdAt: "2026-03-19T00:00:00.000Z",
+        updatedAt: "2026-03-19T00:00:00.000Z",
+      },
+      { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
     ])
     expect(applyRoutePolicyMock).toHaveBeenCalled()
   })
@@ -112,6 +119,7 @@ describe("unit-of-measures routes", () => {
       id: "u-1",
       name: "Square Feet",
       createdAt: "2026-03-19T00:00:00.000Z",
+      updatedAt: "2026-03-19T00:00:00.000Z",
     })
   })
 
@@ -149,6 +157,7 @@ describe("unit-of-measures routes", () => {
       id: "u-1",
       name: "Hour",
       createdAt: "2026-03-19T00:00:00.000Z",
+      updatedAt: "2026-03-19T00:00:00.000Z",
     })
   })
 
@@ -227,14 +236,8 @@ describe("unit-of-measures routes", () => {
     expect(prismaMock.flooringUnitOfMeasure.delete).not.toHaveBeenCalled()
   })
 
-  it("normalizes unit name conflicts", async () => {
-    prismaMock.flooringUnitOfMeasure.create.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`name`)", {
-        code: "P2002",
-        clientVersion: "5.22.0",
-        meta: { target: ["name"] },
-      }),
-    )
+  it("enforces case-insensitive unit name uniqueness before create", async () => {
+    prismaMock.flooringUnitOfMeasure.findFirst.mockResolvedValue({ id: "u-2" })
 
     const response = await POST(
       new Request("http://localhost/api/builder/unit-of-measures", {
@@ -246,7 +249,8 @@ describe("unit-of-measures routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("Name must be unique")
+    expect(payload.error).toBe("Unit of measure must be unique")
+    expect(prismaMock.flooringUnitOfMeasure.create).not.toHaveBeenCalled()
   })
 
   it("returns shared auth responses unchanged", async () => {

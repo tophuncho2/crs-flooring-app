@@ -200,6 +200,7 @@ model FlooringCategory {
   serviceUnit             FlooringUnitOfMeasure? @relation("FlooringCategoryServiceUnit", fields: [serviceUnitId], references: [id], onDelete: Restrict)
   products                FlooringProduct[]
   createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
 
   @@index([sendUnitId])
   @@index([stockUnitId])
@@ -213,6 +214,7 @@ model FlooringUnitOfMeasure {
   id                              String                         @id @default(uuid())
   name                            String                         @unique
   createdAt                       DateTime                       @default(now())
+  updatedAt                       DateTime                       @updatedAt
   sendUnitCategories              FlooringCategory[]             @relation("FlooringCategorySendUnit")
   stockUnitCategories             FlooringCategory[]             @relation("FlooringCategoryStockUnit")
   coverageAvailableUnitCategories FlooringCategory[]             @relation("FlooringCategoryCoverageAvailableUnit")

@@ -1,5 +1,8 @@
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { deleteManufacturer, updateManufacturer } from "@/features/flooring/manufacturers/mutations"
+import {
+  deleteManufacturerRecord,
+  replaceManufacturerPrimarySection,
+  validateUpdateManufacturerPrimarySectionInput,
+} from "@/features/flooring/manufacturers/application/manage-manufacturer"
 import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
 import {
   enforceRouteRateLimit,
@@ -28,15 +31,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const companyName = parseRequiredString(body.companyName, "companyName")
-    const agentName = parseOptionalString(body.agentName ?? body.name)
-    const manufacturer = await updateManufacturer(id, {
-      companyName,
-      agentName,
-      website: parseOptionalString(body.website),
-      phone: parseOptionalString(body.phone),
-      email: parseOptionalString(body.email),
-    })
+    const manufacturer = await replaceManufacturerPrimarySection(id, validateUpdateManufacturerPrimarySectionInput(body))
     logRouteMutationSuccess(access, {
       message: "Manufacturer updated",
       action: "manufacturers.update",
@@ -76,7 +71,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    const result = await deleteManufacturer(id)
+    const result = await deleteManufacturerRecord(id)
     logRouteMutationSuccess(access, {
       message: "Manufacturer deleted",
       action: "manufacturers.delete",

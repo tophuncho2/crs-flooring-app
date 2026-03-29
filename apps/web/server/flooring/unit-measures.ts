@@ -59,10 +59,11 @@ export function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
   }
 }
 
-export function normalizeUnitOfMeasureOption(unit: { id: string; name: string; createdAt: Date }) {
+export function normalizeUnitOfMeasureOption(unit: { id: string; name: string; createdAt: Date; updatedAt: Date }) {
   return {
     id: unit.id,
     name: unit.name,
     createdAt: unit.createdAt.toISOString(),
+    updatedAt: unit.updatedAt.toISOString(),
   }
 }

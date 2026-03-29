@@ -13,6 +13,7 @@ export type CategoryRow = {
   serviceUnit: string
   productCount: number
   createdAt: string
+  updatedAt: string
 }
 
 export type CategoryForm = {
@@ -37,6 +38,10 @@ export const EMPTY_CATEGORY_FORM: CategoryForm = {
   coverageAvailableUnitId: "",
   itemCoverageUnitId: "",
   serviceUnitId: "",
+}
+
+export function normalizeCategoryName(value: string) {
+  return value.trim()
 }
 
 export function toCategoryForm(category: CategoryRow): CategoryForm {

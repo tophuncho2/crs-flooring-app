@@ -7,6 +7,10 @@ type CategoryFormInput = {
   name: string
 }
 
+export function normalizeCategoryName(value: string) {
+  return value.trim().toLowerCase()
+}
+
 export function validateCategoryForm(
   input: CategoryFormInput,
   existingCategories: CategoryLike[] = [],
@@ -18,9 +22,9 @@ export function validateCategoryForm(
     return "Category name is required"
   }
 
-  const normalizedName = name.toLowerCase()
+  const normalizedName = normalizeCategoryName(name)
   const hasDuplicate = existingCategories.some(
-    (category) => category.id !== currentId && category.name.trim().toLowerCase() === normalizedName,
+    (category) => category.id !== currentId && normalizeCategoryName(category.name) === normalizedName,
   )
 
   return hasDuplicate ? "Category name must be unique" : ""

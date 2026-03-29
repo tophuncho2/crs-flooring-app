@@ -1,1 +1,1 @@
-export * from "../detail/unit-of-measure-record-panel"
+export * from "../../record/panel/unit-of-measure-record-panel"

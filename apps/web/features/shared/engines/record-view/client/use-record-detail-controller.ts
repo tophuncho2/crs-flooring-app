@@ -70,13 +70,14 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
   }, [payloadKey, syncRecord, url])
 
   useEffect(() => {
-    const nextSeed = cachedRecord ?? initialRecord
+    const nextCachedRecord = getCachedRecordDetail<TRecord>(scope, id, initialRecord.updatedAt)
+    const nextSeed = nextCachedRecord ?? initialRecord
     setRecord(nextSeed)
     setDraft(manageDraft && toDraft ? toDraft(nextSeed) : null)
     setLoading(false)
     setError("")
     setCachedRecordDetail(scope, nextSeed.id, nextSeed.updatedAt, nextSeed)
-  }, [cachedRecord, id, initialRecord, manageDraft, scope, toDraft])
+  }, [id, initialRecord.id, initialRecord.updatedAt, manageDraft, scope, toDraft])
 
   const clearRecordCache = useCallback(() => {
     clearCachedRecordDetail(scope, id)

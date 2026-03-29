@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
+  MockRequestJsonError,
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "./helpers/simple-table-client-mocks"
@@ -16,11 +17,13 @@ function unitRow(overrides: Partial<{
   id: string
   name: string
   createdAt: string
+  updatedAt: string
 }> = {}) {
   return {
     id: "u-1",
     name: "Square Feet",
     createdAt: "2026-03-19T00:00:00.000Z",
+    updatedAt: "2026-03-19T00:00:00.000Z",
     ...overrides,
   }
 }
@@ -75,8 +78,14 @@ describe("UnitOfMeasuresClient", () => {
     expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/flooring/unit-of-measures/u-1"), { scroll: false })
   })
 
-  it("detail save validates and PATCHes the expected payload", async () => {
+  it("detail save validates and uses the engine primary section route", async () => {
     const user = userEvent.setup()
+    requestJsonMock.mockRejectedValueOnce(
+      new MockRequestJsonError("Unit of measure is required", {
+        status: 400,
+        payload: { field: "name" },
+      }),
+    )
 
     render(
       <UnitOfMeasureDetailClient
@@ -88,27 +97,55 @@ describe("UnitOfMeasuresClient", () => {
 
     const panelInput = screen.getByLabelText("Unit Of Measure")
     await user.clear(panelInput)
-    await user.click(screen.getByRole("button", { name: "Save Unit Of Measure" }))
+    await user.click(screen.getByRole("button", { name: "Save" }))
 
-    expect(requestJsonMock).not.toHaveBeenCalled()
-    expect(screen.getByText("Unit of measure is required")).toBeTruthy()
+    expect(await screen.findByText("Unit of measure is required")).toBeTruthy()
 
     requestJsonMock.mockResolvedValue({
-      unitOfMeasure: unitRow({ name: "Hour" }),
+      unitOfMeasure: unitRow({ name: "Hour", updatedAt: "2026-03-20T00:00:00.000Z" }),
     })
 
     await user.type(panelInput, "Hour")
-    await user.click(screen.getByRole("button", { name: "Save Unit Of Measure" }))
+    await user.click(screen.getByRole("button", { name: "Save" }))
 
     await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/builder/unit-of-measures/u-1", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Hour" }),
-      })
+      expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    expect(screen.getByText("Unit of measure updated")).toBeTruthy()
+    const [url, options] = requestJsonMock.mock.calls.at(-1) ?? []
+    const body = JSON.parse(String(options?.body ?? "{}"))
+
+    expect(url).toBe("/api/builder/unit-of-measures/u-1/primary/section")
+    expect(options).toMatchObject({
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    })
+    expect(body).toMatchObject({
+      name: "Hour",
+      mutation: {
+        expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+      },
+    })
+    expect(body.mutation.idempotencyKey).toEqual(expect.any(String))
+  })
+
+  it("detail save renders transport errors inside the primary section", async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockRejectedValue(new Error("Unit of measure must be unique"))
+
+    render(
+      <UnitOfMeasureDetailClient
+        unitOfMeasure={unitRow()}
+        canManage
+        backHref="/dashboard/flooring/unit-of-measures"
+      />,
+    )
+
+    await user.clear(screen.getByLabelText("Unit Of Measure"))
+    await user.type(screen.getByLabelText("Unit Of Measure"), "Hour")
+    await user.click(screen.getByRole("button", { name: "Save" }))
+
+    expect(await screen.findByText("Unit of measure must be unique")).toBeTruthy()
   })
 
   it("delete flow confirms and removes the row on success", async () => {

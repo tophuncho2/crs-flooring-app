@@ -41,9 +41,13 @@ vi.mock("@/features/flooring/shared/access/domain-tools", () => ({
 
 vi.mock("@/features/flooring/categories/data/queries", () => ({
   listCategories: vi.fn(),
-  createCategory: createCategoryMock,
-  updateCategory: vi.fn(),
-  deleteCategory: vi.fn(),
+}))
+
+vi.mock("@/features/flooring/categories/application/manage-category", () => ({
+  createCategoryRecord: createCategoryMock,
+  replaceCategoryPrimarySection: vi.fn(),
+  deleteCategoryRecord: vi.fn(),
+  validateUpdateCategoryPrimarySectionInput: vi.fn((value) => value),
 }))
 
 vi.mock("@/features/flooring/warehouse/api", () => ({
@@ -52,10 +56,11 @@ vi.mock("@/features/flooring/warehouse/api", () => ({
   updateWarehouseRow: vi.fn(),
 }))
 
-vi.mock("@/features/flooring/manufacturers/mutations", () => ({
-  createManufacturer: vi.fn(),
-  updateManufacturer: vi.fn(),
-  deleteManufacturer: deleteManufacturerMock,
+vi.mock("@/features/flooring/manufacturers/application/manage-manufacturer", () => ({
+  createManufacturerRecord: vi.fn(),
+  replaceManufacturerPrimarySection: vi.fn(),
+  deleteManufacturerRecord: deleteManufacturerMock,
+  validateUpdateManufacturerPrimarySectionInput: vi.fn((value) => value),
 }))
 
 vi.mock("@/server/http/route-helpers", () => ({

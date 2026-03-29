@@ -29,6 +29,7 @@ function normalizeCategory(category: {
   itemCoverageUnit: { id: string; name: string } | null
   serviceUnit: { id: string; name: string } | null
   createdAt: Date
+  updatedAt: Date
   _count?: { products: number }
 }): CategoryRow {
   return {
@@ -37,6 +38,7 @@ function normalizeCategory(category: {
     ...normalizeCategoryUnitValues(category),
     productCount: category._count?.products ?? 0,
     createdAt: category.createdAt.toISOString(),
+    updatedAt: category.updatedAt.toISOString(),
   }
 }
 

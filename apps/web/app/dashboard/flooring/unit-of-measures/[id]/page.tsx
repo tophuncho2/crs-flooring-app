@@ -4,7 +4,7 @@ import { canEditUnitOfMeasures } from "@/server/auth/access-control"
 import { requireUnitOfMeasuresAccess } from "@/features/flooring/shared/access/lookup-domains"
 import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
 import { getUnitOfMeasureDetailPageData } from "@/features/flooring/unit-of-measures/data/queries"
-import { UnitOfMeasureDetailClient } from "@/features/flooring/unit-of-measures/components/detail/unit-of-measure-detail-client"
+import { UnitOfMeasureDetailClient } from "@/features/flooring/unit-of-measures/record/detail/unit-of-measure-detail-client"
 
 export default async function UnitOfMeasureDetailPage({
   params,

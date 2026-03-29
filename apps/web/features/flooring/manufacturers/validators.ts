@@ -7,6 +7,10 @@ type ManufacturerFormInput = {
   companyName: string
 }
 
+export function normalizeManufacturerCompanyName(value: string) {
+  return value.trim().toLowerCase()
+}
+
 export function validateManufacturerForm(
   input: ManufacturerFormInput,
   existingManufacturers: ManufacturerLike[] = [],
@@ -18,10 +22,10 @@ export function validateManufacturerForm(
     return "Company name is required"
   }
 
-  const normalizedCompanyName = companyName.toLowerCase()
+  const normalizedCompanyName = normalizeManufacturerCompanyName(companyName)
   const hasDuplicate = existingManufacturers.some(
     (manufacturer) =>
-      manufacturer.id !== currentId && manufacturer.companyName.trim().toLowerCase() === normalizedCompanyName,
+      manufacturer.id !== currentId && normalizeManufacturerCompanyName(manufacturer.companyName) === normalizedCompanyName,
   )
 
   return hasDuplicate ? "Company name must be unique" : ""

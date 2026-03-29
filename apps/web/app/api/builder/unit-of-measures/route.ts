@@ -1,5 +1,6 @@
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { createUnitOfMeasure, listUnitOfMeasures, normalizeUnitOfMeasureInput } from "@/server/builder/unit-of-measures"
+import { createUnitOfMeasureRecord, validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
+import { listUnitOfMeasures } from "@/server/builder/unit-of-measures"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy } from "@/server/http/route-policy"
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   if (access instanceof Response) return access
 
   try {
-    const body = await request.json().catch(() => null)
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
     const unitOfMeasure = await withMutationTelemetry(
       access,
       {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
         route: "/api/builder/unit-of-measures",
         entityType: "flooringUnitOfMeasure",
       },
-      () => createUnitOfMeasure(normalizeUnitOfMeasureInput(body).name),
+      () => createUnitOfMeasureRecord(validateUpdateUnitOfMeasurePrimarySectionInput(body)),
     )
 
     return routeJson(access, { unitOfMeasure }, { status: 201 })

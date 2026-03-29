@@ -1,5 +1,9 @@
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { deleteUnitOfMeasure, normalizeUnitOfMeasureInput, updateUnitOfMeasure } from "@/server/builder/unit-of-measures"
+import {
+  deleteUnitOfMeasureRecord,
+  replaceUnitOfMeasurePrimarySection,
+  validateUpdateUnitOfMeasurePrimarySectionInput,
+} from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy } from "@/server/http/route-policy"
 
@@ -22,7 +26,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    const body = await request.json().catch(() => null)
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
     const unitOfMeasure = await withMutationTelemetry(
       access,
       {
@@ -32,7 +36,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringUnitOfMeasure",
         entityId: id,
       },
-      () => updateUnitOfMeasure(id, normalizeUnitOfMeasureInput(body).name),
+      () => replaceUnitOfMeasurePrimarySection(id, validateUpdateUnitOfMeasurePrimarySectionInput(body)),
     )
 
     return routeJson(access, { unitOfMeasure })
@@ -65,7 +69,7 @@ export async function DELETE(request: Request, context: RouteContext) {
         entityType: "flooringUnitOfMeasure",
         entityId: id,
       },
-      () => deleteUnitOfMeasure(id),
+      () => deleteUnitOfMeasureRecord(id),
     )
 
     return routeJson(access, { success: true })

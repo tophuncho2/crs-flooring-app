@@ -1,5 +1,4 @@
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { createManufacturer } from "@/features/flooring/manufacturers/mutations"
+import { createManufacturerRecord, validateUpdateManufacturerPrimarySectionInput } from "@/features/flooring/manufacturers/application/manage-manufacturer"
 import { listManufacturers } from "@/features/flooring/manufacturers/queries"
 import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
 import {
@@ -37,15 +36,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const companyName = parseRequiredString(body.companyName, "companyName")
-    const agentName = parseOptionalString(body.agentName ?? body.name)
-    const manufacturer = await createManufacturer({
-      companyName,
-      agentName,
-      website: parseOptionalString(body.website),
-      phone: parseOptionalString(body.phone),
-      email: parseOptionalString(body.email),
-    })
+    const manufacturer = await createManufacturerRecord(validateUpdateManufacturerPrimarySectionInput(body))
     logRouteMutationSuccess(access, {
       message: "Manufacturer created",
       action: "manufacturers.create",

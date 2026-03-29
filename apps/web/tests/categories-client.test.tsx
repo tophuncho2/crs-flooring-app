@@ -27,6 +27,7 @@ function categoryRow(overrides: Partial<{
   serviceUnit: string
   productCount: number
   createdAt: string
+  updatedAt: string
 }> = {}) {
   return {
     id: "cat-1",
@@ -43,6 +44,7 @@ function categoryRow(overrides: Partial<{
     serviceUnit: "",
     productCount: 2,
     createdAt: "2026-03-19T00:00:00.000Z",
+    updatedAt: "2026-03-19T00:00:00.000Z",
     ...overrides,
   }
 }
@@ -138,10 +140,15 @@ describe("CategoriesClient", () => {
     expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/flooring/categories/cat-1"), { scroll: false })
   })
 
-  it("detail save PATCHes the expected payload", async () => {
+  it("detail save uses the engine primary section route", async () => {
     const user = userEvent.setup()
     requestJsonMock.mockResolvedValue({
-      category: categoryRow({ name: "Updated Carpet", stockUnitId: "u-stock", stockUnit: "Roll" }),
+      category: categoryRow({
+        name: "Updated Carpet",
+        stockUnitId: "u-stock",
+        stockUnit: "Roll",
+        updatedAt: "2026-03-20T00:00:00.000Z",
+      }),
     })
 
     render(
@@ -157,28 +164,59 @@ describe("CategoriesClient", () => {
       />,
     )
 
+    expect(screen.getByText("Category Carpet")).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Save Category" })).toBeNull()
+
     const nameInput = screen.getByLabelText("Category Name")
     await user.clear(nameInput)
     await user.type(nameInput, "Updated Carpet")
     fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "u-stock" } })
-    await user.click(screen.getByRole("button", { name: "Save Category" }))
+    await user.click(screen.getByRole("button", { name: "Save" }))
 
     await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/categories/cat-1", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Updated Carpet",
-          sendUnitId: "u-send",
-          stockUnitId: "u-stock",
-          coverageAvailableUnitId: "",
-          itemCoverageUnitId: "u-item",
-          serviceUnitId: "",
-        }),
-      })
+      expect(requestJsonMock).toHaveBeenCalled()
     })
 
-    expect(screen.getByText("Category updated")).toBeTruthy()
+    const [url, options] = requestJsonMock.mock.calls.at(-1) ?? []
+    const body = JSON.parse(String(options?.body ?? "{}"))
+
+    expect(url).toBe("/api/flooring/categories/cat-1/primary/section")
+    expect(options).toMatchObject({
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    })
+    expect(body).toMatchObject({
+      name: "Updated Carpet",
+      sendUnitId: "u-send",
+      stockUnitId: "u-stock",
+      coverageAvailableUnitId: "",
+      itemCoverageUnitId: "u-item",
+      serviceUnitId: "",
+      mutation: {
+        expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+      },
+    })
+    expect(body.mutation.idempotencyKey).toEqual(expect.any(String))
+  })
+
+  it("detail save renders transport errors inside the primary section", async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockRejectedValue(new Error("Category name must be unique"))
+
+    render(
+      <CategoryDetailClient
+        category={categoryRow()}
+        canManage
+        unitOfMeasureOptions={[]}
+        backHref="/dashboard/flooring/categories"
+      />,
+    )
+
+    await user.clear(screen.getByLabelText("Category Name"))
+    await user.type(screen.getByLabelText("Category Name"), "Updated Carpet")
+    await user.click(screen.getByRole("button", { name: "Save" }))
+
+    expect(await screen.findByText("Category name must be unique")).toBeTruthy()
   })
 
   it("delete flow confirms and removes the row on success", async () => {

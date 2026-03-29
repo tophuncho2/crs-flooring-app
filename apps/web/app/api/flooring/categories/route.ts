@@ -1,4 +1,5 @@
-import { createCategory, listCategories } from "@/features/flooring/categories/data/queries"
+import { createCategoryRecord, validateUpdateCategoryPrimarySectionInput } from "@/features/flooring/categories/application/manage-category"
+import { listCategories } from "@/features/flooring/categories/data/queries"
 import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
 import {
   enforceRouteRateLimit,
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await authorizeCategoriesRoute(request, { capability: "governance.access" })
+  const access = await authorizeCategoriesRoute(request, { capability: "categories.edit" })
   if (access instanceof Response) return access
 
   const rateLimitResponse = await enforceRouteRateLimit(request, access, {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const category = await createCategory(body)
+    const category = await createCategoryRecord(validateUpdateCategoryPrimarySectionInput(body))
     logRouteMutationSuccess(access, {
       message: "Category created",
       action: "categories.create",
