@@ -13,6 +13,7 @@ export function RecordSectionItem({
   nestedContent,
   className,
   bodyClassName,
+  nestedContentClassName,
 }: {
   children: ReactNode
   status?: ReactNode
@@ -20,6 +21,7 @@ export function RecordSectionItem({
   nestedContent?: ReactNode
   className?: string
   bodyClassName?: string
+  nestedContentClassName?: string
 }) {
   return (
     <section
@@ -44,7 +46,9 @@ export function RecordSectionItem({
       ) : null}
       <div className={joinRecordSectionClasses("px-4 py-4", bodyClassName)}>{children}</div>
       {nestedContent ? (
-        <div className={joinRecordSectionClasses("border-t", RECORD_SECTION_BORDER_CLASS_NAME)}>{nestedContent}</div>
+        <div className={joinRecordSectionClasses("border-t", RECORD_SECTION_BORDER_CLASS_NAME, nestedContentClassName)}>
+          {nestedContent}
+        </div>
       ) : null}
     </section>
   )

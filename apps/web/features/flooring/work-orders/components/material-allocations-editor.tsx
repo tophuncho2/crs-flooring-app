@@ -147,14 +147,18 @@ function AllocationEditorRow({
         />
       </AllocationCell>
       <AllocationCell label="Controls">
-        <div className="flex flex-wrap items-center gap-2">
-          <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
-            {isLocalOnlyRow ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-          <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
-            Remove
-          </DeleteRowButton>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
+              {isLocalOnlyRow ? "Unsaved" : "Ready"}
+            </RecordSectionStatusBadge>
+            {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          </div>
+          <div className="flex items-start">
+            <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
+              Remove
+            </DeleteRowButton>
+          </div>
         </div>
       </AllocationCell>
     </div>

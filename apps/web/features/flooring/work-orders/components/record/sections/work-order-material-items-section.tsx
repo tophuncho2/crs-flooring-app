@@ -64,9 +64,11 @@ function MaterialItemEditorRow({
 
   return (
     <RecordSectionItem
+      bodyClassName={isExpanded ? "pb-0" : undefined}
+      nestedContentClassName={isExpanded ? "border-t-0" : undefined}
       nestedContent={
         isExpanded ? (
-          <div className="px-4 py-4">
+          <div className="px-4 pb-4 pt-0">
             {allocationContent}
           </div>
         ) : null
@@ -140,40 +142,44 @@ function MaterialItemEditorRow({
         />
         </RecordItemCell>
         <RecordItemCell label="Controls">
-        <div className="flex flex-wrap items-center gap-2">
-          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-            {isLocalOnlyItem ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          <RecordSectionStatusBadge
-            tone={
-              item.allocationStatus === "FULLY_ALLOCATED"
-                ? "success"
-                : item.allocationStatus === "SHORTAGE"
-                  ? "error"
-                  : item.allocationStatus === "PARTIALLY_ALLOCATED"
-                    ? "warning"
-                    : "neutral"
-            }
-          >
-            {item.allocationStatus.replaceAll("_", " ")}
-          </RecordSectionStatusBadge>
-          <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
-            {item.isAllocationDone ? "Done" : "Pending"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.8fr)_auto]">
           <button
             type="button"
             onClick={onToggleAllocations}
             aria-expanded={isExpanded}
             aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
+            className="inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
           >
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
           </button>
-          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
-            Remove
-          </DeleteRowButton>
+          <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
+            <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+              {isLocalOnlyItem ? "Unsaved" : "Ready"}
+            </RecordSectionStatusBadge>
+            <RecordSectionStatusBadge
+              tone={
+                item.allocationStatus === "FULLY_ALLOCATED"
+                  ? "success"
+                  : item.allocationStatus === "SHORTAGE"
+                    ? "error"
+                    : item.allocationStatus === "PARTIALLY_ALLOCATED"
+                      ? "warning"
+                      : "neutral"
+              }
+            >
+              {item.allocationStatus.replaceAll("_", " ")}
+            </RecordSectionStatusBadge>
+            <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
+              {item.isAllocationDone ? "Done" : "Pending"}
+            </RecordSectionStatusBadge>
+            {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          </div>
+          <div className="flex min-h-[2.5rem] items-start justify-end">
+            <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+              Remove
+            </DeleteRowButton>
+          </div>
         </div>
         </RecordItemCell>
       </div>
