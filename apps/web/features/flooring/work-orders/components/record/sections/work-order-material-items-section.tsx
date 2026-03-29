@@ -141,8 +141,8 @@ function MaterialItemEditorRow({
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
         </RecordItemCell>
-        <RecordItemCell label="Controls">
-        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.8fr)_auto]">
+        <RecordItemCell label="Allocations">
+        <div className="flex min-h-[2.5rem] items-center">
           <button
             type="button"
             onClick={onToggleAllocations}
@@ -153,33 +153,37 @@ function MaterialItemEditorRow({
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
           </button>
-          <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
-            <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-              {isLocalOnlyItem ? "Unsaved" : "Ready"}
-            </RecordSectionStatusBadge>
-            <RecordSectionStatusBadge
-              tone={
-                item.allocationStatus === "FULLY_ALLOCATED"
-                  ? "success"
-                  : item.allocationStatus === "SHORTAGE"
-                    ? "error"
-                    : item.allocationStatus === "PARTIALLY_ALLOCATED"
-                      ? "warning"
-                      : "neutral"
-              }
-            >
-              {item.allocationStatus.replaceAll("_", " ")}
-            </RecordSectionStatusBadge>
-            <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
-              {item.isAllocationDone ? "Done" : "Pending"}
-            </RecordSectionStatusBadge>
-            {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-          </div>
-          <div className="flex min-h-[2.5rem] items-start justify-end">
-            <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
-              Remove
-            </DeleteRowButton>
-          </div>
+        </div>
+        </RecordItemCell>
+        <RecordItemCell label="Status">
+        <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
+          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+            {isLocalOnlyItem ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          <RecordSectionStatusBadge
+            tone={
+              item.allocationStatus === "FULLY_ALLOCATED"
+                ? "success"
+                : item.allocationStatus === "SHORTAGE"
+                  ? "error"
+                  : item.allocationStatus === "PARTIALLY_ALLOCATED"
+                    ? "warning"
+                    : "neutral"
+            }
+          >
+            {item.allocationStatus.replaceAll("_", " ")}
+          </RecordSectionStatusBadge>
+          <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
+            {item.isAllocationDone ? "Done" : "Pending"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+        </div>
+        </RecordItemCell>
+        <RecordItemCell label="Remove">
+        <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+            Remove
+          </DeleteRowButton>
         </div>
         </RecordItemCell>
       </div>

@@ -138,7 +138,7 @@ function AllocationEditorRow({
       </AllocationCell>
       <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
       <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
-      <AllocationCell label="Notes">
+      <AllocationCell label="Notes" className="xl:col-span-2">
         <input
           value={allocation.notes}
           placeholder="Notes"
@@ -146,19 +146,19 @@ function AllocationEditorRow({
           className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
         />
       </AllocationCell>
-      <AllocationCell label="Controls">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
-              {isLocalOnlyRow ? "Unsaved" : "Ready"}
-            </RecordSectionStatusBadge>
-            {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-          </div>
-          <div className="flex items-start">
-            <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
-              Remove
-            </DeleteRowButton>
-          </div>
+      <AllocationCell label="Status">
+        <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
+          <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
+            {isLocalOnlyRow ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+        </div>
+      </AllocationCell>
+      <AllocationCell label="Remove">
+        <div className="flex min-h-[2.5rem] items-start justify-start xl:justify-end">
+          <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
+            Remove
+          </DeleteRowButton>
         </div>
       </AllocationCell>
     </div>
