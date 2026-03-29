@@ -4,14 +4,13 @@ import type { Dispatch, ReactNode, SetStateAction } from "react"
 import {
   AutoGrowTextarea,
   RecordFormField,
+  RecordPrimarySectionInstance,
   RecordPrimaryFieldCell,
   RecordPrimaryFieldsGrid,
   RecordPrimaryPane,
   RecordPrimarySection,
-  RecordSectionShell,
-  joinRecordSectionClasses,
-  RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
 } from "@/features/shared/engines/record-view"
+import type { RecordSectionError } from "@/features/shared/engines/record-view"
 import type { DraftTemplate, PropertyOption, WarehouseOption } from "@/features/flooring/templates/types"
 
 export function TemplatePrimaryFieldsSection({
@@ -20,7 +19,12 @@ export function TemplatePrimaryFieldsSection({
   warehouseOptions,
   padProductOptions,
   setDraft,
-  actionPanel,
+  error,
+  isDirty,
+  isSaving,
+  hasConflict,
+  onSave,
+  onDiscard,
   showHeader = true,
 }: {
   draft: DraftTemplate
@@ -28,7 +32,12 @@ export function TemplatePrimaryFieldsSection({
   warehouseOptions: WarehouseOption[]
   padProductOptions: Array<{ id: string; label: string }>
   setDraft: Dispatch<SetStateAction<DraftTemplate>>
-  actionPanel?: ReactNode
+  error?: ReactNode | RecordSectionError | null
+  isDirty: boolean
+  isSaving: boolean
+  hasConflict: boolean
+  onSave: () => void | Promise<void>
+  onDiscard: () => void
   showHeader?: boolean
 }) {
   const content = (
@@ -120,20 +129,18 @@ export function TemplatePrimaryFieldsSection({
       </RecordPrimarySection>
   )
 
-  if (!showHeader) {
-    return (
-      <>
-        {actionPanel}
-        <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
-          {content}
-        </div>
-      </>
-    )
-  }
-
   return (
-    <RecordSectionShell title="Template Details" bodyClassName="space-y-0" statusPanel={actionPanel}>
+    <RecordPrimarySectionInstance
+      title="Template Details"
+      error={error}
+      isDirty={isDirty}
+      isSaving={isSaving}
+      hasConflict={hasConflict}
+      onSave={onSave}
+      onDiscard={onDiscard}
+      showHeader={showHeader}
+    >
       {content}
-    </RecordSectionShell>
+    </RecordPrimarySectionInstance>
   )
 }

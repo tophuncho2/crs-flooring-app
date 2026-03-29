@@ -77,21 +77,6 @@ function buildWorkOrderReconciliationKey(input: {
   ].join(":")
 }
 
-function buildPrimarySectionStatus(input: {
-  isDirty: boolean
-  isSaving: boolean
-  hasConflict: boolean
-}) {
-  return (
-    <>
-      <RecordSectionStatusBadge tone={input.isSaving ? "processing" : input.isDirty ? "warning" : "success"}>
-        {input.isSaving ? "Saving" : input.isDirty ? "Dirty" : "Saved"}
-      </RecordSectionStatusBadge>
-      {input.hasConflict ? <RecordSectionStatusBadge tone="error">Conflict</RecordSectionStatusBadge> : null}
-    </>
-  )
-}
-
 function buildSectionStatus(input: {
   isDirty: boolean
   isSaving: boolean
@@ -531,6 +516,12 @@ export function WorkOrderRecordPanel({
             warehouseOptions={warehouseOptions}
             selectedAddressValue={selectedAddress(propertyOptions, primarySection.localValue, currentWorkOrder.propertyAddress)}
             unitType={currentWorkOrder.unitType}
+            error={primarySection.error}
+            isDirty={primarySection.isDirty}
+            isSaving={primarySection.isSaving}
+            hasConflict={primarySection.hasConflict}
+            onSave={() => void primarySection.save()}
+            onDiscard={() => primarySection.discard()}
             setDraft={(value) => {
               primarySection.setLocalValue((previous) => {
                 const nextValue =
@@ -540,36 +531,6 @@ export function WorkOrderRecordPanel({
                 return nextValue ?? previous
               })
             }}
-            actionPanel={
-              <RecordSectionActionPanel
-                status={buildPrimarySectionStatus({
-                  isDirty: primarySection.isDirty,
-                  isSaving: primarySection.isSaving,
-                  hasConflict: primarySection.hasConflict,
-                })}
-                error={primarySection.error}
-                actions={
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => primarySection.discard()}
-                      disabled={!primarySection.isDirty || primarySection.isSaving}
-                      className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                    >
-                      Discard
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void primarySection.save()}
-                      disabled={!primarySection.isDirty || primarySection.isSaving}
-                      className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                    >
-                      {primarySection.isSaving ? "Saving..." : "Save"}
-                    </button>
-                  </>
-                }
-              />
-            }
           />
         ) : null}
 

@@ -1,14 +1,11 @@
 "use client"
 
 import type { Dispatch, ReactNode, SetStateAction } from "react"
+import type { RecordSectionError } from "@/features/shared/engines/record-view"
 import {
   AutoGrowTextarea,
   RecordFormField,
-  RecordSectionShell,
-} from "@/features/shared/engines/record-view"
-import {
-  joinRecordSectionClasses,
-  RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
+  RecordPrimarySectionInstance,
 } from "@/features/shared/engines/record-view"
 import {
   RecordPrimaryFieldCell,
@@ -33,7 +30,12 @@ export function WorkOrderPrimaryFieldsSection({
   selectedAddressValue,
   unitType,
   setDraft,
-  actionPanel,
+  error,
+  isDirty,
+  isSaving,
+  hasConflict,
+  onSave,
+  onDiscard,
   showHeader = true,
 }: {
   draft: DraftWorkOrder
@@ -42,7 +44,12 @@ export function WorkOrderPrimaryFieldsSection({
   selectedAddressValue: string
   unitType: string
   setDraft: Dispatch<SetStateAction<DraftWorkOrder | null>>
-  actionPanel?: ReactNode
+  error?: ReactNode | RecordSectionError | null
+  isDirty: boolean
+  isSaving: boolean
+  hasConflict: boolean
+  onSave: () => void | Promise<void>
+  onDiscard: () => void
   showHeader?: boolean
 }) {
   const content = (
@@ -196,20 +203,18 @@ export function WorkOrderPrimaryFieldsSection({
     </RecordPrimarySection>
   )
 
-  if (!showHeader) {
-    return (
-      <>
-        {actionPanel}
-        <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
-          {content}
-        </div>
-      </>
-    )
-  }
-
   return (
-    <RecordSectionShell title="Work Order Details" bodyClassName="space-y-0" statusPanel={actionPanel}>
+    <RecordPrimarySectionInstance
+      title="Work Order Details"
+      error={error}
+      isDirty={isDirty}
+      isSaving={isSaving}
+      hasConflict={hasConflict}
+      onSave={onSave}
+      onDiscard={onDiscard}
+      showHeader={showHeader}
+    >
       {content}
-    </RecordSectionShell>
+    </RecordPrimarySectionInstance>
   )
 }
