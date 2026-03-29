@@ -1,1 +1,1 @@
-export { WORK_ORDER_MATERIAL_GRID_CLASS_NAME } from "./work-order-line-item-grid"
+export { WORK_ORDER_MATERIAL_COLUMNS } from "./work-order-line-item-grid"

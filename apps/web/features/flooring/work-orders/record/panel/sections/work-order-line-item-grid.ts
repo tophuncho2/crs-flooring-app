@@ -1,11 +1,36 @@
-export const WORK_ORDER_MATERIAL_GRID_CLASS_NAME =
-  "grid w-full gap-0 lg:grid-cols-[minmax(18rem,2.1fr)_minmax(7.5rem,.62fr)_minmax(7.5rem,.62fr)_minmax(6.75rem,.54fr)_minmax(11rem,.95fr)_minmax(9.5rem,.82fr)_minmax(10.5rem,.92fr)_minmax(5.75rem,.42fr)] xl:grid-cols-[minmax(20rem,2.25fr)_minmax(8rem,.68fr)_minmax(8rem,.68fr)_minmax(7rem,.58fr)_minmax(12rem,1fr)_minmax(10rem,.84fr)_minmax(11rem,.95fr)_minmax(5.75rem,.42fr)]"
+import type { RecordRowColumnSpec } from "@/features/shared/engines/record-view"
 
-export const WORK_ORDER_SERVICE_GRID_CLASS_NAME =
-  "grid w-full gap-0 xl:grid-cols-[minmax(16rem,1.6fr)_minmax(16rem,1.6fr)_minmax(8.25rem,.72fr)_minmax(8.25rem,.72fr)_minmax(7rem,.64fr)_minmax(14rem,1.1fr)_minmax(12rem,.9fr)]"
+export const WORK_ORDER_MATERIAL_COLUMNS = [
+  { key: "product", minWidth: 320, grow: 2.25 },
+  { key: "quantity", minWidth: 152, grow: 0.7, align: "center" },
+  { key: "unitPrice", minWidth: 184, grow: 0.82 },
+  { key: "total", minWidth: 160, grow: 0.72 },
+  { key: "notes", minWidth: 224, grow: 1.15 },
+  { key: "allocations", minWidth: 136, grow: 0.76, align: "center" },
+  { key: "status", minWidth: 176, grow: 0.9, align: "center" },
+  { key: "remove", minWidth: 112, grow: 0.52, align: "end" },
+] satisfies RecordRowColumnSpec[]
 
-export const WORK_ORDER_SALES_REP_GRID_CLASS_NAME =
-  "grid w-full gap-0 xl:grid-cols-[minmax(22rem,2.5fr)_minmax(8.25rem,.72fr)_minmax(7rem,.64fr)_minmax(12rem,.9fr)]"
+export const WORK_ORDER_SERVICE_COLUMNS = [
+  { key: "service", minWidth: 256, grow: 1.65 },
+  { key: "name", minWidth: 256, grow: 1.65 },
+  { key: "quantity", minWidth: 164, grow: 0.8, align: "center" },
+  { key: "unitPrice", minWidth: 184, grow: 0.82 },
+  { key: "total", minWidth: 160, grow: 0.72 },
+  { key: "notes", minWidth: 224, grow: 1.1 },
+  { key: "status", minWidth: 176, grow: 0.9, align: "center" },
+  { key: "remove", minWidth: 112, grow: 0.52, align: "end" },
+] satisfies RecordRowColumnSpec[]
 
-export const WORK_ORDER_CALCULATION_GRID_CLASS_NAME =
-  "grid w-full gap-0 xl:grid-cols-[minmax(18rem,2fr)_minmax(9rem,.8fr)]"
+export const WORK_ORDER_SALES_REP_COLUMNS = [
+  { key: "salesRep", minWidth: 320, grow: 2.2 },
+  { key: "percent", minWidth: 168, grow: 0.8, align: "center" },
+  { key: "total", minWidth: 168, grow: 0.8, align: "end" },
+  { key: "status", minWidth: 176, grow: 0.9, align: "center" },
+  { key: "remove", minWidth: 112, grow: 0.52, align: "end" },
+] satisfies RecordRowColumnSpec[]
+
+export const WORK_ORDER_CALCULATION_COLUMNS = [
+  { key: "calculation", minWidth: 288, grow: 2 },
+  { key: "value", minWidth: 176, grow: 0.9, align: "end" },
+] satisfies RecordRowColumnSpec[]

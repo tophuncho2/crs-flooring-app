@@ -8,8 +8,7 @@ import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
   buildRecordActionConfirmationMessage,
   confirmRecordAction,
-  RecordFooterNeutralButton,
-  RecordManagedSectionActionPanel,
+  RecordSectionSubHeader,
   RecordSectionStatusBadge,
   RecordPanelFooter,
   RecordSectionStack,
@@ -524,7 +523,7 @@ export function WorkOrderRecordPanel({
             productOptions={productOptions}
             loading={loading}
             actionPanel={
-              <RecordManagedSectionActionPanel
+              <RecordSectionSubHeader
                 isDirty={materialSection.isDirty}
                 isSaving={materialSection.isSaving}
                 hasConflict={materialSection.hasConflict}
@@ -551,24 +550,24 @@ export function WorkOrderRecordPanel({
                     ) : null}
                   </>
                 }
-                extraActions={
-                  <>
-                    <RecordFooterNeutralButton onClick={materialSection.addItem}>
-                      Add Material Item
-                    </RecordFooterNeutralButton>
-                    <RecordFooterNeutralButton
-                      onClick={requestAutoAllocation}
-                      disabled={autoAllocationRequestBlocked || materialSection.localValue.length === 0}
-                    >
-                      {autoAllocationButtonLabel}
-                    </RecordFooterNeutralButton>
-                    {autoAllocationWorkflow.isPending ? (
-                      <RecordFooterNeutralButton onClick={() => void autoAllocationWorkflow.refresh()}>
-                        Refresh Status
-                      </RecordFooterNeutralButton>
-                    ) : null}
-                  </>
-                }
+                actions={[
+                  { key: "add-material-item", label: "Add Material Item", onClick: materialSection.addItem },
+                  {
+                    key: "run-auto-allocation",
+                    label: autoAllocationButtonLabel,
+                    onClick: requestAutoAllocation,
+                    disabled: autoAllocationRequestBlocked || materialSection.localValue.length === 0,
+                  },
+                  ...(autoAllocationWorkflow.isPending
+                    ? [
+                        {
+                          key: "refresh-auto-allocation",
+                          label: "Refresh Status",
+                          onClick: () => void autoAllocationWorkflow.refresh(),
+                        },
+                      ]
+                    : []),
+                ]}
               />
             }
             itemErrors={materialSection.itemErrors}
@@ -600,18 +599,14 @@ export function WorkOrderRecordPanel({
           totalAmount={currentSummary.serviceTotal}
           loading={loading}
           actionPanel={
-            <RecordManagedSectionActionPanel
+            <RecordSectionSubHeader
               isDirty={serviceSection.isDirty}
               isSaving={serviceSection.isSaving}
               hasConflict={serviceSection.hasConflict}
               error={serviceSection.error}
               onSave={() => void serviceSection.save()}
               onDiscard={() => serviceSection.discard()}
-              extraActions={
-                <RecordFooterNeutralButton onClick={serviceSection.addItem}>
-                  Add Service Item
-                </RecordFooterNeutralButton>
-              }
+              actions={[{ key: "add-service-item", label: "Add Service Item", onClick: serviceSection.addItem }]}
             />
           }
           itemErrors={serviceSection.itemErrors}
@@ -627,18 +622,14 @@ export function WorkOrderRecordPanel({
           totalAmount={currentExpenseSummary.salesRepExpense}
           loading={loading}
           actionPanel={
-            <RecordManagedSectionActionPanel
+            <RecordSectionSubHeader
               isDirty={salesRepSection.isDirty}
               isSaving={salesRepSection.isSaving}
               hasConflict={salesRepSection.hasConflict}
               error={salesRepSection.error}
               onSave={() => void salesRepSection.save()}
               onDiscard={() => salesRepSection.discard()}
-              extraActions={
-                <RecordFooterNeutralButton onClick={salesRepSection.addItem}>
-                  Add Sales Rep
-                </RecordFooterNeutralButton>
-              }
+              actions={[{ key: "add-sales-rep", label: "Add Sales Rep", onClick: salesRepSection.addItem }]}
             />
           }
           itemErrors={salesRepSection.itemErrors}

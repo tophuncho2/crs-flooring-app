@@ -2,10 +2,11 @@
 
 import React from "react"
 import { describe, expect, it, vi } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
   RecordDetailClientScaffold,
+  RecordSectionSubHeader,
   RecordSingleSectionPanel,
   useRecordPageController,
   useSingleSectionRecordController,
@@ -160,5 +161,38 @@ describe("record view single-section engine", () => {
 
     await user.click(screen.getByRole("button", { name: "Expand Category Carpet" }))
     expect(screen.getByText("Single Section Fields")).toBeTruthy()
+  })
+
+  it("section sub-header renders canonical status and configured actions from engine state", async () => {
+    const user = userEvent.setup()
+    const save = vi.fn()
+    const discard = vi.fn()
+    const refresh = vi.fn()
+
+    const { container } = render(
+      <RecordSectionSubHeader
+        isDirty
+        isSaving={false}
+        hasConflict
+        onSave={save}
+        onDiscard={discard}
+        actions={[{ key: "refresh", label: "Refresh", onClick: refresh }]}
+      />,
+    )
+    const scoped = within(container)
+
+    expect(scoped.getAllByText("Dirty").length).toBeGreaterThan(0)
+    expect(scoped.getByText("Conflict")).toBeTruthy()
+    expect(scoped.getByRole("button", { name: "Refresh" })).toBeTruthy()
+    expect(scoped.getByRole("button", { name: "Discard" })).toBeTruthy()
+    expect(scoped.getByRole("button", { name: "Save" })).toBeTruthy()
+
+    await user.click(scoped.getByRole("button", { name: "Refresh" }))
+    await user.click(scoped.getByRole("button", { name: "Discard" }))
+    await user.click(scoped.getByRole("button", { name: "Save" }))
+
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(discard).toHaveBeenCalledTimes(1)
+    expect(save).toHaveBeenCalledTimes(1)
   })
 })

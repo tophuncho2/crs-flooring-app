@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionItem,
   RecordSectionMetric,
   RecordSectionShell,
@@ -24,7 +25,7 @@ import {
   hasFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import { WORK_ORDER_SALES_REP_GRID_CLASS_NAME } from "./work-order-line-item-grid"
+import { WORK_ORDER_SALES_REP_COLUMNS } from "./work-order-line-item-grid"
 import { buildSalesRepSectionMetrics } from "./work-order-section-metrics"
 
 function SalesRepRow({
@@ -48,8 +49,8 @@ function SalesRepRow({
   return (
     <RecordSectionItem
     >
-      <div className={WORK_ORDER_SALES_REP_GRID_CLASS_NAME}>
-        <RecordItemCell label="Sales Rep">
+      <RecordRowLayout columns={WORK_ORDER_SALES_REP_COLUMNS}>
+        <RecordItemCell label="Sales Rep" columnKey="salesRep">
         <div className="space-y-1">
           <select
             value={item.contactId}
@@ -74,7 +75,7 @@ function SalesRepRow({
           {rowErrors?.contactId ? <FieldErrorText>{rowErrors.contactId}</FieldErrorText> : null}
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Percent">
+        <RecordItemCell label="Percent" columnKey="percent">
         <div className="space-y-1">
           <div
             className={getFieldControlClassName(
@@ -94,23 +95,27 @@ function SalesRepRow({
           {rowErrors?.percent ? <FieldErrorText>{rowErrors.percent}</FieldErrorText> : null}
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Total">
+        <RecordItemCell label="Total" columnKey="total">
         <div className="rounded border border-[var(--panel-border)] px-2 py-1 font-medium">
           {formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))}
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Controls">
-        <div className="flex flex-wrap items-center gap-2">
+        <RecordItemCell label="Status" columnKey="status">
+        <div className="flex min-h-[2.5rem] items-center">
           <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
             {isLocalOnlyItem ? "Unsaved" : "Ready"}
           </RecordSectionStatusBadge>
           {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+        </div>
+        </RecordItemCell>
+        <RecordItemCell label="Remove" columnKey="remove">
+        <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
             Remove
           </DeleteRowButton>
         </div>
         </RecordItemCell>
-      </div>
+      </RecordRowLayout>
     </RecordSectionItem>
   )
 }

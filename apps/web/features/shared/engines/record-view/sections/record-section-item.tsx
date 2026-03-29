@@ -45,7 +45,7 @@ export function RecordSectionItem({
         </div>
       ) : null}
       <div className="overflow-x-auto">
-        <div className={joinRecordSectionClasses("min-w-full", bodyClassName)}>{children}</div>
+        <div className={joinRecordSectionClasses("w-full", bodyClassName)}>{children}</div>
       </div>
       {nestedContent ? (
         <div className={joinRecordSectionClasses("border-t", RECORD_SECTION_BORDER_CLASS_NAME, nestedContentClassName)}>

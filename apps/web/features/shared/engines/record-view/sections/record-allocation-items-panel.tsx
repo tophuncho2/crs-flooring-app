@@ -47,7 +47,7 @@ export function RecordAllocationItemsPanel({
     >
       {children ? (
         <div className="overflow-x-auto">
-          <div className={joinRecordSectionClasses("min-w-full overflow-hidden", RECORD_SECTION_BORDER_CLASS_NAME)}>
+          <div className={joinRecordSectionClasses("w-full overflow-hidden", RECORD_SECTION_BORDER_CLASS_NAME)}>
             {children}
           </div>
         </div>

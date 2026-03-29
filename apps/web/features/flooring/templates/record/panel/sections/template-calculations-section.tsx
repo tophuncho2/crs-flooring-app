@@ -2,11 +2,13 @@
 
 import {
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionMetric,
   RecordSectionShell,
   RECORD_SECTION_BORDER_CLASS_NAME,
+  TextCell,
 } from "@/features/shared/engines/record-view"
-import { TEMPLATE_CALCULATION_GRID_CLASS_NAME } from "./template-line-item-grid"
+import { TEMPLATE_CALCULATION_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateCalculationSectionMetrics } from "./template-section-metrics"
 import { type DisplayCalculationRow } from "@/features/flooring/shared/line-items/calculation-rows-table"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
@@ -52,14 +54,16 @@ export function TemplateCalculationsSection({
       ) : null}
       {!loading
         ? items.map((item) => (
-            <div key={item.key} className={TEMPLATE_CALCULATION_GRID_CLASS_NAME}>
-              <RecordItemCell label="Calculation">{item.label}</RecordItemCell>
-              <RecordItemCell label="Value">
-                <div className="rounded border border-[var(--panel-border)] px-2 py-1 font-medium">
-                  {formatCalculationValue(item)}
-                </div>
+            <RecordRowLayout key={item.key} columns={TEMPLATE_CALCULATION_COLUMNS}>
+              <RecordItemCell label="Calculation" columnKey="calculation">
+                <TextCell>{item.label}</TextCell>
               </RecordItemCell>
-            </div>
+              <RecordItemCell label="Value" columnKey="value">
+                <TextCell align="right" className="font-medium">
+                  {formatCalculationValue(item)}
+                </TextCell>
+              </RecordItemCell>
+            </RecordRowLayout>
           ))
         : null}
     </RecordSectionShell>

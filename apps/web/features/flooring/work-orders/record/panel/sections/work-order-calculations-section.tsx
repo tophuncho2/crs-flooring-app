@@ -2,11 +2,13 @@
 
 import {
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionMetric,
   RecordSectionShell,
   RECORD_SECTION_BORDER_CLASS_NAME,
+  TextCell,
 } from "@/features/shared/engines/record-view"
-import { WORK_ORDER_CALCULATION_GRID_CLASS_NAME } from "./work-order-line-item-grid"
+import { WORK_ORDER_CALCULATION_COLUMNS } from "./work-order-line-item-grid"
 import { buildCalculationSectionMetrics } from "./work-order-section-metrics"
 import { type DisplayCalculationRow } from "@/features/flooring/shared/line-items/calculation-rows-table"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
@@ -52,14 +54,16 @@ export function WorkOrderCalculationsSection({
       ) : null}
       {!loading
         ? items.map((item) => (
-            <div key={item.key} className={WORK_ORDER_CALCULATION_GRID_CLASS_NAME}>
-              <RecordItemCell label="Calculation">{item.label}</RecordItemCell>
-              <RecordItemCell label="Value">
-                <div className="rounded border border-[var(--panel-border)] px-2 py-1 font-medium">
-                  {formatCalculationValue(item)}
-                </div>
+            <RecordRowLayout key={item.key} columns={WORK_ORDER_CALCULATION_COLUMNS}>
+              <RecordItemCell label="Calculation" columnKey="calculation">
+                <TextCell>{item.label}</TextCell>
               </RecordItemCell>
-            </div>
+              <RecordItemCell label="Value" columnKey="value">
+                <TextCell align="right" className="font-medium">
+                  {formatCalculationValue(item)}
+                </TextCell>
+              </RecordItemCell>
+            </RecordRowLayout>
           ))
         : null}
     </RecordSectionShell>

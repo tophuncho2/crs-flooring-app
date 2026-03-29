@@ -7,6 +7,7 @@ import {
   CurrencyCell,
   QuantityCell,
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionItem,
   RecordSectionMetric,
   RecordSectionShell,
@@ -28,7 +29,7 @@ import type {
   MaterialItemField,
   MaterialItemOption,
 } from "@/features/flooring/shared/line-items/material-items-editor"
-import { WORK_ORDER_MATERIAL_GRID_CLASS_NAME } from "./work-order-line-item-grid"
+import { WORK_ORDER_MATERIAL_COLUMNS } from "./work-order-line-item-grid"
 import { buildMaterialSectionMetrics } from "./work-order-section-metrics"
 import type { WorkOrderMaterialItem } from "@/features/flooring/work-orders/types"
 
@@ -111,8 +112,8 @@ function MaterialItemEditorRow({
         ) : null
       }
     >
-      <div className={WORK_ORDER_MATERIAL_GRID_CLASS_NAME}>
-        <RecordItemCell label="Product">
+      <RecordRowLayout columns={WORK_ORDER_MATERIAL_COLUMNS}>
+        <RecordItemCell label="Product" columnKey="product">
         <div className="space-y-1">
           <select
             value={item.productId}
@@ -131,7 +132,7 @@ function MaterialItemEditorRow({
           {rowErrors?.productId ? <FieldErrorText>{rowErrors.productId}</FieldErrorText> : null}
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Qty">
+        <RecordItemCell label="Qty" columnKey="quantity">
         <div className="space-y-1">
           <QuantityCell
             className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity))}
@@ -150,7 +151,7 @@ function MaterialItemEditorRow({
           {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Unit Price">
+        <RecordItemCell label="Unit Price" columnKey="unitPrice">
         <div className="space-y-1">
           <CurrencyCell
             className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
@@ -168,17 +169,17 @@ function MaterialItemEditorRow({
           {rowErrors?.unitPrice ? <FieldErrorText>{rowErrors.unitPrice}</FieldErrorText> : null}
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Total">
+        <RecordItemCell label="Total" columnKey="total">
         <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
-        <RecordItemCell label="Notes">
+        <RecordItemCell label="Notes" columnKey="notes">
         <input
           value={item.notes}
           onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
         </RecordItemCell>
-        <RecordItemCell label="Allocations">
+        <RecordItemCell label="Allocations" columnKey="allocations">
         <div className="flex min-h-[2.5rem] items-center">
           <button
             type="button"
@@ -192,21 +193,21 @@ function MaterialItemEditorRow({
           </button>
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Status">
+        <RecordItemCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
           <RecordSectionStatusBadge tone={rowStatusTone} className="min-w-[8.75rem] justify-center">
             {rowStatusLabel}
           </RecordSectionStatusBadge>
         </div>
         </RecordItemCell>
-        <RecordItemCell label="Remove">
+        <RecordItemCell label="Remove" columnKey="remove">
         <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
           <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
             Remove
           </DeleteRowButton>
         </div>
         </RecordItemCell>
-      </div>
+      </RecordRowLayout>
     </RecordSectionItem>
   )
 }

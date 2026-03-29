@@ -7,7 +7,9 @@ import {
   RecordAllocationItemRow,
   RecordAllocationItemsPanel,
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionStatusBadge,
+  TextCell,
 } from "@/features/shared/engines/record-view"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
@@ -19,7 +21,7 @@ import {
   type FieldErrorMap,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import { WORK_ORDER_MATERIAL_GRID_CLASS_NAME } from "./material-grid-layout"
+import { WORK_ORDER_MATERIAL_COLUMNS } from "./material-grid-layout"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "@/features/flooring/work-orders/types"
 
 export type AllocationDraft = {
@@ -83,16 +85,19 @@ function readAllocationRowStatusTone(allocation: WorkOrderItemAllocationRow, has
 
 function AllocationCell({
   label,
+  columnKey,
   children,
   className,
 }: {
   label: string
+  columnKey: string
   children?: ReactNode
   className?: string
 }) {
   return (
     <RecordItemCell
       label={label}
+      columnKey={columnKey}
       className={joinClasses("bg-orange-500/[0.08] px-2.5 py-2", className)}
       labelClassName="text-[9px] text-[var(--foreground)]/55"
     >
@@ -103,13 +108,15 @@ function AllocationCell({
 
 function AllocationValueCell({
   label,
+  columnKey,
   value,
 }: {
   label: string
+  columnKey: string
   value: string
 }) {
   return (
-    <AllocationCell label={label}>
+    <AllocationCell label={label} columnKey={columnKey}>
       <div className="rounded-md border border-[rgba(58,58,58,0.72)] bg-[var(--panel-background)] px-2 py-1.5 text-sm text-[var(--foreground)]">
         {value}
       </div>
@@ -137,8 +144,8 @@ function AllocationEditorRow({
   const rowStatusTone = readAllocationRowStatusTone(allocation, hasErrors)
 
   return (
-    <div className={joinClasses(WORK_ORDER_MATERIAL_GRID_CLASS_NAME, hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined)}>
-      <AllocationCell label="Inventory">
+    <RecordRowLayout columns={WORK_ORDER_MATERIAL_COLUMNS} className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}>
+      <AllocationCell label="Inventory" columnKey="product">
         <div className="space-y-1">
           <select
             value={allocation.inventoryId}
@@ -155,7 +162,7 @@ function AllocationEditorRow({
           {rowErrors?.inventoryId ? <FieldErrorText>{rowErrors.inventoryId}</FieldErrorText> : null}
         </div>
       </AllocationCell>
-      <AllocationCell label="Qty">
+      <AllocationCell label="Qty" columnKey="quantity">
         <div className="space-y-1">
           <QuantityCell
             className={getFieldControlClassName("w-full bg-[var(--panel-background)]", Boolean(rowErrors?.quantity))}
@@ -173,13 +180,13 @@ function AllocationEditorRow({
           {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
         </div>
       </AllocationCell>
-      <AllocationCell label="Unit Cost">
+      <AllocationCell label="Unit Cost" columnKey="unitPrice">
         <CurrencyCell value={formatCurrencyValue(rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
       </AllocationCell>
-      <AllocationCell label="Total">
+      <AllocationCell label="Total" columnKey="total">
         <CurrencyCell value={formatCurrencyValue(quantityValue * rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
       </AllocationCell>
-      <AllocationCell label="Notes" className="xl:col-span-2">
+      <AllocationCell label="Notes" columnKey="notes">
         <input
           value={allocation.notes}
           placeholder="Notes"
@@ -187,21 +194,26 @@ function AllocationEditorRow({
           className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
         />
       </AllocationCell>
-      <AllocationCell label="Status">
+      <AllocationCell label="Allocations" columnKey="allocations">
+        <TextCell align="center" className="text-[var(--foreground)]/45">
+          -
+        </TextCell>
+      </AllocationCell>
+      <AllocationCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
           <RecordSectionStatusBadge tone={rowStatusTone} className="min-w-[8.75rem] justify-center">
             {rowStatusLabel}
           </RecordSectionStatusBadge>
         </div>
       </AllocationCell>
-      <AllocationCell label="Remove">
+      <AllocationCell label="Remove" columnKey="remove">
         <div className="flex min-h-[2.5rem] items-start justify-start xl:justify-end">
           <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} className="whitespace-nowrap px-2.5">
             Remove
           </DeleteRowButton>
         </div>
       </AllocationCell>
-    </div>
+    </RecordRowLayout>
   )
 }
 

@@ -2,13 +2,7 @@
 
 import type { ReactNode } from "react"
 import type { RecordSectionError } from "../contracts"
-import {
-  RecordFooterDestructiveButton,
-  RecordFooterNeutralButton,
-  RecordFooterPrimaryButton,
-} from "../shell/record-action-buttons"
-import { RecordSectionActionPanel } from "./record-section-action-panel"
-import { RecordSectionSaveStateIndicators } from "./record-section-status-indicators"
+import { RecordSectionSubHeader } from "./record-section-sub-header"
 
 export function RecordManagedSectionActionPanel({
   summary,
@@ -44,37 +38,22 @@ export function RecordManagedSectionActionPanel({
   canManage?: boolean
 }) {
   return (
-    <RecordSectionActionPanel
+    <RecordSectionSubHeader
       summary={summary}
       error={error ?? null}
-      status={
-        <RecordSectionSaveStateIndicators
-          isDirty={isDirty}
-          isSaving={isSaving}
-          hasConflict={hasConflict}
-          extra={statusExtra}
-        />
-      }
-      actions={
-        canManage ? (
-          <>
-            {extraActions}
-            {onDelete ? (
-              <RecordFooterDestructiveButton onClick={() => void onDelete()} disabled={isSaving}>
-                {deleteLabel}
-              </RecordFooterDestructiveButton>
-            ) : null}
-            <RecordFooterNeutralButton onClick={onDiscard} disabled={!isDirty || isSaving}>
-              {discardLabel}
-            </RecordFooterNeutralButton>
-            <RecordFooterPrimaryButton onClick={() => void onSave()} disabled={!isDirty || isSaving}>
-              {isSaving ? savingLabel : saveLabel}
-            </RecordFooterPrimaryButton>
-          </>
-        ) : extraActions ? (
-          <>{extraActions}</>
-        ) : null
-      }
+      isDirty={isDirty}
+      isSaving={isSaving}
+      hasConflict={hasConflict}
+      onSave={onSave}
+      onDiscard={onDiscard}
+      onDelete={onDelete}
+      saveLabel={saveLabel}
+      savingLabel={savingLabel}
+      discardLabel={discardLabel}
+      deleteLabel={deleteLabel}
+      statusExtra={statusExtra}
+      canManage={canManage}
+      actions={[]}
     />
   )
 }

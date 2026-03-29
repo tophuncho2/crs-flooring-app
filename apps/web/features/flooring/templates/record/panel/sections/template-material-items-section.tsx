@@ -6,6 +6,7 @@ import {
   CurrencyCell,
   QuantityCell,
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionItem,
   RecordSectionMetric,
   RecordSectionShell,
@@ -27,7 +28,7 @@ import type {
   MaterialItemField,
   MaterialItemOption,
 } from "@/features/flooring/shared/line-items/material-items-editor"
-import { TEMPLATE_MATERIAL_GRID_CLASS_NAME } from "./template-line-item-grid"
+import { TEMPLATE_MATERIAL_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateMaterialSectionMetrics } from "./template-section-metrics"
 
 function readStatusLabel(item: EditableMaterialItem, hasErrors: boolean) {
@@ -64,8 +65,8 @@ function TemplateMaterialItemRow({
 
   return (
     <RecordSectionItem>
-      <div className={TEMPLATE_MATERIAL_GRID_CLASS_NAME}>
-        <RecordItemCell label="Product">
+      <RecordRowLayout columns={TEMPLATE_MATERIAL_COLUMNS}>
+        <RecordItemCell label="Product" columnKey="product">
           <div className="space-y-1">
             <select
               value={item.productId}
@@ -85,7 +86,7 @@ function TemplateMaterialItemRow({
             {rowErrors?.productId ? <FieldErrorText>{rowErrors.productId}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Qty">
+        <RecordItemCell label="Qty" columnKey="quantity">
           <div className="space-y-1">
             <QuantityCell
               className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity))}
@@ -104,7 +105,7 @@ function TemplateMaterialItemRow({
             {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Unit Price">
+        <RecordItemCell label="Unit Price" columnKey="unitPrice">
           <div className="space-y-1">
             <CurrencyCell
               className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
@@ -122,31 +123,31 @@ function TemplateMaterialItemRow({
             {rowErrors?.unitPrice ? <FieldErrorText>{rowErrors.unitPrice}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Total">
+        <RecordItemCell label="Total" columnKey="total">
           <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
-        <RecordItemCell label="Notes">
+        <RecordItemCell label="Notes" columnKey="notes">
           <input
             value={item.notes}
             onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
             className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
           />
         </RecordItemCell>
-        <RecordItemCell label="Status">
+        <RecordItemCell label="Status" columnKey="status">
           <div className="flex min-h-[2.5rem] items-center">
             <RecordSectionStatusBadge tone={readStatusTone(item, hasErrors)} className="min-w-[8.75rem] justify-center">
               {readStatusLabel(item, hasErrors)}
             </RecordSectionStatusBadge>
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Remove">
+        <RecordItemCell label="Remove" columnKey="remove">
           <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
             <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
               Remove
             </DeleteRowButton>
           </div>
         </RecordItemCell>
-      </div>
+      </RecordRowLayout>
     </RecordSectionItem>
   )
 }

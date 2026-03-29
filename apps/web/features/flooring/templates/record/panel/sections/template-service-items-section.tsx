@@ -6,6 +6,7 @@ import {
   CurrencyCell,
   QuantityCell,
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionItem,
   RecordSectionMetric,
   RecordSectionShell,
@@ -26,7 +27,7 @@ import type {
   ServiceOption,
   UnitOption,
 } from "@/features/flooring/shared/line-items/service-items-editor"
-import { TEMPLATE_SERVICE_GRID_CLASS_NAME } from "./template-line-item-grid"
+import { TEMPLATE_SERVICE_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateServiceSectionMetrics } from "./template-section-metrics"
 
 function readStatusLabel(item: EditableServiceItem, hasErrors: boolean) {
@@ -61,8 +62,8 @@ function TemplateServiceItemRow({
 
   return (
     <RecordSectionItem>
-      <div className={TEMPLATE_SERVICE_GRID_CLASS_NAME}>
-        <RecordItemCell label="Service">
+      <RecordRowLayout columns={TEMPLATE_SERVICE_COLUMNS}>
+        <RecordItemCell label="Service" columnKey="service">
           <select
             value={item.serviceId}
             onChange={(event) => {
@@ -86,7 +87,7 @@ function TemplateServiceItemRow({
             ))}
           </select>
         </RecordItemCell>
-        <RecordItemCell label="Name">
+        <RecordItemCell label="Name" columnKey="name">
           <div className="space-y-1">
             <input
               value={item.name}
@@ -99,7 +100,7 @@ function TemplateServiceItemRow({
             {rowErrors?.name ? <FieldErrorText>{rowErrors.name}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Qty">
+        <RecordItemCell label="Qty" columnKey="quantity">
           <div className="space-y-1">
             <QuantityCell
               className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity || rowErrors?.unitId))}
@@ -137,7 +138,7 @@ function TemplateServiceItemRow({
             {rowErrors?.unitId ? <FieldErrorText>{rowErrors.unitId}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Unit Price">
+        <RecordItemCell label="Unit Price" columnKey="unitPrice">
           <div className="space-y-1">
             <CurrencyCell
               className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
@@ -155,31 +156,31 @@ function TemplateServiceItemRow({
             {rowErrors?.unitPrice ? <FieldErrorText>{rowErrors.unitPrice}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Total">
+        <RecordItemCell label="Total" columnKey="total">
           <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
-        <RecordItemCell label="Notes">
+        <RecordItemCell label="Notes" columnKey="notes">
           <input
             value={item.notes}
             onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
             className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
           />
         </RecordItemCell>
-        <RecordItemCell label="Status">
+        <RecordItemCell label="Status" columnKey="status">
           <div className="flex min-h-[2.5rem] items-center">
             <RecordSectionStatusBadge tone={readStatusTone(item, hasErrors)} className="min-w-[8.75rem] justify-center">
               {readStatusLabel(item, hasErrors)}
             </RecordSectionStatusBadge>
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Remove">
+        <RecordItemCell label="Remove" columnKey="remove">
           <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
             <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
               Remove
             </DeleteRowButton>
           </div>
         </RecordItemCell>
-      </div>
+      </RecordRowLayout>
     </RecordSectionItem>
   )
 }

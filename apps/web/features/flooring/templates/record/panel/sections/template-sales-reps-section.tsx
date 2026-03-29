@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   RecordItemCell,
+  RecordRowLayout,
   RecordSectionItem,
   RecordSectionMetric,
   RecordSectionShell,
@@ -24,7 +25,7 @@ import {
   hasFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import { TEMPLATE_SALES_REP_GRID_CLASS_NAME } from "./template-line-item-grid"
+import { TEMPLATE_SALES_REP_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateSalesRepSectionMetrics } from "./template-section-metrics"
 
 function readStatusLabel(item: EditableSalesRepItem, hasErrors: boolean) {
@@ -59,8 +60,8 @@ function TemplateSalesRepRow({
 
   return (
     <RecordSectionItem>
-      <div className={TEMPLATE_SALES_REP_GRID_CLASS_NAME}>
-        <RecordItemCell label="Sales Rep">
+      <RecordRowLayout columns={TEMPLATE_SALES_REP_COLUMNS}>
+        <RecordItemCell label="Sales Rep" columnKey="salesRep">
           <div className="space-y-1">
             <select
               value={item.contactId}
@@ -85,7 +86,7 @@ function TemplateSalesRepRow({
             {rowErrors?.contactId ? <FieldErrorText>{rowErrors.contactId}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Percent">
+        <RecordItemCell label="Percent" columnKey="percent">
           <div className="space-y-1">
             <div
               className={getFieldControlClassName(
@@ -105,26 +106,26 @@ function TemplateSalesRepRow({
             {rowErrors?.percent ? <FieldErrorText>{rowErrors.percent}</FieldErrorText> : null}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Total">
+        <RecordItemCell label="Total" columnKey="total">
           <div className="rounded border border-[var(--panel-border)] px-2 py-1 font-medium">
             {formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))}
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Status">
+        <RecordItemCell label="Status" columnKey="status">
           <div className="flex min-h-[2.5rem] items-center">
             <RecordSectionStatusBadge tone={readStatusTone(item, hasErrors)} className="min-w-[8.75rem] justify-center">
               {readStatusLabel(item, hasErrors)}
             </RecordSectionStatusBadge>
           </div>
         </RecordItemCell>
-        <RecordItemCell label="Remove">
+        <RecordItemCell label="Remove" columnKey="remove">
           <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
             <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
               Remove
             </DeleteRowButton>
           </div>
         </RecordItemCell>
-      </div>
+      </RecordRowLayout>
     </RecordSectionItem>
   )
 }

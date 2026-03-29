@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { RecordManagedSectionActionPanel } from "./record-managed-section-action-panel"
+import { RecordSectionSubHeader } from "./record-section-sub-header"
 import { RecordSectionShell } from "./record-section-shell"
 import {
   joinRecordSectionClasses,
@@ -47,7 +47,7 @@ export function RecordPrimarySectionInstance({
   showHeader?: boolean
 }) {
   const actionPanel = (
-    <RecordManagedSectionActionPanel
+    <RecordSectionSubHeader
       summary={summary}
       error={error ?? null}
       isDirty={isDirty}

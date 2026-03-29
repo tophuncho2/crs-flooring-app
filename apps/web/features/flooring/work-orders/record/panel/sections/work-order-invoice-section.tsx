@@ -6,7 +6,7 @@ import {
   type RecordSectionWorkflowPhase,
 } from "@/features/shared/engines/record-view"
 import {
-  RecordSectionActionPanel,
+  RecordSectionSubHeader,
   RecordSectionStatusBadge,
   RecordSectionShell,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -66,8 +66,12 @@ export function WorkOrderInvoiceSection({
       defaultOpen={false}
       onOpenChange={onOpenChange}
       statusPanel={
-        <RecordSectionActionPanel
-          status={
+        <RecordSectionSubHeader
+          isDirty={false}
+          isSaving={isPending}
+          hasConflict={false}
+          canManage={false}
+          statusExtra={
             <>
               <RecordSectionStatusBadge tone={workflowTone}>
                 Invoice: {formatRecordSectionWorkflowPhase(workflowPhase)}
@@ -82,35 +86,23 @@ export function WorkOrderInvoiceSection({
             </>
           }
           error={error}
-          actions={
-            <>
-              <button
-                type="button"
-                onClick={onQueueInvoice}
-                disabled={isPending}
-                className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
-              >
-                {queueButtonLabel}
-              </button>
-              {isPending ? (
-                <button
-                  type="button"
-                  onClick={onRefreshStatus}
-                  className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--panel-hover)]"
-                >
-                  Refresh Status
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={onOpenInvoice}
-                disabled={!invoice.canOpen}
-                className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
-              >
-                Open Invoice
-              </button>
-            </>
-          }
+          actions={[
+            {
+              key: "queue-invoice",
+              label: queueButtonLabel,
+              onClick: onQueueInvoice,
+              disabled: isPending,
+            },
+            ...(isPending && onRefreshStatus
+              ? [{ key: "refresh-invoice-status", label: "Refresh Status", onClick: onRefreshStatus }]
+              : []),
+            {
+              key: "open-invoice",
+              label: "Open Invoice",
+              onClick: onOpenInvoice,
+              disabled: !invoice.canOpen,
+            },
+          ]}
         />
       }
     >

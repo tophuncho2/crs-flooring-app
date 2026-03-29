@@ -9,7 +9,7 @@ import { buildRecordSummary } from "@/features/flooring/shared/domain/record-sum
 import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,
-  RecordManagedSectionActionPanel,
+  RecordSectionSubHeader,
   RecordSectionStack,
   useRecordDetailController,
   useRecordNotices,
@@ -272,18 +272,14 @@ export function TemplateRecordPanel({
           onItemFieldChange={materialSection.changeField}
           onDeleteItem={materialSection.deleteItem}
           actionPanel={
-            <RecordManagedSectionActionPanel
+            <RecordSectionSubHeader
               isDirty={materialSection.isDirty}
               isSaving={materialSection.isSaving}
               hasConflict={materialSection.hasConflict}
               error={materialSection.error}
               onSave={() => void materialSection.save()}
               onDiscard={() => materialSection.discard()}
-              extraActions={
-                <RecordFooterNeutralButton onClick={materialSection.addItem}>
-                  Add Material Item
-                </RecordFooterNeutralButton>
-              }
+              actions={[{ key: "add-material-item", label: "Add Material Item", onClick: materialSection.addItem }]}
             />
           }
         />
@@ -299,18 +295,14 @@ export function TemplateRecordPanel({
           onItemFieldChange={serviceSection.changeField}
           onDeleteItem={serviceSection.deleteItem}
           actionPanel={
-            <RecordManagedSectionActionPanel
+            <RecordSectionSubHeader
               isDirty={serviceSection.isDirty}
               isSaving={serviceSection.isSaving}
               hasConflict={serviceSection.hasConflict}
               error={serviceSection.error}
               onSave={() => void serviceSection.save()}
               onDiscard={() => serviceSection.discard()}
-              extraActions={
-                <RecordFooterNeutralButton onClick={serviceSection.addItem}>
-                  Add Service Item
-                </RecordFooterNeutralButton>
-              }
+              actions={[{ key: "add-service-item", label: "Add Service Item", onClick: serviceSection.addItem }]}
             />
           }
         />
@@ -326,18 +318,14 @@ export function TemplateRecordPanel({
           onItemFieldChange={salesRepSection.changeField}
           onDeleteItem={salesRepSection.deleteItem}
           actionPanel={
-            <RecordManagedSectionActionPanel
+            <RecordSectionSubHeader
               isDirty={salesRepSection.isDirty}
               isSaving={salesRepSection.isSaving}
               hasConflict={salesRepSection.hasConflict}
               error={salesRepSection.error}
               onSave={() => void salesRepSection.save()}
               onDiscard={() => salesRepSection.discard()}
-              extraActions={
-                <RecordFooterNeutralButton onClick={salesRepSection.addItem}>
-                  Add Sales Rep
-                </RecordFooterNeutralButton>
-              }
+              actions={[{ key: "add-sales-rep", label: "Add Sales Rep", onClick: salesRepSection.addItem }]}
             />
           }
         />
