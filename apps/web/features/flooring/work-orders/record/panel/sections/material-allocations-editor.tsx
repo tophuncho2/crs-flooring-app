@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react"
 import {
+  CurrencyCell,
+  QuantityCell,
   RecordAllocationItemRow,
   RecordAllocationItemsPanel,
   RecordItemCell,
@@ -155,19 +157,28 @@ function AllocationEditorRow({
       </AllocationCell>
       <AllocationCell label="Qty">
         <div className="space-y-1">
-          <input
-            value={allocation.quantity}
-            inputMode="decimal"
-            spellCheck={false}
-            placeholder="Qty"
-            onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(rowErrors?.quantity))}
+          <QuantityCell
+            className={getFieldControlClassName("w-full bg-[var(--panel-background)]", Boolean(rowErrors?.quantity))}
+            input={
+              <input
+                value={allocation.quantity}
+                inputMode="decimal"
+                spellCheck={false}
+                placeholder="Qty"
+                onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
+                className="w-16 bg-transparent text-center text-[var(--foreground)] outline-none"
+              />
+            }
           />
           {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
         </div>
       </AllocationCell>
-      <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
-      <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
+      <AllocationCell label="Unit Cost">
+        <CurrencyCell value={formatCurrencyValue(rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
+      </AllocationCell>
+      <AllocationCell label="Total">
+        <CurrencyCell value={formatCurrencyValue(quantityValue * rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
+      </AllocationCell>
       <AllocationCell label="Notes" className="xl:col-span-2">
         <input
           value={allocation.notes}

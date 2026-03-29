@@ -1,8 +1,8 @@
 import type { ReactNode } from "react"
 import { DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME } from "@/features/dashboard/shared/display/dashboard-card-title"
-import { RecordSectionHeader } from "../sections/record-section-header"
 import { RECORD_DETAIL_PANEL_WIDTH_CLASS } from "./record-panel-width"
 import { RecordBackButton } from "./record-action-buttons"
+import { RecordPrimaryHeader } from "./record-primary-header"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -44,17 +44,15 @@ export function RecordDetailPageShell({
       <div className={joinClasses("mx-auto w-full", sizeClass)}>
         <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">
           {headerVariant === "section" ? (
-            <RecordSectionHeader
+            <RecordPrimaryHeader
               title={title}
+              backHref={backHref}
+              backLabel={backLabel}
+              onBack={onBack}
               isOpen={Boolean(isHeaderExpanded)}
-              onToggle={onHeaderToggle ?? (() => {})}
-              metrics={headerMeta}
-              actions={
-                <div className="flex items-center gap-2">
-                  {headerActions}
-                  {backButton}
-                </div>
-              }
+              onToggle={onHeaderToggle}
+              headerMeta={headerMeta}
+              headerActions={headerActions}
             />
           ) : (
             <div className="relative border-b border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] px-5 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.12)]">

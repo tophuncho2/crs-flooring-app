@@ -4,6 +4,8 @@ import { type ReactNode } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
+  CurrencyCell,
+  QuantityCell,
   RecordItemCell,
   RecordSectionItem,
   RecordSectionMetric,
@@ -15,7 +17,6 @@ import {
   formatLineTotal,
 } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
-import { LineItemPriceField, LineItemQuantityField, LineItemTotalField } from "@/features/flooring/shared/ui/record-items/line-item-table-cells"
 import {
   FieldErrorText,
   getFieldControlClassName,
@@ -106,9 +107,7 @@ function MaterialItemEditorRow({
       nestedContentClassName={isExpanded ? "border-t-0" : undefined}
       nestedContent={
         isExpanded ? (
-          <div className="px-4 pb-4 pt-0">
-            {allocationContent}
-          </div>
+          allocationContent
         ) : null
       }
     >
@@ -134,7 +133,7 @@ function MaterialItemEditorRow({
         </RecordItemCell>
         <RecordItemCell label="Qty">
         <div className="space-y-1">
-          <LineItemQuantityField
+          <QuantityCell
             className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity))}
             input={
               <input
@@ -143,7 +142,7 @@ function MaterialItemEditorRow({
                 spellCheck={false}
                 placeholder="Qty"
                 onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                className="w-16 bg-transparent outline-none"
+                className="w-16 bg-transparent text-center outline-none"
               />
             }
             unit={<span className="whitespace-nowrap">{readProductUnit(productOptions, item.productId, item.sendUnit)}</span>}
@@ -153,7 +152,7 @@ function MaterialItemEditorRow({
         </RecordItemCell>
         <RecordItemCell label="Unit Price">
         <div className="space-y-1">
-          <LineItemPriceField
+          <CurrencyCell
             className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
             input={
               <input
@@ -161,7 +160,7 @@ function MaterialItemEditorRow({
                 inputMode="decimal"
                 spellCheck={false}
                 onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
-                className="w-16 bg-transparent outline-none"
+                className="w-16 bg-transparent text-right outline-none"
               />
             }
             unit={readProductUnit(productOptions, item.productId, item.sendUnit) || "unit"}
@@ -170,7 +169,7 @@ function MaterialItemEditorRow({
         </div>
         </RecordItemCell>
         <RecordItemCell label="Total">
-        <LineItemTotalField value={formatLineTotal(item)} className="w-full justify-end" />
+        <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
         <RecordItemCell label="Notes">
         <input

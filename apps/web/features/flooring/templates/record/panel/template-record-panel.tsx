@@ -50,6 +50,8 @@ export function TemplateRecordPanel({
   currentUserId,
   templateId,
   initialTemplate,
+  showPrimaryFields = true,
+  usePageHeaderForPrimarySection = false,
   propertyOptions,
   warehouseOptions,
   padProductOptions,
@@ -66,6 +68,8 @@ export function TemplateRecordPanel({
   currentUserId: string
   templateId: string
   initialTemplate: TemplateDetail
+  showPrimaryFields?: boolean
+  usePageHeaderForPrimarySection?: boolean
   propertyOptions: Array<{ id: string; name: string }>
   warehouseOptions: Array<{ id: string; name: string }>
   padProductOptions: Array<{ id: string; label: string }>
@@ -252,49 +256,53 @@ export function TemplateRecordPanel({
       <FormStatusNotices message={notices.message} error={notices.error} loadingMessage="" />
 
       <RecordSectionStack>
-        <TemplatePrimaryFieldsSection
-          draft={primarySection.localValue}
-          propertyOptions={propertyOptions}
-          warehouseOptions={warehouseOptions}
-          padProductOptions={padProductOptions}
-          setDraft={(value) => {
-            primarySection.setLocalValue((previous) =>
-              typeof value === "function" ? value(previous) : value,
-            )
-          }}
-          actionPanel={
-            <RecordSectionActionPanel
-              status={buildSectionStatus({
-                isDirty: primarySection.isDirty,
-                isSaving: primarySection.isSaving,
-                hasConflict: primarySection.hasConflict,
-              })}
-              error={primarySection.error}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={() => primarySection.discard()}
-                    disabled={!primarySection.isDirty || primarySection.isSaving}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void primarySection.save()}
-                    disabled={!primarySection.isDirty || primarySection.isSaving}
-                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    {primarySection.isSaving ? "Saving..." : "Save"}
-                  </button>
-                </>
-              }
-            />
-          }
-        />
+        {showPrimaryFields ? (
+          <TemplatePrimaryFieldsSection
+            showHeader={!usePageHeaderForPrimarySection}
+            draft={primarySection.localValue}
+            propertyOptions={propertyOptions}
+            warehouseOptions={warehouseOptions}
+            padProductOptions={padProductOptions}
+            setDraft={(value) => {
+              primarySection.setLocalValue((previous) =>
+                typeof value === "function" ? value(previous) : value,
+              )
+            }}
+            actionPanel={
+              <RecordSectionActionPanel
+                status={buildSectionStatus({
+                  isDirty: primarySection.isDirty,
+                  isSaving: primarySection.isSaving,
+                  hasConflict: primarySection.hasConflict,
+                })}
+                error={primarySection.error}
+                actions={
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => primarySection.discard()}
+                      disabled={!primarySection.isDirty || primarySection.isSaving}
+                      className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                    >
+                      Discard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void primarySection.save()}
+                      disabled={!primarySection.isDirty || primarySection.isSaving}
+                      className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                    >
+                      {primarySection.isSaving ? "Saving..." : "Save"}
+                    </button>
+                  </>
+                }
+              />
+            }
+          />
+        ) : null}
 
-        <TemplateMaterialItemsSection
+        <div className={showPrimaryFields ? "pt-2" : undefined}>
+          <TemplateMaterialItemsSection
           title="Material Items"
           items={materialSection.localValue}
           productOptions={productOptions}
@@ -440,7 +448,8 @@ export function TemplateRecordPanel({
           }
         />
 
-        <TemplateCalculationsSection title="Calculations" items={currentCalculationRows} loading={loading} />
+          <TemplateCalculationsSection title="Calculations" items={currentCalculationRows} loading={loading} />
+        </div>
       </RecordSectionStack>
 
       <div className="flex justify-between gap-2">

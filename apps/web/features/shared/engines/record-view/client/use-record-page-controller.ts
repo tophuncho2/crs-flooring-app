@@ -24,8 +24,11 @@ export type RecordPageController = {
   notices: RecordNotices
   isDirty: boolean
   dirtySections: string[]
+  isPrimarySectionOpen: boolean
   setIsDirty: (value: boolean) => void
   setDirtySections: (value: string[]) => void
+  setPrimarySectionOpen: (value: boolean) => void
+  togglePrimarySectionOpen: () => void
   summary: RecordPageSummary
   setSummary: (value: RecordPageSummary) => void
   closePage: () => void
@@ -43,6 +46,7 @@ export function useRecordPageController({
   const router = useRouter()
   const notices = useRecordNotices()
   const [dirtySections, setDirtySections] = useState<string[]>([])
+  const [isPrimarySectionOpen, setPrimarySectionOpen] = useState(true)
   const [summary, setSummary] = useState<RecordPageSummary>(EMPTY_SUMMARY)
   const guard = useRecordCloseGuard({
     isDirty: dirtySections.length > 0,
@@ -75,19 +79,36 @@ export function useRecordPageController({
     router.push(backHref, { scroll: false })
   }, [backHref, router])
 
+  const togglePrimarySectionOpen = useCallback(() => {
+    setPrimarySectionOpen((current) => !current)
+  }, [])
+
   return useMemo(
     () => ({
       notices,
       isDirty: dirtySections.length > 0,
       dirtySections,
+      isPrimarySectionOpen,
       setIsDirty,
       setDirtySections,
+      setPrimarySectionOpen,
+      togglePrimarySectionOpen,
       summary,
       setSummary,
       closePage,
       redirectToBack,
       confirmNavigation: guard.confirmNavigation,
     }),
-    [closePage, dirtySections, guard.confirmNavigation, notices, redirectToBack, setIsDirty, summary],
+    [
+      closePage,
+      dirtySections,
+      guard.confirmNavigation,
+      isPrimarySectionOpen,
+      notices,
+      redirectToBack,
+      setIsDirty,
+      summary,
+      togglePrimarySectionOpen,
+    ],
   )
 }

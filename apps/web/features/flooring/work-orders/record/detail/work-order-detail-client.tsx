@@ -39,7 +39,6 @@ export default function WorkOrderDetailClient({
     dirtyMessage: "You have unsaved work order changes. Leave this work order without saving?",
   })
   const [workOrder, setWorkOrder] = useState(initialWorkOrder)
-  const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
 
   const closePage = useCallback(() => {
     page.closePage()
@@ -74,8 +73,8 @@ export default function WorkOrderDetailClient({
       title={`Work Order ${workOrder.workOrderNumber}`}
       backHref={backHref}
       onBack={closePage}
-      onHeaderToggle={() => setIsPrimaryFieldsOpen((current) => !current)}
-      isHeaderExpanded={isPrimaryFieldsOpen}
+      onHeaderToggle={page.togglePrimarySectionOpen}
+      isHeaderExpanded={page.isPrimarySectionOpen}
       headerVariant="section"
       headerActions={
         <RecordOptionsMenu
@@ -93,7 +92,7 @@ export default function WorkOrderDetailClient({
         currentUserId={currentUserId}
         workOrderId={workOrder.id}
         initialWorkOrder={workOrder}
-        showPrimaryFields={isPrimaryFieldsOpen}
+        showPrimaryFields={page.isPrimarySectionOpen}
         usePageHeaderForPrimarySection
         propertyOptions={propertyOptions}
         warehouseOptions={warehouseOptions}

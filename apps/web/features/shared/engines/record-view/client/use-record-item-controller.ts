@@ -14,7 +14,7 @@ export function useRecordItemController<TItem>({
   const addItem = useCallback(
     (createItem: () => TItem) => {
       const nextItem = createItem()
-      setItems((previous) => [...previous, nextItem])
+      setItems((previous) => [nextItem, ...previous])
       return nextItem
     },
     [setItems],

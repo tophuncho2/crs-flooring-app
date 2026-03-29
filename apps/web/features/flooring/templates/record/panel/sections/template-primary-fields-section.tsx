@@ -9,6 +9,8 @@ import {
   RecordPrimaryPane,
   RecordPrimarySection,
   RecordSectionShell,
+  joinRecordSectionClasses,
+  RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
 } from "@/features/shared/engines/record-view"
 import type { DraftTemplate, PropertyOption, WarehouseOption } from "@/features/flooring/templates/types"
 
@@ -19,6 +21,7 @@ export function TemplatePrimaryFieldsSection({
   padProductOptions,
   setDraft,
   actionPanel,
+  showHeader = true,
 }: {
   draft: DraftTemplate
   propertyOptions: PropertyOption[]
@@ -26,10 +29,10 @@ export function TemplatePrimaryFieldsSection({
   padProductOptions: Array<{ id: string; label: string }>
   setDraft: Dispatch<SetStateAction<DraftTemplate>>
   actionPanel?: ReactNode
+  showHeader?: boolean
 }) {
-  return (
-    <RecordSectionShell title="Template Details" bodyClassName="space-y-0" statusPanel={actionPanel}>
-      <RecordPrimarySection>
+  const content = (
+    <RecordPrimarySection>
         <RecordPrimaryPane variant="side">
           <RecordPrimaryFieldsGrid variant="side">
             <RecordPrimaryFieldCell>
@@ -115,6 +118,22 @@ export function TemplatePrimaryFieldsSection({
           </RecordPrimaryFieldsGrid>
         </RecordPrimaryPane>
       </RecordPrimarySection>
+  )
+
+  if (!showHeader) {
+    return (
+      <>
+        {actionPanel}
+        <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
+          {content}
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <RecordSectionShell title="Template Details" bodyClassName="space-y-0" statusPanel={actionPanel}>
+      {content}
     </RecordSectionShell>
   )
 }

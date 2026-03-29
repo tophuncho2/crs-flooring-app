@@ -3,6 +3,8 @@
 import type { ReactNode } from "react"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
+  CurrencyCell,
+  QuantityCell,
   RecordItemCell,
   RecordSectionItem,
   RecordSectionMetric,
@@ -12,7 +14,6 @@ import {
 } from "@/features/shared/engines/record-view"
 import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
-import { LineItemPriceField, LineItemQuantityField, LineItemTotalField } from "@/features/flooring/shared/ui/record-items/line-item-table-cells"
 import {
   FieldErrorText,
   getFieldControlClassName,
@@ -89,7 +90,7 @@ function ServiceItemRow({
         </RecordItemCell>
         <RecordItemCell label="Qty">
         <div className="space-y-1">
-          <LineItemQuantityField
+          <QuantityCell
             className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity || rowErrors?.unitId))}
             input={
               <input
@@ -98,7 +99,7 @@ function ServiceItemRow({
                 spellCheck={false}
                 placeholder="Qty"
                 onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                className="w-16 bg-transparent outline-none"
+                className="w-16 bg-transparent text-center outline-none"
               />
             }
             unit={
@@ -127,7 +128,7 @@ function ServiceItemRow({
         </RecordItemCell>
         <RecordItemCell label="Unit Price">
         <div className="space-y-1">
-          <LineItemPriceField
+          <CurrencyCell
             className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
             input={
               <input
@@ -135,7 +136,7 @@ function ServiceItemRow({
                 inputMode="decimal"
                 spellCheck={false}
                 onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
-                className="w-16 bg-transparent outline-none"
+                className="w-16 bg-transparent text-right outline-none"
               />
             }
             unit={item.unitName || "unit"}
@@ -144,7 +145,7 @@ function ServiceItemRow({
         </div>
         </RecordItemCell>
         <RecordItemCell label="Total">
-        <LineItemTotalField value={formatLineTotal(item)} className="w-full justify-end" />
+        <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
         <RecordItemCell label="Notes">
         <input

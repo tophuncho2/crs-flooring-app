@@ -26,6 +26,7 @@ export function RecordDetailClientScaffold({
   dirtyMessage,
   headerMeta,
   headerActions,
+  headerVariant = "default",
   children,
 }: {
   title: string
@@ -33,6 +34,7 @@ export function RecordDetailClientScaffold({
   dirtyMessage: string
   headerMeta?: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode)
   headerActions?: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode)
+  headerVariant?: "default" | "section"
   children: (context: RecordDetailClientScaffoldContext) => ReactNode
 }) {
   const page = useRecordPageController({
@@ -45,6 +47,9 @@ export function RecordDetailClientScaffold({
       title={title}
       backHref={backHref}
       onBack={page.closePage}
+      onHeaderToggle={headerVariant === "section" ? page.togglePrimarySectionOpen : undefined}
+      isHeaderExpanded={headerVariant === "section" ? page.isPrimarySectionOpen : undefined}
+      headerVariant={headerVariant}
       headerMeta={resolveSlot(headerMeta, page)}
       headerActions={resolveSlot(headerActions, page)}
     >

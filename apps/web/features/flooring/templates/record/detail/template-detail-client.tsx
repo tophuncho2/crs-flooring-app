@@ -35,6 +35,7 @@ export function TemplateDetailClient({
       title={`Template ${template.templateNumber}`}
       backHref={backHref}
       dirtyMessage="You have unsaved template changes. Leave this template without saving?"
+      headerVariant="section"
       headerMeta={({ summary }) => (
         <RecordLineSummary materialItems={summary.materialItems} serviceItems={summary.serviceItems} variant="header" />
       )}
@@ -52,6 +53,8 @@ export function TemplateDetailClient({
             serviceOptions={serviceOptions}
             salesRepOptions={salesRepOptions}
             unitOptions={unitOptions}
+            showPrimaryFields={page.isPrimarySectionOpen}
+            usePageHeaderForPrimarySection
             onClose={page.closePage}
             onSummaryChange={page.setSummary as (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void}
             onDirtyChange={page.setIsDirty}
