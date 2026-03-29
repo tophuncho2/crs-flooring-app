@@ -1,6 +1,5 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
@@ -9,7 +8,8 @@ import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
   buildRecordActionConfirmationMessage,
   confirmRecordAction,
-  RecordSectionActionPanel,
+  RecordFooterNeutralButton,
+  RecordManagedSectionActionPanel,
   RecordSectionStatusBadge,
   RecordPanelFooter,
   RecordSectionStack,
@@ -75,23 +75,6 @@ function buildWorkOrderReconciliationKey(input: {
     input.invoiceStatus?.generation?.status ?? "",
     input.invoiceStatus?.artifact?.id ?? "",
   ].join(":")
-}
-
-function buildSectionStatus(input: {
-  isDirty: boolean
-  isSaving: boolean
-  hasConflict: boolean
-  workflow?: ReactNode
-}) {
-  return (
-    <>
-      <RecordSectionStatusBadge tone={input.isSaving ? "processing" : input.isDirty ? "warning" : "success"}>
-        {input.isSaving ? "Saving" : input.isDirty ? "Dirty" : "Saved"}
-      </RecordSectionStatusBadge>
-      {input.hasConflict ? <RecordSectionStatusBadge tone="error">Conflict</RecordSectionStatusBadge> : null}
-      {input.workflow}
-    </>
-  )
 }
 
 function buildUnsavedWorkflowWarning(dirtySections: string[]) {
@@ -541,75 +524,49 @@ export function WorkOrderRecordPanel({
             productOptions={productOptions}
             loading={loading}
             actionPanel={
-              <RecordSectionActionPanel
-                status={buildSectionStatus({
-                  isDirty: materialSection.isDirty,
-                  isSaving: materialSection.isSaving,
-                  hasConflict: materialSection.hasConflict,
-                  workflow: (
-                    <>
-                      <RecordSectionStatusBadge
-                        tone={
-                          autoAllocationWorkflow.phase === "completed"
-                            ? "success"
-                            : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
-                              ? "error"
-                              : autoAllocationWorkflow.isPending
-                                ? "processing"
-                                : "neutral"
-                        }
-                      >
-                        Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
-                      </RecordSectionStatusBadge>
-                      {autoAllocationWorkflow.isStalled ? (
-                        <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
-                      ) : null}
-                    </>
-                  ),
-                })}
+              <RecordManagedSectionActionPanel
+                isDirty={materialSection.isDirty}
+                isSaving={materialSection.isSaving}
+                hasConflict={materialSection.hasConflict}
                 error={materialSection.error ?? autoAllocationWorkflow.error}
-                actions={
+                onSave={() => void materialSection.save()}
+                onDiscard={() => materialSection.discard()}
+                statusExtra={
                   <>
-                    <button
-                      type="button"
-                      onClick={materialSection.addItem}
-                      className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
+                    <RecordSectionStatusBadge
+                      tone={
+                        autoAllocationWorkflow.phase === "completed"
+                          ? "success"
+                          : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
+                            ? "error"
+                            : autoAllocationWorkflow.isPending
+                              ? "processing"
+                              : "neutral"
+                      }
                     >
+                      Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
+                    </RecordSectionStatusBadge>
+                    {autoAllocationWorkflow.isStalled ? (
+                      <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
+                    ) : null}
+                  </>
+                }
+                extraActions={
+                  <>
+                    <RecordFooterNeutralButton onClick={materialSection.addItem}>
                       Add Material Item
-                    </button>
-                    <button
-                      type="button"
+                    </RecordFooterNeutralButton>
+                    <RecordFooterNeutralButton
                       onClick={requestAutoAllocation}
                       disabled={autoAllocationRequestBlocked || materialSection.localValue.length === 0}
-                      className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
                     >
                       {autoAllocationButtonLabel}
-                    </button>
+                    </RecordFooterNeutralButton>
                     {autoAllocationWorkflow.isPending ? (
-                      <button
-                        type="button"
-                        onClick={() => void autoAllocationWorkflow.refresh()}
-                        className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
-                      >
+                      <RecordFooterNeutralButton onClick={() => void autoAllocationWorkflow.refresh()}>
                         Refresh Status
-                      </button>
+                      </RecordFooterNeutralButton>
                     ) : null}
-                    <button
-                      type="button"
-                      onClick={() => materialSection.discard()}
-                      disabled={!materialSection.isDirty || materialSection.isSaving}
-                      className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                    >
-                      Discard
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void materialSection.save()}
-                      disabled={!materialSection.isDirty || materialSection.isSaving}
-                      className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                    >
-                      {materialSection.isSaving ? "Saving..." : "Save"}
-                    </button>
                   </>
                 }
               />
@@ -643,39 +600,17 @@ export function WorkOrderRecordPanel({
           totalAmount={currentSummary.serviceTotal}
           loading={loading}
           actionPanel={
-            <RecordSectionActionPanel
-              status={buildSectionStatus({
-                isDirty: serviceSection.isDirty,
-                isSaving: serviceSection.isSaving,
-                hasConflict: serviceSection.hasConflict,
-              })}
+            <RecordManagedSectionActionPanel
+              isDirty={serviceSection.isDirty}
+              isSaving={serviceSection.isSaving}
+              hasConflict={serviceSection.hasConflict}
               error={serviceSection.error}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={serviceSection.addItem}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
-                  >
-                    Add Service Item
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => serviceSection.discard()}
-                    disabled={!serviceSection.isDirty || serviceSection.isSaving}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void serviceSection.save()}
-                    disabled={!serviceSection.isDirty || serviceSection.isSaving}
-                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    {serviceSection.isSaving ? "Saving..." : "Save"}
-                  </button>
-                </>
+              onSave={() => void serviceSection.save()}
+              onDiscard={() => serviceSection.discard()}
+              extraActions={
+                <RecordFooterNeutralButton onClick={serviceSection.addItem}>
+                  Add Service Item
+                </RecordFooterNeutralButton>
               }
             />
           }
@@ -692,39 +627,17 @@ export function WorkOrderRecordPanel({
           totalAmount={currentExpenseSummary.salesRepExpense}
           loading={loading}
           actionPanel={
-            <RecordSectionActionPanel
-              status={buildSectionStatus({
-                isDirty: salesRepSection.isDirty,
-                isSaving: salesRepSection.isSaving,
-                hasConflict: salesRepSection.hasConflict,
-              })}
+            <RecordManagedSectionActionPanel
+              isDirty={salesRepSection.isDirty}
+              isSaving={salesRepSection.isSaving}
+              hasConflict={salesRepSection.hasConflict}
               error={salesRepSection.error}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={salesRepSection.addItem}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
-                  >
-                    Add Sales Rep
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => salesRepSection.discard()}
-                    disabled={!salesRepSection.isDirty || salesRepSection.isSaving}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void salesRepSection.save()}
-                    disabled={!salesRepSection.isDirty || salesRepSection.isSaving}
-                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    {salesRepSection.isSaving ? "Saving..." : "Save"}
-                  </button>
-                </>
+              onSave={() => void salesRepSection.save()}
+              onDiscard={() => salesRepSection.discard()}
+              extraActions={
+                <RecordFooterNeutralButton onClick={salesRepSection.addItem}>
+                  Add Sales Rep
+                </RecordFooterNeutralButton>
               }
             />
           }

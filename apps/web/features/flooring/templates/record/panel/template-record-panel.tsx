@@ -9,9 +9,8 @@ import { buildRecordSummary } from "@/features/flooring/shared/domain/record-sum
 import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,
-  RecordSectionActionPanel,
+  RecordManagedSectionActionPanel,
   RecordSectionStack,
-  RecordSectionStatusBadge,
   useRecordDetailController,
   useRecordNotices,
 } from "@/features/shared/engines/record-view"
@@ -30,21 +29,6 @@ import { useTemplateServiceSection } from "./controllers/use-template-service-se
 import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
 import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
-
-function buildSectionStatus(input: {
-  isDirty: boolean
-  isSaving: boolean
-  hasConflict: boolean
-}) {
-  return (
-    <>
-      <RecordSectionStatusBadge tone={input.isSaving ? "processing" : input.isDirty ? "warning" : "success"}>
-        {input.isSaving ? "Saving" : input.isDirty ? "Dirty" : "Saved"}
-      </RecordSectionStatusBadge>
-      {input.hasConflict ? <RecordSectionStatusBadge tone="error">Conflict</RecordSectionStatusBadge> : null}
-    </>
-  )
-}
 
 export function TemplateRecordPanel({
   currentUserId,
@@ -288,39 +272,17 @@ export function TemplateRecordPanel({
           onItemFieldChange={materialSection.changeField}
           onDeleteItem={materialSection.deleteItem}
           actionPanel={
-            <RecordSectionActionPanel
-              status={buildSectionStatus({
-                isDirty: materialSection.isDirty,
-                isSaving: materialSection.isSaving,
-                hasConflict: materialSection.hasConflict,
-              })}
+            <RecordManagedSectionActionPanel
+              isDirty={materialSection.isDirty}
+              isSaving={materialSection.isSaving}
+              hasConflict={materialSection.hasConflict}
               error={materialSection.error}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={materialSection.addItem}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
-                  >
-                    Add Material Item
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => materialSection.discard()}
-                    disabled={!materialSection.isDirty || materialSection.isSaving}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void materialSection.save()}
-                    disabled={!materialSection.isDirty || materialSection.isSaving}
-                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    {materialSection.isSaving ? "Saving..." : "Save"}
-                  </button>
-                </>
+              onSave={() => void materialSection.save()}
+              onDiscard={() => materialSection.discard()}
+              extraActions={
+                <RecordFooterNeutralButton onClick={materialSection.addItem}>
+                  Add Material Item
+                </RecordFooterNeutralButton>
               }
             />
           }
@@ -337,39 +299,17 @@ export function TemplateRecordPanel({
           onItemFieldChange={serviceSection.changeField}
           onDeleteItem={serviceSection.deleteItem}
           actionPanel={
-            <RecordSectionActionPanel
-              status={buildSectionStatus({
-                isDirty: serviceSection.isDirty,
-                isSaving: serviceSection.isSaving,
-                hasConflict: serviceSection.hasConflict,
-              })}
+            <RecordManagedSectionActionPanel
+              isDirty={serviceSection.isDirty}
+              isSaving={serviceSection.isSaving}
+              hasConflict={serviceSection.hasConflict}
               error={serviceSection.error}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={serviceSection.addItem}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
-                  >
-                    Add Service Item
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => serviceSection.discard()}
-                    disabled={!serviceSection.isDirty || serviceSection.isSaving}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void serviceSection.save()}
-                    disabled={!serviceSection.isDirty || serviceSection.isSaving}
-                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    {serviceSection.isSaving ? "Saving..." : "Save"}
-                  </button>
-                </>
+              onSave={() => void serviceSection.save()}
+              onDiscard={() => serviceSection.discard()}
+              extraActions={
+                <RecordFooterNeutralButton onClick={serviceSection.addItem}>
+                  Add Service Item
+                </RecordFooterNeutralButton>
               }
             />
           }
@@ -386,39 +326,17 @@ export function TemplateRecordPanel({
           onItemFieldChange={salesRepSection.changeField}
           onDeleteItem={salesRepSection.deleteItem}
           actionPanel={
-            <RecordSectionActionPanel
-              status={buildSectionStatus({
-                isDirty: salesRepSection.isDirty,
-                isSaving: salesRepSection.isSaving,
-                hasConflict: salesRepSection.hasConflict,
-              })}
+            <RecordManagedSectionActionPanel
+              isDirty={salesRepSection.isDirty}
+              isSaving={salesRepSection.isSaving}
+              hasConflict={salesRepSection.hasConflict}
               error={salesRepSection.error}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={salesRepSection.addItem}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
-                  >
-                    Add Sales Rep
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => salesRepSection.discard()}
-                    disabled={!salesRepSection.isDirty || salesRepSection.isSaving}
-                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void salesRepSection.save()}
-                    disabled={!salesRepSection.isDirty || salesRepSection.isSaving}
-                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-                  >
-                    {salesRepSection.isSaving ? "Saving..." : "Save"}
-                  </button>
-                </>
+              onSave={() => void salesRepSection.save()}
+              onDiscard={() => salesRepSection.discard()}
+              extraActions={
+                <RecordFooterNeutralButton onClick={salesRepSection.addItem}>
+                  Add Sales Rep
+                </RecordFooterNeutralButton>
               }
             />
           }

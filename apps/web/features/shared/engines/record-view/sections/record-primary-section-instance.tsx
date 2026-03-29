@@ -1,18 +1,12 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { RecordSectionActionPanel } from "./record-section-action-panel"
+import { RecordManagedSectionActionPanel } from "./record-managed-section-action-panel"
 import { RecordSectionShell } from "./record-section-shell"
-import { RecordSectionSaveStateIndicators } from "./record-section-status-indicators"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
 } from "./record-section-tokens"
-import {
-  RecordFooterDestructiveButton,
-  RecordFooterNeutralButton,
-  RecordFooterPrimaryButton,
-} from "../shell/record-action-buttons"
 import type { RecordSectionError } from "../contracts"
 
 export function RecordPrimarySectionInstance({
@@ -53,33 +47,20 @@ export function RecordPrimarySectionInstance({
   showHeader?: boolean
 }) {
   const actionPanel = (
-    <RecordSectionActionPanel
+    <RecordManagedSectionActionPanel
       summary={summary}
       error={error ?? null}
-      status={
-        <RecordSectionSaveStateIndicators
-          isDirty={isDirty}
-          isSaving={isSaving}
-          hasConflict={hasConflict}
-        />
-      }
-      actions={
-        canManage ? (
-          <>
-            {onDelete ? (
-              <RecordFooterDestructiveButton onClick={() => void onDelete()} disabled={isSaving}>
-                {deleteLabel}
-              </RecordFooterDestructiveButton>
-            ) : null}
-            <RecordFooterNeutralButton onClick={onDiscard} disabled={!isDirty || isSaving}>
-              {discardLabel}
-            </RecordFooterNeutralButton>
-            <RecordFooterPrimaryButton onClick={() => void onSave()} disabled={!isDirty || isSaving}>
-              {isSaving ? savingLabel : saveLabel}
-            </RecordFooterPrimaryButton>
-          </>
-        ) : null
-      }
+      isDirty={isDirty}
+      isSaving={isSaving}
+      hasConflict={hasConflict}
+      canManage={canManage}
+      onSave={onSave}
+      onDiscard={onDiscard}
+      onDelete={onDelete}
+      saveLabel={saveLabel}
+      savingLabel={savingLabel}
+      discardLabel={discardLabel}
+      deleteLabel={deleteLabel}
     />
   )
 
