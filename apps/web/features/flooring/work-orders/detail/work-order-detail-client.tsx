@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react"
+import { startTransition, useCallback, useDeferredValue, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { RecordDetailPageShell } from "@/features/dashboard/shared/record-view/shell/record-detail-page-shell"
@@ -11,7 +11,6 @@ import type { MaterialItemOption } from "@/features/flooring/shared/line-items/m
 import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
 import { WorkOrderExpenseSummaryHeader } from "../components/work-order-expense-summary"
 import { normalizeWorkOrderExpenseSummary } from "../domain/expense-summary"
-import { useWorkOrderInvoiceController } from "../use-work-order-invoice-controller"
 import type { PropertyOption, SalesRepContactOption, WarehouseOption, WorkOrderDetail } from "../types"
 
 export default function WorkOrderDetailClient({
@@ -50,32 +49,10 @@ export default function WorkOrderDetailClient({
   )
   const deferredExpenseSummary = useDeferredValue(expenseSummary)
   const [isPrimaryFieldsOpen, setIsPrimaryFieldsOpen] = useState(true)
-  const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
-  const invoice = useWorkOrderInvoiceController(workOrder.id, {
-    enabled: isInvoiceSectionOpen,
-    initialInvoice: workOrder.invoiceStatus ?? null,
-    refreshToken: workOrder.updatedAt,
-  })
-  const previousInvoicePhaseRef = useRef(invoice.phase)
 
   const closePage = useCallback(() => {
     page.closePage()
   }, [page])
-
-  useEffect(() => {
-    const previousPhase = previousInvoicePhaseRef.current
-    const currentPhase = invoice.phase
-
-    if ((previousPhase === "requested" || previousPhase === "queued" || previousPhase === "processing") && currentPhase === "completed") {
-      page.notices.showSuccess("Invoice ready")
-    }
-
-    if ((previousPhase === "requested" || previousPhase === "queued" || previousPhase === "processing") && currentPhase === "failed") {
-      page.notices.showError(invoice.invoice.generation?.error || "Invoice generation failed")
-    }
-
-    previousInvoicePhaseRef.current = currentPhase
-  }, [invoice.invoice.generation?.error, invoice.phase, page.notices])
 
   async function markWorkOrderComplete() {
     if (workOrder.isComplete) return
@@ -101,28 +78,6 @@ export default function WorkOrderDetailClient({
       page.notices.showSuccess("Work order marked complete")
     } catch (completeError) {
       page.notices.showError(completeError instanceof Error ? completeError.message : "Failed to complete work order")
-    }
-  }
-
-  async function queueInvoiceGeneration() {
-    page.notices.clearNotices()
-
-    try {
-      const nextInvoice = await invoice.queueInvoice(workOrder.updatedAt)
-
-      if (nextInvoice.generation?.status === "COMPLETED") {
-        page.notices.showSuccess("Invoice already available")
-        return
-      }
-
-      if (nextInvoice.generation?.status === "FAILED") {
-        page.notices.showError(nextInvoice.generation.error || "Invoice generation failed")
-        return
-      }
-
-      page.notices.showSuccess("Invoice generation requested")
-    } catch (invoiceError) {
-      page.notices.showError(invoiceError instanceof Error ? invoiceError.message : "Failed to request invoice generation")
     }
   }
 
@@ -157,13 +112,6 @@ export default function WorkOrderDetailClient({
         serviceOptions={serviceOptions}
         salesRepOptions={salesRepOptions}
         unitOptions={unitOptions}
-        invoice={invoice.invoice}
-        invoiceError={invoice.error}
-        invoiceLoading={invoice.isLoading}
-        invoiceWorkflowPhase={invoice.phase}
-        onQueueInvoice={() => void queueInvoiceGeneration()}
-        onOpenInvoice={invoice.openInvoice}
-        onInvoiceSectionOpenChange={setIsInvoiceSectionOpen}
         onClose={closePage}
         onExpenseSummaryChange={(nextSummary) => {
           startTransition(() => {

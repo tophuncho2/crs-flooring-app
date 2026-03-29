@@ -14,6 +14,7 @@ import {
 } from "@/features/flooring/shared/line-items/service-items-editor"
 import { useWorkOrderSectionController } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-section-controller"
 import {
+  areServiceItemsEqual,
   cloneServiceItems,
   createEmptyServiceItem,
   isLocalOnlyRow,
@@ -50,6 +51,7 @@ export function useWorkOrderServiceSection(input: {
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: cloneServiceItems,
     cloneLocalValue: cloneServiceItems,
+    isEqual: areServiceItemsEqual,
     onSave: async (items, _serverItems, serverRevisionKey) => {
       const nextErrors: RowFieldErrors<ServiceItemField> = {}
 

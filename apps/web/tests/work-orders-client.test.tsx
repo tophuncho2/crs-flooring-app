@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { useState } from "react"
 import {
   requestJsonMock,
   resetSimpleTableClientMocks,
@@ -15,38 +16,72 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
     workOrderId,
     notices,
     onDirtySectionsChange,
-    invoice,
-    invoiceError,
-    invoiceLoading,
-    onQueueInvoice,
-    onOpenInvoice,
-    onInvoiceSectionOpenChange,
   }: {
     workOrderId: string
     notices?: { message?: string; error?: string }
     onDirtySectionsChange?: (value: string[]) => void
-    invoice?: { canOpen?: boolean }
-    invoiceError?: string | null
-    invoiceLoading?: boolean
-    onQueueInvoice?: () => void
-    onOpenInvoice?: () => void
-    onInvoiceSectionOpenChange?: (open: boolean) => void
-  }) => (
-    <>
-      <div>
-        <div>{`Panel ${workOrderId}`}</div>
-        {notices?.message ? <div>{notices.message}</div> : null}
-        {notices?.error ? <div>{notices.error}</div> : null}
-        {invoiceLoading ? <div>Loading invoice status...</div> : null}
-        {invoiceError ? <div>{invoiceError}</div> : null}
-        <button type="button" onClick={() => onInvoiceSectionOpenChange?.(true)}>Open Invoice Section</button>
-        <button type="button" onClick={() => onQueueInvoice?.()}>Generate Invoice</button>
-        <button type="button" onClick={() => onOpenInvoice?.()} disabled={!invoice?.canOpen}>Open Invoice</button>
-        <button type="button" onClick={() => onDirtySectionsChange?.(["Work Order"])}>Mark Dirty</button>
-        <button type="button" onClick={() => onDirtySectionsChange?.([])}>Clear Dirty</button>
-      </div>
-    </>
-  ),
+  }) => {
+    const [invoice, setInvoice] = useState<{ canOpen?: boolean; generation?: { status?: string; error?: string } } | null>(null)
+    const [invoiceError, setInvoiceError] = useState<string | null>(null)
+    const [invoiceLoading, setInvoiceLoading] = useState(false)
+    const [localMessage, setLocalMessage] = useState<string | null>(null)
+
+    return (
+      <>
+        <div>
+          <div>{`Panel ${workOrderId}`}</div>
+          {notices?.message ? <div>{notices.message}</div> : null}
+          {notices?.error ? <div>{notices.error}</div> : null}
+          {localMessage ? <div>{localMessage}</div> : null}
+          {invoiceLoading ? <div>Loading invoice status...</div> : null}
+          {invoiceError ? <div>{invoiceError}</div> : null}
+          <button
+            type="button"
+            onClick={async () => {
+              setInvoiceLoading(true)
+              setInvoiceError(null)
+              try {
+                const nextInvoice = await requestJsonMock(`/api/flooring/work-orders/${workOrderId}/invoice`, {
+                  cache: "no-store",
+                })
+                setInvoice(nextInvoice)
+              } catch (error) {
+                setInvoiceError(error instanceof Error ? error.message : "Invoice status unavailable")
+              } finally {
+                setInvoiceLoading(false)
+              }
+            }}
+          >
+            Open Invoice Section
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              setInvoiceError(null)
+              const nextInvoice = await requestJsonMock(`/api/flooring/work-orders/${workOrderId}/invoice`, {
+                method: "POST",
+              })
+              setInvoice(nextInvoice)
+              if (nextInvoice?.generation?.status === "COMPLETED") {
+                setLocalMessage("Invoice already available")
+              } else if (nextInvoice?.generation?.status === "FAILED") {
+                setLocalMessage(nextInvoice.generation.error || "Invoice generation failed")
+              } else {
+                setLocalMessage("Invoice generation requested")
+              }
+            }}
+          >
+            Generate Invoice
+          </button>
+          <button type="button" disabled={!invoice?.canOpen}>
+            Open Invoice
+          </button>
+          <button type="button" onClick={() => onDirtySectionsChange?.(["Work Order"])}>Mark Dirty</button>
+          <button type="button" onClick={() => onDirtySectionsChange?.([])}>Clear Dirty</button>
+        </div>
+      </>
+    )
+  },
 }))
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({

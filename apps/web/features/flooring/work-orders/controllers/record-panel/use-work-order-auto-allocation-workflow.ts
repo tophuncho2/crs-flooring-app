@@ -7,6 +7,8 @@ import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { WorkOrderAutoAllocationStatusResponse } from "@/features/flooring/work-orders/transport/allocations"
 import type { WorkOrderAutoAllocationRun, WorkOrderDetail } from "@/features/flooring/work-orders/types"
 
+const STALLED_PENDING_THRESHOLD_MS = 2 * 60 * 1000
+
 function buildAutoAllocationSyncKey(value: WorkOrderAutoAllocationRun | null) {
   return value ? `${value.id}:${value.status}:${value.sourceVersion}` : "none"
 }
@@ -17,6 +19,46 @@ function readAutoAllocationStatus(value: WorkOrderAutoAllocationRun | null) {
 
 function buildAutoAllocationTerminalKey(value: WorkOrderAutoAllocationRun | null) {
   return value ? `${value.id}:${value.status}` : null
+}
+
+function readPendingReferenceTimestamp(value: WorkOrderAutoAllocationRun | null) {
+  return value?.startedAt ?? value?.queuedAt ?? value?.requestedAt ?? null
+}
+
+function readPendingDurationMs(value: WorkOrderAutoAllocationRun | null) {
+  const referenceTimestamp = readPendingReferenceTimestamp(value)
+  if (!referenceTimestamp) {
+    return null
+  }
+
+  const startedAtMs = new Date(referenceTimestamp).getTime()
+  if (Number.isNaN(startedAtMs)) {
+    return null
+  }
+
+  return Math.max(Date.now() - startedAtMs, 0)
+}
+
+function readPollingIntervalMs(value: WorkOrderAutoAllocationRun | null) {
+  const pendingDurationMs = readPendingDurationMs(value)
+  if (pendingDurationMs === null) {
+    return 3000
+  }
+
+  if (pendingDurationMs >= STALLED_PENDING_THRESHOLD_MS) {
+    return 15000
+  }
+
+  if (pendingDurationMs >= 30_000) {
+    return 5000
+  }
+
+  return 3000
+}
+
+function isAutoAllocationWorkflowStalled(value: WorkOrderAutoAllocationRun | null) {
+  const pendingDurationMs = readPendingDurationMs(value)
+  return pendingDurationMs !== null && pendingDurationMs >= STALLED_PENDING_THRESHOLD_MS
 }
 
 export function useWorkOrderAutoAllocationWorkflow(input: {
@@ -43,6 +85,7 @@ export function useWorkOrderAutoAllocationWorkflow(input: {
     readStatus: readAutoAllocationStatus,
     refresh: refreshRun,
     getTerminalKey: buildAutoAllocationTerminalKey,
+    getPollingIntervalMs: readPollingIntervalMs,
     onTerminal: async (value) => {
       if (!value) {
         return
@@ -92,6 +135,7 @@ export function useWorkOrderAutoAllocationWorkflow(input: {
 
   return {
     ...workflow,
+    isStalled: isAutoAllocationWorkflowStalled(workflow.value),
     requestAutoAllocation,
   }
 }

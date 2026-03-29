@@ -21,30 +21,36 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
   toDraft,
   url,
   payloadKey,
+  manageDraft = true,
 }: {
   scope: string
   id: string
   initialRecord: TRecord
-  toDraft: (record: TRecord) => TDraft
+  toDraft?: (record: TRecord) => TDraft
   url: string
   payloadKey: string
+  manageDraft?: boolean
 }) {
+  if (manageDraft && !toDraft) {
+    throw new Error("useRecordDetailController requires toDraft when manageDraft is enabled")
+  }
+
   const cachedRecord = getCachedRecordDetail<TRecord>(scope, id, initialRecord.updatedAt)
   const seededRecord = cachedRecord ?? initialRecord
   const [record, setRecord] = useState<TRecord | null>(seededRecord)
-  const [draft, setDraft] = useState<TDraft | null>(toDraft(seededRecord))
+  const [draft, setDraft] = useState<TDraft | null>(manageDraft && toDraft ? toDraft(seededRecord) : null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   const syncRecord = useCallback(
     (nextRecord: TRecord, options?: { syncDraft?: boolean }) => {
       setRecord(nextRecord)
-      if (options?.syncDraft !== false) {
+      if (manageDraft && toDraft && options?.syncDraft !== false) {
         setDraft(toDraft(nextRecord))
       }
       setCachedRecordDetail(scope, nextRecord.id, nextRecord.updatedAt, nextRecord)
     },
-    [scope, toDraft],
+    [manageDraft, scope, toDraft],
   )
 
   const publishRecord = useCallback((nextRecord: TRecord) => {
@@ -66,17 +72,20 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
   useEffect(() => {
     const nextSeed = cachedRecord ?? initialRecord
     setRecord(nextSeed)
-    setDraft(toDraft(nextSeed))
+    setDraft(manageDraft && toDraft ? toDraft(nextSeed) : null)
     setLoading(false)
     setError("")
     setCachedRecordDetail(scope, nextSeed.id, nextSeed.updatedAt, nextSeed)
-  }, [cachedRecord, id, initialRecord, scope, toDraft])
+  }, [cachedRecord, id, initialRecord, manageDraft, scope, toDraft])
 
   const clearRecordCache = useCallback(() => {
     clearCachedRecordDetail(scope, id)
   }, [id, scope])
 
-  const isDirty = useMemo(() => hasRecordDraftChanges(record, draft, toDraft), [draft, record, toDraft])
+  const isDirty = useMemo(
+    () => (manageDraft && toDraft ? hasRecordDraftChanges(record, draft, toDraft) : false),
+    [draft, manageDraft, record, toDraft],
+  )
 
   return {
     cachedRecord,

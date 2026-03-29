@@ -194,6 +194,21 @@ function assertVersionMatch(actualUpdatedAt: Date, expectedUpdatedAt: string, me
   }
 }
 
+function isNullableStringEqual(left: string | null | undefined, right: string | null | undefined) {
+  return (left ?? null) === (right ?? null)
+}
+
+function isDateValueEqual(left: Date | null | undefined, right: Date | null | undefined) {
+  return (left?.getTime() ?? null) === (right?.getTime() ?? null)
+}
+
+function isDecimalValueEqual(
+  left: Prisma.Decimal | string | number | null | undefined,
+  right: Prisma.Decimal | string | number | null | undefined,
+) {
+  return String(left ?? "") === String(right ?? "")
+}
+
 function applyAllocationUpdatePatch(input: UpdateWorkOrderItemAllocationInput) {
   return {
     ...(input.inventoryId !== undefined ? { inventoryId: input.inventoryId } : {}),
@@ -310,37 +325,94 @@ export async function createWorkOrder(input: CreateWorkOrderInput) {
 }
 
 export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
-  const data: Prisma.FlooringWorkOrderUncheckedUpdateInput = {}
-
-  if (input.propertyId !== undefined) data.propertyId = input.propertyId
-  if (input.templateId !== undefined) data.templateId = input.templateId
-  if (input.warehouseId !== undefined) data.warehouseId = input.warehouseId
-  if (input.status !== undefined) data.status = input.status
-  if (input.isComplete !== undefined) data.isComplete = input.isComplete
-  if (input.vacancy !== undefined) data.vacancy = input.vacancy
-  if (input.scheduledFor !== undefined) data.scheduledFor = input.scheduledFor
-  if (input.unitLabel !== undefined) data.unitLabel = input.unitLabel
-  if (input.customAddress !== undefined) data.customAddress = input.customAddress
-  if (input.instructions !== undefined) data.instructions = input.instructions
-  if (input.notes !== undefined) data.notes = input.notes
-  if (input.googleDriveSlip !== undefined) data.googleDriveSlip = input.googleDriveSlip
-  if (input.googleDocUrl !== undefined) data.googleDocUrl = input.googleDocUrl
-
-  if (Object.keys(data).length > 0) {
-    Object.assign(data, buildInvoiceInvalidationFields())
-  }
-
   const workOrder = await prisma.$transaction(async (tx) => {
     const existing = await tx.flooringWorkOrder.findUniqueOrThrow({
       where: { id },
       select: {
+        propertyId: true,
+        templateId: true,
         warehouseId: true,
+        status: true,
+        isComplete: true,
+        vacancy: true,
+        scheduledFor: true,
+        unitLabel: true,
+        customAddress: true,
+        instructions: true,
+        notes: true,
+        googleDriveSlip: true,
+        googleDocUrl: true,
       },
     })
+
+    const data: Prisma.FlooringWorkOrderUncheckedUpdateInput = {}
+    let didChange = false
+
+    if (input.propertyId !== undefined && input.propertyId !== existing.propertyId) {
+      data.propertyId = input.propertyId
+      didChange = true
+    }
+    if (input.templateId !== undefined && input.templateId !== existing.templateId) {
+      data.templateId = input.templateId
+      didChange = true
+    }
+    if (input.warehouseId !== undefined && input.warehouseId !== existing.warehouseId) {
+      data.warehouseId = input.warehouseId
+      didChange = true
+    }
+    if (input.status !== undefined && input.status !== existing.status) {
+      data.status = input.status
+      didChange = true
+    }
+    if (input.isComplete !== undefined && input.isComplete !== existing.isComplete) {
+      data.isComplete = input.isComplete
+      didChange = true
+    }
+    if (input.vacancy !== undefined && input.vacancy !== existing.vacancy) {
+      data.vacancy = input.vacancy
+      didChange = true
+    }
+    if (input.scheduledFor !== undefined && !isDateValueEqual(input.scheduledFor, existing.scheduledFor)) {
+      data.scheduledFor = input.scheduledFor
+      didChange = true
+    }
+    if (input.unitLabel !== undefined && !isNullableStringEqual(input.unitLabel, existing.unitLabel)) {
+      data.unitLabel = input.unitLabel
+      didChange = true
+    }
+    if (input.customAddress !== undefined && !isNullableStringEqual(input.customAddress, existing.customAddress)) {
+      data.customAddress = input.customAddress
+      didChange = true
+    }
+    if (input.instructions !== undefined && !isNullableStringEqual(input.instructions, existing.instructions)) {
+      data.instructions = input.instructions
+      didChange = true
+    }
+    if (input.notes !== undefined && !isNullableStringEqual(input.notes, existing.notes)) {
+      data.notes = input.notes
+      didChange = true
+    }
+    if (input.googleDriveSlip !== undefined && !isNullableStringEqual(input.googleDriveSlip, existing.googleDriveSlip)) {
+      data.googleDriveSlip = input.googleDriveSlip
+      didChange = true
+    }
+    if (input.googleDocUrl !== undefined && !isNullableStringEqual(input.googleDocUrl, existing.googleDocUrl)) {
+      data.googleDocUrl = input.googleDocUrl
+      didChange = true
+    }
+
+    if (!didChange) {
+      return tx.flooringWorkOrder.findUniqueOrThrow({
+        where: { id },
+        include: workOrderInclude,
+      })
+    }
 
     if (input.warehouseId !== undefined && input.warehouseId !== existing.warehouseId) {
       await clearAllocationsForWorkOrder(id, tx)
     }
+
+    Object.assign(data, buildInvoiceInvalidationFields())
 
     return tx.flooringWorkOrder.update({
       where: { id },
@@ -809,10 +881,17 @@ export async function saveWorkOrderMaterialItemsSection(
       select: {
         id: true,
         productId: true,
+        quantity: true,
+        unitPrice: true,
+        notes: true,
         updatedAt: true,
         allocations: {
           select: {
             id: true,
+            inventoryId: true,
+            quantity: true,
+            cutSize: true,
+            notes: true,
             updatedAt: true,
           },
         },
@@ -824,8 +903,18 @@ export async function saveWorkOrderMaterialItemsSection(
 
     for (const row of input.items) {
       let nextItemId = row.id
-      let existingAllocations = [] as Array<{ id: string; updatedAt: Date }>
+      let existingAllocations = [] as Array<{
+        id: string
+        inventoryId: string
+        quantity: Prisma.Decimal
+        cutSize: string | null
+        notes: string | null
+        updatedAt: Date
+      }>
+      let itemDidChange = false
       const current = row.id ? currentItemsById.get(row.id) : null
+      const resolvedUnitPrice = row.item.unitPrice ?? (await resolveMaterialUnitPrice(row.item, tx))
+      const nextNotes = row.item.notes ?? null
 
       if (!row.id) {
         const created = await tx.flooringWorkOrderItem.create({
@@ -833,8 +922,8 @@ export async function saveWorkOrderMaterialItemsSection(
             workOrderId,
             productId: row.item.productId,
             quantity: row.item.quantity,
-            unitPrice: row.item.unitPrice ?? (await resolveMaterialUnitPrice(row.item, tx)),
-            notes: row.item.notes,
+            unitPrice: resolvedUnitPrice,
+            notes: nextNotes,
             allocationStatus: "NOT_STARTED",
             changeOrderStatus: "SUFFICIENT",
           },
@@ -842,6 +931,7 @@ export async function saveWorkOrderMaterialItemsSection(
         })
         nextItemId = created.id
         didChange = true
+        itemDidChange = true
       } else {
         if (!current) {
           throw createAppError("Material item does not belong to this work order", {
@@ -852,27 +942,38 @@ export async function saveWorkOrderMaterialItemsSection(
 
         assertVersionMatch(current.updatedAt, row.expectedUpdatedAt ?? "", "Material item changed before save completed. Refresh and try again.")
 
+        const itemIsUnchanged =
+          current.productId === row.item.productId &&
+          isDecimalValueEqual(current.quantity, row.item.quantity) &&
+          isDecimalValueEqual(current.unitPrice, resolvedUnitPrice) &&
+          isNullableStringEqual(current.notes, nextNotes)
+
         if (current.productId !== row.item.productId) {
           await deleteAllAllocationsForWorkOrderItem(row.id, tx)
           didChange = true
+          itemDidChange = true
         } else {
           existingAllocations = current.allocations
         }
 
-        await tx.flooringWorkOrderItem.update({
-          where: { id: row.id },
-          data: {
-            productId: row.item.productId,
-            quantity: row.item.quantity,
-            unitPrice: row.item.unitPrice ?? undefined,
-            notes: row.item.notes,
-            allocationStatus: "NOT_STARTED",
-            changeOrderStatus: "SUFFICIENT",
-          },
-        })
+        if (!itemIsUnchanged) {
+          await tx.flooringWorkOrderItem.update({
+            where: { id: row.id },
+            data: {
+              productId: row.item.productId,
+              quantity: row.item.quantity,
+              unitPrice: resolvedUnitPrice,
+              notes: nextNotes,
+              allocationStatus: "NOT_STARTED",
+              changeOrderStatus: "SUFFICIENT",
+            },
+          })
+
+          didChange = true
+          itemDidChange = true
+        }
 
         seenItemIds.add(row.id)
-        didChange = true
       }
 
       const allocationIdsById = new Map(existingAllocations.map((allocation) => [allocation.id, allocation]))
@@ -894,20 +995,30 @@ export async function saveWorkOrderMaterialItemsSection(
             "Allocation changed before save completed. Refresh and try again.",
           )
 
-          await updateWorkOrderItemAllocation(
-            {
-              workOrderId,
-              workOrderItemId: nextItemId ?? "",
-              allocationId: allocation.id,
-              inventoryId: allocation.input.inventoryId,
-              quantity: allocation.input.quantity,
-              cutSize: allocation.input.cutSize,
-              notes: allocation.input.notes,
-            },
-            tx,
-          )
+          const allocationIsUnchanged =
+            currentAllocation.inventoryId === allocation.input.inventoryId &&
+            isDecimalValueEqual(currentAllocation.quantity, allocation.input.quantity) &&
+            isNullableStringEqual(currentAllocation.cutSize, allocation.input.cutSize) &&
+            isNullableStringEqual(currentAllocation.notes, allocation.input.notes)
+
+          if (!allocationIsUnchanged) {
+            await updateWorkOrderItemAllocation(
+              {
+                workOrderId,
+                workOrderItemId: nextItemId ?? "",
+                allocationId: allocation.id,
+                inventoryId: allocation.input.inventoryId,
+                quantity: allocation.input.quantity,
+                cutSize: allocation.input.cutSize,
+                notes: allocation.input.notes,
+              },
+              tx,
+            )
+            didChange = true
+            itemDidChange = true
+          }
+
           seenAllocationIds.add(allocation.id)
-          didChange = true
           continue
         }
 
@@ -924,6 +1035,7 @@ export async function saveWorkOrderMaterialItemsSection(
           tx,
         )
         didChange = true
+        itemDidChange = true
       }
 
       for (const currentAllocation of existingAllocations) {
@@ -940,6 +1052,7 @@ export async function saveWorkOrderMaterialItemsSection(
           tx,
         )
         didChange = true
+        itemDidChange = true
       }
 
       if (!nextItemId) {
@@ -949,7 +1062,9 @@ export async function saveWorkOrderMaterialItemsSection(
         })
       }
 
-      await recalculateWorkOrderItemAllocationStatus(tx, nextItemId)
+      if (itemDidChange) {
+        await recalculateWorkOrderItemAllocationStatus(tx, nextItemId)
+      }
       seenItemIds.add(nextItemId)
     }
 

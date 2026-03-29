@@ -14,6 +14,7 @@ import {
 } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
 import { useWorkOrderSectionController } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-section-controller"
 import {
+  areSalesRepItemsEqual,
   cloneSalesRepItems,
   createEmptySalesRepItem,
   isLocalOnlyRow,
@@ -50,6 +51,7 @@ export function useWorkOrderSalesRepsSection(input: {
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: cloneSalesRepItems,
     cloneLocalValue: cloneSalesRepItems,
+    isEqual: areSalesRepItemsEqual,
     onSave: async (items, _serverItems, serverRevisionKey) => {
       const nextErrors: RowFieldErrors<SalesRepField> = {}
 

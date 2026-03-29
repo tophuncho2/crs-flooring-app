@@ -29,6 +29,7 @@ export function WorkOrderInvoiceSection({
   error,
   isLoading,
   workflowPhase,
+  isStalled = false,
   onQueueInvoice,
   onOpenInvoice,
   onOpenChange,
@@ -37,6 +38,7 @@ export function WorkOrderInvoiceSection({
   error?: string | null
   isLoading?: boolean
   workflowPhase: RecordSectionWorkflowPhase
+  isStalled?: boolean
   onQueueInvoice: () => void
   onOpenInvoice: () => void
   onOpenChange?: (open: boolean) => void
@@ -72,6 +74,7 @@ export function WorkOrderInvoiceSection({
               <RecordSectionStatusBadge tone={invoice.generation?.status === "FAILED" ? "error" : "neutral"}>
                 Status: {statusLabel}
               </RecordSectionStatusBadge>
+              {isStalled ? <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge> : null}
             </>
           }
           error={error}

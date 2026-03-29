@@ -34,8 +34,9 @@ import {
   formatRecordSectionWorkflowPhase,
 } from "@/features/dashboard/shared/record-view/client/use-record-section-workflow"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
-import { selectedAddress, toWorkOrderDraft } from "@/features/flooring/work-orders/controllers/record-panel/shared"
+import { selectedAddress } from "@/features/flooring/work-orders/controllers/record-panel/shared"
 import { useWorkOrderAutoAllocationWorkflow } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-auto-allocation-workflow"
+import { useWorkOrderInvoiceWorkflow } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-invoice-workflow"
 import { useWorkOrderMaterialSection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-material-section"
 import { useWorkOrderPrimarySection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-primary-section"
 import { useWorkOrderSalesRepsSection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-sales-reps-section"
@@ -114,13 +115,6 @@ export function WorkOrderRecordPanel({
   serviceOptions,
   salesRepOptions,
   unitOptions,
-  invoice,
-  invoiceError,
-  invoiceLoading = false,
-  invoiceWorkflowPhase = "idle",
-  onQueueInvoice,
-  onOpenInvoice,
-  onInvoiceSectionOpenChange,
   onClose,
   onWorkOrderChange,
   onWorkOrderSaved,
@@ -140,13 +134,6 @@ export function WorkOrderRecordPanel({
   serviceOptions: ServiceOption[]
   salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
-  invoice: WorkOrderInvoiceStatusResponse
-  invoiceError?: string | null
-  invoiceLoading?: boolean
-  invoiceWorkflowPhase?: "idle" | "requested" | "queued" | "processing" | "completed" | "failed" | "superseded"
-  onQueueInvoice: () => void
-  onOpenInvoice: () => void
-  onInvoiceSectionOpenChange?: (open: boolean) => void
   onClose: () => void
   onWorkOrderChange?: (workOrder: WorkOrderDetail) => void
   onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
@@ -160,7 +147,8 @@ export function WorkOrderRecordPanel({
   const localNotices = useRecordNotices()
   const noticeController = notices ?? localNotices
   const { message, error: noticeError, showSuccess, showError, clearNotices } = noticeController
-  const [remoteReconciliation, setRemoteReconciliation] = useState<WorkOrderReconciliationStatus | null>(null)
+  const [remoteReconciliationKey, setRemoteReconciliationKey] = useState<string | null>(null)
+  const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
 
   const {
     record: workOrder,
@@ -169,13 +157,13 @@ export function WorkOrderRecordPanel({
     publishRecord,
     refreshRecord,
     clearRecordCache,
-  } = useRecordDetailController<WorkOrderDetail, ReturnType<typeof toWorkOrderDraft>>({
+  } = useRecordDetailController<WorkOrderDetail, DraftWorkOrder>({
     scope: "workOrder",
     id: workOrderId,
     initialRecord: initialWorkOrderDetail,
-    toDraft: toWorkOrderDraft,
     url: `/api/flooring/work-orders/${workOrderId}`,
     payloadKey: "workOrder",
+    manageDraft: false,
   })
 
   const currentWorkOrder = workOrder ?? initialWorkOrderDetail
@@ -190,7 +178,7 @@ export function WorkOrderRecordPanel({
 
   const refreshWorkOrderDetail = useCallback(async () => {
     const nextWorkOrder = await refreshRecord()
-    setRemoteReconciliation(null)
+    setRemoteReconciliationKey(null)
     publishWorkOrder(nextWorkOrder)
     onExpenseSummaryChange?.(nextWorkOrder.financialSummary)
     return nextWorkOrder
@@ -268,6 +256,15 @@ export function WorkOrderRecordPanel({
     applyConflictWorkOrderSnapshot,
   })
 
+  const invoiceWorkflow = useWorkOrderInvoiceWorkflow({
+    workOrder: currentWorkOrder,
+    enabled: isInvoiceSectionOpen,
+    clearNotices,
+    showSuccess,
+    showError,
+    applyConflictWorkOrderSnapshot,
+  })
+
   const dirtySections = useMemo(
     () =>
       [
@@ -301,22 +298,22 @@ export function WorkOrderRecordPanel({
         const currentKey = buildWorkOrderReconciliationKey({
           updatedAt: currentWorkOrder.updatedAt,
           autoAllocationRun: autoAllocationWorkflow.value ?? currentWorkOrder.autoAllocationRun,
-          invoiceStatus: invoice,
+          invoiceStatus: invoiceWorkflow.invoice ?? currentWorkOrder.invoiceStatus,
         })
         const nextKey = buildWorkOrderReconciliationKey(nextReconciliation)
 
         if (currentKey === nextKey) {
-          setRemoteReconciliation(null)
+          setRemoteReconciliationKey(null)
           return
         }
 
         if (dirtySections.length === 0) {
-          setRemoteReconciliation(null)
+          setRemoteReconciliationKey(null)
           await refreshWorkOrderDetail()
           return
         }
 
-        setRemoteReconciliation(nextReconciliation)
+        setRemoteReconciliationKey(nextKey)
       } catch {
         // Reconciliation polling is advisory.
       }
@@ -334,7 +331,7 @@ export function WorkOrderRecordPanel({
       cancelled = true
       window.clearInterval(interval)
     }
-  }, [autoAllocationWorkflow.value, currentWorkOrder.autoAllocationRun, currentWorkOrder.updatedAt, dirtySections.length, invoice, refreshWorkOrderDetail, workOrderId])
+  }, [autoAllocationWorkflow.value, currentWorkOrder.autoAllocationRun, currentWorkOrder.updatedAt, dirtySections.length, invoiceWorkflow.invoice, refreshWorkOrderDetail, workOrderId])
 
   const currentExpenseSummary = useMemo(
     () =>
@@ -397,7 +394,7 @@ export function WorkOrderRecordPanel({
     <div className="space-y-6">
       <FormStatusNotices message={message} error={noticeError} loadingMessage="" />
 
-      {remoteReconciliation ? (
+      {remoteReconciliationKey ? (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
           <div className="font-medium text-amber-800">This work order changed on the server while you were editing it.</div>
           <div className="mt-1 text-amber-900/80">
@@ -407,7 +404,7 @@ export function WorkOrderRecordPanel({
             <button
               type="button"
               onClick={() => {
-                setRemoteReconciliation(null)
+                setRemoteReconciliationKey(null)
                 void refreshWorkOrderDetail()
               }}
               className="rounded-md border border-amber-600/40 px-3 py-2 font-medium hover:bg-amber-500/10"
@@ -416,7 +413,7 @@ export function WorkOrderRecordPanel({
             </button>
             <button
               type="button"
-              onClick={() => setRemoteReconciliation(null)}
+              onClick={() => setRemoteReconciliationKey(null)}
               className="rounded-md border border-[var(--panel-border)] px-3 py-2 font-medium hover:bg-[var(--panel-hover)]"
             >
               Keep Editing
@@ -490,19 +487,24 @@ export function WorkOrderRecordPanel({
                   isSaving: materialSection.isSaving,
                   hasConflict: materialSection.hasConflict,
                   workflow: (
-                    <RecordSectionStatusBadge
-                      tone={
-                        autoAllocationWorkflow.phase === "completed"
-                          ? "success"
-                          : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
-                            ? "error"
-                            : autoAllocationWorkflow.isPending
-                              ? "processing"
-                              : "neutral"
-                      }
-                    >
-                      Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
-                    </RecordSectionStatusBadge>
+                    <>
+                      <RecordSectionStatusBadge
+                        tone={
+                          autoAllocationWorkflow.phase === "completed"
+                            ? "success"
+                            : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
+                              ? "error"
+                              : autoAllocationWorkflow.isPending
+                                ? "processing"
+                                : "neutral"
+                        }
+                      >
+                        Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
+                      </RecordSectionStatusBadge>
+                      {autoAllocationWorkflow.isStalled ? (
+                        <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
+                      ) : null}
+                    </>
                   ),
                 })}
                 error={materialSection.error ?? autoAllocationWorkflow.error}
@@ -667,13 +669,14 @@ export function WorkOrderRecordPanel({
         <WorkOrderCalculationsSection title="Calculations" items={currentCalculationRows} loading={false} />
 
         <WorkOrderInvoiceSection
-          invoice={invoice}
-          error={invoiceError}
-          isLoading={invoiceLoading}
-          workflowPhase={invoiceWorkflowPhase}
-          onQueueInvoice={onQueueInvoice}
-          onOpenInvoice={onOpenInvoice}
-          onOpenChange={onInvoiceSectionOpenChange}
+          invoice={invoiceWorkflow.invoice}
+          error={invoiceWorkflow.error}
+          isLoading={invoiceWorkflow.isLoading}
+          workflowPhase={invoiceWorkflow.phase}
+          isStalled={invoiceWorkflow.isStalled}
+          onQueueInvoice={() => void invoiceWorkflow.queueInvoice()}
+          onOpenInvoice={invoiceWorkflow.openInvoice}
+          onOpenChange={setIsInvoiceSectionOpen}
         />
       </RecordSectionStack>
 

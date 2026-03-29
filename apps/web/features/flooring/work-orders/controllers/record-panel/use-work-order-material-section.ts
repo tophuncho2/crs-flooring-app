@@ -16,6 +16,7 @@ import {
 } from "@/features/flooring/shared/line-items/material-items-editor"
 import { useWorkOrderSectionController } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-section-controller"
 import {
+  areMaterialItemsEqual,
   cloneMaterialItems,
   createEmptyAllocationRow,
   createEmptyMaterialItem,
@@ -71,6 +72,7 @@ export function useWorkOrderMaterialSection(input: {
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: cloneMaterialItems,
     cloneLocalValue: cloneMaterialItems,
+    isEqual: areMaterialItemsEqual,
     onSave: async (items, _serverItems, serverRevisionKey) => {
       const nextItemErrors: RowFieldErrors<MaterialItemField> = {}
       const nextAllocationErrors: Record<string, RowFieldErrors<AllocationField>> = {}

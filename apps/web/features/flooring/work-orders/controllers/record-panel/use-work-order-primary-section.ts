@@ -4,6 +4,7 @@ import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { useWorkOrderSectionController } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-section-controller"
 import {
+  areWorkOrderDraftsEqual,
   cloneDraftWorkOrder,
   toWorkOrderDraft,
 } from "@/features/flooring/work-orders/controllers/record-panel/shared"
@@ -30,6 +31,7 @@ export function useWorkOrderPrimarySection(input: {
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: toWorkOrderDraft,
     cloneLocalValue: cloneDraftWorkOrder,
+    isEqual: areWorkOrderDraftsEqual,
     onSave: async (nextDraft, serverWorkOrder, serverRevisionKey) => {
       clearNotices()
 

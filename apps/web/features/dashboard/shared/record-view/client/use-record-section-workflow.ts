@@ -42,6 +42,7 @@ export function useRecordSectionWorkflow<TValue>({
   refresh,
   getTerminalKey,
   onTerminal,
+  getPollingIntervalMs,
 }: {
   value: TValue
   getSyncKey: (value: TValue) => string
@@ -49,11 +50,13 @@ export function useRecordSectionWorkflow<TValue>({
   refresh: () => Promise<TValue | null>
   getTerminalKey?: (value: TValue) => string | null
   onTerminal?: (value: TValue) => void | Promise<void>
+  getPollingIntervalMs?: (value: TValue) => number | undefined
 }) {
   const [value, setValue] = useState(seedValue)
   const [error, setError] = useState<string | null>(null)
   const getSyncKeyRef = useRef(getSyncKey)
   const readStatusRef = useRef(readStatus)
+  const getPollingIntervalMsRef = useRef(getPollingIntervalMs)
   const syncKey = getSyncKey(seedValue)
 
   useEffect(() => {
@@ -65,10 +68,15 @@ export function useRecordSectionWorkflow<TValue>({
   }, [readStatus])
 
   useEffect(() => {
+    getPollingIntervalMsRef.current = getPollingIntervalMs
+  }, [getPollingIntervalMs])
+
+  useEffect(() => {
     setValue((current) => (getSyncKeyRef.current(current) === syncKey ? current : seedValue))
   }, [seedValue, syncKey])
 
   const phase = useMemo(() => normalizeRecordSectionWorkflowPhase(readStatusRef.current(value)), [value])
+  const pollingIntervalMs = useMemo(() => getPollingIntervalMsRef.current?.(value), [value])
 
   const refreshValue = useCallback(async () => {
     try {
@@ -95,6 +103,7 @@ export function useRecordSectionWorkflow<TValue>({
       return getTerminalKey?.(nextValue) ?? getSyncKeyRef.current(nextValue)
     },
     onTerminal,
+    intervalMs: pollingIntervalMs,
   })
 
   return {
