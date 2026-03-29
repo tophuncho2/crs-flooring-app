@@ -39,6 +39,42 @@ function readProductUnit(options: MaterialItemOption[], productId: string, fallb
   return options.find((product) => product.id === productId)?.sendUnit || fallback || "-"
 }
 
+function readMaterialRowStatus(item: WorkOrderMaterialItem, hasErrors: boolean) {
+  if (hasErrors) {
+    return "Needs Review"
+  }
+
+  if (item.id.startsWith("temp:")) {
+    return "Unsaved"
+  }
+
+  return item.allocationStatus.replaceAll("_", " ")
+}
+
+function readMaterialRowStatusTone(item: WorkOrderMaterialItem, hasErrors: boolean) {
+  if (hasErrors) {
+    return "error" as const
+  }
+
+  if (item.id.startsWith("temp:")) {
+    return "warning" as const
+  }
+
+  if (item.allocationStatus === "FULLY_ALLOCATED") {
+    return "success" as const
+  }
+
+  if (item.allocationStatus === "SHORTAGE") {
+    return "error" as const
+  }
+
+  if (item.allocationStatus === "PARTIALLY_ALLOCATED") {
+    return "warning" as const
+  }
+
+  return "neutral" as const
+}
+
 function MaterialItemEditorRow({
   item,
   productOptions,
@@ -60,7 +96,9 @@ function MaterialItemEditorRow({
 }) {
   const rowErrors = itemErrors[item.id]
   const productLabel = readProductLabel(productOptions, item.productId, item.productName)
-  const isLocalOnlyItem = item.id.startsWith("temp:")
+  const hasErrors = hasFieldErrors(rowErrors)
+  const rowStatusLabel = readMaterialRowStatus(item, hasErrors)
+  const rowStatusTone = readMaterialRowStatusTone(item, hasErrors)
 
   return (
     <RecordSectionItem
@@ -156,27 +194,10 @@ function MaterialItemEditorRow({
         </div>
         </RecordItemCell>
         <RecordItemCell label="Status">
-        <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
-          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-            {isLocalOnlyItem ? "Unsaved" : "Ready"}
+        <div className="flex min-h-[2.5rem] items-center">
+          <RecordSectionStatusBadge tone={rowStatusTone} className="min-w-[8.75rem] justify-center">
+            {rowStatusLabel}
           </RecordSectionStatusBadge>
-          <RecordSectionStatusBadge
-            tone={
-              item.allocationStatus === "FULLY_ALLOCATED"
-                ? "success"
-                : item.allocationStatus === "SHORTAGE"
-                  ? "error"
-                  : item.allocationStatus === "PARTIALLY_ALLOCATED"
-                    ? "warning"
-                    : "neutral"
-            }
-          >
-            {item.allocationStatus.replaceAll("_", " ")}
-          </RecordSectionStatusBadge>
-          <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
-            {item.isAllocationDone ? "Done" : "Pending"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
         </div>
         </RecordItemCell>
         <RecordItemCell label="Remove">

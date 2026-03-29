@@ -11,9 +11,11 @@ import {
 export function RecordSectionStatusBadge({
   children,
   tone = "neutral",
+  className,
 }: {
   children: ReactNode
   tone?: "neutral" | "success" | "warning" | "error" | "processing"
+  className?: string
 }) {
   const toneClassName =
     tone === "success"
@@ -31,6 +33,7 @@ export function RecordSectionStatusBadge({
       className={joinRecordSectionClasses(
         "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
         toneClassName,
+        className,
       )}
     >
       {children}

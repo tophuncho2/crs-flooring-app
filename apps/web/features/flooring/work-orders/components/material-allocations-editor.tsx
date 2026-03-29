@@ -51,6 +51,30 @@ function readPricePerUnit(options: InventoryAllocationOption[], inventoryId: str
   return options.find((option) => option.id === inventoryId)?.pricePerUnit ?? 0
 }
 
+function readAllocationRowStatus(allocation: WorkOrderItemAllocationRow, hasErrors: boolean) {
+  if (hasErrors) {
+    return "Needs Review"
+  }
+
+  if (allocation.id.startsWith("temp:")) {
+    return "Unsaved"
+  }
+
+  return "Ready"
+}
+
+function readAllocationRowStatusTone(allocation: WorkOrderItemAllocationRow, hasErrors: boolean) {
+  if (hasErrors) {
+    return "error" as const
+  }
+
+  if (allocation.id.startsWith("temp:")) {
+    return "warning" as const
+  }
+
+  return "neutral" as const
+}
+
 function AllocationCell({
   label,
   children,
@@ -102,7 +126,9 @@ function AllocationEditorRow({
 }) {
   const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
   const quantityValue = Number(allocation.quantity || 0)
-  const isLocalOnlyRow = allocation.id.startsWith("temp:")
+  const hasErrors = hasFieldErrors(rowErrors)
+  const rowStatusLabel = readAllocationRowStatus(allocation, hasErrors)
+  const rowStatusTone = readAllocationRowStatusTone(allocation, hasErrors)
 
   return (
     <div className={joinClasses(WORK_ORDER_MATERIAL_GRID_CLASS_NAME, hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined)}>
@@ -147,11 +173,10 @@ function AllocationEditorRow({
         />
       </AllocationCell>
       <AllocationCell label="Status">
-        <div className="flex min-h-[2.5rem] flex-wrap items-center gap-2">
-          <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
-            {isLocalOnlyRow ? "Unsaved" : "Ready"}
+        <div className="flex min-h-[2.5rem] items-center">
+          <RecordSectionStatusBadge tone={rowStatusTone} className="min-w-[8.75rem] justify-center">
+            {rowStatusLabel}
           </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
         </div>
       </AllocationCell>
       <AllocationCell label="Remove">
