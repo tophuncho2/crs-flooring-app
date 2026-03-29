@@ -4,6 +4,12 @@ import { useCallback, useEffect, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
+  createRecordSectionError,
+  useRecordAllocationController,
+  useRecordItemController,
+  isLocalOnlyRecordRow,
+} from "@/features/shared/engines/record-view"
+import {
   clearRowFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
@@ -20,9 +26,8 @@ import {
   cloneMaterialItems,
   createEmptyAllocationRow,
   createEmptyMaterialItem,
-  isLocalOnlyRow,
-  reconcileMaterialItemDraft,
 } from "../shared"
+import { reconcileMaterialItemDraft } from "@/features/flooring/work-orders/domain/material-allocations"
 import {
   validateAllocationFields,
   type AllocationField,
@@ -107,7 +112,10 @@ export function useWorkOrderMaterialSection(input: {
       setAllocationErrorsByItemId(nextAllocationErrors)
 
       if (Object.keys(nextItemErrors).length > 0 || Object.keys(nextAllocationErrors).length > 0) {
-        throw new Error("Fix the highlighted material item and allocation fields before saving.")
+        throw createRecordSectionError({
+          kind: "validation",
+          message: "Fix the highlighted material item and allocation fields before saving.",
+        })
       }
 
       clearNotices()
@@ -122,8 +130,8 @@ export function useWorkOrderMaterialSection(input: {
               withMutationMeta(
                 {
                   items: items.map((item) => ({
-                    id: isLocalOnlyRow(item.id) ? null : item.id,
-                    expectedUpdatedAt: isLocalOnlyRow(item.id) ? null : item.updatedAt,
+                    id: isLocalOnlyRecordRow(item.id) ? null : item.id,
+                    expectedUpdatedAt: isLocalOnlyRecordRow(item.id) ? null : item.updatedAt,
                     item: {
                       productId: item.productId,
                       quantity: item.quantity,
@@ -131,8 +139,8 @@ export function useWorkOrderMaterialSection(input: {
                       notes: item.notes || null,
                     },
                     allocations: item.allocations.map((allocation) => ({
-                      id: isLocalOnlyRow(allocation.id) ? null : allocation.id,
-                      expectedUpdatedAt: isLocalOnlyRow(allocation.id) ? null : allocation.updatedAt,
+                      id: isLocalOnlyRecordRow(allocation.id) ? null : allocation.id,
+                      expectedUpdatedAt: isLocalOnlyRecordRow(allocation.id) ? null : allocation.updatedAt,
                       input: {
                         inventoryId: allocation.inventoryId,
                         quantity: allocation.quantity,
@@ -162,6 +170,19 @@ export function useWorkOrderMaterialSection(input: {
     },
   })
 
+  const itemController = useRecordItemController<WorkOrderMaterialItem>({
+    setItems: controller.setLocalValue,
+    getItemId: (item) => item.id,
+  })
+  const allocationController = useRecordAllocationController<WorkOrderMaterialItem, WorkOrderItemAllocationRow>({
+    setItems: controller.setLocalValue,
+    getItemId: (item) => item.id,
+    getAllocationId: (allocation) => allocation.id,
+    readAllocations: (item) => item.allocations,
+    writeAllocations: (item, allocations) => ({ ...item, allocations }),
+    reconcileItem: reconcileMaterialItemDraft,
+  })
+
   const loadAllocationOptions = useCallback(
     async (itemId: string, productId: string) => {
       if (!productId) {
@@ -186,9 +207,9 @@ export function useWorkOrderMaterialSection(input: {
 
   const addItem = useCallback(() => {
     const nextItem = createEmptyMaterialItem()
-    controller.setLocalValue((previous) => [...previous, nextItem])
+    itemController.addItem(() => nextItem)
     setExpandedItemIds((previous) => (previous.includes(nextItem.id) ? previous : [...previous, nextItem.id]))
-  }, [controller])
+  }, [itemController])
 
   const toggleExpandedItem = useCallback(
     (itemId: string) => {
@@ -211,41 +232,35 @@ export function useWorkOrderMaterialSection(input: {
 
   const changeItemField = useCallback(
     (itemId: string, field: keyof EditableMaterialItem, value: string) => {
-      controller.setLocalValue((previous) =>
-        previous.map((item) => {
-          if (item.id !== itemId) {
-            return item
-          }
-
-          if (field === "productId") {
-            const selectedProduct = productOptions.find((product) => product.id === value)
-            setAllocationOptionsByItemId((current) => ({ ...current, [itemId]: [] }))
-            setAllocationErrorsByItemId((current) => {
-              const next = { ...current }
-              delete next[itemId]
-              return next
-            })
-            return reconcileMaterialItemDraft({
-              ...item,
-              productId: value,
-              productName: selectedProduct?.label ?? "",
-              sendUnit: selectedProduct?.sendUnit ?? "",
-              allocations: [],
-            })
-          }
-
+      itemController.updateItem(itemId, (item) => {
+        if (field === "productId") {
+          const selectedProduct = productOptions.find((product) => product.id === value)
+          setAllocationOptionsByItemId((current) => ({ ...current, [itemId]: [] }))
+          setAllocationErrorsByItemId((current) => {
+            const next = { ...current }
+            delete next[itemId]
+            return next
+          })
           return reconcileMaterialItemDraft({
             ...item,
-            [field]: value,
+            productId: value,
+            productName: selectedProduct?.label ?? "",
+            sendUnit: selectedProduct?.sendUnit ?? "",
+            allocations: [],
           })
-        }),
-      )
+        }
+
+        return reconcileMaterialItemDraft({
+          ...item,
+          [field]: value,
+        })
+      })
 
       if (field === "productId" || field === "quantity" || field === "unitPrice") {
         setItemErrors((previous) => clearRowFieldError(previous, itemId, field))
       }
     },
-    [controller, productOptions],
+    [itemController, productOptions],
   )
 
   const addAllocation = useCallback(
@@ -261,63 +276,37 @@ export function useWorkOrderMaterialSection(input: {
       }
 
       await loadAllocationOptions(item.id, item.productId)
-      controller.setLocalValue((previous) =>
-        previous.map((value) =>
-          value.id === itemId
-            ? reconcileMaterialItemDraft({
-                ...value,
-                allocations: [...value.allocations, createEmptyAllocationRow(itemId)],
-              })
-            : value,
-        ),
-      )
+      allocationController.addAllocation(item.id, () => createEmptyAllocationRow(itemId))
     },
-    [controller, loadAllocationOptions, showError],
+    [allocationController, controller.localValue, loadAllocationOptions, showError],
   )
 
   const changeAllocationField = useCallback(
     (itemId: string, allocationId: string, field: keyof WorkOrderItemAllocationRow, value: string) => {
       const options = allocationOptionsByItemId[itemId] ?? []
 
-      controller.setLocalValue((previous) =>
-        previous.map((item) => {
-          if (item.id !== itemId) {
-            return item
+      allocationController.updateAllocation(itemId, allocationId, (allocation) => {
+        if (field === "inventoryId") {
+          const selectedOption = options.find((option) => option.id === value)
+          return {
+            ...allocation,
+            inventoryId: value,
+            unitCost: String(selectedOption?.pricePerUnit ?? allocation.unitCost),
+            inventory: {
+              itemNumber: selectedOption?.itemNumber ?? "",
+              dyeLot: selectedOption?.dyeLot ?? "",
+              locationCode: selectedOption?.locationCode ?? "",
+              warehouseName: selectedOption?.warehouseName ?? "",
+              stockUnit: selectedOption?.stockUnit ?? "",
+            },
           }
+        }
 
-          const allocations = item.allocations.map((allocation) => {
-            if (allocation.id !== allocationId) {
-              return allocation
-            }
-
-            if (field === "inventoryId") {
-              const selectedOption = options.find((option) => option.id === value)
-              return {
-                ...allocation,
-                inventoryId: value,
-                unitCost: String(selectedOption?.pricePerUnit ?? allocation.unitCost),
-                inventory: {
-                  itemNumber: selectedOption?.itemNumber ?? "",
-                  dyeLot: selectedOption?.dyeLot ?? "",
-                  locationCode: selectedOption?.locationCode ?? "",
-                  warehouseName: selectedOption?.warehouseName ?? "",
-                  stockUnit: selectedOption?.stockUnit ?? "",
-                },
-              }
-            }
-
-            return {
-              ...allocation,
-              [field]: value,
-            }
-          })
-
-          return reconcileMaterialItemDraft({
-            ...item,
-            allocations,
-          })
-        }),
-      )
+        return {
+          ...allocation,
+          [field]: value,
+        }
+      })
 
       if (field === "inventoryId" || field === "quantity") {
         setAllocationErrorsByItemId((previous) => ({
@@ -326,7 +315,7 @@ export function useWorkOrderMaterialSection(input: {
         }))
       }
     },
-    [allocationOptionsByItemId, controller],
+    [allocationController, allocationOptionsByItemId],
   )
 
   const deleteItem = useCallback(
@@ -335,7 +324,7 @@ export function useWorkOrderMaterialSection(input: {
         return
       }
 
-      controller.setLocalValue((previous) => previous.filter((item) => item.id !== itemId))
+      itemController.removeItem(itemId)
       setItemErrors((previous) => {
         const next = { ...previous }
         delete next[itemId]
@@ -353,28 +342,19 @@ export function useWorkOrderMaterialSection(input: {
       })
       setExpandedItemIds((previous) => previous.filter((value) => value !== itemId))
     },
-    [confirmDelete, controller],
+    [confirmDelete, itemController],
   )
 
   const deleteAllocation = useCallback(
     (itemId: string, allocationId: string) => {
-      controller.setLocalValue((previous) =>
-        previous.map((item) =>
-          item.id === itemId
-            ? reconcileMaterialItemDraft({
-                ...item,
-                allocations: item.allocations.filter((allocation) => allocation.id !== allocationId),
-              })
-            : item,
-        ),
-      )
+      allocationController.removeAllocation(itemId, allocationId)
 
       setAllocationErrorsByItemId((previous) => ({
         ...previous,
         [itemId]: setRowFieldErrors(previous[itemId] ?? {}, allocationId, {}),
       }))
     },
-    [controller],
+    [allocationController],
   )
 
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { requestJsonMock } from "./helpers/simple-table-client-mocks"
 import { TemplateRecordPanel } from "@/features/flooring/templates/components/template-record-panel"
@@ -16,6 +16,33 @@ vi.mock("@/features/flooring/shared/domain/record-summary", () => ({
   buildRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
   emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
 }))
+
+vi.mock("@/features/flooring/shared/line-items/material-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/line-items/material-items-editor")>()
+
+  return {
+    ...actual,
+    validateMaterialItemFields: vi.fn(() => ({})),
+  }
+})
+
+vi.mock("@/features/flooring/shared/line-items/service-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/line-items/service-items-editor")>()
+
+  return {
+    ...actual,
+    validateServiceItemFields: vi.fn(() => ({})),
+  }
+})
+
+vi.mock("@/features/flooring/shared/line-items/sales-rep-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/line-items/sales-rep-items-editor")>()
+
+  return {
+    ...actual,
+    validateSalesRepFields: vi.fn(() => ({})),
+  }
+})
 
 vi.mock("@/features/flooring/shared/ui/record-items/material-items-editor", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/material-items-editor")>()
@@ -265,6 +292,7 @@ function templateRow() {
 function renderPanel() {
   return render(
     <TemplateRecordPanel
+      currentUserId="user-1"
       templateId="tpl-1"
       initialTemplate={templateRow()}
       propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
@@ -282,6 +310,16 @@ function renderPanel() {
   )
 }
 
+function getSection(collapseLabel: string) {
+  const section = screen.getByRole("button", { name: collapseLabel }).closest("section")
+
+  if (!section) {
+    throw new Error(`Section not found for ${collapseLabel}`)
+  }
+
+  return section
+}
+
 describe("TemplateRecordPanel", () => {
   beforeEach(() => {
     cleanup()
@@ -296,14 +334,18 @@ describe("TemplateRecordPanel", () => {
     })
 
     renderPanel()
+    const primarySection = getSection("Collapse Template Details")
     await user.clear(screen.getByLabelText("Template Tag"))
     await user.type(screen.getByLabelText("Template Tag"), "Saved")
-    await user.click(screen.getByRole("button", { name: "Save Template" }))
+    await user.click(within(primarySection).getByRole("button", { name: "Save" }))
 
     await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/templates/tpl-1", expect.objectContaining({
-        method: "PATCH",
-      }))
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        "/api/flooring/templates/tpl-1/primary/section",
+        expect.objectContaining({
+          method: "PATCH",
+        }),
+      )
     })
   })
 
@@ -316,6 +358,7 @@ describe("TemplateRecordPanel", () => {
 
     render(
       <TemplateRecordPanel
+        currentUserId="user-1"
         templateId="tpl-1"
         initialTemplate={templateRow()}
         propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
@@ -353,47 +396,104 @@ describe("TemplateRecordPanel", () => {
   it("adding, saving, and deleting material items keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
     vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock
-      .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "" } })
-      .mockResolvedValueOnce({ item: { id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "3", unitPrice: "4.00", notes: "" } })
-      .mockResolvedValueOnce({})
+    requestJsonMock.mockResolvedValueOnce({
+      template: {
+        ...templateRow(),
+        items: [{ id: "item-1", productId: "prod-1", productName: "Pad", sendUnit: "SF", quantity: "2", unitPrice: "4.00", notes: "", createdAt: "", updatedAt: "2026-03-19T00:00:00.000Z" }],
+        summary: {
+          ...templateRow().summary,
+          materialItemsCount: 1,
+          totalItemsCount: 1,
+        },
+      },
+    })
 
     renderPanel()
-    await user.click(screen.getByRole("button", { name: "Add Material" }))
-    expect(await screen.findByText("Material count 1")).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: "Save Material" }))
-    await user.click(screen.getByRole("button", { name: "Delete Material" }))
-    expect(await screen.findByText("Material count 0")).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
+    const materialSection = getSection("Collapse Material Items")
+
+    await user.click(within(materialSection).getByRole("button", { name: "Add Material Item" }))
+    expect(within(materialSection).getByText("1 item")).toBeTruthy()
+
+    await user.click(within(materialSection).getByRole("button", { name: "Save" }))
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        "/api/flooring/templates/tpl-1/items/section",
+        expect.objectContaining({ method: "PATCH" }),
+      )
+    })
+
+    await user.click(within(materialSection).getByRole("button", { name: "Remove" }))
+    expect(window.confirm).toHaveBeenCalledWith("Delete this material item? This cannot be undone.")
+    expect(within(materialSection).getByText("0 items")).toBeTruthy()
+    expect(within(materialSection).getByRole("button", { name: "Add Material Item" })).toBeTruthy()
   })
 
   it("adding, saving, and deleting service items keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
     vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock
-      .mockResolvedValueOnce({ item: { id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "1", unitPrice: "9.00", notes: "" } })
-      .mockResolvedValueOnce({ item: { id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "2", unitPrice: "9.00", notes: "" } })
-      .mockResolvedValueOnce({})
+    requestJsonMock.mockResolvedValueOnce({
+      template: {
+        ...templateRow(),
+        serviceItems: [{ id: "svc-1", serviceId: "svc-1", name: "Install", unitId: "unit-1", unitName: "SF", quantity: "1", unitPrice: "9.00", notes: "", createdAt: "", updatedAt: "2026-03-19T00:00:00.000Z" }],
+        summary: {
+          ...templateRow().summary,
+          serviceItemsCount: 1,
+          totalItemsCount: 1,
+        },
+      },
+    })
 
     renderPanel()
-    await user.click(screen.getByRole("button", { name: "Add Service" }))
-    expect(await screen.findByText("Service count 1")).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: "Save Service" }))
-    await user.click(screen.getByRole("button", { name: "Delete Service" }))
-    expect(await screen.findByText("Service count 0")).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
+    const serviceSection = getSection("Collapse Service Items")
+
+    await user.click(within(serviceSection).getByRole("button", { name: "Add Service Item" }))
+    expect(within(serviceSection).getByText("1 item")).toBeTruthy()
+
+    await user.click(within(serviceSection).getByRole("button", { name: "Save" }))
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        "/api/flooring/templates/tpl-1/service-items/section",
+        expect.objectContaining({ method: "PATCH" }),
+      )
+    })
+
+    await user.click(within(serviceSection).getByRole("button", { name: "Remove" }))
+    expect(window.confirm).toHaveBeenCalledWith("Delete this service item? This cannot be undone.")
+    expect(within(serviceSection).getByText("0 items")).toBeTruthy()
+    expect(within(serviceSection).getByRole("button", { name: "Add Service Item" })).toBeTruthy()
   })
 
   it("adding, saving, and deleting sales reps keeps the template panel open and updates panel state", async () => {
     const user = userEvent.setup()
     vi.spyOn(window, "confirm").mockReturnValue(true)
+    requestJsonMock.mockResolvedValueOnce({
+      template: {
+        ...templateRow(),
+        salesReps: [{ id: "rep-1", contactId: "contact-1", contactName: "Jordan Case", percent: "10.00", createdAt: "", updatedAt: "2026-03-19T00:00:00.000Z" }],
+        summary: {
+          ...templateRow().summary,
+          totalItemsCount: 0,
+        },
+      },
+    })
 
     renderPanel()
-    await user.click(screen.getByRole("button", { name: "Add Sales Rep" }))
-    expect(await screen.findByText("Sales rep count 1")).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: "Save Sales Rep" }))
-    await user.click(screen.getByRole("button", { name: "Delete Sales Rep" }))
-    expect(await screen.findByText("Sales rep count 0")).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Save Template" })).toBeTruthy()
+    const salesSection = getSection("Collapse Sales Reps")
+
+    await user.click(within(salesSection).getByRole("button", { name: "Add Sales Rep" }))
+    expect(within(salesSection).getByText("1 item")).toBeTruthy()
+
+    await user.click(within(salesSection).getByRole("button", { name: "Save" }))
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        "/api/flooring/templates/tpl-1/sales-reps/section",
+        expect.objectContaining({ method: "PATCH" }),
+      )
+    })
+
+    await user.click(within(salesSection).getByRole("button", { name: "Remove" }))
+    expect(window.confirm).toHaveBeenCalledWith("Delete this sales rep? This cannot be undone.")
+    expect(within(salesSection).getByText("0 items")).toBeTruthy()
+    expect(within(salesSection).getByRole("button", { name: "Add Sales Rep" })).toBeTruthy()
   })
 })

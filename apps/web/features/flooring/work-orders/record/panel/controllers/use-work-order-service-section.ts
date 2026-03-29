@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
+  createRecordSectionError,
+  useRecordItemController,
+  isLocalOnlyRecordRow,
+} from "@/features/shared/engines/record-view"
+import {
   clearRowFieldError,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
@@ -17,7 +22,6 @@ import {
   areServiceItemsEqual,
   cloneServiceItems,
   createEmptyServiceItem,
-  isLocalOnlyRow,
 } from "../shared"
 import type { WorkOrderDetail } from "@/features/flooring/work-orders/types"
 
@@ -70,7 +74,10 @@ export function useWorkOrderServiceSection(input: {
 
       setItemErrors(nextErrors)
       if (Object.keys(nextErrors).length > 0) {
-        throw new Error("Fix the highlighted service item fields before saving.")
+        throw createRecordSectionError({
+          kind: "validation",
+          message: "Fix the highlighted service item fields before saving.",
+        })
       }
 
       clearNotices()
@@ -85,8 +92,8 @@ export function useWorkOrderServiceSection(input: {
               withMutationMeta(
                 {
                   items: items.map((item) => ({
-                    id: isLocalOnlyRow(item.id) ? null : item.id,
-                    expectedUpdatedAt: isLocalOnlyRow(item.id) ? null : item.updatedAt,
+                    id: isLocalOnlyRecordRow(item.id) ? null : item.id,
+                    expectedUpdatedAt: isLocalOnlyRecordRow(item.id) ? null : item.updatedAt,
                     item: {
                       serviceId: item.serviceId || null,
                       name: item.name || null,
@@ -116,19 +123,24 @@ export function useWorkOrderServiceSection(input: {
     },
   })
 
+  const itemController = useRecordItemController<EditableServiceItem>({
+    setItems: controller.setLocalValue,
+    getItemId: (item) => item.id,
+  })
+
   const addItem = useCallback(() => {
-    controller.setLocalValue((previous) => [...previous, createEmptyServiceItem()])
-  }, [controller])
+    itemController.addItem(createEmptyServiceItem)
+  }, [itemController])
 
   const changeField = useCallback(
     (itemId: string, field: keyof EditableServiceItem, value: string) => {
-      controller.setLocalValue((previous) => previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+      itemController.updateItem(itemId, (item) => ({ ...item, [field]: value }))
 
       if (field === "name" || field === "unitId" || field === "quantity" || field === "unitPrice") {
         setItemErrors((previous) => clearRowFieldError(previous, itemId, field))
       }
     },
-    [controller],
+    [itemController],
   )
 
   const deleteItem = useCallback(
@@ -137,14 +149,14 @@ export function useWorkOrderServiceSection(input: {
         return
       }
 
-      controller.setLocalValue((previous) => previous.filter((item) => item.id !== itemId))
+      itemController.removeItem(itemId)
       setItemErrors((previous) => {
         const next = { ...previous }
         delete next[itemId]
         return next
       })
     },
-    [confirmDelete, controller],
+    [confirmDelete, itemController],
   )
 
   useEffect(() => {

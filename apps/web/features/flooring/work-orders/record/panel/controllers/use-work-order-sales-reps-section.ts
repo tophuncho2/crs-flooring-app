@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
+  createRecordSectionError,
+  useRecordItemController,
+  isLocalOnlyRecordRow,
+} from "@/features/shared/engines/record-view"
+import {
   clearRowFieldError,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
@@ -17,7 +22,6 @@ import {
   areSalesRepItemsEqual,
   cloneSalesRepItems,
   createEmptySalesRepItem,
-  isLocalOnlyRow,
 } from "../shared"
 import type { WorkOrderDetail } from "@/features/flooring/work-orders/types"
 
@@ -67,7 +71,10 @@ export function useWorkOrderSalesRepsSection(input: {
 
       setItemErrors(nextErrors)
       if (Object.keys(nextErrors).length > 0) {
-        throw new Error("Fix the highlighted sales rep fields before saving.")
+        throw createRecordSectionError({
+          kind: "validation",
+          message: "Fix the highlighted sales rep fields before saving.",
+        })
       }
 
       clearNotices()
@@ -82,8 +89,8 @@ export function useWorkOrderSalesRepsSection(input: {
               withMutationMeta(
                 {
                   items: items.map((item) => ({
-                    id: isLocalOnlyRow(item.id) ? null : item.id,
-                    expectedUpdatedAt: isLocalOnlyRow(item.id) ? null : item.updatedAt,
+                    id: isLocalOnlyRecordRow(item.id) ? null : item.id,
+                    expectedUpdatedAt: isLocalOnlyRecordRow(item.id) ? null : item.updatedAt,
                     item: {
                       contactId: item.contactId,
                       percent: item.percent,
@@ -109,19 +116,24 @@ export function useWorkOrderSalesRepsSection(input: {
     },
   })
 
+  const itemController = useRecordItemController<EditableSalesRepItem>({
+    setItems: controller.setLocalValue,
+    getItemId: (item) => item.id,
+  })
+
   const addItem = useCallback(() => {
-    controller.setLocalValue((previous) => [...previous, createEmptySalesRepItem()])
-  }, [controller])
+    itemController.addItem(createEmptySalesRepItem)
+  }, [itemController])
 
   const changeField = useCallback(
     (itemId: string, field: keyof EditableSalesRepItem, value: string) => {
-      controller.setLocalValue((previous) => previous.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)))
+      itemController.updateItem(itemId, (item) => ({ ...item, [field]: value }))
 
       if (field === "contactId" || field === "percent") {
         setItemErrors((previous) => clearRowFieldError(previous, itemId, field))
       }
     },
-    [controller],
+    [itemController],
   )
 
   const deleteItem = useCallback(
@@ -130,14 +142,14 @@ export function useWorkOrderSalesRepsSection(input: {
         return
       }
 
-      controller.setLocalValue((previous) => previous.filter((item) => item.id !== itemId))
+      itemController.removeItem(itemId)
       setItemErrors((previous) => {
         const next = { ...previous }
         delete next[itemId]
         return next
       })
     },
-    [confirmDelete, controller],
+    [confirmDelete, itemController],
   )
 
   useEffect(() => {

@@ -12,7 +12,7 @@ export default async function TemplateDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireTemplatesAccess()
+  const user = await requireTemplatesAccess()
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const result = await getTemplateDetailPageData(id)
@@ -38,6 +38,7 @@ export default async function TemplateDetailPage({
 
   return (
     <TemplateDetailClient
+      currentUserId={user.id}
       template={result.data.template}
       propertyOptions={result.data.propertyOptions}
       warehouseOptions={result.data.warehouseOptions}

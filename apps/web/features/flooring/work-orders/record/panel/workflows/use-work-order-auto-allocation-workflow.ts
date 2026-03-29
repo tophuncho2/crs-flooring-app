@@ -1,7 +1,10 @@
 "use client"
 
 import { useCallback } from "react"
-import { useRecordSectionWorkflow } from "@/features/shared/engines/record-view"
+import {
+  createRecordSectionError,
+  useRecordSectionWorkflow,
+} from "@/features/shared/engines/record-view"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { WorkOrderAutoAllocationStatusResponse } from "@/features/flooring/work-orders/transport/allocations"
@@ -127,7 +130,12 @@ export function useWorkOrderAutoAllocationWorkflow(input: {
     } catch (allocationError) {
       applyConflictWorkOrderSnapshot(allocationError)
       const message = allocationError instanceof Error ? allocationError.message : "Failed to request auto allocation"
-      setError(message)
+      setError(
+        createRecordSectionError({
+          kind: "workflow",
+          message,
+        }),
+      )
       showError(message)
       return null
     }

@@ -1,7 +1,12 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { RecordItemCell, RecordSectionStatusBadge } from "@/features/shared/engines/record-view"
+import {
+  RecordAllocationItemRow,
+  RecordAllocationItemsPanel,
+  RecordItemCell,
+  RecordSectionStatusBadge,
+} from "@/features/shared/engines/record-view"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
@@ -208,42 +213,41 @@ export function MaterialAllocationsEditor({
 }) {
   return (
     <div className="space-y-0">
-      {allocations.length === 0 ? (
-        <div className="border border-dashed border-[var(--panel-border)] px-3 py-3 text-sm text-[var(--foreground)]/60">
-          No allocations yet.
-        </div>
-      ) : null}
-
-      {allocations.map((allocation, index) => {
-        return (
-          <div
-            key={allocation.id}
-            className={joinClasses(
-              index > 0 ? "border-t border-[var(--panel-border)]" : undefined,
-              "py-0",
-            )}
+      <RecordAllocationItemsPanel
+        emptyState="No allocations yet."
+        footer={
+          <button
+            type="button"
+            onClick={onAddAllocation}
+            disabled={loadingOptions}
+            className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
           >
-            <AllocationEditorRow
-              allocation={allocation}
-              allocationOptions={allocationOptions}
-              rowErrors={itemErrors[allocation.id]}
-              onAllocationFieldChange={onAllocationFieldChange}
-              onDeleteAllocation={onDeleteAllocation}
-            />
-          </div>
-        )
-      })}
-
-      <div className="flex justify-end border-t border-[var(--panel-border)] pt-3">
-        <button
-          type="button"
-          onClick={onAddAllocation}
-          disabled={loadingOptions}
-          className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-        >
-          {loadingOptions ? "Loading inventory..." : "Add Allocation"}
-        </button>
-      </div>
+            {loadingOptions ? "Loading inventory..." : "Add Allocation"}
+          </button>
+        }
+      >
+        {allocations.length > 0
+          ? allocations.map((allocation, index) => {
+              return (
+                <RecordAllocationItemRow
+                  key={allocation.id}
+                  className={joinClasses(
+                    index > 0 ? "border-t border-[var(--panel-border)]" : undefined,
+                    "py-0",
+                  )}
+                >
+                  <AllocationEditorRow
+                    allocation={allocation}
+                    allocationOptions={allocationOptions}
+                    rowErrors={itemErrors[allocation.id]}
+                    onAllocationFieldChange={onAllocationFieldChange}
+                    onDeleteAllocation={onDeleteAllocation}
+                  />
+                </RecordAllocationItemRow>
+              )
+            })
+          : null}
+      </RecordAllocationItemsPanel>
     </div>
   )
 }

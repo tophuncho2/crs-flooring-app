@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
+  createRecordSectionError,
   useRecordSectionWorkflow,
   type RecordSectionWorkflowPhase,
 } from "@/features/shared/engines/record-view"
@@ -176,7 +177,12 @@ export function useWorkOrderInvoiceWorkflow(input: {
     } catch (invoiceError) {
       applyConflictWorkOrderSnapshot(invoiceError)
       const message = invoiceError instanceof Error ? invoiceError.message : "Failed to request invoice generation"
-      setError(message)
+      setError(
+        createRecordSectionError({
+          kind: "workflow",
+          message,
+        }),
+      )
       showError(message)
       return null
     }

@@ -1,3 +1,4 @@
+export * from "./record-allocation-items-panel"
 export * from "./record-inline-actions-cell"
 export * from "./record-item-card"
 export * from "./record-item-cell"

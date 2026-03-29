@@ -1,8 +1,13 @@
 "use client"
 
-import type { RecordSectionWorkflowPhase } from "@/features/shared/engines/record-view"
+import {
+  createLocalRecordRowId,
+  isLocalOnlyRecordRow,
+  type RecordSectionWorkflowPhase,
+} from "@/features/shared/engines/record-view"
 import type { EditableMaterialItem } from "@/features/flooring/shared/line-items/material-items-editor"
 import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
+import { reconcileMaterialItemDraft } from "@/features/flooring/work-orders/domain/material-allocations"
 import type {
   DraftWorkOrder,
   WorkOrderAutoAllocationRun,
@@ -15,14 +20,8 @@ export type MaterialSectionDraftState = WorkOrderMaterialItem[]
 export type ServiceSectionDraftState = EditableServiceItem[]
 export type SalesRepSectionDraftState = WorkOrderDetail["salesReps"]
 
-export function createLocalRowId(scope: string) {
-  const randomId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
-  return `temp:${scope}:${randomId}`
-}
-
-export function isLocalOnlyRow(id: string) {
-  return id.startsWith("temp:")
-}
+export const createLocalRowId = createLocalRecordRowId
+export const isLocalOnlyRow = isLocalOnlyRecordRow
 
 export function cloneDraftWorkOrder(draft: DraftWorkOrder): DraftWorkOrder {
   return { ...draft }
@@ -227,38 +226,6 @@ export function selectedAddress(propertyOptions: Array<{ id: string; address: st
   }
 
   return propertyOptions.find((property) => property.id === draft.propertyId)?.address ?? fallbackAddress
-}
-
-function normalizeNumericValue(value: string) {
-  return Number.isFinite(Number(value)) ? Number(value) : 0
-}
-
-export function reconcileMaterialItemDraft(item: WorkOrderMaterialItem): WorkOrderMaterialItem {
-  const requiredQuantity = normalizeNumericValue(item.quantity)
-  const allocatedQuantity = item.allocations.reduce((total, allocation) => total + normalizeNumericValue(allocation.quantity), 0)
-  const materialExpense = item.allocations.reduce(
-    (total, allocation) => total + normalizeNumericValue(allocation.quantity) * normalizeNumericValue(allocation.unitCost),
-    0,
-  )
-  const remainingQuantity = Math.max(requiredQuantity - allocatedQuantity, 0)
-  const nextAllocationStatus =
-    item.allocationStatus === "SHORTAGE" && allocatedQuantity < requiredQuantity
-      ? "SHORTAGE"
-      : allocatedQuantity <= 0
-        ? "NOT_STARTED"
-        : allocatedQuantity >= requiredQuantity
-          ? "FULLY_ALLOCATED"
-          : "PARTIALLY_ALLOCATED"
-
-  return {
-    ...item,
-    allocatedQuantity,
-    remainingQuantity,
-    materialExpense,
-    allocationStatus: nextAllocationStatus,
-    isAllocationDone: nextAllocationStatus === "FULLY_ALLOCATED" || nextAllocationStatus === "SHORTAGE",
-    hasAllocationShortage: nextAllocationStatus === "SHORTAGE",
-  }
 }
 
 export function createEmptyServiceItem(): EditableServiceItem {

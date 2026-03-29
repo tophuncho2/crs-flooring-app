@@ -8,6 +8,7 @@ import { TemplateRecordPanel } from "../panel/template-record-panel"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 
 export function TemplateDetailClient({
+  currentUserId,
   template,
   propertyOptions,
   warehouseOptions,
@@ -18,6 +19,7 @@ export function TemplateDetailClient({
   unitOptions,
   backHref,
 }: {
+  currentUserId: string
   template: TemplateDetail
   propertyOptions: Array<{ id: string; name: string }>
   warehouseOptions: Array<{ id: string; name: string }>
@@ -40,6 +42,7 @@ export function TemplateDetailClient({
       {(page) => {
         return (
           <TemplateRecordPanel
+            currentUserId={currentUserId}
             templateId={template.id}
             initialTemplate={template}
             propertyOptions={propertyOptions}

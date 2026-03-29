@@ -38,6 +38,21 @@ export type UpdateTemplateInput = Partial<Omit<CreateTemplateInput, "items" | "s
 export type UpdateTemplateMaterialItemInput = Partial<TemplateMaterialItemInput>
 export type UpdateTemplateServiceItemInput = Partial<TemplateServiceItemInput>
 export type UpdateTemplateSalesRepInput = Partial<TemplateSalesRepInput>
+export type TemplateSectionRowInput<TItem> = {
+  id: string | null
+  expectedUpdatedAt: string | null
+  item: TItem
+}
+export type UpdateTemplatePrimarySectionInput = UpdateTemplateInput
+export type UpdateTemplateMaterialItemsSectionInput = {
+  items: TemplateSectionRowInput<TemplateMaterialItemInput>[]
+}
+export type UpdateTemplateServiceItemsSectionInput = {
+  items: TemplateSectionRowInput<TemplateServiceItemInput>[]
+}
+export type UpdateTemplateSalesRepsSectionInput = {
+  items: TemplateSectionRowInput<TemplateSalesRepInput>[]
+}
 
 export function validateTemplateMaterialItemInput(body: Record<string, unknown>): TemplateMaterialItemInput {
   const quantity = requirePositiveDecimal(parseDecimal(body.quantity, "quantity", 2), "quantity")
@@ -139,6 +154,19 @@ function asRecord(value: unknown, field: string) {
   return value as Record<string, unknown>
 }
 
+function parseSectionRowInput<TItem>(
+  value: unknown,
+  field: string,
+  parseItem: (input: Record<string, unknown>) => TItem,
+): TemplateSectionRowInput<TItem> {
+  const row = asRecord(value, field)
+  return {
+    id: parseOptionalString(row.id),
+    expectedUpdatedAt: parseOptionalString(row.expectedUpdatedAt),
+    item: parseItem(asRecord(row.item, `${field}.item`)),
+  }
+}
+
 export function validateCreateTemplateInput(body: Record<string, unknown>): CreateTemplateInput {
   return {
     propertyId: parseRequiredString(body.propertyId, "propertyId"),
@@ -163,4 +191,44 @@ export function validateUpdateTemplateInput(body: Record<string, unknown>): Upda
   if ("padProductId" in body) input.padProductId = parseOptionalString(body.padProductId)
 
   return input
+}
+
+export function validateUpdateTemplatePrimarySectionInput(body: Record<string, unknown>): UpdateTemplatePrimarySectionInput {
+  return validateUpdateTemplateInput(body)
+}
+
+export function validateUpdateTemplateMaterialItemsSectionInput(
+  body: Record<string, unknown>,
+): UpdateTemplateMaterialItemsSectionInput {
+  return {
+    items: Array.isArray(body.items)
+      ? body.items.map((item, index) =>
+          parseSectionRowInput(item, `items[${index}]`, validateTemplateMaterialItemInput),
+        )
+      : [],
+  }
+}
+
+export function validateUpdateTemplateServiceItemsSectionInput(
+  body: Record<string, unknown>,
+): UpdateTemplateServiceItemsSectionInput {
+  return {
+    items: Array.isArray(body.items)
+      ? body.items.map((item, index) =>
+          parseSectionRowInput(item, `items[${index}]`, validateTemplateServiceItemInput),
+        )
+      : [],
+  }
+}
+
+export function validateUpdateTemplateSalesRepsSectionInput(
+  body: Record<string, unknown>,
+): UpdateTemplateSalesRepsSectionInput {
+  return {
+    items: Array.isArray(body.items)
+      ? body.items.map((item, index) =>
+          parseSectionRowInput(item, `items[${index}]`, validateTemplateSalesRepInput),
+        )
+      : [],
+  }
 }

@@ -2,6 +2,7 @@
 
 import {
   formatRecordSectionWorkflowPhase,
+  type RecordSectionError,
   type RecordSectionWorkflowPhase,
 } from "@/features/shared/engines/record-view"
 import {
@@ -37,7 +38,7 @@ export function WorkOrderInvoiceSection({
   onOpenChange,
 }: {
   invoice: WorkOrderInvoiceStatusResponse
-  error?: string | null
+  error?: RecordSectionError | null
   isLoading?: boolean
   workflowPhase: RecordSectionWorkflowPhase
   isStalled?: boolean

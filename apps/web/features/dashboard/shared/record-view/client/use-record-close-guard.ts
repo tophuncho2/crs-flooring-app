@@ -1,16 +1,3 @@
 "use client"
 
-import { useUnsavedChangesGuard } from "@/features/dashboard/shared/navigation/use-unsaved-changes-guard"
-
-export function useRecordCloseGuard({
-  isDirty,
-  message,
-}: {
-  isDirty: boolean
-  message: string
-}) {
-  return useUnsavedChangesGuard({
-    isDirty,
-    message,
-  })
-}
+export * from "@/features/shared/engines/record-view/client/use-record-close-guard"

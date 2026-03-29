@@ -1,83 +1,53 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import {
-  AutoGrowTextarea,
-  RecordFormField,
-  RecordPanelFooter,
+  RecordFooterDestructiveButton,
+  RecordFooterNeutralButton,
+  RecordSectionActionPanel,
+  RecordSectionStack,
+  RecordSectionStatusBadge,
   useRecordDetailController,
   useRecordNotices,
 } from "@/features/shared/engines/record-view"
-import {
-  MaterialItemsEditor,
-  type EditableMaterialItem,
-  type MaterialItemDraft,
-  type MaterialItemOption,
-} from "@/features/flooring/shared/line-items/material-items-editor"
-import {
-  ServiceItemsEditor,
-  type EditableServiceItem,
-  type ServiceItemDraft,
-  type ServiceOption,
-  type UnitOption,
-} from "@/features/flooring/shared/line-items/service-items-editor"
-import { SalesRepItemsEditor, type SalesRepDraft } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import { CalculationRowsTable } from "@/features/flooring/shared/line-items/calculation-rows-table"
-import {
-  RecordPrimaryFieldCell,
-  RecordPrimaryFieldsGrid,
-  RecordPrimaryPane,
-  RecordPrimarySection,
-} from "@/features/shared/engines/record-view"
-import { useChildCollection } from "@/features/flooring/shared/controllers/record-items/use-child-collection"
-import { useRecordLineItemsController } from "@/features/flooring/shared/controllers/record-items/use-record-line-items-controller"
-import { useRecordSalesRepsController } from "@/features/flooring/shared/controllers/record-items/use-record-sales-reps-controller"
-import { useReadOnlyChildCollection } from "@/features/flooring/shared/controllers/record-items/use-read-only-child-collection"
-import { buildRecordCalculationRowsFromSummary, type CalculationRow } from "@/features/flooring/shared/domain/record-calculation-rows"
+import { buildRecordCalculationRowsFromSummary } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { normalizeTemplateExpenseSummary } from "@/features/flooring/templates/domain/expense-summary"
-import type { EditableTemplateSalesRep } from "@/features/flooring/templates/domain/sales-reps"
-import type { DraftTemplate, SalesRepContactOption, TemplateDetail, TemplateRow } from "@/features/flooring/templates/types"
+import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
+import { TemplateCalculationsSection } from "./sections/template-calculations-section"
+import { TemplateMaterialItemsSection } from "./sections/template-material-items-section"
+import { TemplatePrimaryFieldsSection } from "./sections/template-primary-fields-section"
+import { TemplateSalesRepsSection } from "./sections/template-sales-reps-section"
+import { TemplateServiceItemsSection } from "./sections/template-service-items-section"
+import { useTemplateMaterialSection } from "./controllers/use-template-material-section"
+import { useTemplatePrimarySection } from "./controllers/use-template-primary-section"
+import { useTemplateSalesRepsSection } from "./controllers/use-template-sales-reps-section"
+import { useTemplateServiceSection } from "./controllers/use-template-service-section"
+import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 
-type TemplateMaterialItem = EditableMaterialItem
-type TemplateServiceItem = EditableServiceItem
-
-function toTemplateDraft(template: TemplateDetail): DraftTemplate {
-  return {
-    templateTag: template.templateTag,
-    propertyId: template.propertyId,
-    warehouseId: template.warehouseId,
-    instructions: template.instructions,
-    templateNotes: template.templateNotes,
-    padProductId: template.padProductId,
-  }
-}
-
-const defaultMaterialDraft: MaterialItemDraft = {
-  productId: "",
-  quantity: "",
-  unitPrice: "",
-  notes: "",
-}
-
-const defaultServiceDraft: ServiceItemDraft = {
-  serviceId: "",
-  name: "",
-  unitId: "",
-  quantity: "",
-  unitPrice: "",
-  notes: "",
-}
-
-const defaultSalesRepDraft: SalesRepDraft = {
-  contactId: "",
-  percent: "",
+function buildSectionStatus(input: {
+  isDirty: boolean
+  isSaving: boolean
+  hasConflict: boolean
+}) {
+  return (
+    <>
+      <RecordSectionStatusBadge tone={input.isSaving ? "processing" : input.isDirty ? "warning" : "success"}>
+        {input.isSaving ? "Saving" : input.isDirty ? "Dirty" : "Saved"}
+      </RecordSectionStatusBadge>
+      {input.hasConflict ? <RecordSectionStatusBadge tone="error">Conflict</RecordSectionStatusBadge> : null}
+    </>
+  )
 }
 
 export function TemplateRecordPanel({
+  currentUserId,
   templateId,
   initialTemplate,
   propertyOptions,
@@ -93,6 +63,7 @@ export function TemplateRecordPanel({
   onSummaryChange,
   onDirtyChange,
 }: {
+  currentUserId: string
   templateId: string
   initialTemplate: TemplateDetail
   propertyOptions: Array<{ id: string; name: string }>
@@ -103,265 +74,161 @@ export function TemplateRecordPanel({
   salesRepOptions: SalesRepContactOption[]
   unitOptions: UnitOption[]
   onClose: () => void
-  onTemplateSaved?: (template: TemplateRow, previousPropertyId: string, itemsCount: number) => void
+  onTemplateSaved?: (template: TemplateDetail, previousPropertyId: string, itemsCount: number) => void
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
-  onSummaryChange?: (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void
+  onSummaryChange?: (summary: { materialItems: TemplateDetail["items"]; serviceItems: TemplateDetail["serviceItems"] }) => void
   onDirtyChange?: (value: boolean) => void
 }) {
-  const initialTemplateDetail = useMemo<TemplateDetail>(() => initialTemplate, [initialTemplate])
-  const [savingTemplate, setSavingTemplate] = useState(false)
   const notices = useRecordNotices()
   const {
     record: template,
-    draft,
-    setDraft,
     loading,
     error,
-    setError,
-    syncRecord,
+    publishRecord,
     clearRecordCache,
-    isDirty,
-  } = useRecordDetailController<TemplateDetail, DraftTemplate>({
+  } = useRecordDetailController<TemplateDetail, never>({
     scope: "template",
     id: templateId,
-    initialRecord: initialTemplateDetail,
-    toDraft: toTemplateDraft,
+    initialRecord: initialTemplate,
     url: `/api/flooring/templates/${templateId}`,
     payloadKey: "template",
+    manageDraft: false,
   })
 
-  const materialCollection = useChildCollection<TemplateMaterialItem, MaterialItemDraft, EditableMaterialItem>({
-    listUrl: `/api/flooring/templates/${templateId}/items`,
-    createUrl: `/api/flooring/templates/${templateId}/items`,
-    updateUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
-    deleteUrl: (itemId) => `/api/flooring/templates/${templateId}/items/${itemId}`,
-    mapItems: (payload) => (payload.items as TemplateMaterialItem[] | undefined) ?? [],
-    getItemId: (item) => item.id,
-    pickCreatedItem: (payload) => payload.item as TemplateMaterialItem,
-    pickUpdatedItem: (payload) => payload.item as TemplateMaterialItem,
-    serializeCreate: (input) => ({
-      productId: input.productId,
-      quantity: input.quantity,
-      unitPrice: input.unitPrice,
-      notes: input.notes,
-    }),
-    serializeUpdate: (item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      notes: item.notes,
-    }),
-    skipReloadAfterMutation: true,
-  })
-  const serviceCollection = useChildCollection<TemplateServiceItem, ServiceItemDraft, EditableServiceItem>({
-    listUrl: `/api/flooring/templates/${templateId}/service-items`,
-    createUrl: `/api/flooring/templates/${templateId}/service-items`,
-    updateUrl: (itemId) => `/api/flooring/templates/${templateId}/service-items/${itemId}`,
-    deleteUrl: (itemId) => `/api/flooring/templates/${templateId}/service-items/${itemId}`,
-    mapItems: (payload) => (payload.items as TemplateServiceItem[] | undefined) ?? [],
-    getItemId: (item) => item.id,
-    pickCreatedItem: (payload) => payload.item as TemplateServiceItem,
-    pickUpdatedItem: (payload) => payload.item as TemplateServiceItem,
-    serializeCreate: (input) => input,
-    serializeUpdate: (item) => item,
-    skipReloadAfterMutation: true,
-  })
-  const salesRepCollection = useChildCollection<EditableTemplateSalesRep, SalesRepDraft, EditableTemplateSalesRep>({
-    listUrl: `/api/flooring/templates/${templateId}/sales-reps`,
-    createUrl: `/api/flooring/templates/${templateId}/sales-reps`,
-    updateUrl: (repId) => `/api/flooring/templates/${templateId}/sales-reps/${repId}`,
-    deleteUrl: (repId) => `/api/flooring/templates/${templateId}/sales-reps/${repId}`,
-    mapItems: (payload) => (payload.items as EditableTemplateSalesRep[] | undefined) ?? [],
-    getItemId: (item) => item.id,
-    pickCreatedItem: (payload) => payload.item as EditableTemplateSalesRep,
-    pickUpdatedItem: (payload) => payload.item as EditableTemplateSalesRep,
-    serializeCreate: (input) => input,
-    serializeUpdate: (item) => ({
-      contactId: item.contactId,
-      percent: item.percent,
-    }),
-    skipReloadAfterMutation: true,
-  })
-  const initialCalculationRows = useMemo(
-    () => buildRecordCalculationRowsFromSummary(initialTemplateDetail.expenseSummary),
-    [initialTemplateDetail.expenseSummary],
+  const currentTemplate = template ?? initialTemplate
+
+  const publishTemplate = useCallback(
+    (nextTemplate: TemplateDetail) => {
+      publishRecord(nextTemplate)
+    },
+    [publishRecord],
   )
-  const calculationRowsCollection = useReadOnlyChildCollection<CalculationRow>({
-    listUrl: `/api/flooring/templates/${templateId}/calculations`,
-    mapItems: (payload) => (payload.items as CalculationRow[] | undefined) ?? [],
-    initialItems: initialCalculationRows,
-  })
-  const {
-    items: calculationRows,
-    loading: loadingCalculationRows,
-    setItems: setCalculationRows,
-  } = calculationRowsCollection
 
-  const onSummaryChangeRef = useRef(onSummaryChange)
-  const onTemplateSavedRef = useRef(onTemplateSaved)
-
-  const lineItems = useRecordLineItemsController<TemplateDetail, TemplateMaterialItem, TemplateServiceItem>({
-    record: template,
-    notices,
-    clearParentError: () => setError(""),
-    materialCollection,
-    serviceCollection,
-    initialMaterialDraft: defaultMaterialDraft,
-    initialServiceDraft: defaultServiceDraft,
-    getCollectionsFromRecord: (record) => ({
-      materialItems: record.items ?? [],
-      serviceItems: record.serviceItems ?? [],
-    }),
-    onCollectionsChanged: ({ record, materialItems, serviceItems, action }) => {
-      syncRecord(
-        {
-          ...record,
-          items: materialItems,
-          serviceItems,
-          salesReps: salesRepCollection.items,
-          summary: buildRecordSummary({
-            materialItems,
-            serviceItems,
-          }),
-          expenseSummary: normalizeTemplateExpenseSummary({
-            items: materialItems,
-            serviceItems,
-            salesReps: salesRepCollection.items,
-          }),
-        },
-        { syncDraft: false },
-      )
-
-      if (action !== "save") {
-        onTemplateSavedRef.current?.(record, record.propertyId, materialItems.length + serviceItems.length)
+  const applyConflictTemplateSnapshot = useCallback(
+    (saveError: unknown) => {
+      const conflictSnapshot = getConflictSnapshot<{ template?: TemplateDetail }>(saveError)
+      if (conflictSnapshot?.template) {
+        publishTemplate(conflictSnapshot.template)
+        return conflictSnapshot.template
       }
+
+      return null
     },
+    [publishTemplate],
+  )
+
+  const confirmDelete = useCallback((entityLabel: string) => {
+    return confirmRecordDelete(buildDeleteConfirmationMessage(entityLabel))
+  }, [])
+
+  const primarySection = useTemplatePrimarySection({
+    currentUserId,
+    templateId,
+    template: currentTemplate,
+    publishTemplate,
+    onTemplateSaved,
+    clearNotices: notices.clearNotices,
+    showSuccess: notices.showSuccess,
+    applyConflictTemplateSnapshot,
   })
 
-  const salesRepLines = useRecordSalesRepsController({
-    record: template,
-    notices,
-    clearParentError: () => setError(""),
-    salesRepCollection,
-    initialDraft: defaultSalesRepDraft,
-    getItemsFromRecord: (record: TemplateDetail) => record.salesReps ?? [],
-    onItemsChanged: ({ record, salesReps }) => {
-      syncRecord(
-        {
-          ...record,
-          salesReps,
-          summary: buildRecordSummary({
-            materialItems: lineItems.materialItems,
-            serviceItems: lineItems.serviceItems,
-          }),
-          expenseSummary: normalizeTemplateExpenseSummary({
-            items: lineItems.materialItems,
-            serviceItems: lineItems.serviceItems,
-            salesReps,
-          }),
-        },
-        { syncDraft: false },
-      )
-    },
+  const materialSection = useTemplateMaterialSection({
+    currentUserId,
+    templateId,
+    template: currentTemplate,
+    publishTemplate,
+    onTemplateSaved,
+    clearNotices: notices.clearNotices,
+    showSuccess: notices.showSuccess,
+    applyConflictTemplateSnapshot,
+    confirmDelete,
   })
 
-  useEffect(() => {
-    onSummaryChangeRef.current = onSummaryChange
-  }, [onSummaryChange])
+  const serviceSection = useTemplateServiceSection({
+    currentUserId,
+    templateId,
+    template: currentTemplate,
+    publishTemplate,
+    onTemplateSaved,
+    clearNotices: notices.clearNotices,
+    showSuccess: notices.showSuccess,
+    applyConflictTemplateSnapshot,
+    confirmDelete,
+  })
+
+  const salesRepSection = useTemplateSalesRepsSection({
+    currentUserId,
+    templateId,
+    template: currentTemplate,
+    publishTemplate,
+    onTemplateSaved,
+    clearNotices: notices.clearNotices,
+    showSuccess: notices.showSuccess,
+    applyConflictTemplateSnapshot,
+    confirmDelete,
+  })
+
+  const dirtySections = useMemo(
+    () =>
+      [
+        primarySection.isDirty ? "Template" : null,
+        materialSection.isDirty ? "Material Items" : null,
+        serviceSection.isDirty ? "Service Items" : null,
+        salesRepSection.isDirty ? "Sales Reps" : null,
+      ].filter(Boolean) as string[],
+    [materialSection.isDirty, primarySection.isDirty, salesRepSection.isDirty, serviceSection.isDirty],
+  )
 
   useEffect(() => {
-    onTemplateSavedRef.current = onTemplateSaved
-  }, [onTemplateSaved])
+    onDirtyChange?.(dirtySections.length > 0)
+  }, [dirtySections.length, onDirtyChange])
 
-  useEffect(() => {
-    onSummaryChangeRef.current?.({ materialItems: lineItems.materialItems, serviceItems: lineItems.serviceItems })
-  }, [lineItems.materialItems, lineItems.serviceItems])
-
-  useEffect(() => {
-    onDirtyChange?.(isDirty)
-  }, [isDirty, onDirtyChange])
-
-  const itemCount = lineItems.materialItems.length + lineItems.serviceItems.length
   const currentExpenseSummary = useMemo(
     () =>
       normalizeTemplateExpenseSummary({
-        items: lineItems.materialItems,
-        serviceItems: lineItems.serviceItems,
-        salesReps: salesRepLines.salesReps,
+        items: materialSection.localValue,
+        serviceItems: serviceSection.localValue,
+        salesReps: salesRepSection.localValue,
       }),
-    [lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps],
+    [materialSection.localValue, salesRepSection.localValue, serviceSection.localValue],
   )
+
   const currentCalculationRows = useMemo(
     () => buildRecordCalculationRowsFromSummary(currentExpenseSummary),
     [currentExpenseSummary],
   )
 
-  useEffect(() => {
-    setCalculationRows(currentCalculationRows)
-  }, [currentCalculationRows, setCalculationRows])
-
-  const syncTemplateCollections = useCallback(
-    (
-      nextMaterialItems: TemplateMaterialItem[],
-      nextServiceItems: TemplateServiceItem[],
-      nextSalesReps: EditableTemplateSalesRep[],
-    ) => ({
-      items: nextMaterialItems,
-      serviceItems: nextServiceItems,
-      salesReps: nextSalesReps,
-      summary: buildRecordSummary({
-        materialItems: nextMaterialItems,
-        serviceItems: nextServiceItems,
+  const currentSummary = useMemo(
+    () =>
+      buildRecordSummary({
+        materialItems: materialSection.localValue,
+        serviceItems: serviceSection.localValue,
       }),
-      expenseSummary: normalizeTemplateExpenseSummary({
-        items: nextMaterialItems,
-        serviceItems: nextServiceItems,
-        salesReps: nextSalesReps,
-      }),
-    }),
-    [],
+    [materialSection.localValue, serviceSection.localValue],
   )
 
-  async function saveTemplate() {
-    if (!template || !draft) return
-    setSavingTemplate(true)
-    setError("")
-    notices.clearNotices()
-
-    try {
-      const previousPropertyId = template.propertyId
-      const payload = await requestJson<{ template: TemplateRow }>(`/api/flooring/templates/${template.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...draft,
-          warehouseId: draft.warehouseId || null,
-          padProductId: draft.padProductId || null,
-        }),
-      })
-
-      syncRecord({
-        ...payload.template,
-        ...syncTemplateCollections(lineItems.materialItems, lineItems.serviceItems, salesRepLines.salesReps),
-      })
-      notices.showSuccess("Template saved")
-      onTemplateSavedRef.current?.(payload.template, previousPropertyId, itemCount)
-    } catch (saveError) {
-      notices.showError(saveError instanceof Error ? saveError.message : "Failed to save template")
-    } finally {
-      setSavingTemplate(false)
-    }
-  }
+  useEffect(() => {
+    onSummaryChange?.({
+      materialItems: materialSection.localValue,
+      serviceItems: serviceSection.localValue,
+    })
+  }, [materialSection.localValue, onSummaryChange, serviceSection.localValue])
 
   async function deleteTemplate() {
-    if (!template) return
-    setError("")
+    if (!confirmDelete("template")) {
+      return
+    }
+
     notices.clearNotices()
 
     try {
-      await requestJson<{ ok: boolean }>(`/api/flooring/templates/${template.id}`, { method: "DELETE" })
+      await requestJson<{ ok: boolean }>(`/api/flooring/templates/${currentTemplate.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, currentTemplate.updatedAt)),
+      })
       clearRecordCache()
-      onTemplateDeleted?.(template.id, template.propertyId)
+      onTemplateDeleted?.(currentTemplate.id, currentTemplate.propertyId)
       onClose()
     } catch (deleteError) {
       notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete template")
@@ -372,158 +239,220 @@ export function TemplateRecordPanel({
     return <CenteredLoadingState label="Loading template..." />
   }
 
-  if (error && (!template || !draft)) {
+  if (error && !template) {
     return <CenteredErrorState title="Error" message={error} onDismiss={onClose} />
   }
 
-  if (!template || !draft) {
+  if (!template) {
     return <CenteredErrorState title="Error" message="Template could not be loaded." onDismiss={onClose} />
   }
 
   return (
     <div className="space-y-6">
-      <FormStatusNotices message={notices.message} error={notices.error} loadingMessage={savingTemplate ? "Saving template..." : ""} />
+      <FormStatusNotices message={notices.message} error={notices.error} loadingMessage="" />
 
-      <RecordPrimarySection>
-        <RecordPrimaryPane variant="side">
-          <RecordPrimaryFieldsGrid variant="side">
-            <RecordPrimaryFieldCell>
-              <RecordFormField label="Warehouse">
-                <select value={draft.warehouseId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">No warehouse</option>
-                  {warehouseOptions.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
-                  ))}
-                </select>
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-            <RecordPrimaryFieldCell>
-              <RecordFormField label="Pad Type">
-                <select value={draft.padProductId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, padProductId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">No pad type</option>
-                  {padProductOptions.map((product) => (
-                    <option key={product.id} value={product.id}>{product.label}</option>
-                  ))}
-                </select>
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-          </RecordPrimaryFieldsGrid>
-        </RecordPrimaryPane>
+      <RecordSectionStack>
+        <TemplatePrimaryFieldsSection
+          draft={primarySection.localValue}
+          propertyOptions={propertyOptions}
+          warehouseOptions={warehouseOptions}
+          padProductOptions={padProductOptions}
+          setDraft={(value) => {
+            primarySection.setLocalValue((previous) =>
+              typeof value === "function" ? value(previous) : value,
+            )
+          }}
+          actionPanel={
+            <RecordSectionActionPanel
+              status={buildSectionStatus({
+                isDirty: primarySection.isDirty,
+                isSaving: primarySection.isSaving,
+                hasConflict: primarySection.hasConflict,
+              })}
+              error={primarySection.error}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => primarySection.discard()}
+                    disabled={!primarySection.isDirty || primarySection.isSaving}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void primarySection.save()}
+                    disabled={!primarySection.isDirty || primarySection.isSaving}
+                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    {primarySection.isSaving ? "Saving..." : "Save"}
+                  </button>
+                </>
+              }
+            />
+          }
+        />
 
-        <RecordPrimaryPane variant="main">
-          <RecordPrimaryFieldsGrid>
-            <RecordPrimaryFieldCell size="md">
-              <RecordFormField label="Property">
-                <select value={draft.propertyId} onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2">
-                  <option value="">Select property</option>
-                  {propertyOptions.map((property) => (
-                    <option key={property.id} value={property.id}>{property.name}</option>
-                  ))}
-                </select>
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-            <RecordPrimaryFieldCell size="sm">
-              <RecordFormField label="Template Tag">
-                <input value={draft.templateTag} onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateTag: event.target.value } : prev))} className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2" />
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-            <RecordPrimaryFieldCell size="lg">
-              <RecordFormField label="Instructions">
-                <AutoGrowTextarea
-                  value={draft.instructions}
-                  onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-            <RecordPrimaryFieldCell size="lg">
-              <RecordFormField label="Template Notes">
-                <AutoGrowTextarea
-                  value={draft.templateNotes}
-                  onChange={(event) => setDraft((prev) => (prev ? { ...prev, templateNotes: event.target.value } : prev))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-                />
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-          </RecordPrimaryFieldsGrid>
-        </RecordPrimaryPane>
-      </RecordPrimarySection>
+        <TemplateMaterialItemsSection
+          title="Material Items"
+          items={materialSection.localValue}
+          productOptions={productOptions}
+          loading={loading}
+          totalAmount={currentExpenseSummary.materialTotal}
+          itemErrors={materialSection.itemErrors}
+          onItemFieldChange={materialSection.changeField}
+          onDeleteItem={materialSection.deleteItem}
+          actionPanel={
+            <RecordSectionActionPanel
+              status={buildSectionStatus({
+                isDirty: materialSection.isDirty,
+                isSaving: materialSection.isSaving,
+                hasConflict: materialSection.hasConflict,
+              })}
+              error={materialSection.error}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={materialSection.addItem}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
+                  >
+                    Add Material Item
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => materialSection.discard()}
+                    disabled={!materialSection.isDirty || materialSection.isSaving}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void materialSection.save()}
+                    disabled={!materialSection.isDirty || materialSection.isSaving}
+                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    {materialSection.isSaving ? "Saving..." : "Save"}
+                  </button>
+                </>
+              }
+            />
+          }
+        />
 
-      <MaterialItemsEditor
-        title="Material Items"
-        items={lineItems.materialItems}
-        draft={lineItems.materialDraft}
-        productOptions={productOptions}
-        totalAmount={currentExpenseSummary.materialTotal}
-        loading={loading || lineItems.materialCollection.loading}
-        adding={lineItems.materialCollection.adding}
-        savingItemId={lineItems.materialCollection.savingItemId}
-        deletingItemId={lineItems.materialCollection.deletingItemId}
-        draftErrors={lineItems.materialDraftErrors}
-        itemErrors={lineItems.materialItemErrors}
-        onDraftChange={lineItems.handleMaterialDraftChange}
-        onAdd={() => lineItems.addMaterialItem()}
-        onItemFieldChange={lineItems.handleMaterialItemFieldChange}
-        onSaveItem={(item) => void lineItems.saveMaterialItem(item)}
-        onDeleteItem={(itemId) => void lineItems.deleteMaterialItem(itemId)}
-      />
+        <TemplateServiceItemsSection
+          title="Service Items"
+          items={serviceSection.localValue}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          loading={loading}
+          totalAmount={currentExpenseSummary.serviceTotal}
+          itemErrors={serviceSection.itemErrors}
+          onItemFieldChange={serviceSection.changeField}
+          onDeleteItem={serviceSection.deleteItem}
+          actionPanel={
+            <RecordSectionActionPanel
+              status={buildSectionStatus({
+                isDirty: serviceSection.isDirty,
+                isSaving: serviceSection.isSaving,
+                hasConflict: serviceSection.hasConflict,
+              })}
+              error={serviceSection.error}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={serviceSection.addItem}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
+                  >
+                    Add Service Item
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => serviceSection.discard()}
+                    disabled={!serviceSection.isDirty || serviceSection.isSaving}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void serviceSection.save()}
+                    disabled={!serviceSection.isDirty || serviceSection.isSaving}
+                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    {serviceSection.isSaving ? "Saving..." : "Save"}
+                  </button>
+                </>
+              }
+            />
+          }
+        />
 
-      <ServiceItemsEditor
-        title="Service Items"
-        items={lineItems.serviceItems}
-        draft={lineItems.serviceDraft}
-        serviceOptions={serviceOptions}
-        unitOptions={unitOptions}
-        totalAmount={currentExpenseSummary.serviceTotal}
-        loading={loading || lineItems.serviceCollection.loading}
-        adding={lineItems.serviceCollection.adding}
-        savingItemId={lineItems.serviceCollection.savingItemId}
-        deletingItemId={lineItems.serviceCollection.deletingItemId}
-        draftErrors={lineItems.serviceDraftErrors}
-        itemErrors={lineItems.serviceItemErrors}
-        onDraftChange={lineItems.handleServiceDraftChange}
-        onAdd={() => lineItems.addServiceItem()}
-        onItemFieldChange={lineItems.handleServiceItemFieldChange}
-        onSaveItem={(item) => void lineItems.saveServiceItem(item)}
-        onDeleteItem={(itemId) => void lineItems.deleteServiceItem(itemId)}
-      />
+        <TemplateSalesRepsSection
+          title="Sales Reps"
+          items={salesRepSection.localValue}
+          salesRepOptions={salesRepOptions}
+          customerCost={currentExpenseSummary.customerCost}
+          totalAmount={currentExpenseSummary.salesRepExpense}
+          loading={loading}
+          itemErrors={salesRepSection.itemErrors}
+          onItemFieldChange={salesRepSection.changeField}
+          onDeleteItem={salesRepSection.deleteItem}
+          actionPanel={
+            <RecordSectionActionPanel
+              status={buildSectionStatus({
+                isDirty: salesRepSection.isDirty,
+                isSaving: salesRepSection.isSaving,
+                hasConflict: salesRepSection.hasConflict,
+              })}
+              error={salesRepSection.error}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={salesRepSection.addItem}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
+                  >
+                    Add Sales Rep
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => salesRepSection.discard()}
+                    disabled={!salesRepSection.isDirty || salesRepSection.isSaving}
+                    className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void salesRepSection.save()}
+                    disabled={!salesRepSection.isDirty || salesRepSection.isSaving}
+                    className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                  >
+                    {salesRepSection.isSaving ? "Saving..." : "Save"}
+                  </button>
+                </>
+              }
+            />
+          }
+        />
 
-      <SalesRepItemsEditor
-        title="Sales Reps"
-        items={salesRepLines.salesReps}
-        draft={salesRepLines.draft}
-        salesRepOptions={salesRepOptions}
-        customerCost={currentExpenseSummary.customerCost}
-        totalAmount={currentExpenseSummary.salesRepExpense}
-        loading={loading || salesRepLines.salesRepCollection.loading}
-        adding={salesRepLines.salesRepCollection.adding}
-        savingItemId={salesRepLines.salesRepCollection.savingItemId}
-        deletingItemId={salesRepLines.salesRepCollection.deletingItemId}
-        draftErrors={salesRepLines.draftErrors}
-        itemErrors={salesRepLines.itemErrors}
-        onDraftChange={salesRepLines.handleDraftChange}
-        onAdd={() => salesRepLines.addItem()}
-        onItemFieldChange={salesRepLines.handleItemFieldChange}
-        onSaveItem={(item) => void salesRepLines.saveItem(item)}
-        onDeleteItem={(itemId) => void salesRepLines.deleteItem(itemId)}
-      />
+        <TemplateCalculationsSection title="Calculations" items={currentCalculationRows} loading={loading} />
+      </RecordSectionStack>
 
-      <CalculationRowsTable
-        title="Calculations"
-        items={calculationRows}
-        loading={loadingCalculationRows}
-      />
-
-      <RecordPanelFooter
-        deleteLabel="Delete Template"
-        deleteConfirmMessage="Delete this template? This cannot be undone."
-        onDelete={() => void deleteTemplate()}
-        onClose={onClose}
-        saveLabel="Save Template"
-        savingLabel="Saving..."
-        onSave={() => void saveTemplate()}
-        isSaving={savingTemplate}
-      />
+      <div className="flex justify-between gap-2">
+        <div className="flex gap-2">
+          <RecordFooterDestructiveButton onClick={() => void deleteTemplate()}>
+            Delete Template
+          </RecordFooterDestructiveButton>
+        </div>
+        <div className="flex gap-2">
+          <RecordFooterNeutralButton onClick={onClose}>Close</RecordFooterNeutralButton>
+        </div>
+      </div>
     </div>
   )
 }
