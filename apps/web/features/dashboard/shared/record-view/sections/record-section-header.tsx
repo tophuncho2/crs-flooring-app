@@ -24,7 +24,14 @@ export function RecordSectionHeader({
   className?: string
 }) {
   return (
-    <div className={joinRecordSectionClasses("relative border", RECORD_SECTION_BORDER_CLASS_NAME, className)}>
+    <div
+      className={joinRecordSectionClasses(
+        "relative",
+        isOpen ? "border-b" : undefined,
+        RECORD_SECTION_BORDER_CLASS_NAME,
+        className,
+      )}
+    >
       <button
         type="button"
         onClick={onToggle}

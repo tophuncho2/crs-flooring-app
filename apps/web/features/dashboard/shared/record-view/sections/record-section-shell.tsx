@@ -6,6 +6,8 @@ import { RecordSectionHeader } from "@/features/dashboard/shared/record-view/sec
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
+  RECORD_SECTION_BORDER_CLASS_NAME,
+  RECORD_SECTION_SHELL_CLASS_NAME,
 } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
 
 export function RecordSectionShell({
@@ -33,7 +35,7 @@ export function RecordSectionShell({
 
   return (
     <TableBleed variant="record">
-      <section className={className}>
+      <section className={joinRecordSectionClasses(RECORD_SECTION_SHELL_CLASS_NAME, RECORD_SECTION_BORDER_CLASS_NAME, className)}>
         <RecordSectionHeader
           title={title}
           isOpen={isOpen}

@@ -8,5 +8,5 @@ export function RecordSectionStack({
   children: ReactNode
   className?: string
 }) {
-  return <div className={joinRecordSectionClasses("space-y-0", className)}>{children}</div>
+  return <div className={joinRecordSectionClasses("space-y-6", className)}>{children}</div>
 }

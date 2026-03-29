@@ -57,7 +57,7 @@ export function RecordSectionActionPanel({
   return (
     <div
       className={joinRecordSectionClasses(
-        "border-x border-b px-5 py-4",
+        "border-b px-5 py-4",
         RECORD_SECTION_BORDER_CLASS_NAME,
         RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
         className,
