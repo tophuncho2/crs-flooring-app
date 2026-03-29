@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useRecordCloseGuard } from "@/features/dashboard/shared/record-view/client/use-record-close-guard"
 import { useRecordNotices, type RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
@@ -53,7 +53,15 @@ export function useRecordPageController({
   })
 
   const setIsDirty = useCallback((value: boolean) => {
-    setDirtySections(value ? ["Record"] : [])
+    setDirtySections((current) => {
+      const next = value ? ["Record"] : []
+
+      if (current.length === next.length && current.every((section, index) => section === next[index])) {
+        return current
+      }
+
+      return next
+    })
   }, [])
 
   const closePage = useCallback(() => {
@@ -67,16 +75,19 @@ export function useRecordPageController({
     router.push(backHref, { scroll: false })
   }, [backHref, router])
 
-  return {
-    notices,
-    isDirty: dirtySections.length > 0,
-    dirtySections,
-    setIsDirty,
-    setDirtySections,
-    summary,
-    setSummary,
-    closePage,
-    redirectToBack,
-    confirmNavigation: guard.confirmNavigation,
-  }
+  return useMemo(
+    () => ({
+      notices,
+      isDirty: dirtySections.length > 0,
+      dirtySections,
+      setIsDirty,
+      setDirtySections,
+      summary,
+      setSummary,
+      closePage,
+      redirectToBack,
+      confirmNavigation: guard.confirmNavigation,
+    }),
+    [closePage, dirtySections, guard.confirmNavigation, notices, redirectToBack, setIsDirty, summary],
+  )
 }

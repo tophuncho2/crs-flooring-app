@@ -48,7 +48,7 @@ function ManagementCompanyDetailContent({
 
   useEffect(() => {
     page.setIsDirty(controller.isDirty)
-  }, [controller.isDirty, page])
+  }, [controller.isDirty, page.setIsDirty])
 
   function navigateToProperty(propertyId: string) {
     const currentPath = buildCurrentPath(window.location.pathname, new URLSearchParams(window.location.search))

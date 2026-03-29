@@ -1,9 +1,11 @@
 "use client"
 
+import type { RecordSectionWorkflowPhase } from "@/features/dashboard/shared/record-view/client/use-record-section-workflow"
 import type { EditableMaterialItem } from "@/features/flooring/shared/line-items/material-items-editor"
 import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
 import type {
   DraftWorkOrder,
+  WorkOrderAutoAllocationRun,
   WorkOrderDetail,
   WorkOrderItemAllocationRow,
   WorkOrderMaterialItem,
@@ -148,6 +150,49 @@ export function areMaterialItemsEqual(left: WorkOrderMaterialItem[], right: Work
   return left.every(
     (item, index) => buildComparableMaterialItemFingerprint(item) === buildComparableMaterialItemFingerprint(right[index]),
   )
+}
+
+export function isAutoAllocationRequestBlocked(
+  run: WorkOrderAutoAllocationRun | null | undefined,
+  currentSourceVersion: string,
+) {
+  if (!run) {
+    return false
+  }
+
+  if (run.status === "PROCESSING") {
+    return true
+  }
+
+  return (run.status === "REQUESTED" || run.status === "QUEUED") && run.sourceVersion === currentSourceVersion
+}
+
+export function buildWorkflowActionLabel(input: {
+  phase: RecordSectionWorkflowPhase
+  isStalled: boolean
+  idleLabel: string
+  requestedLabel: string
+  queuedLabel: string
+  processingLabel: string
+  stalledLabel: string
+}) {
+  if (input.isStalled) {
+    return input.stalledLabel
+  }
+
+  if (input.phase === "requested") {
+    return input.requestedLabel
+  }
+
+  if (input.phase === "queued") {
+    return input.queuedLabel
+  }
+
+  if (input.phase === "processing") {
+    return input.processingLabel
+  }
+
+  return input.idleLabel
 }
 
 export function toWorkOrderDraft(workOrder: WorkOrderDetail): DraftWorkOrder {

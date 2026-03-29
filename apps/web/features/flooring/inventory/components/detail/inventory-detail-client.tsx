@@ -107,7 +107,7 @@ function InventoryDetailContent({
 
   useEffect(() => {
     page.setIsDirty(isDirty)
-  }, [isDirty, page])
+  }, [isDirty, page.setIsDirty])
 
   return (
     <div className="space-y-6">

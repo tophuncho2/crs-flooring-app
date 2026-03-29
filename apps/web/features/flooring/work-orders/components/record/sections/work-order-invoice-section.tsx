@@ -30,8 +30,10 @@ export function WorkOrderInvoiceSection({
   isLoading,
   workflowPhase,
   isStalled = false,
+  queueButtonLabel = "Generate Invoice",
   onQueueInvoice,
   onOpenInvoice,
+  onRefreshStatus,
   onOpenChange,
 }: {
   invoice: WorkOrderInvoiceStatusResponse
@@ -39,8 +41,10 @@ export function WorkOrderInvoiceSection({
   isLoading?: boolean
   workflowPhase: RecordSectionWorkflowPhase
   isStalled?: boolean
+  queueButtonLabel?: string
   onQueueInvoice: () => void
   onOpenInvoice: () => void
+  onRefreshStatus?: () => void
   onOpenChange?: (open: boolean) => void
 }) {
   const statusLabel = readInvoiceStatusLabel(invoice)
@@ -62,7 +66,11 @@ export function WorkOrderInvoiceSection({
       onOpenChange={onOpenChange}
       statusPanel={
         <RecordSectionActionPanel
-          summary="Invoice generation is worker-backed. Generate when needed, then open the current invoice artifact from this section."
+          summary={
+            isStalled
+              ? "Invoice generation is still pending in the background. Check the relay and worker if it does not advance, or refresh the workflow status from this section."
+              : "Invoice generation is worker-backed. Generate when needed, then open the current invoice artifact from this section."
+          }
           status={
             <>
               <RecordSectionStatusBadge tone={workflowTone}>
@@ -86,8 +94,17 @@ export function WorkOrderInvoiceSection({
                 disabled={isPending}
                 className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
               >
-                {isPending ? "Generating Invoice..." : "Generate Invoice"}
+                {queueButtonLabel}
               </button>
+              {isPending ? (
+                <button
+                  type="button"
+                  onClick={onRefreshStatus}
+                  className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--panel-hover)]"
+                >
+                  Refresh Status
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={onOpenInvoice}

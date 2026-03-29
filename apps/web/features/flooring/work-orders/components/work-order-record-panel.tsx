@@ -8,6 +8,10 @@ import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/s
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
 import { useRecordDetailController } from "@/features/dashboard/shared/record-view/client/use-record-detail-controller"
+import {
+  buildRecordActionConfirmationMessage,
+  confirmRecordAction,
+} from "@/features/dashboard/shared/record-view/client/confirm-record-action"
 import { useRecordNotices, type RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { RecordSectionStack } from "@/features/dashboard/shared/record-view/sections/record-section-stack"
 import {
@@ -34,7 +38,11 @@ import {
   formatRecordSectionWorkflowPhase,
 } from "@/features/dashboard/shared/record-view/client/use-record-section-workflow"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
-import { selectedAddress } from "@/features/flooring/work-orders/controllers/record-panel/shared"
+import {
+  buildWorkflowActionLabel,
+  isAutoAllocationRequestBlocked,
+  selectedAddress,
+} from "@/features/flooring/work-orders/controllers/record-panel/shared"
 import { useWorkOrderAutoAllocationWorkflow } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-auto-allocation-workflow"
 import { useWorkOrderInvoiceWorkflow } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-invoice-workflow"
 import { useWorkOrderMaterialSection } from "@/features/flooring/work-orders/controllers/record-panel/use-work-order-material-section"
@@ -102,6 +110,14 @@ function buildSectionStatus(input: {
       {input.workflow}
     </>
   )
+}
+
+function buildUnsavedWorkflowWarning(dirtySections: string[]) {
+  if (dirtySections.length === 0) {
+    return undefined
+  }
+
+  return `Unsaved changes in ${dirtySections.join(", ")} will not be included. Save those sections first if they must be part of this request.`
 }
 
 export function WorkOrderRecordPanel({
@@ -275,6 +291,50 @@ export function WorkOrderRecordPanel({
       ].filter(Boolean) as string[],
     [materialSection.isDirty, primarySection.isDirty, salesRepSection.isDirty, serviceSection.isDirty],
   )
+  const unsavedWorkflowWarning = useMemo(() => buildUnsavedWorkflowWarning(dirtySections), [dirtySections])
+  const hasStalePendingAutoAllocation = useMemo(() => {
+    const run = autoAllocationWorkflow.value
+    if (!run) {
+      return false
+    }
+
+    return (
+      run.sourceVersion !== currentWorkOrder.updatedAt &&
+      (run.status === "REQUESTED" || run.status === "QUEUED")
+    )
+  }, [autoAllocationWorkflow.value, currentWorkOrder.updatedAt])
+  const autoAllocationRequestBlocked = useMemo(
+    () => isAutoAllocationRequestBlocked(autoAllocationWorkflow.value, currentWorkOrder.updatedAt),
+    [autoAllocationWorkflow.value, currentWorkOrder.updatedAt],
+  )
+  const autoAllocationButtonLabel = useMemo(() => {
+    if (!autoAllocationRequestBlocked) {
+      return "Run Auto Allocation"
+    }
+
+    return buildWorkflowActionLabel({
+      phase: autoAllocationWorkflow.phase,
+      isStalled: autoAllocationWorkflow.isStalled,
+      idleLabel: "Run Auto Allocation",
+      requestedLabel: "Requesting...",
+      queuedLabel: "Queued...",
+      processingLabel: "Auto Allocating...",
+      stalledLabel: "Awaiting Worker...",
+    })
+  }, [autoAllocationRequestBlocked, autoAllocationWorkflow.isStalled, autoAllocationWorkflow.phase])
+  const invoiceButtonLabel = useMemo(
+    () =>
+      buildWorkflowActionLabel({
+        phase: invoiceWorkflow.phase,
+        isStalled: invoiceWorkflow.isStalled,
+        idleLabel: "Generate Invoice",
+        requestedLabel: "Requesting...",
+        queuedLabel: "Queued...",
+        processingLabel: "Generating Invoice...",
+        stalledLabel: "Awaiting Worker...",
+      }),
+    [invoiceWorkflow.isStalled, invoiceWorkflow.phase],
+  )
 
   useEffect(() => {
     onDirtyChange?.(dirtySections.length > 0)
@@ -377,6 +437,47 @@ export function WorkOrderRecordPanel({
       showError(deleteError instanceof Error ? deleteError.message : "Failed to delete work order")
     }
   }, [clearNotices, clearRecordCache, currentWorkOrder.id, currentWorkOrder.updatedAt, onClose, onWorkOrderDeleted, showError])
+
+  const requestAutoAllocation = useCallback(() => {
+    const warning = [
+      hasStalePendingAutoAllocation
+        ? "A previous auto-allocation request is still pending for an older saved version. Confirming will supersede that older pending request."
+        : null,
+      unsavedWorkflowWarning,
+    ]
+      .filter(Boolean)
+      .join("\n\n")
+
+    const didConfirm = confirmRecordAction(
+      buildRecordActionConfirmationMessage({
+        title: "Run auto allocation for this work order?",
+        summary: "This queues a background allocation run from the current saved work order snapshot.",
+        warning: warning || undefined,
+      }),
+    )
+
+    if (!didConfirm) {
+      return
+    }
+
+    void autoAllocationWorkflow.requestAutoAllocation()
+  }, [autoAllocationWorkflow, hasStalePendingAutoAllocation, unsavedWorkflowWarning])
+
+  const queueInvoice = useCallback(() => {
+    const didConfirm = confirmRecordAction(
+      buildRecordActionConfirmationMessage({
+        title: "Generate an invoice for this work order?",
+        summary: "This queues background invoice generation from the current saved work order snapshot.",
+        warning: unsavedWorkflowWarning,
+      }),
+    )
+
+    if (!didConfirm) {
+      return
+    }
+
+    void invoiceWorkflow.queueInvoice()
+  }, [invoiceWorkflow, unsavedWorkflowWarning])
 
   if (loading && !workOrder) {
     return <CenteredLoadingState label="Loading work order..." />
@@ -481,7 +582,7 @@ export function WorkOrderRecordPanel({
             loading={loading}
             actionPanel={
               <RecordSectionActionPanel
-                summary={`Edit material items and their nested allocations locally. Save the full section to replace server state. ${currentSummary.materialItemsCount} items, ${currentSummary.materialTotal.toFixed(2)} material total.`}
+                summary={`Edit material items and their nested allocations locally. Save the full section to replace server state. ${currentSummary.materialItemsCount} items, ${currentSummary.materialTotal.toFixed(2)} material total.${hasStalePendingAutoAllocation ? " A previous auto-allocation request is still pending for an older saved version and can be superseded from this section." : autoAllocationWorkflow.isStalled ? " Auto allocation is still pending in the background. Check the relay and worker if it does not advance, or refresh the status here." : ""}`}
                 status={buildSectionStatus({
                   isDirty: materialSection.isDirty,
                   isSaving: materialSection.isSaving,
@@ -519,12 +620,21 @@ export function WorkOrderRecordPanel({
                     </button>
                     <button
                       type="button"
-                      onClick={() => void autoAllocationWorkflow.requestAutoAllocation()}
-                      disabled={autoAllocationWorkflow.isPending || materialSection.localValue.length === 0}
+                      onClick={requestAutoAllocation}
+                      disabled={autoAllocationRequestBlocked || materialSection.localValue.length === 0}
                       className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
                     >
-                      {autoAllocationWorkflow.isPending ? "Auto Allocating..." : "Run Auto Allocation"}
+                      {autoAllocationButtonLabel}
                     </button>
+                    {autoAllocationWorkflow.isPending ? (
+                      <button
+                        type="button"
+                        onClick={() => void autoAllocationWorkflow.refresh()}
+                        className="rounded-md border border-[var(--panel-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)]"
+                      >
+                        Refresh Status
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => materialSection.discard()}
@@ -674,8 +784,10 @@ export function WorkOrderRecordPanel({
           isLoading={invoiceWorkflow.isLoading}
           workflowPhase={invoiceWorkflow.phase}
           isStalled={invoiceWorkflow.isStalled}
-          onQueueInvoice={() => void invoiceWorkflow.queueInvoice()}
+          queueButtonLabel={invoiceButtonLabel}
+          onQueueInvoice={queueInvoice}
           onOpenInvoice={invoiceWorkflow.openInvoice}
+          onRefreshStatus={() => void invoiceWorkflow.refreshInvoice()}
           onOpenChange={setIsInvoiceSectionOpen}
         />
       </RecordSectionStack>

@@ -63,7 +63,7 @@ function WarehouseDetailContent({
 
   useEffect(() => {
     page.setIsDirty(controller.isDirty)
-  }, [controller.isDirty, page])
+  }, [controller.isDirty, page.setIsDirty])
 
   return (
     <div className="space-y-6">
