@@ -1,1 +1,1 @@
-export * from "../work-order-record-panel"
+export * from "@/features/flooring/work-orders/record/panel/work-order-record-panel"

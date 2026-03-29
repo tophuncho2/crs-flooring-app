@@ -1,1 +1,1 @@
-export * from "../template-record-panel"
+export * from "@/features/flooring/templates/record/panel/template-record-panel"

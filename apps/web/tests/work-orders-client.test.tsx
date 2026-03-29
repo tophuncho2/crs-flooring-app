@@ -11,7 +11,8 @@ import { navigationMocks } from "./helpers/next-navigation-mock"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
 import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
 
-vi.mock("@/features/flooring/work-orders/components/record/work-order-record-panel", () => ({
+const { workOrderRecordPanelMock } = vi.hoisted(() => ({
+  workOrderRecordPanelMock: () => ({
   WorkOrderRecordPanel: ({
     workOrderId,
     notices,
@@ -82,7 +83,11 @@ vi.mock("@/features/flooring/work-orders/components/record/work-order-record-pan
       </>
     )
   },
+  }),
 }))
+
+vi.mock("@/features/flooring/work-orders/components/record/work-order-record-panel", workOrderRecordPanelMock)
+vi.mock("@/features/flooring/work-orders/record/panel/work-order-record-panel", workOrderRecordPanelMock)
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({

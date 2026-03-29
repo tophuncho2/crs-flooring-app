@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { getWorkOrderDetailPageData } from "@/features/flooring/work-orders/queries"
-import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
+import WorkOrderDetailClient from "@/features/flooring/work-orders/record/detail/work-order-detail-client"
 
 export default async function WorkOrderDetailPage({
   params,

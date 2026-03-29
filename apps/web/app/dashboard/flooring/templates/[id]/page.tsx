@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { getTemplateDetailPageData } from "@/features/flooring/templates/queries"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { requireTemplatesAccess } from "@/features/flooring/shared/access/templates-work-orders"
-import { TemplateDetailClient } from "@/features/flooring/templates/components/template-detail-client"
+import { TemplateDetailClient } from "@/features/flooring/templates/record/detail/template-detail-client"
 
 export default async function TemplateDetailPage({
   params,

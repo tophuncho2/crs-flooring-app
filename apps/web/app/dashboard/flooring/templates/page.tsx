@@ -2,7 +2,7 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireTemplatesAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getTemplatesPageData } from "@/features/flooring/templates/queries"
-import TemplatesClient from "@/features/flooring/templates/components/templates-client"
+import TemplatesClient from "@/features/flooring/templates/list/templates-client"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 
 export default async function TemplatesPage({
