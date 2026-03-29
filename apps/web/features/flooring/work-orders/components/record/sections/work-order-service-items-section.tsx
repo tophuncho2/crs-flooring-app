@@ -48,19 +48,6 @@ function ServiceItemRow({
 
   return (
     <RecordSectionItem
-      status={
-        <>
-          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-            {isLocalOnlyItem ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-        </>
-      }
-      actions={
-        <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="w-full">
-          Remove
-        </DeleteRowButton>
-      }
     >
       <div className={WORK_ORDER_SERVICE_GRID_CLASS_NAME}>
         <RecordItemCell label="Service">
@@ -165,6 +152,17 @@ function ServiceItemRow({
           onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
+        </RecordItemCell>
+        <RecordItemCell label="Controls">
+        <div className="flex flex-wrap items-center gap-2">
+          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+            {isLocalOnlyItem ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+            Remove
+          </DeleteRowButton>
+        </div>
         </RecordItemCell>
       </div>
     </RecordSectionItem>

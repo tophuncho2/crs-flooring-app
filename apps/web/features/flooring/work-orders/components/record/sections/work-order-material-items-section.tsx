@@ -8,7 +8,6 @@ import { RecordSectionStatusBadge } from "@/features/dashboard/shared/record-vie
 import { RecordSectionItem } from "@/features/dashboard/shared/record-view/sections/record-section-item"
 import { RecordSectionMetric } from "@/features/dashboard/shared/record-view/sections/record-section-metric"
 import { RecordSectionShell } from "@/features/dashboard/shared/record-view/sections/record-section-shell"
-import { RecordSectionSubtable } from "@/features/dashboard/shared/record-view/sections/record-section-subtable"
 import { RECORD_SECTION_BORDER_CLASS_NAME } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
 import {
   formatLineTotal,
@@ -44,6 +43,7 @@ function MaterialItemEditorRow({
   item,
   productOptions,
   isExpanded,
+  allocationContent,
   itemErrors = {},
   onItemFieldChange,
   onDeleteItem,
@@ -52,6 +52,7 @@ function MaterialItemEditorRow({
   item: WorkOrderMaterialItem
   productOptions: MaterialItemOption[]
   isExpanded: boolean
+  allocationContent?: ReactNode
   itemErrors?: RowFieldErrors<MaterialItemField>
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
   onDeleteItem: (itemId: string) => void
@@ -63,46 +64,12 @@ function MaterialItemEditorRow({
 
   return (
     <RecordSectionItem
-      status={
-        <>
-          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-            {isLocalOnlyItem ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          <RecordSectionStatusBadge
-            tone={
-              item.allocationStatus === "FULLY_ALLOCATED"
-                ? "success"
-                : item.allocationStatus === "SHORTAGE"
-                  ? "error"
-                  : item.allocationStatus === "PARTIALLY_ALLOCATED"
-                    ? "warning"
-                    : "neutral"
-            }
-          >
-            {item.allocationStatus.replaceAll("_", " ")}
-          </RecordSectionStatusBadge>
-          <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
-            {item.isAllocationDone ? "Done" : "Pending"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-        </>
-      }
-      actions={
-        <>
-          <button
-            type="button"
-            onClick={onToggleAllocations}
-            aria-expanded={isExpanded}
-            aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
-          >
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
-          </button>
-          <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="w-full">
-            Remove
-          </DeleteRowButton>
-        </>
+      nestedContent={
+        isExpanded ? (
+          <div className="px-4 py-4">
+            {allocationContent}
+          </div>
+        ) : null
       }
     >
       <div className={WORK_ORDER_MATERIAL_GRID_CLASS_NAME}>
@@ -172,6 +139,43 @@ function MaterialItemEditorRow({
           className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
         />
         </RecordItemCell>
+        <RecordItemCell label="Controls">
+        <div className="flex flex-wrap items-center gap-2">
+          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+            {isLocalOnlyItem ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          <RecordSectionStatusBadge
+            tone={
+              item.allocationStatus === "FULLY_ALLOCATED"
+                ? "success"
+                : item.allocationStatus === "SHORTAGE"
+                  ? "error"
+                  : item.allocationStatus === "PARTIALLY_ALLOCATED"
+                    ? "warning"
+                    : "neutral"
+            }
+          >
+            {item.allocationStatus.replaceAll("_", " ")}
+          </RecordSectionStatusBadge>
+          <RecordSectionStatusBadge tone={item.isAllocationDone ? "success" : "processing"}>
+            {item.isAllocationDone ? "Done" : "Pending"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          <button
+            type="button"
+            onClick={onToggleAllocations}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
+          >
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
+          </button>
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+            Remove
+          </DeleteRowButton>
+        </div>
+        </RecordItemCell>
       </div>
     </RecordSectionItem>
   )
@@ -234,19 +238,12 @@ export function WorkOrderMaterialItemsSection({
                   item={item}
                   productOptions={productOptions}
                   isExpanded={isExpanded}
+                  allocationContent={renderAllocationSection(item)}
                   itemErrors={itemErrors}
                   onItemFieldChange={onItemFieldChange}
                   onDeleteItem={onDeleteItem}
                   onToggleAllocations={() => onToggleExpandedItem(item.id)}
                 />
-                {isExpanded ? (
-                  <RecordSectionSubtable
-                    title="Allocations"
-                    summary="Second-level child rows for this material item."
-                  >
-                    {renderAllocationSection(item)}
-                  </RecordSectionSubtable>
-                ) : null}
               </div>
             )
           })

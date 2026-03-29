@@ -542,7 +542,6 @@ export function WorkOrderRecordPanel({
             }}
             actionPanel={
               <RecordSectionActionPanel
-                summary="Primary work order fields are section-owned. Save or discard this section independently."
                 status={buildPrimarySectionStatus({
                   isDirty: primarySection.isDirty,
                   isSaving: primarySection.isSaving,
@@ -582,7 +581,6 @@ export function WorkOrderRecordPanel({
             loading={loading}
             actionPanel={
               <RecordSectionActionPanel
-                summary={`Edit material items and their nested allocations locally. Save the full section to replace server state. ${currentSummary.materialItemsCount} items, ${currentSummary.materialTotal.toFixed(2)} material total.${hasStalePendingAutoAllocation ? " A previous auto-allocation request is still pending for an older saved version and can be superseded from this section." : autoAllocationWorkflow.isStalled ? " Auto allocation is still pending in the background. Check the relay and worker if it does not advance, or refresh the status here." : ""}`}
                 status={buildSectionStatus({
                   isDirty: materialSection.isDirty,
                   isSaving: materialSection.isSaving,
@@ -685,7 +683,6 @@ export function WorkOrderRecordPanel({
           loading={loading}
           actionPanel={
             <RecordSectionActionPanel
-              summary="Service items are edited locally and saved as one authoritative section."
               status={buildSectionStatus({
                 isDirty: serviceSection.isDirty,
                 isSaving: serviceSection.isSaving,
@@ -735,7 +732,6 @@ export function WorkOrderRecordPanel({
           loading={loading}
           actionPanel={
             <RecordSectionActionPanel
-              summary="Sales reps are edited locally and saved as one authoritative section."
               status={buildSectionStatus({
                 isDirty: salesRepSection.isDirty,
                 isSaving: salesRepSection.isSaving,

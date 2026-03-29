@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react"
 import { RecordItemCell } from "@/features/dashboard/shared/record-view/sections/record-item-cell"
-import { RecordSectionItem } from "@/features/dashboard/shared/record-view/sections/record-section-item"
 import { RecordSectionStatusBadge } from "@/features/dashboard/shared/record-view/sections/record-section-action-panel"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
@@ -64,8 +63,8 @@ function AllocationCell({
   return (
     <RecordItemCell
       label={label}
-      className={joinClasses("bg-orange-500/[0.08] px-3 py-2", className)}
-      labelClassName="text-[var(--foreground)]/55"
+      className={joinClasses("bg-orange-500/[0.08] px-2.5 py-2", className)}
+      labelClassName="text-[9px] text-[var(--foreground)]/55"
     >
       {children}
     </RecordItemCell>
@@ -106,24 +105,8 @@ function AllocationEditorRow({
   const isLocalOnlyRow = allocation.id.startsWith("temp:")
 
   return (
-    <RecordSectionItem
-      className="rounded-xl shadow-none"
-      status={
-        <>
-          <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
-            {isLocalOnlyRow ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-        </>
-      }
-      actions={
-        <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
-          Remove
-        </DeleteRowButton>
-      }
-    >
-      <div className={joinClasses(WORK_ORDER_MATERIAL_GRID_CLASS_NAME, hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined)}>
-        <AllocationCell label="Inventory">
+    <div className={joinClasses(WORK_ORDER_MATERIAL_GRID_CLASS_NAME, hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined)}>
+      <AllocationCell label="Inventory">
         <div className="space-y-1">
           <select
             value={allocation.inventoryId}
@@ -139,8 +122,8 @@ function AllocationEditorRow({
           </select>
           {rowErrors?.inventoryId ? <FieldErrorText>{rowErrors.inventoryId}</FieldErrorText> : null}
         </div>
-        </AllocationCell>
-        <AllocationCell label="Qty">
+      </AllocationCell>
+      <AllocationCell label="Qty">
         <div className="space-y-1">
           <input
             value={allocation.quantity}
@@ -152,19 +135,29 @@ function AllocationEditorRow({
           />
           {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
         </div>
-        </AllocationCell>
-        <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
-        <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
-        <AllocationCell label="Notes">
+      </AllocationCell>
+      <AllocationValueCell label="Unit Cost" value={formatCurrencyValue(rowPricePerUnit)} />
+      <AllocationValueCell label="Total" value={formatCurrencyValue(quantityValue * rowPricePerUnit)} />
+      <AllocationCell label="Notes">
         <input
           value={allocation.notes}
           placeholder="Notes"
           onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
           className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
         />
-        </AllocationCell>
-      </div>
-    </RecordSectionItem>
+      </AllocationCell>
+      <AllocationCell label="Controls">
+        <div className="flex flex-wrap items-center gap-2">
+          <RecordSectionStatusBadge tone={isLocalOnlyRow ? "warning" : "neutral"}>
+            {isLocalOnlyRow ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
+            Remove
+          </DeleteRowButton>
+        </div>
+      </AllocationCell>
+    </div>
   )
 }
 
@@ -186,28 +179,43 @@ export function MaterialAllocationsEditor({
   onDeleteAllocation: (allocationId: string) => void
 }) {
   return (
-    <div className="space-y-3">
-      {allocations.map((allocation) => {
+    <div className="space-y-0">
+      {allocations.length === 0 ? (
+        <div className="border border-dashed border-[var(--panel-border)] px-3 py-3 text-sm text-[var(--foreground)]/60">
+          No allocations yet.
+        </div>
+      ) : null}
+
+      {allocations.map((allocation, index) => {
         return (
-          <AllocationEditorRow
+          <div
             key={allocation.id}
-            allocation={allocation}
-            allocationOptions={allocationOptions}
-            rowErrors={itemErrors[allocation.id]}
-            onAllocationFieldChange={onAllocationFieldChange}
-            onDeleteAllocation={onDeleteAllocation}
-          />
+            className={joinClasses(
+              index > 0 ? "border-t border-[var(--panel-border)]" : undefined,
+              "py-0",
+            )}
+          >
+            <AllocationEditorRow
+              allocation={allocation}
+              allocationOptions={allocationOptions}
+              rowErrors={itemErrors[allocation.id]}
+              onAllocationFieldChange={onAllocationFieldChange}
+              onDeleteAllocation={onDeleteAllocation}
+            />
+          </div>
         )
       })}
 
-      <button
-        type="button"
-        onClick={onAddAllocation}
-        disabled={loadingOptions}
-        className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
-      >
-        {loadingOptions ? "Loading inventory..." : "Add Allocation"}
-      </button>
+      <div className="flex justify-end border-t border-[var(--panel-border)] pt-3">
+        <button
+          type="button"
+          onClick={onAddAllocation}
+          disabled={loadingOptions}
+          className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+        >
+          {loadingOptions ? "Loading inventory..." : "Add Allocation"}
+        </button>
+      </div>
     </div>
   )
 }

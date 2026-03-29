@@ -47,19 +47,6 @@ function SalesRepRow({
 
   return (
     <RecordSectionItem
-      status={
-        <>
-          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-            {isLocalOnlyItem ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
-        </>
-      }
-      actions={
-        <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="w-full">
-          Remove
-        </DeleteRowButton>
-      }
     >
       <div className={WORK_ORDER_SALES_REP_GRID_CLASS_NAME}>
         <RecordItemCell label="Sales Rep">
@@ -110,6 +97,17 @@ function SalesRepRow({
         <RecordItemCell label="Total">
         <div className="rounded border border-[var(--panel-border)] px-2 py-1 font-medium">
           {formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))}
+        </div>
+        </RecordItemCell>
+        <RecordItemCell label="Controls">
+        <div className="flex flex-wrap items-center gap-2">
+          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+            {isLocalOnlyItem ? "Unsaved" : "Ready"}
+          </RecordSectionStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+            Remove
+          </DeleteRowButton>
         </div>
         </RecordItemCell>
       </div>

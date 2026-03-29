@@ -66,11 +66,6 @@ export function WorkOrderInvoiceSection({
       onOpenChange={onOpenChange}
       statusPanel={
         <RecordSectionActionPanel
-          summary={
-            isStalled
-              ? "Invoice generation is still pending in the background. Check the relay and worker if it does not advance, or refresh the workflow status from this section."
-              : "Invoice generation is worker-backed. Generate when needed, then open the current invoice artifact from this section."
-          }
           status={
             <>
               <RecordSectionStatusBadge tone={workflowTone}>
