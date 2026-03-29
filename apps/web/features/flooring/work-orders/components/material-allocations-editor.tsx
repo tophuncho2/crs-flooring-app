@@ -181,7 +181,7 @@ function AllocationEditorRow({
       </AllocationCell>
       <AllocationCell label="Remove">
         <div className="flex min-h-[2.5rem] items-start justify-start xl:justify-end">
-          <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)}>
+          <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} className="whitespace-nowrap px-2.5">
             Remove
           </DeleteRowButton>
         </div>

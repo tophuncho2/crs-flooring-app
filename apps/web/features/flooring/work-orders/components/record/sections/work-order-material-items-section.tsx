@@ -202,7 +202,7 @@ function MaterialItemEditorRow({
         </RecordItemCell>
         <RecordItemCell label="Remove">
         <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-          <DeleteRowButton onClick={() => onDeleteItem(item.id)}>
+          <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
             Remove
           </DeleteRowButton>
         </div>
