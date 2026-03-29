@@ -120,7 +120,7 @@ describe("record view single-section engine", () => {
     expect(screen.getByText("Name is required")).toBeTruthy()
   })
 
-  it("record detail scaffold uses the page header as the governing section header", async () => {
+  it("record detail scaffold uses the page header as the governing header for single-section panels", async () => {
     const user = userEvent.setup()
 
     render(
@@ -130,14 +130,35 @@ describe("record view single-section engine", () => {
         dirtyMessage="Unsaved changes"
         headerVariant="section"
       >
-        {(page) => <div>{page.isPrimarySectionOpen ? "Section Open" : "Section Closed"}</div>}
+        {(page) => (
+          <RecordSingleSectionPanel
+            title="Category Details"
+            controller={{
+              page,
+              primarySection: {
+                isDirty: false,
+                isSaving: false,
+                hasConflict: false,
+                error: null,
+                save: vi.fn(),
+                discard: vi.fn(),
+              },
+            }}
+            showHeader={false}
+          >
+            <div>Single Section Fields</div>
+          </RecordSingleSectionPanel>
+        )}
       </RecordDetailClientScaffold>,
     )
 
     expect(screen.getAllByText("Category Carpet")).toHaveLength(1)
-    expect(screen.getByText("Section Open")).toBeTruthy()
+    expect(screen.getByText("Single Section Fields")).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: "Collapse Category Carpet" }))
-    expect(screen.getByText("Section Closed")).toBeTruthy()
+    expect(screen.queryByText("Single Section Fields")).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Expand Category Carpet" }))
+    expect(screen.getByText("Single Section Fields")).toBeTruthy()
   })
 })

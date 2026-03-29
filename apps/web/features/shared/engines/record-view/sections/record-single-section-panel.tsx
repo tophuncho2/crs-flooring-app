@@ -17,6 +17,9 @@ type SingleSectionState = {
 }
 
 type SingleSectionController = {
+  page?: {
+    isPrimarySectionOpen: boolean
+  }
   primarySection: SingleSectionState
   deleteRecord?: () => Promise<boolean>
 }
@@ -64,28 +67,32 @@ export function RecordSingleSectionPanel({
     await controller.primarySection.save()
   }, [controller.primarySection])
 
+  const isOpen = controller.page?.isPrimarySectionOpen ?? true
+
   return (
     <RecordSectionStack>
-      <RecordPrimarySectionInstance
-        title={title}
-        metrics={metrics}
-        summary={summary}
-        error={controller.primarySection.error}
-        isDirty={controller.primarySection.isDirty}
-        isSaving={controller.primarySection.isSaving}
-        hasConflict={controller.primarySection.hasConflict}
-        canManage={canManage}
-        onSave={handleSave}
-        onDiscard={controller.primarySection.discard}
-        onDelete={controller.deleteRecord ? handleDelete : undefined}
-        saveLabel={saveLabel}
-        savingLabel={savingLabel}
-        discardLabel={discardLabel}
-        deleteLabel={deleteLabel}
-        showHeader={showHeader}
-      >
-        {children}
-      </RecordPrimarySectionInstance>
+      {isOpen ? (
+        <RecordPrimarySectionInstance
+          title={title}
+          metrics={metrics}
+          summary={summary}
+          error={controller.primarySection.error}
+          isDirty={controller.primarySection.isDirty}
+          isSaving={controller.primarySection.isSaving}
+          hasConflict={controller.primarySection.hasConflict}
+          canManage={canManage}
+          onSave={handleSave}
+          onDiscard={controller.primarySection.discard}
+          onDelete={controller.deleteRecord ? handleDelete : undefined}
+          saveLabel={saveLabel}
+          savingLabel={savingLabel}
+          discardLabel={discardLabel}
+          deleteLabel={deleteLabel}
+          showHeader={showHeader}
+        >
+          {children}
+        </RecordPrimarySectionInstance>
+      ) : null}
     </RecordSectionStack>
   )
 }
