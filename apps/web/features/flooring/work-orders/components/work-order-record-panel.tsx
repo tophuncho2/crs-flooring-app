@@ -125,6 +125,7 @@ export function WorkOrderRecordPanel({
   workOrderId,
   initialWorkOrder,
   showPrimaryFields = true,
+  usePageHeaderForPrimarySection = false,
   propertyOptions,
   warehouseOptions,
   productOptions,
@@ -144,6 +145,7 @@ export function WorkOrderRecordPanel({
   workOrderId: string
   initialWorkOrder: WorkOrderDetail
   showPrimaryFields?: boolean
+  usePageHeaderForPrimarySection?: boolean
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   productOptions: MaterialItemOption[]
@@ -526,6 +528,7 @@ export function WorkOrderRecordPanel({
       <RecordSectionStack>
         {showPrimaryFields ? (
           <WorkOrderPrimaryFieldsSection
+            showHeader={!usePageHeaderForPrimarySection}
             draft={primarySection.localValue}
             propertyOptions={propertyOptions}
             warehouseOptions={warehouseOptions}

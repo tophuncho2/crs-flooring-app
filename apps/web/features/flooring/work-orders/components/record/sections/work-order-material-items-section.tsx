@@ -189,7 +189,7 @@ function MaterialItemEditorRow({
             className="inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
           >
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            <span>{isExpanded ? "Hide Allocations" : "Show Allocations"}</span>
+            <span>{isExpanded ? "Hide" : "Show"}</span>
           </button>
         </div>
         </RecordItemCell>
