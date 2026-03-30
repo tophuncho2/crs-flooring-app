@@ -79,7 +79,7 @@ export function WorkOrderSalesRepsSection({
         isEmpty={items.length === 0}
         emptyState="No sales reps yet."
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
           const isLocalOnlyItem = item.id.startsWith("temp:")
 
@@ -95,6 +95,7 @@ export function WorkOrderSalesRepsSection({
                 totalValue={formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))}
                 salesRepError={rowErrors?.contactId}
                 percentError={rowErrors?.percent}
+                showCellLabels={index === 0}
                 onSalesRepChange={(value) => {
                   const selected = salesRepOptions.find((option) => option.id === value)
                   onItemFieldChange(item.id, "contactId", value)

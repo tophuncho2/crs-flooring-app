@@ -127,7 +127,7 @@ export function WorkOrderMaterialItemsSection({
         isEmpty={items.length === 0}
         emptyState="No material items yet."
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
           const productLabel = readProductLabel(productOptions, item.productId, item.productName)
           const productUnit = readProductUnit(productOptions, item.productId, item.sendUnit)
@@ -155,6 +155,7 @@ export function WorkOrderMaterialItemsSection({
                 productError={rowErrors?.productId}
                 quantityError={rowErrors?.quantity}
                 unitPriceError={rowErrors?.unitPrice}
+                showCellLabels={index === 0}
                 onProductChange={(value) => onItemFieldChange(item.id, "productId", value)}
                 onQuantityChange={(value) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(value))}
                 onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}

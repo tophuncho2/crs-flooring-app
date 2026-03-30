@@ -200,7 +200,6 @@ export function useWorkOrderMaterialSection(input: {
   const addItem = useCallback(() => {
     const nextItem = createEmptyMaterialItem()
     itemController.addItem(() => nextItem)
-    setExpandedItemIds((previous) => (previous.includes(nextItem.id) ? previous : [...previous, nextItem.id]))
   }, [itemController])
 
   const toggleExpandedItem = useCallback(

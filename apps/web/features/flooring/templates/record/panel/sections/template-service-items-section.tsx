@@ -91,7 +91,7 @@ export function TemplateServiceItemsSection({
         isEmpty={items.length === 0}
         emptyState="No service items yet."
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
           const hasErrors = hasFieldErrors(rowErrors)
 
@@ -118,6 +118,7 @@ export function TemplateServiceItemsSection({
                 quantityError={rowErrors?.quantity}
                 unitError={rowErrors?.unitId}
                 unitPriceError={rowErrors?.unitPrice}
+                showCellLabels={index === 0}
                 onServiceChange={(value) => {
                   const selected = serviceOptions.find((service) => service.id === value)
                   onItemFieldChange(item.id, "serviceId", value)

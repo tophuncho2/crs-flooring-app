@@ -33,11 +33,11 @@ function FieldStack({
   )
 }
 
-function buildGridCellProps(columnKey: string) {
+function buildGridCellProps(columnKey: string, showCellLabels: boolean) {
   return {
     columnKey,
     chrome: "grid" as const,
-    showLabel: true,
+    showLabel: showCellLabels,
   }
 }
 
@@ -59,6 +59,7 @@ export function RecordMaterialRowBuilder({
   onUnitPriceChange,
   onNotesChange,
   controls,
+  showCellLabels = true,
 }: {
   productValue: string
   productOptions: RecordRowBuilderOption[]
@@ -77,10 +78,11 @@ export function RecordMaterialRowBuilder({
   onUnitPriceChange: (value: string) => void
   onNotesChange: (value: string) => void
   controls?: Omit<RecordItemSectionControlsProps, "cellChrome" | "showCellLabels">
+  showCellLabels?: boolean
 }) {
   return (
     <>
-      <RecordItemCell {...buildGridCellProps("product")}>
+      <RecordItemCell {...buildGridCellProps("product", showCellLabels)}>
         <FieldStack error={productError}>
           <RecordGridCellSelect
             value={productValue}
@@ -96,7 +98,7 @@ export function RecordMaterialRowBuilder({
           </RecordGridCellSelect>
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("quantity")}>
+      <RecordItemCell {...buildGridCellProps("quantity", showCellLabels)}>
         <FieldStack error={quantityError}>
           <QuantityCell
             input={(
@@ -114,10 +116,10 @@ export function RecordMaterialRowBuilder({
           />
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("unit")}>
+      <RecordItemCell {...buildGridCellProps("unit", showCellLabels)}>
         <TextCell align="center">{unitLabel}</TextCell>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("unitPrice")}>
+      <RecordItemCell {...buildGridCellProps("unitPrice", showCellLabels)}>
         <FieldStack error={unitPriceError}>
           <CurrencyCell
             input={(
@@ -135,10 +137,10 @@ export function RecordMaterialRowBuilder({
           />
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("total")}>
+      <RecordItemCell {...buildGridCellProps("total", showCellLabels)}>
         <CurrencyCell value={totalValue} className="w-full" />
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("notes")}>
+      <RecordItemCell {...buildGridCellProps("notes", showCellLabels)}>
         <RecordGridCellInput
           value={notesValue}
           onChange={(event) => onNotesChange(event.target.value)}
@@ -148,7 +150,7 @@ export function RecordMaterialRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels
+          showCellLabels={showCellLabels}
         />
       ) : null}
     </>
@@ -179,6 +181,7 @@ export function RecordServiceRowBuilder({
   onUnitPriceChange,
   onNotesChange,
   controls,
+  showCellLabels = true,
 }: {
   serviceValue: string
   serviceOptions: RecordRowBuilderOption[]
@@ -203,10 +206,11 @@ export function RecordServiceRowBuilder({
   onUnitPriceChange: (value: string) => void
   onNotesChange: (value: string) => void
   controls?: Omit<RecordItemSectionControlsProps, "cellChrome" | "showCellLabels">
+  showCellLabels?: boolean
 }) {
   return (
     <>
-      <RecordItemCell {...buildGridCellProps("service")}>
+      <RecordItemCell {...buildGridCellProps("service", showCellLabels)}>
         <RecordGridCellSelect
           value={serviceValue}
           onChange={(event) => onServiceChange(event.target.value)}
@@ -219,7 +223,7 @@ export function RecordServiceRowBuilder({
           ))}
         </RecordGridCellSelect>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("name")}>
+      <RecordItemCell {...buildGridCellProps("name", showCellLabels)}>
         <FieldStack error={nameError}>
           <RecordGridCellInput
             value={nameValue}
@@ -228,7 +232,7 @@ export function RecordServiceRowBuilder({
           />
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("quantity")}>
+      <RecordItemCell {...buildGridCellProps("quantity", showCellLabels)}>
         <FieldStack error={quantityError}>
           <QuantityCell
             input={(
@@ -246,7 +250,7 @@ export function RecordServiceRowBuilder({
           />
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("unit")}>
+      <RecordItemCell {...buildGridCellProps("unit", showCellLabels)}>
         <FieldStack error={unitError}>
           <RecordGridCellSelect
             value={unitValue}
@@ -263,7 +267,7 @@ export function RecordServiceRowBuilder({
           </RecordGridCellSelect>
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("unitPrice")}>
+      <RecordItemCell {...buildGridCellProps("unitPrice", showCellLabels)}>
         <FieldStack error={unitPriceError}>
           <CurrencyCell
             input={(
@@ -281,10 +285,10 @@ export function RecordServiceRowBuilder({
           />
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("total")}>
+      <RecordItemCell {...buildGridCellProps("total", showCellLabels)}>
         <CurrencyCell value={totalValue} className="w-full" />
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("notes")}>
+      <RecordItemCell {...buildGridCellProps("notes", showCellLabels)}>
         <RecordGridCellInput
           value={notesValue}
           onChange={(event) => onNotesChange(event.target.value)}
@@ -294,7 +298,7 @@ export function RecordServiceRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels
+          showCellLabels={showCellLabels}
         />
       ) : null}
     </>
@@ -312,6 +316,7 @@ export function RecordSalesRepRowBuilder({
   onSalesRepChange,
   onPercentChange,
   controls,
+  showCellLabels = true,
 }: {
   salesRepValue: string
   salesRepOptions: RecordRowBuilderOption[]
@@ -323,10 +328,11 @@ export function RecordSalesRepRowBuilder({
   onSalesRepChange: (value: string) => void
   onPercentChange: (value: string) => void
   controls?: Omit<RecordItemSectionControlsProps, "cellChrome" | "showCellLabels">
+  showCellLabels?: boolean
 }) {
   return (
     <>
-      <RecordItemCell {...buildGridCellProps("salesRep")}>
+      <RecordItemCell {...buildGridCellProps("salesRep", showCellLabels)}>
         <FieldStack error={salesRepError}>
           <RecordGridCellSelect
             value={salesRepValue}
@@ -342,7 +348,7 @@ export function RecordSalesRepRowBuilder({
           </RecordGridCellSelect>
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("percent")}>
+      <RecordItemCell {...buildGridCellProps("percent", showCellLabels)}>
         <FieldStack error={percentError}>
           <div className="flex min-h-[2.5rem] items-center gap-2">
             <RecordGridCellInput
@@ -358,14 +364,14 @@ export function RecordSalesRepRowBuilder({
           </div>
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("total")}>
+      <RecordItemCell {...buildGridCellProps("total", showCellLabels)}>
         <CurrencyCell value={totalValue} className="w-full" />
       </RecordItemCell>
       {controls ? (
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels
+          showCellLabels={showCellLabels}
         />
       ) : null}
     </>
@@ -387,6 +393,7 @@ export function RecordAllocationRowBuilder({
   onQuantityChange,
   onNotesChange,
   controls,
+  showCellLabels = true,
 }: {
   inventoryValue: string
   inventoryOptions: RecordRowBuilderOption[]
@@ -402,10 +409,11 @@ export function RecordAllocationRowBuilder({
   onQuantityChange: (value: string) => void
   onNotesChange: (value: string) => void
   controls?: Omit<RecordItemSectionControlsProps, "cellChrome" | "showCellLabels">
+  showCellLabels?: boolean
 }) {
   return (
     <>
-      <RecordItemCell {...buildGridCellProps("product")}>
+      <RecordItemCell {...buildGridCellProps("product", showCellLabels)}>
         <FieldStack error={inventoryError}>
           <RecordGridCellSelect
             value={inventoryValue}
@@ -421,7 +429,7 @@ export function RecordAllocationRowBuilder({
           </RecordGridCellSelect>
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("quantity")}>
+      <RecordItemCell {...buildGridCellProps("quantity", showCellLabels)}>
         <FieldStack error={quantityError}>
           <QuantityCell
             input={(
@@ -439,16 +447,16 @@ export function RecordAllocationRowBuilder({
           />
         </FieldStack>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("unit")}>
+      <RecordItemCell {...buildGridCellProps("unit", showCellLabels)}>
         <TextCell align="center">{unitLabel}</TextCell>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("unitPrice")}>
+      <RecordItemCell {...buildGridCellProps("unitPrice", showCellLabels)}>
         <CurrencyCell value={unitCostValue} className="w-full" />
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("total")}>
+      <RecordItemCell {...buildGridCellProps("total", showCellLabels)}>
         <CurrencyCell value={totalValue} className="w-full" />
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("notes")}>
+      <RecordItemCell {...buildGridCellProps("notes", showCellLabels)}>
         <RecordGridCellInput
           value={notesValue}
           placeholder="Notes"
@@ -459,7 +467,7 @@ export function RecordAllocationRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels
+          showCellLabels={showCellLabels}
         />
       ) : null}
     </>
@@ -469,16 +477,18 @@ export function RecordAllocationRowBuilder({
 export function RecordCalculationRowBuilder({
   label,
   value,
+  showCellLabels = true,
 }: {
   label: ReactNode
   value: ReactNode
+  showCellLabels?: boolean
 }) {
   return (
     <>
-      <RecordItemCell {...buildGridCellProps("calculation")}>
+      <RecordItemCell {...buildGridCellProps("calculation", showCellLabels)}>
         <TextCell>{label}</TextCell>
       </RecordItemCell>
-      <RecordItemCell {...buildGridCellProps("value")}>
+      <RecordItemCell {...buildGridCellProps("value", showCellLabels)}>
         <TextCell align="right" className="font-medium">
           {value}
         </TextCell>

@@ -35,10 +35,11 @@ export function TemplateCalculationsSection({
       loading={loading}
       columns={TEMPLATE_CALCULATION_COLUMNS}
       metrics={metrics.length > 0 ? metrics : undefined}
-      renderItem={(item) => (
+      renderItem={(item, index) => (
         <RecordCalculationRowBuilder
           label={item.label}
           value={formatCalculationValue(item)}
+          showCellLabels={index === 0}
         />
       )}
     />

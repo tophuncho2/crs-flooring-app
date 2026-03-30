@@ -94,7 +94,7 @@ export function TemplateMaterialItemsSection({
         isEmpty={items.length === 0}
         emptyState="No material items yet."
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
           const hasErrors = hasFieldErrors(rowErrors)
 
@@ -116,6 +116,7 @@ export function TemplateMaterialItemsSection({
                 productError={rowErrors?.productId}
                 quantityError={rowErrors?.quantity}
                 unitPriceError={rowErrors?.unitPrice}
+                showCellLabels={index === 0}
                 onProductChange={(value) => onItemFieldChange(item.id, "productId", value)}
                 onQuantityChange={(value) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(value))}
                 onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}

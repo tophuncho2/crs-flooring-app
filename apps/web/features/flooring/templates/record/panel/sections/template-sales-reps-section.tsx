@@ -91,7 +91,7 @@ export function TemplateSalesRepsSection({
         isEmpty={items.length === 0}
         emptyState="No sales reps yet."
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
           const hasErrors = hasFieldErrors(rowErrors)
 
@@ -107,6 +107,7 @@ export function TemplateSalesRepsSection({
                 totalValue={formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))}
                 salesRepError={rowErrors?.contactId}
                 percentError={rowErrors?.percent}
+                showCellLabels={index === 0}
                 onSalesRepChange={(value) => {
                   const selected = salesRepOptions.find((option) => option.id === value)
                   onItemFieldChange(item.id, "contactId", value)

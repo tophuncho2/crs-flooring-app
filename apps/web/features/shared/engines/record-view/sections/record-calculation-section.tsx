@@ -29,7 +29,7 @@ export function RecordCalculationSection<TItem>({
   metrics?: ReactNode | RecordSectionMetricValue[]
   loading: boolean
   columns: RecordGridColumnSpec[]
-  renderItem: (item: TItem) => ReactNode
+  renderItem: (item: TItem, index: number) => ReactNode
   loadingState?: ReactNode
   emptyState?: ReactNode
   subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
@@ -62,7 +62,7 @@ export function RecordCalculationSection<TItem>({
       >
         {items.map((item, index) => (
           <RecordSectionGridRow key={index} columns={columns}>
-            {renderItem(item)}
+            {renderItem(item, index)}
           </RecordSectionGridRow>
         ))}
       </RecordSectionGrid>

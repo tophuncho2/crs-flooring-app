@@ -112,7 +112,7 @@ export function MaterialAllocationsEditor({
         </button>
       )}
     >
-      {allocations.map((allocation) => {
+      {allocations.map((allocation, index) => {
         const rowErrors = itemErrors[allocation.id]
         const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
         const quantityValue = Number(allocation.quantity || 0)
@@ -138,6 +138,7 @@ export function MaterialAllocationsEditor({
               notesValue={allocation.notes}
               inventoryError={rowErrors?.inventoryId}
               quantityError={rowErrors?.quantity}
+              showCellLabels={index === 0}
               onInventoryChange={(value) => onAllocationFieldChange(allocation.id, "inventoryId", value)}
               onQuantityChange={(value) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(value))}
               onNotesChange={(value) => onAllocationFieldChange(allocation.id, "notes", value)}
