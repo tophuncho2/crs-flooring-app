@@ -44,16 +44,16 @@ export function InventoryPrimaryFieldsSection({
       <RecordPrimaryPane variant="side" placement="left">
         <RecordPrimaryFieldsGrid variant="side">
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Running Balance">
+            <RecordFormField label="Warehouse">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.runningBalance, inventory.stockUnit)}
+                {warehouseName || "-"}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Cut Total">
+            <RecordFormField label="Section">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.cutTotal, inventory.stockUnit)}
+                {sectionName || "-"}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -65,9 +65,16 @@ export function InventoryPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Warehouse & Section">
-              <RecordStaticFieldValue wrap>
-                {[warehouseName || "-", sectionName || "-"].join("\n")}
+            <RecordFormField label="Cut Total">
+              <RecordStaticFieldValue>
+                {formatInventoryQuantity(inventory.cutTotal, inventory.stockUnit)}
+              </RecordStaticFieldValue>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
+            <RecordFormField label="Running Balance">
+              <RecordStaticFieldValue>
+                {formatInventoryQuantity(inventory.runningBalance, inventory.stockUnit)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
