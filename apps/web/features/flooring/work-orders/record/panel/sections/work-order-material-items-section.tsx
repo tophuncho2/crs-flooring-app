@@ -6,14 +6,13 @@ import {
   QuantityCell,
   RecordGridCellInput,
   RecordGridCellSelect,
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
-  RecordRowDeleteButton,
   RecordRowLayout,
   RecordRowStatusBadge,
-  RecordRowToggleButton,
   RecordSectionItem,
-  RecordSectionShell,
-  RECORD_SECTION_BORDER_CLASS_NAME,
+  type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import {
   formatLineTotal,
@@ -177,27 +176,26 @@ function MaterialItemEditorRow({
           onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
         />
         </RecordItemCell>
-        <RecordItemCell label="Allocations" columnKey="allocations">
-        <div className="flex min-h-[2.5rem] items-center">
-          <RecordRowToggleButton
-            expanded={isExpanded}
-            onToggle={onToggleAllocations}
-            ariaLabel={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
-          />
-        </div>
-        </RecordItemCell>
-        <RecordItemCell label="Status" columnKey="status">
-        <div className="flex min-h-[2.5rem] items-center">
-          <RecordRowStatusBadge tone={rowStatusTone}>
-            {rowStatusLabel}
-          </RecordRowStatusBadge>
-        </div>
-        </RecordItemCell>
-        <RecordItemCell label="Remove" columnKey="remove">
-        <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-          <RecordRowDeleteButton onClick={() => onDeleteItem(item.id)}>Remove</RecordRowDeleteButton>
-        </div>
-        </RecordItemCell>
+        <RecordItemSectionControls
+          capabilities={{ supportsNestedAllocations: true, supportsStatusColumn: true, supportsRemoveRow: true }}
+          toggle={{
+            columnKey: "allocations",
+            label: "Allocations",
+            expanded: isExpanded,
+            onToggle: onToggleAllocations,
+            ariaLabel: isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`,
+          }}
+          status={{
+            content: (
+              <RecordRowStatusBadge tone={rowStatusTone}>
+                {rowStatusLabel}
+              </RecordRowStatusBadge>
+            ),
+          }}
+          remove={{
+            onRemove: () => onDeleteItem(item.id),
+          }}
+        />
       </RecordRowLayout>
     </RecordSectionItem>
   )
@@ -208,7 +206,7 @@ export function WorkOrderMaterialItemsSection({
   items,
   productOptions,
   loading,
-  actionPanel,
+  subHeader,
   noticeMessage,
   noticeError,
   itemErrors = {},
@@ -222,7 +220,7 @@ export function WorkOrderMaterialItemsSection({
   items: WorkOrderMaterialItem[]
   productOptions: MaterialItemOption[]
   loading: boolean
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   noticeMessage?: string
   noticeError?: string
   itemErrors?: RowFieldErrors<MaterialItemField>
@@ -235,24 +233,29 @@ export function WorkOrderMaterialItemsSection({
   const metrics = buildMaterialSectionMetrics(items)
 
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title={title}
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
       metrics={metrics}
+      capabilities={{
+        editable: true,
+        supportsAddRow: true,
+        supportsNestedAllocations: true,
+        supportsRemoveRow: true,
+        supportsStatusColumn: true,
+        supportsSaveDiscard: true,
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+      }}
+      loading={loading}
+      loadingState={<div className="border px-4 py-8 text-center text-[var(--foreground)]/70">Loading items...</div>}
+      isEmpty={items.length === 0}
+      emptyState={<div className="border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65">No material items yet.</div>}
     >
-      {loading ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
-          Loading items...
-        </div>
-      ) : null}
-      {!loading && items.length === 0 ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65`}>
-          No material items yet.
-        </div>
-      ) : null}
 
       {!loading
         ? items.map((item) => {
@@ -274,6 +277,6 @@ export function WorkOrderMaterialItemsSection({
             )
           })
         : null}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

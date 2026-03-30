@@ -4,13 +4,14 @@ import type { ReactNode } from "react"
 import {
   RecordAllocationItemRow,
   RecordAllocationItemsPanel,
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
   RecordRowLayout,
   RecordRowOpenButton,
-  RecordRowToggleButton,
   RecordSectionItem,
-  RecordSectionShell,
   TextCell,
+  type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
 } from "@/features/shared/engines/record-view"
 import type { ManagementCompanyPropertyRow, ManagementCompanyTemplateRow } from "../../../domain/types"
@@ -77,7 +78,7 @@ function PropertyTemplateRow({
 }
 
 export function ManagementCompanyPropertiesSection({
-  actionPanel,
+  subHeader,
   properties,
   expandedPropertyIds,
   loadingPropertyId,
@@ -86,7 +87,7 @@ export function ManagementCompanyPropertiesSection({
   onOpenProperty,
   onOpenTemplate,
 }: {
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   properties: ManagementCompanyPropertyRow[]
   expandedPropertyIds: string[]
   loadingPropertyId: string | null
@@ -96,17 +97,27 @@ export function ManagementCompanyPropertiesSection({
   onOpenTemplate: (templateId: string) => void
 }) {
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title="Linked Properties"
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       metrics={buildPropertiesMetrics(properties)}
-    >
-      {properties.length === 0 ? (
+      capabilities={{
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+        supportsNestedAllocations: true,
+        supportsOpenRow: true,
+        supportsRouteAdd: true,
+      }}
+      isEmpty={properties.length === 0}
+      emptyState={(
         <div className="rounded-2xl border border-dashed border-[rgba(58,58,58,0.72)] px-4 py-8 text-center text-[var(--foreground)]/65">
           No properties linked to this management company yet.
         </div>
-      ) : (
+      )}
+    >
+      {properties.length > 0 ? (
         properties.map((property) => {
           const isExpanded = expandedPropertyIds.includes(property.id)
 
@@ -144,28 +155,23 @@ export function ManagementCompanyPropertiesSection({
                 <RecordItemCell label="Templates" columnKey="templates">
                   <TextCell align="center">{property.templateCount}</TextCell>
                 </RecordItemCell>
-                <RecordItemCell label="Show / Hide" columnKey="toggle">
-                  <div className="flex min-h-[2.5rem] items-center justify-center">
-                    <RecordRowToggleButton
-                      expanded={isExpanded}
-                      onToggle={() => onTogglePropertyTemplates(property.id)}
-                      ariaLabel={isExpanded ? `Hide templates for ${property.name}` : `Show templates for ${property.name}`}
-                    />
-                  </div>
-                </RecordItemCell>
-                <RecordItemCell label="Open" columnKey="open">
-                  <div className="flex min-h-[2.5rem] items-center justify-center">
-                    <RecordRowOpenButton
-                      onOpen={() => onOpenProperty(property.id)}
-                      loading={loadingPropertyId === property.id}
-                    />
-                  </div>
-                </RecordItemCell>
+                <RecordItemSectionControls
+                  capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
+                  toggle={{
+                    expanded: isExpanded,
+                    onToggle: () => onTogglePropertyTemplates(property.id),
+                    ariaLabel: isExpanded ? `Hide templates for ${property.name}` : `Show templates for ${property.name}`,
+                  }}
+                  open={{
+                    onOpen: () => onOpenProperty(property.id),
+                    loading: loadingPropertyId === property.id,
+                  }}
+                />
               </RecordRowLayout>
             </RecordSectionItem>
           )
         })
-      )}
-    </RecordSectionShell>
+      ) : null}
+    </RecordItemSection>
   )
 }

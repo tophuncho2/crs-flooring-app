@@ -4,10 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
-import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import {
   buildRecordActionConfirmationMessage,
   confirmRecordAction,
+  RecordPageActionNotices,
   RecordSectionSubHeader,
   RecordSectionStatusBadge,
   RecordPanelFooter,
@@ -402,35 +402,35 @@ export function WorkOrderRecordPanel({
 
   return (
     <div className="space-y-6">
-      <FormStatusNotices message={message} error={noticeError} loadingMessage="" />
-
-      {remoteReconciliationKey ? (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
-          <div className="font-medium text-amber-800">This work order changed on the server while you were editing it.</div>
-          <div className="mt-1 text-amber-900/80">
-            Reload the latest server snapshot before saving, or keep editing and save manually after reconciling the differences.
+      <RecordPageActionNotices message={message} error={noticeError}>
+        {remoteReconciliationKey ? (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+            <div className="font-medium text-amber-800">This work order changed on the server while you were editing it.</div>
+            <div className="mt-1 text-amber-900/80">
+              Reload the latest server snapshot before saving, or keep editing and save manually after reconciling the differences.
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRemoteReconciliationKey(null)
+                  void refreshWorkOrderDetail()
+                }}
+                className="rounded-md border border-amber-600/40 px-3 py-2 font-medium hover:bg-amber-500/10"
+              >
+                Reload Latest
+              </button>
+              <button
+                type="button"
+                onClick={() => setRemoteReconciliationKey(null)}
+                className="rounded-md border border-[var(--panel-border)] px-3 py-2 font-medium hover:bg-[var(--panel-hover)]"
+              >
+                Keep Editing
+              </button>
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setRemoteReconciliationKey(null)
-                void refreshWorkOrderDetail()
-              }}
-              className="rounded-md border border-amber-600/40 px-3 py-2 font-medium hover:bg-amber-500/10"
-            >
-              Reload Latest
-            </button>
-            <button
-              type="button"
-              onClick={() => setRemoteReconciliationKey(null)}
-              className="rounded-md border border-[var(--panel-border)] px-3 py-2 font-medium hover:bg-[var(--panel-hover)]"
-            >
-              Keep Editing
-            </button>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </RecordPageActionNotices>
 
       <RecordSectionStack>
         {showPrimaryFields ? (
@@ -469,54 +469,54 @@ export function WorkOrderRecordPanel({
             loading={loading}
             noticeMessage={materialSection.noticeMessage}
             noticeError={materialSection.noticeError}
-            actionPanel={
-              <RecordSectionSubHeader
-                isDirty={materialSection.isDirty}
-                isSaving={materialSection.isSaving}
-                hasConflict={materialSection.hasConflict}
-                error={materialSection.error ?? autoAllocationWorkflow.error}
-                onSave={() => void materialSection.save()}
-                onDiscard={() => materialSection.discard()}
-                statusExtra={
-                  <>
-                    <RecordSectionStatusBadge
-                      tone={
-                        autoAllocationWorkflow.phase === "completed"
-                          ? "success"
-                          : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
-                            ? "error"
-                            : autoAllocationWorkflow.isPending
-                              ? "processing"
-                              : "neutral"
-                      }
-                    >
-                      Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
-                    </RecordSectionStatusBadge>
-                    {autoAllocationWorkflow.isStalled ? (
-                      <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
-                    ) : null}
-                  </>
-                }
-                actions={[
-                  { key: "add-material-item", label: "Add Material Item", onClick: materialSection.addItem },
-                  {
-                    key: "run-auto-allocation",
-                    label: autoAllocationButtonLabel,
-                    onClick: requestAutoAllocation,
-                    disabled: autoAllocationRequestBlocked || materialSection.localValue.length === 0,
-                  },
-                  ...(autoAllocationWorkflow.isPending
-                    ? [
-                        {
-                          key: "refresh-auto-allocation",
-                          label: "Refresh Status",
-                          onClick: () => void autoAllocationWorkflow.refresh(),
-                        },
-                      ]
-                    : []),
-                ]}
-              />
-            }
+            subHeader={{
+              isDirty: materialSection.isDirty,
+              isSaving: materialSection.isSaving,
+              hasConflict: materialSection.hasConflict,
+              error: materialSection.error ?? autoAllocationWorkflow.error,
+              onSave: () => void materialSection.save(),
+              onDiscard: () => materialSection.discard(),
+              statusExtra: (
+                <>
+                  <RecordSectionStatusBadge
+                    tone={
+                      autoAllocationWorkflow.phase === "completed"
+                        ? "success"
+                        : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
+                          ? "error"
+                          : autoAllocationWorkflow.isPending
+                            ? "processing"
+                            : "neutral"
+                    }
+                  >
+                    Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
+                  </RecordSectionStatusBadge>
+                  {autoAllocationWorkflow.isStalled ? (
+                    <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
+                  ) : null}
+                </>
+              ),
+              actions: [
+                { key: "add-material-item", kind: "add-row", label: "Add Material Item", onClick: materialSection.addItem },
+                {
+                  key: "run-auto-allocation",
+                  kind: "workflow",
+                  label: autoAllocationButtonLabel,
+                  onClick: requestAutoAllocation,
+                  disabled: autoAllocationRequestBlocked || materialSection.localValue.length === 0,
+                },
+                ...(autoAllocationWorkflow.isPending
+                  ? [
+                      {
+                        key: "refresh-auto-allocation",
+                        kind: "workflow" as const,
+                        label: "Refresh Status",
+                        onClick: () => void autoAllocationWorkflow.refresh(),
+                      },
+                    ]
+                  : []),
+              ],
+            }}
             itemErrors={materialSection.itemErrors}
             expandedItemIds={materialSection.expandedItemIds}
             onToggleExpandedItem={materialSection.toggleExpandedItem}
@@ -547,17 +547,15 @@ export function WorkOrderRecordPanel({
           loading={loading}
           noticeMessage={serviceSection.noticeMessage}
           noticeError={serviceSection.noticeError}
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={serviceSection.isDirty}
-              isSaving={serviceSection.isSaving}
-              hasConflict={serviceSection.hasConflict}
-              error={serviceSection.error}
-              onSave={() => void serviceSection.save()}
-              onDiscard={() => serviceSection.discard()}
-              actions={[{ key: "add-service-item", label: "Add Service Item", onClick: serviceSection.addItem }]}
-            />
-          }
+          subHeader={{
+            isDirty: serviceSection.isDirty,
+            isSaving: serviceSection.isSaving,
+            hasConflict: serviceSection.hasConflict,
+            error: serviceSection.error,
+            onSave: () => void serviceSection.save(),
+            onDiscard: () => serviceSection.discard(),
+            actions: [{ key: "add-service-item", kind: "add-row", label: "Add Service Item", onClick: serviceSection.addItem }],
+          }}
           itemErrors={serviceSection.itemErrors}
           onItemFieldChange={serviceSection.changeField}
           onDeleteItem={serviceSection.deleteItem}
@@ -572,17 +570,15 @@ export function WorkOrderRecordPanel({
           loading={loading}
           noticeMessage={salesRepSection.noticeMessage}
           noticeError={salesRepSection.noticeError}
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={salesRepSection.isDirty}
-              isSaving={salesRepSection.isSaving}
-              hasConflict={salesRepSection.hasConflict}
-              error={salesRepSection.error}
-              onSave={() => void salesRepSection.save()}
-              onDiscard={() => salesRepSection.discard()}
-              actions={[{ key: "add-sales-rep", label: "Add Sales Rep", onClick: salesRepSection.addItem }]}
-            />
-          }
+          subHeader={{
+            isDirty: salesRepSection.isDirty,
+            isSaving: salesRepSection.isSaving,
+            hasConflict: salesRepSection.hasConflict,
+            error: salesRepSection.error,
+            onSave: () => void salesRepSection.save(),
+            onDiscard: () => salesRepSection.discard(),
+            actions: [{ key: "add-sales-rep", kind: "add-row", label: "Add Sales Rep", onClick: salesRepSection.addItem }],
+          }}
           itemErrors={salesRepSection.itemErrors}
           onItemFieldChange={salesRepSection.changeField}
           onDeleteItem={salesRepSection.deleteItem}

@@ -5,10 +5,13 @@ import { describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
+  RecordCalculationSection,
   CurrencyCell,
   RecordDetailClientScaffold,
   RecordGridCellInput,
   RecordItemCell,
+  RecordItemSectionControls,
+  RecordPageActionNotices,
   RecordRowLayout,
   RecordRowToggleButton,
   RecordSectionItem,
@@ -283,5 +286,89 @@ describe("record view single-section engine", () => {
 
     await user.click(screen.getByRole("button", { name: "Open template T-100" }))
     expect(openAllocation).toHaveBeenCalledTimes(1)
+  })
+
+  it("item-section controls only render enabled canonical row control columns", () => {
+    render(
+      <RecordRowLayout
+        columns={[
+          { key: "toggle", minWidth: 120 },
+          { key: "open", minWidth: 108 },
+          { key: "status", minWidth: 120 },
+          { key: "remove", minWidth: 108 },
+        ]}
+      >
+        <RecordItemSectionControls
+          capabilities={{
+            supportsNestedAllocations: true,
+            supportsOpenRow: false,
+            supportsStatusColumn: true,
+            supportsRemoveRow: false,
+          }}
+          toggle={{
+            expanded: false,
+            onToggle: vi.fn(),
+            ariaLabel: "Show allocations",
+          }}
+          open={{
+            onOpen: vi.fn(),
+          }}
+          status={{
+            content: <span>Ready</span>,
+          }}
+          remove={{
+            onRemove: vi.fn(),
+          }}
+        />
+      </RecordRowLayout>,
+    )
+
+    expect(screen.getByLabelText("Show allocations")).toBeTruthy()
+    expect(screen.getByText("Ready")).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Open" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Remove" })).toBeNull()
+  })
+
+  it("calculation sections use the canonical read-only section framing", () => {
+    const { container } = render(
+      <RecordCalculationSection
+        title="Calculations"
+        items={[{ key: "subtotal", label: "Subtotal", value: "$12.00" }]}
+        loading={false}
+        metrics={[{ label: "Rows", value: "1" }]}
+        renderItem={(item) => (
+          <RecordRowLayout
+            columns={[
+              { key: "name", minWidth: 180 },
+              { key: "value", minWidth: 120, align: "end" },
+            ]}
+          >
+            <RecordItemCell label="Calculation" columnKey="name">
+              {item.label}
+            </RecordItemCell>
+            <RecordItemCell label="Value" columnKey="value">
+              {item.value}
+            </RecordItemCell>
+          </RecordRowLayout>
+        )}
+      />,
+    )
+
+    const scoped = within(container)
+    expect(screen.getByText("Calculations")).toBeTruthy()
+    expect(screen.getByText("Subtotal")).toBeTruthy()
+    expect(screen.getByText("$12.00")).toBeTruthy()
+    expect(scoped.queryByRole("button", { name: "Save" })).toBeNull()
+  })
+
+  it("record page action notices are separate from section notices", () => {
+    render(
+      <RecordPageActionNotices message="Delete failed" error="">
+        <div>Workflow retry required</div>
+      </RecordPageActionNotices>,
+    )
+
+    expect(screen.getByText("Delete failed")).toBeTruthy()
+    expect(screen.getByText("Workflow retry required")).toBeTruthy()
   })
 })

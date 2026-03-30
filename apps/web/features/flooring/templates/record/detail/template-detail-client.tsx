@@ -56,6 +56,7 @@ export function TemplateDetailClient({
             showPrimaryFields={page.isPrimarySectionOpen}
             usePageHeaderForPrimarySection
             onClose={page.closePage}
+            notices={page.notices}
             onSummaryChange={page.setSummary as (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void}
             onDirtyChange={page.setIsDirty}
             onTemplateDeleted={() => {

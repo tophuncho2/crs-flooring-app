@@ -6,13 +6,13 @@ import {
   RecordFieldErrorText,
   RecordGridCellInput,
   RecordGridCellSelect,
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
-  RecordRowDeleteButton,
   RecordRowLayout,
   RecordRowStatusBadge,
   RecordSectionItem,
-  RecordSectionShell,
-  RECORD_SECTION_BORDER_CLASS_NAME,
+  type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import {
   calculateSalesRepAmount,
@@ -93,19 +93,22 @@ function SalesRepRow({
         <RecordItemCell label="Total" columnKey="total">
         <CurrencyCell value={formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))} className="w-full" />
         </RecordItemCell>
-        <RecordItemCell label="Status" columnKey="status">
-        <div className="flex min-h-[2.5rem] items-center">
-          <RecordRowStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-            {isLocalOnlyItem ? "Unsaved" : "Ready"}
-          </RecordRowStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordRowStatusBadge tone="error">Needs review</RecordRowStatusBadge> : null}
-        </div>
-        </RecordItemCell>
-        <RecordItemCell label="Remove" columnKey="remove">
-        <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-          <RecordRowDeleteButton onClick={() => onDeleteItem(item.id)}>Remove</RecordRowDeleteButton>
-        </div>
-        </RecordItemCell>
+        <RecordItemSectionControls
+          capabilities={{ supportsStatusColumn: true, supportsRemoveRow: true }}
+          status={{
+            content: (
+              <>
+                <RecordRowStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+                  {isLocalOnlyItem ? "Unsaved" : "Ready"}
+                </RecordRowStatusBadge>
+                {hasFieldErrors(rowErrors) ? <RecordRowStatusBadge tone="error">Needs review</RecordRowStatusBadge> : null}
+              </>
+            ),
+          }}
+          remove={{
+            onRemove: () => onDeleteItem(item.id),
+          }}
+        />
       </RecordRowLayout>
     </RecordSectionItem>
   )
@@ -118,7 +121,7 @@ export function WorkOrderSalesRepsSection({
   customerCost,
   totalAmount,
   loading,
-  actionPanel,
+  subHeader,
   noticeMessage,
   noticeError,
   itemErrors = {},
@@ -131,7 +134,7 @@ export function WorkOrderSalesRepsSection({
   customerCost: number
   totalAmount?: number
   loading: boolean
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   noticeMessage?: string
   noticeError?: string
   itemErrors?: RowFieldErrors<SalesRepField>
@@ -141,24 +144,28 @@ export function WorkOrderSalesRepsSection({
   const metrics = buildSalesRepSectionMetrics(items, totalAmount)
 
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title={title}
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
       metrics={metrics}
+      capabilities={{
+        editable: true,
+        supportsAddRow: true,
+        supportsRemoveRow: true,
+        supportsStatusColumn: true,
+        supportsSaveDiscard: true,
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+      }}
+      loading={loading}
+      loadingState={<div className="border px-4 py-8 text-center text-[var(--foreground)]/70">Loading sales reps...</div>}
+      isEmpty={items.length === 0}
+      emptyState={<div className="border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65">No sales reps yet.</div>}
     >
-      {loading ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
-          Loading sales reps...
-        </div>
-      ) : null}
-      {!loading && items.length === 0 ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65`}>
-          No sales reps yet.
-        </div>
-      ) : null}
       {!loading
         ? items.map((item) => (
             <SalesRepRow
@@ -172,6 +179,6 @@ export function WorkOrderSalesRepsSection({
             />
           ))
         : null}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

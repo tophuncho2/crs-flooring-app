@@ -4,12 +4,13 @@ import type { ReactNode } from "react"
 import {
   RecordGridCellInput,
   RecordGridCellSelect,
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
-  RecordRowDeleteButton,
   RecordRowLayout,
   RecordSectionItem,
-  RecordSectionShell,
   RecordSectionStatusBadge,
+  type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import { calculateImportSummary } from "../../../domain/summary"
 import type { ImportInventoryRowDraft, LocationOption, ProductOption, WarehouseOption } from "../../../domain/types"
@@ -31,7 +32,7 @@ function isDraftRow(row: ImportInventoryRowDraft) {
 }
 
 export function ImportInventoryRowsSection({
-  actionPanel,
+  subHeader,
   rows,
   warehouseId,
   productOptions,
@@ -42,7 +43,7 @@ export function ImportInventoryRowsSection({
   onRowFieldChange,
   onRemoveRow,
 }: {
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   rows: ImportInventoryRowDraft[]
   warehouseId: string
   productOptions: ProductOption[]
@@ -61,22 +62,32 @@ export function ImportInventoryRowsSection({
   const activeWarehouseName = warehouseOptions.find((warehouse) => warehouse.id === warehouseId)?.name || "-"
 
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title="Import Inventory Rows"
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
       metrics={[
         { label: "Rows", value: String(rows.length) },
         { label: "Total Cost", value: summary.totalCostLabel },
       ]}
-    >
-      {rows.length === 0 ? (
+      capabilities={{
+        editable: true,
+        supportsAddRow: true,
+        supportsSaveDiscard: true,
+        supportsRemoveRow: true,
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+      }}
+      isEmpty={rows.length === 0}
+      emptyState={(
         <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
           No import inventory rows have been added yet.
         </div>
-      ) : null}
+      )}
+    >
 
       {rows.map((row, index) => {
         const filteredLocations = warehouseId
@@ -180,15 +191,16 @@ export function ImportInventoryRowsSection({
                   </div>
                 </div>
               </RecordItemCell>
-              <RecordItemCell label="Remove" columnKey="remove" align="center">
-                <RecordRowDeleteButton onClick={() => onRemoveRow(index)}>
-                  Remove
-                </RecordRowDeleteButton>
-              </RecordItemCell>
+              <RecordItemSectionControls
+                capabilities={{ supportsRemoveRow: true }}
+                remove={{
+                  onRemove: () => onRemoveRow(index),
+                }}
+              />
             </RecordRowLayout>
           </RecordSectionItem>
         )
       })}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

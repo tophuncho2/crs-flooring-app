@@ -9,10 +9,16 @@ import {
 } from "../shell/record-action-buttons"
 import { RecordSectionActionPanel } from "./record-section-action-panel"
 import { RecordSectionSaveStateIndicators } from "./record-section-status-indicators"
+import {
+  resolveRecordSectionCapabilities,
+  type RecordSectionCapabilities,
+  type RecordSectionType,
+} from "./record-section-capabilities"
 
 export type RecordSectionSubHeaderAction = {
   key: string
   label: string
+  kind?: "custom" | "add-row" | "route-add" | "workflow"
   tone?: "neutral" | "primary" | "destructive"
   onClick: () => void | Promise<void>
   disabled?: boolean
@@ -36,6 +42,27 @@ function renderActionButton(action: RecordSectionSubHeaderAction) {
   return <RecordFooterNeutralButton key={action.key} {...commonProps} />
 }
 
+export type RecordSectionSubHeaderProps = {
+  summary?: ReactNode
+  error?: ReactNode | RecordSectionError | null
+  isDirty: boolean
+  isSaving: boolean
+  hasConflict: boolean
+  onSave?: () => void | Promise<void>
+  onDiscard?: () => void
+  onDelete?: () => void | Promise<void>
+  saveLabel?: string
+  savingLabel?: string
+  discardLabel?: string
+  deleteLabel?: string
+  actions?: RecordSectionSubHeaderAction[]
+  statusExtra?: ReactNode
+  canManage?: boolean
+  showStatus?: boolean
+  sectionType?: RecordSectionType
+  capabilities?: RecordSectionCapabilities
+}
+
 export function RecordSectionSubHeader({
   summary,
   error,
@@ -53,29 +80,29 @@ export function RecordSectionSubHeader({
   statusExtra,
   canManage = true,
   showStatus = true,
-}: {
-  summary?: ReactNode
-  error?: ReactNode | RecordSectionError | null
-  isDirty: boolean
-  isSaving: boolean
-  hasConflict: boolean
-  onSave?: () => void | Promise<void>
-  onDiscard?: () => void
-  onDelete?: () => void | Promise<void>
-  saveLabel?: string
-  savingLabel?: string
-  discardLabel?: string
-  deleteLabel?: string
-  actions?: RecordSectionSubHeaderAction[]
-  statusExtra?: ReactNode
-  canManage?: boolean
-  showStatus?: boolean
-}) {
+  sectionType = "field",
+  capabilities,
+}: RecordSectionSubHeaderProps) {
+  const resolvedCapabilities = resolveRecordSectionCapabilities(sectionType, capabilities)
+
   const configuredActions = actions
     .filter((action) => Boolean(action))
+    .filter((action) => {
+      if (action.kind === "add-row") {
+        return resolvedCapabilities.supportsAddRow
+      }
+
+      if (action.kind === "route-add") {
+        return resolvedCapabilities.supportsRouteAdd
+      }
+
+      return true
+    })
     .map((action) => renderActionButton(action))
 
-  const managedActions = canManage ? (
+  const shouldRenderManagedActions = canManage && resolvedCapabilities.editable && resolvedCapabilities.supportsSaveDiscard
+
+  const managedActions = shouldRenderManagedActions ? (
     <>
       {configuredActions}
       {onDelete ? (
@@ -94,18 +121,21 @@ export function RecordSectionSubHeader({
     <>{configuredActions}</>
   ) : null
 
+  const statusContent =
+    showStatus && resolvedCapabilities.supportsSaveDiscard ? (
+      <RecordSectionSaveStateIndicators
+        isDirty={isDirty}
+        isSaving={isSaving}
+        hasConflict={hasConflict}
+        extra={statusExtra}
+      />
+    ) : null
+
   return (
     <RecordSectionActionPanel
-      summary={summary}
+      summary={resolvedCapabilities.supportsSummary ? summary : null}
       error={error ?? null}
-      status={showStatus ? (
-        <RecordSectionSaveStateIndicators
-          isDirty={isDirty}
-          isSaving={isSaving}
-          hasConflict={hasConflict}
-          extra={statusExtra}
-        />
-      ) : null}
+      status={statusContent}
       actions={managedActions}
     />
   )

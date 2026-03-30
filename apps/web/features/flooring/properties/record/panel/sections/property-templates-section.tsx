@@ -2,12 +2,13 @@
 
 import type { ReactNode } from "react"
 import {
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
   RecordRowLayout,
-  RecordRowOpenButton,
   RecordSectionItem,
-  RecordSectionShell,
   TextCell,
+  type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
 } from "@/features/shared/engines/record-view"
 import type { PropertyTemplateRow } from "../../../domain/types"
@@ -20,28 +21,36 @@ const TEMPLATE_COLUMNS: RecordRowColumnSpec[] = [
 ]
 
 export function PropertyTemplatesSection({
-  actionPanel,
+  subHeader,
   templates,
   loadingTemplateId,
   onOpenTemplate,
 }: {
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   templates: PropertyTemplateRow[]
   loadingTemplateId: string | null
   onOpenTemplate: (templateId: string) => void
 }) {
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title="Templates"
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       metrics={[{ label: "Templates", value: String(templates.length) }]}
-    >
-      {templates.length === 0 ? (
+      capabilities={{
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+        supportsOpenRow: true,
+        supportsRouteAdd: true,
+      }}
+      isEmpty={templates.length === 0}
+      emptyState={(
         <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
           No templates linked to this property yet.
         </div>
-      ) : null}
+      )}
+    >
 
       {templates.map((template) => (
         <RecordSectionItem key={template.id}>
@@ -55,17 +64,16 @@ export function PropertyTemplatesSection({
             <RecordItemCell label="Rows" columnKey="items">
               <TextCell align="center">{template.itemsCount}</TextCell>
             </RecordItemCell>
-            <RecordItemCell label="Open" columnKey="open">
-              <div className="flex min-h-[2.5rem] items-center justify-center">
-                <RecordRowOpenButton
-                  onOpen={() => onOpenTemplate(template.id)}
-                  loading={loadingTemplateId === template.id}
-                />
-              </div>
-            </RecordItemCell>
+            <RecordItemSectionControls
+              capabilities={{ supportsOpenRow: true }}
+              open={{
+                onOpen: () => onOpenTemplate(template.id),
+                loading: loadingTemplateId === template.id,
+              }}
+            />
           </RecordRowLayout>
         </RecordSectionItem>
       ))}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

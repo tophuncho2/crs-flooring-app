@@ -5,7 +5,6 @@ import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
   RecordSectionStack,
-  RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
@@ -82,28 +81,28 @@ export function PropertyRecordPanel({
         ) : null}
 
         <PropertyTemplatesSection
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={false}
-              isSaving={false}
-              hasConflict={false}
-              canManage={false}
-              actions={[
-                {
-                  key: "add-template",
-                  label: "Add Template",
-                  tone: "primary",
-                  onClick: () => {
-                    page.confirmNavigation(() => {
-                      templateNavigation.openCreate({
-                        propertyId: controller.record.id,
-                      })
+          subHeader={{
+            isDirty: false,
+            isSaving: false,
+            hasConflict: false,
+            canManage: false,
+            showStatus: false,
+            actions: [
+              {
+                key: "add-template",
+                kind: "route-add",
+                label: "Add Template",
+                tone: "primary",
+                onClick: () => {
+                  page.confirmNavigation(() => {
+                    templateNavigation.openCreate({
+                      propertyId: controller.record.id,
                     })
-                  },
+                  })
                 },
-              ]}
-            />
-          }
+              },
+            ],
+          }}
           templates={controller.record.templates}
           loadingTemplateId={loadingTemplateId}
           onOpenTemplate={handleOpenTemplate}

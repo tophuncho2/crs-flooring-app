@@ -1,10 +1,9 @@
 "use client"
 
 import {
+  RecordCalculationSection,
   RecordItemCell,
   RecordRowLayout,
-  RecordSectionShell,
-  RECORD_SECTION_BORDER_CLASS_NAME,
   TextCell,
 } from "@/features/shared/engines/record-view"
 import { TEMPLATE_CALCULATION_COLUMNS } from "./template-line-item-grid"
@@ -32,24 +31,13 @@ export function TemplateCalculationsSection({
   const metrics = buildTemplateCalculationSectionMetrics(items)
 
   return (
-    <RecordSectionShell
+    <RecordCalculationSection
       title={title}
-      bodyClassName="space-y-4"
+      items={items}
+      loading={loading}
       metrics={metrics.length > 0 ? metrics : undefined}
-    >
-      {loading ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
-          Loading calculations...
-        </div>
-      ) : null}
-      {!loading && items.length === 0 ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
-          No calculations available.
-        </div>
-      ) : null}
-      {!loading
-        ? items.map((item) => (
-            <RecordRowLayout key={item.key} columns={TEMPLATE_CALCULATION_COLUMNS}>
+      renderItem={(item) => (
+        <RecordRowLayout key={item.key} columns={TEMPLATE_CALCULATION_COLUMNS}>
               <RecordItemCell label="Calculation" columnKey="calculation">
                 <TextCell>{item.label}</TextCell>
               </RecordItemCell>
@@ -58,9 +46,8 @@ export function TemplateCalculationsSection({
                   {formatCalculationValue(item)}
                 </TextCell>
               </RecordItemCell>
-            </RecordRowLayout>
-          ))
-        : null}
-    </RecordSectionShell>
+        </RecordRowLayout>
+      )}
+    />
   )
 }

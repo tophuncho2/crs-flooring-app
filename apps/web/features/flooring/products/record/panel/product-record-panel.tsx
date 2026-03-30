@@ -6,7 +6,6 @@ import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
   RecordSectionStack,
-  RecordSectionSubHeader,
 } from "@/features/shared/engines/record-view"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
@@ -113,16 +112,14 @@ export function ProductRecordPanel({
         ) : null}
 
         <ProductInventoryRowsSection
-          actionPanel={
-            <RecordSectionSubHeader
-              summary="Open inventory rows to manage stock, location, and cut logs."
-              isDirty={false}
-              isSaving={false}
-              hasConflict={false}
-              canManage={false}
-              showStatus={false}
-            />
-          }
+          subHeader={{
+            summary: "Open inventory rows to manage stock, location, and cut logs.",
+            isDirty: false,
+            isSaving: false,
+            hasConflict: false,
+            canManage: false,
+            showStatus: false,
+          }}
           inventoryRows={inventoryRows}
           expandedInventoryIds={expandedInventoryIds}
           loadingInventoryId={loadingInventoryId}

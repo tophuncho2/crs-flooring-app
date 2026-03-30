@@ -6,13 +6,13 @@ import {
   RecordFieldErrorText,
   RecordGridCellInput,
   RecordGridCellSelect,
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
-  RecordRowDeleteButton,
   RecordRowLayout,
   RecordRowStatusBadge,
   RecordSectionItem,
-  RecordSectionShell,
-  RECORD_SECTION_BORDER_CLASS_NAME,
+  type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import {
   calculateSalesRepAmount,
@@ -104,18 +104,19 @@ function TemplateSalesRepRow({
         <RecordItemCell label="Total" columnKey="total">
           <CurrencyCell value={formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))} className="w-full" />
         </RecordItemCell>
-        <RecordItemCell label="Status" columnKey="status">
-          <div className="flex min-h-[2.5rem] items-center">
-            <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
-              {readStatusLabel(item, hasErrors)}
-            </RecordRowStatusBadge>
-          </div>
-        </RecordItemCell>
-        <RecordItemCell label="Remove" columnKey="remove">
-          <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-            <RecordRowDeleteButton onClick={() => onDeleteItem(item.id)}>Remove</RecordRowDeleteButton>
-          </div>
-        </RecordItemCell>
+        <RecordItemSectionControls
+          capabilities={{ supportsStatusColumn: true, supportsRemoveRow: true }}
+          status={{
+            content: (
+              <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
+                {readStatusLabel(item, hasErrors)}
+              </RecordRowStatusBadge>
+            ),
+          }}
+          remove={{
+            onRemove: () => onDeleteItem(item.id),
+          }}
+        />
       </RecordRowLayout>
     </RecordSectionItem>
   )
@@ -128,7 +129,7 @@ export function TemplateSalesRepsSection({
   customerCost,
   totalAmount,
   loading,
-  actionPanel,
+  subHeader,
   noticeMessage,
   noticeError,
   itemErrors = {},
@@ -141,7 +142,7 @@ export function TemplateSalesRepsSection({
   customerCost: number
   totalAmount?: number
   loading: boolean
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   noticeMessage?: string
   noticeError?: string
   itemErrors?: RowFieldErrors<SalesRepField>
@@ -151,24 +152,28 @@ export function TemplateSalesRepsSection({
   const metrics = buildTemplateSalesRepSectionMetrics(items, totalAmount)
 
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title={title}
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
       metrics={metrics}
+      capabilities={{
+        editable: true,
+        supportsAddRow: true,
+        supportsRemoveRow: true,
+        supportsStatusColumn: true,
+        supportsSaveDiscard: true,
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+      }}
+      loading={loading}
+      loadingState={<div className="border px-4 py-8 text-center text-[var(--foreground)]/70">Loading sales reps...</div>}
+      isEmpty={items.length === 0}
+      emptyState={<div className="border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65">No sales reps yet.</div>}
     >
-      {loading ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
-          Loading sales reps...
-        </div>
-      ) : null}
-      {!loading && items.length === 0 ? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65`}>
-          No sales reps yet.
-        </div>
-      ) : null}
       {!loading
         ? items.map((item) => (
             <TemplateSalesRepRow
@@ -182,6 +187,6 @@ export function TemplateSalesRepsSection({
             />
           ))
         : null}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

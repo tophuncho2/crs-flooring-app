@@ -5,6 +5,7 @@ import { TableBleed } from "@/features/dashboard/shared/table/table-shell"
 import { RecordFormNotices } from "../feedback"
 import { RecordSectionHeader } from "./record-section-header"
 import { RecordSectionMetric, type RecordSectionMetricValue } from "./record-section-metric"
+import type { RecordSectionCapabilities, RecordSectionType } from "./record-section-capabilities"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
@@ -24,6 +25,8 @@ export function RecordSectionShell({
   onOpenChange,
   bodyClassName,
   className,
+  sectionType,
+  capabilities,
 }: {
   title: string
   children: ReactNode
@@ -36,6 +39,8 @@ export function RecordSectionShell({
   onOpenChange?: (open: boolean) => void
   bodyClassName?: string
   className?: string
+  sectionType?: RecordSectionType
+  capabilities?: RecordSectionCapabilities
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const hasReportedOpenState = useRef(false)
@@ -77,7 +82,11 @@ export function RecordSectionShell({
           <>
             {statusPanel}
             <RecordFormNotices message={noticeMessage} error={noticeError} />
-            <div className={joinRecordSectionClasses("px-5 py-5", RECORD_SECTION_BODY_SURFACE_CLASS_NAME, bodyClassName)}>
+            <div
+              data-record-section-type={sectionType}
+              data-record-section-capabilities={capabilities ? JSON.stringify(capabilities) : undefined}
+              className={joinRecordSectionClasses("px-5 py-5", RECORD_SECTION_BODY_SURFACE_CLASS_NAME, bodyClassName)}
+            >
               {children}
             </div>
           </>

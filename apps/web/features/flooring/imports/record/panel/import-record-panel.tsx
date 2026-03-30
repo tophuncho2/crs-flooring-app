@@ -5,7 +5,6 @@ import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
   RecordSectionStack,
-  RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
@@ -89,26 +88,25 @@ export function ImportRecordPanel({
         ) : null}
 
         <ImportInventoryRowsSection
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={inventoryRowsSection.isDirty}
-              isSaving={inventoryRowsSection.isSaving}
-              hasConflict={inventoryRowsSection.hasConflict}
-              error={inventoryRowsSection.error}
-              onSave={() => void inventoryRowsSection.save()}
-              onDiscard={() => inventoryRowsSection.discard()}
-              saveLabel="Save Rows"
-              savingLabel="Saving Rows..."
-              actions={[
-                {
-                  key: "add-row",
-                  label: "Add Row",
-                  onClick: inventoryRowsSection.addRow,
-                  disabled: inventoryRowsSection.isSaving,
-                },
-              ]}
-            />
-          }
+          subHeader={{
+            isDirty: inventoryRowsSection.isDirty,
+            isSaving: inventoryRowsSection.isSaving,
+            hasConflict: inventoryRowsSection.hasConflict,
+            error: inventoryRowsSection.error,
+            onSave: () => void inventoryRowsSection.save(),
+            onDiscard: () => inventoryRowsSection.discard(),
+            saveLabel: "Save Rows",
+            savingLabel: "Saving Rows...",
+            actions: [
+              {
+                key: "add-row",
+                kind: "add-row",
+                label: "Add Row",
+                onClick: inventoryRowsSection.addRow,
+                disabled: inventoryRowsSection.isSaving,
+              },
+            ],
+          }}
           rows={inventoryRowsSection.localValue}
           warehouseId={controller.record.warehouseId}
           productOptions={productOptions}

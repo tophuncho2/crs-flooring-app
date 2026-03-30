@@ -4,7 +4,6 @@ import { useEffect } from "react"
 import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
-  RecordSectionSubHeader,
   RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -84,27 +83,26 @@ export function InventoryRecordPanel({
         ) : null}
 
         <InventoryCutLogsSection
-          actionPanel={
-            <RecordSectionSubHeader
-              summary={cutLogsSection.blockedSummary || undefined}
-              isDirty={cutLogsSection.isDirty}
-              isSaving={cutLogsSection.isSaving}
-              hasConflict={cutLogsSection.hasConflict}
-              error={cutLogsSection.error}
-              onSave={() => void cutLogsSection.save()}
-              onDiscard={() => cutLogsSection.discard()}
-              saveLabel="Save Cut Log"
-              savingLabel="Saving Cut Log..."
-              actions={[
-                {
-                  key: "add-cut-log",
-                  label: "Add Cut Log",
-                  onClick: cutLogsSection.addDraft,
-                  disabled: !cutLogsSection.canAddDraft,
-                },
-              ]}
-            />
-          }
+          subHeader={{
+            summary: cutLogsSection.blockedSummary || undefined,
+            isDirty: cutLogsSection.isDirty,
+            isSaving: cutLogsSection.isSaving,
+            hasConflict: cutLogsSection.hasConflict,
+            error: cutLogsSection.error,
+            onSave: () => void cutLogsSection.save(),
+            onDiscard: () => cutLogsSection.discard(),
+            saveLabel: "Save Cut Log",
+            savingLabel: "Saving Cut Log...",
+            actions: [
+              {
+                key: "add-cut-log",
+                kind: "add-row",
+                label: "Add Cut Log",
+                onClick: cutLogsSection.addDraft,
+                disabled: !cutLogsSection.canAddDraft,
+              },
+            ],
+          }}
           cutLogs={controller.record.cutLogs}
           stockUnit={controller.record.stockUnit}
           cutTotal={controller.record.cutTotal}

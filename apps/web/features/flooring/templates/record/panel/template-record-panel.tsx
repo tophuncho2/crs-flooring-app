@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
-import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import {
+  RecordPageActionNotices,
   RecordPanelFooter,
   RecordSectionSubHeader,
   RecordSectionStack,
+  type RecordNotices,
   useRecordDetailController,
   useRecordNotices,
 } from "@/features/shared/engines/record-view"
@@ -47,6 +48,7 @@ export function TemplateRecordPanel({
   onTemplateDeleted,
   onSummaryChange,
   onDirtyChange,
+  notices,
 }: {
   currentUserId: string
   templateId: string
@@ -65,8 +67,9 @@ export function TemplateRecordPanel({
   onTemplateDeleted?: (templateId: string, propertyId: string) => void
   onSummaryChange?: (summary: { materialItems: TemplateDetail["items"]; serviceItems: TemplateDetail["serviceItems"] }) => void
   onDirtyChange?: (value: boolean) => void
+  notices?: RecordNotices
 }) {
-  const notices = useRecordNotices()
+  const noticeController = notices ?? useRecordNotices()
   const {
     record: template,
     loading,
@@ -194,7 +197,7 @@ export function TemplateRecordPanel({
   }, [materialSection.localValue, onSummaryChange, serviceSection.localValue])
 
   async function deleteTemplate() {
-    notices.clearNotices()
+      noticeController.clearNotices()
 
     try {
       await requestJson<{ ok: boolean }>(`/api/flooring/templates/${currentTemplate.id}`, {
@@ -206,7 +209,7 @@ export function TemplateRecordPanel({
       onTemplateDeleted?.(currentTemplate.id, currentTemplate.propertyId)
       onClose()
     } catch (deleteError) {
-      notices.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete template")
+      noticeController.showError(deleteError instanceof Error ? deleteError.message : "Failed to delete template")
     }
   }
 
@@ -224,7 +227,7 @@ export function TemplateRecordPanel({
 
   return (
     <div className="space-y-6">
-      <FormStatusNotices message={notices.message} error={notices.error} loadingMessage="" />
+      <RecordPageActionNotices message={noticeController.message} error={noticeController.error} />
 
       <RecordSectionStack>
         {showPrimaryFields ? (
@@ -262,17 +265,15 @@ export function TemplateRecordPanel({
           itemErrors={materialSection.itemErrors}
           onItemFieldChange={materialSection.changeField}
           onDeleteItem={materialSection.deleteItem}
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={materialSection.isDirty}
-              isSaving={materialSection.isSaving}
-              hasConflict={materialSection.hasConflict}
-              error={materialSection.error}
-              onSave={() => void materialSection.save()}
-              onDiscard={() => materialSection.discard()}
-              actions={[{ key: "add-material-item", label: "Add Material Item", onClick: materialSection.addItem }]}
-            />
-          }
+          subHeader={{
+            isDirty: materialSection.isDirty,
+            isSaving: materialSection.isSaving,
+            hasConflict: materialSection.hasConflict,
+            error: materialSection.error,
+            onSave: () => void materialSection.save(),
+            onDiscard: () => materialSection.discard(),
+            actions: [{ key: "add-material-item", kind: "add-row", label: "Add Material Item", onClick: materialSection.addItem }],
+          }}
         />
 
         <TemplateServiceItemsSection
@@ -287,17 +288,15 @@ export function TemplateRecordPanel({
           itemErrors={serviceSection.itemErrors}
           onItemFieldChange={serviceSection.changeField}
           onDeleteItem={serviceSection.deleteItem}
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={serviceSection.isDirty}
-              isSaving={serviceSection.isSaving}
-              hasConflict={serviceSection.hasConflict}
-              error={serviceSection.error}
-              onSave={() => void serviceSection.save()}
-              onDiscard={() => serviceSection.discard()}
-              actions={[{ key: "add-service-item", label: "Add Service Item", onClick: serviceSection.addItem }]}
-            />
-          }
+          subHeader={{
+            isDirty: serviceSection.isDirty,
+            isSaving: serviceSection.isSaving,
+            hasConflict: serviceSection.hasConflict,
+            error: serviceSection.error,
+            onSave: () => void serviceSection.save(),
+            onDiscard: () => serviceSection.discard(),
+            actions: [{ key: "add-service-item", kind: "add-row", label: "Add Service Item", onClick: serviceSection.addItem }],
+          }}
         />
 
         <TemplateSalesRepsSection
@@ -312,17 +311,15 @@ export function TemplateRecordPanel({
           itemErrors={salesRepSection.itemErrors}
           onItemFieldChange={salesRepSection.changeField}
           onDeleteItem={salesRepSection.deleteItem}
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={salesRepSection.isDirty}
-              isSaving={salesRepSection.isSaving}
-              hasConflict={salesRepSection.hasConflict}
-              error={salesRepSection.error}
-              onSave={() => void salesRepSection.save()}
-              onDiscard={() => salesRepSection.discard()}
-              actions={[{ key: "add-sales-rep", label: "Add Sales Rep", onClick: salesRepSection.addItem }]}
-            />
-          }
+          subHeader={{
+            isDirty: salesRepSection.isDirty,
+            isSaving: salesRepSection.isSaving,
+            hasConflict: salesRepSection.hasConflict,
+            error: salesRepSection.error,
+            onSave: () => void salesRepSection.save(),
+            onDiscard: () => salesRepSection.discard(),
+            actions: [{ key: "add-sales-rep", kind: "add-row", label: "Add Sales Rep", onClick: salesRepSection.addItem }],
+          }}
         />
 
           <TemplateCalculationsSection title="Calculations" items={currentCalculationRows} loading={loading} />

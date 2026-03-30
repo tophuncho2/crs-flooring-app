@@ -7,13 +7,13 @@ import { formatInventoryImportNumber, formatInventoryQuantity } from "@/features
 import {
   RecordAllocationItemRow,
   RecordAllocationItemsPanel,
+  RecordItemSection,
+  RecordItemSectionControls,
   RecordItemCell,
   RecordRowLayout,
-  RecordRowOpenButton,
-  RecordRowToggleButton,
   RecordSectionItem,
-  RecordSectionShell,
   TextCell,
+  type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
 } from "@/features/shared/engines/record-view"
 import type { ProductInventoryRow } from "../../../domain/types"
@@ -72,14 +72,14 @@ function ProductCutLogRow({
 }
 
 export function ProductInventoryRowsSection({
-  actionPanel,
+  subHeader,
   inventoryRows,
   expandedInventoryIds,
   loadingInventoryId,
   onToggleInventoryCutLogs,
   onOpenInventory,
 }: {
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   inventoryRows: ProductInventoryRow[]
   expandedInventoryIds: string[]
   loadingInventoryId: string | null
@@ -89,20 +89,28 @@ export function ProductInventoryRowsSection({
   const summary = calculateProductInventorySummary(inventoryRows)
 
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title="Inventory Rows"
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       metrics={[
         { label: "Rows", value: String(summary.rowCount) },
         { label: "Total Cost", value: summary.totalCostLabel },
       ]}
-    >
-      {inventoryRows.length === 0 ? (
+      capabilities={{
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+        supportsNestedAllocations: true,
+        supportsOpenRow: true,
+      }}
+      isEmpty={inventoryRows.length === 0}
+      emptyState={(
         <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
           No inventory rows found for this product.
         </div>
-      ) : null}
+      )}
+    >
 
       {inventoryRows.map((row) => {
         const isExpanded = expandedInventoryIds.includes(row.id)
@@ -147,27 +155,22 @@ export function ProductInventoryRowsSection({
               <RecordItemCell label="Running Balance" columnKey="runningBalance">
                 <TextCell align="center">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</TextCell>
               </RecordItemCell>
-              <RecordItemCell label="Show / Hide" columnKey="toggle">
-                <div className="flex min-h-[2.5rem] items-center justify-center">
-                  <RecordRowToggleButton
-                    expanded={isExpanded}
-                    onToggle={() => onToggleInventoryCutLogs(row.id)}
-                    ariaLabel={isExpanded ? `Hide cut logs for inventory ${row.itemNumber}` : `Show cut logs for inventory ${row.itemNumber}`}
-                  />
-                </div>
-              </RecordItemCell>
-              <RecordItemCell label="Open" columnKey="open">
-                <div className="flex min-h-[2.5rem] items-center justify-center">
-                  <RecordRowOpenButton
-                    onOpen={() => onOpenInventory(row.id)}
-                    loading={loadingInventoryId === row.id}
-                  />
-                </div>
-              </RecordItemCell>
+              <RecordItemSectionControls
+                capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
+                toggle={{
+                  expanded: isExpanded,
+                  onToggle: () => onToggleInventoryCutLogs(row.id),
+                  ariaLabel: isExpanded ? `Hide cut logs for inventory ${row.itemNumber}` : `Show cut logs for inventory ${row.itemNumber}`,
+                }}
+                open={{
+                  onOpen: () => onOpenInventory(row.id),
+                  loading: loadingInventoryId === row.id,
+                }}
+              />
             </RecordRowLayout>
           </RecordSectionItem>
         )
       })}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

@@ -4,11 +4,12 @@ import type { ReactNode } from "react"
 import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
 import {
   RecordGridCellInput,
+  RecordItemSection,
   RecordItemCell,
   RecordRowLayout,
   RecordSectionItem,
-  RecordSectionShell,
   RecordSectionStatusBadge,
+  type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import { formatInventoryQuantity } from "../../../domain/formatters"
 import type { CutLogRow } from "../../../domain/types"
@@ -23,7 +24,7 @@ const INVENTORY_CUT_LOG_COLUMNS = [
 ]
 
 export function InventoryCutLogsSection({
-  actionPanel,
+  subHeader,
   cutLogs,
   stockUnit,
   cutTotal,
@@ -34,7 +35,7 @@ export function InventoryCutLogsSection({
   noticeError,
   onDraftChange,
 }: {
-  actionPanel?: ReactNode
+  subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   cutLogs: CutLogRow[]
   stockUnit: string
   cutTotal: string
@@ -46,16 +47,30 @@ export function InventoryCutLogsSection({
   onDraftChange: (field: keyof Omit<InventoryCutLogDraft, "id">, value: string) => void
 }) {
   return (
-    <RecordSectionShell
+    <RecordItemSection
       title="Cut Logs"
       bodyClassName="space-y-4"
-      statusPanel={actionPanel}
+      subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
       metrics={[
         { label: "Logs", value: String(cutLogs.length) },
         { label: "Cuts Total", value: formatInventoryQuantity(cutTotal, stockUnit) },
       ]}
+      capabilities={{
+        editable: true,
+        supportsAddRow: true,
+        supportsSaveDiscard: true,
+        supportsMetrics: true,
+        supportsSummary: true,
+        supportsEmptyState: true,
+      }}
+      isEmpty={cutLogs.length === 0 && !draft}
+      emptyState={(
+        <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
+          No cut logs recorded for this inventory row.
+        </div>
+      )}
     >
       {draft ? (
         <RecordSectionItem
@@ -98,12 +113,6 @@ export function InventoryCutLogsSection({
         </RecordSectionItem>
       ) : null}
 
-      {cutLogs.length === 0 && !draft ? (
-        <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
-          No cut logs recorded for this inventory row.
-        </div>
-      ) : null}
-
       {cutLogs.map((cutLog) => (
         <RecordSectionItem key={cutLog.id}>
           <RecordRowLayout columns={INVENTORY_CUT_LOG_COLUMNS}>
@@ -133,6 +142,6 @@ export function InventoryCutLogsSection({
           </RecordRowLayout>
         </RecordSectionItem>
       ))}
-    </RecordSectionShell>
+    </RecordItemSection>
   )
 }

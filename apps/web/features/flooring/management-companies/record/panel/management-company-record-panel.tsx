@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react"
 import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
-  RecordSectionSubHeader,
   RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -94,28 +93,28 @@ export function ManagementCompanyRecordPanel({
         ) : null}
 
         <ManagementCompanyPropertiesSection
-          actionPanel={
-            <RecordSectionSubHeader
-              isDirty={false}
-              isSaving={false}
-              hasConflict={false}
-              canManage={false}
-              actions={[
-                {
-                  key: "add-property",
-                  label: "Add Property",
-                  tone: "primary",
-                  onClick: () => {
-                    page.confirmNavigation(() => {
-                      propertyNavigation.openCreate({
-                        managementCompanyId: controller.record.id,
-                      })
+          subHeader={{
+            isDirty: false,
+            isSaving: false,
+            hasConflict: false,
+            canManage: false,
+            showStatus: false,
+            actions: [
+              {
+                key: "add-property",
+                kind: "route-add",
+                label: "Add Property",
+                tone: "primary",
+                onClick: () => {
+                  page.confirmNavigation(() => {
+                    propertyNavigation.openCreate({
+                      managementCompanyId: controller.record.id,
                     })
-                  },
+                  })
                 },
-              ]}
-            />
-          }
+              },
+            ],
+          }}
           properties={controller.record.properties}
           expandedPropertyIds={expandedPropertyIds}
           loadingPropertyId={loadingPropertyId}
