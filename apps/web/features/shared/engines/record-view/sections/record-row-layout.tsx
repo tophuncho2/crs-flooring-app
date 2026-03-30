@@ -84,12 +84,14 @@ function resolveRecordRowColumnSpec(
 
 export function getRecordRowColumnStyle(column: RecordRowColumnSpec | undefined): CSSProperties {
   const resolvedColumn = resolveRecordRowColumnSpec(column)
-  const minWidth = toCssLength(resolvedColumn.minWidth)
   const preferredWidth = toCssLength(resolvedColumn.preferredWidth)
 
   return {
-    flex: `${resolvedColumn.grow} 1 ${preferredWidth}`,
-    minWidth,
+    flexBasis: "auto",
+    flexGrow: resolvedColumn.grow,
+    flexShrink: 0,
+    minWidth: preferredWidth,
+    width: "max-content",
     maxWidth: "none",
   }
 }

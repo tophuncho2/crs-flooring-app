@@ -27,13 +27,13 @@ export function TextCell({
   return (
     <div
       className={joinClasses(
-        "flex min-h-[2.5rem] w-full min-w-0 items-center text-sm text-[var(--foreground)]",
+        "flex min-h-[2.5rem] w-full items-center text-sm text-[var(--foreground)]",
         alignmentClassName,
         noWrap ? "whitespace-nowrap" : undefined,
         className,
       )}
     >
-      <div className={joinClasses("min-w-0 flex-1", noWrap ? "truncate" : undefined)}>{children}</div>
+      <div className={joinClasses("shrink-0", noWrap ? "whitespace-nowrap" : undefined)}>{children}</div>
     </div>
   )
 }

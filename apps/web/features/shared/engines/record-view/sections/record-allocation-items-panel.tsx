@@ -71,7 +71,7 @@ export function RecordAllocationItemsPanel({
     >
       {children ? (
         <div ref={scrollRef} onScroll={onScroll} className="overflow-x-auto overscroll-x-contain">
-          <div className={joinRecordSectionClasses("w-full overflow-hidden", RECORD_SECTION_BORDER_CLASS_NAME)}>
+          <div className={joinRecordSectionClasses("w-max min-w-full", RECORD_SECTION_BORDER_CLASS_NAME)}>
             {children}
           </div>
         </div>

@@ -9,7 +9,7 @@ export const RECORD_GRID_CELL_CONTROL_INVALID_CLASS_NAME = "border-rose-500/50 f
 
 export function getRecordGridCellControlSizeClassName(size: "compact" | "regular" | "wide" = "regular") {
   if (size === "compact") {
-    return "max-w-[6rem]"
+    return "min-w-[6rem]"
   }
 
   if (size === "wide") {

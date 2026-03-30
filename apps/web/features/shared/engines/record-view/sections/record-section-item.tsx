@@ -73,7 +73,7 @@ export function RecordSectionItem({
           </div>
         ) : null}
         <div ref={scrollRef} onScroll={onScroll} className="overflow-x-auto overscroll-x-contain">
-          <div className={joinRecordSectionClasses("w-full", bodyClassName)}>{children}</div>
+          <div className={joinRecordSectionClasses("w-max min-w-full", bodyClassName)}>{children}</div>
         </div>
       </div>
       {nestedContent ? (
