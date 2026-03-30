@@ -212,6 +212,25 @@ describe("record view single-section engine", () => {
     expect(screen.getByText("4")).toBeTruthy()
   })
 
+  it("section shell reports open-state changes after toggle, not during render", async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+
+    render(
+      <RecordSectionShell title="Invoice" defaultOpen={false} onOpenChange={onOpenChange}>
+        <div>Body</div>
+      </RecordSectionShell>,
+    )
+
+    expect(onOpenChange).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole("button", { name: "Expand Invoice" }))
+    expect(onOpenChange).toHaveBeenNthCalledWith(1, true)
+
+    await user.click(screen.getByRole("button", { name: "Collapse Invoice" }))
+    expect(onOpenChange).toHaveBeenNthCalledWith(2, false)
+  })
+
   it("grid cell controls and currency cells use canonical engine chrome", () => {
     const { container } = render(
       <div>

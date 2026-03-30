@@ -735,6 +735,7 @@ model QueueOutboxEvent {
 
   @@index([status, availableAt])
   @@index([status, availableAt, lockedAt, createdAt])
+  @@index([topic, status, availableAt, lockedAt, createdAt])
   @@index([aggregateType, aggregateId])
   @@map("queue_outbox_event")
 }

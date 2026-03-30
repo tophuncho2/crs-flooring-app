@@ -1,3 +1,4 @@
+import { Prisma } from "@builders/db"
 import { createAppError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { getCategoryById } from "../data/queries"
 import {
@@ -31,6 +32,17 @@ async function assertCategoryNameAvailable(name: string, currentId?: string) {
   }
 }
 
+function mapCategoryUniquenessError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    throw createAppError("Category name must be unique", {
+      status: 409,
+      field: "name",
+    })
+  }
+
+  throw error
+}
+
 export function validateUpdateCategoryPrimarySectionInput(body: Record<string, unknown>) {
   const input = parseCategoryForm(body)
   const validationError = validateCategoryForm(input)
@@ -43,13 +55,21 @@ export function validateUpdateCategoryPrimarySectionInput(body: Record<string, u
 
 export async function createCategoryRecord(input: CategoryForm) {
   await assertCategoryNameAvailable(normalizeCategoryNameForUniqueness(input.name))
-  return createCategoryPrimaryRecord(input)
+  try {
+    return await createCategoryPrimaryRecord(input)
+  } catch (error) {
+    mapCategoryUniquenessError(error)
+  }
 }
 
 export async function replaceCategoryPrimarySection(id: string, input: CategoryForm) {
   await assertCategoryNameAvailable(normalizeCategoryNameForUniqueness(input.name), id)
-  await updateCategoryPrimaryRecord(id, input)
-  return getCategoryById(id)
+  try {
+    await updateCategoryPrimaryRecord(id, input)
+    return getCategoryById(id)
+  } catch (error) {
+    mapCategoryUniquenessError(error)
+  }
 }
 
 export async function deleteCategoryRecord(id: string) {

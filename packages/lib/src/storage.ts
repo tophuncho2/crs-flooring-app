@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 export type StorageEnvironment = {
@@ -83,6 +83,31 @@ export async function getBucketObject(env: StorageEnvironment, key: string) {
   return {
     data: Buffer.from(bytes),
     contentType: result.ContentType ?? "application/octet-stream",
+  }
+}
+
+export async function bucketObjectExists(env: StorageEnvironment, key: string) {
+  try {
+    await getStorageClient(env).send(
+      new HeadObjectCommand({
+        Bucket: env.bucketName,
+        Key: key,
+      }),
+    )
+
+    return true
+  } catch (error) {
+    const httpStatusCode =
+      typeof error === "object" && error && "$metadata" in error
+        ? (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode
+        : undefined
+    const name = typeof error === "object" && error && "name" in error ? String((error as { name?: unknown }).name) : ""
+
+    if (httpStatusCode === 404 || name === "NotFound" || name === "NoSuchKey") {
+      return false
+    }
+
+    throw error
   }
 }
 

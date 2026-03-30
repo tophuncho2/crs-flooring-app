@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import { TableBleed } from "@/features/dashboard/shared/table/table-shell"
 import { RecordSectionHeader } from "./record-section-header"
 import { RecordSectionMetric, type RecordSectionMetricValue } from "./record-section-metric"
@@ -33,6 +33,7 @@ export function RecordSectionShell({
   className?: string
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  const hasReportedOpenState = useRef(false)
   const metricContent = Array.isArray(metrics)
     ? metrics.map((metric) => (
         <RecordSectionMetric
@@ -44,19 +45,26 @@ export function RecordSectionShell({
       ))
     : metrics
 
+  useEffect(() => {
+    if (!onOpenChange) {
+      return
+    }
+
+    if (!hasReportedOpenState.current) {
+      hasReportedOpenState.current = true
+      return
+    }
+
+    onOpenChange(isOpen)
+  }, [isOpen, onOpenChange])
+
   return (
     <TableBleed variant="record">
       <section className={joinRecordSectionClasses(RECORD_SECTION_SHELL_CLASS_NAME, RECORD_SECTION_BORDER_CLASS_NAME, className)}>
         <RecordSectionHeader
           title={title}
           isOpen={isOpen}
-          onToggle={() =>
-            setIsOpen((current) => {
-              const next = !current
-          onOpenChange?.(next)
-          return next
-        })
-          }
+          onToggle={() => setIsOpen((current) => !current)}
           metrics={metricContent}
           actions={actions}
         />

@@ -1,3 +1,4 @@
+import { Prisma } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { normalizeUnitOfMeasureInput } from "@/server/builder/unit-of-measures"
 import { getUnitOfMeasureById } from "../data/queries"
@@ -24,6 +25,17 @@ async function assertUnitOfMeasureNameAvailable(name: string, currentId?: string
   }
 }
 
+function mapUnitOfMeasureUniquenessError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    throw createAppError("Unit of measure must be unique", {
+      status: 409,
+      field: "name",
+    })
+  }
+
+  throw error
+}
+
 export function validateUpdateUnitOfMeasurePrimarySectionInput(body: Record<string, unknown>) {
   const input = normalizeUnitOfMeasureInput(body)
   const validationError = validateUnitOfMeasureForm(input)
@@ -36,13 +48,21 @@ export function validateUpdateUnitOfMeasurePrimarySectionInput(body: Record<stri
 
 export async function createUnitOfMeasureRecord(input: UnitOfMeasureForm) {
   await assertUnitOfMeasureNameAvailable(normalizeUnitOfMeasureNameForUniqueness(input.name))
-  return createUnitOfMeasurePrimaryRecord(input)
+  try {
+    return await createUnitOfMeasurePrimaryRecord(input)
+  } catch (error) {
+    mapUnitOfMeasureUniquenessError(error)
+  }
 }
 
 export async function replaceUnitOfMeasurePrimarySection(id: string, input: UnitOfMeasureForm) {
   await assertUnitOfMeasureNameAvailable(normalizeUnitOfMeasureNameForUniqueness(input.name), id)
-  await updateUnitOfMeasurePrimaryRecord(id, input)
-  return getUnitOfMeasureById(id)
+  try {
+    await updateUnitOfMeasurePrimaryRecord(id, input)
+    return getUnitOfMeasureById(id)
+  } catch (error) {
+    mapUnitOfMeasureUniquenessError(error)
+  }
 }
 
 export async function deleteUnitOfMeasureRecord(id: string) {

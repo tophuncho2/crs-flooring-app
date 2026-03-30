@@ -1,3 +1,4 @@
+import { Prisma } from "@builders/db"
 import { createAppError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { getManufacturerById } from "../data/queries"
 import {
@@ -34,6 +35,17 @@ async function assertManufacturerNameAvailable(companyName: string, currentId?: 
   }
 }
 
+function mapManufacturerUniquenessError(error: unknown): never {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    throw createAppError("Company name must be unique", {
+      status: 409,
+      field: "companyName",
+    })
+  }
+
+  throw error
+}
+
 export function validateUpdateManufacturerPrimarySectionInput(body: Record<string, unknown>) {
   const input = parseManufacturerForm(body)
   const validationError = validateManufacturerForm(input)
@@ -46,13 +58,21 @@ export function validateUpdateManufacturerPrimarySectionInput(body: Record<strin
 
 export async function createManufacturerRecord(input: ManufacturerForm): Promise<ManufacturerRow> {
   await assertManufacturerNameAvailable(normalizeManufacturerCompanyNameForUniqueness(input.companyName))
-  return createManufacturerPrimaryRecord(input)
+  try {
+    return await createManufacturerPrimaryRecord(input)
+  } catch (error) {
+    mapManufacturerUniquenessError(error)
+  }
 }
 
 export async function replaceManufacturerPrimarySection(id: string, input: ManufacturerForm): Promise<ManufacturerRow> {
   await assertManufacturerNameAvailable(normalizeManufacturerCompanyNameForUniqueness(input.companyName), id)
-  await updateManufacturerPrimaryRecord(id, input)
-  return getManufacturerById(id)
+  try {
+    await updateManufacturerPrimaryRecord(id, input)
+    return getManufacturerById(id)
+  } catch (error) {
+    mapManufacturerUniquenessError(error)
+  }
 }
 
 export async function deleteManufacturerRecord(id: string) {

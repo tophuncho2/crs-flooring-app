@@ -5,13 +5,19 @@ const {
   createInvoiceGenerationMock,
   supersedePendingInvoiceGenerationsMock,
   createQueueOutboxEventMock,
+  softDeleteInvoiceArtifactMock,
   withDatabaseTransactionMock,
+  bucketObjectExistsForKeyMock,
+  createPresignedBucketObjectUrlForKeyMock,
 } = vi.hoisted(() => ({
   getWorkOrderInvoiceViewMock: vi.fn(),
   createInvoiceGenerationMock: vi.fn(),
   supersedePendingInvoiceGenerationsMock: vi.fn(),
   createQueueOutboxEventMock: vi.fn(),
+  softDeleteInvoiceArtifactMock: vi.fn(),
   withDatabaseTransactionMock: vi.fn(),
+  bucketObjectExistsForKeyMock: vi.fn(),
+  createPresignedBucketObjectUrlForKeyMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", () => ({
@@ -19,10 +25,19 @@ vi.mock("@builders/db", () => ({
   createInvoiceGeneration: createInvoiceGenerationMock,
   supersedePendingInvoiceGenerations: supersedePendingInvoiceGenerationsMock,
   createQueueOutboxEvent: createQueueOutboxEventMock,
+  softDeleteInvoiceArtifact: softDeleteInvoiceArtifactMock,
   withDatabaseTransaction: withDatabaseTransactionMock,
 }))
 
-import { queueWorkOrderInvoiceUseCase } from "@/features/flooring/work-orders/application/invoice"
+vi.mock("@/server/storage/s3", () => ({
+  bucketObjectExistsForKey: bucketObjectExistsForKeyMock,
+  createPresignedBucketObjectUrlForKey: createPresignedBucketObjectUrlForKeyMock,
+}))
+
+import {
+  queueWorkOrderInvoiceUseCase,
+  resolveWorkOrderInvoiceDownloadUrlUseCase,
+} from "@/features/flooring/work-orders/application/invoice"
 
 describe("queueWorkOrderInvoiceUseCase", () => {
   beforeEach(() => {
@@ -129,5 +144,67 @@ describe("queueWorkOrderInvoiceUseCase", () => {
       {},
     )
     expect(result.generation?.status).toBe("REQUESTED")
+  })
+
+  it("returns a presigned download url when the invoice artifact exists", async () => {
+    getWorkOrderInvoiceViewMock.mockResolvedValue({
+      workOrderId: "wo-1",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: null,
+      artifact: {
+        id: "artifact-1",
+        generationId: "gen-1",
+        workOrderId: "wo-1",
+        bucketName: "builders",
+        storageKey: "invoices/wo-1/invoice.pdf",
+        fileName: "WO-00001.pdf",
+        contentType: "application/pdf",
+        checksum: "abc",
+        sizeBytes: 123,
+        createdAt: "2026-03-26T12:01:10.000Z",
+        deletedAt: null,
+      },
+    })
+    bucketObjectExistsForKeyMock.mockResolvedValue(true)
+    createPresignedBucketObjectUrlForKeyMock.mockResolvedValue("https://storage.example.com/presigned")
+
+    const result = await resolveWorkOrderInvoiceDownloadUrlUseCase("wo-1")
+
+    expect(bucketObjectExistsForKeyMock).toHaveBeenCalledWith("invoices/wo-1/invoice.pdf")
+    expect(createPresignedBucketObjectUrlForKeyMock).toHaveBeenCalledWith("invoices/wo-1/invoice.pdf")
+    expect(result).toBe("https://storage.example.com/presigned")
+  })
+
+  it("soft-deletes stale invoice artifacts and raises a retryable app error", async () => {
+    getWorkOrderInvoiceViewMock.mockResolvedValue({
+      workOrderId: "wo-1",
+      sourceVersion: "2026-03-26T12:00:00.000Z",
+      generation: null,
+      artifact: {
+        id: "artifact-1",
+        generationId: "gen-1",
+        workOrderId: "wo-1",
+        bucketName: "builders",
+        storageKey: "invoices/wo-1/invoice.pdf",
+        fileName: "WO-00001.pdf",
+        contentType: "application/pdf",
+        checksum: "abc",
+        sizeBytes: 123,
+        createdAt: "2026-03-26T12:01:10.000Z",
+        deletedAt: null,
+      },
+    })
+    bucketObjectExistsForKeyMock.mockResolvedValue(false)
+
+    await expect(resolveWorkOrderInvoiceDownloadUrlUseCase("wo-1")).rejects.toMatchObject({
+      message: "Invoice artifact is missing from storage. Generate the invoice again.",
+      status: 409,
+      field: "invoice",
+    })
+
+    expect(softDeleteInvoiceArtifactMock).toHaveBeenCalledWith({
+      artifactId: "artifact-1",
+    })
+    expect(createPresignedBucketObjectUrlForKeyMock).not.toHaveBeenCalled()
   })
 })

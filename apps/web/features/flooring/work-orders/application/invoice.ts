@@ -2,6 +2,7 @@ import {
   createInvoiceGeneration,
   createQueueOutboxEvent,
   getWorkOrderInvoiceView,
+  softDeleteInvoiceArtifact,
   supersedePendingInvoiceGenerations,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -11,9 +12,32 @@ import {
   INVOICE_GENERATION_REQUESTED_OUTBOX_TOPIC,
   type InvoiceGenerationRequestedOutboxEventV1,
 } from "@builders/domain"
+import { createAppError } from "@/server/http/api-helpers"
+import { bucketObjectExistsForKey, createPresignedBucketObjectUrlForKey } from "@/server/storage/s3"
 
 export async function getWorkOrderInvoiceStatusUseCase(workOrderId: string) {
   return getWorkOrderInvoiceView(workOrderId)
+}
+
+export async function resolveWorkOrderInvoiceDownloadUrlUseCase(workOrderId: string) {
+  const invoice = await getWorkOrderInvoiceView(workOrderId)
+
+  if (!invoice.artifact) {
+    throw createAppError("Invoice is not ready yet", { status: 409 })
+  }
+
+  const artifactExists = await bucketObjectExistsForKey(invoice.artifact.storageKey)
+  if (!artifactExists) {
+    await softDeleteInvoiceArtifact({
+      artifactId: invoice.artifact.id,
+    })
+    throw createAppError("Invoice artifact is missing from storage. Generate the invoice again.", {
+      status: 409,
+      field: "invoice",
+    })
+  }
+
+  return createPresignedBucketObjectUrlForKey(invoice.artifact.storageKey)
 }
 
 export async function queueWorkOrderInvoiceUseCase(input: {

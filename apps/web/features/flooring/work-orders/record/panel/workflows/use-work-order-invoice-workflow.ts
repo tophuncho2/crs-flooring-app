@@ -188,13 +188,35 @@ export function useWorkOrderInvoiceWorkflow(input: {
     }
   }, [applyConflictWorkOrderSnapshot, clearNotices, setError, setValue, showError, showSuccess, workOrder.id, workOrder.updatedAt])
 
-  const openInvoice = useCallback(() => {
-    if (!value?.artifact?.downloadUrl) {
+  const openInvoice = useCallback(async () => {
+    if (!value?.artifact?.id) {
       return
     }
 
-    window.open(value.artifact.downloadUrl, "_blank", "noopener")
-  }, [value?.artifact?.downloadUrl])
+    clearNotices()
+
+    try {
+      const payload = await requestJson<{ downloadUrl: string }>(
+        `/api/flooring/work-orders/${workOrder.id}/invoice/download?format=json`,
+        {
+          cache: "no-store",
+        },
+      )
+      window.open(payload.downloadUrl, "_blank", "noopener")
+      setError(null)
+    } catch (invoiceError) {
+      applyConflictWorkOrderSnapshot(invoiceError)
+      const message = invoiceError instanceof Error ? invoiceError.message : "Failed to open invoice"
+      setError(
+        createRecordSectionError({
+          kind: "workflow",
+          message,
+        }),
+      )
+      showError(message)
+      void refresh()
+    }
+  }, [applyConflictWorkOrderSnapshot, clearNotices, refresh, setError, showError, workOrder.id, value?.artifact?.id])
 
   return {
     ...workflow,

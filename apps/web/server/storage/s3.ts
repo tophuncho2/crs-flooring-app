@@ -1,4 +1,5 @@
 import {
+  bucketObjectExists,
   buildBucketObjectUrl,
   createBucketObjectPresignedUrl,
   getBucketObject,
@@ -33,6 +34,10 @@ export function buildBucketObjectUrlForKey(key: string) {
 
 export function createPresignedBucketObjectUrlForKey(key: string, options?: { expiresInSeconds?: number }) {
   return createBucketObjectPresignedUrl(getEnv(), key, options)
+}
+
+export function bucketObjectExistsForKey(key: string) {
+  return bucketObjectExists(getEnv(), key)
 }
 
 export function isBucketFileUrl(url: string) {

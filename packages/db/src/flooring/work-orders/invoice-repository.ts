@@ -557,3 +557,21 @@ export async function insertInvoiceArtifact(
 
   return toInvoiceArtifactRecord(artifact)
 }
+
+export async function softDeleteInvoiceArtifact(
+  input: {
+    artifactId: string
+    deletedAt?: Date
+  },
+  client: WorkOrderInvoiceDbClient = db,
+) {
+  const artifact = await client.flooringInvoiceArtifact.update({
+    where: { id: input.artifactId },
+    data: {
+      deletedAt: input.deletedAt ?? new Date(),
+    },
+    select: invoiceArtifactSelect,
+  })
+
+  return toInvoiceArtifactRecord(artifact)
+}
