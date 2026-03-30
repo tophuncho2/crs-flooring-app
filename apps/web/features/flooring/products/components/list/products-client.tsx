@@ -15,7 +15,6 @@ import {
   type ProductRow,
   useProductsListController,
 } from "@/features/flooring/products/controllers/use-products-list-controller"
-import { ProductsCreateModal } from "./products-create-modal"
 import { ProductsTable } from "./products-table"
 
 type ServerPaginationState = {
@@ -49,26 +48,9 @@ export default function FlooringProductsClient({
     products,
     message,
     error,
-    isCreateModalOpen,
     openCreateProduct,
-    closeCreateProduct,
-    productForm,
-    updateProductForm,
-    isSavingProduct,
-    isUploadingPhotos,
-    isLoadingFormOptions,
-    createProduct,
     deletingProductId,
     deleteProduct,
-    handlePhotoUpload,
-    removePhotoUrl,
-    selectedCategory,
-    newBaseColor,
-    setNewBaseColor,
-    addBaseColorOption,
-    baseColorOptions,
-    categoryOptions,
-    manufacturerOptions,
     openProductRecord,
   } = useProductsListController({
     initialProducts,
@@ -135,96 +117,72 @@ export default function FlooringProductsClient({
   })
 
   return (
-    <>
-      <DashboardListPageScaffold
-        title={<DashboardCardTitle>Flooring Products</DashboardCardTitle>}
-        controls={
-          <DashboardListPageControls
-            count={filteredProducts.length}
-            searchQuery={searchQuery}
-            onSearchQueryChange={onSearchQueryChange}
-            searchPlaceholder="Search product name"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={onToggleSort}
-            columnSettingsSlot={
-              <TableColumnSettings
-                columns={orderedProductColumns}
-                hiddenColumnKeys={hiddenProductColumnKeys}
-                onToggleColumn={toggleProductColumnVisibility}
-                onMoveColumn={moveProductColumn}
-                onSetColumnOrder={setProductColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            }
-            primaryAction={
-              <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
-                <Plus size={16} />
-                Product
-              </button>
-            }
-          />
-        }
-        notices={<FormStatusNotices message={message} error={error} />}
-        table={
-          <ProductsTable
-            rows={sortedProducts}
-            groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
-            isGroupingEnabled={isGroupingEnabled}
-            visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
-            visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
-            pagination={pagination}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredProducts.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-            deletingProductId={deletingProductId}
-            onDeleteProduct={deleteProduct}
-            onOpenProduct={openProductRecord}
-          />
-        }
-        pagination={
-          <TablePaginationControls
-            page={pagination?.page ?? page}
-            totalPages={pagination?.totalPages ?? totalPages}
-            pageSize={pagination?.pageSize ?? pageSize}
-            totalItems={pagination?.totalItems ?? filteredProducts.length}
-            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-            onPreviousPage={pagination ? undefined : goToPreviousPage}
-            onNextPage={pagination ? undefined : goToNextPage}
-            previousPageHref={pagination?.previousPageHref}
-            nextPageHref={pagination?.nextPageHref}
-          />
-        }
-      />
-
-      <ProductsCreateModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateProduct}
-        productForm={productForm}
-        selectedCategory={selectedCategory}
-        manufacturerOptions={manufacturerOptions}
-        categoryOptions={categoryOptions}
-        baseColorOptions={baseColorOptions}
-        newBaseColor={newBaseColor}
-        onNewBaseColorChange={setNewBaseColor}
-        onAddBaseColorOption={addBaseColorOption}
-        onFieldChange={updateProductForm}
-        onPhotoUpload={handlePhotoUpload}
-        onRemovePhotoUrl={removePhotoUrl}
-        onSave={createProduct}
-        isSaving={isSavingProduct}
-        isUploadingPhotos={isUploadingPhotos}
-        isLoadingOptions={isLoadingFormOptions}
-        message=""
-        error={error}
-      />
-    </>
+    <DashboardListPageScaffold
+      title={<DashboardCardTitle>Flooring Products</DashboardCardTitle>}
+      controls={
+        <DashboardListPageControls
+          count={filteredProducts.length}
+          searchQuery={searchQuery}
+          onSearchQueryChange={onSearchQueryChange}
+          searchPlaceholder="Search product name"
+          isAscendingSort={isAscendingSort}
+          onToggleSort={onToggleSort}
+          columnSettingsSlot={
+            <TableColumnSettings
+              columns={orderedProductColumns}
+              hiddenColumnKeys={hiddenProductColumnKeys}
+              onToggleColumn={toggleProductColumnVisibility}
+              onMoveColumn={moveProductColumn}
+              onSetColumnOrder={setProductColumnOrder}
+              groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
+              maxGroupFields={MAX_GROUP_FIELDS}
+              onToggleGroupedColumn={onToggleGroupedColumn}
+            />
+          }
+          primaryAction={
+            <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+              <Plus size={16} />
+              Product
+            </button>
+          }
+        />
+      }
+      notices={<FormStatusNotices message={message} error={error} />}
+      table={
+        <ProductsTable
+          rows={sortedProducts}
+          groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
+          isGroupingEnabled={isGroupingEnabled}
+          visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
+          visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
+          pagination={pagination}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredProducts.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+          deletingProductId={deletingProductId}
+          onDeleteProduct={deleteProduct}
+          onOpenProduct={openProductRecord}
+        />
+      }
+      pagination={
+        <TablePaginationControls
+          page={pagination?.page ?? page}
+          totalPages={pagination?.totalPages ?? totalPages}
+          pageSize={pagination?.pageSize ?? pageSize}
+          totalItems={pagination?.totalItems ?? filteredProducts.length}
+          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+          onPreviousPage={pagination ? undefined : goToPreviousPage}
+          onNextPage={pagination ? undefined : goToNextPage}
+          previousPageHref={pagination?.previousPageHref}
+          nextPageHref={pagination?.nextPageHref}
+        />
+      }
+    />
   )
 }

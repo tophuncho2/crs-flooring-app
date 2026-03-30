@@ -52,6 +52,7 @@ export function RecordSectionSubHeader({
   actions = [],
   statusExtra,
   canManage = true,
+  showStatus = true,
 }: {
   summary?: ReactNode
   error?: ReactNode | RecordSectionError | null
@@ -68,6 +69,7 @@ export function RecordSectionSubHeader({
   actions?: RecordSectionSubHeaderAction[]
   statusExtra?: ReactNode
   canManage?: boolean
+  showStatus?: boolean
 }) {
   const configuredActions = actions
     .filter((action) => Boolean(action))
@@ -96,14 +98,14 @@ export function RecordSectionSubHeader({
     <RecordSectionActionPanel
       summary={summary}
       error={error ?? null}
-      status={
+      status={showStatus ? (
         <RecordSectionSaveStateIndicators
           isDirty={isDirty}
           isSaving={isSaving}
           hasConflict={hasConflict}
           extra={statusExtra}
         />
-      }
+      ) : null}
       actions={managedActions}
     />
   )

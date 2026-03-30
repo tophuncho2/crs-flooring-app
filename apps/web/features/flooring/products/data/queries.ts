@@ -164,6 +164,10 @@ export async function getProductFormOptions() {
   }
 }
 
+export async function getProductCreatePageData() {
+  return getProductFormOptions()
+}
+
 export async function getProductsPageData(page: number, tableState: ServerTableQueryState) {
   const where = buildProductWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringProduct.count({ where })

@@ -1,16 +1,56 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { navigationMocks, resetNavigationMocks } from "./helpers/next-navigation-mock"
 import { ProductDetailClient } from "@/features/flooring/products/components/detail/product-detail-client"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => navigationMocks,
-  usePathname: () => "/dashboard/flooring/test",
+  usePathname: () => "/dashboard/flooring/products/prod-1",
   useSearchParams: () => new URLSearchParams(),
 }))
+
+function createInventoryRow(overrides: Partial<Parameters<typeof ProductDetailClient>[0]["inventoryRows"][number]> = {}) {
+  return {
+    id: "inv-1",
+    importEntryId: "imp-1",
+    importWarehouseId: "wh-1",
+    importNumber: "1",
+    importTag: "",
+    importStatus: "PENDING",
+    importTransportType: "PURCHASE_ORDER",
+    importWarehouseName: "Main Warehouse",
+    productId: "prod-1",
+    productName: "Carpet - Plush - Sand",
+    stockUnit: "SF",
+    itemNumber: "A100",
+    dyeLot: "DL-1",
+    locationId: "loc-1",
+    locationCode: "A1",
+    warehouseId: "wh-1",
+    warehouseName: "Main Warehouse",
+    sectionName: "Showroom",
+    stockCount: "20.00",
+    cutTotal: "2.00",
+    reservedStockCount: "0.00",
+    totalAllocated: "0.00",
+    unreservedTotal: "0.00",
+    availableToAllocate: "0.00",
+    runningBalance: "18.00",
+    cost: "10.00",
+    freight: "5.00",
+    pricePerUnit: "0.75",
+    notes: "",
+    createdAt: "2026-03-23T00:00:00.000Z",
+    updatedAt: "2026-03-23T00:00:00.000Z",
+    canCreateCutLogs: true,
+    cutLogBlockedReason: "",
+    cutLogs: [],
+    ...overrides,
+  }
+}
 
 describe("ProductDetailClient", () => {
   afterEach(() => {
@@ -18,8 +58,8 @@ describe("ProductDetailClient", () => {
     resetNavigationMocks()
   })
 
-  it("uses the shared record width, footer actions, and inventory child-table shell", () => {
-    resetNavigationMocks()
+  it("uses the record-view engine shell and canonical inventory row controls", async () => {
+    const user = userEvent.setup()
 
     render(
       <ProductDetailClient
@@ -38,8 +78,8 @@ describe("ProductDetailClient", () => {
           baseColor: "Tan",
           coveragePerUnit: "20",
           coverageUnit: "SF",
-          photoUrls: ["https://storage.example.com/builders-app/uploads/photo-1.png"],
-          notes: "",
+          photoUrls: [],
+          notes: "Primary note",
           createdAt: "2026-03-23T00:00:00.000Z",
           updatedAt: "2026-03-23T00:00:00.000Z",
           category: {
@@ -54,62 +94,43 @@ describe("ProductDetailClient", () => {
         categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", coverageAvailableUnit: "SF", itemCoverageUnit: "SF" }]}
         manufacturerOptions={[{ id: "man-1", name: "Acme", website: "", phone: "", email: "" }]}
         inventoryRows={[
-          {
-            id: "inv-1",
-            importEntryId: "imp-1",
-            importWarehouseId: "wh-1",
-            importNumber: "1",
-            importTag: "",
-            importStatus: "PENDING",
-            importTransportType: "PURCHASE_ORDER",
-            importWarehouseName: "Main Warehouse",
-            productId: "prod-1",
-            productName: "Carpet - Plush - Sand",
-            stockUnit: "SF",
-            itemNumber: "A100",
-            dyeLot: "DL-1",
-            locationId: "loc-1",
-            locationCode: "A1",
-            warehouseId: "wh-1",
-            warehouseName: "Main Warehouse",
-            sectionName: "Showroom",
-            stockCount: "20",
-            cutTotal: "2",
-            runningBalance: "18",
-            cost: "10",
-            freight: "5",
-            notes: "",
-            createdAt: "2026-03-23T00:00:00.000Z",
-            updatedAt: "2026-03-23T00:00:00.000Z",
-            cutLogs: [],
-          },
+          createInventoryRow({
+            cutLogs: [
+              {
+                id: "cut-1",
+                inventoryId: "inv-1",
+                inventoryLabel: "Main Warehouse / A1 / Item A100",
+                itemNumber: "A100",
+                before: "20.00",
+                cut: "2.00",
+                after: "18.00",
+                notes: "First cut",
+                createdAt: "2026-03-24T00:00:00.000Z",
+              },
+            ],
+          }),
         ]}
         backHref="/dashboard/flooring/products"
       />,
     )
 
-    expect(screen.getByRole("heading", { name: "Carpet - Plush - Sand" })).toBeTruthy()
+    expect(screen.getByText("Product Carpet - Plush - Sand")).toBeTruthy()
     expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Save Product" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Delete Product" })).toBeTruthy()
-    expect(screen.queryByText("Open an inventory row to manage cuts and running balance in its own detail page.")).toBeNull()
-    expect(screen.getByRole("heading", { name: "Inventory Rows" })).toBeTruthy()
-    expect(screen.getByText("$15.00")).toBeTruthy()
-    expect(within(screen.getByRole("table")).getByText("Main Warehouse")).toBeTruthy()
-    expect(within(screen.getByRole("table")).getByText("Cost")).toBeTruthy()
-    expect(within(screen.getByRole("table")).getByText("Freight")).toBeTruthy()
-    expect(screen.queryByAltText("Product photo 1")).toBeNull()
-    expect(screen.getByLabelText("Category")).toBeTruthy()
-    expect(screen.getByLabelText("Manufacturer")).toBeTruthy()
-    expect(screen.getByText("Coverage Per Unit")).toBeTruthy()
-    expect(screen.getByText("SF")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Product" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Filter" })).toBeNull()
+    expect(screen.getByText("Inventory Rows")).toBeTruthy()
+    expect(screen.getByText("Main Warehouse / Showroom / A1")).toBeTruthy()
+    expect(screen.getByText("IMP-0001")).toBeTruthy()
+    expect(screen.queryByText("First cut")).toBeNull()
 
-    fireEvent.click(screen.getByText("A100"))
-    expect(navigationMocks.push).not.toHaveBeenCalled()
+    await user.click(screen.getByRole("button", { name: "Show cut logs for inventory A100" }))
+
+    expect(screen.getByRole("button", { name: "Hide cut logs for inventory A100" })).toBeTruthy()
+    expect(screen.getByText("First cut")).toBeTruthy()
   })
 
-  it("filters child inventory rows locally by status and warehouse", async () => {
-    resetNavigationMocks()
+  it("opens inventory rows through the canonical open button", async () => {
     const user = userEvent.setup()
 
     render(
@@ -144,84 +165,18 @@ describe("ProductDetailClient", () => {
         }}
         categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", coverageAvailableUnit: "SF", itemCoverageUnit: "SF" }]}
         manufacturerOptions={[{ id: "man-1", name: "Acme", website: "", phone: "", email: "" }]}
-        inventoryRows={[
-          {
-            id: "inv-1",
-            importEntryId: "imp-1",
-            importWarehouseId: "wh-1",
-            importNumber: "1",
-            importTag: "",
-            importStatus: "PENDING",
-            importTransportType: "PURCHASE_ORDER",
-            importWarehouseName: "Main Warehouse",
-            productId: "prod-1",
-            productName: "Carpet - Plush - Sand",
-            stockUnit: "SF",
-            itemNumber: "A100",
-            dyeLot: "DL-1",
-            locationId: "loc-1",
-            locationCode: "A1",
-            warehouseId: "wh-1",
-            warehouseName: "Main Warehouse",
-            sectionName: "Showroom",
-            stockCount: "20",
-            cutTotal: "2",
-            runningBalance: "18",
-            cost: "10",
-            freight: "5",
-            notes: "",
-            createdAt: "2026-03-23T00:00:00.000Z",
-            updatedAt: "2026-03-23T00:00:00.000Z",
-            cutLogs: [],
-          },
-          {
-            id: "inv-2",
-            importEntryId: "",
-            importWarehouseId: "",
-            importNumber: "",
-            importTag: "",
-            importStatus: "FINAL",
-            importTransportType: "",
-            importWarehouseName: "",
-            productId: "prod-1",
-            productName: "Carpet - Plush - Sand",
-            stockUnit: "SF",
-            itemNumber: "B200",
-            dyeLot: "DL-2",
-            locationId: "loc-2",
-            locationCode: "B2",
-            warehouseId: "wh-2",
-            warehouseName: "Overflow Warehouse",
-            sectionName: "Reserve",
-            stockCount: "15",
-            cutTotal: "1",
-            runningBalance: "14",
-            cost: "12",
-            freight: "3",
-            notes: "",
-            createdAt: "2026-03-23T00:00:00.000Z",
-            updatedAt: "2026-03-23T00:00:00.000Z",
-            cutLogs: [],
-          },
-        ]}
+        inventoryRows={[createInventoryRow()]}
         backHref="/dashboard/flooring/products"
       />,
     )
 
-    const inventorySection = screen.getAllByRole("heading", { name: "Inventory Rows" })[0]?.closest("section")
-    if (!inventorySection) {
-      throw new Error("Inventory Rows section not found")
-    }
-    const inventoryTable = within(inventorySection).getAllByRole("table")[0]!
+    await user.click(screen.getByRole("button", { name: "Open" }))
 
-    await user.click(within(inventorySection).getByRole("button", { name: "Filter" }))
-    await user.click(within(inventorySection).getByRole("button", { name: "Pending" }))
-    expect(within(inventoryTable).getByText("A100")).toBeTruthy()
-    expect(within(inventoryTable).queryByText("B200")).toBeNull()
-
-    await user.click(within(inventorySection).getAllByRole("button", { name: "All" })[0]!)
-    await user.click(within(inventorySection).getByRole("button", { name: "Overflow Warehouse" }))
-    expect(within(inventoryTable).queryByText("A100")).toBeNull()
-    expect(within(inventoryTable).getByText("B200")).toBeTruthy()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/inventory/inv-1?returnTo=%2Fdashboard%2Fflooring%2Fproducts%2Fprod-1",
+        { scroll: false },
+      )
+    })
   })
 })

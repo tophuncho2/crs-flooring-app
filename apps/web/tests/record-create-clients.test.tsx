@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import { requestJsonMock, resetSimpleTableClientMocks } from "./helpers/simple-table-client-mocks"
 import { ManufacturerCreateClient } from "@/features/flooring/manufacturers/record/create/manufacturer-create-client"
+import { ProductCreateClient } from "@/features/flooring/products/record/create/product-create-client"
 import { PropertyCreateClient } from "@/features/flooring/properties/record/create/property-create-client"
 import { TemplateCreateClient } from "@/features/flooring/templates/record/create/template-create-client"
 
@@ -78,6 +79,77 @@ describe("record create clients", () => {
     await waitFor(() => {
       expect(navigationMocks.push).toHaveBeenCalledWith(
         "/dashboard/flooring/properties/prop-2?returnTo=%2Fdashboard%2Fflooring%2Fmanagement-companies%2Fmc-1",
+        { scroll: false },
+      )
+    })
+  })
+
+  it("product create mode uses the record-view form route and redirects after save", async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockResolvedValueOnce({
+      product: {
+        id: "prod-2",
+        name: "Carpet - Plush - Sand",
+        categoryId: "cat-1",
+        manufacturerId: "man-1",
+        manufacturerName: "Acme",
+        style: "Plush",
+        color: "Sand",
+        width: "12ft",
+        sheetSize: "",
+        thickness: "",
+        unitWeight: "",
+        baseColor: "Tan",
+        coveragePerUnit: "20",
+        coverageUnit: "SF",
+        photoUrls: [],
+        notes: "",
+        createdAt: "2026-03-30T00:00:00.000Z",
+        updatedAt: "2026-03-30T00:00:00.000Z",
+        category: {
+          id: "cat-1",
+          name: "Carpet",
+          sendUnit: "SY",
+          stockUnit: "SF",
+          coverageAvailableUnit: "SF",
+          itemCoverageUnit: "SF",
+        },
+      },
+    })
+
+    render(
+      <ProductCreateClient
+        backHref="/dashboard/flooring/products"
+        categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", coverageAvailableUnit: "SF", itemCoverageUnit: "SF" }]}
+        manufacturerOptions={[{ id: "man-1", name: "Acme", website: "", phone: "", email: "" }]}
+      />,
+    )
+
+    expect(screen.getByText("New Product")).toBeTruthy()
+    expect(screen.queryByText("Inventory Rows")).toBeNull()
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Category" }), "cat-1")
+    await user.type(screen.getByRole("textbox", { name: "Style" }), "Plush")
+    await user.type(screen.getByRole("textbox", { name: "Color" }), "Sand")
+    await user.click(screen.getByRole("button", { name: "Create Product" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        "/api/flooring/products",
+        expect.objectContaining({ method: "POST" }),
+      )
+    })
+
+    const productPayload = JSON.parse(String(requestJsonMock.mock.calls[0]?.[1]?.body ?? "{}"))
+    expect(productPayload).toMatchObject({
+      categoryId: "cat-1",
+      style: "Plush",
+      color: "Sand",
+    })
+
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/products/prod-2?returnTo=%2Fdashboard%2Fflooring%2Fproducts",
         { scroll: false },
       )
     })
