@@ -16,11 +16,9 @@ export function useWorkOrderPrimarySection(input: {
   workOrder: WorkOrderDetail
   publishWorkOrder: (workOrder: WorkOrderDetail) => void
   onWorkOrderSaved?: (workOrder: WorkOrderDetail) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
   applyConflictWorkOrderSnapshot: (error: unknown) => WorkOrderDetail | null
 }) {
-  const { currentUserId, workOrderId, workOrder, publishWorkOrder, onWorkOrderSaved, clearNotices, showSuccess, applyConflictWorkOrderSnapshot } =
+  const { currentUserId, workOrderId, workOrder, publishWorkOrder, onWorkOrderSaved, applyConflictWorkOrderSnapshot } =
     input
 
   return useWorkOrderSectionController<WorkOrderDetail, DraftWorkOrder>({
@@ -33,8 +31,6 @@ export function useWorkOrderPrimarySection(input: {
     cloneLocalValue: cloneDraftWorkOrder,
     isEqual: areWorkOrderDraftsEqual,
     onSave: async (nextDraft, serverWorkOrder, serverRevisionKey) => {
-      clearNotices()
-
       try {
         const payload = await requestJson<{ workOrder: WorkOrderDetail }>(`/api/flooring/work-orders/${serverWorkOrder.id}`, {
           method: "PATCH",
@@ -43,10 +39,10 @@ export function useWorkOrderPrimarySection(input: {
         })
         publishWorkOrder(payload.workOrder)
         onWorkOrderSaved?.(payload.workOrder)
-        showSuccess("Work order fields saved")
         return {
           serverValue: payload.workOrder,
           serverRevisionKey: payload.workOrder.updatedAt,
+          noticeMessage: "Work order fields saved",
         }
       } catch (saveError) {
         applyConflictWorkOrderSnapshot(saveError)

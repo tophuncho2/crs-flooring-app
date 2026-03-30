@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { RecordFormNotices } from "../feedback"
 import { RecordSectionSubHeader } from "./record-section-sub-header"
 import { RecordSectionShell } from "./record-section-shell"
 import {
@@ -15,6 +16,8 @@ export function RecordPrimarySectionInstance({
   metrics,
   summary,
   error,
+  noticeMessage,
+  noticeError,
   isDirty,
   isSaving,
   hasConflict,
@@ -33,6 +36,8 @@ export function RecordPrimarySectionInstance({
   metrics?: ReactNode
   summary?: ReactNode
   error?: ReactNode | RecordSectionError | null
+  noticeMessage?: string
+  noticeError?: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -68,6 +73,7 @@ export function RecordPrimarySectionInstance({
     return (
       <>
         {actionPanel}
+        <RecordFormNotices message={noticeMessage} error={noticeError} />
         <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
           {children}
         </div>
@@ -76,7 +82,14 @@ export function RecordPrimarySectionInstance({
   }
 
   return (
-    <RecordSectionShell title={title} metrics={metrics} bodyClassName="space-y-0" statusPanel={actionPanel}>
+    <RecordSectionShell
+      title={title}
+      metrics={metrics}
+      bodyClassName="space-y-0"
+      statusPanel={actionPanel}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
+    >
       {children}
     </RecordSectionShell>
   )

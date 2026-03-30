@@ -31,8 +31,6 @@ export function useTemplateServiceSection(input: {
   template: TemplateDetail
   publishTemplate: (template: TemplateDetail) => void
   onTemplateSaved?: (template: TemplateDetail, previousPropertyId: string, itemsCount: number) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
   applyConflictTemplateSnapshot: (error: unknown) => TemplateDetail | null
   confirmDelete: (label: string) => boolean
 }) {
@@ -42,8 +40,6 @@ export function useTemplateServiceSection(input: {
     template,
     publishTemplate,
     onTemplateSaved,
-    clearNotices,
-    showSuccess,
     applyConflictTemplateSnapshot,
     confirmDelete,
   } = input
@@ -83,8 +79,6 @@ export function useTemplateServiceSection(input: {
         })
       }
 
-      clearNotices()
-
       try {
         const payload = await requestJson<{ template: TemplateDetail }>(
           `/api/flooring/templates/${template.id}/service-items/section`,
@@ -115,10 +109,10 @@ export function useTemplateServiceSection(input: {
         setItemErrors({})
         publishTemplate(payload.template)
         onTemplateSaved?.(payload.template, payload.template.propertyId, payload.template.summary.totalItemsCount)
-        showSuccess("Service section saved")
         return {
           serverValue: payload.template.serviceItems,
           serverRevisionKey: payload.template.updatedAt,
+          noticeMessage: "Service section saved",
         }
       } catch (saveError) {
         applyConflictTemplateSnapshot(saveError)

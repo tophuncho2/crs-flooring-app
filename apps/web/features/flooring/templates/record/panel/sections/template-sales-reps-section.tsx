@@ -129,6 +129,8 @@ export function TemplateSalesRepsSection({
   totalAmount,
   loading,
   actionPanel,
+  noticeMessage,
+  noticeError,
   itemErrors = {},
   onItemFieldChange,
   onDeleteItem,
@@ -140,6 +142,8 @@ export function TemplateSalesRepsSection({
   totalAmount?: number
   loading: boolean
   actionPanel?: ReactNode
+  noticeMessage?: string
+  noticeError?: string
   itemErrors?: RowFieldErrors<SalesRepField>
   onItemFieldChange: (itemId: string, field: keyof EditableSalesRepItem, value: string) => void
   onDeleteItem: (itemId: string) => void
@@ -151,6 +155,8 @@ export function TemplateSalesRepsSection({
       title={title}
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       metrics={metrics}
     >
       {loading ? (

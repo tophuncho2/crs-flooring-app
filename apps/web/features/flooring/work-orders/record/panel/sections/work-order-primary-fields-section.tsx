@@ -33,6 +33,8 @@ export function WorkOrderPrimaryFieldsSection({
   unitType,
   setDraft,
   error,
+  noticeMessage,
+  noticeError,
   isDirty,
   isSaving,
   hasConflict,
@@ -47,6 +49,8 @@ export function WorkOrderPrimaryFieldsSection({
   unitType: string
   setDraft: Dispatch<SetStateAction<DraftWorkOrder | null>>
   error?: ReactNode | RecordSectionError | null
+  noticeMessage?: string
+  noticeError?: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -209,6 +213,8 @@ export function WorkOrderPrimaryFieldsSection({
     <RecordPrimarySectionInstance
       title="Work Order Details"
       error={error}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       isDirty={isDirty}
       isSaving={isSaving}
       hasConflict={hasConflict}

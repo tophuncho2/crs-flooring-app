@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  RecordFormNotices,
   RecordPanelFooter,
   RecordPrimarySectionInstance,
   RecordSectionStack,
@@ -63,13 +62,13 @@ export function ManagementCompanyRecordPanel({
 
   return (
     <div className="space-y-4">
-      <RecordFormNotices message={page.notices.message} error={page.notices.error} />
-
       <RecordSectionStack>
         {page.isPrimarySectionOpen ? (
           <RecordPrimarySectionInstance
             title="Management Company Details"
             error={controller.primarySection.error}
+            noticeMessage={controller.primarySection.noticeMessage}
+            noticeError={controller.primarySection.noticeError}
             isDirty={controller.primarySection.isDirty}
             isSaving={controller.primarySection.isSaving}
             hasConflict={controller.primarySection.hasConflict}
@@ -84,7 +83,6 @@ export function ManagementCompanyRecordPanel({
               draft={controller.primarySection.localValue}
               disabled={controller.primarySection.isSaving}
               onFieldChange={(field, value) => {
-                page.notices.clearNotices()
                 controller.primarySection.setLocalValue((previous: ManagementCompanyForm) => ({
                   ...previous,
                   [field]: field === "state" ? normalizeAddressState(value) : value,

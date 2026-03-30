@@ -2,7 +2,6 @@
 
 import {
   buildSingleSectionDeleteConfirmationMessage,
-  RecordFormNotices,
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -26,7 +25,6 @@ export function ServiceRecordPanel({
 
   return (
     <div className="space-y-4">
-      <RecordFormNotices message={page.notices.message} error={page.notices.error} />
       <RecordSingleSectionPanel
         title="Service Details"
         controller={controller}
@@ -45,7 +43,6 @@ export function ServiceRecordPanel({
           unitOptions={unitOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
-            page.notices.clearNotices()
             controller.primarySection.setLocalValue((previous: ServiceForm) => ({
               ...previous,
               [field]: value,

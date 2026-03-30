@@ -30,7 +30,10 @@ export function useManufacturerPrimarySection({
         },
       )
 
-      return payload.manufacturer
+      return {
+        serverValue: payload.manufacturer,
+        noticeMessage: "Manufacturer saved",
+      }
     },
     deleteRecord: async (record) => {
       await requestJson<{ ok: true }>(`/api/flooring/manufacturers/${record.id}`, {

@@ -30,8 +30,6 @@ export function useWorkOrderServiceSection(input: {
   workOrderId: string
   workOrder: WorkOrderDetail
   publishWorkOrder: (workOrder: WorkOrderDetail) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
   applyConflictWorkOrderSnapshot: (error: unknown) => WorkOrderDetail | null
   confirmDelete: (label: string) => boolean
 }) {
@@ -40,8 +38,6 @@ export function useWorkOrderServiceSection(input: {
     workOrderId,
     workOrder,
     publishWorkOrder,
-    clearNotices,
-    showSuccess,
     applyConflictWorkOrderSnapshot,
     confirmDelete,
   } = input
@@ -80,8 +76,6 @@ export function useWorkOrderServiceSection(input: {
         })
       }
 
-      clearNotices()
-
       try {
         const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
           `/api/flooring/work-orders/${workOrder.id}/service-items/section`,
@@ -111,10 +105,10 @@ export function useWorkOrderServiceSection(input: {
         )
         setItemErrors({})
         publishWorkOrder(payload.workOrder)
-        showSuccess("Service section saved")
         return {
           serverValue: payload.workOrder.serviceItems,
           serverRevisionKey: payload.workOrder.updatedAt,
+          noticeMessage: "Service section saved",
         }
       } catch (saveError) {
         applyConflictWorkOrderSnapshot(saveError)

@@ -22,6 +22,8 @@ export function TemplatePrimaryFieldsSection({
   padProductOptions,
   setDraft,
   error,
+  noticeMessage,
+  noticeError,
   isDirty,
   isSaving,
   hasConflict,
@@ -35,6 +37,8 @@ export function TemplatePrimaryFieldsSection({
   padProductOptions: Array<{ id: string; label: string }>
   setDraft: Dispatch<SetStateAction<DraftTemplate>>
   error?: ReactNode | RecordSectionError | null
+  noticeMessage?: string
+  noticeError?: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -135,6 +139,8 @@ export function TemplatePrimaryFieldsSection({
     <RecordPrimarySectionInstance
       title="Template Details"
       error={error}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       isDirty={isDirty}
       isSaving={isSaving}
       hasConflict={hasConflict}

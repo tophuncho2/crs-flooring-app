@@ -16,8 +16,6 @@ export function useTemplatePrimarySection(input: {
   template: TemplateDetail
   publishTemplate: (template: TemplateDetail) => void
   onTemplateSaved?: (template: TemplateDetail, previousPropertyId: string, itemsCount: number) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
   applyConflictTemplateSnapshot: (error: unknown) => TemplateDetail | null
 }) {
   const {
@@ -26,8 +24,6 @@ export function useTemplatePrimarySection(input: {
     template,
     publishTemplate,
     onTemplateSaved,
-    clearNotices,
-    showSuccess,
     applyConflictTemplateSnapshot,
   } = input
 
@@ -41,8 +37,6 @@ export function useTemplatePrimarySection(input: {
     cloneLocalValue: cloneDraftTemplate,
     isEqual: areTemplateDraftsEqual,
     onSave: async (nextDraft, serverTemplate, serverRevisionKey) => {
-      clearNotices()
-
       try {
         const payload = await requestJson<{ template: TemplateDetail }>(
           `/api/flooring/templates/${serverTemplate.id}/primary/section`,
@@ -63,10 +57,10 @@ export function useTemplatePrimarySection(input: {
         )
         publishTemplate(payload.template)
         onTemplateSaved?.(payload.template, serverTemplate.propertyId, payload.template.summary.totalItemsCount)
-        showSuccess("Template fields saved")
         return {
           serverValue: payload.template,
           serverRevisionKey: payload.template.updatedAt,
+          noticeMessage: "Template fields saved",
         }
       } catch (saveError) {
         applyConflictTemplateSnapshot(saveError)

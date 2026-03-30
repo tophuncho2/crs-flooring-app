@@ -29,7 +29,6 @@ export function useContactPrimarySection({
     payloadKey: "contact",
     createLocalValue: toContactForm,
     saveSection: async ({ localValue, record }) => {
-      page.notices.clearNotices()
       const validationError = validateContactForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -45,11 +44,12 @@ export function useContactPrimarySection({
         body: JSON.stringify(localValue),
       })
 
-      page.notices.showSuccess("Contact saved")
-      return payload.contact
+      return {
+        serverValue: payload.contact,
+        noticeMessage: "Contact saved",
+      }
     },
     deleteRecord: async (record) => {
-      page.notices.clearNotices()
       await requestJson<{ ok: true }>(`/api/flooring/contacts/${record.id}`, {
         method: "DELETE",
       })

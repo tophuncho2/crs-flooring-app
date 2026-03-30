@@ -29,7 +29,6 @@ export function useManagementCompanyPrimarySection({
     payloadKey: "managementCompany",
     createLocalValue: toManagementCompanyForm,
     saveSection: async ({ localValue, record }) => {
-      page.notices.clearNotices()
       const validationError = validateManagementCompanyForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -48,11 +47,12 @@ export function useManagementCompanyPrimarySection({
         },
       )
 
-      page.notices.showSuccess("Management company saved")
-      return payload.managementCompany
+      return {
+        serverValue: payload.managementCompany,
+        noticeMessage: "Management company saved",
+      }
     },
     deleteRecord: async (record) => {
-      page.notices.clearNotices()
       await requestJson<{ ok: true }>(`/api/flooring/management-companies/${record.id}`, {
         method: "DELETE",
       })

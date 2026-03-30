@@ -180,8 +180,6 @@ export function WorkOrderRecordPanel({
     workOrder: currentWorkOrder,
     publishWorkOrder,
     onWorkOrderSaved,
-    clearNotices,
-    showSuccess,
     applyConflictWorkOrderSnapshot,
   })
 
@@ -190,8 +188,6 @@ export function WorkOrderRecordPanel({
     workOrderId,
     workOrder: currentWorkOrder,
     publishWorkOrder,
-    clearNotices,
-    showSuccess,
     applyConflictWorkOrderSnapshot,
     confirmDelete,
   })
@@ -201,8 +197,6 @@ export function WorkOrderRecordPanel({
     workOrderId,
     workOrder: currentWorkOrder,
     publishWorkOrder,
-    clearNotices,
-    showSuccess,
     applyConflictWorkOrderSnapshot,
     confirmDelete,
   })
@@ -213,9 +207,6 @@ export function WorkOrderRecordPanel({
     workOrder: currentWorkOrder,
     productOptions,
     publishWorkOrder,
-    clearNotices,
-    showSuccess,
-    showError,
     applyConflictWorkOrderSnapshot,
     confirmDelete,
   })
@@ -451,6 +442,8 @@ export function WorkOrderRecordPanel({
             selectedAddressValue={selectedAddress(propertyOptions, primarySection.localValue, currentWorkOrder.propertyAddress)}
             unitType={currentWorkOrder.unitType}
             error={primarySection.error}
+            noticeMessage={primarySection.noticeMessage}
+            noticeError={primarySection.noticeError}
             isDirty={primarySection.isDirty}
             isSaving={primarySection.isSaving}
             hasConflict={primarySection.hasConflict}
@@ -474,6 +467,8 @@ export function WorkOrderRecordPanel({
             items={materialSection.localValue}
             productOptions={productOptions}
             loading={loading}
+            noticeMessage={materialSection.noticeMessage}
+            noticeError={materialSection.noticeError}
             actionPanel={
               <RecordSectionSubHeader
                 isDirty={materialSection.isDirty}
@@ -550,6 +545,8 @@ export function WorkOrderRecordPanel({
           unitOptions={unitOptions}
           totalAmount={currentSummary.serviceTotal}
           loading={loading}
+          noticeMessage={serviceSection.noticeMessage}
+          noticeError={serviceSection.noticeError}
           actionPanel={
             <RecordSectionSubHeader
               isDirty={serviceSection.isDirty}
@@ -573,6 +570,8 @@ export function WorkOrderRecordPanel({
           customerCost={currentExpenseSummary.customerCost}
           totalAmount={currentExpenseSummary.salesRepExpense}
           loading={loading}
+          noticeMessage={salesRepSection.noticeMessage}
+          noticeError={salesRepSection.noticeError}
           actionPanel={
             <RecordSectionSubHeader
               isDirty={salesRepSection.isDirty}

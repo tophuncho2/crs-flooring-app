@@ -7,6 +7,7 @@ import {
   readRecordSectionDraft,
   writeRecordSectionDraft,
   useRecordSectionController,
+  type RecordSectionSaveResult,
 } from "@/features/shared/engines/record-view"
 
 export function useWorkOrderSectionController<TServer, TLocal>({
@@ -32,14 +33,7 @@ export function useWorkOrderSectionController<TServer, TLocal>({
     localValue: TLocal,
     serverValue: TServer,
     serverRevisionKey: string,
-  ) => Promise<
-    | void
-    | TServer
-    | {
-        serverValue: TServer
-        serverRevisionKey?: string
-      }
-  >
+  ) => Promise<RecordSectionSaveResult<TServer>>
 }) {
   const controller = useRecordSectionController<TServer, TLocal>({
     serverValue,

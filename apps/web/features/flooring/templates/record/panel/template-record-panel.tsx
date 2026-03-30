@@ -114,8 +114,6 @@ export function TemplateRecordPanel({
     template: currentTemplate,
     publishTemplate,
     onTemplateSaved,
-    clearNotices: notices.clearNotices,
-    showSuccess: notices.showSuccess,
     applyConflictTemplateSnapshot,
   })
 
@@ -125,8 +123,6 @@ export function TemplateRecordPanel({
     template: currentTemplate,
     publishTemplate,
     onTemplateSaved,
-    clearNotices: notices.clearNotices,
-    showSuccess: notices.showSuccess,
     applyConflictTemplateSnapshot,
     confirmDelete,
   })
@@ -137,8 +133,6 @@ export function TemplateRecordPanel({
     template: currentTemplate,
     publishTemplate,
     onTemplateSaved,
-    clearNotices: notices.clearNotices,
-    showSuccess: notices.showSuccess,
     applyConflictTemplateSnapshot,
     confirmDelete,
   })
@@ -149,8 +143,6 @@ export function TemplateRecordPanel({
     template: currentTemplate,
     publishTemplate,
     onTemplateSaved,
-    clearNotices: notices.clearNotices,
-    showSuccess: notices.showSuccess,
     applyConflictTemplateSnapshot,
     confirmDelete,
   })
@@ -243,6 +235,8 @@ export function TemplateRecordPanel({
             warehouseOptions={warehouseOptions}
             padProductOptions={padProductOptions}
             error={primarySection.error}
+            noticeMessage={primarySection.noticeMessage}
+            noticeError={primarySection.noticeError}
             isDirty={primarySection.isDirty}
             isSaving={primarySection.isSaving}
             hasConflict={primarySection.hasConflict}
@@ -262,6 +256,8 @@ export function TemplateRecordPanel({
           items={materialSection.localValue}
           productOptions={productOptions}
           loading={loading}
+          noticeMessage={materialSection.noticeMessage}
+          noticeError={materialSection.noticeError}
           totalAmount={currentExpenseSummary.materialTotal}
           itemErrors={materialSection.itemErrors}
           onItemFieldChange={materialSection.changeField}
@@ -285,6 +281,8 @@ export function TemplateRecordPanel({
           serviceOptions={serviceOptions}
           unitOptions={unitOptions}
           loading={loading}
+          noticeMessage={serviceSection.noticeMessage}
+          noticeError={serviceSection.noticeError}
           totalAmount={currentExpenseSummary.serviceTotal}
           itemErrors={serviceSection.itemErrors}
           onItemFieldChange={serviceSection.changeField}
@@ -309,6 +307,8 @@ export function TemplateRecordPanel({
           customerCost={currentExpenseSummary.customerCost}
           totalAmount={currentExpenseSummary.salesRepExpense}
           loading={loading}
+          noticeMessage={salesRepSection.noticeMessage}
+          noticeError={salesRepSection.noticeError}
           itemErrors={salesRepSection.itemErrors}
           onItemFieldChange={salesRepSection.changeField}
           onDeleteItem={salesRepSection.deleteItem}

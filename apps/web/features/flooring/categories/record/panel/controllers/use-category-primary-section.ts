@@ -30,7 +30,10 @@ export function useCategoryPrimarySection({
         },
       )
 
-      return payload.category
+      return {
+        serverValue: payload.category,
+        noticeMessage: "Category saved",
+      }
     },
     deleteRecord: async (record) => {
       await requestJson<{ ok: true }>(`/api/flooring/categories/${record.id}`, {

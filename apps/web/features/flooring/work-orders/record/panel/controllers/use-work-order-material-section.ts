@@ -45,9 +45,6 @@ export function useWorkOrderMaterialSection(input: {
   workOrder: WorkOrderDetail
   productOptions: MaterialItemOption[]
   publishWorkOrder: (workOrder: WorkOrderDetail) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
-  showError: (message: string) => void
   applyConflictWorkOrderSnapshot: (error: unknown) => WorkOrderDetail | null
   confirmDelete: (label: string) => boolean
 }) {
@@ -57,9 +54,6 @@ export function useWorkOrderMaterialSection(input: {
     workOrder,
     productOptions,
     publishWorkOrder,
-    clearNotices,
-    showSuccess,
-    showError,
     applyConflictWorkOrderSnapshot,
     confirmDelete,
   } = input
@@ -118,8 +112,6 @@ export function useWorkOrderMaterialSection(input: {
         })
       }
 
-      clearNotices()
-
       try {
         const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
           `/api/flooring/work-orders/${workOrder.id}/items/section`,
@@ -158,10 +150,10 @@ export function useWorkOrderMaterialSection(input: {
         setItemErrors({})
         setAllocationErrorsByItemId({})
         publishWorkOrder(payload.workOrder)
-        showSuccess("Material section saved")
         return {
           serverValue: payload.workOrder.items,
           serverRevisionKey: payload.workOrder.updatedAt,
+          noticeMessage: "Material section saved",
         }
       } catch (saveError) {
         applyConflictWorkOrderSnapshot(saveError)
@@ -271,14 +263,14 @@ export function useWorkOrderMaterialSection(input: {
       }
 
       if (!item.productId) {
-        showError("Select a product before adding allocations.")
+        controller.showError("Select a product before adding allocations.")
         return
       }
 
       await loadAllocationOptions(item.id, item.productId)
       allocationController.addAllocation(item.id, () => createEmptyAllocationRow(itemId))
     },
-    [allocationController, controller.localValue, loadAllocationOptions, showError],
+    [allocationController, controller, controller.localValue, loadAllocationOptions],
   )
 
   const changeAllocationField = useCallback(

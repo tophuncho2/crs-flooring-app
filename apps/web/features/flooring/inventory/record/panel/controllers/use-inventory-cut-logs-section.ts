@@ -5,7 +5,6 @@ import {
   createLocalRecordRowId,
   createRecordSectionError,
   useRecordSectionController,
-  type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
@@ -33,11 +32,9 @@ function createCutLogsRevisionKey(record: InventoryRow) {
 }
 
 export function useInventoryCutLogsSection({
-  page,
   record,
   publishRecord,
 }: {
-  page: RecordDetailClientScaffoldContext
   record: InventoryRow
   publishRecord: (record: InventoryRow) => void
 }) {
@@ -46,8 +43,6 @@ export function useInventoryCutLogsSection({
     serverRevisionKey: createCutLogsRevisionKey(record),
     createLocalValue: () => null,
     onSave: async (draft, currentRecord) => {
-      page.notices.clearNotices()
-
       if (!draft) {
         throw createRecordSectionError({
           kind: "validation",
@@ -104,11 +99,11 @@ export function useInventoryCutLogsSection({
 
       const payload = await requestJson<{ inventory: InventoryRow }>(`/api/flooring/inventory/${currentRecord.id}`)
       publishRecord(payload.inventory)
-      page.notices.showSuccess("Cut log added")
 
       return {
         serverValue: payload.inventory,
         serverRevisionKey: createCutLogsRevisionKey(payload.inventory),
+        noticeMessage: "Cut log added",
       }
     },
   })

@@ -178,6 +178,8 @@ export function WorkOrderServiceItemsSection({
   unitOptions,
   loading,
   actionPanel,
+  noticeMessage,
+  noticeError,
   itemErrors = {},
   totalAmount,
   onItemFieldChange,
@@ -189,6 +191,8 @@ export function WorkOrderServiceItemsSection({
   unitOptions: UnitOption[]
   loading: boolean
   actionPanel?: ReactNode
+  noticeMessage?: string
+  noticeError?: string
   itemErrors?: RowFieldErrors<ServiceItemField>
   totalAmount?: number
   onItemFieldChange: (itemId: string, field: keyof EditableServiceItem, value: string) => void
@@ -201,6 +205,8 @@ export function WorkOrderServiceItemsSection({
       title={title}
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       metrics={metrics}
     >
       {loading ? (

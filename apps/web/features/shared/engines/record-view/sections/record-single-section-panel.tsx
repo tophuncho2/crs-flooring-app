@@ -12,6 +12,8 @@ type SingleSectionState = {
   isSaving: boolean
   hasConflict: boolean
   error: ReactNode | RecordSectionError | null
+  noticeMessage?: string
+  noticeError?: string
   save: () => boolean | void | Promise<boolean | void>
   discard: () => void
 }
@@ -77,6 +79,8 @@ export function RecordSingleSectionPanel({
           metrics={metrics}
           summary={summary}
           error={controller.primarySection.error}
+          noticeMessage={controller.primarySection.noticeMessage}
+          noticeError={controller.primarySection.noticeError}
           isDirty={controller.primarySection.isDirty}
           isSaving={controller.primarySection.isSaving}
           hasConflict={controller.primarySection.hasConflict}

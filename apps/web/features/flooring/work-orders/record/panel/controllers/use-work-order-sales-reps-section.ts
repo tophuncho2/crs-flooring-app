@@ -30,8 +30,6 @@ export function useWorkOrderSalesRepsSection(input: {
   workOrderId: string
   workOrder: WorkOrderDetail
   publishWorkOrder: (workOrder: WorkOrderDetail) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
   applyConflictWorkOrderSnapshot: (error: unknown) => WorkOrderDetail | null
   confirmDelete: (label: string) => boolean
 }) {
@@ -40,8 +38,6 @@ export function useWorkOrderSalesRepsSection(input: {
     workOrderId,
     workOrder,
     publishWorkOrder,
-    clearNotices,
-    showSuccess,
     applyConflictWorkOrderSnapshot,
     confirmDelete,
   } = input
@@ -77,8 +73,6 @@ export function useWorkOrderSalesRepsSection(input: {
         })
       }
 
-      clearNotices()
-
       try {
         const payload = await requestJson<{ workOrder: WorkOrderDetail }>(
           `/api/flooring/work-orders/${workOrder.id}/sales-reps/section`,
@@ -104,10 +98,10 @@ export function useWorkOrderSalesRepsSection(input: {
         )
         setItemErrors({})
         publishWorkOrder(payload.workOrder)
-        showSuccess("Sales rep section saved")
         return {
           serverValue: payload.workOrder.salesReps,
           serverRevisionKey: payload.workOrder.updatedAt,
+          noticeMessage: "Sales rep section saved",
         }
       } catch (saveError) {
         applyConflictWorkOrderSnapshot(saveError)

@@ -5,7 +5,10 @@ import { RequestJsonError } from "@builders/lib"
 import { normalizeRecordSectionError } from "../contracts"
 import type { RecordDetailClientScaffoldContext } from "./record-detail-client-scaffold"
 import { useRecordDetailController } from "./use-record-detail-controller"
-import { useRecordSectionController } from "./use-record-section-controller"
+import {
+  useRecordSectionController,
+  type RecordSectionSaveResult,
+} from "./use-record-section-controller"
 
 type BaseRecord = {
   id: string
@@ -46,7 +49,7 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
     localValue: TLocal
     record: TRecord
     revisionKey: string
-  }) => Promise<TRecord>
+  }) => Promise<RecordSectionSaveResult<TRecord>>
   deleteRecord?: (record: TRecord) => Promise<void>
   deleteErrorMessage?: string
   manageDirtySections?: boolean
@@ -74,10 +77,27 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
           record,
           revisionKey,
         })
-        detail.publishRecord(nextRecord)
+
+        if (nextRecord === undefined) {
+          return undefined
+        }
+
+        const nextServerRecord =
+          typeof nextRecord === "object" && "serverValue" in nextRecord
+            ? nextRecord.serverValue
+            : nextRecord
+
+        detail.publishRecord(nextServerRecord)
         return {
-          serverValue: nextRecord,
-          serverRevisionKey: nextRecord.updatedAt,
+          serverValue: nextServerRecord,
+          serverRevisionKey:
+            typeof nextRecord === "object" && "serverValue" in nextRecord
+              ? (nextRecord.serverRevisionKey ?? nextServerRecord.updatedAt)
+              : nextServerRecord.updatedAt,
+          noticeMessage:
+            typeof nextRecord === "object" && "serverValue" in nextRecord
+              ? nextRecord.noticeMessage
+              : undefined,
         }
       } catch (error) {
         const conflictSnapshot = readConflictSnapshot<Record<string, TRecord | undefined>>(error)

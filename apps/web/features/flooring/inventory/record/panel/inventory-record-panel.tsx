@@ -2,7 +2,6 @@
 
 import { useEffect } from "react"
 import {
-  RecordFormNotices,
   RecordPanelFooter,
   RecordPrimarySectionInstance,
   RecordSectionSubHeader,
@@ -31,7 +30,6 @@ export function InventoryRecordPanel({
     locationOptions,
   })
   const cutLogsSection = useInventoryCutLogsSection({
-    page,
     record: controller.record,
     publishRecord: controller.publishRecord,
   })
@@ -52,13 +50,13 @@ export function InventoryRecordPanel({
 
   return (
     <div className="space-y-4">
-      <RecordFormNotices message={page.notices.message} error={page.notices.error} />
-
       <RecordSectionStack>
         {page.isPrimarySectionOpen ? (
           <RecordPrimarySectionInstance
             title="Inventory Details"
             error={controller.primarySection.error}
+            noticeMessage={controller.primarySection.noticeMessage}
+            noticeError={controller.primarySection.noticeError}
             isDirty={controller.primarySection.isDirty}
             isSaving={controller.primarySection.isSaving}
             hasConflict={controller.primarySection.hasConflict}
@@ -76,7 +74,6 @@ export function InventoryRecordPanel({
               sectionName={controller.activeSectionName}
               disabled={controller.primarySection.isSaving}
               onFieldChange={(field, value) => {
-                page.notices.clearNotices()
                 controller.primarySection.setLocalValue((previous: InventoryPrimaryForm) => ({
                   ...previous,
                   [field]: value,
@@ -114,6 +111,8 @@ export function InventoryRecordPanel({
           draft={cutLogsSection.localValue}
           draftBefore={cutLogsSection.draftBefore}
           draftAfter={cutLogsSection.draftAfter}
+          noticeMessage={cutLogsSection.noticeMessage}
+          noticeError={cutLogsSection.noticeError}
           onDraftChange={cutLogsSection.setDraftField}
         />
       </RecordSectionStack>

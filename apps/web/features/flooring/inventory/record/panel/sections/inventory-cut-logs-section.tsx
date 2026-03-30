@@ -30,6 +30,8 @@ export function InventoryCutLogsSection({
   draft,
   draftBefore,
   draftAfter,
+  noticeMessage,
+  noticeError,
   onDraftChange,
 }: {
   actionPanel?: ReactNode
@@ -39,6 +41,8 @@ export function InventoryCutLogsSection({
   draft: InventoryCutLogDraft | null
   draftBefore: string
   draftAfter: string
+  noticeMessage?: string
+  noticeError?: string
   onDraftChange: (field: keyof Omit<InventoryCutLogDraft, "id">, value: string) => void
 }) {
   return (
@@ -46,6 +50,8 @@ export function InventoryCutLogsSection({
       title="Cut Logs"
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       metrics={[
         { label: "Logs", value: String(cutLogs.length) },
         { label: "Cuts Total", value: formatInventoryQuantity(cutTotal, stockUnit) },

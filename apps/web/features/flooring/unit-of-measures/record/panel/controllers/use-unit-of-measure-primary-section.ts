@@ -30,7 +30,10 @@ export function useUnitOfMeasurePrimarySection({
         },
       )
 
-      return payload.unitOfMeasure
+      return {
+        serverValue: payload.unitOfMeasure,
+        noticeMessage: "Unit of measure saved",
+      }
     },
     deleteRecord: async (record) => {
       await requestJson<{ ok: true }>(`/api/builder/unit-of-measures/${record.id}`, {

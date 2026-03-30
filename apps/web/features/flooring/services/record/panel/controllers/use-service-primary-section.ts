@@ -29,7 +29,6 @@ export function useServicePrimarySection({
     payloadKey: "service",
     createLocalValue: toServiceForm,
     saveSection: async ({ localValue, record }) => {
-      page.notices.clearNotices()
       const validationError = validateServiceForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -45,11 +44,12 @@ export function useServicePrimarySection({
         body: JSON.stringify(localValue),
       })
 
-      page.notices.showSuccess("Service saved")
-      return payload.service
+      return {
+        serverValue: payload.service,
+        noticeMessage: "Service saved",
+      }
     },
     deleteRecord: async (record) => {
-      page.notices.clearNotices()
       await requestJson<{ ok: true }>(`/api/flooring/services/${record.id}`, {
         method: "DELETE",
       })

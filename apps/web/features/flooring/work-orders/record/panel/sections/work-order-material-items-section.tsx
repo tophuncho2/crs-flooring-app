@@ -209,6 +209,8 @@ export function WorkOrderMaterialItemsSection({
   productOptions,
   loading,
   actionPanel,
+  noticeMessage,
+  noticeError,
   itemErrors = {},
   expandedItemIds,
   onToggleExpandedItem,
@@ -221,6 +223,8 @@ export function WorkOrderMaterialItemsSection({
   productOptions: MaterialItemOption[]
   loading: boolean
   actionPanel?: ReactNode
+  noticeMessage?: string
+  noticeError?: string
   itemErrors?: RowFieldErrors<MaterialItemField>
   expandedItemIds: string[]
   onToggleExpandedItem: (itemId: string) => void
@@ -235,6 +239,8 @@ export function WorkOrderMaterialItemsSection({
       title={title}
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       metrics={metrics}
     >
       {loading ? (

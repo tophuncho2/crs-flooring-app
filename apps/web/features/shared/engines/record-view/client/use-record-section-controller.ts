@@ -17,6 +17,7 @@ export type RecordSectionSaveResult<T> =
   | {
       serverValue: T
       serverRevisionKey?: string
+      noticeMessage?: string
     }
 
 function defaultIsEqual<T>(left: T, right: T) {
@@ -46,6 +47,8 @@ export function useRecordSectionController<TServer, TLocal>({
   const [localValue, setLocalValueState] = useState<TLocal>(() => createLocalValue(serverValue))
   const [saving, setSaving] = useState(false)
   const [error, setErrorState] = useState<RecordSectionError | null>(null)
+  const [noticeMessage, setNoticeMessage] = useState("")
+  const [noticeError, setNoticeError] = useState("")
   const [hasConflict, setHasConflict] = useState(false)
   const [pendingServerState, setPendingServerState] = useState<PendingServerState<TServer> | null>(null)
   const baselineServerValueRef = useRef(baselineServerValue)
@@ -125,10 +128,27 @@ export function useRecordSectionController<TServer, TLocal>({
       localValueRef.current = nextValue
       return nextValue
     })
+    setNoticeMessage("")
+    setNoticeError("")
   }, [])
 
   const setError = useCallback((value: RecordSectionError | string | Error | null) => {
     setErrorState(value ? normalizeRecordSectionError(value) : null)
+  }, [])
+
+  const clearNotices = useCallback(() => {
+    setNoticeMessage("")
+    setNoticeError("")
+  }, [])
+
+  const showSuccess = useCallback((value: string) => {
+    setNoticeMessage(value)
+    setNoticeError("")
+  }, [])
+
+  const showError = useCallback((value: string) => {
+    setNoticeError(value)
+    setNoticeMessage("")
   }, [])
 
   const replaceFromServer = useCallback(
@@ -145,6 +165,7 @@ export function useRecordSectionController<TServer, TLocal>({
   )
 
   const discard = useCallback(() => {
+    clearNotices()
     const nextPendingServerState = pendingServerStateRef.current
     if (nextPendingServerState) {
       replaceFromServer(nextPendingServerState.value, nextPendingServerState.revisionKey)
@@ -152,7 +173,7 @@ export function useRecordSectionController<TServer, TLocal>({
     }
 
     replaceFromServer(baselineServerValueRef.current, baselineRevisionKeyRef.current)
-  }, [replaceFromServer])
+  }, [clearNotices, replaceFromServer])
 
   const save = useCallback(async () => {
     if (!onSave || savingRef.current) {
@@ -162,6 +183,7 @@ export function useRecordSectionController<TServer, TLocal>({
     setSaving(true)
     savingRef.current = true
     setError(null)
+    clearNotices()
 
     try {
       const saveResult = await onSave(
@@ -175,6 +197,9 @@ export function useRecordSectionController<TServer, TLocal>({
           saveResult.serverValue,
           saveResult.serverRevisionKey ?? baselineRevisionKeyRef.current,
         )
+        if (saveResult.noticeMessage) {
+          showSuccess(saveResult.noticeMessage)
+        }
         return true
       }
 
@@ -203,7 +228,7 @@ export function useRecordSectionController<TServer, TLocal>({
       savingRef.current = false
       setSaving(false)
     }
-  }, [onSave, replaceFromServer])
+  }, [clearNotices, onSave, replaceFromServer, showSuccess])
 
   return {
     localValue,
@@ -212,6 +237,11 @@ export function useRecordSectionController<TServer, TLocal>({
     isSaving: saving,
     error,
     setError,
+    noticeMessage,
+    noticeError,
+    clearNotices,
+    showSuccess,
+    showError,
     hasConflict,
     pendingServerValue: pendingServerState?.value ?? null,
     pendingServerRevisionKey: pendingServerState?.revisionKey ?? null,

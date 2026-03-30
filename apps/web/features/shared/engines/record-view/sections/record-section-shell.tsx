@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { TableBleed } from "@/features/dashboard/shared/table/table-shell"
+import { RecordFormNotices } from "../feedback"
 import { RecordSectionHeader } from "./record-section-header"
 import { RecordSectionMetric, type RecordSectionMetricValue } from "./record-section-metric"
 import {
@@ -17,6 +18,8 @@ export function RecordSectionShell({
   metrics,
   actions,
   statusPanel,
+  noticeMessage,
+  noticeError,
   defaultOpen = true,
   onOpenChange,
   bodyClassName,
@@ -27,6 +30,8 @@ export function RecordSectionShell({
   metrics?: ReactNode | RecordSectionMetricValue[]
   actions?: ReactNode
   statusPanel?: ReactNode
+  noticeMessage?: string
+  noticeError?: string
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   bodyClassName?: string
@@ -71,6 +76,7 @@ export function RecordSectionShell({
         {isOpen ? (
           <>
             {statusPanel}
+            <RecordFormNotices message={noticeMessage} error={noticeError} />
             <div className={joinRecordSectionClasses("px-5 py-5", RECORD_SECTION_BODY_SURFACE_CLASS_NAME, bodyClassName)}>
               {children}
             </div>

@@ -34,7 +34,6 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryPrimaryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      page.notices.clearNotices()
       const validationError = validateInventoryPrimaryForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -50,11 +49,12 @@ export function useInventoryPrimarySection({
         body: JSON.stringify(localValue),
       })
 
-      page.notices.showSuccess("Inventory saved")
-      return payload.inventory
+      return {
+        serverValue: payload.inventory,
+        noticeMessage: "Inventory saved",
+      }
     },
     deleteRecord: async (record) => {
-      page.notices.clearNotices()
       await requestJson<{ ok: true }>(`/api/flooring/inventory/${record.id}`, {
         method: "DELETE",
       })

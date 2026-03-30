@@ -31,8 +31,6 @@ export function useTemplateSalesRepsSection(input: {
   template: TemplateDetail
   publishTemplate: (template: TemplateDetail) => void
   onTemplateSaved?: (template: TemplateDetail, previousPropertyId: string, itemsCount: number) => void
-  clearNotices: () => void
-  showSuccess: (message: string) => void
   applyConflictTemplateSnapshot: (error: unknown) => TemplateDetail | null
   confirmDelete: (label: string) => boolean
 }) {
@@ -42,8 +40,6 @@ export function useTemplateSalesRepsSection(input: {
     template,
     publishTemplate,
     onTemplateSaved,
-    clearNotices,
-    showSuccess,
     applyConflictTemplateSnapshot,
     confirmDelete,
   } = input
@@ -80,8 +76,6 @@ export function useTemplateSalesRepsSection(input: {
         })
       }
 
-      clearNotices()
-
       try {
         const payload = await requestJson<{ template: TemplateDetail }>(
           `/api/flooring/templates/${template.id}/sales-reps/section`,
@@ -108,10 +102,10 @@ export function useTemplateSalesRepsSection(input: {
         setItemErrors({})
         publishTemplate(payload.template)
         onTemplateSaved?.(payload.template, payload.template.propertyId, payload.template.summary.totalItemsCount)
-        showSuccess("Sales rep section saved")
         return {
           serverValue: payload.template.salesReps,
           serverRevisionKey: payload.template.updatedAt,
+          noticeMessage: "Sales rep section saved",
         }
       } catch (saveError) {
         applyConflictTemplateSnapshot(saveError)
