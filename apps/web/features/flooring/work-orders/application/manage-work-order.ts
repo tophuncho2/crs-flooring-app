@@ -1,5 +1,6 @@
 import { Prisma, clearAllocationsForWorkOrder, listWorkOrderAllocationInventoryIds, prisma, refreshInventoryReservedStockCounts } from "@builders/db"
 import { collectAffectedReservationInventoryIds } from "@builders/domain"
+import { reconcileWorkOrderAllocationStatusesUseCase } from "@builders/execution"
 import type { CreateWorkOrderInput, UpdateWorkOrderInput } from "@/features/flooring/work-orders/validators"
 import { createWorkOrder } from "@/features/flooring/work-orders/mutations"
 import { getWorkOrderById } from "../queries"
@@ -101,6 +102,7 @@ export async function updateWorkOrderUseCase(id: string, input: UpdateWorkOrderI
       const affectedInventoryIds = await listWorkOrderAllocationInventoryIds(id, tx)
       await clearAllocationsForWorkOrder(id, tx)
       await refreshInventoryReservedStockCounts(collectAffectedReservationInventoryIds(affectedInventoryIds), tx)
+      await reconcileWorkOrderAllocationStatusesUseCase(id, tx)
     }
 
     await tx.flooringWorkOrder.update({

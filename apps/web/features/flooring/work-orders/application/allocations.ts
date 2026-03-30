@@ -1,43 +1,44 @@
+import type { Prisma } from "@builders/db"
 import {
-  buildWorkOrderAutoAllocationIdempotencyKey,
-  collectAffectedReservationInventoryIds,
-  WORK_ORDER_AUTO_ALLOCATION_AGGREGATE_TYPE,
-  WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,
-  type WorkOrderAutoAllocationRequestedOutboxEventV1,
-} from "@builders/domain"
+  applyManualAllocationChangeUseCase,
+  mapInventoryAllocationCandidateRowToOptionRecord,
+  mapWorkOrderAllocationRunRowToRecord,
+  mapWorkOrderItemAllocationRowToRecord,
+  reconcileWorkOrderAllocationStatusesUseCase,
+  removeWorkOrderItemAllocationUseCase,
+  requestWorkOrderAutoAllocationUseCase as requestSharedWorkOrderAutoAllocationUseCase,
+} from "@builders/execution"
 import {
-  Prisma,
-  createQueueOutboxEvent,
-  createWorkOrderAllocationRun,
-  createWorkOrderItemAllocation,
-  deleteWorkOrderItemAllocation,
-  findActiveWorkOrderAllocationRun,
-  findWorkOrderAllocationRunBySourceVersion,
-  getWorkOrderItemAllocationInventoryContext,
-  getWorkOrderAllocationRunById,
-  lockWorkOrderAllocationScope,
-  listInventoryAllocationOptionsForWorkOrderProduct,
-  listInventoryAllocationOptionsForWorkOrderItem,
-  listWorkOrderItemAllocations,
-  refreshInventoryReservedStockCounts,
-  syncWorkOrderAllocationStatuses,
-  supersedePendingWorkOrderAllocationRuns,
-  updateWorkOrderItemAllocation,
-  withDatabaseTransaction,
   db,
+  findActiveWorkOrderAllocationRunRow,
+  findWorkOrderAllocationRunRowBySourceVersion,
+  getWorkOrderAllocationRunRowById,
+  listInventoryAllocationCandidateRowsForWorkOrderItem,
+  listInventoryAllocationCandidateRowsForWorkOrderProduct,
+  listWorkOrderItemAllocationRows,
+  refreshInventoryReservedStockCounts,
+  withDatabaseTransaction,
 } from "@builders/db"
-import { createAppError } from "@/server/http/api-helpers"
+import { collectAffectedReservationInventoryIds } from "@builders/domain"
+import { normalizeWorkOrderAllocationApplicationError } from "./allocation-errors"
 
 export async function listWorkOrderItemAllocationsUseCase(workOrderId: string, workOrderItemId: string) {
-  return listWorkOrderItemAllocations(workOrderId, workOrderItemId)
+  const rows = await listWorkOrderItemAllocationRows(workOrderId, workOrderItemId)
+  return rows.map(mapWorkOrderItemAllocationRowToRecord)
 }
 
 export async function listInventoryAllocationOptionsUseCase(workOrderId: string, workOrderItemId: string) {
-  return listInventoryAllocationOptionsForWorkOrderItem(workOrderId, workOrderItemId)
+  const rows = await listInventoryAllocationCandidateRowsForWorkOrderItem(workOrderId, workOrderItemId)
+  return rows
+    .map(mapInventoryAllocationCandidateRowToOptionRecord)
+    .filter((inventory) => inventory.availableToAllocate > 0)
 }
 
 export async function listInventoryAllocationOptionsForProductUseCase(workOrderId: string, productId: string) {
-  return listInventoryAllocationOptionsForWorkOrderProduct(workOrderId, productId)
+  const rows = await listInventoryAllocationCandidateRowsForWorkOrderProduct(workOrderId, productId)
+  return rows
+    .map(mapInventoryAllocationCandidateRowToOptionRecord)
+    .filter((inventory) => inventory.availableToAllocate > 0)
 }
 
 export async function createWorkOrderItemAllocationUseCase(input: {
@@ -48,21 +49,31 @@ export async function createWorkOrderItemAllocationUseCase(input: {
   cutSize?: string | null
   notes?: string | null
 }) {
-  return withDatabaseTransaction(async (tx) => {
-    const allocation = await createWorkOrderItemAllocation({
-      ...input,
-      method: "MANUAL",
-    }, tx)
+  try {
+    return await withDatabaseTransaction(async (tx) => {
+      const result = await applyManualAllocationChangeUseCase(
+        {
+          workOrderId: input.workOrderId,
+          workOrderItemId: input.workOrderItemId,
+          inventoryId: String(input.inventoryId),
+          quantity: input.quantity,
+          cutSize: input.cutSize,
+          notes: input.notes,
+        },
+        tx,
+      )
 
-    await refreshInventoryReservedStockCounts(
-      collectAffectedReservationInventoryIds([allocation.inventoryId]),
-      tx,
-    )
+      await refreshInventoryReservedStockCounts(
+        collectAffectedReservationInventoryIds(result.touchedInventoryIds),
+        tx,
+      )
+      await reconcileWorkOrderAllocationStatusesUseCase(input.workOrderId, tx)
 
-    await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
-
-    return allocation
-  })
+      return mapWorkOrderItemAllocationRowToRecord(result.allocation)
+    })
+  } catch (error) {
+    normalizeWorkOrderAllocationApplicationError(error)
+  }
 }
 
 export async function updateWorkOrderItemAllocationUseCase(input: {
@@ -74,23 +85,32 @@ export async function updateWorkOrderItemAllocationUseCase(input: {
   cutSize?: string | null
   notes?: string | null
 }) {
-  return withDatabaseTransaction(async (tx) => {
-    const existing = await getWorkOrderItemAllocationInventoryContext(input.allocationId, tx)
-    if (!existing) {
-      throw createAppError("Allocation not found", { status: 404 })
-    }
+  try {
+    return await withDatabaseTransaction(async (tx) => {
+      const result = await applyManualAllocationChangeUseCase(
+        {
+          workOrderId: input.workOrderId,
+          workOrderItemId: input.workOrderItemId,
+          allocationId: input.allocationId,
+          inventoryId: input.inventoryId,
+          quantity: input.quantity,
+          cutSize: input.cutSize,
+          notes: input.notes,
+        },
+        tx,
+      )
 
-    const allocation = await updateWorkOrderItemAllocation(input, tx)
+      await refreshInventoryReservedStockCounts(
+        collectAffectedReservationInventoryIds(result.touchedInventoryIds),
+        tx,
+      )
+      await reconcileWorkOrderAllocationStatusesUseCase(input.workOrderId, tx)
 
-    await refreshInventoryReservedStockCounts(
-      collectAffectedReservationInventoryIds([existing.inventoryId], [allocation.inventoryId]),
-      tx,
-    )
-
-    await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
-
-    return allocation
-  })
+      return mapWorkOrderItemAllocationRowToRecord(result.allocation)
+    })
+  } catch (error) {
+    normalizeWorkOrderAllocationApplicationError(error)
+  }
 }
 
 export async function deleteWorkOrderItemAllocationUseCase(input: {
@@ -98,21 +118,19 @@ export async function deleteWorkOrderItemAllocationUseCase(input: {
   workOrderItemId: string
   allocationId: string
 }) {
-  return withDatabaseTransaction(async (tx) => {
-    const existing = await getWorkOrderItemAllocationInventoryContext(input.allocationId, tx)
-    if (!existing) {
-      throw createAppError("Allocation not found", { status: 404 })
-    }
+  try {
+    await withDatabaseTransaction(async (tx) => {
+      const result = await removeWorkOrderItemAllocationUseCase(input, tx)
 
-    await deleteWorkOrderItemAllocation(input, tx)
-
-    await refreshInventoryReservedStockCounts(
-      collectAffectedReservationInventoryIds([existing.inventoryId]),
-      tx,
-    )
-
-    await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
-  })
+      await refreshInventoryReservedStockCounts(
+        collectAffectedReservationInventoryIds(result.touchedInventoryIds),
+        tx,
+      )
+      await reconcileWorkOrderAllocationStatusesUseCase(input.workOrderId, tx)
+    })
+  } catch (error) {
+    normalizeWorkOrderAllocationApplicationError(error)
+  }
 }
 
 export async function getWorkOrderAutoAllocationStatusUseCase(workOrderId: string) {
@@ -123,12 +141,13 @@ export async function getWorkOrderAutoAllocationStatusUseCase(workOrderId: strin
     },
   })
 
-  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrderId, workOrder.updatedAt)
+  const currentRun = await findWorkOrderAllocationRunRowBySourceVersion(workOrderId, workOrder.updatedAt)
   if (currentRun) {
-    return currentRun
+    return mapWorkOrderAllocationRunRowToRecord(currentRun)
   }
 
-  return findActiveWorkOrderAllocationRun(workOrderId)
+  const activeRun = await findActiveWorkOrderAllocationRunRow(workOrderId)
+  return activeRun ? mapWorkOrderAllocationRunRowToRecord(activeRun) : null
 }
 
 export async function requestWorkOrderAutoAllocationUseCase(input: {
@@ -136,97 +155,13 @@ export async function requestWorkOrderAutoAllocationUseCase(input: {
   triggeredByUserId: string
   requestId: string
 }) {
-  return withDatabaseTransaction(async (tx) => {
-    await lockWorkOrderAllocationScope(tx, input.workOrderId)
-
-    const workOrder = await tx.flooringWorkOrder.findUniqueOrThrow({
-      where: { id: input.workOrderId },
-      select: {
-        id: true,
-        updatedAt: true,
-      },
-    })
-    const sourceVersion = workOrder.updatedAt
-    const sourceVersionIso = sourceVersion.toISOString()
-    const existingRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, sourceVersion, tx)
-    if (existingRun) {
-      return existingRun
-    }
-
-    const activeRun = await findActiveWorkOrderAllocationRun(input.workOrderId, tx)
-    if (activeRun) {
-      if (activeRun.sourceVersion === sourceVersionIso) {
-        return activeRun
-      }
-
-      if (activeRun.status === "PROCESSING") {
-        throw createAppError(
-          "Auto allocation is already processing for an older work order version. Wait for it to finish and retry.",
-          { status: 409, field: "updatedAt", payload: { run: activeRun } },
-        )
-      }
-
-      await supersedePendingWorkOrderAllocationRuns({
-        workOrderId: input.workOrderId,
-        excludeSourceVersion: sourceVersion,
-      }, tx)
-    }
-
-    const now = new Date()
-    const idempotencyKey = buildWorkOrderAutoAllocationIdempotencyKey(workOrder.id, sourceVersionIso)
-    let run
-
-    try {
-      run = await createWorkOrderAllocationRun(
-        {
-          workOrderId: workOrder.id,
-          requestedByUserId: input.triggeredByUserId,
-          sourceVersion,
-          idempotencyKey,
-          requestId: input.requestId,
-          requestedAt: now,
-        },
-        tx,
-      )
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        const replayRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, sourceVersion, tx)
-        if (replayRun) {
-          return replayRun
-        }
-      }
-
-      throw error
-    }
-
-    const outboxPayload: WorkOrderAutoAllocationRequestedOutboxEventV1 = {
-      version: "v1",
-      topic: WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,
-      requestId: input.requestId,
-      allocationRunId: run.id,
-      workOrderId: input.workOrderId,
-      requestedByUserId: input.triggeredByUserId,
-      idempotencyKey,
-      sourceVersion: run.sourceVersion,
-      requestedAt: run.requestedAt,
-    }
-
-    await createQueueOutboxEvent(
-      {
-        topic: WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,
-        aggregateType: WORK_ORDER_AUTO_ALLOCATION_AGGREGATE_TYPE,
-        aggregateId: run.id,
-        idempotencyKey,
-        payloadJson: outboxPayload,
-        availableAt: now,
-      },
-      tx,
-    )
-
-    return run
-  })
+  try {
+    return await requestSharedWorkOrderAutoAllocationUseCase(input)
+  } catch (error) {
+    normalizeWorkOrderAllocationApplicationError(error)
+  }
 }
 
 export async function getWorkOrderAutoAllocationRunByIdUseCase(allocationRunId: string) {
-  return getWorkOrderAllocationRunById(allocationRunId, db)
+  return mapWorkOrderAllocationRunRowToRecord(await getWorkOrderAllocationRunRowById(allocationRunId))
 }

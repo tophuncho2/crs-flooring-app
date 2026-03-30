@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest"
 import {
+  WorkOrderAllocationDomainError,
+  assertAllocationFitsInventoryAvailability,
+  assertAllocationFitsWorkOrderItemQuantity,
+  assertWorkOrderAllocationCompatibility,
   buildInventoryAllocationTotals,
   buildWorkOrderAllocationPlan,
   buildWorkOrderAllocationWorkflowSummary,
   buildWorkOrderItemAllocationSummary,
+  collectAffectedReservationInventoryIds,
   determineWorkOrderMaterialAllocationStatus,
 } from "@builders/domain"
 
@@ -136,5 +141,42 @@ describe("work order allocation domain", () => {
       unreservedTotal: 16,
       availableToAllocate: 13,
     })
+  })
+
+  it("raises typed domain errors for compatibility and quantity invariants", () => {
+    expect(() =>
+      assertWorkOrderAllocationCompatibility({
+        itemProductId: "prod-1",
+        workOrderWarehouseId: "wh-1",
+        inventoryProductId: "prod-2",
+        inventoryWarehouseId: "wh-1",
+      }),
+    ).toThrowError(WorkOrderAllocationDomainError)
+
+    expect(() =>
+      assertAllocationFitsInventoryAvailability({
+        quantity: 8,
+        stockCount: 10,
+        cutTotal: 1,
+        reservedStockCount: 3,
+      }),
+    ).toThrowError(WorkOrderAllocationDomainError)
+
+    expect(() =>
+      assertAllocationFitsWorkOrderItemQuantity({
+        requiredQuantity: 5,
+        existingAllocatedQuantity: 3,
+        allocationQuantity: 3,
+      }),
+    ).toThrowError(WorkOrderAllocationDomainError)
+  })
+
+  it("deduplicates reservation refresh inventory ids in one domain helper", () => {
+    expect(
+      collectAffectedReservationInventoryIds(
+        ["inv-1", "inv-2", "inv-1", "", null],
+        ["inv-3", "inv-2", undefined],
+      ),
+    ).toEqual(["inv-1", "inv-2", "inv-3"])
   })
 })

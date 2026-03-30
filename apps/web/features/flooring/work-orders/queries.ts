@@ -1,16 +1,18 @@
 import {
   Prisma,
   createPrismaPageLoadIssue,
-  findActiveWorkOrderAllocationRun,
-  findWorkOrderAllocationRunBySourceVersion,
+  findActiveWorkOrderAllocationRunRow,
+  findWorkOrderAllocationRunRowBySourceVersion,
   isPrismaNotFoundError,
-  listAutoAllocationInventoryCandidates,
+  listAutoAllocationInventoryCandidateRows,
   prisma,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
+import { mapWorkOrderAllocationRunRowToRecord } from "@builders/execution"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import {
+  buildInventoryAllocationTotals,
   buildWorkOrderAllocationPlan,
   buildWorkOrderAllocationWorkflowSummary,
   isWorkOrderAutoAllocationPendingStatus,
@@ -45,14 +47,15 @@ async function deriveWorkOrderAllocationState(
     }>
   },
 ) {
-  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, workOrder.updatedAt, db)
+  const currentRunRow = await findWorkOrderAllocationRunRowBySourceVersion(workOrder.id, workOrder.updatedAt, db)
+  const currentRun = currentRunRow ? mapWorkOrderAllocationRunRowToRecord(currentRunRow) : null
   const hasPendingRun = isWorkOrderAutoAllocationPendingStatus(currentRun?.status)
   const canDeclareShortage = currentRun?.status === "COMPLETED"
 
   const shortageItemIds = new Set<string>()
 
   if (canDeclareShortage && workOrder.warehouseId) {
-    const inventoryCandidates = await listAutoAllocationInventoryCandidates(workOrder.id, db)
+    const inventoryCandidates = await listAutoAllocationInventoryCandidateRows(workOrder.id, db)
     const allocationPlan = buildWorkOrderAllocationPlan({
       warehouseId: workOrder.warehouseId,
       items: workOrder.items.map((item) => ({
@@ -68,8 +71,12 @@ async function deriveWorkOrderAllocationState(
         id: candidate.id,
         productId: candidate.productId,
         warehouseId: candidate.warehouseId,
-        availableQuantity: candidate.availableToAllocate,
-        fifoReceivedAt: candidate.fifoReceivedAt,
+        availableQuantity: buildInventoryAllocationTotals({
+          stockCount: candidate.stockCount.toString(),
+          cutTotal: candidate.cutTotal,
+          reservedStockCount: candidate.reservedStockCount.toString(),
+        }).availableToAllocate,
+        fifoReceivedAt: candidate.fifoReceivedAt.toISOString(),
         itemNumber: candidate.itemNumber,
       })),
     })
@@ -313,9 +320,9 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
     },
   })
 
-  const [allocationState, activeAllocationRun] = await Promise.all([
+  const [allocationState, activeAllocationRunRow] = await Promise.all([
     deriveWorkOrderAllocationState(db, workOrder),
-    findActiveWorkOrderAllocationRun(workOrder.id, db),
+    findActiveWorkOrderAllocationRunRow(workOrder.id, db),
   ])
 
   return {
@@ -338,7 +345,9 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
           ...workOrder,
           hasShortage: normalizedItems.some((item) => item.allocationStatus === "SHORTAGE"),
         }),
-        autoAllocationRun: allocationState.currentRun ?? activeAllocationRun,
+        autoAllocationRun:
+          allocationState.currentRun ??
+          (activeAllocationRunRow ? mapWorkOrderAllocationRunRowToRecord(activeAllocationRunRow) : null),
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
         salesReps: normalizedSalesReps,
@@ -375,8 +384,9 @@ export async function getWorkOrderReconciliationByIdWithClient(db: WorkOrderDbCl
     },
   })
 
-  const currentRun = await findWorkOrderAllocationRunBySourceVersion(workOrder.id, workOrder.updatedAt, db)
-  const activeRun = currentRun ?? (await findActiveWorkOrderAllocationRun(workOrder.id, db))
+  const currentRunRow = await findWorkOrderAllocationRunRowBySourceVersion(workOrder.id, workOrder.updatedAt, db)
+  const activeRunRow = currentRunRow ?? (await findActiveWorkOrderAllocationRunRow(workOrder.id, db))
+  const activeRun = activeRunRow ? mapWorkOrderAllocationRunRowToRecord(activeRunRow) : null
   const allocationWorkflow = buildWorkOrderAllocationWorkflowSummary({
     itemStatuses: workOrder.items.map((item) => item.allocationStatus),
     hasPendingRun: isWorkOrderAutoAllocationPendingStatus(activeRun?.status),

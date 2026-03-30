@@ -1,16 +1,20 @@
 import {
   Prisma,
   clearAllocationsForWorkOrder,
-  createWorkOrderItemAllocation,
-  deleteWorkOrderItemAllocation,
   deleteAllAllocationsForWorkOrderItem,
+  listWorkOrderAllocationInventoryIds,
   prisma,
-  recalculateWorkOrderItemAllocationStatus,
-  syncWorkOrderAllocationStatuses,
-  updateWorkOrderItemAllocation,
+  refreshInventoryReservedStockCounts,
 } from "@builders/db"
+import {
+  applyManualAllocationChangeUseCase,
+  reconcileWorkOrderAllocationStatusesUseCase,
+  removeWorkOrderItemAllocationUseCase,
+} from "@builders/execution"
+import { collectAffectedReservationInventoryIds } from "@builders/domain"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
+import { normalizeWorkOrderAllocationApplicationError } from "./application/allocation-errors"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
 import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import type {
@@ -423,7 +427,9 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
 
 export async function deleteWorkOrder(id: string) {
   await prisma.$transaction(async (tx) => {
+    const affectedInventoryIds = await listWorkOrderAllocationInventoryIds(id, tx)
     await clearAllocationsForWorkOrder(id, tx)
+    await refreshInventoryReservedStockCounts(collectAffectedReservationInventoryIds(affectedInventoryIds), tx)
     await tx.flooringWorkOrderSalesRep.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderServiceItem.deleteMany({ where: { workOrderId: id } })
     await tx.flooringWorkOrderItem.deleteMany({ where: { workOrderId: id } })
@@ -447,7 +453,7 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
       include: workOrderItemInclude,
     })
 
-    await syncWorkOrderAllocationStatuses(workOrderId, tx)
+    await reconcileWorkOrderAllocationStatusesUseCase(workOrderId, tx)
 
     return item
   })
@@ -465,7 +471,15 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
       },
     })
 
+    const touchedInventoryIds = new Set<string>()
     if (input.productId !== undefined && input.productId !== current.productId) {
+      const allocationInventoryIds = await tx.flooringWorkOrderItemAllocation.findMany({
+        where: { workOrderItemId: itemId },
+        select: { inventoryId: true },
+      })
+      for (const allocation of allocationInventoryIds) {
+        touchedInventoryIds.add(allocation.inventoryId)
+      }
       await deleteAllAllocationsForWorkOrderItem(itemId, tx)
     }
 
@@ -482,9 +496,14 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
       include: workOrderItemInclude,
     })
 
-    await recalculateWorkOrderItemAllocationStatus(tx, item.id)
+    if (touchedInventoryIds.size > 0) {
+      await refreshInventoryReservedStockCounts(
+        collectAffectedReservationInventoryIds(Array.from(touchedInventoryIds)),
+        tx,
+      )
+    }
 
-    await syncWorkOrderAllocationStatuses(item.workOrderId, tx)
+    await reconcileWorkOrderAllocationStatusesUseCase(item.workOrderId, tx)
 
     return tx.flooringWorkOrderItem.findUniqueOrThrow({
       where: { id: itemId },
@@ -497,12 +516,20 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
 
 export async function deleteWorkOrderItem(itemId: string) {
   await prisma.$transaction(async (tx) => {
+    const affectedInventoryIds = await tx.flooringWorkOrderItemAllocation.findMany({
+      where: { workOrderItemId: itemId },
+      select: { inventoryId: true },
+    })
     await deleteAllAllocationsForWorkOrderItem(itemId, tx)
+    await refreshInventoryReservedStockCounts(
+      collectAffectedReservationInventoryIds(affectedInventoryIds.map((allocation) => allocation.inventoryId)),
+      tx,
+    )
     const deleted = await tx.flooringWorkOrderItem.delete({
       where: { id: itemId },
       select: { workOrderId: true },
     })
-    await syncWorkOrderAllocationStatuses(deleted.workOrderId, tx)
+    await reconcileWorkOrderAllocationStatusesUseCase(deleted.workOrderId, tx)
   })
 }
 
@@ -831,8 +858,9 @@ export async function saveWorkOrderMaterialItemsSection(
   workOrderId: string,
   input: UpdateWorkOrderMaterialItemsSectionInput,
 ) {
-  await prisma.$transaction(async (tx) => {
-    const currentItems = await tx.flooringWorkOrderItem.findMany({
+  try {
+    await prisma.$transaction(async (tx) => {
+      const currentItems = await tx.flooringWorkOrderItem.findMany({
       where: { workOrderId },
       select: {
         id: true,
@@ -853,9 +881,10 @@ export async function saveWorkOrderMaterialItemsSection(
         },
       },
     })
-    const currentItemsById = new Map(currentItems.map((item) => [item.id, item]))
-    const seenItemIds = new Set<string>()
-    let didChange = currentItems.length !== input.items.length
+      const currentItemsById = new Map(currentItems.map((item) => [item.id, item]))
+      const seenItemIds = new Set<string>()
+      const touchedInventoryIds = new Set<string>()
+      let didChange = currentItems.length !== input.items.length
 
     for (const row of input.items) {
       let nextItemId = row.id
@@ -905,6 +934,9 @@ export async function saveWorkOrderMaterialItemsSection(
           isNullableStringEqual(current.notes, nextNotes)
 
         if (current.productId !== row.item.productId) {
+          for (const allocation of current.allocations) {
+            touchedInventoryIds.add(allocation.inventoryId)
+          }
           await deleteAllAllocationsForWorkOrderItem(row.id, tx)
           didChange = true
           itemDidChange = true
@@ -958,7 +990,7 @@ export async function saveWorkOrderMaterialItemsSection(
             isNullableStringEqual(currentAllocation.notes, allocation.input.notes)
 
           if (!allocationIsUnchanged) {
-            await updateWorkOrderItemAllocation(
+            const result = await applyManualAllocationChangeUseCase(
               {
                 workOrderId,
                 workOrderItemId: nextItemId ?? "",
@@ -970,6 +1002,9 @@ export async function saveWorkOrderMaterialItemsSection(
               },
               tx,
             )
+            for (const inventoryId of result.touchedInventoryIds) {
+              touchedInventoryIds.add(inventoryId)
+            }
             didChange = true
             itemDidChange = true
           }
@@ -978,7 +1013,7 @@ export async function saveWorkOrderMaterialItemsSection(
           continue
         }
 
-        await createWorkOrderItemAllocation(
+        const result = await applyManualAllocationChangeUseCase(
           {
             workOrderId,
             workOrderItemId: nextItemId ?? "",
@@ -986,10 +1021,12 @@ export async function saveWorkOrderMaterialItemsSection(
             quantity: allocation.input.quantity,
             cutSize: allocation.input.cutSize,
             notes: allocation.input.notes,
-            method: "MANUAL",
           },
           tx,
         )
+        for (const inventoryId of result.touchedInventoryIds) {
+          touchedInventoryIds.add(inventoryId)
+        }
         didChange = true
         itemDidChange = true
       }
@@ -999,7 +1036,7 @@ export async function saveWorkOrderMaterialItemsSection(
           continue
         }
 
-        await deleteWorkOrderItemAllocation(
+        const result = await removeWorkOrderItemAllocationUseCase(
           {
             workOrderId,
             workOrderItemId: nextItemId ?? "",
@@ -1007,6 +1044,9 @@ export async function saveWorkOrderMaterialItemsSection(
           },
           tx,
         )
+        for (const inventoryId of result.touchedInventoryIds) {
+          touchedInventoryIds.add(inventoryId)
+        }
         didChange = true
         itemDidChange = true
       }
@@ -1018,9 +1058,6 @@ export async function saveWorkOrderMaterialItemsSection(
         })
       }
 
-      if (itemDidChange) {
-        await recalculateWorkOrderItemAllocationStatus(tx, nextItemId)
-      }
       seenItemIds.add(nextItemId)
     }
 
@@ -1029,15 +1066,25 @@ export async function saveWorkOrderMaterialItemsSection(
         continue
       }
 
+      for (const allocation of current.allocations) {
+        touchedInventoryIds.add(allocation.inventoryId)
+      }
       await deleteAllAllocationsForWorkOrderItem(current.id, tx)
       await tx.flooringWorkOrderItem.delete({ where: { id: current.id } })
       didChange = true
     }
 
     if (didChange) {
-      await syncWorkOrderAllocationStatuses(workOrderId, tx)
+      await refreshInventoryReservedStockCounts(
+        collectAffectedReservationInventoryIds(Array.from(touchedInventoryIds)),
+        tx,
+      )
+      await reconcileWorkOrderAllocationStatusesUseCase(workOrderId, tx)
     }
-  })
+    })
+  } catch (error) {
+    normalizeWorkOrderAllocationApplicationError(error)
+  }
 }
 
 export async function saveWorkOrderMaterialSection(
@@ -1045,8 +1092,9 @@ export async function saveWorkOrderMaterialSection(
   itemId: string,
   input: UpdateWorkOrderMaterialSectionInput,
 ) {
-  const updated = await prisma.$transaction(async (tx) => {
-    const current = await tx.flooringWorkOrderItem.findUniqueOrThrow({
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const current = await tx.flooringWorkOrderItem.findUniqueOrThrow({
       where: { id: itemId },
       select: {
         id: true,
@@ -1065,9 +1113,18 @@ export async function saveWorkOrderMaterialSection(
 
     assertVersionMatch(current.updatedAt, input.itemExpectedUpdatedAt, "Material item changed before save completed. Refresh and try again.")
 
-    if (input.item.productId !== undefined && input.item.productId !== current.productId) {
+      const touchedInventoryIds = new Set<string>()
+
+      if (input.item.productId !== undefined && input.item.productId !== current.productId) {
+        const currentAllocationInventoryIds = await tx.flooringWorkOrderItemAllocation.findMany({
+          where: { workOrderItemId: itemId },
+          select: { inventoryId: true },
+        })
+        for (const allocation of currentAllocationInventoryIds) {
+          touchedInventoryIds.add(allocation.inventoryId)
+        }
       await deleteAllAllocationsForWorkOrderItem(itemId, tx)
-    }
+      }
 
     const itemUpdateData: Prisma.FlooringWorkOrderItemUncheckedUpdateInput = {}
 
@@ -1088,22 +1145,24 @@ export async function saveWorkOrderMaterialSection(
       data: itemUpdateData,
     })
 
-    for (const operation of input.allocationOperations) {
-      if (operation.type === "create") {
-        await createWorkOrderItemAllocation(
-          {
-            workOrderId,
-            workOrderItemId: itemId,
-            inventoryId: operation.input.inventoryId,
-            quantity: operation.input.quantity,
-            cutSize: operation.input.cutSize,
-            notes: operation.input.notes,
-            method: "MANUAL",
-          },
-          tx,
-        )
-        continue
-      }
+      for (const operation of input.allocationOperations) {
+        if (operation.type === "create") {
+          const result = await applyManualAllocationChangeUseCase(
+            {
+              workOrderId,
+              workOrderItemId: itemId,
+              inventoryId: operation.input.inventoryId,
+              quantity: operation.input.quantity,
+              cutSize: operation.input.cutSize,
+              notes: operation.input.notes,
+            },
+            tx,
+          )
+          for (const inventoryId of result.touchedInventoryIds) {
+            touchedInventoryIds.add(inventoryId)
+          }
+          continue
+        }
 
       const allocation = await tx.flooringWorkOrderItemAllocation.findUniqueOrThrow({
         where: { id: operation.allocationId },
@@ -1127,38 +1186,55 @@ export async function saveWorkOrderMaterialSection(
         "Allocation changed before save completed. Refresh and try again.",
       )
 
-      if (operation.type === "update") {
-        await updateWorkOrderItemAllocation(
+        if (operation.type === "update") {
+          const result = await applyManualAllocationChangeUseCase(
+            {
+              workOrderId,
+              workOrderItemId: itemId,
+              allocationId: operation.allocationId,
+              inventoryId: operation.input.inventoryId,
+              quantity: operation.input.quantity,
+              cutSize: operation.input.cutSize,
+              notes: operation.input.notes,
+            },
+            tx,
+          )
+          for (const inventoryId of result.touchedInventoryIds) {
+            touchedInventoryIds.add(inventoryId)
+          }
+          continue
+        }
+
+        const result = await removeWorkOrderItemAllocationUseCase(
           {
             workOrderId,
             workOrderItemId: itemId,
             allocationId: operation.allocationId,
-            ...applyAllocationUpdatePatch(operation.input),
           },
           tx,
         )
-        continue
+        for (const inventoryId of result.touchedInventoryIds) {
+          touchedInventoryIds.add(inventoryId)
+        }
       }
 
-      await deleteWorkOrderItemAllocation(
-        {
-          workOrderId,
-          workOrderItemId: itemId,
-          allocationId: operation.allocationId,
-        },
-        tx,
-      )
-    }
+      if (touchedInventoryIds.size > 0) {
+        await refreshInventoryReservedStockCounts(
+          collectAffectedReservationInventoryIds(Array.from(touchedInventoryIds)),
+          tx,
+        )
+      }
 
-    await recalculateWorkOrderItemAllocationStatus(tx, itemId)
+      await reconcileWorkOrderAllocationStatusesUseCase(workOrderId, tx)
 
-    await syncWorkOrderAllocationStatuses(workOrderId, tx)
-
-    return tx.flooringWorkOrderItem.findUniqueOrThrow({
-      where: { id: itemId },
-      include: workOrderItemInclude,
+      return tx.flooringWorkOrderItem.findUniqueOrThrow({
+        where: { id: itemId },
+        include: workOrderItemInclude,
+      })
     })
-  })
 
-  return normalizeWorkOrderItem(updated)
+    return normalizeWorkOrderItem(updated)
+  } catch (error) {
+    normalizeWorkOrderAllocationApplicationError(error)
+  }
 }
