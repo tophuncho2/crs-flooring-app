@@ -1,6 +1,5 @@
 "use client"
 
-import { RecordLineSummary } from "@/features/flooring/shared/ui/display/record-line-summary"
 import { RecordDetailClientScaffold } from "@/features/shared/engines/record-view"
 import type { EditableMaterialItem, MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
 import type { EditableServiceItem, ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
@@ -36,9 +35,6 @@ export function TemplateDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved template changes. Leave this template without saving?"
       headerVariant="section"
-      headerMeta={({ summary }) => (
-        <RecordLineSummary materialItems={summary.materialItems} serviceItems={summary.serviceItems} variant="header" />
-      )}
     >
       {(page) => {
         return (
