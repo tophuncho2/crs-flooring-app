@@ -13,23 +13,26 @@ const {
   enforceRouteRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
+  enforceMutationReceiptMock,
+  finalizeMutationReceiptMock,
 } = vi.hoisted(() => ({
   prismaMock: {
     flooringManufacturer: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
-    },
-    flooringProduct: {
-      count: vi.fn(),
     },
   },
   requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
+  enforceMutationReceiptMock: vi.fn(),
+  finalizeMutationReceiptMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", async () => {
@@ -61,6 +64,15 @@ vi.mock("@/server/http/route-helpers", () => ({
   logRouteMutationSuccess: logRouteMutationSuccessMock,
   logRouteMutationFailure: logRouteMutationFailureMock,
 }))
+
+vi.mock("@/server/http/route-policy", async () => {
+  const actual = await vi.importActual<typeof import("@/server/http/route-policy")>("@/server/http/route-policy")
+  return {
+    ...actual,
+    enforceMutationReceipt: enforceMutationReceiptMock,
+    finalizeMutationReceipt: finalizeMutationReceiptMock,
+  }
+})
 
 function manufacturerRecord(
   overrides: Partial<{
@@ -94,6 +106,8 @@ describe("manufacturers", () => {
     vi.clearAllMocks()
     requireRouteAccessMock.mockResolvedValue(routeAccess)
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    enforceMutationReceiptMock.mockResolvedValue({ replay: null, requestHash: "hash" })
+    finalizeMutationReceiptMock.mockResolvedValue(undefined)
   })
 
   it("manufacturer POST route accepts missing agentName and returns normalized payload", async () => {
@@ -197,15 +211,17 @@ describe("manufacturers", () => {
 
   it("PATCH route updates a manufacturer and returns normalized payload", async () => {
     prismaMock.flooringManufacturer.findFirst.mockResolvedValue(null)
-    prismaMock.flooringManufacturer.update.mockResolvedValue(
-      manufacturerRecord({
-        companyName: "Acme Flooring",
-        agentName: "Jamie Agent",
-        website: "https://example.com",
-        phone: "555-1111",
-        email: "jamie@example.com",
-      }),
-    )
+    prismaMock.flooringManufacturer.findUniqueOrThrow
+      .mockResolvedValueOnce(manufacturerRecord())
+      .mockResolvedValueOnce(
+        manufacturerRecord({
+          companyName: "Acme Flooring",
+          agentName: "Jamie Agent",
+          website: "https://example.com",
+          phone: "555-1111",
+          email: "jamie@example.com",
+        }),
+      )
 
     const response = await PATCH(
       new Request("http://localhost/api/flooring/manufacturers/mfg-1", {
@@ -217,6 +233,10 @@ describe("manufacturers", () => {
           website: "https://example.com",
           phone: "555-1111",
           email: "jamie@example.com",
+          mutation: {
+            idempotencyKey: "idem-1",
+            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
+          },
         }),
       }),
       { params: Promise.resolve({ id: "mfg-1" }) },
@@ -233,7 +253,6 @@ describe("manufacturers", () => {
         phone: "555-1111",
         email: "jamie@example.com",
       },
-      include: { _count: { select: { products: true } } },
     })
     expect(payload.manufacturer).toEqual(
       normalizeManufacturer(
@@ -256,6 +275,10 @@ describe("manufacturers", () => {
         body: JSON.stringify({
           companyName: "   ",
           agentName: "Jamie Agent",
+          mutation: {
+            idempotencyKey: "idem-2",
+            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
+          },
         }),
       }),
       { params: Promise.resolve({ id: "mfg-1" }) },
@@ -328,11 +351,25 @@ describe("manufacturers", () => {
   })
 
   it("prevents deleting a manufacturer that still has linked products", async () => {
-    prismaMock.flooringProduct.count.mockResolvedValue(1)
-
-    const response = await DELETE(new Request("http://localhost/api/flooring/manufacturers/mfg-1"), {
-      params: Promise.resolve({ id: "mfg-1" }),
+    prismaMock.flooringManufacturer.findUniqueOrThrow.mockResolvedValue(manufacturerRecord())
+    prismaMock.flooringManufacturer.findUnique.mockResolvedValue({
+      id: "mfg-1",
+      _count: { products: 1 },
     })
+
+    const response = await DELETE(
+      new Request("http://localhost/api/flooring/manufacturers/mfg-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-3",
+            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
+          },
+        }),
+      }),
+      { params: Promise.resolve({ id: "mfg-1" }) },
+    )
 
     const payload = await response.json()
 
@@ -342,12 +379,26 @@ describe("manufacturers", () => {
   })
 
   it("deletes a manufacturer when there are no linked products", async () => {
-    prismaMock.flooringProduct.count.mockResolvedValue(0)
+    prismaMock.flooringManufacturer.findUniqueOrThrow.mockResolvedValue(manufacturerRecord())
+    prismaMock.flooringManufacturer.findUnique.mockResolvedValue({
+      id: "mfg-1",
+      _count: { products: 0 },
+    })
     prismaMock.flooringManufacturer.delete.mockResolvedValue({ id: "mfg-1" })
 
-    const response = await DELETE(new Request("http://localhost/api/flooring/manufacturers/mfg-1"), {
-      params: Promise.resolve({ id: "mfg-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/flooring/manufacturers/mfg-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-4",
+            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
+          },
+        }),
+      }),
+      { params: Promise.resolve({ id: "mfg-1" }) },
+    )
 
     const payload = await response.json()
 

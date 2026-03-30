@@ -3,19 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const {
   authorizeCategoriesRouteMock,
   authorizeWarehouseRouteMock,
-  authorizeManufacturersRouteMock,
   createCategoryMock,
   createWarehouseRowMock,
   deleteManufacturerMock,
   enforceRouteRateLimitMock,
+  requireRouteAccessMock,
 } = vi.hoisted(() => ({
   authorizeCategoriesRouteMock: vi.fn(),
   authorizeWarehouseRouteMock: vi.fn(),
-  authorizeManufacturersRouteMock: vi.fn(),
   createCategoryMock: vi.fn(),
   createWarehouseRowMock: vi.fn(),
   deleteManufacturerMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
+  requireRouteAccessMock: vi.fn(),
 }))
 
 const routeAccess = {
@@ -32,7 +32,7 @@ const routeAccess = {
 
 vi.mock("@/features/flooring/shared/access/lookup-domains", () => ({
   authorizeCategoriesRoute: authorizeCategoriesRouteMock,
-  authorizeManufacturersRoute: authorizeManufacturersRouteMock,
+  MANUFACTURERS_TOOL_SLUG: "manufacturers",
 }))
 
 vi.mock("@/features/flooring/shared/access/domain-tools", () => ({
@@ -64,6 +64,7 @@ vi.mock("@/features/flooring/manufacturers/application/manage-manufacturer", () 
 }))
 
 vi.mock("@/server/http/route-helpers", () => ({
+  requireRouteAccess: requireRouteAccessMock,
   enforceRouteRateLimit: enforceRouteRateLimitMock,
   routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
   routeError: vi.fn((_context, error) =>
@@ -87,7 +88,7 @@ describe("route policy parity", () => {
     vi.clearAllMocks()
     authorizeCategoriesRouteMock.mockResolvedValue(routeAccess)
     authorizeWarehouseRouteMock.mockResolvedValue(routeAccess)
-    authorizeManufacturersRouteMock.mockResolvedValue(routeAccess)
+    requireRouteAccessMock.mockResolvedValue(routeAccess)
     enforceRouteRateLimitMock.mockResolvedValue(null)
   })
 

@@ -103,6 +103,7 @@ export function createWorkOrderAllocationOutboxDispatcher(
         limit: env.batchSize,
         now,
         lockStaleBefore,
+        topic: WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,
       })
 
       let dispatchedCount = 0

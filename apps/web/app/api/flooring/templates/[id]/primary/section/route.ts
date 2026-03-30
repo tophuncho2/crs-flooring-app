@@ -1,6 +1,6 @@
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { updateTemplatePrimarySectionUseCase } from "@/features/flooring/templates/application/record-sections"
 import { getTemplateById } from "@/features/flooring/templates/queries"
-import { saveTemplatePrimarySection } from "@/features/flooring/templates/mutations"
 import { validateUpdateTemplatePrimarySectionInput } from "@/features/flooring/templates/validators"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -62,7 +62,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringTemplate",
         entityId: id,
       },
-      () => saveTemplatePrimarySection(id, input),
+      () => updateTemplatePrimarySectionUseCase(id, input),
     )
 
     const responseBody = {

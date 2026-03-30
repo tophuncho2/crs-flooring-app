@@ -1,6 +1,6 @@
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { saveWorkOrderSalesRepsSectionUseCase } from "@/features/flooring/work-orders/application/record-sections"
 import { getWorkOrderById } from "@/features/flooring/work-orders/queries"
-import { saveWorkOrderSalesRepsSection } from "@/features/flooring/work-orders/mutations"
 import { withWorkOrderCapabilities } from "@/features/flooring/work-orders/transport/detail"
 import { validateUpdateWorkOrderSalesRepSectionInput } from "@/features/flooring/work-orders/validators"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -63,7 +63,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringWorkOrder",
         entityId: id,
       },
-      () => saveWorkOrderSalesRepsSection(id, input),
+      () => saveWorkOrderSalesRepsSectionUseCase(id, input),
     )
 
     const responseBody = {

@@ -35,6 +35,8 @@ export function useManufacturerPrimarySection({
     deleteRecord: async (record) => {
       await requestJson<{ ok: true }>(`/api/flooring/manufacturers/${record.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, record.updatedAt)),
       })
     },
     deleteErrorMessage: "Failed to delete manufacturer",

@@ -10,15 +10,18 @@ import { GET as GET_CALCULATIONS } from "@/app/api/flooring/templates/[id]/calcu
 import { DELETE as DELETE_SALES_REP, PATCH as PATCH_SALES_REP } from "@/app/api/flooring/templates/[id]/sales-reps/[repId]/route"
 
 const {
+  applyRoutePolicyMock,
+  enforceMutationReceiptMock,
+  finalizeMutationReceiptMock,
   authorizeTemplatesRouteMock,
   enforceRouteRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
   listTemplatesMock,
-  createTemplateMock,
   getTemplateByIdMock,
-  updateTemplateMock,
-  deleteTemplateMock,
+  createTemplateUseCaseMock,
+  updateTemplateUseCaseMock,
+  deleteTemplateUseCaseMock,
   listTemplateItemsMock,
   createTemplateItemMock,
   updateTemplateItemMock,
@@ -33,15 +36,18 @@ const {
   updateTemplateSalesRepMock,
   deleteTemplateSalesRepMock,
 } = vi.hoisted(() => ({
+  applyRoutePolicyMock: vi.fn(),
+  enforceMutationReceiptMock: vi.fn(),
+  finalizeMutationReceiptMock: vi.fn(),
   authorizeTemplatesRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
   listTemplatesMock: vi.fn(),
-  createTemplateMock: vi.fn(),
   getTemplateByIdMock: vi.fn(),
-  updateTemplateMock: vi.fn(),
-  deleteTemplateMock: vi.fn(),
+  createTemplateUseCaseMock: vi.fn(),
+  updateTemplateUseCaseMock: vi.fn(),
+  deleteTemplateUseCaseMock: vi.fn(),
   listTemplateItemsMock: vi.fn(),
   createTemplateItemMock: vi.fn(),
   updateTemplateItemMock: vi.fn(),
@@ -87,6 +93,16 @@ vi.mock("@/server/http/route-helpers", () => ({
   },
 }))
 
+vi.mock("@/server/http/route-policy", async () => {
+  const actual = await vi.importActual<typeof import("@/server/http/route-policy")>("@/server/http/route-policy")
+  return {
+    ...actual,
+    applyRoutePolicy: applyRoutePolicyMock,
+    enforceMutationReceipt: enforceMutationReceiptMock,
+    finalizeMutationReceipt: finalizeMutationReceiptMock,
+  }
+})
+
 vi.mock("@/features/flooring/templates/queries", () => ({
   listTemplates: listTemplatesMock,
   getTemplateById: getTemplateByIdMock,
@@ -96,10 +112,13 @@ vi.mock("@/features/flooring/templates/queries", () => ({
   listTemplateCalculationRows: listTemplateCalculationRowsMock,
 }))
 
+vi.mock("@/features/flooring/templates/application/manage-template", () => ({
+  createTemplateUseCase: createTemplateUseCaseMock,
+  updateTemplateUseCase: updateTemplateUseCaseMock,
+  deleteTemplateUseCase: deleteTemplateUseCaseMock,
+}))
+
 vi.mock("@/features/flooring/templates/mutations", () => ({
-  createTemplate: createTemplateMock,
-  updateTemplate: updateTemplateMock,
-  deleteTemplate: deleteTemplateMock,
   createTemplateItem: createTemplateItemMock,
   updateTemplateItem: updateTemplateItemMock,
   deleteTemplateItem: deleteTemplateItemMock,
@@ -132,6 +151,8 @@ function templateRow(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 describe("template routes", () => {
+  const templateId = "11111111-1111-4111-8111-111111111111"
+
   beforeEach(() => {
     vi.clearAllMocks()
     authorizeTemplatesRouteMock.mockResolvedValue({
@@ -140,6 +161,23 @@ describe("template routes", () => {
       user: { id: "user-1", email: "owner@test.com" },
     })
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    applyRoutePolicyMock.mockResolvedValue({
+      requestId: "req-1",
+      clientIp: "127.0.0.1",
+      user: { id: "user-1", email: "owner@test.com" },
+    })
+    enforceMutationReceiptMock.mockResolvedValue({ replay: null, requestHash: "hash" })
+    finalizeMutationReceiptMock.mockResolvedValue(undefined)
+    createTemplateUseCaseMock.mockImplementation(async (body: Record<string, unknown>) => {
+      if (typeof body.propertyId !== "string" || body.propertyId.trim() === "") {
+        throw { message: "propertyId is required", status: 400, field: "propertyId" }
+      }
+      if (typeof body.templateTag !== "string" || body.templateTag.trim() === "") {
+        throw { message: "templateTag is required", status: 400, field: "templateTag" }
+      }
+
+      return templateRow()
+    })
   })
 
   it("GET /api/flooring/templates returns normalized template rows", async () => {
@@ -180,7 +218,7 @@ describe("template routes", () => {
   })
 
   it("POST accepts nullable warehouseId and padProductId and returns normalized payload", async () => {
-    createTemplateMock.mockResolvedValue(templateRow())
+    createTemplateUseCaseMock.mockResolvedValue(templateRow())
 
     const response = await POST_TEMPLATES(
       new Request("http://localhost/api/flooring/templates", {
@@ -197,7 +235,7 @@ describe("template routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(201)
-    expect(createTemplateMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(createTemplateUseCaseMock).toHaveBeenCalledWith(expect.objectContaining({
       propertyId: "prop-1",
       templateTag: "Turn",
       warehouseId: null,
@@ -207,40 +245,68 @@ describe("template routes", () => {
   })
 
   it("PATCH updates allowed fields and returns normalized payload", async () => {
-    updateTemplateMock.mockResolvedValue(templateRow({ templateTag: "Make Ready", warehouseId: "wh-1", warehouseName: "Main" }))
+    getTemplateByIdMock.mockResolvedValueOnce(templateRow({ id: templateId }))
+    updateTemplateUseCaseMock.mockResolvedValue(templateRow({
+      id: templateId,
+      templateTag: "Make Ready",
+      warehouseId: "wh-1",
+      warehouseName: "Main",
+    }))
 
     const response = await PATCH_TEMPLATE(
-      new Request("http://localhost/api/flooring/templates/tpl-1", {
+      new Request(`http://localhost/api/flooring/templates/${templateId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateTag: "Make Ready", warehouseId: "wh-1" }),
+        body: JSON.stringify({
+          templateTag: "Make Ready",
+          warehouseId: "wh-1",
+          mutation: {
+            idempotencyKey: "idem-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
-      { params: Promise.resolve({ id: "tpl-1" }) },
+      { params: Promise.resolve({ id: templateId }) },
     )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(updateTemplateMock).toHaveBeenCalledWith("tpl-1", expect.objectContaining({
+    expect(updateTemplateUseCaseMock).toHaveBeenCalledWith(templateId, expect.objectContaining({
       templateTag: "Make Ready",
       warehouseId: "wh-1",
     }))
-    expect(payload.template).toEqual(templateRow({ templateTag: "Make Ready", warehouseId: "wh-1", warehouseName: "Main" }))
+    expect(payload.template).toEqual(templateRow({ id: templateId, templateTag: "Make Ready", warehouseId: "wh-1", warehouseName: "Main" }))
   })
 
   it("DELETE succeeds on happy path and auth uses warehouse tool access", async () => {
-    const response = await DELETE_TEMPLATE(new Request("http://localhost/api/flooring/templates/tpl-1"), {
-      params: Promise.resolve({ id: "tpl-1" }),
-    })
+    getTemplateByIdMock.mockResolvedValueOnce(templateRow({ id: templateId }))
+    deleteTemplateUseCaseMock.mockResolvedValue({ ok: true })
+
+    const response = await DELETE_TEMPLATE(
+      new Request(`http://localhost/api/flooring/templates/${templateId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-2",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
+      }),
+      {
+        params: Promise.resolve({ id: templateId }),
+      },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteTemplateMock).toHaveBeenCalledWith("tpl-1")
-    expect(authorizeTemplatesRouteMock).toHaveBeenCalledTimes(1)
+    expect(deleteTemplateUseCaseMock).toHaveBeenCalledWith(templateId)
+    expect(applyRoutePolicyMock).toHaveBeenCalledTimes(1)
   })
 
   it("normalizes template validation and business-rule errors", async () => {
-    createTemplateMock.mockRejectedValue({ message: "padProductId must reference a Pad product", field: "padProductId" })
+    createTemplateUseCaseMock.mockRejectedValue({ message: "padProductId must reference a Pad product", field: "padProductId" })
 
     const response = await POST_TEMPLATES(
       new Request("http://localhost/api/flooring/templates", {

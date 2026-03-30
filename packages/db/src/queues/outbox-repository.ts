@@ -109,6 +109,7 @@ export async function listClaimableQueueOutboxEvents(
     limit: number
     now?: Date
     lockStaleBefore?: Date
+    topic?: string
   },
   client: OutboxDbClient = db,
 ) {
@@ -117,6 +118,7 @@ export async function listClaimableQueueOutboxEvents(
 
   const events = await client.queueOutboxEvent.findMany({
     where: {
+      ...(input.topic ? { topic: input.topic } : {}),
       availableAt: {
         lte: now,
       },

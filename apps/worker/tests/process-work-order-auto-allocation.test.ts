@@ -89,6 +89,8 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
       deleteAutoAllocationsForWorkOrder: vi.fn().mockResolvedValue(undefined),
       createAllocation,
       updateItemShortageStatuses,
+      listWorkOrderAllocationInventoryIds: vi.fn().mockResolvedValue([]),
+      refreshInventoryReservedStockCounts: vi.fn().mockResolvedValue(undefined),
       getAllocationSource: vi.fn().mockResolvedValue({
         allocationRun: {
           id: "11111111-1111-4111-8111-111111111111",
@@ -286,6 +288,8 @@ describe("createWorkOrderAutoAllocationProcessor", () => {
       deleteAutoAllocationsForWorkOrder: vi.fn().mockResolvedValue(undefined),
       createAllocation: vi.fn(),
       updateItemShortageStatuses: vi.fn(),
+      listWorkOrderAllocationInventoryIds: vi.fn().mockResolvedValue([]),
+      refreshInventoryReservedStockCounts: vi.fn().mockResolvedValue(undefined),
       getAllocationSource: vi.fn().mockResolvedValue({
         allocationRun: {
           id: "11111111-1111-4111-8111-111111111111",

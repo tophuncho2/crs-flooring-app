@@ -33,8 +33,10 @@ export function useCategoryPrimarySection({
       return payload.category
     },
     deleteRecord: async (record) => {
-      await requestJson<{ success: boolean }>(`/api/flooring/categories/${record.id}`, {
+      await requestJson<{ ok: true }>(`/api/flooring/categories/${record.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, record.updatedAt)),
       })
     },
     deleteErrorMessage: "Failed to delete category",

@@ -109,6 +109,7 @@ export function createInvoiceOutboxDispatcher(
         limit: env.batchSize,
         now,
         lockStaleBefore,
+        topic: INVOICE_GENERATION_REQUESTED_OUTBOX_TOPIC,
       })
 
       let dispatchedCount = 0

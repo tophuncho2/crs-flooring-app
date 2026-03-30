@@ -644,6 +644,46 @@ async function refreshInventoryReservedStockCount(
   })
 }
 
+export async function refreshInventoryReservedStockCounts(
+  inventoryIds: string[],
+  client: WorkOrderAllocationDbClient = db,
+) {
+  for (const inventoryId of Array.from(new Set(inventoryIds))) {
+    await refreshInventoryReservedStockCount(client, inventoryId)
+  }
+}
+
+export async function listWorkOrderAllocationInventoryIds(
+  workOrderId: string,
+  client: WorkOrderAllocationDbClient = db,
+) {
+  const allocations = await client.flooringWorkOrderItemAllocation.findMany({
+    where: {
+      workOrderItem: {
+        workOrderId,
+      },
+    },
+    select: {
+      inventoryId: true,
+    },
+  })
+
+  return Array.from(new Set(allocations.map((allocation) => allocation.inventoryId)))
+}
+
+export async function getWorkOrderItemAllocationInventoryContext(
+  allocationId: string,
+  client: WorkOrderAllocationDbClient = db,
+) {
+  return client.flooringWorkOrderItemAllocation.findUnique({
+    where: { id: allocationId },
+    select: {
+      id: true,
+      inventoryId: true,
+    },
+  })
+}
+
 export async function recalculateWorkOrderItemAllocationStatus(
   client: WorkOrderAllocationDbClient,
   workOrderItemId: string,
@@ -1187,7 +1227,6 @@ export async function createWorkOrderItemAllocation(
       select: allocationSelect,
     })
 
-    await refreshInventoryReservedStockCount(tx, inventory.id)
     await syncWorkOrderAllocationStatuses(item.workOrder.id, tx)
 
     return toWorkOrderItemAllocationRecord(allocation)
@@ -1266,10 +1305,6 @@ export async function updateWorkOrderItemAllocation(
       },
     })
 
-    await refreshInventoryReservedStockCount(tx, existing.inventoryId)
-    if (nextInventoryId !== existing.inventoryId) {
-      await refreshInventoryReservedStockCount(tx, nextInventoryId)
-    }
     await syncWorkOrderAllocationStatuses(item.workOrder.id, tx)
 
     return loadAllocationRecord(tx, existing.id)
@@ -1304,7 +1339,6 @@ export async function deleteWorkOrderItemAllocation(
       where: { id: allocation.id },
     })
 
-    await refreshInventoryReservedStockCount(tx, allocation.inventoryId)
     await syncWorkOrderAllocationStatuses(item.workOrder.id, tx)
   })
 }
@@ -1332,10 +1366,6 @@ export async function deleteAllAllocationsForWorkOrderItem(
     await tx.flooringWorkOrderItemAllocation.deleteMany({
       where: { workOrderItemId },
     })
-
-    for (const inventoryId of Array.from(new Set(inventoryIds))) {
-      await refreshInventoryReservedStockCount(tx, inventoryId)
-    }
 
     await syncWorkOrderAllocationStatuses(workOrderItem.workOrderId, tx)
   })
@@ -1371,9 +1401,6 @@ export async function deleteAllAutoAllocationsForWorkOrder(
       },
     })
 
-    for (const inventoryId of inventoryIds) {
-      await refreshInventoryReservedStockCount(tx, inventoryId)
-    }
     await syncWorkOrderAllocationStatuses(workOrderId, tx)
   })
 }
@@ -1407,9 +1434,6 @@ export async function clearAllocationsForWorkOrder(
       },
     })
 
-    for (const inventoryId of inventoryIds) {
-      await refreshInventoryReservedStockCount(tx, inventoryId)
-    }
     await syncWorkOrderAllocationStatuses(workOrderId, tx)
   })
 }

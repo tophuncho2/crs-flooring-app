@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GET, POST } from "@/app/api/builder/unit-of-measures/route"
 import { DELETE, PATCH } from "@/app/api/builder/unit-of-measures/[id]/route"
 
-const { prismaMock, applyRoutePolicyMock } = vi.hoisted(() => ({
+const { prismaMock, applyRoutePolicyMock, enforceMutationReceiptMock, finalizeMutationReceiptMock } = vi.hoisted(() => ({
   prismaMock: {
     flooringUnitOfMeasure: {
       findMany: vi.fn(),
@@ -10,10 +10,13 @@ const { prismaMock, applyRoutePolicyMock } = vi.hoisted(() => ({
       create: vi.fn(),
       update: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       delete: vi.fn(),
     },
   },
   applyRoutePolicyMock: vi.fn(),
+  enforceMutationReceiptMock: vi.fn(),
+  finalizeMutationReceiptMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", async () => {
@@ -25,9 +28,15 @@ vi.mock("@builders/db", async () => {
   }
 })
 
-vi.mock("@/server/http/route-policy", () => ({
-  applyRoutePolicy: applyRoutePolicyMock,
-}))
+vi.mock("@/server/http/route-policy", async () => {
+  const actual = await vi.importActual<typeof import("@/server/http/route-policy")>("@/server/http/route-policy")
+  return {
+    ...actual,
+    applyRoutePolicy: applyRoutePolicyMock,
+    enforceMutationReceipt: enforceMutationReceiptMock,
+    finalizeMutationReceipt: finalizeMutationReceiptMock,
+  }
+})
 
 vi.mock("@/server/platform/logger", () => ({
   logEvent: vi.fn(),
@@ -63,6 +72,8 @@ describe("unit-of-measures routes", () => {
         isVerified: true,
       },
     })
+    enforceMutationReceiptMock.mockResolvedValue({ replay: null, requestHash: "hash" })
+    finalizeMutationReceiptMock.mockResolvedValue(undefined)
   })
 
   it("GET returns normalized rows", async () => {
@@ -128,7 +139,13 @@ describe("unit-of-measures routes", () => {
       new Request("http://localhost/api/builder/unit-of-measures/u-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "   " }),
+        body: JSON.stringify({
+          name: "   ",
+          mutation: {
+            idempotencyKey: "idem-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "u-1" }) },
     )
@@ -140,13 +157,21 @@ describe("unit-of-measures routes", () => {
   })
 
   it("PATCH returns normalized payload", async () => {
-    prismaMock.flooringUnitOfMeasure.update.mockResolvedValue(unitRecord({ name: "Hour" }))
+    prismaMock.flooringUnitOfMeasure.findUniqueOrThrow
+      .mockResolvedValueOnce(unitRecord())
+      .mockResolvedValueOnce(unitRecord({ name: "Hour" }))
 
     const response = await PATCH(
       new Request("http://localhost/api/builder/unit-of-measures/u-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Hour" }),
+        body: JSON.stringify({
+          name: "Hour",
+          mutation: {
+            idempotencyKey: "idem-2",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "u-1" }) },
     )
@@ -162,6 +187,7 @@ describe("unit-of-measures routes", () => {
   })
 
   it("DELETE succeeds on happy path only when there is no linkage", async () => {
+    prismaMock.flooringUnitOfMeasure.findUniqueOrThrow.mockResolvedValue(unitRecord())
     prismaMock.flooringUnitOfMeasure.findUnique.mockResolvedValue({
       id: "u-1",
       _count: {
@@ -176,17 +202,30 @@ describe("unit-of-measures routes", () => {
       },
     })
 
-    const response = await DELETE(new Request("http://localhost/api/builder/unit-of-measures/u-1"), {
-      params: Promise.resolve({ id: "u-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/builder/unit-of-measures/u-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-3",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
+      }),
+      {
+        params: Promise.resolve({ id: "u-1" }),
+      },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload).toEqual({ success: true })
+    expect(payload).toEqual({ ok: true })
     expect(prismaMock.flooringUnitOfMeasure.delete).toHaveBeenCalledWith({ where: { id: "u-1" } })
   })
 
   it("DELETE is blocked when linked to categories", async () => {
+    prismaMock.flooringUnitOfMeasure.findUniqueOrThrow.mockResolvedValue(unitRecord())
     prismaMock.flooringUnitOfMeasure.findUnique.mockResolvedValue({
       id: "u-1",
       _count: {
@@ -201,9 +240,21 @@ describe("unit-of-measures routes", () => {
       },
     })
 
-    const response = await DELETE(new Request("http://localhost/api/builder/unit-of-measures/u-1"), {
-      params: Promise.resolve({ id: "u-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/builder/unit-of-measures/u-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-4",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
+      }),
+      {
+        params: Promise.resolve({ id: "u-1" }),
+      },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(409)
@@ -212,6 +263,7 @@ describe("unit-of-measures routes", () => {
   })
 
   it("DELETE is blocked when linked to a representative service relation", async () => {
+    prismaMock.flooringUnitOfMeasure.findUniqueOrThrow.mockResolvedValue(unitRecord())
     prismaMock.flooringUnitOfMeasure.findUnique.mockResolvedValue({
       id: "u-1",
       _count: {
@@ -226,9 +278,21 @@ describe("unit-of-measures routes", () => {
       },
     })
 
-    const response = await DELETE(new Request("http://localhost/api/builder/unit-of-measures/u-1"), {
-      params: Promise.resolve({ id: "u-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/builder/unit-of-measures/u-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-5",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
+      }),
+      {
+        params: Promise.resolve({ id: "u-1" }),
+      },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(409)

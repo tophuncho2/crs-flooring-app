@@ -3,12 +3,21 @@ import { GET, POST } from "@/app/api/flooring/categories/route"
 import { DELETE, PATCH } from "@/app/api/flooring/categories/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock, logRouteMutationSuccessMock, logRouteMutationFailureMock } = vi.hoisted(() => ({
+const {
+  prismaMock,
+  requireRouteAccessMock,
+  enforceRouteRateLimitMock,
+  logRouteMutationSuccessMock,
+  logRouteMutationFailureMock,
+  enforceMutationReceiptMock,
+  finalizeMutationReceiptMock,
+} = vi.hoisted(() => ({
   prismaMock: {
     flooringCategory: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -18,6 +27,8 @@ const { prismaMock, requireRouteAccessMock, enforceRouteRateLimitMock, logRouteM
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
+  enforceMutationReceiptMock: vi.fn(),
+  finalizeMutationReceiptMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", async () => {
@@ -49,6 +60,15 @@ vi.mock("@/server/http/route-helpers", () => ({
   logRouteMutationSuccess: logRouteMutationSuccessMock,
   logRouteMutationFailure: logRouteMutationFailureMock,
 }))
+
+vi.mock("@/server/http/route-policy", async () => {
+  const actual = await vi.importActual<typeof import("@/server/http/route-policy")>("@/server/http/route-policy")
+  return {
+    ...actual,
+    enforceMutationReceipt: enforceMutationReceiptMock,
+    finalizeMutationReceipt: finalizeMutationReceiptMock,
+  }
+})
 
 function categoryRecord(
   overrides: Partial<{
@@ -84,6 +104,8 @@ describe("categories routes", () => {
     vi.clearAllMocks()
     requireRouteAccessMock.mockResolvedValue(routeAccess)
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    enforceMutationReceiptMock.mockResolvedValue({ replay: null, requestHash: "hash" })
+    finalizeMutationReceiptMock.mockResolvedValue(undefined)
   })
 
   it("GET returns normalized category rows", async () => {
@@ -221,7 +243,13 @@ describe("categories routes", () => {
       new Request("http://localhost/api/flooring/categories/cat-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "   " }),
+        body: JSON.stringify({
+          name: "   ",
+          mutation: {
+            idempotencyKey: "idem-1",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "cat-1" }) },
     )
@@ -233,14 +261,16 @@ describe("categories routes", () => {
   })
 
   it("PATCH returns normalized payload", async () => {
-    prismaMock.flooringCategory.update.mockResolvedValue(
-      categoryRecord({
-        name: "Updated Carpet",
-        stockUnit: { id: "u-stock", name: "Roll" },
-        coverageAvailableUnit: { id: "u-cover", name: "Box" },
-        serviceUnit: { id: "u-service", name: "Hour" },
-      }),
-    )
+    prismaMock.flooringCategory.findUniqueOrThrow
+      .mockResolvedValueOnce(categoryRecord())
+      .mockResolvedValueOnce(
+        categoryRecord({
+          name: "Updated Carpet",
+          stockUnit: { id: "u-stock", name: "Roll" },
+          coverageAvailableUnit: { id: "u-cover", name: "Box" },
+          serviceUnit: { id: "u-service", name: "Hour" },
+        }),
+      )
 
     const response = await PATCH(
       new Request("http://localhost/api/flooring/categories/cat-1", {
@@ -253,6 +283,10 @@ describe("categories routes", () => {
           coverageAvailableUnitId: "u-cover",
           itemCoverageUnitId: "u-item",
           serviceUnitId: "u-service",
+          mutation: {
+            idempotencyKey: "idem-2",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
         }),
       }),
       { params: Promise.resolve({ id: "cat-1" }) },
@@ -273,6 +307,7 @@ describe("categories routes", () => {
   })
 
   it("DELETE succeeds on the happy path and does not affect unit-of-measure records", async () => {
+    prismaMock.flooringCategory.findUniqueOrThrow.mockResolvedValue(categoryRecord({ _count: { products: 0 } }))
     prismaMock.flooringCategory.findUnique.mockResolvedValue({
       id: "cat-1",
       _count: {
@@ -280,13 +315,25 @@ describe("categories routes", () => {
       },
     })
 
-    const response = await DELETE(new Request("http://localhost/api/flooring/categories/cat-1"), {
-      params: Promise.resolve({ id: "cat-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/flooring/categories/cat-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-3",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
+      }),
+      {
+        params: Promise.resolve({ id: "cat-1" }),
+      },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload).toEqual({ success: true })
+    expect(payload).toEqual({ ok: true })
     expect(prismaMock.flooringCategory.findUnique).toHaveBeenCalledWith({
       where: { id: "cat-1" },
       select: {
@@ -303,6 +350,7 @@ describe("categories routes", () => {
   })
 
   it("DELETE is blocked when the category is linked to products", async () => {
+    prismaMock.flooringCategory.findUniqueOrThrow.mockResolvedValue(categoryRecord())
     prismaMock.flooringCategory.findUnique.mockResolvedValue({
       id: "cat-1",
       _count: {
@@ -310,9 +358,21 @@ describe("categories routes", () => {
       },
     })
 
-    const response = await DELETE(new Request("http://localhost/api/flooring/categories/cat-1"), {
-      params: Promise.resolve({ id: "cat-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/flooring/categories/cat-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "idem-4",
+            expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+          },
+        }),
+      }),
+      {
+        params: Promise.resolve({ id: "cat-1" }),
+      },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(409)

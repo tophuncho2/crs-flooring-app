@@ -3,95 +3,143 @@ import {
   replaceManufacturerPrimarySection,
   validateUpdateManufacturerPrimarySectionInput,
 } from "@/features/flooring/manufacturers/application/manage-manufacturer"
-import { authorizeManufacturersRoute } from "@/features/flooring/shared/access/lookup-domains"
+import { getManufacturerById } from "@/features/flooring/manufacturers/queries"
+import { MANUFACTURERS_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
-  enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+  applyRoutePolicy,
+  assertExpectedUpdatedAt,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const access = await authorizeManufacturersRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "manufacturers.write",
-    limit: 20,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/manufacturers/[id]",
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: MANUFACTURERS_TOOL_SLUG,
+    rateLimit: {
+      scope: "manufacturers.update",
+      limit: 20,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/manufacturers/[id]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const manufacturer = await replaceManufacturerPrimarySection(id, validateUpdateManufacturerPrimarySectionInput(body))
-    logRouteMutationSuccess(access, {
-      message: "Manufacturer updated",
-      action: "manufacturers.update",
-      route: "/api/flooring/manufacturers/[id]",
-      entityType: "flooringManufacturer",
-      entityId: id,
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateManufacturerPrimarySectionInput, {
+      requireExpectedUpdatedAt: true,
     })
-
-    return routeJson(access, { manufacturer })
-  } catch (error) {
-    logRouteMutationFailure(
+    const currentSnapshot = await getManufacturerById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { manufacturer: currentSnapshot },
+      message: "Manufacturer changed before save completed. Refresh and try again.",
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "manufacturers.update",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
+    const manufacturer = await withMutationTelemetry(
       access,
       {
-        message: "Manufacturer update failed",
-        action: "manufacturers.update.error",
+        message: "Manufacturer updated",
+        action: "manufacturers.update",
         route: "/api/flooring/manufacturers/[id]",
         entityType: "flooringManufacturer",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => replaceManufacturerPrimarySection(id, input),
     )
+
+    const responseBody = {
+      manufacturer,
+    }
+    await finalizeMutationReceipt({
+      scope: "manufacturers.update",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
     return routeError(access, error)
   }
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const access = await authorizeManufacturersRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "manufacturers.delete",
-    limit: 10,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/manufacturers/[id]",
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: MANUFACTURERS_TOOL_SLUG,
+    rateLimit: {
+      scope: "manufacturers.delete",
+      limit: 10,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/manufacturers/[id]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
-    const result = await deleteManufacturerRecord(id)
-    logRouteMutationSuccess(access, {
-      message: "Manufacturer deleted",
-      action: "manufacturers.delete",
-      route: "/api/flooring/manufacturers/[id]",
-      entityType: "flooringManufacturer",
-      entityId: id,
+    const body = (await request.json()) as Record<string, unknown>
+    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+      requireExpectedUpdatedAt: true,
     })
-    return routeJson(access, result)
-  } catch (error) {
-    logRouteMutationFailure(
+    const currentSnapshot = await getManufacturerById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { manufacturer: currentSnapshot },
+      message: "Manufacturer changed before delete completed. Refresh and try again.",
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "manufacturers.delete",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
+    await withMutationTelemetry(
       access,
       {
-        message: "Manufacturer deletion failed",
-        action: "manufacturers.delete.error",
+        message: "Manufacturer deleted",
+        action: "manufacturers.delete",
         route: "/api/flooring/manufacturers/[id]",
         entityType: "flooringManufacturer",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => deleteManufacturerRecord(id),
     )
+    const responseBody = { ok: true as const }
+    await finalizeMutationReceipt({
+      scope: "manufacturers.delete",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
     return routeError(access, error)
   }
 }

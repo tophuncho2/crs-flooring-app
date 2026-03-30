@@ -3,95 +3,145 @@ import {
   replaceCategoryPrimarySection,
   validateUpdateCategoryPrimarySectionInput,
 } from "@/features/flooring/categories/application/manage-category"
-import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
+import { getCategoryById } from "@/features/flooring/categories/data/queries"
+import { CATEGORIES_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
-  enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+  applyRoutePolicy,
+  assertExpectedUpdatedAt,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const access = await authorizeCategoriesRoute(request, { capability: "categories.edit" })
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "categories.write",
-    limit: 20,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/categories/[id]",
+  const access = await applyRoutePolicy(request, {
+    capability: "categories.edit",
+    toolSlug: CATEGORIES_TOOL_SLUG,
+    rateLimit: {
+      scope: "categories.update",
+      limit: 20,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/categories/[id]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const category = await replaceCategoryPrimarySection(id, validateUpdateCategoryPrimarySectionInput(body))
-    logRouteMutationSuccess(access, {
-      message: "Category updated",
-      action: "categories.update",
-      route: "/api/flooring/categories/[id]",
-      entityType: "flooringCategory",
-      entityId: id,
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateCategoryPrimarySectionInput, {
+      requireExpectedUpdatedAt: true,
     })
+    const currentSnapshot = await getCategoryById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { category: currentSnapshot },
+      message: "Category changed before save completed. Refresh and try again.",
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "categories.update",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
 
-    return routeJson(access, { category })
-  } catch (error) {
-    logRouteMutationFailure(
+    const category = await withMutationTelemetry(
       access,
       {
-        message: "Category update failed",
-        action: "categories.update.error",
+        message: "Category updated",
+        action: "categories.update",
         route: "/api/flooring/categories/[id]",
         entityType: "flooringCategory",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => replaceCategoryPrimarySection(id, input),
     )
+
+    const responseBody = {
+      category,
+    }
+    await finalizeMutationReceipt({
+      scope: "categories.update",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
     return routeError(access, error)
   }
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const access = await authorizeCategoriesRoute(request, { capability: "categories.edit" })
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "categories.delete",
-    limit: 10,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/categories/[id]",
+  const access = await applyRoutePolicy(request, {
+    capability: "categories.edit",
+    toolSlug: CATEGORIES_TOOL_SLUG,
+    rateLimit: {
+      scope: "categories.delete",
+      limit: 10,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/categories/[id]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
-    const result = await deleteCategoryRecord(id)
-    logRouteMutationSuccess(access, {
-      message: "Category deleted",
-      action: "categories.delete",
-      route: "/api/flooring/categories/[id]",
-      entityType: "flooringCategory",
-      entityId: id,
+    const body = (await request.json()) as Record<string, unknown>
+    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+      requireExpectedUpdatedAt: true,
     })
-    return routeJson(access, result)
-  } catch (error) {
-    logRouteMutationFailure(
+    const currentSnapshot = await getCategoryById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { category: currentSnapshot },
+      message: "Category changed before delete completed. Refresh and try again.",
+    })
+    const receipt = await enforceMutationReceipt({
+      scope: "categories.delete",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) {
+      return receipt.replay
+    }
+
+    await withMutationTelemetry(
       access,
       {
-        message: "Category deletion failed",
-        action: "categories.delete.error",
+        message: "Category deleted",
+        action: "categories.delete",
         route: "/api/flooring/categories/[id]",
         entityType: "flooringCategory",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => deleteCategoryRecord(id),
     )
+    const responseBody = { ok: true as const }
+    await finalizeMutationReceipt({
+      scope: "categories.delete",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
     return routeError(access, error)
   }
 }

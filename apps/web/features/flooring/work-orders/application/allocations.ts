@@ -1,5 +1,6 @@
 import {
   buildWorkOrderAutoAllocationIdempotencyKey,
+  collectAffectedReservationInventoryIds,
   WORK_ORDER_AUTO_ALLOCATION_AGGREGATE_TYPE,
   WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,
   type WorkOrderAutoAllocationRequestedOutboxEventV1,
@@ -12,11 +13,13 @@ import {
   deleteWorkOrderItemAllocation,
   findActiveWorkOrderAllocationRun,
   findWorkOrderAllocationRunBySourceVersion,
+  getWorkOrderItemAllocationInventoryContext,
   getWorkOrderAllocationRunById,
   lockWorkOrderAllocationScope,
   listInventoryAllocationOptionsForWorkOrderProduct,
   listInventoryAllocationOptionsForWorkOrderItem,
   listWorkOrderItemAllocations,
+  refreshInventoryReservedStockCounts,
   syncWorkOrderAllocationStatuses,
   supersedePendingWorkOrderAllocationRuns,
   updateWorkOrderItemAllocation,
@@ -52,6 +55,11 @@ export async function createWorkOrderItemAllocationUseCase(input: {
       method: "MANUAL",
     }, tx)
 
+    await refreshInventoryReservedStockCounts(
+      collectAffectedReservationInventoryIds([allocation.inventoryId]),
+      tx,
+    )
+
     await tx.flooringWorkOrder.update({
       where: { id: input.workOrderId },
       data: buildInvoiceInvalidationFields(),
@@ -73,7 +81,17 @@ export async function updateWorkOrderItemAllocationUseCase(input: {
   notes?: string | null
 }) {
   return withDatabaseTransaction(async (tx) => {
+    const existing = await getWorkOrderItemAllocationInventoryContext(input.allocationId, tx)
+    if (!existing) {
+      throw createAppError("Allocation not found", { status: 404 })
+    }
+
     const allocation = await updateWorkOrderItemAllocation(input, tx)
+
+    await refreshInventoryReservedStockCounts(
+      collectAffectedReservationInventoryIds([existing.inventoryId], [allocation.inventoryId]),
+      tx,
+    )
 
     await tx.flooringWorkOrder.update({
       where: { id: input.workOrderId },
@@ -92,7 +110,17 @@ export async function deleteWorkOrderItemAllocationUseCase(input: {
   allocationId: string
 }) {
   return withDatabaseTransaction(async (tx) => {
+    const existing = await getWorkOrderItemAllocationInventoryContext(input.allocationId, tx)
+    if (!existing) {
+      throw createAppError("Allocation not found", { status: 404 })
+    }
+
     await deleteWorkOrderItemAllocation(input, tx)
+
+    await refreshInventoryReservedStockCounts(
+      collectAffectedReservationInventoryIds([existing.inventoryId]),
+      tx,
+    )
 
     await tx.flooringWorkOrder.update({
       where: { id: input.workOrderId },

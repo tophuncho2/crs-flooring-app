@@ -33,8 +33,10 @@ export function useUnitOfMeasurePrimarySection({
       return payload.unitOfMeasure
     },
     deleteRecord: async (record) => {
-      await requestJson<{ success: boolean }>(`/api/builder/unit-of-measures/${record.id}`, {
+      await requestJson<{ ok: true }>(`/api/builder/unit-of-measures/${record.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({}, record.updatedAt)),
       })
     },
     deleteErrorMessage: "Failed to delete unit of measure",
