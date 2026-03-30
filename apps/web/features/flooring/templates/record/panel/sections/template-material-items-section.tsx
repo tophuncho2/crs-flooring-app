@@ -13,6 +13,7 @@ import {
   RecordRowLayout,
   RecordRowStatusBadge,
   RecordSectionItem,
+  TextCell,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import {
@@ -98,10 +99,12 @@ function TemplateMaterialItemRow({
                 controlSize="compact"
               />
             }
-            unit={<span className="whitespace-nowrap">{item.sendUnit || "-"}</span>}
-            />
+          />
             {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
           </div>
+        </RecordItemCell>
+        <RecordItemCell label="Unit" columnKey="unit">
+          <TextCell align="center">{item.sendUnit || "-"}</TextCell>
         </RecordItemCell>
         <RecordItemCell label="Unit Price" columnKey="unitPrice">
           <div className="space-y-1">

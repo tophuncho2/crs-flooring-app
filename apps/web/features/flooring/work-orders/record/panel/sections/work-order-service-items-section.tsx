@@ -1,6 +1,5 @@
 "use client"
 
-import type { ReactNode } from "react"
 import {
   CurrencyCell,
   QuantityCell,
@@ -100,28 +99,30 @@ function ServiceItemRow({
                 controlSize="compact"
               />
             }
-            unit={
-              <RecordGridCellSelect
-                value={item.unitId}
-                onChange={(event) => {
-                  const nextUnitId = event.target.value
-                  const selected = unitOptions.find((unit) => unit.id === nextUnitId)
-                  onItemFieldChange(item.id, "unitId", nextUnitId)
-                  onItemFieldChange(item.id, "unitName", selected?.name ?? "")
-                }}
-                invalid={Boolean(rowErrors?.unitId)}
-                controlSize="compact"
-              >
-                <option value="">Unit</option>
-                {unitOptions.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </RecordGridCellSelect>
-            }
           />
           {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
+        </div>
+        </RecordItemCell>
+        <RecordItemCell label="Unit" columnKey="unit">
+        <div className="space-y-1">
+          <RecordGridCellSelect
+            value={item.unitId}
+            onChange={(event) => {
+              const nextUnitId = event.target.value
+              const selected = unitOptions.find((unit) => unit.id === nextUnitId)
+              onItemFieldChange(item.id, "unitId", nextUnitId)
+              onItemFieldChange(item.id, "unitName", selected?.name ?? "")
+            }}
+            invalid={Boolean(rowErrors?.unitId)}
+            controlSize="compact"
+          >
+            <option value="">Unit</option>
+            {unitOptions.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
+              </option>
+            ))}
+          </RecordGridCellSelect>
           {rowErrors?.unitId ? <RecordFieldErrorText>{rowErrors.unitId}</RecordFieldErrorText> : null}
         </div>
         </RecordItemCell>

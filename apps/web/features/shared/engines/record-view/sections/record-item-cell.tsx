@@ -17,7 +17,7 @@ export function RecordItemCell({
   tone = "default",
   density = "default",
 }: {
-  label: string
+  label?: string
   children: ReactNode
   columnKey?: string
   className?: string
@@ -30,8 +30,10 @@ export function RecordItemCell({
   const column = useRecordRowColumn(columnKey)
   const resolvedAlign = align ?? column?.align ?? "start"
   const densityClassName = density === "compact" ? "px-2.5 py-2" : "px-3 py-3"
-  const toneClassName = tone === "allocation" ? "bg-orange-500/[0.08]" : undefined
+  const resolvedTone = tone === "default" ? (column?.tone ?? "default") : tone
+  const toneClassName = resolvedTone === "allocation" ? "bg-orange-500/[0.08]" : undefined
   const defaultLabelClassName = density === "compact" ? "text-[9px] text-[var(--foreground)]/55" : undefined
+  const resolvedLabel = label ?? column?.label ?? ""
   const contentAlignClassName =
     resolvedAlign === "center"
       ? "items-center text-center"
@@ -51,18 +53,20 @@ export function RecordItemCell({
       )}
       style={getRecordRowColumnStyle(column ?? undefined)}
     >
+      {resolvedLabel ? (
+        <div
+          className={joinRecordSectionClasses(
+            "mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45",
+            defaultLabelClassName,
+            labelClassName,
+          )}
+        >
+          {resolvedLabel}
+        </div>
+      ) : null}
       <div
         className={joinRecordSectionClasses(
-          "mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45",
-          defaultLabelClassName,
-          labelClassName,
-        )}
-      >
-        {label}
-      </div>
-      <div
-        className={joinRecordSectionClasses(
-          "flex min-h-[2.5rem] min-w-0 flex-col justify-center overflow-visible",
+          "flex min-h-[2.5rem] w-full min-w-0 justify-center overflow-visible",
           contentAlignClassName,
           contentClassName,
         )}

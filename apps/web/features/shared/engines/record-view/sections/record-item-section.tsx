@@ -11,6 +11,7 @@ import {
   RecordSectionSubHeader,
   type RecordSectionSubHeaderProps,
 } from "./record-section-sub-header"
+import { RecordScrollSyncProvider } from "./record-scroll-sync"
 import { RECORD_SECTION_BORDER_CLASS_NAME } from "./record-section-tokens"
 
 export type RecordItemSectionProps = {
@@ -59,19 +60,21 @@ export function RecordItemSection({
   )
 
   return (
-    <RecordSectionShell
-      title={title}
-      bodyClassName={bodyClassName}
-      statusPanel={statusPanel}
-      noticeMessage={noticeMessage}
-      noticeError={noticeError}
-      metrics={resolvedCapabilities.supportsMetrics ? metrics : undefined}
-      sectionType="item"
-      capabilities={resolvedCapabilities}
-    >
-      {loading ? resolvedLoadingState : null}
-      {!loading && resolvedCapabilities.supportsEmptyState && isEmpty ? emptyState ?? null : null}
-      {!loading ? children : null}
-    </RecordSectionShell>
+    <RecordScrollSyncProvider>
+      <RecordSectionShell
+        title={title}
+        bodyClassName={bodyClassName}
+        statusPanel={statusPanel}
+        noticeMessage={noticeMessage}
+        noticeError={noticeError}
+        metrics={resolvedCapabilities.supportsMetrics ? metrics : undefined}
+        sectionType="item"
+        capabilities={resolvedCapabilities}
+      >
+        {loading ? resolvedLoadingState : null}
+        {!loading && resolvedCapabilities.supportsEmptyState && isEmpty ? emptyState ?? null : null}
+        {!loading ? children : null}
+      </RecordSectionShell>
+    </RecordScrollSyncProvider>
   )
 }

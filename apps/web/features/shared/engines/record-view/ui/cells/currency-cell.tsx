@@ -26,7 +26,7 @@ export function CurrencyCell({
           {input ?? <TextCell align="left">{value}</TextCell>}
         </div>
       </div>
-      <div className="min-w-[4.75rem] shrink-0 text-right text-xs text-[var(--foreground)]/50">
+      <div className="min-w-[5.25rem] shrink-0 text-right text-xs text-[var(--foreground)]/50">
         {unit ? <span className="whitespace-nowrap">/ {unit}</span> : <span className="invisible">/ unit</span>}
       </div>
     </div>

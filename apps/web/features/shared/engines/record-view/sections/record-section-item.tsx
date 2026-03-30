@@ -1,4 +1,5 @@
 import type { KeyboardEvent, ReactNode } from "react"
+import { useRecordScrollSync } from "./record-scroll-sync"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -27,6 +28,8 @@ export function RecordSectionItem({
   bodyClassName?: string
   nestedContentClassName?: string
 }) {
+  const { scrollRef, onScroll } = useRecordScrollSync("parent")
+
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!onOpen) {
       return
@@ -69,7 +72,7 @@ export function RecordSectionItem({
             {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-end">{actions}</div> : null}
           </div>
         ) : null}
-        <div className="overflow-x-auto overscroll-x-contain">
+        <div ref={scrollRef} onScroll={onScroll} className="overflow-x-auto overscroll-x-contain">
           <div className={joinRecordSectionClasses("w-full", bodyClassName)}>{children}</div>
         </div>
       </div>

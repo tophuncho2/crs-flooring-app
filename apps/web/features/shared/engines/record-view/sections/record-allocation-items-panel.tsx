@@ -1,6 +1,7 @@
 "use client"
 
 import type { KeyboardEvent, ReactNode } from "react"
+import { useRecordScrollSync } from "./record-scroll-sync"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -58,6 +59,8 @@ export function RecordAllocationItemsPanel({
   footer?: ReactNode
   className?: string
 }) {
+  const { scrollRef, onScroll } = useRecordScrollSync("allocation")
+
   return (
     <div
       className={joinRecordSectionClasses(
@@ -67,7 +70,7 @@ export function RecordAllocationItemsPanel({
       )}
     >
       {children ? (
-        <div className="overflow-x-auto overscroll-x-contain">
+        <div ref={scrollRef} onScroll={onScroll} className="overflow-x-auto overscroll-x-contain">
           <div className={joinRecordSectionClasses("w-full overflow-hidden", RECORD_SECTION_BORDER_CLASS_NAME)}>
             {children}
           </div>

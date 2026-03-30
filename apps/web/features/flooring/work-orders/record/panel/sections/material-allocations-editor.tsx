@@ -22,7 +22,7 @@ import {
   type FieldErrorMap,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import { WORK_ORDER_MATERIAL_COLUMNS } from "./material-grid-layout"
+import { WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS } from "./material-grid-layout"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "@/features/flooring/work-orders/types"
 
 export type AllocationDraft = {
@@ -58,6 +58,12 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
 
 function readPricePerUnit(options: InventoryAllocationOption[], inventoryId: string) {
   return options.find((option) => option.id === inventoryId)?.pricePerUnit ?? 0
+}
+
+function readAllocationUnit(options: InventoryAllocationOption[], allocation: WorkOrderItemAllocationRow) {
+  return options.find((option) => option.id === allocation.inventoryId)?.stockUnit
+    || allocation.inventory.stockUnit
+    || "-"
 }
 
 function readAllocationRowStatus(allocation: WorkOrderItemAllocationRow, hasErrors: boolean) {
@@ -147,7 +153,7 @@ function AllocationEditorRow({
   const rowStatusTone = readAllocationRowStatusTone(allocation, hasErrors)
 
   return (
-    <RecordRowLayout columns={WORK_ORDER_MATERIAL_COLUMNS} className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}>
+    <RecordRowLayout columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS} className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}>
       <AllocationCell label="Inventory" columnKey="product">
         <div className="space-y-1">
           <RecordGridCellSelect
@@ -184,6 +190,11 @@ function AllocationEditorRow({
           {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
         </div>
       </AllocationCell>
+      <AllocationValueCell
+        label="Unit"
+        columnKey="unit"
+        value={readAllocationUnit(allocationOptions, allocation)}
+      />
       <AllocationCell label="Unit Cost" columnKey="unitPrice">
         <CurrencyCell value={formatCurrencyValue(rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
       </AllocationCell>
@@ -196,11 +207,6 @@ function AllocationEditorRow({
           placeholder="Notes"
           onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
         />
-      </AllocationCell>
-      <AllocationCell label="Allocations" columnKey="allocations">
-        <TextCell align="center" className="text-[var(--foreground)]/45">
-          -
-        </TextCell>
       </AllocationCell>
       <AllocationCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
