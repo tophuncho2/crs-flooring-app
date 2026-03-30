@@ -2,7 +2,7 @@ import type { Server } from "node:http"
 import { createBullBoard } from "@bull-board/api"
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter"
 import { ExpressAdapter } from "@bull-board/express"
-import type { AutoAllocateWorkOrderJobV1, GenerateWorkOrderInvoiceJobV1 } from "@builders/domain"
+import type { AutoAllocateWorkOrderJobV1 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
 import type { Queue } from "bullmq"
 import express, { type Request, type Response, type NextFunction } from "express"
@@ -37,11 +37,9 @@ function createBasicAuthMiddleware(username: string, password: string) {
 
 export async function startBullBoardServer({
   env,
-  invoiceQueue,
   autoAllocationQueue,
 }: {
   env: RelayEnvironment
-  invoiceQueue: Queue<GenerateWorkOrderInvoiceJobV1>
   autoAllocationQueue: Queue<AutoAllocateWorkOrderJobV1>
 }) {
   if (!env.bullBoard.enabled) {
@@ -53,10 +51,7 @@ export async function startBullBoardServer({
   serverAdapter.setBasePath(env.bullBoard.basePath)
 
   createBullBoard({
-    queues: [
-      new BullMQAdapter(invoiceQueue, { readOnlyMode: true }),
-      new BullMQAdapter(autoAllocationQueue, { readOnlyMode: true }),
-    ],
+    queues: [new BullMQAdapter(autoAllocationQueue, { readOnlyMode: true })],
     serverAdapter,
   })
 

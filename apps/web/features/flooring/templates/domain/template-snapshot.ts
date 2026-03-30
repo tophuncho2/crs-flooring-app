@@ -1,6 +1,5 @@
 import { createHash } from "crypto"
 import { Prisma } from "@builders/db"
-import { buildInvoiceInvalidationFields } from "@/features/flooring/work-orders/invoice-state"
 
 export type TemplateSnapshotMaterialRow = {
   sourceTemplateItemId: string
@@ -442,7 +441,6 @@ export async function applyTemplateSync(args: {
       templateSyncedAt: new Date(),
       templateSyncMode: args.mode,
       templateSnapshotHash: args.snapshot.hash,
-      ...buildInvoiceInvalidationFields(),
     },
   })
 

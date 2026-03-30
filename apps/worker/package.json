@@ -15,7 +15,6 @@
     "@builders/domain": "file:../../packages/domain",
     "@builders/lib": "file:../../packages/lib",
     "bullmq": "^5.61.2",
-    "pdf-lib": "^1.17.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

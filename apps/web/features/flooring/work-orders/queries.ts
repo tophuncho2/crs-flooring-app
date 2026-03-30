@@ -3,7 +3,6 @@ import {
   createPrismaPageLoadIssue,
   findActiveWorkOrderAllocationRun,
   findWorkOrderAllocationRunBySourceVersion,
-  getWorkOrderInvoiceView,
   isPrismaNotFoundError,
   listAutoAllocationInventoryCandidates,
   prisma,
@@ -26,7 +25,6 @@ import {
 import { buildWorkOrderCalculationRowsFromSummary, normalizeWorkOrderExpenseTotals } from "./domain/expense-summary"
 import {
   normalizeWorkOrder,
-  normalizeWorkOrderInvoiceStatus,
   normalizeWorkOrderItem,
   normalizeWorkOrderSalesRep,
   normalizeWorkOrderServiceItem,
@@ -315,10 +313,9 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
     },
   })
 
-  const [allocationState, activeAllocationRun, invoiceStatus] = await Promise.all([
+  const [allocationState, activeAllocationRun] = await Promise.all([
     deriveWorkOrderAllocationState(db, workOrder),
     findActiveWorkOrderAllocationRun(workOrder.id, db),
-    getWorkOrderInvoiceView(workOrder.id, db).then((invoice) => normalizeWorkOrderInvoiceStatus(workOrder.id, invoice)),
   ])
 
   return {
@@ -342,7 +339,6 @@ export async function getWorkOrderByIdWithClient(db: WorkOrderDbClient, id: stri
           hasShortage: normalizedItems.some((item) => item.allocationStatus === "SHORTAGE"),
         }),
         autoAllocationRun: allocationState.currentRun ?? activeAllocationRun,
-        invoiceStatus,
         items: normalizedItems,
         serviceItems: normalizedServiceItems,
         salesReps: normalizedSalesReps,
@@ -385,14 +381,12 @@ export async function getWorkOrderReconciliationByIdWithClient(db: WorkOrderDbCl
     itemStatuses: workOrder.items.map((item) => item.allocationStatus),
     hasPendingRun: isWorkOrderAutoAllocationPendingStatus(activeRun?.status),
   })
-  const invoice = await getWorkOrderInvoiceView(workOrder.id, db)
 
   return {
     updatedAt: workOrder.updatedAt.toISOString(),
     hasShortage: workOrder.items.some((item) => item.allocationStatus === "SHORTAGE"),
     allocationIsDone: allocationWorkflow.isDone,
     autoAllocationRun: activeRun,
-    invoiceStatus: normalizeWorkOrderInvoiceStatus(workOrder.id, invoice),
   }
 }
 

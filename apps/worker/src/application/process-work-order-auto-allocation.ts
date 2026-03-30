@@ -178,13 +178,6 @@ export function createProcessWorkOrderAutoAllocationUseCase(
           tx,
         )
 
-        await tx.flooringWorkOrder.update({
-          where: { id: source.workOrder.id },
-          data: {
-            invoiceSourceVersion: new Date(),
-          },
-        })
-
         await dependencies.completeAllocationRun(
           {
             allocationRunId: job.allocationRunId,

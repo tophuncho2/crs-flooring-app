@@ -2,7 +2,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { useState } from "react"
 import {
   requestJsonMock,
   resetSimpleTableClientMocks,
@@ -22,61 +21,12 @@ const { workOrderRecordPanelMock } = vi.hoisted(() => ({
     notices?: { message?: string; error?: string }
     onDirtySectionsChange?: (value: string[]) => void
   }) => {
-    const [invoice, setInvoice] = useState<{ canOpen?: boolean; generation?: { status?: string; error?: string } } | null>(null)
-    const [invoiceError, setInvoiceError] = useState<string | null>(null)
-    const [invoiceLoading, setInvoiceLoading] = useState(false)
-    const [localMessage, setLocalMessage] = useState<string | null>(null)
-
     return (
       <>
         <div>
           <div>{`Panel ${workOrderId}`}</div>
           {notices?.message ? <div>{notices.message}</div> : null}
           {notices?.error ? <div>{notices.error}</div> : null}
-          {localMessage ? <div>{localMessage}</div> : null}
-          {invoiceLoading ? <div>Loading invoice status...</div> : null}
-          {invoiceError ? <div>{invoiceError}</div> : null}
-          <button
-            type="button"
-            onClick={async () => {
-              setInvoiceLoading(true)
-              setInvoiceError(null)
-              try {
-                const nextInvoice = await requestJsonMock(`/api/flooring/work-orders/${workOrderId}/invoice`, {
-                  cache: "no-store",
-                })
-                setInvoice(nextInvoice)
-              } catch (error) {
-                setInvoiceError(error instanceof Error ? error.message : "Invoice status unavailable")
-              } finally {
-                setInvoiceLoading(false)
-              }
-            }}
-          >
-            Open Invoice Section
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              setInvoiceError(null)
-              const nextInvoice = await requestJsonMock(`/api/flooring/work-orders/${workOrderId}/invoice`, {
-                method: "POST",
-              })
-              setInvoice(nextInvoice)
-              if (nextInvoice?.generation?.status === "COMPLETED") {
-                setLocalMessage("Invoice already available")
-              } else if (nextInvoice?.generation?.status === "FAILED") {
-                setLocalMessage(nextInvoice.generation.error || "Invoice generation failed")
-              } else {
-                setLocalMessage("Invoice generation requested")
-              }
-            }}
-          >
-            Generate Invoice
-          </button>
-          <button type="button" disabled={!invoice?.canOpen}>
-            Open Invoice
-          </button>
           <button type="button" onClick={() => onDirtySectionsChange?.(["Work Order"])}>Mark Dirty</button>
           <button type="button" onClick={() => onDirtySectionsChange?.([])}>Clear Dirty</button>
         </div>
@@ -363,100 +313,6 @@ describe("WorkOrdersClient", () => {
     expect(within(optionsMenu).queryByRole("button", { name: "Sync Template" })).toBeNull()
     expect(within(optionsMenu).getByRole("button", { name: "Complete" })).toBeTruthy()
     expect(within(optionsMenu).queryByRole("button", { name: "Auto Allocate" })).toBeNull()
-    expect(within(optionsMenu).queryByRole("button", { name: "Invoice" })).toBeNull()
-    expect(within(optionsMenu).queryByRole("button", { name: "Open Invoice" })).toBeNull()
-  })
-
-  it("queues invoice generation from the invoice section and keeps Open Invoice disabled until a file exists", async () => {
-    const user = userEvent.setup()
-
-    requestJsonMock.mockReset()
-    requestJsonMock
-      .mockResolvedValueOnce({
-        sourceVersion: "2026-03-26T12:00:00.000Z",
-        generation: null,
-        artifact: null,
-        canOpen: false,
-      })
-      .mockResolvedValueOnce({
-        sourceVersion: "2026-03-26T12:00:00.000Z",
-        generation: null,
-        artifact: null,
-        canOpen: false,
-      })
-      .mockResolvedValueOnce({
-        sourceVersion: "2026-03-26T12:00:00.000Z",
-        generation: {
-          id: "gen-1",
-          status: "REQUESTED",
-          requestedAt: "2026-03-26T12:00:00.000Z",
-          queuedAt: null,
-          startedAt: null,
-          completedAt: null,
-          failedAt: null,
-          error: "",
-        },
-        artifact: null,
-        canOpen: false,
-      })
-
-    render(
-      <WorkOrderDetailClient
-        workOrder={workOrderRow()}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
-        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        productOptions={[]}
-        serviceOptions={[]}
-        salesRepOptions={[]}
-        unitOptions={[]}
-        backHref="/dashboard/flooring/work-orders"
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Open Invoice Section" }))
-
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders/wo-1/invoice", expect.objectContaining({
-        cache: "no-store",
-      }))
-    })
-
-    const openInvoiceButton = screen.getByRole("button", { name: "Open Invoice" }) as HTMLButtonElement
-    expect(openInvoiceButton.disabled).toBe(true)
-
-    await user.click(screen.getByRole("button", { name: "Generate Invoice" }))
-
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders/wo-1/invoice", expect.objectContaining({
-        method: "POST",
-      }))
-    })
-
-    expect(await screen.findByText("Invoice generation requested")).toBeTruthy()
-  })
-
-  it("surfaces invoice section load errors in the detail experience", async () => {
-    const user = userEvent.setup()
-
-    requestJsonMock.mockReset()
-    requestJsonMock.mockRejectedValueOnce(new Error("Invoice status unavailable"))
-
-    render(
-      <WorkOrderDetailClient
-        workOrder={workOrderRow()}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments", address: "123 Main St" }]}
-        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        productOptions={[]}
-        serviceOptions={[]}
-        salesRepOptions={[]}
-        unitOptions={[]}
-        backHref="/dashboard/flooring/work-orders"
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Open Invoice Section" }))
-
-    expect(await screen.findByText("Invoice status unavailable")).toBeTruthy()
   })
 
   it("shows completion success inside the canonical detail notice area", async () => {

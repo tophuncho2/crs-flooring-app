@@ -30,7 +30,6 @@ import { buildRecordSummary } from "@/features/flooring/shared/domain/record-sum
 import { MaterialAllocationsEditor } from "./sections/material-allocations-editor"
 import { WorkOrderMaterialItemsSection } from "./sections/work-order-material-items-section"
 import { WorkOrderCalculationsSection } from "./sections/work-order-calculations-section"
-import { WorkOrderInvoiceSection } from "./sections/work-order-invoice-section"
 import { WorkOrderPrimaryFieldsSection } from "./sections/work-order-primary-fields-section"
 import { WorkOrderSalesRepsSection } from "./sections/work-order-sales-reps-section"
 import { WorkOrderServiceItemsSection } from "./sections/work-order-service-items-section"
@@ -40,12 +39,10 @@ import {
   selectedAddress,
 } from "./shared"
 import { useWorkOrderAutoAllocationWorkflow } from "./workflows/use-work-order-auto-allocation-workflow"
-import { useWorkOrderInvoiceWorkflow } from "./workflows/use-work-order-invoice-workflow"
 import { useWorkOrderMaterialSection } from "./controllers/use-work-order-material-section"
 import { useWorkOrderPrimarySection } from "./controllers/use-work-order-primary-section"
 import { useWorkOrderSalesRepsSection } from "./controllers/use-work-order-sales-reps-section"
 import { useWorkOrderServiceSection } from "./controllers/use-work-order-service-section"
-import type { WorkOrderInvoiceStatusResponse } from "@/features/flooring/work-orders/transport/invoice"
 import type {
   DraftWorkOrder,
   PropertyOption,
@@ -62,17 +59,12 @@ import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-
 function buildWorkOrderReconciliationKey(input: {
   updatedAt: string
   autoAllocationRun?: WorkOrderDetail["autoAllocationRun"] | WorkOrderReconciliationStatus["autoAllocationRun"]
-  invoiceStatus?: WorkOrderDetail["invoiceStatus"] | WorkOrderReconciliationStatus["invoiceStatus"] | WorkOrderInvoiceStatusResponse
 }) {
   return [
     input.updatedAt,
     input.autoAllocationRun?.id ?? "",
     input.autoAllocationRun?.sourceVersion ?? "",
     input.autoAllocationRun?.status ?? "",
-    input.invoiceStatus?.sourceVersion ?? "",
-    input.invoiceStatus?.generation?.id ?? "",
-    input.invoiceStatus?.generation?.status ?? "",
-    input.invoiceStatus?.artifact?.id ?? "",
   ].join(":")
 }
 
@@ -130,7 +122,6 @@ export function WorkOrderRecordPanel({
   const noticeController = notices ?? localNotices
   const { message, error: noticeError, showSuccess, showError, clearNotices } = noticeController
   const [remoteReconciliationKey, setRemoteReconciliationKey] = useState<string | null>(null)
-  const [isInvoiceSectionOpen, setIsInvoiceSectionOpen] = useState(false)
 
   const {
     record: workOrder,
@@ -238,15 +229,6 @@ export function WorkOrderRecordPanel({
     applyConflictWorkOrderSnapshot,
   })
 
-  const invoiceWorkflow = useWorkOrderInvoiceWorkflow({
-    workOrder: currentWorkOrder,
-    enabled: isInvoiceSectionOpen,
-    clearNotices,
-    showSuccess,
-    showError,
-    applyConflictWorkOrderSnapshot,
-  })
-
   const dirtySections = useMemo(
     () =>
       [
@@ -288,19 +270,6 @@ export function WorkOrderRecordPanel({
       stalledLabel: "Awaiting Worker...",
     })
   }, [autoAllocationRequestBlocked, autoAllocationWorkflow.isStalled, autoAllocationWorkflow.phase])
-  const invoiceButtonLabel = useMemo(
-    () =>
-      buildWorkflowActionLabel({
-        phase: invoiceWorkflow.phase,
-        isStalled: invoiceWorkflow.isStalled,
-        idleLabel: "Generate Invoice",
-        requestedLabel: "Requesting...",
-        queuedLabel: "Queued...",
-        processingLabel: "Generating Invoice...",
-        stalledLabel: "Awaiting Worker...",
-      }),
-    [invoiceWorkflow.isStalled, invoiceWorkflow.phase],
-  )
 
   useEffect(() => {
     onDirtyChange?.(dirtySections.length > 0)
@@ -324,7 +293,6 @@ export function WorkOrderRecordPanel({
         const currentKey = buildWorkOrderReconciliationKey({
           updatedAt: currentWorkOrder.updatedAt,
           autoAllocationRun: autoAllocationWorkflow.value ?? currentWorkOrder.autoAllocationRun,
-          invoiceStatus: invoiceWorkflow.invoice ?? currentWorkOrder.invoiceStatus,
         })
         const nextKey = buildWorkOrderReconciliationKey(nextReconciliation)
 
@@ -357,7 +325,7 @@ export function WorkOrderRecordPanel({
       cancelled = true
       window.clearInterval(interval)
     }
-  }, [autoAllocationWorkflow.value, currentWorkOrder.autoAllocationRun, currentWorkOrder.updatedAt, dirtySections.length, invoiceWorkflow.invoice, refreshWorkOrderDetail, workOrderId])
+  }, [autoAllocationWorkflow.value, currentWorkOrder.autoAllocationRun, currentWorkOrder.updatedAt, dirtySections.length, refreshWorkOrderDetail, workOrderId])
 
   const currentExpenseSummary = useMemo(
     () =>
@@ -428,22 +396,6 @@ export function WorkOrderRecordPanel({
 
     void autoAllocationWorkflow.requestAutoAllocation()
   }, [autoAllocationWorkflow, hasStalePendingAutoAllocation, unsavedWorkflowWarning])
-
-  const queueInvoice = useCallback(() => {
-    const didConfirm = confirmRecordAction(
-      buildRecordActionConfirmationMessage({
-        title: "Generate an invoice for this work order?",
-        summary: "This queues background invoice generation from the current saved work order snapshot.",
-        warning: unsavedWorkflowWarning,
-      }),
-    )
-
-    if (!didConfirm) {
-      return
-    }
-
-    void invoiceWorkflow.queueInvoice()
-  }, [invoiceWorkflow, unsavedWorkflowWarning])
 
   if (loading && !workOrder) {
     return <CenteredLoadingState label="Loading work order..." />
@@ -638,19 +590,6 @@ export function WorkOrderRecordPanel({
         />
 
         <WorkOrderCalculationsSection title="Calculations" items={currentCalculationRows} loading={false} />
-
-        <WorkOrderInvoiceSection
-          invoice={invoiceWorkflow.invoice}
-          error={invoiceWorkflow.error}
-          isLoading={invoiceWorkflow.isLoading}
-          workflowPhase={invoiceWorkflow.phase}
-          isStalled={invoiceWorkflow.isStalled}
-          queueButtonLabel={invoiceButtonLabel}
-          onQueueInvoice={queueInvoice}
-          onOpenInvoice={invoiceWorkflow.openInvoice}
-          onRefreshStatus={() => void invoiceWorkflow.refreshInvoice()}
-          onOpenChange={setIsInvoiceSectionOpen}
-        />
       </RecordSectionStack>
 
       <RecordPanelFooter

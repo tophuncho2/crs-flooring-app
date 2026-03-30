@@ -11,7 +11,6 @@ import {
 } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"
-import { buildInvoiceInvalidationFields } from "./invoice-state"
 import { normalizeWorkOrder, normalizeWorkOrderItem, normalizeWorkOrderServiceItem } from "./services"
 import { normalizeWorkOrderSalesRep } from "./domain/sales-reps"
 import type {
@@ -412,8 +411,6 @@ export async function updateWorkOrder(id: string, input: UpdateWorkOrderInput) {
       await clearAllocationsForWorkOrder(id, tx)
     }
 
-    Object.assign(data, buildInvoiceInvalidationFields())
-
     return tx.flooringWorkOrder.update({
       where: { id },
       data,
@@ -448,11 +445,6 @@ export async function createWorkOrderItem(workOrderId: string, input: WorkOrderM
         changeOrderStatus: "SUFFICIENT",
       },
       include: workOrderItemInclude,
-    })
-
-    await tx.flooringWorkOrder.update({
-      where: { id: workOrderId },
-      data: buildInvoiceInvalidationFields(),
     })
 
     await syncWorkOrderAllocationStatuses(workOrderId, tx)
@@ -492,11 +484,6 @@ export async function updateWorkOrderItem(itemId: string, input: Partial<WorkOrd
 
     await recalculateWorkOrderItemAllocationStatus(tx, item.id)
 
-    await tx.flooringWorkOrder.update({
-      where: { id: item.workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
-
     await syncWorkOrderAllocationStatuses(item.workOrderId, tx)
 
     return tx.flooringWorkOrderItem.findUniqueOrThrow({
@@ -515,11 +502,6 @@ export async function deleteWorkOrderItem(itemId: string) {
       where: { id: itemId },
       select: { workOrderId: true },
     })
-    await tx.flooringWorkOrder.update({
-      where: { id: deleted.workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
-
     await syncWorkOrderAllocationStatuses(deleted.workOrderId, tx)
   })
 }
@@ -545,11 +527,6 @@ export async function createWorkOrderServiceItem(workOrderId: string, input: Wor
           },
         },
       },
-    })
-
-    await tx.flooringWorkOrder.update({
-      where: { id: workOrderId },
-      data: buildInvoiceInvalidationFields(),
     })
 
     return item
@@ -587,11 +564,6 @@ export async function updateWorkOrderServiceItem(itemId: string, input: Partial<
       },
     })
 
-    await tx.flooringWorkOrder.update({
-      where: { id: item.workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
-
     return item
   })
 
@@ -603,10 +575,6 @@ export async function deleteWorkOrderServiceItem(itemId: string) {
     const deleted = await tx.flooringWorkOrderServiceItem.delete({
       where: { id: itemId },
       select: { workOrderId: true },
-    })
-    await tx.flooringWorkOrder.update({
-      where: { id: deleted.workOrderId },
-      data: buildInvoiceInvalidationFields(),
     })
   })
 }
@@ -774,12 +742,6 @@ export async function saveWorkOrderServiceItemsSection(
       didChange = true
     }
 
-    if (didChange) {
-      await tx.flooringWorkOrder.update({
-        where: { id: workOrderId },
-        data: buildInvoiceInvalidationFields(),
-      })
-    }
   })
 }
 
@@ -862,12 +824,6 @@ export async function saveWorkOrderSalesRepsSection(
       didChange = true
     }
 
-    if (didChange) {
-      await tx.flooringWorkOrder.update({
-        where: { id: workOrderId },
-        data: buildInvoiceInvalidationFields(),
-      })
-    }
   })
 }
 
@@ -1079,10 +1035,6 @@ export async function saveWorkOrderMaterialItemsSection(
     }
 
     if (didChange) {
-      await tx.flooringWorkOrder.update({
-        where: { id: workOrderId },
-        data: buildInvoiceInvalidationFields(),
-      })
       await syncWorkOrderAllocationStatuses(workOrderId, tx)
     }
   })
@@ -1200,10 +1152,6 @@ export async function saveWorkOrderMaterialSection(
 
     await recalculateWorkOrderItemAllocationStatus(tx, itemId)
 
-    await tx.flooringWorkOrder.update({
-      where: { id: workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
     await syncWorkOrderAllocationStatuses(workOrderId, tx)
 
     return tx.flooringWorkOrderItem.findUniqueOrThrow({

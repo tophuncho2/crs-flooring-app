@@ -27,7 +27,6 @@ import {
   db,
 } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
-import { buildInvoiceInvalidationFields } from "../invoice-state"
 
 export async function listWorkOrderItemAllocationsUseCase(workOrderId: string, workOrderItemId: string) {
   return listWorkOrderItemAllocations(workOrderId, workOrderItemId)
@@ -60,11 +59,6 @@ export async function createWorkOrderItemAllocationUseCase(input: {
       tx,
     )
 
-    await tx.flooringWorkOrder.update({
-      where: { id: input.workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
-
     await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
 
     return allocation
@@ -93,11 +87,6 @@ export async function updateWorkOrderItemAllocationUseCase(input: {
       tx,
     )
 
-    await tx.flooringWorkOrder.update({
-      where: { id: input.workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
-
     await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
 
     return allocation
@@ -121,11 +110,6 @@ export async function deleteWorkOrderItemAllocationUseCase(input: {
       collectAffectedReservationInventoryIds([existing.inventoryId]),
       tx,
     )
-
-    await tx.flooringWorkOrder.update({
-      where: { id: input.workOrderId },
-      data: buildInvoiceInvalidationFields(),
-    })
 
     await syncWorkOrderAllocationStatuses(input.workOrderId, tx)
   })

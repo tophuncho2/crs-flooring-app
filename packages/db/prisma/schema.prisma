@@ -25,7 +25,6 @@ model User {
   flooringNavOrderSlugs  String[]              @default([])
   createdAt              DateTime              @default(now())
   activities             UserLoginActivity[]
-  requestedInvoiceGenerations FlooringInvoiceGeneration[]
   requestedAllocationRuns FlooringWorkOrderAllocationRun[]
   tablePreferences       UserTablePreference[]
   mutationReceipts       AppMutationReceipt[]
@@ -87,15 +86,6 @@ enum FlooringWorkOrderStatus {
   PENDING
   PULL_TEMPLATE
   MODIFY
-}
-
-enum FlooringInvoiceGenerationStatus {
-  REQUESTED
-  QUEUED
-  PROCESSING
-  COMPLETED
-  FAILED
-  SUPERSEDED
 }
 
 enum FlooringAllocationMethod {
@@ -522,7 +512,6 @@ model FlooringWorkOrder {
   notes           String?
   googleDriveSlip String?
   googleDocUrl    String?
-  invoiceSourceVersion DateTime                  @default(now())
   templateSyncedAt DateTime?
   templateSyncMode String?
   templateSnapshotHash String?
@@ -531,8 +520,6 @@ model FlooringWorkOrder {
   items           FlooringWorkOrderItem[]
   serviceItems    FlooringWorkOrderServiceItem[]
   salesReps       FlooringWorkOrderSalesRep[]
-  invoiceGenerations FlooringInvoiceGeneration[]
-  invoiceArtifacts FlooringInvoiceArtifact[]
   allocationRuns  FlooringWorkOrderAllocationRun[]
   analytics       FlooringAnalytics?
   cutLogs         FlooringCutLog[]
@@ -637,54 +624,6 @@ model FlooringWorkOrderSalesRep {
   @@index([workOrderId, createdAt])
   @@index([sourceTemplateSalesRepId])
   @@map("flooring_work_order_sales_rep")
-}
-
-model FlooringInvoiceGeneration {
-  id              String                          @id @default(uuid())
-  workOrderId     String
-  workOrder       FlooringWorkOrder               @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  requestedByUserId String
-  requestedByUser User                            @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
-  sourceVersion   DateTime
-  idempotencyKey  String                          @unique
-  status          FlooringInvoiceGenerationStatus @default(REQUESTED)
-  requestId       String?
-  queueJobId      String?
-  requestedAt     DateTime                        @default(now())
-  queuedAt        DateTime?
-  startedAt       DateTime?
-  completedAt     DateTime?
-  failedAt        DateTime?
-  supersededAt    DateTime?
-  failureCode     String?
-  failureMessage  String?
-  createdAt       DateTime                        @default(now())
-  updatedAt       DateTime                        @updatedAt
-  artifact        FlooringInvoiceArtifact?
-
-  @@unique([workOrderId, sourceVersion])
-  @@index([workOrderId, requestedAt])
-  @@index([status, requestedAt])
-  @@map("flooring_invoice_generation")
-}
-
-model FlooringInvoiceArtifact {
-  id          String                   @id @default(uuid())
-  generationId String                  @unique
-  generation  FlooringInvoiceGeneration @relation(fields: [generationId], references: [id], onDelete: Cascade)
-  workOrderId String
-  workOrder   FlooringWorkOrder        @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  bucketName  String
-  storageKey  String
-  fileName    String
-  contentType String
-  checksum    String
-  sizeBytes   Int
-  createdAt   DateTime                 @default(now())
-  deletedAt   DateTime?
-
-  @@index([workOrderId, createdAt])
-  @@map("flooring_invoice_artifact")
 }
 
 model FlooringWorkOrderAllocationRun {

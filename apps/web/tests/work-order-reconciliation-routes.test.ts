@@ -64,12 +64,6 @@ describe("work-order reconciliation route", () => {
         allocatedRowCount: 0,
         shortageCount: 0,
       },
-      invoiceStatus: {
-        sourceVersion: "2026-03-28T12:00:00.000Z",
-        generation: null,
-        artifact: null,
-        canOpen: false,
-      },
     })
 
     const response = await GET_RECONCILIATION(
@@ -85,10 +79,6 @@ describe("work-order reconciliation route", () => {
         updatedAt: "2026-03-28T12:00:00.000Z",
         allocationIsDone: false,
         autoAllocationRun: expect.objectContaining({ id: "run-1", status: "PROCESSING" }),
-        invoiceStatus: expect.objectContaining({
-          sourceVersion: "2026-03-28T12:00:00.000Z",
-          canOpen: false,
-        }),
       }),
     })
   })

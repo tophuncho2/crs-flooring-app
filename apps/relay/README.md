@@ -10,7 +10,6 @@ Current responsibility:
 It does not:
 - load work-order source data for business decisions
 - render PDFs
-- upload invoice artifacts
 - import from `apps/web`
 
 Local start:

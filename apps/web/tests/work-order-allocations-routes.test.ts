@@ -108,7 +108,6 @@ vi.mock("@/features/flooring/work-orders/transport/detail", () => ({
       canDelete: true,
       canAllocate: true,
       canSyncTemplate: true,
-      canGenerateInvoice: true,
     },
   }),
 }))

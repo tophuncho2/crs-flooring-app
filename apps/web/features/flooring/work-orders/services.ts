@@ -2,7 +2,6 @@ import { buildFlooringProductDisplayName } from "@/features/flooring/shared/doma
 import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import type { PricingLine } from "@/features/flooring/templates/services"
-import type { WorkOrderInvoiceViewRecord } from "@builders/db"
 import {
   buildWorkOrderItemAllocationSummary,
   calculateAllocationRowTotal,
@@ -125,38 +124,6 @@ export function normalizeWorkOrderExpenseTotals(input: {
     serviceItems: input.serviceItems,
     salesReps: input.salesReps,
   })
-}
-
-export function normalizeWorkOrderInvoiceStatus(
-  workOrderId: string,
-  invoice: WorkOrderInvoiceViewRecord,
-) {
-  const artifact = invoice.artifact
-    ? {
-        id: invoice.artifact.id,
-        fileName: invoice.artifact.fileName,
-        createdAt: invoice.artifact.createdAt,
-        downloadUrl: `/api/flooring/work-orders/${workOrderId}/invoice/download`,
-      }
-    : null
-
-  return {
-    sourceVersion: invoice.sourceVersion,
-    generation: invoice.generation
-      ? {
-          id: invoice.generation.id,
-          status: invoice.generation.status,
-          requestedAt: invoice.generation.requestedAt,
-          queuedAt: invoice.generation.queuedAt,
-          startedAt: invoice.generation.startedAt,
-          completedAt: invoice.generation.completedAt,
-          failedAt: invoice.generation.failedAt,
-          error: invoice.generation.failureMessage ?? "",
-        }
-      : null,
-    artifact,
-    canOpen: Boolean(artifact),
-  }
 }
 
 export function normalizeWorkOrderItem(item: {

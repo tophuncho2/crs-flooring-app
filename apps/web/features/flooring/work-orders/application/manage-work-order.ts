@@ -1,6 +1,5 @@
 import { Prisma, clearAllocationsForWorkOrder, listWorkOrderAllocationInventoryIds, prisma, refreshInventoryReservedStockCounts } from "@builders/db"
 import { collectAffectedReservationInventoryIds } from "@builders/domain"
-import { buildInvoiceInvalidationFields } from "../invoice-state"
 import type { CreateWorkOrderInput, UpdateWorkOrderInput } from "@/features/flooring/work-orders/validators"
 import { createWorkOrder } from "@/features/flooring/work-orders/mutations"
 import { getWorkOrderById } from "../queries"
@@ -103,8 +102,6 @@ export async function updateWorkOrderUseCase(id: string, input: UpdateWorkOrderI
       await clearAllocationsForWorkOrder(id, tx)
       await refreshInventoryReservedStockCounts(collectAffectedReservationInventoryIds(affectedInventoryIds), tx)
     }
-
-    Object.assign(data, buildInvoiceInvalidationFields())
 
     await tx.flooringWorkOrder.update({
       where: { id },

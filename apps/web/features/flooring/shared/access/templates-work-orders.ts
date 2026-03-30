@@ -39,6 +39,5 @@ export function buildWorkOrderCapabilityFlags(role: Role) {
     canDelete: hasCapability(role, "workOrders.delete"),
     canAllocate: hasCapability(role, "workOrders.allocate"),
     canSyncTemplate: hasCapability(role, "workOrders.syncTemplate"),
-    canGenerateInvoice: hasCapability(role, "workOrders.invoiceGenerate"),
   }
 }

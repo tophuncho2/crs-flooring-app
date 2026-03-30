@@ -31,19 +31,10 @@ import { createWorkOrderAutoAllocationProcessor } from "../src/processors/proces
 describe("createWorkOrderAutoAllocationProcessor", () => {
   const env = {
     queueRedisUrl: "redis://localhost:6379",
-    invoiceWorkerConcurrency: 2,
-    invoiceWorkerLockDurationMs: 300000,
     autoAllocationWorkerConcurrency: 2,
     autoAllocationWorkerLockDurationMs: 300000,
     environmentName: "test",
     serviceName: "worker",
-    storage: {
-      accessKeyId: "key",
-      defaultRegion: "us-east-1",
-      endpointUrl: "https://storage.example.com",
-      bucketName: "builders",
-      secretAccessKey: "secret",
-    },
   }
 
   beforeEach(() => {

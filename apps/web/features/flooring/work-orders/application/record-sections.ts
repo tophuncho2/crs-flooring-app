@@ -11,7 +11,6 @@ import {
 } from "@builders/db"
 import { collectAffectedReservationInventoryIds } from "@builders/domain"
 import { createAppError } from "@/server/http/api-helpers"
-import { buildInvoiceInvalidationFields } from "../invoice-state"
 import type {
   UpdateWorkOrderItemAllocationInput,
   UpdateWorkOrderMaterialItemsSectionInput,
@@ -213,12 +212,6 @@ export async function saveWorkOrderServiceItemsSectionUseCase(
       didChange = true
     }
 
-    if (didChange) {
-      await tx.flooringWorkOrder.update({
-        where: { id: workOrderId },
-        data: buildInvoiceInvalidationFields(),
-      })
-    }
   })
 }
 
@@ -301,12 +294,6 @@ export async function saveWorkOrderSalesRepsSectionUseCase(
       didChange = true
     }
 
-    if (didChange) {
-      await tx.flooringWorkOrder.update({
-        where: { id: workOrderId },
-        data: buildInvoiceInvalidationFields(),
-      })
-    }
   })
 }
 
@@ -533,10 +520,6 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
         collectAffectedReservationInventoryIds(Array.from(touchedInventoryIds)),
         tx,
       )
-      await tx.flooringWorkOrder.update({
-        where: { id: workOrderId },
-        data: buildInvoiceInvalidationFields(),
-      })
       await syncWorkOrderAllocationStatuses(workOrderId, tx)
     }
   })

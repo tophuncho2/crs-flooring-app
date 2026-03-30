@@ -11,7 +11,6 @@ import {
 } from "@builders/db"
 import {
   AUTO_ALLOCATE_WORK_ORDER_JOB,
-  calculateOutboxRetryAvailableAt,
   parseWorkOrderAutoAllocationRequestedOutboxEvent,
   WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,
   WORK_ORDER_AUTO_ALLOCATION_RETRY_POLICY,
@@ -22,6 +21,12 @@ import type { Queue } from "bullmq"
 import type { RelayEnvironment } from "../env.js"
 import { addBullMqJobIdempotently } from "./bullmq-idempotent-dispatch.js"
 import { toBullMqJobId } from "./bullmq-job-id.js"
+
+function calculateOutboxRetryAvailableAt(attemptCount: number, now: Date = new Date()) {
+  const exponent = Math.max(attemptCount - 1, 0)
+  const delayMs = Math.min(WORK_ORDER_AUTO_ALLOCATION_RETRY_POLICY.backoff.delay * 2 ** exponent, 15 * 60 * 1_000)
+  return new Date(now.getTime() + delayMs)
+}
 
 export type WorkOrderAllocationOutboxDispatcherDependencies = {
   listClaimableEvents: typeof listClaimableQueueOutboxEvents

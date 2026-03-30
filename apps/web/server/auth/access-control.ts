@@ -15,7 +15,6 @@ export const CAPABILITIES = [
   "workOrders.delete",
   "workOrders.allocate",
   "workOrders.syncTemplate",
-  "workOrders.invoiceGenerate",
 ] as const
 
 export type Capability = (typeof CAPABILITIES)[number]
@@ -36,7 +35,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "workOrders.delete",
     "workOrders.allocate",
     "workOrders.syncTemplate",
-    "workOrders.invoiceGenerate",
   ]),
   ADMIN: new Set<Capability>([
     "system.access",
@@ -52,7 +50,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "workOrders.delete",
     "workOrders.allocate",
     "workOrders.syncTemplate",
-    "workOrders.invoiceGenerate",
   ]),
   BUILDER: new Set<Capability>([
     "system.access",
@@ -62,7 +59,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "workOrders.delete",
     "workOrders.allocate",
     "workOrders.syncTemplate",
-    "workOrders.invoiceGenerate",
   ]),
   CONTRACTOR: new Set<Capability>([]),
   CUSTOMER: new Set<Capability>([]),
