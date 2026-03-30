@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
-import { InventoryDetailClient } from "@/features/flooring/inventory/components/detail/inventory-detail-client"
+import { InventoryDetailClient } from "@/features/flooring/inventory/record/detail/inventory-detail-client"
 import { getInventoryDetailPageData } from "@/features/flooring/inventory/queries"
 
 export default async function InventoryDetailPage({

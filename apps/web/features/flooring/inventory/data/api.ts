@@ -288,7 +288,21 @@ export async function updateInventoryDetailRow(db: DbClient = prisma, id: string
   const inventory = await db.flooringInventory.update({
     where: { id },
     data,
-    include: inventoryInclude(),
+    include: {
+      ...inventoryInclude(),
+      cutLogs: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          inventoryId: true,
+          before: true,
+          cut: true,
+          after: true,
+          notes: true,
+          createdAt: true,
+        },
+      },
+    },
   })
 
   return normalizeInventoryRow(inventory)

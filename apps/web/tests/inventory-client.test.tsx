@@ -166,8 +166,8 @@ describe("InventoryClient", () => {
     expect(within(screen.getByRole("table")).getByText("Pending").className).toContain("bg-sky-200")
     expect(screen.getByText("Allocated Inventory")).toBeTruthy()
     expect(screen.getByText("Open Inventory")).toBeTruthy()
-    expect(screen.getByText("3 SF")).toBeTruthy()
-    expect(screen.getByText("7 SF")).toBeTruthy()
+    expect(screen.getByText("3.00 SF")).toBeTruthy()
+    expect(screen.getByText("7.00 SF")).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: "Open inventory item 1001" }))
 
@@ -177,7 +177,7 @@ describe("InventoryClient", () => {
     )
   })
 
-  it("uses the canonical detail page shell and removes the legacy cut-log table link", () => {
+  it("uses the record-view engine with a primary section and a read-only cut-logs section", () => {
     render(
       <InventoryDetailClient
         initialRecord={inventoryRow({ importStatus: "FINAL", canCreateCutLogs: true, cutLogBlockedReason: "" })}
@@ -186,51 +186,56 @@ describe("InventoryClient", () => {
       />,
     )
 
-    expect(screen.getByRole("heading", { name: "Inventory 1001" })).toBeTruthy()
+    expect(screen.getByText("Inventory 1001")).toBeTruthy()
     expect(screen.getByText("Product")).toBeTruthy()
-    expect(screen.getByText("Oak Plank")).toBeTruthy()
+    expect(screen.getByDisplayValue("Oak Plank")).toBeTruthy()
     expect(screen.getByText("Warehouse")).toBeTruthy()
-    expect(screen.getAllByText("Main Warehouse").length).toBeGreaterThan(0)
+    expect(screen.getByDisplayValue("Main Warehouse")).toBeTruthy()
     expect(screen.getByText("Import #")).toBeTruthy()
-    expect(screen.getByText("IMP-0001")).toBeTruthy()
+    expect(screen.getByDisplayValue("IMP-0001")).toBeTruthy()
     expect(screen.getByText("Cut Logs")).toBeTruthy()
     expect(screen.queryByText("Open Cut Logs Table")).toBeNull()
-    expect(screen.queryByText("Product", { selector: "p" })).toBeTruthy()
-    expect(screen.queryByText("Import Tag")).toBeNull()
-    expect(screen.queryByText("Running Balance")).toBeTruthy()
-    expect(screen.queryByText("Cuts Total")).toBeTruthy()
-    expect(screen.queryByText("Starting Stock")).toBeTruthy()
-    expect(screen.queryByText("Section")).toBeTruthy()
-    expect(screen.queryByText(/^Item #$/)).toBeTruthy()
-    expect(screen.queryByText(/^Lot$/)).toBeTruthy()
-    expect(screen.queryByText(/^Cost$/)).toBeTruthy()
-    expect(screen.queryByText(/^Freight$/)).toBeTruthy()
+    expect(screen.getByText("Running Balance")).toBeTruthy()
+    expect(screen.getByText("Cut Total")).toBeTruthy()
+    expect(screen.getByText("Starting Stock")).toBeTruthy()
+    expect(screen.getByText("Section")).toBeTruthy()
+    expect(screen.getByText(/^Item #$/)).toBeTruthy()
+    expect(screen.getByText(/^Lot$/)).toBeTruthy()
+    expect(screen.getByText(/^Cost$/)).toBeTruthy()
+    expect(screen.getByText(/^Freight$/)).toBeTruthy()
     expect(screen.getByLabelText("Notes")).toBeTruthy()
     expect(screen.getByDisplayValue("Current notes")).toBeTruthy()
     expect(screen.getByText("Unit turn")).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Add Cut Log" })).toBeNull()
+    expect(screen.getByRole("button", { name: "Save Inventory" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Discard" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
   })
 
-  it("does not render the no-cut-logs empty-state copy when there are no cut logs", () => {
-    render(
+  it("renders the cut-logs section without inline creation controls when there are no cut logs", () => {
+    const view = render(
       <InventoryDetailClient
         initialRecord={inventoryRow({
+          id: "inv-empty",
           importStatus: "FINAL",
           canCreateCutLogs: true,
           cutLogBlockedReason: "",
           cutLogs: [],
           cutTotal: "0.00",
           runningBalance: "12.00",
+          updatedAt: "2026-03-20T00:00:00.000Z",
         })}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         backHref="/dashboard/flooring/inventory"
       />,
     )
 
-    expect(screen.queryByText("No cut logs yet for this inventory row.")).toBeNull()
-    expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
+    expect(within(view.container).getByText("Cut Logs")).toBeTruthy()
+    expect(within(view.container).queryByText("Unit turn")).toBeNull()
+    expect(within(view.container).queryByRole("button", { name: "Add Cut Log" })).toBeNull()
   })
 
-  it("opens the edit panel, uses shared footer actions, and saves the new location", async () => {
+  it("saves inventory from the primary section while the footer remains delete/close only", async () => {
     const user = userEvent.setup()
 
     requestJsonMock.mockResolvedValueOnce({
@@ -260,8 +265,9 @@ describe("InventoryClient", () => {
 
     expect(screen.getByRole("button", { name: "Save Inventory" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Delete Inventory" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
     expect(screen.getByRole("button", { name: /Back/ })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Add Cut Log" })).toBeNull()
 
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "loc-2" } })
     fireEvent.change(screen.getByLabelText("Item #"), { target: { value: "1002" } })
@@ -322,7 +328,7 @@ describe("InventoryClient", () => {
     )
   })
 
-  it("shows the pending-cut warning and disables cut creation for pending import rows", () => {
+  it("keeps cut logs read-only for pending import rows", () => {
     render(
       <InventoryDetailClient
         initialRecord={inventoryRow()}
@@ -331,7 +337,8 @@ describe("InventoryClient", () => {
       />,
     )
 
-    expect(screen.getByText("Pending import inventory cannot be cut until the import is marked Final.")).toBeTruthy()
-    expect((screen.getByRole("button", { name: "Add Cut Log" }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText("Cut Logs")).toBeTruthy()
+    expect(screen.queryByText("Pending import inventory cannot be cut until the import is marked Final.")).toBeNull()
+    expect(screen.queryByRole("button", { name: "Add Cut Log" })).toBeNull()
   })
 })

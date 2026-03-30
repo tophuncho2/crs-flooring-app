@@ -58,6 +58,15 @@ export type InventoryWarehouseOption = {
   name: string
 }
 
+export type InventoryPrimaryForm = {
+  locationId: string
+  itemNumber: string
+  dyeLot: string
+  cost: string
+  freight: string
+  notes: string
+}
+
 export type InventoryCategoryOption = {
   id: string
   name: string
@@ -85,3 +94,20 @@ export type ServerTableState = {
 }
 
 export type InventoryServerFilterState = InventoryPageFilterState
+
+export function toInventoryPrimaryForm(record: InventoryRow): InventoryPrimaryForm {
+  return {
+    locationId: record.locationId,
+    itemNumber: record.itemNumber,
+    dyeLot: record.dyeLot,
+    cost: record.cost,
+    freight: record.freight,
+    notes: record.notes,
+  }
+}
+
+export function validateInventoryPrimaryForm(input: InventoryPrimaryForm) {
+  if (!input.locationId.trim()) return "Select a location before saving inventory"
+  if (!input.itemNumber.trim()) return "Item # is required"
+  return ""
+}
