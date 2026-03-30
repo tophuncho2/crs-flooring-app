@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from "react"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { navigationMocks } from "./helpers/next-navigation-mock"
@@ -37,6 +37,11 @@ const company = {
 }
 
 describe("ManagementCompanyDetailClient", () => {
+  beforeEach(() => {
+    navigationMocks.push.mockReset()
+    vi.stubGlobal("confirm", vi.fn(() => true))
+  })
+
   it("renders through the record-view engine with read-only linked properties and nested templates", async () => {
     const user = userEvent.setup()
 
@@ -50,6 +55,12 @@ describe("ManagementCompanyDetailClient", () => {
     expect(screen.getByText("Management Company Acme Management")).toBeTruthy()
     expect(screen.getAllByText("Linked Properties").length).toBeGreaterThan(0)
     expect(screen.getByLabelText("Company Name").className).toContain("border-sky-500/35")
+    expect(screen.getByRole("button", { name: "Add Property" })).toBeTruthy()
+
+    await user.click(screen.getByRole("button", { name: "Add Property" }))
+
+    expect(screen.getByRole("textbox", { name: "Property Name" })).toBeTruthy()
+    expect(screen.getAllByRole("textbox", { name: "Street Address" }).length).toBeGreaterThan(1)
 
     await user.click(screen.getByRole("button", { name: "Show templates for Oak Apartments" }))
 

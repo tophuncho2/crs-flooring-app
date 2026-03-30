@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getPropertyDetailPageData } from "@/features/flooring/properties/data/queries"
-import { PropertyDetailClient } from "@/features/flooring/properties/components/detail/property-detail-client"
+import { PropertyDetailClient } from "@/features/flooring/properties/record/detail/property-detail-client"
 
 export default async function PropertyDetailPage({
   params,
@@ -41,7 +41,6 @@ export default async function PropertyDetailPage({
       property={result.data.property}
       managementOptions={result.data.managementOptions}
       warehouseOptions={result.data.warehouseOptions}
-      padProductOptions={result.data.padProductOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/properties")}
     />
   )

@@ -28,6 +28,7 @@ export function useManagementCompanyPrimarySection({
     detailUrl: `/api/flooring/management-companies/${company.id}`,
     payloadKey: "managementCompany",
     createLocalValue: toManagementCompanyForm,
+    manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
       const validationError = validateManagementCompanyForm(localValue)
       if (validationError) {

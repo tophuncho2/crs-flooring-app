@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
+  RecordSectionSubHeader,
   RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -12,6 +13,7 @@ import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/ta
 import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/dashboard/shared/navigation/detail-routes"
 import { normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { useManagementCompanyPrimarySection } from "./controllers/use-management-company-primary-section"
+import { useManagementCompanyPropertiesSection } from "./controllers/use-management-company-properties-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./sections/management-company-primary-fields-section"
 import { ManagementCompanyPropertiesSection } from "./sections/management-company-properties-section"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "../../domain/types"
@@ -27,6 +29,10 @@ export function ManagementCompanyRecordPanel({
   const controller = useManagementCompanyPrimarySection({
     page,
     company,
+  })
+  const propertiesSection = useManagementCompanyPropertiesSection({
+    record: controller.record,
+    publishRecord: controller.publishRecord,
   })
   const [expandedPropertyIds, setExpandedPropertyIds] = useState<string[]>([])
   const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null)
@@ -59,6 +65,20 @@ export function ManagementCompanyRecordPanel({
     },
     [navigateToDetail],
   )
+
+  useEffect(() => {
+    const dirtySections: string[] = []
+
+    if (controller.primarySection.isDirty) {
+      dirtySections.push("primary")
+    }
+
+    if (propertiesSection.isDirty) {
+      dirtySections.push("properties")
+    }
+
+    page.setDirtySections(dirtySections)
+  }, [controller.primarySection.isDirty, page, propertiesSection.isDirty])
 
   return (
     <div className="space-y-4">
@@ -93,10 +113,33 @@ export function ManagementCompanyRecordPanel({
         ) : null}
 
         <ManagementCompanyPropertiesSection
+          actionPanel={
+            <RecordSectionSubHeader
+              isDirty={propertiesSection.isDirty}
+              isSaving={propertiesSection.isSaving}
+              hasConflict={propertiesSection.hasConflict}
+              error={propertiesSection.error}
+              onSave={() => void propertiesSection.save()}
+              onDiscard={propertiesSection.discard}
+              saveLabel="Save Property"
+              savingLabel="Saving Property..."
+              actions={[
+                {
+                  key: "add-property",
+                  label: "Add Property",
+                  onClick: propertiesSection.addDraft,
+                  disabled: !propertiesSection.canAddDraft,
+                },
+              ]}
+            />
+          }
           properties={controller.record.properties}
+          draft={propertiesSection.localValue}
           expandedPropertyIds={expandedPropertyIds}
           loadingPropertyId={loadingPropertyId}
           loadingTemplateId={loadingTemplateId}
+          noticeMessage={propertiesSection.noticeMessage}
+          noticeError={propertiesSection.noticeError}
           onTogglePropertyTemplates={(propertyId) => {
             setExpandedPropertyIds((previous) =>
               previous.includes(propertyId)
@@ -104,6 +147,7 @@ export function ManagementCompanyRecordPanel({
                 : [...previous, propertyId],
             )
           }}
+          onDraftChange={propertiesSection.setDraftField}
           onOpenProperty={handleOpenProperty}
           onOpenTemplate={handleOpenTemplate}
         />
