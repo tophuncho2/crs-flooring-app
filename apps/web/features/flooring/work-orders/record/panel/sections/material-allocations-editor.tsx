@@ -12,7 +12,7 @@ import {
   RecordItemCell,
   RecordRowDeleteButton,
   RecordRowLayout,
-  RecordSectionStatusBadge,
+  RecordRowStatusBadge,
   TextCell,
 } from "@/features/shared/engines/record-view"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
@@ -204,9 +204,9 @@ function AllocationEditorRow({
       </AllocationCell>
       <AllocationCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
-          <RecordSectionStatusBadge tone={rowStatusTone} className="min-w-[8.75rem] justify-center">
+          <RecordRowStatusBadge tone={rowStatusTone}>
             {rowStatusLabel}
-          </RecordSectionStatusBadge>
+          </RecordRowStatusBadge>
         </div>
       </AllocationCell>
       <AllocationCell label="Remove" columnKey="remove">

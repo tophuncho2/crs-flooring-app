@@ -9,10 +9,10 @@ import {
   RecordItemCell,
   RecordRowDeleteButton,
   RecordRowLayout,
+  RecordRowStatusBadge,
   RecordRowToggleButton,
   RecordSectionItem,
   RecordSectionShell,
-  RecordSectionStatusBadge,
   RECORD_SECTION_BORDER_CLASS_NAME,
 } from "@/features/shared/engines/record-view"
 import {
@@ -188,9 +188,9 @@ function MaterialItemEditorRow({
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
-          <RecordSectionStatusBadge tone={rowStatusTone} className="min-w-[8.75rem] justify-center">
+          <RecordRowStatusBadge tone={rowStatusTone}>
             {rowStatusLabel}
-          </RecordSectionStatusBadge>
+          </RecordRowStatusBadge>
         </div>
         </RecordItemCell>
         <RecordItemCell label="Remove" columnKey="remove">

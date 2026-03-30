@@ -9,9 +9,9 @@ import {
   RecordItemCell,
   RecordRowDeleteButton,
   RecordRowLayout,
+  RecordRowStatusBadge,
   RecordSectionItem,
   RecordSectionShell,
-  RecordSectionStatusBadge,
   RECORD_SECTION_BORDER_CLASS_NAME,
 } from "@/features/shared/engines/record-view"
 import {
@@ -95,10 +95,10 @@ function SalesRepRow({
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
-          <RecordSectionStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
+          <RecordRowStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
             {isLocalOnlyItem ? "Unsaved" : "Ready"}
-          </RecordSectionStatusBadge>
-          {hasFieldErrors(rowErrors) ? <RecordSectionStatusBadge tone="error">Needs review</RecordSectionStatusBadge> : null}
+          </RecordRowStatusBadge>
+          {hasFieldErrors(rowErrors) ? <RecordRowStatusBadge tone="error">Needs review</RecordRowStatusBadge> : null}
         </div>
         </RecordItemCell>
         <RecordItemCell label="Remove" columnKey="remove">

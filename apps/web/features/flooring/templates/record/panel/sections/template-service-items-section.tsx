@@ -10,9 +10,9 @@ import {
   RecordItemCell,
   RecordRowDeleteButton,
   RecordRowLayout,
+  RecordRowStatusBadge,
   RecordSectionItem,
   RecordSectionShell,
-  RecordSectionStatusBadge,
   RECORD_SECTION_BORDER_CLASS_NAME,
 } from "@/features/shared/engines/record-view"
 import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
@@ -166,9 +166,9 @@ function TemplateServiceItemRow({
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">
           <div className="flex min-h-[2.5rem] items-center">
-            <RecordSectionStatusBadge tone={readStatusTone(item, hasErrors)} className="min-w-[8.75rem] justify-center">
+            <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
               {readStatusLabel(item, hasErrors)}
-            </RecordSectionStatusBadge>
+            </RecordRowStatusBadge>
           </div>
         </RecordItemCell>
         <RecordItemCell label="Remove" columnKey="remove">

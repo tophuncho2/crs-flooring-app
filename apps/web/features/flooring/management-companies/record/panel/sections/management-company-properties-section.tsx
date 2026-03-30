@@ -5,7 +5,7 @@ import {
   RecordAllocationItemsPanel,
   RecordItemCell,
   RecordRowLayout,
-  RecordRowOpenIndicator,
+  RecordRowOpenButton,
   RecordRowToggleButton,
   RecordSectionItem,
   RecordSectionShell,
@@ -63,7 +63,12 @@ function PropertyTemplateRow({
           <TextCell align="center">{template.itemsCount}</TextCell>
         </RecordItemCell>
         <RecordItemCell label="Open" columnKey="open" tone="allocation" density="compact">
-          <RecordRowOpenIndicator loading={loading} />
+          <div className="flex min-h-[2.5rem] items-center justify-center">
+            <RecordRowOpenButton
+              onOpen={onOpen}
+              loading={loading}
+            />
+          </div>
         </RecordItemCell>
       </RecordRowLayout>
     </RecordAllocationItemRow>
@@ -145,7 +150,12 @@ export function ManagementCompanyPropertiesSection({
                   </div>
                 </RecordItemCell>
                 <RecordItemCell label="Open" columnKey="open">
-                  <RecordRowOpenIndicator loading={loadingPropertyId === property.id} />
+                  <div className="flex min-h-[2.5rem] items-center justify-center">
+                    <RecordRowOpenButton
+                      onOpen={() => onOpenProperty(property.id)}
+                      loading={loadingPropertyId === property.id}
+                    />
+                  </div>
                 </RecordItemCell>
               </RecordRowLayout>
             </RecordSectionItem>
