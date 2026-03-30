@@ -14,7 +14,7 @@ import {
 
 type RecordScrollSyncGroup = "parent" | "allocation"
 
-type RecordScrollRegistry = Record<RecordScrollSyncGroup, Set<HTMLElement>>
+type RecordScrollRegistry = Set<HTMLElement>
 
 type RecordScrollSyncContextValue = {
   register: (group: RecordScrollSyncGroup, element: HTMLElement) => void
@@ -25,43 +25,36 @@ type RecordScrollSyncContextValue = {
 const RecordScrollSyncContext = createContext<RecordScrollSyncContextValue | null>(null)
 
 function createRegistry(): RecordScrollRegistry {
-  return {
-    parent: new Set<HTMLElement>(),
-    allocation: new Set<HTMLElement>(),
-  }
+  return new Set<HTMLElement>()
 }
 
 export function RecordScrollSyncProvider({ children }: { children: ReactNode }) {
   const registryRef = useRef<RecordScrollRegistry>(createRegistry())
-  const isSyncingRef = useRef<Record<RecordScrollSyncGroup, boolean>>({
-    parent: false,
-    allocation: false,
-  })
+  const isSyncingRef = useRef(false)
 
-  const register = useCallback((group: RecordScrollSyncGroup, element: HTMLElement) => {
-    const groupRegistry = registryRef.current[group]
-    const firstRegistered = groupRegistry.values().next().value as HTMLElement | undefined
+  const register = useCallback((_group: RecordScrollSyncGroup, element: HTMLElement) => {
+    const firstRegistered = registryRef.current.values().next().value as HTMLElement | undefined
 
-    groupRegistry.add(element)
+    registryRef.current.add(element)
 
     if (firstRegistered && firstRegistered !== element) {
       element.scrollLeft = firstRegistered.scrollLeft
     }
   }, [])
 
-  const unregister = useCallback((group: RecordScrollSyncGroup, element: HTMLElement) => {
-    registryRef.current[group].delete(element)
+  const unregister = useCallback((_group: RecordScrollSyncGroup, element: HTMLElement) => {
+    registryRef.current.delete(element)
   }, [])
 
-  const sync = useCallback((group: RecordScrollSyncGroup, source: HTMLElement) => {
-    if (isSyncingRef.current[group]) {
+  const sync = useCallback((_group: RecordScrollSyncGroup, source: HTMLElement) => {
+    if (isSyncingRef.current) {
       return
     }
 
-    isSyncingRef.current[group] = true
+    isSyncingRef.current = true
     const nextScrollLeft = source.scrollLeft
 
-    for (const element of registryRef.current[group]) {
+    for (const element of registryRef.current) {
       if (element === source) {
         continue
       }
@@ -71,9 +64,7 @@ export function RecordScrollSyncProvider({ children }: { children: ReactNode }) 
       }
     }
 
-    requestAnimationFrame(() => {
-      isSyncingRef.current[group] = false
-    })
+    isSyncingRef.current = false
   }, [])
 
   const value = useMemo<RecordScrollSyncContextValue>(() => ({

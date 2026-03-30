@@ -51,7 +51,7 @@ function SyncHarness() {
 }
 
 describe("Record item section scroll sync", () => {
-  it("syncs parent rows separately from allocation rows", () => {
+  it("syncs parent rows and allocation rows through one section scroll contract", () => {
     const { container } = render(<SyncHarness />)
     const scrollContainers = Array.from(container.querySelectorAll(".overflow-x-auto")) as HTMLDivElement[]
 
@@ -63,14 +63,14 @@ describe("Record item section scroll sync", () => {
     fireEvent.scroll(parentOne)
 
     expect(parentTwo.scrollLeft).toBe(96)
-    expect(allocationOne.scrollLeft).toBe(0)
-    expect(allocationTwo.scrollLeft).toBe(0)
+    expect(allocationOne.scrollLeft).toBe(96)
+    expect(allocationTwo.scrollLeft).toBe(96)
 
     allocationOne.scrollLeft = 144
     fireEvent.scroll(allocationOne)
 
     expect(allocationTwo.scrollLeft).toBe(144)
-    expect(parentOne.scrollLeft).toBe(96)
-    expect(parentTwo.scrollLeft).toBe(96)
+    expect(parentOne.scrollLeft).toBe(144)
+    expect(parentTwo.scrollLeft).toBe(144)
   })
 })
