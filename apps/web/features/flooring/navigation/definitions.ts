@@ -12,7 +12,6 @@ export type FlooringNavItem = {
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "products", name: "Products", href: "/dashboard/flooring/products", requiredTool: "products" },
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/flooring/categories", requiredTool: "products" },
-  { slug: "flooring-cut-logs", name: "Cut Logs", href: "/dashboard/flooring/cut-logs", requiredTool: "warehouse" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/flooring/inventory", requiredTool: "warehouse" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/flooring/imports", requiredTool: "warehouse" },
   { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/flooring/work-orders", requiredTool: WORK_ORDERS_TOOL_SLUG },

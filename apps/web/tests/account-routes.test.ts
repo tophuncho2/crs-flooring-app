@@ -367,8 +367,8 @@ describe("account routes", () => {
 
   it("PATCH /api/account/flooring-nav filters unknown slugs and returns the normalized preference", async () => {
     userUpdateMock.mockResolvedValue({
-      hiddenFlooringNavSlugs: ["flooring-cut-logs"],
-      flooringNavOrderSlugs: ["products", "flooring-templates", "flooring-cut-logs"],
+      hiddenFlooringNavSlugs: ["flooring-inventory"],
+      flooringNavOrderSlugs: ["products", "flooring-templates", "flooring-inventory"],
     })
 
     const response = await PATCH_FLOORING_NAV(
@@ -393,7 +393,7 @@ describe("account routes", () => {
     )
     expect(payload).toEqual({
       visibleSlugs: expect.arrayContaining(["products", "flooring-templates"]),
-      orderedSlugs: ["products", "flooring-templates", "flooring-cut-logs"],
+      orderedSlugs: ["products", "flooring-templates", "flooring-inventory"],
     })
   })
 

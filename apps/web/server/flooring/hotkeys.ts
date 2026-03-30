@@ -111,13 +111,4 @@ export const FLOORING_HOTKEYS: FlooringHotkeyDefinition[] = [
     path: "/dashboard/flooring/imports",
     requiredTool: "warehouse",
   },
-  {
-    id: "e6e89ab5-4bb4-4ad4-9f57-3b65fce00010",
-    key: "Cut Logs",
-    combination: "SHIFT + U",
-    action: "Open Cut Logs",
-    code: "KeyU",
-    path: "/dashboard/flooring/cut-logs",
-    requiredTool: "warehouse",
-  },
 ]
