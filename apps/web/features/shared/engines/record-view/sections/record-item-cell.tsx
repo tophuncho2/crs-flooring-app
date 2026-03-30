@@ -44,11 +44,12 @@ export function RecordItemCell({
       : resolvedAlign === "end"
         ? "items-end text-right"
         : "items-start text-left"
+  const cellStyle = chrome === "grid" ? undefined : getRecordRowColumnStyle(column ?? undefined)
 
   return (
     <div
       className={joinRecordSectionClasses(
-        "min-w-0 shrink-0 self-stretch",
+        "min-w-0 self-stretch",
         chrome === "card" ? "border shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" : undefined,
         densityClassName,
         chrome === "card" ? toneClassName : undefined,
@@ -56,7 +57,7 @@ export function RecordItemCell({
         chrome === "card" ? RECORD_SECTION_ITEM_SURFACE_CLASS_NAME : undefined,
         className,
       )}
-      style={getRecordRowColumnStyle(column ?? undefined)}
+      style={cellStyle}
     >
       {showLabel && resolvedLabel ? (
         <div

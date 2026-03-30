@@ -46,6 +46,7 @@ export function RecordSectionGrid({
     surface === "outer"
       ? "border bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]"
       : "border-0 bg-orange-500/[0.06]"
+  const { scrollRef, onScroll } = useRecordScrollSync(group)
 
   return (
     <div
@@ -57,14 +58,21 @@ export function RecordSectionGrid({
         className,
       )}
     >
-      <RecordSectionGridHeader columns={columns} group={group} className={headerClassName} />
       {isEmpty ? (
         <div className={joinRecordSectionClasses("px-4 py-8 text-center text-[var(--foreground)]/65")}>
           {emptyState}
         </div>
       ) : (
-        <div className={joinRecordSectionClasses("[&>*+*]:border-t", RECORD_SECTION_BORDER_CLASS_NAME)}>
-          {children}
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className={joinRecordSectionClasses("overflow-x-auto overscroll-x-contain", headerClassName)}
+        >
+          <div className="w-max min-w-full">
+            <div className={joinRecordSectionClasses("[&>*+*]:border-t", RECORD_SECTION_BORDER_CLASS_NAME)}>
+              {children}
+            </div>
+          </div>
         </div>
       )}
       {footer ? (
@@ -123,7 +131,7 @@ export function RecordSectionGridHeader({
 
 export function RecordSectionGridRow({
   columns,
-  group = "parent",
+  group: _group = "parent",
   children,
   nestedContent,
   onOpen,
@@ -140,8 +148,6 @@ export function RecordSectionGridRow({
   rowTone?: "default" | "allocation" | "error"
   className?: string
 }) {
-  const { scrollRef, onScroll } = useRecordScrollSync(group)
-
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!onOpen) {
       return
@@ -172,18 +178,16 @@ export function RecordSectionGridRow({
           onOpen ? "cursor-pointer transition hover:bg-[var(--panel-hover)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20" : undefined,
         )}
       >
-        <div ref={scrollRef} onScroll={onScroll} className="overflow-x-auto overscroll-x-contain">
-          <RecordRowLayout
-            columns={columns}
-            className={joinRecordSectionClasses(
-              rowToneClassName,
-              "[&>*+*]:border-l",
-              RECORD_SECTION_BORDER_CLASS_NAME,
-            )}
-          >
-            {children}
-          </RecordRowLayout>
-        </div>
+        <RecordRowLayout
+          columns={columns}
+          className={joinRecordSectionClasses(
+            rowToneClassName,
+            "[&>*+*]:border-l",
+            RECORD_SECTION_BORDER_CLASS_NAME,
+          )}
+        >
+          {children}
+        </RecordRowLayout>
       </div>
       {nestedContent ? (
         <div className={joinRecordSectionClasses("border-t", RECORD_SECTION_BORDER_CLASS_NAME)}>

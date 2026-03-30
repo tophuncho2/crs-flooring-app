@@ -38,7 +38,7 @@ export function useRecordAllocationController<TItem, TAllocation>({
   const addAllocation = useCallback(
     (itemId: string, createAllocation: () => TAllocation) => {
       const nextAllocation = createAllocation()
-      patchItemAllocations(itemId, (allocations) => [nextAllocation, ...allocations])
+      patchItemAllocations(itemId, (allocations) => [...allocations, nextAllocation])
       return nextAllocation
     },
     [patchItemAllocations],

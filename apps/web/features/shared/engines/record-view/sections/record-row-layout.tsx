@@ -96,6 +96,20 @@ export function getRecordRowColumnStyle(column: RecordRowColumnSpec | undefined)
   }
 }
 
+function buildRecordRowTemplateColumns(columns: RecordRowColumnSpec[]) {
+  return columns
+    .map((column) => {
+      const resolvedColumn = resolveRecordRowColumnSpec(column)
+      const preferredWidth = toCssLength(resolvedColumn.preferredWidth)
+      const growValue = Number.isFinite(resolvedColumn.grow) && resolvedColumn.grow > 0
+        ? resolvedColumn.grow
+        : 1
+
+      return `minmax(${preferredWidth}, ${growValue}fr)`
+    })
+    .join(" ")
+}
+
 export function RecordRowLayout({
   columns,
   children,
@@ -115,7 +129,12 @@ export function RecordRowLayout({
 
   return (
     <RecordRowContext.Provider value={columnMap}>
-      <div className={joinClasses("flex w-max min-w-full max-w-none flex-nowrap items-stretch gap-0", className)}>{children}</div>
+      <div
+        className={joinClasses("grid w-max min-w-full max-w-none items-stretch gap-0", className)}
+        style={{ gridTemplateColumns: buildRecordRowTemplateColumns(columns) }}
+      >
+        {children}
+      </div>
     </RecordRowContext.Provider>
   )
 }

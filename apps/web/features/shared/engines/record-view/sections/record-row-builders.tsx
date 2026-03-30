@@ -37,7 +37,7 @@ function buildGridCellProps(columnKey: string) {
   return {
     columnKey,
     chrome: "grid" as const,
-    showLabel: false,
+    showLabel: true,
   }
 }
 
@@ -148,7 +148,7 @@ export function RecordMaterialRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels={false}
+          showCellLabels
         />
       ) : null}
     </>
@@ -294,7 +294,7 @@ export function RecordServiceRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels={false}
+          showCellLabels
         />
       ) : null}
     </>
@@ -365,7 +365,7 @@ export function RecordSalesRepRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels={false}
+          showCellLabels
         />
       ) : null}
     </>
@@ -459,7 +459,7 @@ export function RecordAllocationRowBuilder({
         <RecordItemSectionControls
           {...controls}
           cellChrome="grid"
-          showCellLabels={false}
+          showCellLabels
         />
       ) : null}
     </>
