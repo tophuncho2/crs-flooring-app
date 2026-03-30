@@ -33,6 +33,7 @@ export function useInventoryPrimarySection({
     detailUrl: `/api/flooring/inventory/${inventory.id}`,
     payloadKey: "inventory",
     createLocalValue: toInventoryPrimaryForm,
+    manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
       page.notices.clearNotices()
       const validationError = validateInventoryPrimaryForm(localValue)

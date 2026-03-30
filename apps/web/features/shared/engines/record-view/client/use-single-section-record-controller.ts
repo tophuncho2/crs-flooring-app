@@ -32,6 +32,7 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
   saveSection,
   deleteRecord,
   deleteErrorMessage = "Failed to delete record",
+  manageDirtySections = true,
 }: {
   page: RecordDetailClientScaffoldContext
   scope: string
@@ -48,6 +49,7 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
   }) => Promise<TRecord>
   deleteRecord?: (record: TRecord) => Promise<void>
   deleteErrorMessage?: string
+  manageDirtySections?: boolean
 }) {
   const detail = useRecordDetailController<TRecord, never>({
     scope,
@@ -89,8 +91,12 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
   })
 
   useEffect(() => {
+    if (!manageDirtySections) {
+      return
+    }
+
     page.setDirtySections(primarySection.isDirty ? ["primary"] : [])
-  }, [page, primarySection.isDirty])
+  }, [manageDirtySections, page, primarySection.isDirty])
 
   const remove = useCallback(async () => {
     if (!deleteRecord) {

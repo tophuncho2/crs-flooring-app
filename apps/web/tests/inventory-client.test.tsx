@@ -206,13 +206,14 @@ describe("InventoryClient", () => {
     expect(screen.getByLabelText("Notes")).toBeTruthy()
     expect(screen.getByDisplayValue("Current notes")).toBeTruthy()
     expect(screen.getByText("Unit turn")).toBeTruthy()
-    expect(screen.queryByRole("button", { name: "Add Cut Log" })).toBeNull()
+    expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Save Inventory" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Discard" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Cut Log" })).toBeTruthy()
+    expect(screen.getAllByRole("button", { name: "Discard" }).length).toBeGreaterThanOrEqual(2)
     expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
   })
 
-  it("renders the cut-logs section without inline creation controls when there are no cut logs", () => {
+  it("shows the canonical add action when there are no cut logs yet", () => {
     const view = render(
       <InventoryDetailClient
         initialRecord={inventoryRow({
@@ -231,8 +232,7 @@ describe("InventoryClient", () => {
     )
 
     expect(within(view.container).getByText("Cut Logs")).toBeTruthy()
-    expect(within(view.container).queryByText("Unit turn")).toBeNull()
-    expect(within(view.container).queryByRole("button", { name: "Add Cut Log" })).toBeNull()
+    expect(within(view.container).getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
   })
 
   it("saves inventory from the primary section while the footer remains delete/close only", async () => {
@@ -267,7 +267,7 @@ describe("InventoryClient", () => {
     expect(screen.getByRole("button", { name: "Delete Inventory" })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
     expect(screen.getByRole("button", { name: /Back/ })).toBeTruthy()
-    expect(screen.queryByRole("button", { name: "Add Cut Log" })).toBeNull()
+    expect(screen.getByRole("button", { name: "Add Cut Log" })).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "loc-2" } })
     fireEvent.change(screen.getByLabelText("Item #"), { target: { value: "1002" } })
@@ -328,17 +328,94 @@ describe("InventoryClient", () => {
     )
   })
 
-  it("keeps cut logs read-only for pending import rows", () => {
-    render(
+  it("disables cut-log creation from the canonical section when the import is pending", () => {
+    const view = render(
       <InventoryDetailClient
-        initialRecord={inventoryRow()}
+        initialRecord={inventoryRow({ id: "inv-pending", updatedAt: "2026-03-21T00:00:00.000Z" })}
         locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
         backHref="/dashboard/flooring/inventory"
       />,
     )
 
-    expect(screen.getByText("Cut Logs")).toBeTruthy()
-    expect(screen.queryByText("Pending import inventory cannot be cut until the import is marked Final.")).toBeNull()
-    expect(screen.queryByRole("button", { name: "Add Cut Log" })).toBeNull()
+    expect(within(view.container).getByText("Cut Logs")).toBeTruthy()
+    expect(within(view.container).getByText("Pending import inventory cannot be cut until the import is marked Final.")).toBeTruthy()
+    expect((within(view.container).getByRole("button", { name: "Add Cut Log" }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it("adds a draft cut-log row and saves it from the managed section", async () => {
+    const user = userEvent.setup()
+
+    requestJsonMock
+      .mockResolvedValueOnce({
+        cutLog: {
+          id: "cut-2",
+          inventoryId: "inv-cut",
+          inventoryLabel: "Oak Plank",
+          itemNumber: "1001",
+          before: "12.00",
+          cut: "2.00",
+          after: "10.00",
+          notes: "Fresh cut",
+          createdAt: "2026-03-20T00:00:00.000Z",
+        },
+      })
+      .mockResolvedValueOnce({
+        inventory: inventoryRow({
+          id: "inv-cut",
+          importStatus: "FINAL",
+          canCreateCutLogs: true,
+          cutLogBlockedReason: "",
+          cutLogs: [
+            {
+              id: "cut-2",
+              inventoryId: "inv-cut",
+              inventoryLabel: "Oak Plank",
+              itemNumber: "1001",
+              before: "12.00",
+              cut: "2.00",
+              after: "10.00",
+              notes: "Fresh cut",
+              createdAt: "2026-03-20T00:00:00.000Z",
+            },
+          ],
+          cutTotal: "2.00",
+          runningBalance: "10.00",
+          updatedAt: "2026-03-20T00:00:00.000Z",
+        }),
+      })
+
+    render(
+      <InventoryDetailClient
+        initialRecord={inventoryRow({
+          id: "inv-cut",
+          importStatus: "FINAL",
+          canCreateCutLogs: true,
+          cutLogBlockedReason: "",
+          cutLogs: [],
+          cutTotal: "0.00",
+          runningBalance: "12.00",
+          updatedAt: "2026-03-19T01:00:00.000Z",
+        })}
+        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1", sectionName: "Showroom", warehouseName: "Main Warehouse" }]}
+        backHref="/dashboard/flooring/inventory"
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Add Cut Log" }))
+    fireEvent.change(screen.getByLabelText("Cut Quantity"), { target: { value: "2.00" } })
+    fireEvent.change(screen.getByLabelText("Cut Log Notes"), { target: { value: "Fresh cut" } })
+    await user.click(screen.getByRole("button", { name: "Save Cut Log" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenNthCalledWith(
+        1,
+        "/api/flooring/cut-logs",
+        expect.objectContaining({ method: "POST" }),
+      )
+    })
+
+    expect(requestJsonMock).toHaveBeenNthCalledWith(2, "/api/flooring/inventory/inv-cut")
+    expect(await screen.findByText("Cut log added")).toBeTruthy()
+    expect(screen.getByText("Fresh cut")).toBeTruthy()
   })
 })

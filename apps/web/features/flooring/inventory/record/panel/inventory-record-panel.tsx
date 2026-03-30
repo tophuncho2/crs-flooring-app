@@ -1,15 +1,18 @@
 "use client"
 
+import { useEffect } from "react"
 import {
   RecordFormNotices,
   RecordPanelFooter,
   RecordPrimarySectionInstance,
+  RecordSectionSubHeader,
   RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { InventoryCutLogsSection } from "./sections/inventory-cut-logs-section"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
+import { useInventoryCutLogsSection } from "./controllers/use-inventory-cut-logs-section"
 import { useInventoryPrimarySection } from "./controllers/use-inventory-primary-section"
 import type { InventoryPrimaryForm, InventoryRow, LocationOption } from "../../domain/types"
 
@@ -27,6 +30,11 @@ export function InventoryRecordPanel({
     inventory,
     locationOptions,
   })
+  const cutLogsSection = useInventoryCutLogsSection({
+    page,
+    record: controller.record,
+    publishRecord: controller.publishRecord,
+  })
   const primarySummary = (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {controller.primaryMetrics.map((metric) => (
@@ -39,6 +47,20 @@ export function InventoryRecordPanel({
       ))}
     </div>
   )
+
+  useEffect(() => {
+    const dirtySections: string[] = []
+
+    if (controller.primarySection.isDirty) {
+      dirtySections.push("primary")
+    }
+
+    if (cutLogsSection.isDirty) {
+      dirtySections.push("cut logs")
+    }
+
+    page.setDirtySections(dirtySections)
+  }, [controller.primarySection.isDirty, cutLogsSection.isDirty, page])
 
   return (
     <div className="space-y-4">
@@ -77,9 +99,34 @@ export function InventoryRecordPanel({
         ) : null}
 
         <InventoryCutLogsSection
+          actionPanel={
+            <RecordSectionSubHeader
+              summary={cutLogsSection.blockedSummary || undefined}
+              isDirty={cutLogsSection.isDirty}
+              isSaving={cutLogsSection.isSaving}
+              hasConflict={cutLogsSection.hasConflict}
+              error={cutLogsSection.error}
+              onSave={() => void cutLogsSection.save()}
+              onDiscard={() => cutLogsSection.discard()}
+              saveLabel="Save Cut Log"
+              savingLabel="Saving Cut Log..."
+              actions={[
+                {
+                  key: "add-cut-log",
+                  label: "Add Cut Log",
+                  onClick: cutLogsSection.addDraft,
+                  disabled: !cutLogsSection.canAddDraft,
+                },
+              ]}
+            />
+          }
           cutLogs={controller.record.cutLogs}
           stockUnit={controller.record.stockUnit}
           cutTotal={controller.record.cutTotal}
+          draft={cutLogsSection.localValue}
+          draftBefore={cutLogsSection.draftBefore}
+          draftAfter={cutLogsSection.draftAfter}
+          onDraftChange={cutLogsSection.setDraftField}
         />
       </RecordSectionStack>
 
