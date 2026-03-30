@@ -31,10 +31,12 @@ export function RecordPrimarySection({
 
 export function RecordPrimaryPane({
   variant,
+  placement,
   children,
   className,
 }: {
   variant: "side" | "main"
+  placement?: "left" | "right"
   children: ReactNode
   className?: string
 }) {
@@ -43,6 +45,8 @@ export function RecordPrimaryPane({
       className={joinClasses(
         "rounded-xl border border-[color:var(--subpanel-border)] bg-[var(--subpanel-background)] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.16)]",
         variant === "side" ? "xl:col-span-3" : "xl:col-span-9",
+        placement === "left" ? "xl:order-1" : null,
+        placement === "right" ? "xl:order-2" : null,
         className,
       )}
     >

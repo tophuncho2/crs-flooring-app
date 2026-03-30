@@ -7,7 +7,6 @@ import {
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
-import { formatInventoryQuantity } from "../../../domain/formatters"
 import {
   toInventoryPrimaryForm,
   validateInventoryPrimaryForm,
@@ -81,32 +80,10 @@ export function useInventoryPrimarySection({
     selectedLocation?.warehouseName || controller.record.importWarehouseName || controller.record.warehouseName || ""
   const activeSectionName = selectedLocation?.sectionName || controller.record.sectionName || ""
 
-  const primaryMetrics = useMemo(
-    () => [
-      {
-        label: "Running Balance",
-        value: formatInventoryQuantity(controller.record.runningBalance, controller.record.stockUnit),
-      },
-      {
-        label: "Cut Total",
-        value: formatInventoryQuantity(controller.record.cutTotal, controller.record.stockUnit),
-      },
-      {
-        label: "Starting Stock",
-        value: formatInventoryQuantity(controller.record.stockCount, controller.record.stockUnit),
-      },
-      {
-        label: "Section",
-        value: activeSectionName || "-",
-      },
-    ],
-    [activeSectionName, controller.record.cutTotal, controller.record.runningBalance, controller.record.stockCount, controller.record.stockUnit],
-  )
-
   return {
     ...controller,
     availableLocationOptions,
     activeWarehouseName,
-    primaryMetrics,
+    activeSectionName,
   }
 }

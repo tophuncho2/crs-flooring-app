@@ -35,18 +35,6 @@ export function InventoryRecordPanel({
     record: controller.record,
     publishRecord: controller.publishRecord,
   })
-  const primarySummary = (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {controller.primaryMetrics.map((metric) => (
-        <div key={metric.label} className="min-w-0">
-          <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45">
-            {metric.label}
-          </div>
-          <div className="mt-1 text-sm font-medium text-[var(--foreground)]/80">{metric.value}</div>
-        </div>
-      ))}
-    </div>
-  )
 
   useEffect(() => {
     const dirtySections: string[] = []
@@ -78,7 +66,6 @@ export function InventoryRecordPanel({
             onDiscard={controller.primarySection.discard}
             saveLabel="Save Inventory"
             savingLabel="Saving Inventory..."
-            summary={primarySummary}
             showHeader={false}
           >
             <InventoryPrimaryFieldsSection
@@ -86,6 +73,7 @@ export function InventoryRecordPanel({
               draft={controller.primarySection.localValue}
               locationOptions={controller.availableLocationOptions}
               warehouseName={controller.activeWarehouseName}
+              sectionName={controller.activeSectionName}
               disabled={controller.primarySection.isSaving}
               onFieldChange={(field, value) => {
                 page.notices.clearNotices()
