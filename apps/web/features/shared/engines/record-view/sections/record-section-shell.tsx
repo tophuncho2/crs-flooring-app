@@ -3,6 +3,7 @@
 import { type ReactNode, useState } from "react"
 import { TableBleed } from "@/features/dashboard/shared/table/table-shell"
 import { RecordSectionHeader } from "./record-section-header"
+import { RecordSectionMetric, type RecordSectionMetricValue } from "./record-section-metric"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
@@ -23,7 +24,7 @@ export function RecordSectionShell({
 }: {
   title: string
   children: ReactNode
-  metrics?: ReactNode
+  metrics?: ReactNode | RecordSectionMetricValue[]
   actions?: ReactNode
   statusPanel?: ReactNode
   defaultOpen?: boolean
@@ -32,6 +33,16 @@ export function RecordSectionShell({
   className?: string
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  const metricContent = Array.isArray(metrics)
+    ? metrics.map((metric) => (
+        <RecordSectionMetric
+          key={metric.label}
+          label={metric.label}
+          value={metric.value}
+          className={metric.className}
+        />
+      ))
+    : metrics
 
   return (
     <TableBleed variant="record">
@@ -42,11 +53,11 @@ export function RecordSectionShell({
           onToggle={() =>
             setIsOpen((current) => {
               const next = !current
-              onOpenChange?.(next)
-              return next
-            })
+          onOpenChange?.(next)
+          return next
+        })
           }
-          metrics={metrics}
+          metrics={metricContent}
           actions={actions}
         />
         {isOpen ? (

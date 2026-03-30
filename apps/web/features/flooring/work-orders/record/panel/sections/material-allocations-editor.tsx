@@ -6,17 +6,18 @@ import {
   QuantityCell,
   RecordAllocationItemRow,
   RecordAllocationItemsPanel,
+  RecordFieldErrorText,
+  RecordGridCellInput,
+  RecordGridCellSelect,
   RecordItemCell,
+  RecordRowDeleteButton,
   RecordRowLayout,
   RecordSectionStatusBadge,
   TextCell,
 } from "@/features/shared/engines/record-view"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
-  FieldErrorText,
-  getFieldControlClassName,
   hasFieldErrors,
   type FieldErrorMap,
   type RowFieldErrors,
@@ -98,7 +99,9 @@ function AllocationCell({
     <RecordItemCell
       label={label}
       columnKey={columnKey}
-      className={joinClasses("bg-orange-500/[0.08] px-2.5 py-2", className)}
+      tone="allocation"
+      density="compact"
+      className={className}
       labelClassName="text-[9px] text-[var(--foreground)]/55"
     >
       {children}
@@ -147,10 +150,10 @@ function AllocationEditorRow({
     <RecordRowLayout columns={WORK_ORDER_MATERIAL_COLUMNS} className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}>
       <AllocationCell label="Inventory" columnKey="product">
         <div className="space-y-1">
-          <select
+          <RecordGridCellSelect
             value={allocation.inventoryId}
             onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
-            className={getFieldControlClassName("w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]", Boolean(rowErrors?.inventoryId))}
+            invalid={Boolean(rowErrors?.inventoryId)}
           >
             <option value="">Select inventory</option>
             {allocationOptions.map((option) => (
@@ -158,26 +161,27 @@ function AllocationEditorRow({
                 {option.label}
               </option>
             ))}
-          </select>
-          {rowErrors?.inventoryId ? <FieldErrorText>{rowErrors.inventoryId}</FieldErrorText> : null}
+          </RecordGridCellSelect>
+          {rowErrors?.inventoryId ? <RecordFieldErrorText>{rowErrors.inventoryId}</RecordFieldErrorText> : null}
         </div>
       </AllocationCell>
       <AllocationCell label="Qty" columnKey="quantity">
         <div className="space-y-1">
           <QuantityCell
-            className={getFieldControlClassName("w-full bg-[var(--panel-background)]", Boolean(rowErrors?.quantity))}
             input={
-              <input
+              <RecordGridCellInput
                 value={allocation.quantity}
                 inputMode="decimal"
                 spellCheck={false}
                 placeholder="Qty"
                 onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                className="w-16 bg-transparent text-center text-[var(--foreground)] outline-none"
+                invalid={Boolean(rowErrors?.quantity)}
+                align="center"
+                controlSize="compact"
               />
             }
           />
-          {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
+          {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
         </div>
       </AllocationCell>
       <AllocationCell label="Unit Cost" columnKey="unitPrice">
@@ -187,11 +191,10 @@ function AllocationEditorRow({
         <CurrencyCell value={formatCurrencyValue(quantityValue * rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
       </AllocationCell>
       <AllocationCell label="Notes" columnKey="notes">
-        <input
+        <RecordGridCellInput
           value={allocation.notes}
           placeholder="Notes"
           onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
-          className="w-full rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-[var(--foreground)]"
         />
       </AllocationCell>
       <AllocationCell label="Allocations" columnKey="allocations">
@@ -208,9 +211,7 @@ function AllocationEditorRow({
       </AllocationCell>
       <AllocationCell label="Remove" columnKey="remove">
         <div className="flex min-h-[2.5rem] items-start justify-start xl:justify-end">
-          <DeleteRowButton onClick={() => onDeleteAllocation(allocation.id)} className="whitespace-nowrap px-2.5">
-            Remove
-          </DeleteRowButton>
+          <RecordRowDeleteButton onClick={() => onDeleteAllocation(allocation.id)}>Remove</RecordRowDeleteButton>
         </div>
       </AllocationCell>
     </RecordRowLayout>

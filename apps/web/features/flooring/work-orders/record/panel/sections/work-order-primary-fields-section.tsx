@@ -4,6 +4,8 @@ import type { Dispatch, ReactNode, SetStateAction } from "react"
 import type { RecordSectionError } from "@/features/shared/engines/record-view"
 import {
   AutoGrowTextarea,
+  RECORD_FIELD_CONTROL_CLASS_NAME,
+  RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
   RecordPrimarySectionInstance,
 } from "@/features/shared/engines/record-view"
@@ -61,7 +63,7 @@ export function WorkOrderPrimaryFieldsSection({
               <select
                 value={draft.warehouseId}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, warehouseId: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               >
                 <option value="">No warehouse</option>
                 {warehouseOptions.map((warehouse) => (
@@ -77,7 +79,7 @@ export function WorkOrderPrimaryFieldsSection({
               <select
                 value={draft.status}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, status: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               >
                 {WORK_ORDER_STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>
@@ -94,7 +96,7 @@ export function WorkOrderPrimaryFieldsSection({
                 onChange={(event) =>
                   setDraft((prev) => (prev ? { ...prev, isComplete: event.target.value === "COMPLETE" } : prev))
                 }
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               >
                 <option value="OPEN">Open</option>
                 <option value="COMPLETE">Complete</option>
@@ -108,7 +110,7 @@ export function WorkOrderPrimaryFieldsSection({
                 onChange={(event) =>
                   setDraft((prev) => (prev ? { ...prev, vacancy: event.target.value as DraftWorkOrder["vacancy"] } : prev))
                 }
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               >
                 <option value="">Select vacancy</option>
                 {vacancyOptions.map((vacancy) => (
@@ -129,7 +131,7 @@ export function WorkOrderPrimaryFieldsSection({
               <select
                 value={draft.propertyId}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, propertyId: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               >
                 <option value="">Select property</option>
                 {propertyOptions.map((property) => (
@@ -152,7 +154,7 @@ export function WorkOrderPrimaryFieldsSection({
               <input
                 value={draft.customAddress}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, customAddress: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -162,7 +164,7 @@ export function WorkOrderPrimaryFieldsSection({
                 type="date"
                 value={draft.date}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, date: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -176,7 +178,7 @@ export function WorkOrderPrimaryFieldsSection({
               <input
                 value={draft.unitText}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, unitText: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -185,7 +187,7 @@ export function WorkOrderPrimaryFieldsSection({
               <AutoGrowTextarea
                 value={draft.notes}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -194,7 +196,7 @@ export function WorkOrderPrimaryFieldsSection({
               <AutoGrowTextarea
                 value={draft.instructions}
                 onChange={(event) => setDraft((prev) => (prev ? { ...prev, instructions: event.target.value } : prev))}
-                className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>

@@ -7,6 +7,7 @@ import {
   RECORD_SECTION_HEADER_HOVER_CLASS_NAME,
   RECORD_SECTION_HEADER_SURFACE_CLASS_NAME,
 } from "./record-section-tokens"
+import { RecordSectionMetricsGroup } from "./record-section-metrics-group"
 
 export function RecordSectionHeader({
   title,
@@ -43,8 +44,8 @@ export function RecordSectionHeader({
           RECORD_SECTION_HEADER_HOVER_CLASS_NAME,
         )}
       />
-      <div className="pointer-events-none relative z-[1] flex items-center gap-4 px-5 py-5">
-        <div className="flex min-w-0 flex-1 items-center gap-4">
+      <div className="pointer-events-none relative z-[1] flex items-start gap-4 px-5 py-5">
+        <div className="flex min-w-0 flex-1 items-start gap-4">
           <div className="min-w-0">
             <div className="inline-flex items-center border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-base font-semibold text-[var(--foreground)] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
               {title}
@@ -52,9 +53,9 @@ export function RecordSectionHeader({
           </div>
         </div>
         {(metrics || actions) ? (
-          <div className="ml-auto flex min-w-0 items-center gap-3">
-            {metrics ? <div className="flex flex-wrap items-center justify-end gap-2">{metrics}</div> : null}
-            {actions ? <div className="pointer-events-auto relative z-[2] flex items-center">{actions}</div> : null}
+          <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-3 self-start">
+            <RecordSectionMetricsGroup>{metrics}</RecordSectionMetricsGroup>
+            {actions ? <div className="pointer-events-auto relative z-[2] flex items-start">{actions}</div> : null}
           </div>
         ) : null}
       </div>

@@ -1,14 +1,16 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   CurrencyCell,
   QuantityCell,
+  RecordFieldErrorText,
+  RecordGridCellInput,
+  RecordGridCellSelect,
   RecordItemCell,
+  RecordRowDeleteButton,
   RecordRowLayout,
   RecordSectionItem,
-  RecordSectionMetric,
   RecordSectionShell,
   RecordSectionStatusBadge,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -18,8 +20,6 @@ import {
 } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import {
-  FieldErrorText,
-  getFieldControlClassName,
   hasFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
@@ -68,13 +68,10 @@ function TemplateMaterialItemRow({
       <RecordRowLayout columns={TEMPLATE_MATERIAL_COLUMNS}>
         <RecordItemCell label="Product" columnKey="product">
           <div className="space-y-1">
-            <select
+            <RecordGridCellSelect
               value={item.productId}
               onChange={(event) => onItemFieldChange(item.id, "productId", event.target.value)}
-              className={getFieldControlClassName(
-                "w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1",
-                Boolean(rowErrors?.productId),
-              )}
+              invalid={Boolean(rowErrors?.productId)}
             >
               <option value="">Select product</option>
               {productOptions.map((product) => (
@@ -82,55 +79,56 @@ function TemplateMaterialItemRow({
                   {product.label}
                 </option>
               ))}
-            </select>
-            {rowErrors?.productId ? <FieldErrorText>{rowErrors.productId}</FieldErrorText> : null}
+            </RecordGridCellSelect>
+            {rowErrors?.productId ? <RecordFieldErrorText>{rowErrors.productId}</RecordFieldErrorText> : null}
           </div>
         </RecordItemCell>
         <RecordItemCell label="Qty" columnKey="quantity">
           <div className="space-y-1">
-            <QuantityCell
-              className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity))}
-              input={
-                <input
-                  value={item.quantity}
-                  inputMode="decimal"
-                  spellCheck={false}
-                  placeholder="Qty"
-                  onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                  className="w-16 bg-transparent text-center outline-none"
-                />
-              }
-              unit={<span className="whitespace-nowrap">{item.sendUnit || "-"}</span>}
+          <QuantityCell
+            input={
+              <RecordGridCellInput
+                value={item.quantity}
+                inputMode="decimal"
+                spellCheck={false}
+                placeholder="Qty"
+                onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
+                invalid={Boolean(rowErrors?.quantity)}
+                align="center"
+                controlSize="compact"
+              />
+            }
+            unit={<span className="whitespace-nowrap">{item.sendUnit || "-"}</span>}
             />
-            {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
+            {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
           </div>
         </RecordItemCell>
         <RecordItemCell label="Unit Price" columnKey="unitPrice">
           <div className="space-y-1">
             <CurrencyCell
-              className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
               input={
-                <input
+                <RecordGridCellInput
                   value={item.unitPrice}
                   inputMode="decimal"
                   spellCheck={false}
                   onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
-                  className="w-16 bg-transparent text-right outline-none"
+                  invalid={Boolean(rowErrors?.unitPrice)}
+                  align="right"
+                  controlSize="compact"
                 />
               }
               unit={item.sendUnit || "unit"}
             />
-            {rowErrors?.unitPrice ? <FieldErrorText>{rowErrors.unitPrice}</FieldErrorText> : null}
+            {rowErrors?.unitPrice ? <RecordFieldErrorText>{rowErrors.unitPrice}</RecordFieldErrorText> : null}
           </div>
         </RecordItemCell>
         <RecordItemCell label="Total" columnKey="total">
           <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
         <RecordItemCell label="Notes" columnKey="notes">
-          <input
+          <RecordGridCellInput
             value={item.notes}
             onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
-            className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
           />
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">
@@ -142,9 +140,7 @@ function TemplateMaterialItemRow({
         </RecordItemCell>
         <RecordItemCell label="Remove" columnKey="remove">
           <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-            <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
-              Remove
-            </DeleteRowButton>
+            <RecordRowDeleteButton onClick={() => onDeleteItem(item.id)}>Remove</RecordRowDeleteButton>
           </div>
         </RecordItemCell>
       </RecordRowLayout>
@@ -180,9 +176,7 @@ export function TemplateMaterialItemsSection({
       title={title}
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
-      metrics={metrics.map((metric) => (
-        <RecordSectionMetric key={metric.label} label={metric.label} value={metric.value} />
-      ))}
+      metrics={metrics}
     >
       {loading ? (
         <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>

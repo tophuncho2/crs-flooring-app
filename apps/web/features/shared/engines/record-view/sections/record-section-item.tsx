@@ -44,7 +44,7 @@ export function RecordSectionItem({
           {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-end">{actions}</div> : null}
         </div>
       ) : null}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain">
         <div className={joinRecordSectionClasses("w-full", bodyClassName)}>{children}</div>
       </div>
       {nestedContent ? (

@@ -33,7 +33,7 @@ export function TextCell({
         className,
       )}
     >
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className={joinClasses("min-w-0 flex-1", noWrap ? "truncate" : undefined)}>{children}</div>
     </div>
   )
 }

@@ -3,6 +3,8 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 import {
   AutoGrowTextarea,
+  RECORD_FIELD_CONTROL_CLASS_NAME,
+  RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
   RecordPrimarySectionInstance,
   RecordPrimaryFieldCell,
@@ -49,7 +51,7 @@ export function TemplatePrimaryFieldsSection({
                 <select
                   value={draft.warehouseId}
                   onChange={(event) => setDraft((previous) => ({ ...previous, warehouseId: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 >
                   <option value="">No warehouse</option>
                   {warehouseOptions.map((warehouse) => (
@@ -65,7 +67,7 @@ export function TemplatePrimaryFieldsSection({
                 <select
                   value={draft.padProductId}
                   onChange={(event) => setDraft((previous) => ({ ...previous, padProductId: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 >
                   <option value="">No pad type</option>
                   {padProductOptions.map((product) => (
@@ -86,7 +88,7 @@ export function TemplatePrimaryFieldsSection({
                 <select
                   value={draft.propertyId}
                   onChange={(event) => setDraft((previous) => ({ ...previous, propertyId: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 >
                   <option value="">Select property</option>
                   {propertyOptions.map((property) => (
@@ -102,7 +104,7 @@ export function TemplatePrimaryFieldsSection({
                 <input
                   value={draft.templateTag}
                   onChange={(event) => setDraft((previous) => ({ ...previous, templateTag: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 />
               </RecordFormField>
             </RecordPrimaryFieldCell>
@@ -111,7 +113,7 @@ export function TemplatePrimaryFieldsSection({
                 <AutoGrowTextarea
                   value={draft.instructions}
                   onChange={(event) => setDraft((previous) => ({ ...previous, instructions: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
                 />
               </RecordFormField>
             </RecordPrimaryFieldCell>
@@ -120,7 +122,7 @@ export function TemplatePrimaryFieldsSection({
                 <AutoGrowTextarea
                   value={draft.templateNotes}
                   onChange={(event) => setDraft((previous) => ({ ...previous, templateNotes: event.target.value }))}
-                  className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
+                  className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
                 />
               </RecordFormField>
             </RecordPrimaryFieldCell>

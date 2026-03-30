@@ -1,14 +1,16 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   CurrencyCell,
   QuantityCell,
+  RecordFieldErrorText,
+  RecordGridCellInput,
+  RecordGridCellSelect,
   RecordItemCell,
+  RecordRowDeleteButton,
   RecordRowLayout,
   RecordSectionItem,
-  RecordSectionMetric,
   RecordSectionShell,
   RecordSectionStatusBadge,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -16,8 +18,6 @@ import {
 import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import {
-  FieldErrorText,
-  getFieldControlClassName,
   hasFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
@@ -64,7 +64,7 @@ function TemplateServiceItemRow({
     <RecordSectionItem>
       <RecordRowLayout columns={TEMPLATE_SERVICE_COLUMNS}>
         <RecordItemCell label="Service" columnKey="service">
-          <select
+          <RecordGridCellSelect
             value={item.serviceId}
             onChange={(event) => {
               const nextServiceId = event.target.value
@@ -77,7 +77,6 @@ function TemplateServiceItemRow({
                 onItemFieldChange(item.id, "unitPrice", selected.baseCost)
               }
             }}
-            className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
           >
             <option value="">Custom service</option>
             {serviceOptions.map((service) => (
@@ -85,85 +84,84 @@ function TemplateServiceItemRow({
                 {service.name}
               </option>
             ))}
-          </select>
+          </RecordGridCellSelect>
         </RecordItemCell>
         <RecordItemCell label="Name" columnKey="name">
           <div className="space-y-1">
-            <input
+            <RecordGridCellInput
               value={item.name}
               onChange={(event) => onItemFieldChange(item.id, "name", event.target.value)}
-              className={getFieldControlClassName(
-                "w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1",
-                Boolean(rowErrors?.name),
-              )}
+              invalid={Boolean(rowErrors?.name)}
             />
-            {rowErrors?.name ? <FieldErrorText>{rowErrors.name}</FieldErrorText> : null}
+            {rowErrors?.name ? <RecordFieldErrorText>{rowErrors.name}</RecordFieldErrorText> : null}
           </div>
         </RecordItemCell>
         <RecordItemCell label="Qty" columnKey="quantity">
           <div className="space-y-1">
-            <QuantityCell
-              className={getFieldControlClassName("w-full", Boolean(rowErrors?.quantity || rowErrors?.unitId))}
-              input={
-                <input
-                  value={item.quantity}
-                  inputMode="decimal"
-                  spellCheck={false}
-                  placeholder="Qty"
-                  onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                  className="w-16 bg-transparent text-center outline-none"
-                />
-              }
-              unit={
-                <select
-                  value={item.unitId}
-                  onChange={(event) => {
-                    const nextUnitId = event.target.value
-                    const selected = unitOptions.find((unit) => unit.id === nextUnitId)
-                    onItemFieldChange(item.id, "unitId", nextUnitId)
-                    onItemFieldChange(item.id, "unitName", selected?.name ?? "")
-                  }}
-                  className="max-w-[7rem] bg-transparent text-xs outline-none"
-                >
-                  <option value="">Unit</option>
-                  {unitOptions.map((unit) => (
-                    <option key={unit.id} value={unit.id}>
-                      {unit.name}
-                    </option>
-                  ))}
-                </select>
-              }
-            />
-            {rowErrors?.quantity ? <FieldErrorText>{rowErrors.quantity}</FieldErrorText> : null}
-            {rowErrors?.unitId ? <FieldErrorText>{rowErrors.unitId}</FieldErrorText> : null}
+          <QuantityCell
+            input={
+              <RecordGridCellInput
+                value={item.quantity}
+                inputMode="decimal"
+                spellCheck={false}
+                placeholder="Qty"
+                onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
+                invalid={Boolean(rowErrors?.quantity)}
+                align="center"
+                controlSize="compact"
+              />
+            }
+            unit={
+              <RecordGridCellSelect
+                value={item.unitId}
+                onChange={(event) => {
+                  const nextUnitId = event.target.value
+                  const selected = unitOptions.find((unit) => unit.id === nextUnitId)
+                  onItemFieldChange(item.id, "unitId", nextUnitId)
+                  onItemFieldChange(item.id, "unitName", selected?.name ?? "")
+                }}
+                invalid={Boolean(rowErrors?.unitId)}
+                controlSize="compact"
+              >
+                <option value="">Unit</option>
+                {unitOptions.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </RecordGridCellSelect>
+            }
+          />
+            {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
+            {rowErrors?.unitId ? <RecordFieldErrorText>{rowErrors.unitId}</RecordFieldErrorText> : null}
           </div>
         </RecordItemCell>
         <RecordItemCell label="Unit Price" columnKey="unitPrice">
           <div className="space-y-1">
             <CurrencyCell
-              className={getFieldControlClassName("w-full", Boolean(rowErrors?.unitPrice))}
               input={
-                <input
+                <RecordGridCellInput
                   value={item.unitPrice}
                   inputMode="decimal"
                   spellCheck={false}
                   onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
-                  className="w-16 bg-transparent text-right outline-none"
+                  invalid={Boolean(rowErrors?.unitPrice)}
+                  align="right"
+                  controlSize="compact"
                 />
               }
               unit={item.unitName || "unit"}
             />
-            {rowErrors?.unitPrice ? <FieldErrorText>{rowErrors.unitPrice}</FieldErrorText> : null}
+            {rowErrors?.unitPrice ? <RecordFieldErrorText>{rowErrors.unitPrice}</RecordFieldErrorText> : null}
           </div>
         </RecordItemCell>
         <RecordItemCell label="Total" columnKey="total">
           <CurrencyCell value={formatLineTotal(item)} className="w-full" />
         </RecordItemCell>
         <RecordItemCell label="Notes" columnKey="notes">
-          <input
+          <RecordGridCellInput
             value={item.notes}
             onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
-            className="w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1"
           />
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">
@@ -175,9 +173,7 @@ function TemplateServiceItemRow({
         </RecordItemCell>
         <RecordItemCell label="Remove" columnKey="remove">
           <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-            <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
-              Remove
-            </DeleteRowButton>
+            <RecordRowDeleteButton onClick={() => onDeleteItem(item.id)}>Remove</RecordRowDeleteButton>
           </div>
         </RecordItemCell>
       </RecordRowLayout>
@@ -215,9 +211,7 @@ export function TemplateServiceItemsSection({
       title={title}
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
-      metrics={metrics.map((metric) => (
-        <RecordSectionMetric key={metric.label} label={metric.label} value={metric.value} />
-      ))}
+      metrics={metrics}
     >
       {loading ? (
         <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>

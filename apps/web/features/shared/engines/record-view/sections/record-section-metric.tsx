@@ -5,6 +5,12 @@ import {
   RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
 } from "./record-section-tokens"
 
+export type RecordSectionMetricValue = {
+  label: string
+  value: ReactNode
+  className?: string
+}
+
 export function RecordSectionMetric({
   label,
   value,
@@ -17,14 +23,14 @@ export function RecordSectionMetric({
   return (
     <div
       className={joinRecordSectionClasses(
-        "min-w-[8rem] border px-3 py-2",
+        "flex min-h-[3.25rem] min-w-[8rem] flex-col justify-start border px-3 py-2.5",
         RECORD_SECTION_BORDER_CLASS_NAME,
         RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
         className,
       )}
     >
       <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--foreground)]/45">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-[var(--foreground)]">{value}</div>
+      <div className="mt-1 text-sm font-semibold leading-tight text-[var(--foreground)]">{value}</div>
     </div>
   )
 }

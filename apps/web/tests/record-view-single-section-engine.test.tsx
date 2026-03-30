@@ -5,9 +5,12 @@ import { describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
+  CurrencyCell,
   RecordDetailClientScaffold,
+  RecordGridCellInput,
   RecordSectionSubHeader,
   RecordSingleSectionPanel,
+  RecordSectionShell,
   useRecordPageController,
   useSingleSectionRecordController,
 } from "@/features/shared/engines/record-view"
@@ -194,5 +197,32 @@ describe("record view single-section engine", () => {
     expect(refresh).toHaveBeenCalledTimes(1)
     expect(discard).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledTimes(1)
+  })
+
+  it("section shell wraps metrics in the engine-owned responsive metrics group", () => {
+    const { container } = render(
+      <RecordSectionShell title="Materials" metrics={[{ label: "Items", value: "4" }]}>
+        <div>Rows</div>
+      </RecordSectionShell>,
+    )
+
+    const metricsGroup = container.querySelector(".hidden.md\\:flex")
+    expect(metricsGroup).toBeTruthy()
+    expect(screen.getByText("Items")).toBeTruthy()
+    expect(screen.getByText("4")).toBeTruthy()
+  })
+
+  it("grid cell controls and currency cells use canonical engine chrome", () => {
+    const { container } = render(
+      <div>
+        <RecordGridCellInput value="12.5" readOnly controlSize="compact" align="right" />
+        <CurrencyCell value="1.50" unit="sqft" />
+      </div>,
+    )
+
+    const input = container.querySelector("input")
+    expect(input?.className).toContain("border-sky-500/35")
+    expect(screen.getByText("$")).toBeTruthy()
+    expect(screen.getByText("/ sqft")).toBeTruthy()
   })
 })

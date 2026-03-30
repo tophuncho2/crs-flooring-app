@@ -1,12 +1,15 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
+  CurrencyCell,
+  RecordFieldErrorText,
+  RecordGridCellInput,
+  RecordGridCellSelect,
   RecordItemCell,
+  RecordRowDeleteButton,
   RecordRowLayout,
   RecordSectionItem,
-  RecordSectionMetric,
   RecordSectionShell,
   RecordSectionStatusBadge,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -20,8 +23,6 @@ import {
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import {
-  FieldErrorText,
-  getFieldControlClassName,
   hasFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
@@ -52,7 +53,7 @@ function SalesRepRow({
       <RecordRowLayout columns={WORK_ORDER_SALES_REP_COLUMNS}>
         <RecordItemCell label="Sales Rep" columnKey="salesRep">
         <div className="space-y-1">
-          <select
+          <RecordGridCellSelect
             value={item.contactId}
             onChange={(event) => {
               const nextContactId = event.target.value
@@ -60,10 +61,7 @@ function SalesRepRow({
               onItemFieldChange(item.id, "contactId", nextContactId)
               onItemFieldChange(item.id, "contactName", selected?.name ?? "")
             }}
-            className={getFieldControlClassName(
-              "w-full rounded border border-[var(--panel-border)] bg-transparent px-2 py-1",
-              Boolean(rowErrors?.contactId),
-            )}
+            invalid={Boolean(rowErrors?.contactId)}
           >
             <option value="">Select sales rep</option>
             {salesRepOptions.map((option) => (
@@ -71,34 +69,29 @@ function SalesRepRow({
                 {option.name}
               </option>
             ))}
-          </select>
-          {rowErrors?.contactId ? <FieldErrorText>{rowErrors.contactId}</FieldErrorText> : null}
+          </RecordGridCellSelect>
+          {rowErrors?.contactId ? <RecordFieldErrorText>{rowErrors.contactId}</RecordFieldErrorText> : null}
         </div>
         </RecordItemCell>
         <RecordItemCell label="Percent" columnKey="percent">
         <div className="space-y-1">
-          <div
-            className={getFieldControlClassName(
-              "flex w-full items-center gap-2 rounded border border-[var(--panel-border)] px-2 py-1",
-              Boolean(rowErrors?.percent),
-            )}
-          >
-            <input
+          <div className="flex min-h-[2.5rem] items-center gap-2">
+            <RecordGridCellInput
               value={item.percent}
               inputMode="decimal"
               spellCheck={false}
               onChange={(event) => onItemFieldChange(item.id, "percent", normalizeEditableDecimalInput(event.target.value))}
-              className="w-full bg-transparent outline-none"
+              invalid={Boolean(rowErrors?.percent)}
+              align="right"
+              controlSize="compact"
             />
             <span className="text-[var(--foreground)]/60">%</span>
           </div>
-          {rowErrors?.percent ? <FieldErrorText>{rowErrors.percent}</FieldErrorText> : null}
+          {rowErrors?.percent ? <RecordFieldErrorText>{rowErrors.percent}</RecordFieldErrorText> : null}
         </div>
         </RecordItemCell>
         <RecordItemCell label="Total" columnKey="total">
-        <div className="rounded border border-[var(--panel-border)] px-2 py-1 font-medium">
-          {formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))}
-        </div>
+        <CurrencyCell value={formatCurrencyValue(calculateSalesRepAmount(customerCost, item.percent))} className="w-full" />
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">
         <div className="flex min-h-[2.5rem] items-center">
@@ -110,9 +103,7 @@ function SalesRepRow({
         </RecordItemCell>
         <RecordItemCell label="Remove" columnKey="remove">
         <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
-          <DeleteRowButton onClick={() => onDeleteItem(item.id)} className="whitespace-nowrap px-2.5">
-            Remove
-          </DeleteRowButton>
+          <RecordRowDeleteButton onClick={() => onDeleteItem(item.id)}>Remove</RecordRowDeleteButton>
         </div>
         </RecordItemCell>
       </RecordRowLayout>
@@ -150,9 +141,7 @@ export function WorkOrderSalesRepsSection({
       title={title}
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
-      metrics={metrics.map((metric) => (
-        <RecordSectionMetric key={metric.label} label={metric.label} value={metric.value} />
-      ))}
+      metrics={metrics}
     >
       {loading ? (
         <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>

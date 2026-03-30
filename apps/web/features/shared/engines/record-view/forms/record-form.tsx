@@ -3,13 +3,14 @@
 import type { ReactNode } from "react"
 import { X } from "lucide-react"
 
-export const RECORD_FIELD_CONTROL_CLASS_NAME = "w-full rounded-lg border border-[var(--panel-border)] bg-transparent px-3 py-2"
+export const RECORD_FIELD_CONTROL_CLASS_NAME =
+  "w-full rounded-lg border border-sky-500/35 bg-transparent px-3 py-2 text-[var(--foreground)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 focus-visible:border-sky-400/70 disabled:cursor-not-allowed disabled:opacity-60"
 export const RECORD_TEXTAREA_CONTROL_CLASS_NAME = `${RECORD_FIELD_CONTROL_CLASS_NAME} min-h-[42px] resize-y`
 export const RECORD_PREFIXED_CONTROL_CONTAINER_CLASS_NAME =
-  "flex w-full overflow-hidden rounded-lg border border-[var(--panel-border)] bg-transparent"
+  "flex w-full overflow-hidden rounded-lg border border-sky-500/35 bg-transparent transition focus-within:border-sky-400/70 focus-within:ring-2 focus-within:ring-sky-500/20"
 export const RECORD_PREFIX_CONTROL_CLASS_NAME =
-  "inline-flex shrink-0 items-center border-r border-[var(--panel-border)] px-3 text-[var(--foreground)]/70"
-export const RECORD_PREFIXED_CONTROL_INPUT_CLASS_NAME = "min-w-0 flex-1 bg-transparent px-3 py-2 outline-none"
+  "inline-flex shrink-0 items-center border-r border-sky-500/35 px-3 text-[var(--foreground)]/70"
+export const RECORD_PREFIXED_CONTROL_INPUT_CLASS_NAME = "min-w-0 flex-1 bg-transparent px-3 py-2 text-[var(--foreground)] outline-none"
 export const RECORD_CURRENCY_PREFIX = "$"
 
 export function RecordModalShell({

@@ -3,7 +3,6 @@
 import {
   RecordItemCell,
   RecordRowLayout,
-  RecordSectionMetric,
   RecordSectionShell,
   RECORD_SECTION_BORDER_CLASS_NAME,
   TextCell,
@@ -36,11 +35,7 @@ export function WorkOrderCalculationsSection({
     <RecordSectionShell
       title={title}
       bodyClassName="space-y-4"
-      metrics={
-        metrics.length > 0
-          ? metrics.map((metric) => <RecordSectionMetric key={metric.label} label={metric.label} value={metric.value} />)
-          : undefined
-      }
+      metrics={metrics.length > 0 ? metrics : undefined}
     >
       {loading ? (
         <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>

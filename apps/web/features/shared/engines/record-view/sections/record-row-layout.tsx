@@ -25,10 +25,9 @@ export function getRecordRowColumnStyle(column: RecordRowColumnSpec | undefined)
   const minWidth = toCssLength(column?.minWidth ?? 192)
   const grow = column?.grow ?? 1
   return {
-    flexBasis: minWidth,
+    flex: `${grow} 1 ${minWidth}`,
     minWidth,
-    flexGrow: grow,
-    flexShrink: 1,
+    maxWidth: "none",
   }
 }
 
@@ -45,7 +44,7 @@ export function RecordRowLayout({
 
   return (
     <RecordRowContext.Provider value={columnMap}>
-      <div className={joinClasses("flex w-max min-w-full items-stretch gap-0", className)}>{children}</div>
+      <div className={joinClasses("flex w-max min-w-full max-w-none flex-nowrap items-stretch gap-0", className)}>{children}</div>
     </RecordRowContext.Provider>
   )
 }
