@@ -311,6 +311,10 @@ export async function getTemplatesPageData(page: number, tableState: ServerTable
   return withPrismaConnectivityHandling(() => loadTemplatesPageData(page, tableState))
 }
 
+export async function getTemplateCreatePageOptions() {
+  return withPrismaConnectivityHandling(() => loadTemplateRecordDetailOptions())
+}
+
 export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   template: Awaited<ReturnType<typeof getTemplateById>>
   propertyOptions: Awaited<ReturnType<typeof loadTemplateRecordDetailOptions>>["propertyOptions"]

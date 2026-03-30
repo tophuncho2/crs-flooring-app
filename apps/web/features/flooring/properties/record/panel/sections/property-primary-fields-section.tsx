@@ -15,12 +15,14 @@ export function PropertyPrimaryFieldsSection({
   property,
   draft,
   managementOptions,
+  managementCompanyLocked = false,
   disabled,
   onFieldChange,
 }: {
   property: PropertyDetailRecord
   draft: PropertyPrimaryForm
   managementOptions: Array<{ id: string; name: string }>
+  managementCompanyLocked?: boolean
   disabled: boolean
   onFieldChange: (field: keyof PropertyPrimaryForm, value: string) => void
 }) {
@@ -36,7 +38,7 @@ export function PropertyPrimaryFieldsSection({
                 value={draft.managementCompanyId}
                 onChange={(event) => onFieldChange("managementCompanyId", event.target.value)}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
+                disabled={disabled || managementCompanyLocked}
               >
                 <option value="">No management company</option>
                 {managementOptions.map((company) => (

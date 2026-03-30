@@ -6,15 +6,14 @@ import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboar
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
-import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import type { ManufacturerRow } from "../../domain/types"
 import { useManufacturersListController } from "../../controllers/use-manufacturers-list-controller"
-import { ManufacturersCreateModal } from "./manufacturers-create-modal"
 import { ManufacturersTable } from "./manufacturers-table"
 
 export default function ManufacturersClient({
@@ -32,7 +31,7 @@ export default function ManufacturersClient({
   }
 }) {
   const controller = useManufacturersListController(initialManufacturers)
-  const navigation = useCanonicalDetailNavigation("/dashboard/flooring/manufacturers")
+  const navigation = useRecordEntryNavigation("/dashboard/flooring/manufacturers")
   const {
     searchQuery,
     isAscendingSort,
@@ -104,14 +103,14 @@ export default function ManufacturersClient({
               />
             }
             primaryAction={
-              <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+              <button type="button" onClick={() => navigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
                 Manufacturer
               </button>
             }
           />
         }
-        notices={!controller.isCreateModalOpen ? <FormStatusNotices message={controller.notices.message} error={controller.notices.error} /> : null}
+        notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
         table={
           <ManufacturersTable
             rows={sortedRows}
@@ -136,19 +135,6 @@ export default function ManufacturersClient({
           />
         }
       />
-      {controller.isCreateModalOpen ? (
-        <ManufacturersCreateModal
-          draft={controller.createDraft}
-          message={controller.notices.message}
-          error={controller.notices.error}
-          isSaving={controller.isSavingCreate}
-          onClose={controller.closeCreateModal}
-          onFieldChange={controller.updateCreateDraft}
-          onCreate={() => {
-            void controller.submitCreate()
-          }}
-        />
-      ) : null}
     </>
   )
 }

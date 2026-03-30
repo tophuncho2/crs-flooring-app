@@ -42,12 +42,8 @@ describe("ServicesClient", () => {
     resetSimpleTableClientMocks()
   })
 
-  it("requires service name, unit, and cost before submitting and posts the valid form payload", async () => {
+  it("dashboard add routes to the canonical service create form", async () => {
     const user = userEvent.setup()
-
-    requestJsonMock.mockResolvedValue({
-      service: serviceRow(),
-    })
 
     render(
       <ServicesClient
@@ -60,30 +56,11 @@ describe("ServicesClient", () => {
     )
 
     await user.click(screen.getByRole("button", { name: /\+?Service$/ }))
-    await user.click(screen.getByRole("button", { name: "Create Service" }))
 
-    expect(requestJsonMock).not.toHaveBeenCalled()
-    expect(screen.getAllByText("Service name is required").length).toBeGreaterThan(0)
-
-    await user.type(screen.getByLabelText("Service Name"), "Install")
-    fireEvent.change(screen.getByLabelText("Service Unit"), { target: { value: "unit-1" } })
-    await user.type(screen.getByLabelText("Cost"), "9.50")
-    await user.click(screen.getByRole("button", { name: "Create Service" }))
-
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/services", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Install",
-          unitId: "unit-1",
-          baseCost: "9.50",
-          notes: "",
-        }),
-      })
-    })
-
-    expect(screen.getByText("Service created")).toBeTruthy()
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/services/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 
   it("row click routes to the canonical detail page", async () => {

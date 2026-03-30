@@ -3,60 +3,13 @@
 import { useState } from "react"
 import { useRecordNotices } from "@/features/flooring/shared/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/table/confirm-delete"
-import { createCategoryRequest, deleteCategoryRequest } from "../data/mutations"
-import { EMPTY_CATEGORY_FORM, type CategoryForm, type CategoryRow } from "../domain/types"
-import { validateCategoryForm } from "../domain/validators"
+import { deleteCategoryRequest } from "../data/mutations"
+import type { CategoryRow } from "../domain/types"
 
 export function useCategoriesListController(initialRows: CategoryRow[]) {
   const [rows, setRows] = useState(initialRows)
-  const [createDraft, setCreateDraft] = useState<CategoryForm>(EMPTY_CATEGORY_FORM)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isSavingCreate, setIsSavingCreate] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const notices = useRecordNotices()
-
-  function openCreateModal() {
-    notices.clearNotices()
-    setCreateDraft(EMPTY_CATEGORY_FORM)
-    setIsCreateModalOpen(true)
-  }
-
-  function closeCreateModal() {
-    if (isSavingCreate) {
-      return
-    }
-
-    notices.clearNotices()
-    setIsCreateModalOpen(false)
-  }
-
-  function updateCreateDraft(field: keyof CategoryForm, value: string) {
-    setCreateDraft((previous) => ({ ...previous, [field]: value }))
-  }
-
-  async function submitCreate() {
-    notices.clearNotices()
-    const validationError = validateCategoryForm(createDraft, rows)
-    if (validationError) {
-      notices.showError(validationError)
-      return null
-    }
-
-    setIsSavingCreate(true)
-    try {
-      const payload = await createCategoryRequest(createDraft)
-      setRows((previous) => [...previous, payload.category].sort((a, b) => a.name.localeCompare(b.name)))
-      setCreateDraft(EMPTY_CATEGORY_FORM)
-      setIsCreateModalOpen(false)
-      notices.showSuccess("Category created")
-      return payload.category
-    } catch (error) {
-      notices.showError(error instanceof Error ? error.message : "Failed to save category")
-      return null
-    } finally {
-      setIsSavingCreate(false)
-    }
-  }
 
   async function removeRow(row: CategoryRow) {
     if (!confirmRecordDelete(buildDeleteConfirmationMessage("category"))) {
@@ -80,15 +33,8 @@ export function useCategoriesListController(initialRows: CategoryRow[]) {
 
   return {
     rows,
-    createDraft,
-    isCreateModalOpen,
-    isSavingCreate,
     deletingId,
     notices,
-    openCreateModal,
-    closeCreateModal,
-    updateCreateDraft,
-    submitCreate,
     removeRow,
   }
 }

@@ -20,6 +20,7 @@ export function TemplatePrimaryFieldsSection({
   propertyOptions,
   warehouseOptions,
   padProductOptions,
+  propertyLocked = false,
   setDraft,
   error,
   noticeMessage,
@@ -35,6 +36,7 @@ export function TemplatePrimaryFieldsSection({
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   padProductOptions: Array<{ id: string; label: string }>
+  propertyLocked?: boolean
   setDraft: Dispatch<SetStateAction<DraftTemplate>>
   error?: ReactNode | RecordSectionError | null
   noticeMessage?: string
@@ -93,6 +95,7 @@ export function TemplatePrimaryFieldsSection({
                   value={draft.propertyId}
                   onChange={(event) => setDraft((previous) => ({ ...previous, propertyId: event.target.value }))}
                   className={RECORD_FIELD_CONTROL_CLASS_NAME}
+                  disabled={propertyLocked}
                 >
                   <option value="">Select property</option>
                   {propertyOptions.map((property) => (

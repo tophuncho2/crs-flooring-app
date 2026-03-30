@@ -23,6 +23,9 @@ export function UnitOfMeasurePrimaryFieldsSection({
   disabled?: boolean
   onChange: (value: string) => void
 }) {
+  const createdLabel = unitOfMeasure.createdAt ? formatStableDateTime(unitOfMeasure.createdAt) : "Not saved yet"
+  const updatedLabel = unitOfMeasure.updatedAt ? formatStableDateTime(unitOfMeasure.updatedAt) : "Not saved yet"
+
   return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="main">
@@ -43,10 +46,10 @@ export function UnitOfMeasurePrimaryFieldsSection({
       <RecordPrimaryPane variant="side">
         <RecordPrimaryFieldsGrid variant="side">
           <RecordFormField label="Created">
-            <RecordStaticFieldValue>{formatStableDateTime(unitOfMeasure.createdAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Updated">
-            <RecordStaticFieldValue>{formatStableDateTime(unitOfMeasure.updatedAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{updatedLabel}</RecordStaticFieldValue>
           </RecordFormField>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>

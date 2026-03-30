@@ -25,6 +25,9 @@ export function ServicePrimaryFieldsSection({
   disabled?: boolean
   onFieldChange: (field: keyof ServiceForm, value: string) => void
 }) {
+  const createdLabel = service.createdAt ? formatStableDateTime(service.createdAt) : "Not saved yet"
+  const updatedLabel = service.updatedAt ? formatStableDateTime(service.updatedAt) : "Not saved yet"
+
   return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="main">
@@ -85,10 +88,10 @@ export function ServicePrimaryFieldsSection({
             <RecordStaticFieldValue>{service.usageCount}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Created">
-            <RecordStaticFieldValue>{formatStableDateTime(service.createdAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Updated">
-            <RecordStaticFieldValue>{formatStableDateTime(service.updatedAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{updatedLabel}</RecordStaticFieldValue>
           </RecordFormField>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>

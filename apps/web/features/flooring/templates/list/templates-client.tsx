@@ -5,7 +5,6 @@ import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
 import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
@@ -24,15 +23,15 @@ import {
   DashboardListRowCell,
   renderDashboardRowCells,
 } from "@/features/shared/engines/dashboard-view"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import type { PadProductOption, PropertyOption, ServerPaginationState, ServerTableState, TemplateRow, WarehouseOption } from "../types"
 import { useTemplatesClientController } from "./use-templates-client-controller"
-import { TemplateCreateModal } from "../components/template-create-modal"
 
 export default function TemplatesClient({
   initialTemplates,
-  propertyOptions,
-  warehouseOptions,
-  padProductOptions,
+  propertyOptions: _propertyOptions,
+  warehouseOptions: _warehouseOptions,
+  padProductOptions: _padProductOptions,
   initialTablePreferences,
   tableState,
   pagination,
@@ -46,7 +45,7 @@ export default function TemplatesClient({
   pagination?: ServerPaginationState
 }) {
   const controller = useTemplatesClientController(initialTemplates)
-  const templateNavigation = useCanonicalDetailNavigation("/dashboard/flooring/templates")
+  const templateNavigation = useRecordEntryNavigation("/dashboard/flooring/templates")
   const {
     searchQuery,
     isAscendingSort,
@@ -153,7 +152,7 @@ export default function TemplatesClient({
             primaryAction={
               <button
                 type="button"
-                onClick={controller.openCreateModal}
+                onClick={() => templateNavigation.openCreate()}
                 className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
                 <Plus size={16} />
@@ -163,9 +162,7 @@ export default function TemplatesClient({
           />
         }
         notices={
-          !controller.isCreateModalOpen ? (
-            <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
-          ) : null
+          <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
         }
         table={
           <DashboardListPageTable minWidthClass="min-w-[1260px]" columns={visibleTemplateColumns}>
@@ -195,26 +192,6 @@ export default function TemplatesClient({
           />
         }
       />
-
-      {controller.isCreateModalOpen ? (
-        <TemplateCreateModal
-          draft={controller.createDraft}
-          propertyOptions={propertyOptions}
-          warehouseOptions={warehouseOptions}
-          padProductOptions={padProductOptions}
-          message={controller.notices.message}
-          error={controller.notices.error}
-          isSaving={controller.isSavingCreate}
-          onClose={controller.closeCreateModal}
-          onFieldChange={controller.updateCreateDraft}
-          onCreate={async () => {
-            const createdTemplate = await controller.createTemplate()
-            if (createdTemplate) {
-              templateNavigation.openRecord(createdTemplate.id)
-            }
-          }}
-        />
-      ) : null}
     </>
   )
 }

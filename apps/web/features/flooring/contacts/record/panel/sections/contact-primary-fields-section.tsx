@@ -23,6 +23,9 @@ export function ContactPrimaryFieldsSection({
   disabled?: boolean
   onFieldChange: (field: keyof ContactForm, value: string) => void
 }) {
+  const createdLabel = contact.createdAt ? formatStableDateTime(contact.createdAt) : "Not saved yet"
+  const updatedLabel = contact.updatedAt ? formatStableDateTime(contact.updatedAt) : "Not saved yet"
+
   return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="main">
@@ -63,10 +66,10 @@ export function ContactPrimaryFieldsSection({
             <RecordStaticFieldValue>{contact.assignmentsCount}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Created">
-            <RecordStaticFieldValue>{formatStableDateTime(contact.createdAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Updated">
-            <RecordStaticFieldValue>{formatStableDateTime(contact.updatedAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{updatedLabel}</RecordStaticFieldValue>
           </RecordFormField>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>

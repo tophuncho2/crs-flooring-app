@@ -54,70 +54,17 @@ describe("CategoriesClient", () => {
     resetSimpleTableClientMocks()
   })
 
-  it("create flow validates category name before posting", async () => {
+  it("dashboard add routes to the canonical category create form", async () => {
     const user = userEvent.setup()
 
     render(<CategoriesClient canManage initialCategories={[]} unitOfMeasureOptions={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Category$/ }))
-    await user.click(screen.getByRole("button", { name: "Create Category" }))
 
-    expect(requestJsonMock).not.toHaveBeenCalled()
-    expect(screen.getAllByText("Category name is required").length).toBeGreaterThan(0)
-  })
-
-  it("create flow posts the expected payload", async () => {
-    const user = userEvent.setup()
-    requestJsonMock.mockResolvedValue({
-      category: categoryRow({ id: "cat-2", name: "Tile", sendUnitId: "", sendUnit: "", itemCoverageUnitId: "", itemCoverageUnit: "", productCount: 0 }),
-    })
-
-    render(
-      <CategoriesClient
-        canManage
-        initialCategories={[]}
-        unitOfMeasureOptions={[
-          { id: "u-send", name: "SY", createdAt: "2026-03-19T00:00:00.000Z" },
-          { id: "u-item", name: "SF", createdAt: "2026-03-19T00:00:00.000Z" },
-        ]}
-      />,
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/categories/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
     )
-
-    await user.click(screen.getByRole("button", { name: /\+?Category$/ }))
-    await user.type(screen.getByLabelText("Category Name"), "Tile")
-    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "u-send" } })
-    fireEvent.change(screen.getAllByRole("combobox")[3], { target: { value: "u-item" } })
-    await user.click(screen.getByRole("button", { name: "Create Category" }))
-
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Tile",
-          sendUnitId: "u-send",
-          stockUnitId: "",
-          coverageAvailableUnitId: "",
-          itemCoverageUnitId: "u-item",
-          serviceUnitId: "",
-        }),
-      })
-    })
-
-    expect(screen.getByText("Category created")).toBeTruthy()
-  })
-
-  it("create flow surfaces server errors", async () => {
-    const user = userEvent.setup()
-    requestJsonMock.mockRejectedValue(new Error("Name must be unique"))
-
-    render(<CategoriesClient canManage initialCategories={[]} unitOfMeasureOptions={[]} />)
-
-    await user.click(screen.getByRole("button", { name: /\+?Category$/ }))
-    await user.type(screen.getByLabelText("Category Name"), "Carpet")
-    await user.click(screen.getByRole("button", { name: "Create Category" }))
-
-    expect(await screen.findByText("Name must be unique")).toBeTruthy()
   })
 
   it("row click routes to the canonical detail page", async () => {

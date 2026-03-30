@@ -14,7 +14,6 @@ import {
   TablePaginationControls,
 } from "@/features/dashboard/shared/table/table-shell"
 import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
-import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import {
   DashboardListPageControls,
   DashboardListPageScaffold,
@@ -22,6 +21,7 @@ import {
   DashboardListRowCell,
   renderDashboardRowCells,
 } from "@/features/shared/engines/dashboard-view"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
@@ -37,7 +37,6 @@ import type {
 } from "../types"
 import { createWorkOrdersPageFilterDefinitions } from "../table-filters"
 import { useWorkOrdersClientController } from "./use-work-orders-client-controller"
-import { WorkOrderCreateModal } from "../components/work-order-create-modal"
 import { WorkOrderSyncModal } from "../components/work-order-sync-modal"
 
 function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete" | "hasShortage">) {
@@ -68,7 +67,7 @@ export default function WorkOrdersClient({
     propertyOptions,
     templateOptions,
   })
-  const workOrderNavigation = useCanonicalDetailNavigation("/dashboard/flooring/work-orders")
+  const workOrderNavigation = useRecordEntryNavigation("/dashboard/flooring/work-orders")
   const {
     searchQuery,
     isAscendingSort,
@@ -218,7 +217,7 @@ export default function WorkOrdersClient({
               </button>
             }
             primaryAction={
-              <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+              <button type="button" onClick={() => workOrderNavigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
                 Work Order
               </button>
@@ -226,7 +225,7 @@ export default function WorkOrdersClient({
           />
         }
         notices={
-          !controller.isCreateModalOpen && !controller.isSyncModalOpen ? (
+          !controller.isSyncModalOpen ? (
             <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
           ) : null
         }
@@ -257,26 +256,6 @@ export default function WorkOrdersClient({
           />
         }
       />
-
-      {controller.isCreateModalOpen ? (
-        <WorkOrderCreateModal
-          draft={controller.createDraft}
-          propertyOptions={propertyOptions}
-          warehouseOptions={warehouseOptions}
-          selectedAddress={controller.selectedAddress}
-          message={controller.notices.message}
-          error={controller.notices.error}
-          isSaving={controller.isSavingCreate}
-          onClose={controller.closeCreateModal}
-          onFieldChange={controller.updateCreateDraft}
-          onCreate={async () => {
-            const createdWorkOrder = await controller.createWorkOrder()
-            if (createdWorkOrder) {
-              workOrderNavigation.openRecord(createdWorkOrder.id)
-            }
-          }}
-        />
-      ) : null}
 
       {controller.isSyncModalOpen ? (
         <WorkOrderSyncModal

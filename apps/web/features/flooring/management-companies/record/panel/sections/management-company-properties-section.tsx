@@ -4,19 +4,16 @@ import type { ReactNode } from "react"
 import {
   RecordAllocationItemRow,
   RecordAllocationItemsPanel,
-  RecordGridCellInput,
   RecordItemCell,
   RecordRowLayout,
   RecordRowOpenButton,
   RecordRowToggleButton,
   RecordSectionItem,
   RecordSectionShell,
-  RecordSectionStatusBadge,
   TextCell,
   type RecordRowColumnSpec,
 } from "@/features/shared/engines/record-view"
 import type { ManagementCompanyPropertyRow, ManagementCompanyTemplateRow } from "../../../domain/types"
-import type { ManagementCompanyPropertyDraft } from "../controllers/use-management-company-properties-section"
 
 const PROPERTY_COLUMNS: RecordRowColumnSpec[] = [
   { key: "property", minWidth: 240, grow: 2 },
@@ -82,27 +79,19 @@ function PropertyTemplateRow({
 export function ManagementCompanyPropertiesSection({
   actionPanel,
   properties,
-  draft,
   expandedPropertyIds,
   loadingPropertyId,
   loadingTemplateId,
-  noticeMessage,
-  noticeError,
   onTogglePropertyTemplates,
-  onDraftChange,
   onOpenProperty,
   onOpenTemplate,
 }: {
   actionPanel?: ReactNode
   properties: ManagementCompanyPropertyRow[]
-  draft: ManagementCompanyPropertyDraft | null
   expandedPropertyIds: string[]
   loadingPropertyId: string | null
   loadingTemplateId: string | null
-  noticeMessage?: string
-  noticeError?: string
   onTogglePropertyTemplates: (propertyId: string) => void
-  onDraftChange: (field: keyof Omit<ManagementCompanyPropertyDraft, "id">, value: string) => void
   onOpenProperty: (propertyId: string) => void
   onOpenTemplate: (templateId: string) => void
 }) {
@@ -111,69 +100,9 @@ export function ManagementCompanyPropertiesSection({
       title="Linked Properties"
       bodyClassName="space-y-4"
       statusPanel={actionPanel}
-      noticeMessage={noticeMessage}
-      noticeError={noticeError}
       metrics={buildPropertiesMetrics(properties)}
     >
-      {draft ? (
-        <RecordSectionItem status={<RecordSectionStatusBadge tone="warning">Draft</RecordSectionStatusBadge>}>
-          <RecordRowLayout columns={PROPERTY_COLUMNS}>
-            <RecordItemCell label="Property" columnKey="property">
-              <RecordGridCellInput
-                aria-label="Property Name"
-                value={draft.name}
-                placeholder="Property Name"
-                controlSize="compact"
-                onChange={(event) => onDraftChange("name", event.target.value)}
-              />
-            </RecordItemCell>
-            <RecordItemCell label="Address" columnKey="address">
-              <div className="grid gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_88px_108px]">
-                <RecordGridCellInput
-                  aria-label="Street Address"
-                  value={draft.streetAddress}
-                  placeholder="Street Address"
-                  controlSize="compact"
-                  onChange={(event) => onDraftChange("streetAddress", event.target.value)}
-                />
-                <RecordGridCellInput
-                  aria-label="City"
-                  value={draft.city}
-                  placeholder="City"
-                  controlSize="compact"
-                  onChange={(event) => onDraftChange("city", event.target.value)}
-                />
-                <RecordGridCellInput
-                  aria-label="State"
-                  value={draft.state}
-                  placeholder="ST"
-                  maxLength={2}
-                  controlSize="compact"
-                  onChange={(event) => onDraftChange("state", event.target.value)}
-                />
-                <RecordGridCellInput
-                  aria-label="Zip"
-                  value={draft.zip}
-                  placeholder="Zip"
-                  controlSize="compact"
-                  onChange={(event) => onDraftChange("zip", event.target.value)}
-                />
-              </div>
-            </RecordItemCell>
-            <RecordItemCell label="Templates" columnKey="templates">
-              <TextCell align="center">New</TextCell>
-            </RecordItemCell>
-            <RecordItemCell label="Show / Hide" columnKey="toggle">
-              <TextCell align="center">Save first</TextCell>
-            </RecordItemCell>
-            <RecordItemCell label="Open" columnKey="open">
-              <TextCell align="center">Save first</TextCell>
-            </RecordItemCell>
-          </RecordRowLayout>
-        </RecordSectionItem>
-      ) : null}
-
-      {properties.length === 0 && !draft ? (
+      {properties.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[rgba(58,58,58,0.72)] px-4 py-8 text-center text-[var(--foreground)]/65">
           No properties linked to this management company yet.
         </div>

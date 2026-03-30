@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
@@ -9,11 +8,10 @@ import {
   RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
-import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/dashboard/shared/navigation/detail-routes"
 import { normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { useManagementCompanyPrimarySection } from "./controllers/use-management-company-primary-section"
-import { useManagementCompanyPropertiesSection } from "./controllers/use-management-company-properties-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./sections/management-company-primary-fields-section"
 import { ManagementCompanyPropertiesSection } from "./sections/management-company-properties-section"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "../../domain/types"
@@ -25,60 +23,43 @@ export function ManagementCompanyRecordPanel({
   page: RecordDetailClientScaffoldContext
   company: ManagementCompanyDetail
 }) {
-  const router = useRouter()
   const controller = useManagementCompanyPrimarySection({
     page,
     company,
   })
-  const propertiesSection = useManagementCompanyPropertiesSection({
-    record: controller.record,
-    publishRecord: controller.publishRecord,
-  })
+  const propertyNavigation = useRecordEntryNavigation("/dashboard/flooring/properties")
+  const templateNavigation = useRecordEntryNavigation("/dashboard/flooring/templates")
   const [expandedPropertyIds, setExpandedPropertyIds] = useState<string[]>([])
   const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null)
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
 
-  const buildReturnToPath = useCallback(() => {
-    return buildCurrentPath(window.location.pathname, new URLSearchParams(window.location.search))
-  }, [])
-
   const navigateToDetail = useCallback(
-    (basePath: string, id: string, setLoadingId: (value: string | null) => void) => {
+    (id: string, setLoadingId: (value: string | null) => void, openRecord: (recordId: string) => void) => {
       page.confirmNavigation(() => {
         setLoadingId(id)
-        router.push(buildCanonicalDetailHref(basePath, id, buildReturnToPath()), { scroll: false })
+        openRecord(id)
       })
     },
-    [buildReturnToPath, page, router],
+    [page],
   )
 
   const handleOpenProperty = useCallback(
     (propertyId: string) => {
-      navigateToDetail("/dashboard/flooring/properties", propertyId, setLoadingPropertyId)
+      navigateToDetail(propertyId, setLoadingPropertyId, propertyNavigation.openRecord)
     },
-    [navigateToDetail],
+    [navigateToDetail, propertyNavigation.openRecord],
   )
 
   const handleOpenTemplate = useCallback(
     (templateId: string) => {
-      navigateToDetail("/dashboard/flooring/templates", templateId, setLoadingTemplateId)
+      navigateToDetail(templateId, setLoadingTemplateId, templateNavigation.openRecord)
     },
-    [navigateToDetail],
+    [navigateToDetail, templateNavigation.openRecord],
   )
 
   useEffect(() => {
-    const dirtySections: string[] = []
-
-    if (controller.primarySection.isDirty) {
-      dirtySections.push("primary")
-    }
-
-    if (propertiesSection.isDirty) {
-      dirtySections.push("properties")
-    }
-
-    page.setDirtySections(dirtySections)
-  }, [controller.primarySection.isDirty, page, propertiesSection.isDirty])
+    page.setDirtySections(controller.primarySection.isDirty ? ["primary"] : [])
+  }, [controller.primarySection.isDirty, page])
 
   return (
     <div className="space-y-4">
@@ -115,31 +96,30 @@ export function ManagementCompanyRecordPanel({
         <ManagementCompanyPropertiesSection
           actionPanel={
             <RecordSectionSubHeader
-              isDirty={propertiesSection.isDirty}
-              isSaving={propertiesSection.isSaving}
-              hasConflict={propertiesSection.hasConflict}
-              error={propertiesSection.error}
-              onSave={() => void propertiesSection.save()}
-              onDiscard={propertiesSection.discard}
-              saveLabel="Save Property"
-              savingLabel="Saving Property..."
+              isDirty={false}
+              isSaving={false}
+              hasConflict={false}
+              canManage={false}
               actions={[
                 {
                   key: "add-property",
                   label: "Add Property",
-                  onClick: propertiesSection.addDraft,
-                  disabled: !propertiesSection.canAddDraft,
+                  tone: "primary",
+                  onClick: () => {
+                    page.confirmNavigation(() => {
+                      propertyNavigation.openCreate({
+                        managementCompanyId: controller.record.id,
+                      })
+                    })
+                  },
                 },
               ]}
             />
           }
           properties={controller.record.properties}
-          draft={propertiesSection.localValue}
           expandedPropertyIds={expandedPropertyIds}
           loadingPropertyId={loadingPropertyId}
           loadingTemplateId={loadingTemplateId}
-          noticeMessage={propertiesSection.noticeMessage}
-          noticeError={propertiesSection.noticeError}
           onTogglePropertyTemplates={(propertyId) => {
             setExpandedPropertyIds((previous) =>
               previous.includes(propertyId)
@@ -147,7 +127,6 @@ export function ManagementCompanyRecordPanel({
                 : [...previous, propertyId],
             )
           }}
-          onDraftChange={propertiesSection.setDraftField}
           onOpenProperty={handleOpenProperty}
           onOpenTemplate={handleOpenTemplate}
         />

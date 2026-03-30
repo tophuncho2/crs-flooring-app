@@ -40,7 +40,6 @@ export default async function FlooringPropertiesPage({
     <PropertiesClient
       key={`properties-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
       initialProperties={pageData.initialProperties}
-      managementOptions={pageData.managementOptions}
       tableState={pageData.tableState}
       initialTablePreferences={initialTablePreferences}
       pagination={{

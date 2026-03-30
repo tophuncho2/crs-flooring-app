@@ -97,6 +97,12 @@ async function loadUnitOptions(): Promise<UnitOfMeasureOption[]> {
   return unitOfMeasures.map(normalizeUnitOfMeasureOption)
 }
 
+export async function getCategoryCreatePageData() {
+  return withPrismaConnectivityHandling(async () => ({
+    unitOfMeasureOptions: await loadUnitOptions(),
+  }))
+}
+
 export async function getCategoriesPageData() {
   return withPrismaConnectivityHandling(async () => ({
     initialCategories: await listCategories(),

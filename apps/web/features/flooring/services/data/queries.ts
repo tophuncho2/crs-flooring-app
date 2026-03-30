@@ -43,6 +43,14 @@ async function loadUnitOptions(): Promise<UnitOption[]> {
   return units
 }
 
+export async function getServiceCreatePageData(): Promise<PrismaPageDataResult<{
+  unitOptions: UnitOption[]
+}>> {
+  return withPrismaConnectivityHandling(async () => ({
+    unitOptions: await loadUnitOptions(),
+  }))
+}
+
 export async function listServices() {
   return loadServices()
 }

@@ -6,20 +6,19 @@ import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboar
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
-import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import type { ServiceRow, UnitOption } from "../../domain/types"
 import { useServicesListController } from "../../controllers/use-services-list-controller"
-import { ServicesCreateModal } from "./services-create-modal"
 import { ServicesTable } from "./services-table"
 
 export default function ServicesClient({
   initialServices,
-  unitOptions,
+  unitOptions: _unitOptions,
   initialTablePreferences,
   tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
@@ -34,7 +33,7 @@ export default function ServicesClient({
   }
 }) {
   const controller = useServicesListController(initialServices)
-  const navigation = useCanonicalDetailNavigation("/dashboard/flooring/services")
+  const navigation = useRecordEntryNavigation("/dashboard/flooring/services")
   const {
     searchQuery,
     isAscendingSort,
@@ -105,14 +104,14 @@ export default function ServicesClient({
               />
             }
             primaryAction={
-              <button type="button" onClick={controller.openCreateModal} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+              <button type="button" onClick={() => navigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
                 Service
               </button>
             }
           />
         }
-        notices={!controller.isCreateModalOpen ? <FormStatusNotices message={controller.notices.message} error={controller.notices.error} /> : null}
+        notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
         table={
           <ServicesTable
             rows={sortedRows}
@@ -137,20 +136,6 @@ export default function ServicesClient({
           />
         }
       />
-      {controller.isCreateModalOpen ? (
-        <ServicesCreateModal
-          draft={controller.createDraft}
-          unitOptions={unitOptions}
-          message={controller.notices.message}
-          error={controller.notices.error}
-          isSaving={controller.isSavingCreate}
-          onClose={controller.closeCreateModal}
-          onFieldChange={controller.updateCreateDraft}
-          onCreate={() => {
-            void controller.submitCreate()
-          }}
-        />
-      ) : null}
     </>
   )
 }

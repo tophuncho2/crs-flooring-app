@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import {
   RecordPanelFooter,
   RecordPrimarySectionInstance,
@@ -9,11 +8,10 @@ import {
   RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
-import { buildCanonicalDetailHref, buildCurrentPath } from "@/features/dashboard/shared/navigation/detail-routes"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
 import { normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
 import { usePropertyPrimarySection } from "./controllers/use-property-primary-section"
-import { usePropertyTemplatesSection } from "./controllers/use-property-templates-section"
 import { PropertyPrimaryFieldsSection } from "./sections/property-primary-fields-section"
 import { PropertyTemplatesSection } from "./sections/property-templates-section"
 import type { PropertyDetailRecord, PropertyPrimaryForm } from "../../domain/types"
@@ -29,46 +27,26 @@ export function PropertyRecordPanel({
   managementOptions: Array<{ id: string; name: string }>
   warehouseOptions: Array<{ id: string; name: string }>
 }) {
-  const router = useRouter()
   const controller = usePropertyPrimarySection({
     page,
     property,
   })
-  const templatesSection = usePropertyTemplatesSection({
-    record: controller.record,
-    publishRecord: controller.publishRecord,
-  })
+  const templateNavigation = useRecordEntryNavigation("/dashboard/flooring/templates")
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
-
-  const buildReturnToPath = useCallback(() => {
-    return buildCurrentPath(window.location.pathname, new URLSearchParams(window.location.search))
-  }, [])
 
   const handleOpenTemplate = useCallback(
     (templateId: string) => {
       page.confirmNavigation(() => {
         setLoadingTemplateId(templateId)
-        router.push(buildCanonicalDetailHref("/dashboard/flooring/templates", templateId, buildReturnToPath()), {
-          scroll: false,
-        })
+        templateNavigation.openRecord(templateId)
       })
     },
-    [buildReturnToPath, page, router],
+    [page, templateNavigation],
   )
 
   useEffect(() => {
-    const dirtySections: string[] = []
-
-    if (controller.primarySection.isDirty) {
-      dirtySections.push("primary")
-    }
-
-    if (templatesSection.isDirty) {
-      dirtySections.push("templates")
-    }
-
-    page.setDirtySections(dirtySections)
-  }, [controller.primarySection.isDirty, page, templatesSection.isDirty])
+    page.setDirtySections(controller.primarySection.isDirty ? ["primary"] : [])
+  }, [controller.primarySection.isDirty, page])
 
   return (
     <div className="space-y-4">
@@ -106,31 +84,28 @@ export function PropertyRecordPanel({
         <PropertyTemplatesSection
           actionPanel={
             <RecordSectionSubHeader
-              isDirty={templatesSection.isDirty}
-              isSaving={templatesSection.isSaving}
-              hasConflict={templatesSection.hasConflict}
-              error={templatesSection.error}
-              onSave={() => void templatesSection.save()}
-              onDiscard={templatesSection.discard}
-              saveLabel="Save Template"
-              savingLabel="Saving Template..."
+              isDirty={false}
+              isSaving={false}
+              hasConflict={false}
+              canManage={false}
               actions={[
                 {
                   key: "add-template",
                   label: "Add Template",
-                  onClick: templatesSection.addDraft,
-                  disabled: !templatesSection.canAddDraft,
+                  tone: "primary",
+                  onClick: () => {
+                    page.confirmNavigation(() => {
+                      templateNavigation.openCreate({
+                        propertyId: controller.record.id,
+                      })
+                    })
+                  },
                 },
               ]}
             />
           }
           templates={controller.record.templates}
-          draft={templatesSection.localValue}
-          warehouseOptions={warehouseOptions}
           loadingTemplateId={loadingTemplateId}
-          noticeMessage={templatesSection.noticeMessage}
-          noticeError={templatesSection.noticeError}
-          onDraftChange={templatesSection.setDraftField}
           onOpenTemplate={handleOpenTemplate}
         />
       </RecordSectionStack>

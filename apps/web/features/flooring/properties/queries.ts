@@ -169,6 +169,10 @@ async function loadPropertyDetailOptions() {
   }
 }
 
+export async function getPropertyCreatePageOptions() {
+  return withPrismaConnectivityHandling(() => loadPropertyDetailOptions())
+}
+
 export async function getPropertyDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   property: Awaited<ReturnType<typeof getPropertyById>>
   managementOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["managementOptions"]

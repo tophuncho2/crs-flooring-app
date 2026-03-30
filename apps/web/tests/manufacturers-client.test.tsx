@@ -43,46 +43,17 @@ describe("ManufacturersClient", () => {
     resetSimpleTableClientMocks()
   })
 
-  it("create flow validates company name before posting", async () => {
+  it("dashboard add routes to the canonical manufacturer create form", async () => {
     const user = userEvent.setup()
 
     render(<ManufacturersClient initialManufacturers={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Manufacturer$/ }))
-    await user.click(screen.getByRole("button", { name: "Create Manufacturer" }))
 
-    expect(requestJsonMock).not.toHaveBeenCalled()
-    expect(screen.getAllByText("Company name is required").length).toBeGreaterThan(0)
-  })
-
-  it("create flow posts the expected payload", async () => {
-    const user = userEvent.setup()
-    requestJsonMock.mockResolvedValue({
-      manufacturer: manufacturerRow({ id: "mfg-2", companyName: "Zen Floors", agentName: "Jamie" }),
-    })
-
-    render(<ManufacturersClient initialManufacturers={[]} />)
-
-    await user.click(screen.getByRole("button", { name: /\+?Manufacturer$/ }))
-    await user.type(screen.getByLabelText("Company Name"), "Zen Floors")
-    await user.type(screen.getByLabelText("Agent Name"), "Jamie")
-    await user.click(screen.getByRole("button", { name: "Create Manufacturer" }))
-
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/manufacturers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName: "Zen Floors",
-          agentName: "Jamie",
-          website: "",
-          phone: "",
-          email: "",
-        }),
-      })
-    })
-
-    expect(screen.getByText("Manufacturer created")).toBeTruthy()
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/manufacturers/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 
   it("row click routes to the canonical detail page", async () => {

@@ -56,15 +56,19 @@ describe("PropertyDetailClient", () => {
     expect(screen.getAllByText("Templates").length).toBeGreaterThan(0)
 
     await user.click(screen.getByRole("button", { name: "Add Template" }))
-
-    expect(screen.getByRole("textbox", { name: "Template Tag" })).toBeTruthy()
-    expect(screen.getByRole("combobox", { name: "Warehouse" })).toBeTruthy()
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/templates/new?returnTo=%2Fdashboard%2Fflooring%2Ftest&propertyId=prop-1",
+        { scroll: false },
+      )
+    })
+    navigationMocks.push.mockClear()
 
     await user.click(screen.getByRole("button", { name: "Open" }))
 
     await waitFor(() => {
       expect(navigationMocks.push).toHaveBeenCalledWith(
-        "/dashboard/flooring/templates/tpl-1?returnTo=%2Fdashboard%2Fflooring%2Fproperties%2Fprop-1",
+        "/dashboard/flooring/templates/tpl-1?returnTo=%2Fdashboard%2Fflooring%2Ftest",
         { scroll: false },
       )
     })

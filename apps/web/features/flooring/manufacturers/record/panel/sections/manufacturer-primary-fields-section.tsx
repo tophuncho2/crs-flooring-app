@@ -23,6 +23,9 @@ export function ManufacturerPrimaryFieldsSection({
   disabled?: boolean
   onFieldChange: (field: keyof ManufacturerForm, value: string) => void
 }) {
+  const createdLabel = manufacturer.createdAt ? formatStableDateTime(manufacturer.createdAt) : "Not saved yet"
+  const updatedLabel = manufacturer.updatedAt ? formatStableDateTime(manufacturer.updatedAt) : "Not saved yet"
+
   return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="main">
@@ -86,10 +89,10 @@ export function ManufacturerPrimaryFieldsSection({
             <RecordStaticFieldValue>{manufacturer.productsCount}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Created">
-            <RecordStaticFieldValue>{formatStableDateTime(manufacturer.createdAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Updated">
-            <RecordStaticFieldValue>{formatStableDateTime(manufacturer.updatedAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{updatedLabel}</RecordStaticFieldValue>
           </RecordFormField>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>

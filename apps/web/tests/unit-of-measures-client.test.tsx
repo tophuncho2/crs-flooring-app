@@ -33,39 +33,17 @@ describe("UnitOfMeasuresClient", () => {
     resetSimpleTableClientMocks()
   })
 
-  it("create flow blocks empty name with the current client-side validation message", async () => {
+  it("dashboard add routes to the canonical unit-of-measure create form", async () => {
     const user = userEvent.setup()
 
     render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[]} />)
 
     await user.click(screen.getByRole("button", { name: /\+?Unit Of Measure$/ }))
-    await user.click(screen.getByRole("button", { name: "Create Unit Of Measure" }))
 
-    expect(requestJsonMock).not.toHaveBeenCalled()
-    expect(screen.getAllByText("Unit of measure is required").length).toBeGreaterThan(0)
-  })
-
-  it("create flow posts the expected payload for a valid name", async () => {
-    const user = userEvent.setup()
-    requestJsonMock.mockResolvedValue({
-      unitOfMeasure: unitRow({ id: "u-2", name: "Hour" }),
-    })
-
-    render(<UnitOfMeasuresClient canManage initialUnitOfMeasures={[]} />)
-
-    await user.click(screen.getByRole("button", { name: /\+?Unit Of Measure$/ }))
-    await user.type(screen.getByLabelText("Unit Of Measure"), "Hour")
-    await user.click(screen.getByRole("button", { name: "Create Unit Of Measure" }))
-
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/builder/unit-of-measures", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Hour" }),
-      })
-    })
-
-    expect(screen.getByText("Unit of measure created")).toBeTruthy()
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/unit-of-measures/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 
   it("row click routes to the canonical detail page", async () => {

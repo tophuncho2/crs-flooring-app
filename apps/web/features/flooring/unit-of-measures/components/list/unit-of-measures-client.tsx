@@ -6,15 +6,14 @@ import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboar
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
-import { useCanonicalDetailNavigation } from "@/features/dashboard/shared/navigation/use-canonical-detail-navigation"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { type GroupedRowTree, MAX_GROUP_FIELDS } from "@/features/flooring/shared/table/use-table-controls"
+import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import type { UnitOfMeasureRow } from "../../domain/types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
-import { UnitOfMeasuresCreateModal } from "./unit-of-measures-create-modal"
 import { UnitOfMeasuresTable } from "./unit-of-measures-table"
 
 export default function UnitOfMeasuresClient({
@@ -34,7 +33,7 @@ export default function UnitOfMeasuresClient({
   }
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
-  const navigation = useCanonicalDetailNavigation("/dashboard/flooring/unit-of-measures")
+  const navigation = useRecordEntryNavigation("/dashboard/flooring/unit-of-measures")
   const {
     searchQuery,
     isAscendingSort,
@@ -104,7 +103,7 @@ export default function UnitOfMeasuresClient({
             primaryAction={canManage ? (
               <button
                 type="button"
-                onClick={controller.openCreateModal}
+                onClick={() => navigation.openCreate()}
                 className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
                 <Plus size={16} />
@@ -113,7 +112,7 @@ export default function UnitOfMeasuresClient({
             ) : undefined}
           />
         }
-        notices={!controller.isCreateModalOpen ? <FormStatusNotices message={controller.notices.message} error={controller.notices.error} /> : null}
+        notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
         table={
           <UnitOfMeasuresTable
             rows={sortedRows}
@@ -139,19 +138,6 @@ export default function UnitOfMeasuresClient({
           />
         }
       />
-      {controller.isCreateModalOpen ? (
-        <UnitOfMeasuresCreateModal
-          name={controller.createDraft.name}
-          message={controller.notices.message}
-          error={controller.notices.error}
-          isSaving={controller.isSavingCreate}
-          onClose={controller.closeCreateModal}
-          onNameChange={controller.updateCreateDraft}
-          onCreate={() => {
-            void controller.submitCreate()
-          }}
-        />
-      ) : null}
     </>
   )
 }

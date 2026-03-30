@@ -157,15 +157,8 @@ describe("WorkOrdersClient", () => {
     vi.stubGlobal("confirm", vi.fn(() => true))
   })
 
-  it("creates a blank work order from the form and routes to the canonical detail page", async () => {
+  it("dashboard add routes to the canonical work order create form", async () => {
     const user = userEvent.setup()
-
-    requestJsonMock.mockResolvedValue({
-      workOrder: workOrderRow({
-        id: "wo-3",
-        workOrderNumber: "WO-00003",
-      }),
-    })
 
     render(
       <WorkOrdersClient
@@ -179,21 +172,11 @@ describe("WorkOrdersClient", () => {
     )
 
     await user.click(screen.getByRole("button", { name: /\+?Work Order/ }))
-    fireEvent.change(screen.getByLabelText("Property"), { target: { value: "prop-1" } })
-    await user.click(screen.getByRole("button", { name: "Create Work Order" }))
 
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/work-orders", expect.objectContaining({
-        method: "POST",
-      }))
-    })
-
-    await waitFor(() => {
-      expect(navigationMocks.push).toHaveBeenCalledWith(
-        "/dashboard/flooring/work-orders/wo-3?returnTo=%2Fdashboard%2Fflooring%2Ftest",
-        { scroll: false },
-      )
-    })
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/work-orders/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 
   it("creates a work order from the table-level sync flow and routes to the created detail page", async () => {

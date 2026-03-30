@@ -57,6 +57,9 @@ export function CategoryPrimaryFieldsSection({
   disabled?: boolean
   onFieldChange: (field: keyof CategoryForm, value: string) => void
 }) {
+  const createdLabel = category.createdAt ? formatStableDateTime(category.createdAt) : "Not saved yet"
+  const updatedLabel = category.updatedAt ? formatStableDateTime(category.updatedAt) : "Not saved yet"
+
   return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="main">
@@ -125,10 +128,10 @@ export function CategoryPrimaryFieldsSection({
             <RecordStaticFieldValue>{category.productCount}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Created">
-            <RecordStaticFieldValue>{formatStableDateTime(category.createdAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>
           <RecordFormField label="Updated">
-            <RecordStaticFieldValue>{formatStableDateTime(category.updatedAt)}</RecordStaticFieldValue>
+            <RecordStaticFieldValue>{updatedLabel}</RecordStaticFieldValue>
           </RecordFormField>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>

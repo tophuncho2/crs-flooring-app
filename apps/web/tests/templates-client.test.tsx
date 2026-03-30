@@ -71,11 +71,8 @@ describe("TemplatesClient", () => {
     resetSimpleTableClientMocks()
   })
 
-  it("creates a template from the table modal and routes to the canonical detail page", async () => {
+  it("dashboard add routes to the canonical template create form", async () => {
     const user = userEvent.setup()
-    requestJsonMock.mockResolvedValue({
-      template: templateRow({ id: "tpl-2", templateNumber: "TP-00002", templateTag: "Make Ready" }),
-    })
 
     render(
       <TemplatesClient
@@ -88,43 +85,11 @@ describe("TemplatesClient", () => {
     )
 
     await user.click(screen.getByRole("button", { name: /\+?Template$/ }))
-    await user.type(screen.getByLabelText("Template Tag"), "Make Ready")
-    fireEvent.change(screen.getByLabelText("Property"), { target: { value: "prop-1" } })
-    await user.click(screen.getByRole("button", { name: "Create Template" }))
 
-    await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/flooring/templates", expect.objectContaining({
-        method: "POST",
-      }))
-    })
-
-    await waitFor(() => {
-      expect(navigationMocks.push).toHaveBeenCalledWith(
-        "/dashboard/flooring/templates/tpl-2?returnTo=%2Fdashboard%2Fflooring%2Ftest",
-        { scroll: false },
-      )
-    })
-  })
-
-  it("create error is surfaced", async () => {
-    const user = userEvent.setup()
-    requestJsonMock.mockRejectedValue(new Error("Property is required"))
-
-    render(
-      <TemplatesClient
-        initialTemplates={[]}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-        warehouseOptions={[]}
-        padProductOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-      />,
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/templates/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
     )
-
-    await user.click(screen.getByRole("button", { name: /\+?Template$/ }))
-    await user.type(screen.getByLabelText("Template Tag"), "Turn")
-    await user.click(screen.getByRole("button", { name: "Create Template" }))
-
-    expect((await screen.findAllByText("Property is required")).length).toBeGreaterThan(0)
   })
 
   it("clicking the template row routes to the canonical detail page", async () => {

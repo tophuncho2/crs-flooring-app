@@ -44,6 +44,7 @@ describe("ManagementCompanyDetailClient", () => {
 
   it("renders through the record-view engine with read-only linked properties and nested templates", async () => {
     const user = userEvent.setup()
+    window.history.replaceState({}, "", "/dashboard/flooring/management-companies/mc-1")
 
     render(
       <ManagementCompanyDetailClient
@@ -58,9 +59,13 @@ describe("ManagementCompanyDetailClient", () => {
     expect(screen.getByRole("button", { name: "Add Property" })).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: "Add Property" }))
-
-    expect(screen.getByRole("textbox", { name: "Property Name" })).toBeTruthy()
-    expect(screen.getAllByRole("textbox", { name: "Street Address" }).length).toBeGreaterThan(1)
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/properties/new?returnTo=%2Fdashboard%2Fflooring%2Ftest&managementCompanyId=mc-1",
+        { scroll: false },
+      )
+    })
+    navigationMocks.push.mockClear()
 
     await user.click(screen.getByRole("button", { name: "Show templates for Oak Apartments" }))
 
