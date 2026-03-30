@@ -1,29 +1,20 @@
 "use client"
 
-import { type ReactNode } from "react"
+import type { ReactNode } from "react"
 import {
-  CurrencyCell,
-  QuantityCell,
-  RecordGridCellInput,
-  RecordGridCellSelect,
   RecordItemSection,
-  RecordItemSectionControls,
-  RecordItemCell,
-  RecordRowLayout,
+  RecordMaterialRowBuilder,
   RecordRowStatusBadge,
-  RecordSectionItem,
-  TextCell,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
-import {
-  formatLineTotal,
-} from "@/features/flooring/shared/line-items/line-totals"
+import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import {
   hasFieldErrors,
   type RowFieldErrors,
 } from "@/features/flooring/shared/line-items/record-field-errors"
-import { RecordFieldErrorText } from "@/features/shared/engines/record-view"
 import type {
   EditableMaterialItem,
   MaterialItemField,
@@ -77,133 +68,6 @@ function readMaterialRowStatusTone(item: WorkOrderMaterialItem, hasErrors: boole
   return "neutral" as const
 }
 
-function MaterialItemEditorRow({
-  item,
-  productOptions,
-  isExpanded,
-  allocationContent,
-  itemErrors = {},
-  onItemFieldChange,
-  onDeleteItem,
-  onToggleAllocations,
-}: {
-  item: WorkOrderMaterialItem
-  productOptions: MaterialItemOption[]
-  isExpanded: boolean
-  allocationContent?: ReactNode
-  itemErrors?: RowFieldErrors<MaterialItemField>
-  onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
-  onDeleteItem: (itemId: string) => void
-  onToggleAllocations: () => void
-}) {
-  const rowErrors = itemErrors[item.id]
-  const productLabel = readProductLabel(productOptions, item.productId, item.productName)
-  const hasErrors = hasFieldErrors(rowErrors)
-  const rowStatusLabel = readMaterialRowStatus(item, hasErrors)
-  const rowStatusTone = readMaterialRowStatusTone(item, hasErrors)
-
-  return (
-    <RecordSectionItem
-      bodyClassName={isExpanded ? "pb-0" : undefined}
-      nestedContentClassName={isExpanded ? "border-t-0" : undefined}
-      nestedContent={
-        isExpanded ? (
-          allocationContent
-        ) : null
-      }
-    >
-      <RecordRowLayout columns={WORK_ORDER_MATERIAL_COLUMNS}>
-        <RecordItemCell label="Product" columnKey="product">
-        <div className="space-y-1">
-          <RecordGridCellSelect
-            value={item.productId}
-            onChange={(event) => onItemFieldChange(item.id, "productId", event.target.value)}
-            invalid={Boolean(rowErrors?.productId)}
-          >
-            {productOptions.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.label}
-              </option>
-            ))}
-          </RecordGridCellSelect>
-          {rowErrors?.productId ? <RecordFieldErrorText>{rowErrors.productId}</RecordFieldErrorText> : null}
-        </div>
-        </RecordItemCell>
-        <RecordItemCell label="Qty" columnKey="quantity">
-        <div className="space-y-1">
-          <QuantityCell
-            input={
-              <RecordGridCellInput
-                value={item.quantity}
-                inputMode="decimal"
-                spellCheck={false}
-                placeholder="Qty"
-                onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                invalid={Boolean(rowErrors?.quantity)}
-                align="center"
-                controlSize="compact"
-              />
-            }
-          />
-          {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
-        </div>
-        </RecordItemCell>
-        <RecordItemCell label="Unit" columnKey="unit">
-        <TextCell align="center">{readProductUnit(productOptions, item.productId, item.sendUnit)}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Unit Price" columnKey="unitPrice">
-        <div className="space-y-1">
-          <CurrencyCell
-            input={
-              <RecordGridCellInput
-                value={item.unitPrice}
-                inputMode="decimal"
-                spellCheck={false}
-                onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
-                invalid={Boolean(rowErrors?.unitPrice)}
-                align="right"
-                controlSize="compact"
-              />
-            }
-            unit={readProductUnit(productOptions, item.productId, item.sendUnit) || "unit"}
-          />
-          {rowErrors?.unitPrice ? <RecordFieldErrorText>{rowErrors.unitPrice}</RecordFieldErrorText> : null}
-        </div>
-        </RecordItemCell>
-        <RecordItemCell label="Total" columnKey="total">
-        <CurrencyCell value={formatLineTotal(item)} className="w-full" />
-        </RecordItemCell>
-        <RecordItemCell label="Notes" columnKey="notes">
-        <RecordGridCellInput
-          value={item.notes}
-          onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
-        />
-        </RecordItemCell>
-        <RecordItemSectionControls
-          capabilities={{ supportsNestedAllocations: true, supportsStatusColumn: true, supportsRemoveRow: true }}
-          toggle={{
-            columnKey: "allocations",
-            label: "Allocations",
-            expanded: isExpanded,
-            onToggle: onToggleAllocations,
-            ariaLabel: isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`,
-          }}
-          status={{
-            content: (
-              <RecordRowStatusBadge tone={rowStatusTone}>
-                {rowStatusLabel}
-              </RecordRowStatusBadge>
-            ),
-          }}
-          remove={{
-            onRemove: () => onDeleteItem(item.id),
-          }}
-        />
-      </RecordRowLayout>
-    </RecordSectionItem>
-  )
-}
-
 export function WorkOrderMaterialItemsSection({
   title,
   items,
@@ -238,7 +102,7 @@ export function WorkOrderMaterialItemsSection({
   return (
     <RecordItemSection
       title={title}
-      bodyClassName="space-y-4"
+      bodyClassName="space-y-0"
       subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
@@ -252,34 +116,74 @@ export function WorkOrderMaterialItemsSection({
         supportsSaveDiscard: true,
         supportsMetrics: true,
         supportsSummary: true,
-        supportsEmptyState: true,
+        supportsEmptyState: false,
       }}
       loading={loading}
       loadingState={<div className="border px-4 py-8 text-center text-[var(--foreground)]/70">Loading items...</div>}
-      isEmpty={items.length === 0}
-      emptyState={<div className="border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65">No material items yet.</div>}
+      isEmpty={false}
     >
+      <RecordSectionGrid
+        columns={WORK_ORDER_MATERIAL_COLUMNS}
+        isEmpty={items.length === 0}
+        emptyState="No material items yet."
+      >
+        {items.map((item) => {
+          const rowErrors = itemErrors[item.id]
+          const productLabel = readProductLabel(productOptions, item.productId, item.productName)
+          const productUnit = readProductUnit(productOptions, item.productId, item.sendUnit)
+          const hasErrors = hasFieldErrors(rowErrors)
+          const isExpanded = expandedItemIds.includes(item.id)
 
-      {!loading
-        ? items.map((item) => {
-            const isExpanded = expandedItemIds.includes(item.id)
-
-            return (
-              <div key={item.id} className="space-y-0">
-                <MaterialItemEditorRow
-                  item={item}
-                  productOptions={productOptions}
-                  isExpanded={isExpanded}
-                  allocationContent={renderAllocationSection(item)}
-                  itemErrors={itemErrors}
-                  onItemFieldChange={onItemFieldChange}
-                  onDeleteItem={onDeleteItem}
-                  onToggleAllocations={() => onToggleExpandedItem(item.id)}
-                />
-              </div>
-            )
-          })
-        : null}
+          return (
+            <RecordSectionGridRow
+              key={item.id}
+              columns={WORK_ORDER_MATERIAL_COLUMNS}
+              nestedContent={isExpanded ? renderAllocationSection(item) : null}
+            >
+              <RecordMaterialRowBuilder
+                productValue={item.productId}
+                productOptions={productOptions.map((product) => ({
+                  value: product.id,
+                  label: product.label,
+                }))}
+                quantityValue={item.quantity}
+                unitLabel={productUnit}
+                unitPriceValue={item.unitPrice}
+                unitPriceUnit={productUnit || "unit"}
+                totalValue={formatLineTotal(item)}
+                notesValue={item.notes}
+                productError={rowErrors?.productId}
+                quantityError={rowErrors?.quantity}
+                unitPriceError={rowErrors?.unitPrice}
+                onProductChange={(value) => onItemFieldChange(item.id, "productId", value)}
+                onQuantityChange={(value) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(value))}
+                onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}
+                onNotesChange={(value) => onItemFieldChange(item.id, "notes", value)}
+                controls={{
+                  capabilities: { supportsNestedAllocations: true, supportsStatusColumn: true, supportsRemoveRow: true },
+                  toggle: {
+                    columnKey: "allocations",
+                    label: "Show / Hide",
+                    expanded: isExpanded,
+                    onToggle: () => onToggleExpandedItem(item.id),
+                    ariaLabel: isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`,
+                  },
+                  status: {
+                    content: (
+                      <RecordRowStatusBadge tone={readMaterialRowStatusTone(item, hasErrors)}>
+                        {readMaterialRowStatus(item, hasErrors)}
+                      </RecordRowStatusBadge>
+                    ),
+                  },
+                  remove: {
+                    onRemove: () => onDeleteItem(item.id),
+                  },
+                }}
+              />
+            </RecordSectionGridRow>
+          )
+        })}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }

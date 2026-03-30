@@ -1,10 +1,8 @@
 "use client"
 
 import {
+  RecordCalculationRowBuilder,
   RecordCalculationSection,
-  RecordItemCell,
-  RecordRowLayout,
-  TextCell,
 } from "@/features/shared/engines/record-view"
 import { WORK_ORDER_CALCULATION_COLUMNS } from "./work-order-line-item-grid"
 import { buildCalculationSectionMetrics } from "./work-order-section-metrics"
@@ -35,18 +33,13 @@ export function WorkOrderCalculationsSection({
       title={title}
       items={items}
       loading={loading}
+      columns={WORK_ORDER_CALCULATION_COLUMNS}
       metrics={metrics.length > 0 ? metrics : undefined}
       renderItem={(item) => (
-        <RecordRowLayout key={item.key} columns={WORK_ORDER_CALCULATION_COLUMNS}>
-              <RecordItemCell label="Calculation" columnKey="calculation">
-                <TextCell>{item.label}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Value" columnKey="value">
-                <TextCell align="right" className="font-medium">
-                  {formatCalculationValue(item)}
-                </TextCell>
-              </RecordItemCell>
-        </RecordRowLayout>
+        <RecordCalculationRowBuilder
+          label={item.label}
+          value={formatCalculationValue(item)}
+        />
       )}
     />
   )

@@ -6,16 +6,18 @@ import {
   type RecordSectionCapabilities,
 } from "./record-section-capabilities"
 import { RecordItemSection } from "./record-item-section"
+import { RecordSectionGrid, RecordSectionGridRow } from "./record-section-grid"
 import type { RecordSectionMetricValue } from "./record-section-metric"
-import { RecordSectionItem } from "./record-section-item"
 import type { RecordSectionSubHeaderProps } from "./record-section-sub-header"
 import { RECORD_SECTION_BORDER_CLASS_NAME } from "./record-section-tokens"
+import type { RecordGridColumnSpec } from "./record-row-layout"
 
 export function RecordCalculationSection<TItem>({
   title,
   items,
   metrics,
   loading,
+  columns,
   renderItem,
   loadingState,
   emptyState,
@@ -26,6 +28,7 @@ export function RecordCalculationSection<TItem>({
   items: TItem[]
   metrics?: ReactNode | RecordSectionMetricValue[]
   loading: boolean
+  columns: RecordGridColumnSpec[]
   renderItem: (item: TItem) => ReactNode
   loadingState?: ReactNode
   emptyState?: ReactNode
@@ -39,25 +42,30 @@ export function RecordCalculationSection<TItem>({
       title={title}
       metrics={metrics}
       subHeader={subHeader}
-      capabilities={resolvedCapabilities}
+      bodyClassName="space-y-0"
       loading={loading}
       loadingState={loadingState ?? (
         <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
           Loading calculations...
         </div>
       )}
-      isEmpty={items.length === 0}
-      emptyState={emptyState ?? (
-        <div className={`${RECORD_SECTION_BORDER_CLASS_NAME} border px-4 py-8 text-center text-[var(--foreground)]/70`}>
-          No calculations available.
-        </div>
-      )}
+      isEmpty={false}
+      capabilities={{
+        ...resolvedCapabilities,
+        supportsEmptyState: false,
+      }}
     >
-      {items.map((item, index) => (
-        <RecordSectionItem key={index}>
-          {renderItem(item)}
-        </RecordSectionItem>
-      ))}
+      <RecordSectionGrid
+        columns={columns}
+        isEmpty={items.length === 0}
+        emptyState={emptyState ?? "No calculations available."}
+      >
+        {items.map((item, index) => (
+          <RecordSectionGridRow key={index} columns={columns}>
+            {renderItem(item)}
+          </RecordSectionGridRow>
+        ))}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }

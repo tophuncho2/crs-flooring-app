@@ -7,13 +7,7 @@ import { RecordRowOpenButton } from "./record-row-open-button"
 import { RecordRowToggleButton } from "./record-row-toggle-button"
 import { resolveRecordSectionCapabilities, type RecordSectionCapabilities } from "./record-section-capabilities"
 
-export function RecordItemSectionControls({
-  capabilities,
-  toggle,
-  open,
-  status,
-  remove,
-}: {
+export type RecordItemSectionControlsProps = {
   capabilities?: RecordSectionCapabilities
   toggle?: {
     columnKey?: string
@@ -40,13 +34,30 @@ export function RecordItemSectionControls({
     disabled?: boolean
     children?: ReactNode
   }
-}) {
+  cellChrome?: "card" | "grid"
+  showCellLabels?: boolean
+}
+
+export function RecordItemSectionControls({
+  capabilities,
+  toggle,
+  open,
+  status,
+  remove,
+  cellChrome = "card",
+  showCellLabels = true,
+}: RecordItemSectionControlsProps) {
   const resolvedCapabilities = resolveRecordSectionCapabilities("item", capabilities)
 
   return (
     <>
       {resolvedCapabilities.supportsNestedAllocations && toggle ? (
-        <RecordItemCell label={toggle.label ?? "Show / Hide"} columnKey={toggle.columnKey ?? "toggle"}>
+        <RecordItemCell
+          label={toggle.label ?? "Show / Hide"}
+          columnKey={toggle.columnKey ?? "toggle"}
+          chrome={cellChrome}
+          showLabel={showCellLabels}
+        >
           <div className="flex min-h-[2.5rem] items-center justify-center">
             <RecordRowToggleButton
               expanded={toggle.expanded}
@@ -58,7 +69,12 @@ export function RecordItemSectionControls({
       ) : null}
 
       {resolvedCapabilities.supportsOpenRow && open ? (
-        <RecordItemCell label={open.label ?? "Open"} columnKey={open.columnKey ?? "open"}>
+        <RecordItemCell
+          label={open.label ?? "Open"}
+          columnKey={open.columnKey ?? "open"}
+          chrome={cellChrome}
+          showLabel={showCellLabels}
+        >
           <div className="flex min-h-[2.5rem] items-center justify-center">
             <RecordRowOpenButton onOpen={open.onOpen} loading={open.loading} />
           </div>
@@ -66,13 +82,23 @@ export function RecordItemSectionControls({
       ) : null}
 
       {resolvedCapabilities.supportsStatusColumn && status ? (
-        <RecordItemCell label={status.label ?? "Status"} columnKey={status.columnKey ?? "status"}>
+        <RecordItemCell
+          label={status.label ?? "Status"}
+          columnKey={status.columnKey ?? "status"}
+          chrome={cellChrome}
+          showLabel={showCellLabels}
+        >
           <div className="flex min-h-[2.5rem] items-center">{status.content}</div>
         </RecordItemCell>
       ) : null}
 
       {resolvedCapabilities.supportsRemoveRow && remove ? (
-        <RecordItemCell label={remove.label ?? "Remove"} columnKey={remove.columnKey ?? "remove"}>
+        <RecordItemCell
+          label={remove.label ?? "Remove"}
+          columnKey={remove.columnKey ?? "remove"}
+          chrome={cellChrome}
+          showLabel={showCellLabels}
+        >
           <div className="flex min-h-[2.5rem] items-center justify-start xl:justify-end">
             <RecordRowDeleteButton onClick={remove.onRemove} disabled={remove.disabled}>
               {remove.children ?? "Remove"}

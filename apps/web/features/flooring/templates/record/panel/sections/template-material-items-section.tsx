@@ -1,24 +1,14 @@
 "use client"
 
-import type { ReactNode } from "react"
 import {
-  CurrencyCell,
-  QuantityCell,
-  RecordFieldErrorText,
-  RecordGridCellInput,
-  RecordGridCellSelect,
   RecordItemSection,
-  RecordItemSectionControls,
-  RecordItemCell,
-  RecordRowLayout,
+  RecordMaterialRowBuilder,
   RecordRowStatusBadge,
-  RecordSectionItem,
-  TextCell,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
-import {
-  formatLineTotal,
-} from "@/features/flooring/shared/line-items/line-totals"
+import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
 import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
 import {
   hasFieldErrors,
@@ -36,9 +26,11 @@ function readStatusLabel(item: EditableMaterialItem, hasErrors: boolean) {
   if (hasErrors) {
     return "Needs Review"
   }
+
   if (item.id.startsWith("temp:")) {
     return "Unsaved"
   }
+
   return "Ready"
 }
 
@@ -46,110 +38,6 @@ function readStatusTone(item: EditableMaterialItem, hasErrors: boolean) {
   if (hasErrors) return "error" as const
   if (item.id.startsWith("temp:")) return "warning" as const
   return "neutral" as const
-}
-
-function TemplateMaterialItemRow({
-  item,
-  productOptions,
-  itemErrors = {},
-  onItemFieldChange,
-  onDeleteItem,
-}: {
-  item: EditableMaterialItem
-  productOptions: MaterialItemOption[]
-  itemErrors?: RowFieldErrors<MaterialItemField>
-  onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
-  onDeleteItem: (itemId: string) => void
-}) {
-  const rowErrors = itemErrors[item.id]
-  const hasErrors = hasFieldErrors(rowErrors)
-
-  return (
-    <RecordSectionItem>
-      <RecordRowLayout columns={TEMPLATE_MATERIAL_COLUMNS}>
-        <RecordItemCell label="Product" columnKey="product">
-          <div className="space-y-1">
-            <RecordGridCellSelect
-              value={item.productId}
-              onChange={(event) => onItemFieldChange(item.id, "productId", event.target.value)}
-              invalid={Boolean(rowErrors?.productId)}
-            >
-              <option value="">Select product</option>
-              {productOptions.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.label}
-                </option>
-              ))}
-            </RecordGridCellSelect>
-            {rowErrors?.productId ? <RecordFieldErrorText>{rowErrors.productId}</RecordFieldErrorText> : null}
-          </div>
-        </RecordItemCell>
-        <RecordItemCell label="Qty" columnKey="quantity">
-          <div className="space-y-1">
-          <QuantityCell
-            input={
-              <RecordGridCellInput
-                value={item.quantity}
-                inputMode="decimal"
-                spellCheck={false}
-                placeholder="Qty"
-                onChange={(event) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                invalid={Boolean(rowErrors?.quantity)}
-                align="center"
-                controlSize="compact"
-              />
-            }
-          />
-            {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
-          </div>
-        </RecordItemCell>
-        <RecordItemCell label="Unit" columnKey="unit">
-          <TextCell align="center">{item.sendUnit || "-"}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Unit Price" columnKey="unitPrice">
-          <div className="space-y-1">
-            <CurrencyCell
-              input={
-                <RecordGridCellInput
-                  value={item.unitPrice}
-                  inputMode="decimal"
-                  spellCheck={false}
-                  onChange={(event) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(event.target.value))}
-                  invalid={Boolean(rowErrors?.unitPrice)}
-                  align="right"
-                  controlSize="compact"
-                />
-              }
-              unit={item.sendUnit || "unit"}
-            />
-            {rowErrors?.unitPrice ? <RecordFieldErrorText>{rowErrors.unitPrice}</RecordFieldErrorText> : null}
-          </div>
-        </RecordItemCell>
-        <RecordItemCell label="Total" columnKey="total">
-          <CurrencyCell value={formatLineTotal(item)} className="w-full" />
-        </RecordItemCell>
-        <RecordItemCell label="Notes" columnKey="notes">
-          <RecordGridCellInput
-            value={item.notes}
-            onChange={(event) => onItemFieldChange(item.id, "notes", event.target.value)}
-          />
-        </RecordItemCell>
-        <RecordItemSectionControls
-          capabilities={{ supportsStatusColumn: true, supportsRemoveRow: true }}
-          status={{
-            content: (
-              <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
-                {readStatusLabel(item, hasErrors)}
-              </RecordRowStatusBadge>
-            ),
-          }}
-          remove={{
-            onRemove: () => onDeleteItem(item.id),
-          }}
-        />
-      </RecordRowLayout>
-    </RecordSectionItem>
-  )
 }
 
 export function TemplateMaterialItemsSection({
@@ -182,7 +70,7 @@ export function TemplateMaterialItemsSection({
   return (
     <RecordItemSection
       title={title}
-      bodyClassName="space-y-4"
+      bodyClassName="space-y-0"
       subHeader={subHeader}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
@@ -195,25 +83,61 @@ export function TemplateMaterialItemsSection({
         supportsSaveDiscard: true,
         supportsMetrics: true,
         supportsSummary: true,
-        supportsEmptyState: true,
+        supportsEmptyState: false,
       }}
       loading={loading}
       loadingState={<div className="border px-4 py-8 text-center text-[var(--foreground)]/70">Loading items...</div>}
-      isEmpty={items.length === 0}
-      emptyState={<div className="border border-dashed px-4 py-8 text-center text-[var(--foreground)]/65">No material items yet.</div>}
+      isEmpty={false}
     >
-      {!loading
-        ? items.map((item) => (
-            <TemplateMaterialItemRow
-              key={item.id}
-              item={item}
-              productOptions={productOptions}
-              itemErrors={itemErrors}
-              onItemFieldChange={onItemFieldChange}
-              onDeleteItem={onDeleteItem}
-            />
-          ))
-        : null}
+      <RecordSectionGrid
+        columns={TEMPLATE_MATERIAL_COLUMNS}
+        isEmpty={items.length === 0}
+        emptyState="No material items yet."
+      >
+        {items.map((item) => {
+          const rowErrors = itemErrors[item.id]
+          const hasErrors = hasFieldErrors(rowErrors)
+
+          return (
+            <RecordSectionGridRow key={item.id} columns={TEMPLATE_MATERIAL_COLUMNS}>
+              <RecordMaterialRowBuilder
+                productValue={item.productId}
+                productOptions={productOptions.map((product) => ({
+                  value: product.id,
+                  label: product.label,
+                }))}
+                productPlaceholderLabel="Select product"
+                quantityValue={item.quantity}
+                unitLabel={item.sendUnit || "-"}
+                unitPriceValue={item.unitPrice}
+                unitPriceUnit={item.sendUnit || "unit"}
+                totalValue={formatLineTotal(item)}
+                notesValue={item.notes}
+                productError={rowErrors?.productId}
+                quantityError={rowErrors?.quantity}
+                unitPriceError={rowErrors?.unitPrice}
+                onProductChange={(value) => onItemFieldChange(item.id, "productId", value)}
+                onQuantityChange={(value) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(value))}
+                onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}
+                onNotesChange={(value) => onItemFieldChange(item.id, "notes", value)}
+                controls={{
+                  capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
+                  status: {
+                    content: (
+                      <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
+                        {readStatusLabel(item, hasErrors)}
+                      </RecordRowStatusBadge>
+                    ),
+                  },
+                  remove: {
+                    onRemove: () => onDeleteItem(item.id),
+                  },
+                }}
+              />
+            </RecordSectionGridRow>
+          )
+        })}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }

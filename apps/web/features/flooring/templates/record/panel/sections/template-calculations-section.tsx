@@ -1,10 +1,8 @@
 "use client"
 
 import {
+  RecordCalculationRowBuilder,
   RecordCalculationSection,
-  RecordItemCell,
-  RecordRowLayout,
-  TextCell,
 } from "@/features/shared/engines/record-view"
 import { TEMPLATE_CALCULATION_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateCalculationSectionMetrics } from "./template-section-metrics"
@@ -35,18 +33,13 @@ export function TemplateCalculationsSection({
       title={title}
       items={items}
       loading={loading}
+      columns={TEMPLATE_CALCULATION_COLUMNS}
       metrics={metrics.length > 0 ? metrics : undefined}
       renderItem={(item) => (
-        <RecordRowLayout key={item.key} columns={TEMPLATE_CALCULATION_COLUMNS}>
-              <RecordItemCell label="Calculation" columnKey="calculation">
-                <TextCell>{item.label}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Value" columnKey="value">
-                <TextCell align="right" className="font-medium">
-                  {formatCalculationValue(item)}
-                </TextCell>
-              </RecordItemCell>
-        </RecordRowLayout>
+        <RecordCalculationRowBuilder
+          label={item.label}
+          value={formatCalculationValue(item)}
+        />
       )}
     />
   )

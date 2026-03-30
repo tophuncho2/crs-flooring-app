@@ -16,6 +16,8 @@ export function RecordItemCell({
   align,
   tone = "default",
   density = "default",
+  showLabel = true,
+  chrome = "card",
 }: {
   label?: string
   children: ReactNode
@@ -26,6 +28,8 @@ export function RecordItemCell({
   align?: "start" | "center" | "end"
   tone?: "default" | "allocation"
   density?: "default" | "compact"
+  showLabel?: boolean
+  chrome?: "card" | "grid"
 }) {
   const column = useRecordRowColumn(columnKey)
   const resolvedAlign = align ?? column?.align ?? "start"
@@ -44,16 +48,17 @@ export function RecordItemCell({
   return (
     <div
       className={joinRecordSectionClasses(
-        "min-w-0 shrink-0 self-stretch border shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]",
+        "min-w-0 shrink-0 self-stretch",
+        chrome === "card" ? "border shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" : undefined,
         densityClassName,
-        toneClassName,
-        RECORD_SECTION_BORDER_CLASS_NAME,
-        RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
+        chrome === "card" ? toneClassName : undefined,
+        chrome === "card" ? RECORD_SECTION_BORDER_CLASS_NAME : undefined,
+        chrome === "card" ? RECORD_SECTION_ITEM_SURFACE_CLASS_NAME : undefined,
         className,
       )}
       style={getRecordRowColumnStyle(column ?? undefined)}
     >
-      {resolvedLabel ? (
+      {showLabel && resolvedLabel ? (
         <div
           className={joinRecordSectionClasses(
             "mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]/45",

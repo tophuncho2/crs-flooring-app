@@ -1,19 +1,10 @@
 "use client"
 
-import type { ReactNode } from "react"
 import {
-  CurrencyCell,
-  QuantityCell,
-  RecordAllocationItemRow,
-  RecordAllocationItemsPanel,
-  RecordFieldErrorText,
-  RecordGridCellInput,
-  RecordGridCellSelect,
-  RecordItemCell,
-  RecordRowDeleteButton,
-  RecordRowLayout,
+  RecordAllocationRowBuilder,
   RecordRowStatusBadge,
-  TextCell,
+  RecordSectionGrid,
+  RecordSectionGridRow,
 } from "@/features/shared/engines/record-view"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
@@ -52,10 +43,6 @@ export function validateAllocationFields(value: Pick<AllocationDraft, "inventory
   return errors
 }
 
-function joinClasses(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ")
-}
-
 function readPricePerUnit(options: InventoryAllocationOption[], inventoryId: string) {
   return options.find((option) => option.id === inventoryId)?.pricePerUnit ?? 0
 }
@@ -90,140 +77,6 @@ function readAllocationRowStatusTone(allocation: WorkOrderItemAllocationRow, has
   return "neutral" as const
 }
 
-function AllocationCell({
-  label,
-  columnKey,
-  children,
-  className,
-}: {
-  label: string
-  columnKey: string
-  children?: ReactNode
-  className?: string
-}) {
-  return (
-    <RecordItemCell
-      label={label}
-      columnKey={columnKey}
-      tone="allocation"
-      density="compact"
-      className={className}
-      labelClassName="text-[9px] text-[var(--foreground)]/55"
-    >
-      {children}
-    </RecordItemCell>
-  )
-}
-
-function AllocationValueCell({
-  label,
-  columnKey,
-  value,
-}: {
-  label: string
-  columnKey: string
-  value: string
-}) {
-  return (
-    <AllocationCell label={label} columnKey={columnKey}>
-      <div className="rounded-md border border-[rgba(58,58,58,0.72)] bg-[var(--panel-background)] px-2 py-1.5 text-sm text-[var(--foreground)]">
-        {value}
-      </div>
-    </AllocationCell>
-  )
-}
-
-function AllocationEditorRow({
-  allocation,
-  allocationOptions,
-  rowErrors,
-  onAllocationFieldChange,
-  onDeleteAllocation,
-}: {
-  allocation: WorkOrderItemAllocationRow
-  allocationOptions: InventoryAllocationOption[]
-  rowErrors: FieldErrorMap<AllocationField> | undefined
-  onAllocationFieldChange: (allocationId: string, field: keyof AllocationDraft, value: string) => void
-  onDeleteAllocation: (allocationId: string) => void
-}) {
-  const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
-  const quantityValue = Number(allocation.quantity || 0)
-  const hasErrors = hasFieldErrors(rowErrors)
-  const rowStatusLabel = readAllocationRowStatus(allocation, hasErrors)
-  const rowStatusTone = readAllocationRowStatusTone(allocation, hasErrors)
-
-  return (
-    <RecordRowLayout columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS} className={hasFieldErrors(rowErrors) ? "bg-rose-500/[0.04]" : undefined}>
-      <AllocationCell label="Inventory" columnKey="product">
-        <div className="space-y-1">
-          <RecordGridCellSelect
-            value={allocation.inventoryId}
-            onChange={(event) => onAllocationFieldChange(allocation.id, "inventoryId", event.target.value)}
-            invalid={Boolean(rowErrors?.inventoryId)}
-          >
-            <option value="">Select inventory</option>
-            {allocationOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </RecordGridCellSelect>
-          {rowErrors?.inventoryId ? <RecordFieldErrorText>{rowErrors.inventoryId}</RecordFieldErrorText> : null}
-        </div>
-      </AllocationCell>
-      <AllocationCell label="Qty" columnKey="quantity">
-        <div className="space-y-1">
-          <QuantityCell
-            input={
-              <RecordGridCellInput
-                value={allocation.quantity}
-                inputMode="decimal"
-                spellCheck={false}
-                placeholder="Qty"
-                onChange={(event) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(event.target.value))}
-                invalid={Boolean(rowErrors?.quantity)}
-                align="center"
-                controlSize="compact"
-              />
-            }
-          />
-          {rowErrors?.quantity ? <RecordFieldErrorText>{rowErrors.quantity}</RecordFieldErrorText> : null}
-        </div>
-      </AllocationCell>
-      <AllocationValueCell
-        label="Unit"
-        columnKey="unit"
-        value={readAllocationUnit(allocationOptions, allocation)}
-      />
-      <AllocationCell label="Unit Cost" columnKey="unitPrice">
-        <CurrencyCell value={formatCurrencyValue(rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
-      </AllocationCell>
-      <AllocationCell label="Total" columnKey="total">
-        <CurrencyCell value={formatCurrencyValue(quantityValue * rowPricePerUnit)} className="w-full bg-[var(--panel-background)]" />
-      </AllocationCell>
-      <AllocationCell label="Notes" columnKey="notes">
-        <RecordGridCellInput
-          value={allocation.notes}
-          placeholder="Notes"
-          onChange={(event) => onAllocationFieldChange(allocation.id, "notes", event.target.value)}
-        />
-      </AllocationCell>
-      <AllocationCell label="Status" columnKey="status">
-        <div className="flex min-h-[2.5rem] items-center">
-          <RecordRowStatusBadge tone={rowStatusTone}>
-            {rowStatusLabel}
-          </RecordRowStatusBadge>
-        </div>
-      </AllocationCell>
-      <AllocationCell label="Remove" columnKey="remove">
-        <div className="flex min-h-[2.5rem] items-start justify-start xl:justify-end">
-          <RecordRowDeleteButton onClick={() => onDeleteAllocation(allocation.id)}>Remove</RecordRowDeleteButton>
-        </div>
-      </AllocationCell>
-    </RecordRowLayout>
-  )
-}
-
 export function MaterialAllocationsEditor({
   allocations,
   allocationOptions,
@@ -242,42 +95,69 @@ export function MaterialAllocationsEditor({
   onDeleteAllocation: (allocationId: string) => void
 }) {
   return (
-    <div className="space-y-0">
-      <RecordAllocationItemsPanel
-        emptyState="No allocations yet."
-        footer={
-          <button
-            type="button"
-            onClick={onAddAllocation}
-            disabled={loadingOptions}
-            className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+    <RecordSectionGrid
+      columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS}
+      group="allocation"
+      surface="nested"
+      isEmpty={allocations.length === 0}
+      emptyState="No allocations yet."
+      footer={(
+        <button
+          type="button"
+          onClick={onAddAllocation}
+          disabled={loadingOptions}
+          className="rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60"
+        >
+          {loadingOptions ? "Loading inventory..." : "Add Allocation"}
+        </button>
+      )}
+    >
+      {allocations.map((allocation) => {
+        const rowErrors = itemErrors[allocation.id]
+        const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
+        const quantityValue = Number(allocation.quantity || 0)
+        const hasErrors = hasFieldErrors(rowErrors)
+
+        return (
+          <RecordSectionGridRow
+            key={allocation.id}
+            columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS}
+            group="allocation"
+            rowTone={hasErrors ? "error" : "allocation"}
           >
-            {loadingOptions ? "Loading inventory..." : "Add Allocation"}
-          </button>
-        }
-      >
-        {allocations.length > 0
-          ? allocations.map((allocation, index) => {
-              return (
-                <RecordAllocationItemRow
-                  key={allocation.id}
-                  className={joinClasses(
-                    index > 0 ? "border-t border-[var(--panel-border)]" : undefined,
-                    "py-0",
-                  )}
-                >
-                  <AllocationEditorRow
-                    allocation={allocation}
-                    allocationOptions={allocationOptions}
-                    rowErrors={itemErrors[allocation.id]}
-                    onAllocationFieldChange={onAllocationFieldChange}
-                    onDeleteAllocation={onDeleteAllocation}
-                  />
-                </RecordAllocationItemRow>
-              )
-            })
-          : null}
-      </RecordAllocationItemsPanel>
-    </div>
+            <RecordAllocationRowBuilder
+              inventoryValue={allocation.inventoryId}
+              inventoryOptions={allocationOptions.map((option) => ({
+                value: option.id,
+                label: option.label,
+              }))}
+              quantityValue={allocation.quantity}
+              unitLabel={readAllocationUnit(allocationOptions, allocation)}
+              unitCostValue={formatCurrencyValue(rowPricePerUnit)}
+              totalValue={formatCurrencyValue(quantityValue * rowPricePerUnit)}
+              notesValue={allocation.notes}
+              inventoryError={rowErrors?.inventoryId}
+              quantityError={rowErrors?.quantity}
+              onInventoryChange={(value) => onAllocationFieldChange(allocation.id, "inventoryId", value)}
+              onQuantityChange={(value) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(value))}
+              onNotesChange={(value) => onAllocationFieldChange(allocation.id, "notes", value)}
+              controls={{
+                capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
+                status: {
+                  content: (
+                    <RecordRowStatusBadge tone={readAllocationRowStatusTone(allocation, hasErrors)}>
+                      {readAllocationRowStatus(allocation, hasErrors)}
+                    </RecordRowStatusBadge>
+                  ),
+                },
+                remove: {
+                  onRemove: () => onDeleteAllocation(allocation.id),
+                },
+              }}
+            />
+          </RecordSectionGridRow>
+        )
+      })}
+    </RecordSectionGrid>
   )
 }
