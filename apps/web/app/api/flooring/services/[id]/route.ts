@@ -1,7 +1,6 @@
 import { authorizeServicesRoute } from "@/features/flooring/shared/access/lookup-domains"
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { deleteService, updateService } from "@/features/flooring/services/mutations"
-import { normalizeServiceRow } from "@/features/flooring/services/services"
+import { deleteServiceEntry, updateServiceEntry } from "@/features/flooring/services/application/manage-service"
 import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
@@ -23,14 +22,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
-    const service = await updateService(id, {
+    const service = await updateServiceEntry(id, {
       name: parseRequiredString(body.name, "name"),
       unitId: parseRequiredString(body.unitId, "unitId"),
       baseCost: parseRequiredString(body.baseCost, "baseCost"),
       notes: parseOptionalString(body.notes),
     })
 
-    return routeJson(access, { service: normalizeServiceRow(service) })
+    return routeJson(access, { service })
   } catch (error) {
     return routeError(access, error)
   }
@@ -50,7 +49,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params
-    await deleteService(id)
+    await deleteServiceEntry(id)
     return routeJson(access, { ok: true })
   } catch (error) {
     return routeError(access, error)

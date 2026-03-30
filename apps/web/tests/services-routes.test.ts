@@ -4,13 +4,13 @@ import { GET, POST } from "@/app/api/flooring/services/route"
 import { DELETE, PATCH } from "@/app/api/flooring/services/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { requireRouteAccessMock, enforceRouteRateLimitMock, listServicesMock, createServiceMock, updateServiceMock, deleteServiceMock } = vi.hoisted(() => ({
+const { requireRouteAccessMock, enforceRouteRateLimitMock, listServicesMock, createServiceEntryMock, updateServiceEntryMock, deleteServiceEntryMock } = vi.hoisted(() => ({
   requireRouteAccessMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   listServicesMock: vi.fn(),
-  createServiceMock: vi.fn(),
-  updateServiceMock: vi.fn(),
-  deleteServiceMock: vi.fn(),
+  createServiceEntryMock: vi.fn(),
+  updateServiceEntryMock: vi.fn(),
+  deleteServiceEntryMock: vi.fn(),
 }))
 
 const routeAccess = {
@@ -36,10 +36,10 @@ vi.mock("@/features/flooring/services/queries", () => ({
   listServices: listServicesMock,
 }))
 
-vi.mock("@/features/flooring/services/mutations", () => ({
-  createService: createServiceMock,
-  updateService: updateServiceMock,
-  deleteService: deleteServiceMock,
+vi.mock("@/features/flooring/services/application/manage-service", () => ({
+  createServiceEntry: createServiceEntryMock,
+  updateServiceEntry: updateServiceEntryMock,
+  deleteServiceEntry: deleteServiceEntryMock,
 }))
 
 function decimal(value: string) {
@@ -141,11 +141,21 @@ describe("services routes", () => {
     )
     expect((await missingCost.json()).error).toBe("baseCost is required")
 
-    expect(createServiceMock).not.toHaveBeenCalled()
+    expect(createServiceEntryMock).not.toHaveBeenCalled()
   })
 
   it("POST returns normalized payload", async () => {
-    createServiceMock.mockResolvedValue(serviceRecord())
+    createServiceEntryMock.mockResolvedValue({
+      id: "svc-1",
+      name: "Install",
+      unitId: "unit-1",
+      unitName: "Square Feet",
+      baseCost: "9.5",
+      notes: "",
+      usageCount: 3,
+      createdAt: "2026-03-19T00:00:00.000Z",
+      updatedAt: "2026-03-19T00:00:00.000Z",
+    })
 
     const response = await POST(
       new Request("http://localhost/api/flooring/services", {
@@ -157,7 +167,7 @@ describe("services routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(201)
-    expect(createServiceMock).toHaveBeenCalledWith({
+    expect(createServiceEntryMock).toHaveBeenCalledWith({
       name: "Install",
       unitId: "unit-1",
       baseCost: "9.50",
@@ -207,11 +217,21 @@ describe("services routes", () => {
     )
     expect((await missingCost.json()).error).toBe("baseCost is required")
 
-    expect(updateServiceMock).not.toHaveBeenCalled()
+    expect(updateServiceEntryMock).not.toHaveBeenCalled()
   })
 
   it("PATCH returns normalized payload", async () => {
-    updateServiceMock.mockResolvedValue(serviceRecord({ name: "Repair", baseCost: decimal("12.00") }))
+    updateServiceEntryMock.mockResolvedValue({
+      id: "svc-1",
+      name: "Repair",
+      unitId: "unit-1",
+      unitName: "Square Feet",
+      baseCost: "12",
+      notes: "Rush",
+      usageCount: 3,
+      createdAt: "2026-03-19T00:00:00.000Z",
+      updatedAt: "2026-03-19T00:00:00.000Z",
+    })
 
     const response = await PATCH(
       new Request("http://localhost/api/flooring/services/svc-1", {
@@ -224,7 +244,7 @@ describe("services routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(updateServiceMock).toHaveBeenCalledWith("svc-1", {
+    expect(updateServiceEntryMock).toHaveBeenCalledWith("svc-1", {
       name: "Repair",
       unitId: "unit-1",
       baseCost: "12.00",
@@ -242,16 +262,15 @@ describe("services routes", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteServiceMock).toHaveBeenCalledWith("svc-1")
+    expect(deleteServiceEntryMock).toHaveBeenCalledWith("svc-1")
   })
 
   it("DELETE normalizes linked-record conflicts", async () => {
-    deleteServiceMock.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("Foreign key constraint failed", {
-        code: "P2003",
-        clientVersion: "5.22.0",
-      }),
-    )
+    deleteServiceEntryMock.mockRejectedValue({
+      kind: "app",
+      status: 409,
+      message: "This service is linked to work orders and cannot be deleted",
+    })
 
     const response = await DELETE(new Request("http://localhost/api/flooring/services/svc-1"), {
       params: Promise.resolve({ id: "svc-1" }),
@@ -259,6 +278,6 @@ describe("services routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("This record is linked and cannot be modified")
+    expect(payload.error).toBe("This service is linked to work orders and cannot be deleted")
   })
 })

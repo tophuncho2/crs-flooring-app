@@ -6,7 +6,7 @@ import {
   routeError,
   routeJson,
 } from "@/server/http/route-helpers"
-import { createContact } from "@/features/flooring/contacts/data/server-mutations"
+import { createContactEntry } from "@/features/flooring/contacts/application/manage-contact"
 import { listContacts } from "@/features/flooring/contacts/data/queries"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
 import { validateContactType } from "@/features/flooring/contacts/domain/types"
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const contact = await createContact({
+    const contact = await createContactEntry({
       name: parseRequiredString(body.name, "name"),
       type: parseContactType(body.type),
     })

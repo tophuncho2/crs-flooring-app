@@ -1,8 +1,7 @@
 import { authorizeServicesRoute } from "@/features/flooring/shared/access/lookup-domains"
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { createService } from "@/features/flooring/services/mutations"
+import { createServiceEntry } from "@/features/flooring/services/application/manage-service"
 import { listServices } from "@/features/flooring/services/queries"
-import { normalizeServiceRow } from "@/features/flooring/services/services"
 import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
@@ -30,14 +29,14 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const service = await createService({
+    const service = await createServiceEntry({
       name: parseRequiredString(body.name, "name"),
       unitId: parseRequiredString(body.unitId, "unitId"),
       baseCost: parseRequiredString(body.baseCost, "baseCost"),
       notes: parseOptionalString(body.notes),
     })
 
-    return routeJson(access, { service: normalizeServiceRow(service) }, { status: 201 })
+    return routeJson(access, { service }, { status: 201 })
   } catch (error) {
     return routeError(access, error)
   }

@@ -7,7 +7,7 @@ import {
   routeJson,
 } from "@/server/http/route-helpers"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
-import { deleteContact, updateContact } from "@/features/flooring/contacts/data/server-mutations"
+import { deleteContactEntry, updateContactEntry } from "@/features/flooring/contacts/application/manage-contact"
 import { validateContactType } from "@/features/flooring/contacts/domain/types"
 
 type RouteContext = {
@@ -40,7 +40,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const contact = await updateContact(id, {
+    const contact = await updateContactEntry(id, {
       name: parseRequiredString(body.name, "name"),
       type: parseContactType(body.type),
     })
@@ -86,7 +86,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   const { id } = await params
 
   try {
-    await deleteContact(id)
+    await deleteContactEntry(id)
 
     logRouteMutationSuccess(access, {
       message: "Contact deleted",

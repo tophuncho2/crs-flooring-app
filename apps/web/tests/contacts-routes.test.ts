@@ -8,18 +8,18 @@ const {
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
   listContactsMock,
-  createContactMock,
-  updateContactMock,
-  deleteContactMock,
+  createContactEntryMock,
+  updateContactEntryMock,
+  deleteContactEntryMock,
 } = vi.hoisted(() => ({
   authorizeContactsRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
   listContactsMock: vi.fn(),
-  createContactMock: vi.fn(),
-  updateContactMock: vi.fn(),
-  deleteContactMock: vi.fn(),
+  createContactEntryMock: vi.fn(),
+  updateContactEntryMock: vi.fn(),
+  deleteContactEntryMock: vi.fn(),
 }))
 
 vi.mock("@/features/flooring/shared/access/lookup-domains", () => ({
@@ -56,10 +56,10 @@ vi.mock("@/features/flooring/contacts/data/queries", () => ({
   listContacts: listContactsMock,
 }))
 
-vi.mock("@/features/flooring/contacts/data/server-mutations", () => ({
-  createContact: createContactMock,
-  updateContact: updateContactMock,
-  deleteContact: deleteContactMock,
+vi.mock("@/features/flooring/contacts/application/manage-contact", () => ({
+  createContactEntry: createContactEntryMock,
+  updateContactEntry: updateContactEntryMock,
+  deleteContactEntry: deleteContactEntryMock,
 }))
 
 describe("contacts routes", () => {
@@ -120,11 +120,11 @@ describe("contacts routes", () => {
     expect(invalidTypeResponse.status).toBe(400)
     expect(invalidTypePayload.error).toBe("type must be Sales Rep, Contractor, or Other")
     expect(invalidTypePayload.field).toBe("type")
-    expect(createContactMock).not.toHaveBeenCalled()
+    expect(createContactEntryMock).not.toHaveBeenCalled()
   })
 
   it("POST, PATCH, and DELETE mutate contacts through the shared route flow", async () => {
-    createContactMock.mockResolvedValue({
+    createContactEntryMock.mockResolvedValue({
       id: "contact-1",
       name: "Jane Rep",
       type: "SALES_REP",
@@ -133,7 +133,7 @@ describe("contacts routes", () => {
       createdAt: "2026-03-23T00:00:00.000Z",
       updatedAt: "2026-03-23T00:00:00.000Z",
     })
-    updateContactMock.mockResolvedValue({
+    updateContactEntryMock.mockResolvedValue({
       id: "contact-1",
       name: "Jane Contractor",
       type: "CONTRACTOR",
@@ -151,7 +151,7 @@ describe("contacts routes", () => {
       }),
     )
     expect(createResponse.status).toBe(201)
-    expect(createContactMock).toHaveBeenCalledWith({
+    expect(createContactEntryMock).toHaveBeenCalledWith({
       name: "Jane Rep",
       type: "SALES_REP",
     })
@@ -176,14 +176,14 @@ describe("contacts routes", () => {
     })
     expect(deleteResponse.status).toBe(200)
     expect(await deleteResponse.json()).toEqual({ ok: true })
-    expect(deleteContactMock).toHaveBeenCalledWith("contact-1")
+    expect(deleteContactEntryMock).toHaveBeenCalledWith("contact-1")
   })
 
   it("DELETE returns a clear linked-contact error", async () => {
-    deleteContactMock.mockRejectedValue({
+    deleteContactEntryMock.mockRejectedValue({
       kind: "app",
       status: 409,
-      message: "This contact is linked to templates or work orders and cannot be deleted",
+      message: "This contact is linked to work orders and cannot be deleted",
     })
 
     const response = await DELETE(new Request("http://localhost/api/flooring/contacts/contact-1"), {
@@ -192,6 +192,6 @@ describe("contacts routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(409)
-    expect(payload.error).toBe("This contact is linked to templates or work orders and cannot be deleted")
+    expect(payload.error).toBe("This contact is linked to work orders and cannot be deleted")
   })
 })
