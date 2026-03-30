@@ -1,19 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
-import {
-  RecordDetailClientScaffold,
-  type RecordDetailClientScaffoldContext,
-} from "@/features/dashboard/shared/record-view/client/record-detail-client-scaffold"
-import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { RecordFormField } from "@/features/dashboard/shared/record-view/forms/record-form"
-import { RecordPanelFooter } from "@/features/dashboard/shared/record-view/shell/record-panel-footer"
-import { RecordSummaryCard } from "@/features/flooring/shared/ui/display/record-summary-card"
-import { RecordSummaryGrid } from "@/features/flooring/shared/ui/display/record-summary-grid"
-import type { LocationRow, SectionRow, WarehouseRow } from "../types"
-import { useWarehouseRecordController } from "../use-warehouse-record-controller"
-import { WarehouseLocationsSection } from "./warehouse-locations-section"
-import { WarehouseSectionsSection } from "./warehouse-sections-section"
+import { createWarehouseDetail, type LocationRow, type SectionRow, type WarehouseDetail, type WarehouseRow } from "../types"
+import { WarehouseDetailClient as CanonicalWarehouseDetailClient } from "../record/detail/warehouse-detail-client"
 
 export function WarehouseDetailClient({
   warehouse,
@@ -21,133 +9,15 @@ export function WarehouseDetailClient({
   locations,
   backHref,
 }: {
-  warehouse: WarehouseRow
-  sections: SectionRow[]
-  locations: LocationRow[]
+  warehouse: WarehouseRow | WarehouseDetail
+  sections?: SectionRow[]
+  locations?: LocationRow[]
   backHref: string
 }) {
-  return (
-    <RecordDetailClientScaffold
-      title={`Warehouse ${warehouse.name}`}
-      backHref={backHref}
-      dirtyMessage="You have unsaved warehouse changes. Leave this warehouse without saving?"
-    >
-      {(page) => (
-        <WarehouseDetailContent
-          page={page}
-          warehouse={warehouse}
-          sections={sections}
-          locations={locations}
-        />
-      )}
-    </RecordDetailClientScaffold>
-  )
-}
+  const detail =
+    "sections" in warehouse && "locations" in warehouse
+      ? warehouse
+      : createWarehouseDetail(warehouse, sections ?? [], locations ?? [])
 
-function WarehouseDetailContent({
-  page,
-  warehouse,
-  sections,
-  locations,
-}: {
-  page: RecordDetailClientScaffoldContext
-  warehouse: WarehouseRow
-  sections: SectionRow[]
-  locations: LocationRow[]
-}) {
-  const controller = useWarehouseRecordController({
-    initialWarehouse: warehouse,
-    initialSections: sections,
-    initialLocations: locations,
-  })
-
-  useEffect(() => {
-    page.setIsDirty(controller.isDirty)
-  }, [controller.isDirty, page.setIsDirty])
-
-  return (
-    <div className="space-y-6">
-      <FormStatusNotices
-        message={controller.message}
-        error={controller.error}
-        loadingMessage={controller.isSavingWarehouse ? "Saving warehouse..." : ""}
-      />
-
-      <RecordSummaryGrid>
-        <RecordSummaryCard label="Sections">{controller.warehouse.sectionsCount}</RecordSummaryCard>
-        <RecordSummaryCard label="Locations">{controller.warehouse.locationsCount}</RecordSummaryCard>
-        <RecordSummaryCard label="Work Orders">{controller.warehouse.workOrdersCount}</RecordSummaryCard>
-        <RecordSummaryCard label="Updated">{new Date(controller.warehouse.updatedAt).toISOString().slice(0, 10)}</RecordSummaryCard>
-      </RecordSummaryGrid>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <RecordFormField label="Warehouse Name">
-          <input
-            value={controller.draft.name}
-            onChange={(event) => controller.updateDraft("name", event.target.value)}
-            className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-          />
-        </RecordFormField>
-        <RecordFormField label="Street Address">
-          <input
-            value={controller.draft.address}
-            onChange={(event) => controller.updateDraft("address", event.target.value)}
-            className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-          />
-        </RecordFormField>
-        <RecordFormField label="Store Phone">
-          <input
-            value={controller.draft.phone}
-            onChange={(event) => controller.updateDraft("phone", event.target.value)}
-            className="rounded border border-[var(--panel-border)] bg-transparent px-3 py-2"
-          />
-        </RecordFormField>
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-2">
-        <WarehouseSectionsSection
-          sections={controller.sections}
-          sectionDrafts={controller.sectionDrafts}
-          newSection={controller.newSection}
-          deletingSectionId={controller.deletingSectionId}
-          onNewSectionChange={controller.setNewSection}
-          onAddSection={controller.addSection}
-          onSectionDraftChange={(sectionId, value) =>
-            controller.setSectionDrafts((prev) => ({ ...prev, [sectionId]: value }))
-          }
-          onSectionBlur={controller.saveSection}
-          onDeleteSection={controller.deleteSection}
-        />
-
-        <WarehouseLocationsSection
-          locations={controller.locations}
-          sections={controller.sections}
-          locationDrafts={controller.locationDrafts}
-          newLocation={controller.newLocation}
-          deletingLocationId={controller.deletingLocationId}
-          onNewLocationChange={(field, value) =>
-            controller.setNewLocation((prev) => ({ ...prev, [field]: value }))
-          }
-          onAddLocation={controller.addLocation}
-          onLocationDraftChange={(locationId, value) =>
-            controller.setLocationDrafts((prev) => ({
-              ...prev,
-              [locationId]: value,
-            }))
-          }
-          onLocationBlur={controller.saveLocation}
-          onDeleteLocation={controller.deleteLocation}
-        />
-      </div>
-
-      <RecordPanelFooter
-        onClose={page.closePage}
-        closeLabel="Back"
-        onSave={() => void controller.saveWarehouse()}
-        saveLabel="Save Warehouse"
-        savingLabel="Saving Warehouse..."
-        isSaving={controller.isSavingWarehouse}
-      />
-    </div>
-  )
+  return <CanonicalWarehouseDetailClient warehouse={detail} backHref={backHref} />
 }

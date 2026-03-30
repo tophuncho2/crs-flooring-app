@@ -3,7 +3,7 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getWarehouseDetailPageData } from "@/features/flooring/warehouse/queries"
-import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/warehouse-detail-client"
+import { WarehouseDetailClient } from "@/features/flooring/warehouse/record/detail/warehouse-detail-client"
 
 export default async function WarehouseDetailPage({
   params,
@@ -40,9 +40,7 @@ export default async function WarehouseDetailPage({
 
   return (
     <WarehouseDetailClient
-      warehouse={result.data.warehouse}
-      sections={result.data.sections}
-      locations={result.data.locations}
+      warehouse={result.data}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/flooring/warehouse")}
     />
   )

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import WarehouseClient, { type WarehouseRow } from "@/app/dashboard/warehouse/warehouse-client"
 import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/warehouse-detail-client"
@@ -42,6 +42,13 @@ function warehouseRow(overrides: Partial<WarehouseRow> = {}): WarehouseRow {
   }
 }
 
+function getFieldLabel(label: string) {
+  return screen
+    .getAllByText(label)
+    .find((node) => node.closest("label"))
+    ?.closest("label")
+}
+
 describe("WarehouseClient", () => {
   const fetchMock = vi.fn()
 
@@ -64,35 +71,17 @@ describe("WarehouseClient", () => {
     )
   })
 
-  it("navigates to the canonical warehouse detail page after creating a warehouse", async () => {
+  it("navigates to the canonical warehouse create page from the list", async () => {
     const user = userEvent.setup()
-
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse(
-        {
-          warehouse: warehouseRow({
-            id: "wh-2",
-            name: "Overflow Warehouse",
-            address: "2 Main St",
-          }),
-        },
-        201,
-      ),
-    )
 
     render(<WarehouseClient initialRows={[warehouseRow()]} />)
 
     await user.click(screen.getByRole("button", { name: /add warehouse/i }))
-    await user.type(screen.getByLabelText("Warehouse Name"), "Overflow Warehouse")
-    await user.type(screen.getByLabelText("Address"), "2 Main St")
-    await user.click(screen.getByRole("button", { name: "Create Warehouse" }))
 
-    await waitFor(() => {
-      expect(navigationMocks.push).toHaveBeenCalledWith(
-        "/dashboard/flooring/warehouse/wh-2?returnTo=%2Fdashboard%2Fflooring%2Ftest",
-        { scroll: false },
-      )
-    })
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/warehouse/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
   })
 })
 
@@ -105,7 +94,7 @@ describe("WarehouseDetailClient", () => {
     vi.stubGlobal("fetch", fetchMock)
   })
 
-  it("adds a section and updates the summary counts", async () => {
+  it("adds a section through the sections engine section and updates the warehouse counts after save", async () => {
     const user = userEvent.setup()
 
     fetchMock.mockResolvedValueOnce(jsonResponse({ section: { id: "sec-2", name: "Storage", locationsCount: 0 } }, 201))
@@ -119,14 +108,23 @@ describe("WarehouseDetailClient", () => {
       />,
     )
 
-    await user.type(screen.getByPlaceholderText("Section name"), "Storage")
-    await user.click(screen.getAllByRole("button", { name: "Add" })[0])
+    await user.click(screen.getByRole("button", { name: "Add Section" }))
+    const sectionInputs = screen.getAllByPlaceholderText("Section name")
+    await user.type(sectionInputs[0], "Storage")
+    await user.click(screen.getByRole("button", { name: "Save Sections" }))
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/flooring/sections",
+        expect.objectContaining({ method: "POST" }),
+      )
+    })
 
     expect((await screen.findAllByDisplayValue("Storage")).length).toBeGreaterThan(0)
-    expect(screen.getByText("2")).toBeTruthy()
+    expect(getFieldLabel("Sections")?.textContent).toContain("2")
   })
 
-  it("adds a location and updates location counts", async () => {
+  it("adds a location as an allocated row under a warehouse section and updates counts after save", async () => {
     const user = userEvent.setup()
 
     fetchMock.mockResolvedValueOnce(
@@ -142,51 +140,24 @@ describe("WarehouseDetailClient", () => {
       />,
     )
 
+    await user.click(screen.getByRole("button", { name: "Show locations for Showroom" }))
+    await user.click(screen.getByRole("button", { name: "Add Location" }))
     await user.type(screen.getByPlaceholderText("Location code"), "A1")
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "sec-1" } })
-    await user.click(screen.getAllByRole("button", { name: "Add" })[1])
-
-    expect(await screen.findByDisplayValue("A1")).toBeTruthy()
-    expect(screen.getAllByText("1").length).toBeGreaterThan(0)
-  })
-
-  it("moving a location between sections updates both section counts", async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ location: { id: "loc-1", locationCode: "A1", sectionId: "sec-2", sectionName: "Storage" } }),
-    )
-
-    render(
-      <WarehouseDetailClient
-        warehouse={warehouseRow({ sectionsCount: 2, locationsCount: 1 })}
-        sections={[
-          { id: "sec-1", name: "Showroom", locationsCount: 1 },
-          { id: "sec-2", name: "Storage", locationsCount: 0 },
-        ]}
-        locations={[{ id: "loc-1", locationCode: "A1", sectionId: "sec-1", sectionName: "Showroom" }]}
-        backHref="/dashboard/flooring/warehouse"
-      />,
-    )
-
-    const locationRow = screen.getByDisplayValue("A1").closest("tr")
-    expect(locationRow).toBeTruthy()
-    const sectionSelect = within(locationRow as HTMLElement).getByRole("combobox")
-    fireEvent.change(sectionSelect, { target: { value: "sec-2" } })
-    fireEvent.blur(sectionSelect)
+    await user.click(screen.getByRole("button", { name: "Save Sections" }))
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenLastCalledWith("/api/flooring/locations/loc-1", expect.objectContaining({ method: "PATCH" }))
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/flooring/locations",
+        expect.objectContaining({ method: "POST" }),
+      )
     })
 
-    const showroomRow = screen.getAllByDisplayValue("Showroom")[0].closest("tr")
-    const storageRow = screen.getAllByDisplayValue("Storage")[0].closest("tr")
-
-    expect(showroomRow?.textContent).toContain("0")
-    expect(storageRow?.textContent).toContain("1")
+    expect(await screen.findByDisplayValue("A1")).toBeTruthy()
+    expect(getFieldLabel("Locations")?.textContent).toContain("1")
   })
 
-  it("deleting a section removes it from the shared child-table section", async () => {
+  it("removing a section persists through the managed sections save flow", async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
 
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
 
@@ -199,13 +170,20 @@ describe("WarehouseDetailClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: "Delete" })[0])
+    const showroomRow = screen.getByDisplayValue("Showroom").closest("section")
+    expect(showroomRow).toBeTruthy()
+
+    await user.click(within(showroomRow as HTMLElement).getByRole("button", { name: "Remove" }))
+    await user.click(screen.getByRole("button", { name: "Save Sections" }))
 
     await waitFor(() => {
-      expect(screen.queryAllByDisplayValue("Showroom")).toHaveLength(0)
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/api/flooring/sections/"),
+        expect.objectContaining({ method: "DELETE" }),
+      )
     })
 
-    expect(screen.getByText("No sections yet.")).toBeTruthy()
+    expect(screen.queryAllByDisplayValue("Showroom")).toHaveLength(0)
   })
 
   it("guards back navigation when the warehouse draft is dirty", async () => {

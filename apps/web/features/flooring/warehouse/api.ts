@@ -1,5 +1,6 @@
 import { prisma, type Prisma, type PrismaClient } from "@builders/db"
 import { createAppError, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import type { WarehouseDetail } from "./types"
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 
@@ -81,6 +82,47 @@ export async function updateWarehouseRow(id: string, body: Record<string, unknow
   })
 
   return normalizeWarehouseRow(warehouse)
+}
+
+export async function deleteWarehouseRow(id: string, db: DbClient = prisma) {
+  const warehouse = await db.flooringWarehouse.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      _count: {
+        select: {
+          sections: true,
+          locations: true,
+          workOrders: true,
+        },
+      },
+    },
+  })
+
+  if (!warehouse) {
+    throw createAppError("Warehouse not found", { status: 404 })
+  }
+
+  if (warehouse._count.workOrders > 0) {
+    throw createAppError("Warehouse cannot be deleted while work orders are linked to it", { status: 409 })
+  }
+
+  if (warehouse._count.locations > 0) {
+    throw createAppError("Warehouse cannot be deleted while locations are linked to it", { status: 409 })
+  }
+
+  if (warehouse._count.sections > 0) {
+    throw createAppError("Warehouse cannot be deleted while sections are linked to it", { status: 409 })
+  }
+
+  await db.flooringWarehouse.delete({
+    where: { id },
+  })
+
+  return {
+    ok: true,
+    warehouseId: id,
+  }
 }
 
 export function normalizeSectionRow(section: {
@@ -304,4 +346,54 @@ export async function deleteLocationRow(db: DbClient = prisma, id: string) {
 
 export function parseWarehouseFilter(warehouseId: string | null) {
   return parseOptionalString(warehouseId)
+}
+
+export async function getWarehouseDetailRow(id: string, db: DbClient = prisma): Promise<WarehouseDetail> {
+  const warehouse = await db.flooringWarehouse.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          sections: true,
+          locations: true,
+          workOrders: true,
+        },
+      },
+      sections: {
+        select: {
+          id: true,
+          warehouseId: true,
+          name: true,
+          _count: {
+            select: { locations: true },
+          },
+        },
+        orderBy: { name: "asc" },
+      },
+      locations: {
+        select: {
+          id: true,
+          warehouseId: true,
+          locationCode: true,
+          sectionId: true,
+          section: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: [{ section: { name: "asc" } }, { locationCode: "asc" }],
+      },
+    },
+  })
+
+  if (!warehouse) {
+    throw createAppError("Warehouse not found", { status: 404 })
+  }
+
+  return {
+    ...normalizeWarehouseRow(warehouse),
+    sections: warehouse.sections.map(normalizeSectionRow),
+    locations: warehouse.locations.map(normalizeLocationRow),
+  }
 }
