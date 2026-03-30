@@ -16,6 +16,7 @@ export function ManagementCompanyDetailClient({
       title={`Management Company ${company.name}`}
       backHref={backHref}
       dirtyMessage="You have unsaved management company changes. Leave this management company without saving?"
+      headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <ManagementCompanyRecordPanel page={page} company={company} />

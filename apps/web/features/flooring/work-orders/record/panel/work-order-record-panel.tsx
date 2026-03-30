@@ -597,10 +597,6 @@ export function WorkOrderRecordPanel({
         deleteConfirmMessage="Delete this work order? This cannot be undone."
         onDelete={() => void deleteWorkOrder()}
         onClose={onClose}
-        saveLabel="Save Primary Fields"
-        savingLabel="Saving..."
-        onSave={() => void primarySection.save()}
-        isSaving={primarySection.isSaving}
       />
     </div>
   )

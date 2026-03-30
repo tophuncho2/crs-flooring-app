@@ -47,7 +47,7 @@ describe("ManagementCompanyDetailClient", () => {
       />,
     )
 
-    expect(screen.getByText("Management Company Details")).toBeTruthy()
+    expect(screen.getByText("Management Company Acme Management")).toBeTruthy()
     expect(screen.getAllByText("Linked Properties").length).toBeGreaterThan(0)
     expect(screen.getByLabelText("Company Name").className).toContain("border-sky-500/35")
 

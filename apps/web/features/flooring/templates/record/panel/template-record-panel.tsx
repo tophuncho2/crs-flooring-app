@@ -7,8 +7,7 @@ import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/s
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
 import {
-  RecordFooterDestructiveButton,
-  RecordFooterNeutralButton,
+  RecordPanelFooter,
   RecordSectionSubHeader,
   RecordSectionStack,
   useRecordDetailController,
@@ -203,10 +202,6 @@ export function TemplateRecordPanel({
   }, [materialSection.localValue, onSummaryChange, serviceSection.localValue])
 
   async function deleteTemplate() {
-    if (!confirmDelete("template")) {
-      return
-    }
-
     notices.clearNotices()
 
     try {
@@ -334,16 +329,12 @@ export function TemplateRecordPanel({
         </div>
       </RecordSectionStack>
 
-      <div className="flex justify-between gap-2">
-        <div className="flex gap-2">
-          <RecordFooterDestructiveButton onClick={() => void deleteTemplate()}>
-            Delete Template
-          </RecordFooterDestructiveButton>
-        </div>
-        <div className="flex gap-2">
-          <RecordFooterNeutralButton onClick={onClose}>Close</RecordFooterNeutralButton>
-        </div>
-      </div>
+      <RecordPanelFooter
+        deleteLabel="Delete Template"
+        deleteConfirmMessage={buildDeleteConfirmationMessage("template")}
+        onDelete={() => void deleteTemplate()}
+        onClose={onClose}
+      />
     </div>
   )
 }

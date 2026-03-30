@@ -16,9 +16,9 @@ export function RecordPanelFooter({
   onDelete,
   closeLabel = "Close",
   onClose,
-  saveLabel,
-  savingLabel,
   onSave,
+  saveLabel = "Save",
+  savingLabel = "Saving...",
   isSaving = false,
   leftExtra,
 }: {
@@ -27,9 +27,9 @@ export function RecordPanelFooter({
   onDelete?: () => void
   closeLabel?: string
   onClose: () => void
-  saveLabel: string
-  savingLabel: string
-  onSave: () => void
+  saveLabel?: string
+  savingLabel?: string
+  onSave?: () => void
   isSaving?: boolean
   leftExtra?: ReactNode
 }) {
@@ -59,9 +59,11 @@ export function RecordPanelFooter({
         <RecordFooterNeutralButton onClick={onClose} disabled={isSaving}>
           {closeLabel}
         </RecordFooterNeutralButton>
-        <RecordFooterPrimaryButton onClick={onSave} disabled={isSaving}>
-          {isSaving ? savingLabel : saveLabel}
-        </RecordFooterPrimaryButton>
+        {onSave ? (
+          <RecordFooterPrimaryButton onClick={onSave} disabled={isSaving}>
+            {isSaving ? savingLabel : saveLabel}
+          </RecordFooterPrimaryButton>
+        ) : null}
       </div>
     </div>
   )
