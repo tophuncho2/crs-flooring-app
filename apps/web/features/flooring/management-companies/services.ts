@@ -24,6 +24,12 @@ export function normalizeManagementCompany(company: {
     city: string | null
     state: string | null
     postalCode: string | null
+    templates: Array<{
+      id: string
+      templateTag: string
+      warehouse: { name: string } | null
+      _count: { items: number; serviceItems: number }
+    }>
   }>
 }) {
   return {
@@ -41,6 +47,13 @@ export function normalizeManagementCompany(company: {
       id: property.id,
       name: property.name,
       fullAddress: normalizeAddress(property),
+      templateCount: property.templates.length,
+      templates: property.templates.map((template) => ({
+        id: template.id,
+        templateTag: template.templateTag,
+        warehouseName: template.warehouse?.name ?? "",
+        itemsCount: template._count.items + template._count.serviceItems,
+      })),
     })),
   }
 }

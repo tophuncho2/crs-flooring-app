@@ -1,7 +1,6 @@
 "use client"
 
 import { type ReactNode } from "react"
-import { ChevronDown, ChevronRight } from "lucide-react"
 import {
   CurrencyCell,
   QuantityCell,
@@ -10,6 +9,7 @@ import {
   RecordItemCell,
   RecordRowDeleteButton,
   RecordRowLayout,
+  RecordRowToggleButton,
   RecordSectionItem,
   RecordSectionShell,
   RecordSectionStatusBadge,
@@ -179,16 +179,11 @@ function MaterialItemEditorRow({
         </RecordItemCell>
         <RecordItemCell label="Allocations" columnKey="allocations">
         <div className="flex min-h-[2.5rem] items-center">
-          <button
-            type="button"
-            onClick={onToggleAllocations}
-            aria-expanded={isExpanded}
-            aria-label={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
-            className="inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-md border border-blue-500/25 px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
-          >
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            <span>{isExpanded ? "Hide" : "Show"}</span>
-          </button>
+          <RecordRowToggleButton
+            expanded={isExpanded}
+            onToggle={onToggleAllocations}
+            ariaLabel={isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`}
+          />
         </div>
         </RecordItemCell>
         <RecordItemCell label="Status" columnKey="status">

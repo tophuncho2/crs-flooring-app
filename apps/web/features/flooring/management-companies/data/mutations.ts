@@ -20,6 +20,22 @@ const managementCompanySelect = {
       city: true,
       state: true,
       postalCode: true,
+      templates: {
+        select: {
+          id: true,
+          templateTag: true,
+          warehouse: {
+            select: { name: true },
+          },
+          _count: {
+            select: {
+              items: true,
+              serviceItems: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" as const },
+      },
     },
     orderBy: { name: "asc" as const },
   },

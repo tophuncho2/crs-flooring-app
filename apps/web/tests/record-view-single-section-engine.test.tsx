@@ -8,9 +8,14 @@ import {
   CurrencyCell,
   RecordDetailClientScaffold,
   RecordGridCellInput,
+  RecordItemCell,
+  RecordRowLayout,
+  RecordRowToggleButton,
+  RecordSectionItem,
   RecordSectionSubHeader,
   RecordSingleSectionPanel,
   RecordSectionShell,
+  RecordAllocationItemRow,
   useRecordPageController,
   useSingleSectionRecordController,
 } from "@/features/shared/engines/record-view"
@@ -243,5 +248,40 @@ describe("record view single-section engine", () => {
     expect(input?.className).toContain("border-sky-500/35")
     expect(screen.getByText("$")).toBeTruthy()
     expect(screen.getByText("/ sqft")).toBeTruthy()
+  })
+
+  it("row toggle buttons are canonical and do not bubble into row-open navigation", async () => {
+    const user = userEvent.setup()
+    const openItem = vi.fn()
+    const openAllocation = vi.fn()
+    const toggle = vi.fn()
+
+    render(
+      <div>
+        <RecordSectionItem onOpen={openItem} openAriaLabel="Open property Oak">
+          <RecordRowLayout columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}>
+            <RecordItemCell label="Show / Hide" columnKey="toggle">
+              <RecordRowToggleButton expanded={false} onToggle={toggle} ariaLabel="Show templates for Oak" />
+            </RecordItemCell>
+            <RecordItemCell label="Open" columnKey="open">
+              <span>Open</span>
+            </RecordItemCell>
+          </RecordRowLayout>
+        </RecordSectionItem>
+        <RecordAllocationItemRow onOpen={openAllocation} openAriaLabel="Open template T-100">
+          <div>Template Row</div>
+        </RecordAllocationItemRow>
+      </div>,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Show templates for Oak" }))
+    expect(toggle).toHaveBeenCalledTimes(1)
+    expect(openItem).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole("button", { name: "Open property Oak" }))
+    expect(openItem).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole("button", { name: "Open template T-100" }))
+    expect(openAllocation).toHaveBeenCalledTimes(1)
   })
 })

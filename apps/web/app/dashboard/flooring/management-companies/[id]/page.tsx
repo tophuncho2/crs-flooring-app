@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getManagementCompanyDetailPageData } from "@/features/flooring/management-companies/data/queries"
-import { ManagementCompanyDetailClient } from "@/features/flooring/management-companies/components/detail/management-company-detail-client"
+import { ManagementCompanyDetailClient } from "@/features/flooring/management-companies/record/detail/management-company-detail-client"
 
 export default async function ManagementCompanyDetailPage({
   params,

@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { KeyboardEvent, ReactNode } from "react"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
@@ -10,16 +10,37 @@ import {
 export function RecordAllocationItemRow({
   children,
   className,
+  onOpen,
+  openAriaLabel,
 }: {
   children: ReactNode
   className?: string
+  onOpen?: () => void
+  openAriaLabel?: string
 }) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!onOpen) {
+      return
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onOpen()
+    }
+  }
+
   return (
     <div
       className={joinRecordSectionClasses(
         "w-full bg-orange-500/[0.08]",
+        onOpen ? "cursor-pointer transition hover:bg-orange-500/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20" : undefined,
         className,
       )}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={onOpen ? openAriaLabel : undefined}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
     >
       {children}
     </div>
