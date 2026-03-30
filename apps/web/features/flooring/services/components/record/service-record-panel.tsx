@@ -1,1 +1,1 @@
-export * from "../detail/service-record-panel"
+export * from "../../record/panel/service-record-panel"
