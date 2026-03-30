@@ -2,18 +2,13 @@
 
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { navigationMocks } from "./helpers/next-navigation-mock"
+import { requestJsonMock, resetSimpleTableClientMocks } from "./helpers/simple-table-client-mocks"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
 import { ImportDetailClient } from "@/features/flooring/imports/components/import-detail-client"
-
-function jsonResponse(body: unknown, status = 200) {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: vi.fn().mockResolvedValue(body),
-  }
-}
+import { ImportCreateClient } from "@/features/flooring/imports/record/create/import-create-client"
 
 vi.mock("@/features/flooring/shared/use-table-columns", () => ({
   useTableColumns: () => ({
@@ -75,22 +70,6 @@ vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   }),
 }))
 
-vi.mock("@/features/flooring/shared/record-options-menu", () => ({
-  RecordOptionsMenu: ({
-    items,
-  }: {
-    items: Array<{ label: string; onSelect?: () => void; disabled?: boolean }>
-  }) => (
-    <div data-testid="record-options-menu">
-      {items.map((item) => (
-        <button key={item.label} type="button" disabled={item.disabled} onClick={() => item.onSelect?.()}>
-          {item.label}
-        </button>
-      ))}
-    </div>
-  ),
-}))
-
 function importRow() {
   return {
     id: "imp-1",
@@ -129,12 +108,8 @@ function importRow() {
 
 describe("ImportsClient", () => {
   beforeEach(() => {
+    resetSimpleTableClientMocks()
     vi.restoreAllMocks()
-    vi.stubGlobal("fetch", vi.fn())
-    Object.defineProperty(window, "location", {
-      value: { assign: vi.fn() },
-      writable: true,
-    })
   })
 
   it("renders inline transport and status pills in the dashboard table", () => {
@@ -151,37 +126,8 @@ describe("ImportsClient", () => {
     expect(within(screen.getByRole("table")).getByText("Pending").className).toContain("bg-sky-200")
   })
 
-  it("uses header-only import number and header metrics in the canonical detail page", () => {
-    render(
-      <ImportDetailClient
-        initialImport={importRow()}
-        productOptions={[{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }]}
-        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }]}
-        backHref="/dashboard/flooring/imports"
-      />,
-    )
-
-    expect(screen.getByRole("heading", { name: "Import IMP-0001" })).toBeTruthy()
-    expect(screen.getByText("Total Cost")).toBeTruthy()
-    expect(screen.getAllByText("$21.00")).toHaveLength(2)
-    expect(screen.getByText("Material Items").parentElement?.textContent).toContain("1")
-    expect(screen.getByRole("button", { name: "Add Import Inventory Item" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Save Import" })).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Delete Import" })).toBeTruthy()
-    expect(screen.queryByRole("button", { name: "Add Item" })).toBeNull()
-  })
-
-  it("uses the shared child-table pattern in the create form and requires at least one item row", async () => {
+  it("dashboard add routes to the canonical import create form", async () => {
     const user = userEvent.setup()
-    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-      jsonResponse({
-        productOptions: [{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }],
-        warehouseOptions: [{ id: "wh-1", name: "Main Warehouse" }],
-        locationOptions: [{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }],
-      }),
-    )
 
     render(
       <ImportsClient
@@ -192,22 +138,78 @@ describe("ImportsClient", () => {
       />,
     )
 
-    await user.click(screen.getAllByRole("button", { name: /\+?Import/ })[0]!)
+    await user.click(screen.getByRole("button", { name: /\+?Import/ }))
 
-    expect(screen.queryByLabelText("Import Number")).toBeNull()
-    expect(screen.getByRole("button", { name: "Add Inventory Item" })).toBeTruthy()
-    expect(screen.queryByRole("button", { name: "Add Item" })).toBeNull()
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/flooring/imports/new?returnTo=%2Fdashboard%2Fflooring%2Ftest",
+      { scroll: false },
+    )
+  })
 
-    fireEvent.change(screen.getAllByLabelText("Import Warehouse")[0]!, { target: { value: "wh-1" } })
-    await user.click(screen.getAllByRole("button", { name: "Create Import" })[0]!)
+  it("uses section-owned controls in the canonical import detail page", () => {
+    render(
+      <ImportDetailClient
+        initialImport={importRow()}
+        productOptions={[{ id: "prod-1", label: "Oak Plank", stockUnit: "SF" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        locationOptions={[{ id: "loc-1", warehouseId: "wh-1", locationCode: "A1", label: "A1" }]}
+        backHref="/dashboard/flooring/imports"
+      />,
+    )
 
-    expect(await screen.findByText("Add at least one inventory row before creating the import")).toBeTruthy()
-    expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.some(([url, options]) => (
-      url === "/api/flooring/imports" &&
-      typeof options === "object" &&
-      options !== null &&
-      "method" in options &&
-      options.method === "POST"
-    ))).toBe(false)
+    expect(screen.getByText("Import IMP-0001")).toBeTruthy()
+    expect(screen.getByText("Total Cost")).toBeTruthy()
+    expect(screen.getByText("Rows")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Add Row" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Save Import" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Delete Import" })).toBeTruthy()
+    expect(screen.queryByTestId("record-options-menu")).toBeNull()
+  })
+
+  it("import create mode uses the canonical record-form route and redirects after primary save", async () => {
+    const user = userEvent.setup()
+    requestJsonMock.mockResolvedValueOnce({
+      import: {
+        ...importRow(),
+        id: "imp-2",
+        importNumber: 2,
+        inventories: [],
+        itemsCount: 0,
+      },
+    })
+
+    render(
+      <ImportCreateClient
+        backHref="/dashboard/flooring/imports"
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+      />,
+    )
+
+    expect(screen.getByText("New Import")).toBeTruthy()
+    expect(screen.queryByText("Import Inventory Rows")).toBeNull()
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Warehouse" }), "wh-1")
+    await user.click(screen.getByRole("button", { name: "Create Import" }))
+
+    await waitFor(() => {
+      expect(requestJsonMock).toHaveBeenCalledWith(
+        "/api/flooring/imports",
+        expect.objectContaining({ method: "POST" }),
+      )
+    })
+
+    const payload = JSON.parse(String(requestJsonMock.mock.calls[0]?.[1]?.body ?? "{}"))
+    expect(payload).toMatchObject({
+      warehouseId: "wh-1",
+      items: [],
+    })
+
+    await waitFor(() => {
+      expect(navigationMocks.push).toHaveBeenCalledWith(
+        "/dashboard/flooring/imports/imp-2?returnTo=%2Fdashboard%2Fflooring%2Fimports",
+        { scroll: false },
+      )
+    })
   })
 })

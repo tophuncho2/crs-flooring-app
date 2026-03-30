@@ -1,1 +1,1 @@
-export * from "./detail/import-detail-client"
+export * from "../record/detail/import-detail-client"

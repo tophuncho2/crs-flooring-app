@@ -77,17 +77,6 @@ function parseImportItems(items: unknown[]): ParsedImportItem[] {
   })
 }
 
-function requireNonEmptyImportItems(items: ParsedImportItem[]) {
-  if (items.length === 0) {
-    throw createAppError("Add at least one inventory row before saving the import", {
-      field: "items",
-      status: 400,
-    })
-  }
-
-  return items
-}
-
 async function validateImportLocationIds(db: DbClient, warehouseId: string | null, items: ParsedImportItem[]) {
   const explicitLocationIds = items.map((item) => item.locationId).filter((value): value is string => Boolean(value))
   if (explicitLocationIds.length === 0) return items
@@ -244,7 +233,7 @@ export async function getImportEntryById(id: string, db: DbClient = prisma) {
 }
 
 export async function createImportEntry(body: Record<string, unknown>, db: RootDbClient = prisma) {
-  const parsedItems = requireNonEmptyImportItems(parseImportItems(Array.isArray(body.items) ? body.items : []))
+  const parsedItems = parseImportItems(Array.isArray(body.items) ? body.items : [])
 
   return db.$transaction(async (tx) => {
     const warehouseId = parseOptionalString(body.warehouseId)
@@ -286,7 +275,7 @@ export async function createImportEntry(body: Record<string, unknown>, db: RootD
 }
 
 export async function updateImportEntry(id: string, body: Record<string, unknown>, db: RootDbClient = prisma) {
-  const parsedItems = requireNonEmptyImportItems(parseImportItems(Array.isArray(body.items) ? body.items : []))
+  const parsedItems = parseImportItems(Array.isArray(body.items) ? body.items : [])
 
   return db.$transaction(async (tx) => {
     const warehouseId = parseOptionalString(body.warehouseId)

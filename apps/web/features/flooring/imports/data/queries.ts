@@ -245,3 +245,7 @@ export async function getImportDetailPageData(id: string): Promise<PrismaDetailP
     }
   }
 }
+
+export async function getImportCreatePageData() {
+  return getImportFormOptions()
+}

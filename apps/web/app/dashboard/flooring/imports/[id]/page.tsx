@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getImportDetailPageData } from "@/features/flooring/imports/data/queries"
-import { ImportDetailClient } from "@/features/flooring/imports/components/detail/import-detail-client"
+import { ImportDetailClient } from "@/features/flooring/imports/record/detail/import-detail-client"
 
 export default async function ImportDetailPage({
   params,

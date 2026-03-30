@@ -20,10 +20,9 @@ import type { ImportPageFilterState } from "@/features/flooring/imports/domain/f
 import { createImportsPageFilterDefinitions } from "@/features/flooring/imports/table-filters"
 import {
   type ImportRow,
-  type WarehouseOption,
   useImportsListController,
 } from "@/features/flooring/imports/controllers/use-imports-list-controller"
-import { ImportsCreateModal } from "./imports-create-modal"
+import type { WarehouseOption } from "@/features/flooring/imports/domain/types"
 import { ImportsTable } from "./imports-table"
 
 type ServerPaginationState = {
@@ -59,28 +58,12 @@ export default function ImportsClient({
 }) {
   const {
     imports,
-    draft,
-    isCreateModalOpen,
-    isSaving,
-    isLoadingOptions,
     deletingId,
     message,
     pageError,
-    createModalError,
-    createValidation,
-    openCreateModal,
-    closeCreateModal,
-    setDraftField,
-    setItemField,
-    addItemRow,
-    removeItemRow,
-    createImport,
     deleteImport,
+    openCreate,
     openImport,
-    productLookup,
-    productOptions,
-    warehouseOptions,
-    locationOptions,
   } = useImportsListController({
     initialImports,
   })
@@ -167,7 +150,7 @@ export default function ImportsClient({
             primaryAction={
               <button
                 type="button"
-                onClick={openCreateModal}
+                onClick={() => openCreate()}
                 className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
               >
                 <Plus size={16} />
@@ -212,25 +195,6 @@ export default function ImportsClient({
             nextPageHref={pagination?.nextPageHref}
           />
         }
-      />
-
-      <ImportsCreateModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateModal}
-        draft={draft}
-        warehouseOptions={warehouseOptions}
-        productOptions={productOptions}
-        locationOptions={locationOptions}
-        productLookup={productLookup}
-        validation={createValidation}
-        onDraftFieldChange={setDraftField}
-        onItemFieldChange={setItemField}
-        onAddItemRow={addItemRow}
-        onRemoveItemRow={removeItemRow}
-        onSave={createImport}
-        isSaving={isSaving}
-        isLoadingOptions={isLoadingOptions}
-        error={createModalError}
       />
     </>
   )
