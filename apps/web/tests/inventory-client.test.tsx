@@ -10,7 +10,7 @@ import {
 } from "./helpers/simple-table-client-mocks"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import InventoryClient from "@/features/flooring/inventory/components/inventory-client"
-import { InventoryDetailClient } from "@/features/flooring/inventory/components/detail/inventory-detail-client"
+import { InventoryDetailClient } from "@/features/flooring/inventory/record/detail/inventory-detail-client"
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({
   useServerTableQueryControls: ({

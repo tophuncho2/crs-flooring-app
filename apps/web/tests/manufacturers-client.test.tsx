@@ -11,7 +11,7 @@ import {
 } from "./helpers/simple-table-client-mocks"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import ManufacturersClient from "@/features/flooring/manufacturers/components/manufacturers-client"
-import { ManufacturerDetailClient } from "@/features/flooring/manufacturers/components/detail/manufacturer-detail-client"
+import { ManufacturerDetailClient } from "@/features/flooring/manufacturers/record/detail/manufacturer-detail-client"
 
 function manufacturerRow(overrides: Partial<{
   id: string

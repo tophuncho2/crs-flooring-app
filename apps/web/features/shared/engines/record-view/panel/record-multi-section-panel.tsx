@@ -72,6 +72,10 @@ export function RecordMultiSectionPanel({
     [notices, page],
   )
   const resolvedSummary = summary ?? EMPTY_PANEL_SUMMARY
+  const setDirtySections = page.setDirtySections
+  const setSummary = page.setSummary
+  const closePage = page.closePage
+  const isPrimarySectionOpen = page.isPrimarySectionOpen
 
   const orderedSections = useMemo(
     () => [...sections].sort((left, right) => left.order - right.order),
@@ -81,13 +85,13 @@ export function RecordMultiSectionPanel({
   const visibleSections = useMemo(
     () =>
       orderedSections.filter((section) => {
-        if (section.slot === "primary" && !page.isPrimarySectionOpen) {
+        if (section.slot === "primary" && !isPrimarySectionOpen) {
           return false
         }
 
         return section.visibleWhen ? section.visibleWhen(context) : true
       }),
-    [context, orderedSections, page.isPrimarySectionOpen],
+    [context, isPrimarySectionOpen, orderedSections],
   )
 
   const dirtySections = useMemo(
@@ -99,14 +103,14 @@ export function RecordMultiSectionPanel({
   )
 
   useEffect(() => {
-    page.setDirtySections(dirtySections)
+    setDirtySections(dirtySections)
     onDirtyChange?.(dirtySections.length > 0)
     onDirtySectionsChange?.(dirtySections)
-  }, [dirtySections, onDirtyChange, onDirtySectionsChange, page])
+  }, [dirtySections, onDirtyChange, onDirtySectionsChange, setDirtySections])
 
   useEffect(() => {
-    page.setSummary(resolvedSummary)
-  }, [page, resolvedSummary])
+    setSummary(resolvedSummary)
+  }, [resolvedSummary, setSummary])
 
   return (
     <div className="space-y-4">
@@ -130,7 +134,7 @@ export function RecordMultiSectionPanel({
           deleteLabel={footer.deleteLabel}
           deleteConfirmMessage={footer.deleteConfirmMessage}
           onDelete={footer.onDelete}
-          onClose={footer.onClose ?? page.closePage}
+          onClose={footer.onClose ?? closePage}
         />
       ) : null}
     </div>

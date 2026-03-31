@@ -8,7 +8,7 @@ import {
 } from "./helpers/simple-table-client-mocks"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import WorkOrdersClient from "@/features/flooring/work-orders/components/work-orders-client"
-import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-order-detail-client"
+import WorkOrderDetailClient from "@/features/flooring/work-orders/record/detail/work-order-detail-client"
 
 const { workOrderRecordPanelMock } = vi.hoisted(() => ({
   workOrderRecordPanelMock: () => ({
@@ -37,7 +37,6 @@ const { workOrderRecordPanelMock } = vi.hoisted(() => ({
   }),
 }))
 
-vi.mock("@/features/flooring/work-orders/components/record/work-order-record-panel", workOrderRecordPanelMock)
 vi.mock("@/features/flooring/work-orders/record/panel/work-order-record-panel", workOrderRecordPanelMock)
 
 vi.mock("@/features/flooring/shared/use-server-table-query-controls", () => ({

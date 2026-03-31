@@ -97,6 +97,12 @@ function renderScopedSectionHarness() {
   }))
 
   function Harness() {
+    const [serverValue, setServerValue] = React.useState({
+      id: "rec-1",
+      updatedAt: "2026-03-20T00:00:00.000Z",
+      name: "Original",
+    })
+    const [serverRevisionKey, setServerRevisionKey] = React.useState("2026-03-20T00:00:00.000Z")
     const controller = useRecordScopedSectionController<
       { id: string; updatedAt: string; name: string },
       { name: string }
@@ -104,15 +110,20 @@ function renderScopedSectionHarness() {
       currentUserId: "user-1",
       recordId: "rec-1",
       sectionKey: "primary",
-      serverValue: {
-        id: "rec-1",
-        updatedAt: "2026-03-20T00:00:00.000Z",
-        name: "Original",
-      },
-      serverRevisionKey: "2026-03-20T00:00:00.000Z",
+      serverValue,
+      serverRevisionKey,
       createLocalValue: (record) => ({ name: record.name }),
       cloneLocalValue: (value) => ({ ...value }),
-      onSave: async (localValue) => saveSection(localValue),
+      onSave: async (localValue) => {
+        const saveResult = await saveSection(localValue)
+
+        if (saveResult && typeof saveResult === "object" && "serverValue" in saveResult) {
+          setServerValue(saveResult.serverValue)
+          setServerRevisionKey(saveResult.serverRevisionKey ?? saveResult.serverValue.updatedAt)
+        }
+
+        return saveResult
+      },
       persistDraft: false,
       policy: {
         addRowPlacement: "bottom",
@@ -392,6 +403,70 @@ describe("record view single-section engine", () => {
     await user.click(screen.getByRole("button", { name: "Toggle Secondary" }))
     expect(screen.queryByText("Secondary Section")).toBeNull()
     expect(screen.getByText("Primary Section")).toBeTruthy()
+  })
+
+  it("multi-section panel sync stays idempotent when rerenders recreate summary and dirty inputs", async () => {
+    const user = userEvent.setup()
+
+    function Harness() {
+      const page = useRecordPageController({
+        backHref: "/dashboard/test",
+        dirtyMessage: "Unsaved changes",
+      })
+      const [tick, setTick] = React.useState(0)
+      const renderCount = React.useRef(0)
+      renderCount.current += 1
+
+      return (
+        <div>
+          <button type="button" onClick={() => setTick((current) => current + 1)}>
+            Rerender
+          </button>
+          <RecordMultiSectionPanel
+            page={page}
+            summary={{
+              metrics: [{ key: "rows", label: "Rows", value: "3" }],
+              payload: "stable-payload",
+            }}
+            sections={[
+              {
+                key: "primary",
+                type: "field" as const,
+                order: 10,
+                slot: "primary" as const,
+                controller: { isDirty: false, isSaving: false, hasConflict: false },
+                render: () => <div>Primary Section</div>,
+              },
+              {
+                key: "items",
+                type: "item" as const,
+                order: 20,
+                dirtyLabel: "Items",
+                controller: { isDirty: true, isSaving: false, hasConflict: false },
+                render: () => <div>{`Items ${tick}`}</div>,
+              },
+            ]}
+          />
+          <div data-testid="rerender-count">{String(renderCount.current)}</div>
+          <div data-testid="rerender-dirty">{page.dirtySections.join(",")}</div>
+          <div data-testid="rerender-summary">
+            {page.summary.metrics?.map((metric) => `${metric.label}:${metric.value}`).join("|")}
+          </div>
+        </div>
+      )
+    }
+
+    render(<Harness />)
+
+    expect(screen.getByTestId("rerender-dirty").textContent).toBe("Items")
+    expect(screen.getByTestId("rerender-summary").textContent).toBe("Rows:3")
+
+    await user.click(screen.getByRole("button", { name: "Rerender" }))
+
+    expect(screen.getByText("Items 1")).toBeTruthy()
+    expect(screen.getByTestId("rerender-dirty").textContent).toBe("Items")
+    expect(screen.getByTestId("rerender-summary").textContent).toBe("Rows:3")
+    expect(Number(screen.getByTestId("rerender-count").textContent ?? "0")).toBeLessThan(8)
   })
 
   it("section shell reports open-state changes after toggle, not during render", async () => {

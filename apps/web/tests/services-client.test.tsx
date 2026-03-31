@@ -10,7 +10,7 @@ import {
 } from "./helpers/simple-table-client-mocks"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import ServicesClient from "@/features/flooring/services/components/services-client"
-import { ServiceDetailClient } from "@/features/flooring/services/components/detail/service-detail-client"
+import { ServiceDetailClient } from "@/features/flooring/services/record/detail/service-detail-client"
 
 function serviceRow(overrides: Partial<{
   id: string

@@ -20,6 +20,31 @@ const EMPTY_SUMMARY: RecordPageSummary = {
   metrics: [],
 }
 
+function areSummaryMetricsEqual(
+  left: RecordPageSummaryMetric[] | undefined,
+  right: RecordPageSummaryMetric[] | undefined,
+) {
+  const leftMetrics = left ?? []
+  const rightMetrics = right ?? []
+
+  if (leftMetrics.length !== rightMetrics.length) {
+    return false
+  }
+
+  return leftMetrics.every((metric, index) => {
+    const candidate = rightMetrics[index]
+    return (
+      metric.key === candidate?.key &&
+      metric.label === candidate?.label &&
+      metric.value === candidate?.value
+    )
+  })
+}
+
+function areRecordPageSummariesEqual(left: RecordPageSummary, right: RecordPageSummary) {
+  return areSummaryMetricsEqual(left.metrics, right.metrics) && left.payload === right.payload
+}
+
 export type RecordPageController = {
   notices: RecordNotices
   isDirty: boolean
@@ -78,6 +103,16 @@ export function useRecordPageController({
     })
   }, [])
 
+  const updateSummary = useCallback((value: RecordPageSummary) => {
+    setSummary((current) => {
+      if (areRecordPageSummariesEqual(current, value)) {
+        return current
+      }
+
+      return value
+    })
+  }, [])
+
   const closePage = useCallback(() => {
     guard.confirmNavigation(() => {
       router.push(backHref, { scroll: false })
@@ -104,7 +139,7 @@ export function useRecordPageController({
       setPrimarySectionOpen,
       togglePrimarySectionOpen,
       summary,
-      setSummary,
+      setSummary: updateSummary,
       closePage,
       redirectToBack,
       confirmNavigation: guard.confirmNavigation,
@@ -117,6 +152,7 @@ export function useRecordPageController({
       notices,
       redirectToBack,
       setIsDirty,
+      updateSummary,
       updateDirtySections,
       summary,
       togglePrimarySectionOpen,

@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import WarehouseClient, { type WarehouseRow } from "@/app/dashboard/warehouse/warehouse-client"
-import { WarehouseDetailClient } from "@/features/flooring/warehouse/components/warehouse-detail-client"
+import { WarehouseDetailClient } from "@/features/flooring/warehouse/record/detail/warehouse-detail-client"
+import { createWarehouseDetail } from "@/features/flooring/warehouse/types"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 
 vi.mock("lucide-react", () => ({
@@ -101,9 +102,11 @@ describe("WarehouseDetailClient", () => {
 
     render(
       <WarehouseDetailClient
-        warehouse={warehouseRow()}
-        sections={[{ id: "sec-1", name: "Showroom", locationsCount: 1 }]}
-        locations={[]}
+        warehouse={createWarehouseDetail(
+          warehouseRow(),
+          [{ id: "sec-1", name: "Showroom", locationsCount: 1 }],
+          [],
+        )}
         backHref="/dashboard/flooring/warehouse"
       />,
     )
@@ -133,9 +136,11 @@ describe("WarehouseDetailClient", () => {
 
     render(
       <WarehouseDetailClient
-        warehouse={warehouseRow({ locationsCount: 0 })}
-        sections={[{ id: "sec-1", name: "Showroom", locationsCount: 0 }]}
-        locations={[]}
+        warehouse={createWarehouseDetail(
+          warehouseRow({ locationsCount: 0 }),
+          [{ id: "sec-1", name: "Showroom", locationsCount: 0 }],
+          [],
+        )}
         backHref="/dashboard/flooring/warehouse"
       />,
     )
@@ -163,9 +168,11 @@ describe("WarehouseDetailClient", () => {
 
     render(
       <WarehouseDetailClient
-        warehouse={warehouseRow({ sectionsCount: 1, locationsCount: 0 })}
-        sections={[{ id: "sec-1", name: "Showroom", locationsCount: 0 }]}
-        locations={[]}
+        warehouse={createWarehouseDetail(
+          warehouseRow({ sectionsCount: 1, locationsCount: 0 }),
+          [{ id: "sec-1", name: "Showroom", locationsCount: 0 }],
+          [],
+        )}
         backHref="/dashboard/flooring/warehouse"
       />,
     )
@@ -192,9 +199,7 @@ describe("WarehouseDetailClient", () => {
 
     render(
       <WarehouseDetailClient
-        warehouse={warehouseRow()}
-        sections={[]}
-        locations={[]}
+        warehouse={createWarehouseDetail(warehouseRow(), [], [])}
         backHref="/dashboard/flooring/warehouse"
       />,
     )

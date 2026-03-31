@@ -4,8 +4,10 @@ import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { navigationMocks } from "./helpers/next-navigation-mock"
 import { requestJsonMock } from "./helpers/simple-table-client-mocks"
-import { TemplateRecordPanel } from "@/features/flooring/templates/components/template-record-panel"
+import { useRecordPageController } from "@/features/shared/engines/record-view"
+import { TemplateRecordPanel } from "@/features/flooring/templates/record/panel/template-record-panel"
 
 vi.mock("@/features/flooring/shared/ui/feedback/feedback-states", () => ({
   CenteredErrorState: ({ message }: { message: string }) => <div>{message}</div>,
@@ -290,24 +292,35 @@ function templateRow() {
 }
 
 function renderPanel() {
-  return render(
-    <TemplateRecordPanel
-      currentUserId="user-1"
-      templateId="tpl-1"
-      initialTemplate={templateRow()}
-      propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-      warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
-      padProductOptions={[{ id: "pad-1", label: "Pad Product" }]}
-      productOptions={[{ id: "prod-1", label: "Pad", sendUnit: "SF" }]}
-      serviceOptions={[{ id: "svc-1", name: "Install", baseCost: "9.00", unitId: "unit-1", unitName: "SF" }]}
-      salesRepOptions={[{ id: "contact-1", name: "Jordan Case" }]}
-      unitOptions={[{ id: "unit-1", name: "SF" }]}
-      onClose={vi.fn()}
-      onTemplateSaved={vi.fn()}
-      onTemplateDeleted={vi.fn()}
-      onSummaryChange={vi.fn()}
-    />,
-  )
+  function Harness({
+    onTemplateDeleted,
+  }: {
+    onTemplateDeleted?: (templateId: string, propertyId: string) => void
+  }) {
+    const page = useRecordPageController({
+      backHref: "/dashboard/flooring/templates",
+      dirtyMessage: "Unsaved template changes",
+    })
+
+    return (
+      <TemplateRecordPanel
+        page={page}
+        currentUserId="user-1"
+        templateId="tpl-1"
+        initialTemplate={templateRow()}
+        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
+        warehouseOptions={[{ id: "wh-1", name: "Main Warehouse" }]}
+        padProductOptions={[{ id: "pad-1", label: "Pad Product" }]}
+        productOptions={[{ id: "prod-1", label: "Pad", sendUnit: "SF" }]}
+        serviceOptions={[{ id: "svc-1", name: "Install", baseCost: "9.00", unitId: "unit-1", unitName: "SF" }]}
+        salesRepOptions={[{ id: "contact-1", name: "Jordan Case" }]}
+        unitOptions={[{ id: "unit-1", name: "SF" }]}
+        onTemplateDeleted={onTemplateDeleted}
+      />
+    )
+  }
+
+  return render(<Harness />)
 }
 
 function getSection(collapseLabel: string) {
@@ -334,10 +347,9 @@ describe("TemplateRecordPanel", () => {
     })
 
     renderPanel()
-    const primarySection = getSection("Collapse Template Details")
     await user.clear(screen.getByLabelText("Template Tag"))
     await user.type(screen.getByLabelText("Template Tag"), "Saved")
-    await user.click(within(primarySection).getByRole("button", { name: "Save" }))
+    await user.click(screen.getByRole("button", { name: "Save Template" }))
 
     await waitFor(() => {
       expect(requestJsonMock).toHaveBeenCalledWith(
@@ -352,26 +364,34 @@ describe("TemplateRecordPanel", () => {
   it("record-panel delete uses shared confirmation behavior and removes on success", async () => {
     const user = userEvent.setup()
     vi.spyOn(window, "confirm").mockReturnValue(true)
-    const onClose = vi.fn()
     const onTemplateDeleted = vi.fn()
     requestJsonMock.mockResolvedValue({ ok: true })
 
-    render(
-      <TemplateRecordPanel
-        currentUserId="user-1"
-        templateId="tpl-1"
-        initialTemplate={templateRow()}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-        warehouseOptions={[]}
-        padProductOptions={[]}
-        productOptions={[]}
-        serviceOptions={[]}
-        salesRepOptions={[]}
-        unitOptions={[]}
-        onClose={onClose}
-        onTemplateDeleted={onTemplateDeleted}
-      />,
-    )
+    function Harness() {
+      const page = useRecordPageController({
+        backHref: "/dashboard/flooring/templates",
+        dirtyMessage: "Unsaved template changes",
+      })
+
+      return (
+        <TemplateRecordPanel
+          page={page}
+          currentUserId="user-1"
+          templateId="tpl-1"
+          initialTemplate={templateRow()}
+          propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
+          warehouseOptions={[]}
+          padProductOptions={[]}
+          productOptions={[]}
+          serviceOptions={[]}
+          salesRepOptions={[]}
+          unitOptions={[]}
+          onTemplateDeleted={onTemplateDeleted}
+        />
+      )
+    }
+
+    render(<Harness />)
 
     await user.click(screen.getByRole("button", { name: "Delete Template" }))
 
@@ -379,7 +399,7 @@ describe("TemplateRecordPanel", () => {
     await waitFor(() => {
       expect(onTemplateDeleted).toHaveBeenCalledWith("tpl-1", "prop-1")
     })
-    expect(onClose).toHaveBeenCalled()
+    expect(navigationMocks.push).toHaveBeenCalledWith("/dashboard/flooring/templates", { scroll: false })
   })
 
   it("record-panel delete failure surfaces the error", async () => {

@@ -11,7 +11,7 @@ import {
 } from "./helpers/simple-table-client-mocks"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import UnitOfMeasuresClient from "@/features/flooring/unit-of-measures/components/unit-of-measures-client"
-import { UnitOfMeasureDetailClient } from "@/features/flooring/unit-of-measures/components/detail/unit-of-measure-detail-client"
+import { UnitOfMeasureDetailClient } from "@/features/flooring/unit-of-measures/record/detail/unit-of-measure-detail-client"
 
 function unitRow(overrides: Partial<{
   id: string

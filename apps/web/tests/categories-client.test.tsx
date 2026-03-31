@@ -10,7 +10,7 @@ import {
 } from "./helpers/simple-table-client-mocks"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import CategoriesClient from "@/features/flooring/categories/components/categories-client"
-import { CategoryDetailClient } from "@/features/flooring/categories/components/detail/category-detail-client"
+import { CategoryDetailClient } from "@/features/flooring/categories/record/detail/category-detail-client"
 
 function categoryRow(overrides: Partial<{
   id: string

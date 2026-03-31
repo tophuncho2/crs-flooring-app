@@ -7,7 +7,7 @@ import userEvent from "@testing-library/user-event"
 import { navigationMocks } from "./helpers/next-navigation-mock"
 import { requestJsonMock, resetSimpleTableClientMocks } from "./helpers/simple-table-client-mocks"
 import ImportsClient from "@/features/flooring/imports/components/imports-client"
-import { ImportDetailClient } from "@/features/flooring/imports/components/import-detail-client"
+import { ImportDetailClient } from "@/features/flooring/imports/record/detail/import-detail-client"
 import { ImportCreateClient } from "@/features/flooring/imports/record/create/import-create-client"
 
 vi.mock("@/features/flooring/shared/use-table-columns", () => ({

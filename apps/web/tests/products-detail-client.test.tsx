@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { navigationMocks, resetNavigationMocks } from "./helpers/next-navigation-mock"
-import { ProductDetailClient } from "@/features/flooring/products/components/detail/product-detail-client"
+import { ProductDetailClient } from "@/features/flooring/products/record/detail/product-detail-client"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => navigationMocks,
