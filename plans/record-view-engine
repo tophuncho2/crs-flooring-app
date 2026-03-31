@@ -1,0 +1,312 @@
+🧠 RECORD VIEW ENGINE
+Sectional Architecture for the UI / Controller System
+🔷 0. PURPOSE
+
+The Record View Engine is the governing structure for every record detail page in the system.
+
+It defines:
+
+✅ How a record is broken into sections
+✅ How each section is governed by the engine
+✅ How primary rows and child-scoped rows behave
+✅ How sections are typed and configured
+✅ How the engine stays shared while features stay thin
+
+🔑 Core Definition
+
+🔥 A record view is not a page — it is a set of section instances powered by the engine
+
+---
+
+🔷 1. TERMINOLOGY (AUTHORITATIVE)
+
+These terms are fixed system-wide. Do not use deprecated terms.
+
+✅ Current Terms
+
+Term                   | Meaning
+-----------------------|----------------------------------------------------------
+PrimaryRow             | The top-level record being viewed or edited in a section
+ChildScopedRow         | A child row scoped to and owned by a PrimaryRow
+Section                | An isolated engine instance governing one concern of a record
+FieldSection           | A section type that renders structured input fields
+GridSection            | A section type that renders a row-based grid contract
+RecordView             | The full page composed of one or more sections
+
+❌ Deprecated Terms — Never Use
+
+Deprecated Term        | Replace With
+-----------------------|------------------
+nested items           | ChildScopedRows
+allocations (generic)  | ChildScopedRows (in engine context) — use "allocations" only for work-order inventory allocation domain logic
+inline rows            | ChildScopedRows
+child records          | ChildScopedRows
+
+---
+
+🔷 2. ENGINE POSITION
+
+UI (render surface)
+    ↓
+RECORD VIEW ENGINE (section instances)
+    ↓
+Controller Layer (per section)
+    ↓
+Transport → Application → Domain → Data → Infra
+
+Each section is a self-contained engine instance.
+The engine governs — features configure.
+
+---
+
+🔷 3. SECTION TYPES
+
+Every section in the system is one of these types:
+
+🔵 1. FieldSection
+Renders structured input fields for the PrimaryRow.
+Governs: draft state, dirty tracking, save, discard, reconciliation.
+Position: always the first section in a record view.
+Example: UOM name field, Manufacturer name field, Work Order header fields.
+
+🟢 2. GridSection
+Renders a grid contract — a list of ChildScopedRows owned by the PrimaryRow.
+Governs: row-level add, edit, delete, reorder, and save within the scope of the parent.
+Example: Material Items under a Work Order, Template Items under a Template, Properties under a Management Company.
+
+These are the only two section types.
+Do not invent new section types without updating this engine definition.
+
+---
+
+🔷 4. PRIMARY ROWS
+
+A PrimaryRow is the record that the RecordView is centered on.
+
+Rules:
+- One PrimaryRow per RecordView
+- Governed by the FieldSection (first section)
+- All ChildScopedRows are owned by this row
+- Mutations to the PrimaryRow go through the section controller
+
+Examples:
+- Unit of Measure (UOM) record → PrimaryRow in its FieldSection
+- Work Order → PrimaryRow, owns material items, service items, sales reps
+- Management Company → PrimaryRow, owns properties
+
+---
+
+🔷 5. CHILD-SCOPED ROWS (FIRST-CLASS ENGINE ASSET)
+
+ChildScopedRows are first-class assets of the Record View Engine.
+
+They are NOT secondary, nested, or supplementary.
+They are a governed execution unit under a parent PrimaryRow.
+
+🔑 Definition
+
+A ChildScopedRow is:
+- Scoped to exactly one PrimaryRow
+- Rendered inside a GridSection
+- Created, edited, and deleted through the engine
+- Subject to domain rules at the Application layer
+- Reconciled back to the server snapshot after every mutation
+
+Rules:
+- ChildScopedRows are never mutated directly from the UI
+- All operations flow: Controller → Transport → Application → Domain → Data
+- Server snapshot replaces local state after every operation
+- ChildScopedRows can have their own validation, rules, and workflows
+
+Why ChildScopedRows Matter:
+They are where the most complex execution behavior lives.
+Work order material items are ChildScopedRows.
+Their execution path includes inventory auto-allocation, which triggers a worker workflow.
+Getting ChildScopedRow governance right means the entire system scales cleanly.
+
+---
+
+🔷 6. REAL EXAMPLES (SYSTEM-WIDE)
+
+Example 1: Unit of Measures (Simple)
+RecordView: UOM
+  → FieldSection: General (PrimaryRow: UOM)
+      Fields: name
+      Save / Delete governed by section controller
+
+Example 2: Management Company
+RecordView: Management Company
+  → FieldSection: General (PrimaryRow: Management Company)
+      Fields: name, contact info
+  → GridSection: Properties (ChildScopedRows: Properties)
+      Each property is scoped to this management company
+      Add / Edit / Delete governed by section controller
+
+Example 3: Template
+RecordView: Template
+  → FieldSection: General (PrimaryRow: Template)
+      Fields: name, warehouse, property
+  → GridSection: Material Items (ChildScopedRows: Template Material Items)
+  → GridSection: Service Items (ChildScopedRows: Template Service Items)
+  → GridSection: Sales Reps (ChildScopedRows: Template Sales Reps)
+
+Example 4: Work Order (Most Complex)
+RecordView: Work Order
+  → FieldSection: General (PrimaryRow: Work Order)
+      Fields: property, status, scheduled date, warehouse
+  → GridSection: Material Items (ChildScopedRows: Work Order Material Items)
+      Each material item row has its own AllocationChildScopedRows
+      Auto-allocation triggers a worker workflow
+      This is where the execution engine is under the most load
+  → GridSection: Service Items (ChildScopedRows: Work Order Service Items)
+  → GridSection: Sales Reps (ChildScopedRows: Work Order Sales Reps)
+  → GridSection: Calculations (read-only, derived from domain)
+
+---
+
+🔷 7. CHILD-SCOPED ROW DEPTH (ROWS WITHIN ROWS)
+
+In the Work Order Material Items section, ChildScopedRows have their own sub-rows:
+
+Work Order (PrimaryRow)
+  → Material Items (ChildScopedRows, GridSection)
+      → Inventory Allocations (ChildScopedRows of ChildScopedRows)
+
+These allocation rows are domain-specific to work orders.
+In the engine, both levels are ChildScopedRows.
+The term "allocations" is only used in the work-order domain context — never as an engine term.
+
+---
+
+🔷 8. SECTION LIFECYCLE (PER SECTION INSTANCE)
+
+Every section, regardless of type, follows this lifecycle:
+
+mount
+  ↓
+load (server snapshot)
+  ↓
+user edits (draft state, dirty tracking)
+  ↓
+save triggered (controller governs)
+  ↓
+transport executes
+  ↓
+application commits
+  ↓
+snapshot returned
+  ↓
+controller reconciles (replace state)
+  ↓
+UI updated
+
+This lifecycle is identical for FieldSection and GridSection.
+The difference is what the section renders — not how it is governed.
+
+---
+
+🔷 9. ENGINE GOVERNANCE RULES (NON-NEGOTIABLE)
+
+1. Sections are isolated
+   Each section manages its own state. No section reads another's draft.
+
+2. Controller governs all execution
+   No direct API calls from UI or GridSection rows.
+
+3. Server snapshot replaces local state
+   Controller never merges. It replaces.
+
+4. ChildScopedRows are governed like PrimaryRows
+   Same execution pipeline. Same authority. No shortcuts.
+
+5. Features provide configuration only
+   The engine provides behavior. Features declare what sections exist and how they are configured.
+
+6. Section type determines render contract — not execution contract
+   Both FieldSection and GridSection use the same execution flow.
+
+7. No business logic in the controller
+   Controller orchestrates. Domain decides.
+
+---
+
+🔷 10. FILE NAMING STANDARDS
+
+Deprecated naming patterns to replace:
+
+❌ use-work-order-allocation-section.ts
+✅ use-work-order-material-child-rows-section.ts
+
+❌ nested-items-controller.ts
+✅ child-scoped-rows-controller.ts
+
+❌ allocation-table.tsx (engine-level file)
+✅ child-scoped-rows-grid.tsx
+
+Domain-specific allocation files (work-orders only) may still use "allocation" in name:
+✅ auto-allocation-plan.ts (domain-specific, correct)
+✅ request-auto-allocation.ts (execution layer, correct)
+
+---
+
+🔷 11. ENGINE REUSABILITY MODEL
+
+The engine is shared infrastructure.
+Features configure it — they do not reimplement it.
+
+Shared Engine Primitives:
+
+UI:
+  RecordViewShell
+  SectionShell
+  FieldSection (shared field layout)
+  GridSection (shared grid layout)
+  ChildScopedRowShell
+
+Controllers:
+  useRecordController
+  useSectionController (FieldSection)
+  useGridSectionController (GridSection)
+  useChildScopedRowController
+  useReconciliation
+  useWorkflowPolling
+
+Features plug in:
+  section config (type, fields, columns)
+  domain-specific validators
+  domain-specific API endpoints
+  domain-specific labels
+
+---
+
+🔷 12. WHY THIS IS GOOD FOR A SOLO DEVELOPER
+
+Building a governed sectional engine as a solo developer is one of the highest-leverage architectural decisions you can make. Here is why:
+
+1. You write the engine once
+   Every new table, every new record view, every new section inherits your governance rules automatically. You do not rewrite state management, dirty tracking, or reconciliation for each feature. You configure.
+
+2. Bugs fix everywhere at once
+   A bug in section reconciliation logic lives in one place. Fix it once. Every record view in the system benefits. Without the engine, the same bug exists in 15 feature files and you find them one at a time.
+
+3. You can add tables in hours, not days
+   Once the engine is solid, adding a new simple record view (like a new reference table) is a configuration exercise — section type, fields, endpoint, domain rule. The lifecycle, saving, error handling, dirty tracking, and reconciliation come free.
+
+4. Your backend execution layer scales independently
+   Because the engine enforces that all mutations go through the application layer, you can harden, optimize, or reroute backend execution without touching UI or controller code. The boundary is clean.
+
+5. Mental overhead stays low
+   As a solo developer, context-switching between features is expensive. The engine creates a predictable mental model — every record view works the same way. You always know where state lives, where rules live, and where mutations happen.
+
+6. Worker integration is safe by design
+   Because ChildScopedRows already go through the full execution pipeline (Controller → Application → Domain → Data), plugging in async worker workflows (like auto-allocation) does not require architectural changes. The outbox pattern and reconciliation are already in the model.
+
+7. The system is auditable and explainable
+   When something goes wrong in production, you trace it through the same flow every time. UI → Controller → Transport → Application → Domain → Data. This is invaluable when you are the only person on call.
+
+8. You can grow the team without chaos
+   If you bring on contributors later, the engine gives them a clear contract. They configure — they do not design. The architecture does not depend on tribal knowledge.
+
+🔥 FINAL ONE-LINER
+
+The Record View Engine turns a complex distributed system into a repeatable configuration problem.

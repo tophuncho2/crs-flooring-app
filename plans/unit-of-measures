@@ -1,0 +1,477 @@
+🧠 UNIT OF MEASURES — RECORD VIEW + EXECUTION LAYER SPEC
+First Fully Governed Table Under the Record View Engine
+🔷 0. PURPOSE
+
+The Unit of Measures (UOM) table is the first system entity to be fully governed by:
+
+* Record View Engine (UI + Controller)
+* Execution Layer (Transport → Application → Domain → Data → Infra)
+
+This establishes the canonical pattern for all future tables.
+Complexity will increase (work orders, templates, imports) — but the structure never changes.
+
+---
+
+🔷 1. ENTITY DEFINITION
+
+📏 Unit of Measure (UOM)
+
+Represents how quantities are measured across the system.
+
+Fields:
+* id
+* name (e.g. "Square Feet", "Linear Feet")
+* createdAt
+* updatedAt
+
+Note: No abbreviation field exists in the current schema. If added later, it passes through the same execution path as name.
+
+---
+
+🔗 Relationships
+
+* A UOM can be linked to Categories (sendUnit, stockUnit, coverageAvailableUnit, itemCoverageUnit, serviceUnit)
+* A UOM can be linked to Services
+* A UOM can be linked to Template Service Items
+* A UOM can be linked to Work Order Service Items
+* A UOM CANNOT be deleted if any of these links exist
+
+---
+
+🔴 CRITICAL BUSINESS RULE
+
+❗ A Unit of Measure CANNOT be deleted if it is referenced by any Category or Service record
+
+Ownership of this Rule:
+👉 Domain Layer (source of truth)
+
+Enforcement also appears at:
+* Application (final guard before mutation, inside transaction)
+* Transport (early rejection on known invalid requests)
+* Data (FK constraints as a last-resort defensive layer)
+
+---
+
+🔷 2. RECORD VIEW ENGINE STRUCTURE (UOM)
+
+UOM is a single-section record view.
+It is simple — but it MUST follow the full engine pattern.
+This is what makes it the canonical reference.
+
+Structure:
+
+RecordView: Unit of Measure
+  → FieldSection: General (PrimaryRow: UOM)
+      Fields: name
+      Actions: Save, Delete
+
+Why This Matters:
+* UOM uses the SAME engine as complex systems (work orders, templates)
+* No special-case UI or shortcut logic
+* The engine governs — UOM configures
+
+Note on ChildScopedRows:
+UOM has no GridSection and no ChildScopedRows today.
+If UOM gains child data in the future (e.g. conversion factors), a GridSection is added.
+The engine handles it — no structural change required.
+
+---
+
+🔷 3. CURRENT FILE STRUCTURE (apps/web)
+
+features/flooring/unit-of-measures/
+  application/
+    manage-unit-of-measure.ts         ← use case orchestration (should move to packages/execution)
+  data/
+    mutations.ts                       ← client-side HTTP transport only (correct, stays)
+    queries.ts                         ← server-side Prisma reads (should move to packages/db)
+    server-records.ts                  ← server-side Prisma writes (should move to packages/db)
+  domain/
+    types.ts                           ← form types and validation (correct layer)
+    unit-of-measure-rules.ts           ← pure business rules (should move to packages/domain)
+  record/
+    panel/
+      controllers/
+        use-unit-of-measure-primary-section.ts  ← section controller (correct layer, stays)
+      sections/
+        unit-of-measure-primary-fields-section.tsx  ← UI section (correct layer, stays)
+      unit-of-measure-record-panel.tsx            ← panel config (correct layer, stays)
+    create/
+      unit-of-measure-create-client.tsx
+    detail/
+      unit-of-measure-detail-client.tsx
+  controllers/
+    use-unit-of-measures-list-controller.ts
+    use-unit-of-measures-record-controller.ts
+  components/
+    list/
+      unit-of-measures-client.tsx
+      unit-of-measures-table.tsx
+  queries.ts                           ← legacy, superseded by data/queries.ts
+
+app/api/builder/unit-of-measures/
+  route.ts                             ← GET + POST (list + create)
+  [id]/
+    route.ts                           ← PATCH + DELETE
+    primary/section/route.ts           ← section-level PATCH
+
+---
+
+🔷 4. TARGET FILE STRUCTURE (FULLY GOVERNED)
+
+packages/domain/src/flooring/unit-of-measures/
+  rules.ts                             ← isUnitOfMeasureDeleteBlocked, normalizeForUniqueness, isNameConflict
+  types.ts                             ← UnitOfMeasureForm, domain types
+
+packages/db/src/flooring/unit-of-measures/
+  read-repository.ts                   ← listUnitOfMeasures, getById, getDeleteState, nameExists
+  write-repository.ts                  ← createRecord, updateRecord, deleteRecord
+
+packages/execution/src/flooring/unit-of-measures/
+  create-unit-of-measure.ts            ← createUnitOfMeasureUseCase
+  update-unit-of-measure.ts            ← updateUnitOfMeasureUseCase
+  delete-unit-of-measure.ts            ← deleteUnitOfMeasureUseCase
+
+apps/web/features/flooring/unit-of-measures/
+  (all Prisma imports removed)
+  application/ removed (logic moved to packages/execution)
+  domain/rules.ts → import from packages/domain
+  data/server-records.ts → import from packages/db
+  data/queries.ts → import from packages/db
+  record/ (stays — UI and controller)
+  controllers/ (stays)
+  components/ (stays)
+
+---
+
+🔷 5. LAYER RESPONSIBILITIES (UOM EXECUTION)
+
+🎨 1. UI LAYER (Rendering)
+
+Responsibilities:
+* Render: UOM record view shell, General section, name input field
+* Display: validation errors, success states, delete-blocked state
+* Trigger: save, delete
+
+Rules:
+* ❗ No business logic
+* ❗ No knowledge of category linkage rules
+* ❗ Reflects controller state only
+
+Example:
+  User clicks Delete
+  UI calls: controller.delete()
+
+---
+
+🎮 2. CONTROLLER LAYER (Orchestration)
+
+Responsibilities:
+* Manage draft state and dirty tracking
+* Handle save(), delete()
+* Reconcile state after mutation (replace, never merge)
+* Surface errors to UI
+
+Cross-Cutters:
+* Draft system
+* Dirty tracking
+* Reconciliation
+* Notices (success / error)
+
+Example:
+  uomSectionController.delete():
+    call transport.deleteUOM(id, { expectedUpdatedAt })
+    if error → surface to UI
+    if success → navigate away or refresh
+
+---
+
+🌐 3. TRANSPORT LAYER (API Boundary)
+
+Endpoints:
+  GET    /api/builder/unit-of-measures          ← list
+  POST   /api/builder/unit-of-measures          ← create
+  PATCH  /api/builder/unit-of-measures/:id      ← update primary section
+  DELETE /api/builder/unit-of-measures/:id      ← delete
+
+Responsibilities:
+* Auth (capability: unitOfMeasures.edit)
+* Rate limiting (create: 30/10min, update: 30/10min, delete: 20/10min)
+* Input validation (shape, types)
+* expectedUpdatedAt enforcement (optimistic concurrency)
+* Mutation receipt (idempotency)
+* Error normalization
+* Call application layer — nothing else
+
+Cross-Cutters:
+* applyRoutePolicy
+* parseMutationEnvelope
+* assertExpectedUpdatedAt
+* enforceMutationReceipt / finalizeMutationReceipt
+* withMutationTelemetry
+
+Rule:
+🔥 Transport does not execute logic — it protects execution
+
+---
+
+⚙️ 4. APPLICATION LAYER (Execution + Transactions)
+
+Target location: packages/execution/src/flooring/unit-of-measures/
+
+Use Cases:
+
+createUnitOfMeasureUseCase(input: UnitOfMeasureForm):
+  normalizedName = domain.normalizeForUniqueness(input.name)
+  exists = db.nameExists(normalizedName)
+  domain.assertNameAvailable(exists)
+  record = db.createRecord(input)
+  return record
+
+updateUnitOfMeasureUseCase(id, input: UnitOfMeasureForm):
+  normalizedName = domain.normalizeForUniqueness(input.name)
+  exists = db.nameExists(normalizedName, excludeId: id)
+  domain.assertNameAvailable(exists)
+  db.updateRecord(id, input)
+  return db.getById(id)
+
+deleteUnitOfMeasureUseCase(id):
+  deleteState = db.getDeleteState(id)
+  if not found → throw NotFoundError
+
+  domain.assertUOMDeletable({
+    categoryLinks: sum of all category count fields,
+    serviceLinks: sum of service + template service + work order service counts
+  })
+
+  db.deleteRecord(id)
+  return { ok: true }
+
+Cross-Cutters:
+* Transactions (wrap delete in transaction for safety)
+* Idempotency (mutation receipt enforced at transport)
+* Error classification (domain errors → AppError)
+* Telemetry (withMutationTelemetry at route level)
+
+Rule:
+🔥 ALL state mutations pass through Application
+
+---
+
+🧠 5. DOMAIN LAYER (Business Rules — Source of Truth)
+
+Target location: packages/domain/src/flooring/unit-of-measures/rules.ts
+
+Current rules (already implemented, need to migrate from features/):
+
+normalizeUnitOfMeasureNameForUniqueness(value: string):
+  return value.trim().toLowerCase()
+
+isUnitOfMeasureNameConflict(exists: boolean):
+  return exists
+
+isUnitOfMeasureDeleteBlocked({ categoryLinks, serviceLinks }):
+  return categoryLinks > 0 || serviceLinks > 0
+
+Rules:
+* ❗ Domain has no Prisma imports
+* ❗ Domain has no HTTP imports
+* ❗ Domain functions are pure — input in, decision out
+
+Why Domain Owns This:
+* Prevents UI bypass, API misuse, worker-side violations
+* Ensures consistency across ALL entry points
+* Testable without any infrastructure
+
+---
+
+🗄️ 6. DATA LAYER (Persistence)
+
+Target location: packages/db/src/flooring/unit-of-measures/
+
+Read Repository (read-repository.ts):
+  listUnitOfMeasures(): list all, ordered by name
+  getUnitOfMeasureById(id): throws if not found
+  getUnitOfMeasureDeleteState(id): returns counts of all linked entities
+  unitOfMeasureNameExists(normalizedName, currentId?): returns boolean
+
+Write Repository (write-repository.ts):
+  createUnitOfMeasureRecord(input): creates and returns normalized row
+  updateUnitOfMeasureRecord(id, input): updates name
+  deleteUnitOfMeasureRecord(id): deletes
+
+Indexing:
+  name column (for uniqueness lookups — currently insensitive)
+  No FK index needed for delete-check queries (Prisma _count uses indexed FKs in related tables)
+
+---
+
+⚙️ 7. INFRA LAYER (Workers)
+
+For UOM: Minimal / none currently required.
+
+Future Possibilities:
+* Audit log events on create / update / delete
+* Cascade impact analysis if a UOM is edited (which products/templates are affected)
+* Dependency graph calculation
+
+These would be triggered via outbox event from the Application layer.
+
+---
+
+🔷 6. END-TO-END FLOWS
+
+💾 Save (Update Name)
+
+User edits name field
+    ↓
+Controller detects dirty state
+    ↓
+User clicks Save
+    ↓
+Controller → Transport (PATCH /api/builder/unit-of-measures/:id)
+    ↓
+Transport: auth + validation + expectedUpdatedAt check + mutation receipt
+    ↓
+Application.updateUnitOfMeasureUseCase(id, input)
+    ↓
+Domain: normalizeForUniqueness, assertNameAvailable
+    ↓
+Data: nameExists check → updateRecord
+    ↓
+Application returns updated snapshot
+    ↓
+Transport returns { unitOfMeasure }
+    ↓
+Controller replaces state with snapshot
+    ↓
+dirty = false, UI updates
+
+🗑️ Delete
+
+User clicks Delete
+    ↓
+UI: confirmation dialog
+    ↓
+Controller → Transport (DELETE /api/builder/unit-of-measures/:id)
+    ↓
+Transport: auth + expectedUpdatedAt check + mutation receipt
+    ↓
+Application.deleteUnitOfMeasureUseCase(id)
+    ↓
+Data: getDeleteState(id) — fetch all link counts
+    ↓
+Domain: assertUOMDeletable({ categoryLinks, serviceLinks })
+    ↓
+❌ If linked → throw DomainError("UOM_IN_USE")
+    ↓
+Transport returns structured error
+    ↓
+Controller surfaces error to UI
+    ↓
+UI displays: "This unit of measure is linked and cannot be deleted"
+
+✅ If not linked → Data.deleteRecord(id)
+    ↓
+Transport returns { ok: true }
+    ↓
+Controller navigates away or refreshes list
+
+---
+
+🔷 7. ERROR HANDLING
+
+Domain Error Shape:
+{
+  code: "UOM_IN_USE",
+  message: "This unit of measure is linked to categories and cannot be deleted",
+  status: 409,
+}
+
+Error Flow:
+Domain throws → Application classifies → Transport normalizes → Controller receives → UI displays
+
+UI Behavior:
+* Show error in section (scoped to the action, not the whole page)
+* Optionally disable Delete button if known beforehand (query link count on panel open)
+* Error dismisses on next user action
+
+---
+
+🔷 8. WHAT "DONE" MEANS (FULLY GOVERNED UOM)
+
+✅ UI
+* Uses Record View Engine components only
+* No custom state management
+* No business logic
+
+✅ Controller
+* Fully owns draft, save, delete
+* Reconciliation implemented
+* Errors surfaced to section scope
+
+✅ Transport
+* All endpoints follow route policy (auth, rate limit, validation)
+* expectedUpdatedAt enforced on PATCH and DELETE
+* Mutation receipt enforced on write operations
+* Error responses normalized
+
+✅ Application (packages/execution)
+* createUnitOfMeasureUseCase implemented
+* updateUnitOfMeasureUseCase implemented
+* deleteUnitOfMeasureUseCase implemented (transactional)
+* No direct Prisma imports
+
+✅ Domain (packages/domain)
+* normalizeForUniqueness implemented
+* isNameConflict implemented
+* isUnitOfMeasureDeleteBlocked implemented
+* No Prisma, no HTTP, no side effects
+
+✅ Data (packages/db)
+* Read repository implemented
+* Write repository implemented
+* All features/flooring Prisma calls removed and replaced with repository imports
+
+✅ Cross-Cutters
+* Error handling standardized (domain → transport → controller → UI)
+* Idempotency respected (mutation receipts at transport)
+* Telemetry logging on all writes
+* Rate limiting on all mutation endpoints
+
+---
+
+🔷 9. WHY UOM IS THE RIGHT STARTING POINT
+
+UOM is the simplest fully-formed record view in the system:
+* One FieldSection, one PrimaryRow, no ChildScopedRows
+* One domain rule (delete blocked if linked)
+* Full test coverage already exists (SIMPLE_TABLE_DOMAIN_STATUS: Done)
+* No transactions required (single-row operations)
+* No worker workflows
+
+This makes it the ideal table to:
+1. Establish the canonical packages/execution use case pattern
+2. Establish the canonical packages/db repository pattern
+3. Establish the canonical packages/domain rule pattern
+4. Prove the refactor without risk to complex workflows
+5. Create the template that work-orders, templates, and imports will follow
+
+Every more complex table follows this exact same structure — with more sections, more domain rules, and more use cases on top.
+
+---
+
+🔥 FINAL PRINCIPLE
+
+UOM is not a simple table.
+It is the first fully governed execution path.
+
+This establishes:
+* how ALL creates and updates will be validated
+* how ALL deletes will be guarded by domain rules
+* how ALL record views will be structured under the engine
+* how packages/execution, packages/domain, and packages/db relate
+
+🧠 FINAL ONE-LINER
+
+UOM is the seed pattern — every governed table in the system grows from this root.
