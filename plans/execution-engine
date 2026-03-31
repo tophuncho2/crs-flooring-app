@@ -1,0 +1,299 @@
+🧠 EXECUTION LAYER SYSTEM
+Authoritative Execution Pattern for Record View Engine
+🔷 0. PURPOSE
+
+The Execution Layer is not a single layer.
+
+It is the coordinated flow across layers that governs how all system mutations, workflows, and state transitions occur.
+
+It ensures:
+
+✅ UI never mutates state directly
+✅ Controller governs all client-side intent
+✅ Application is the only mutation boundary
+✅ Domain is the only rule authority
+✅ Workers execute async logic safely
+✅ System always resolves to an authoritative server snapshot
+🔷 1. CORE PRINCIPLE
+
+🔥 Execution is always Controller-driven, Application-committed, and Server-authoritative
+
+This means:
+
+UI triggers intent
+Controller governs execution
+Transport validates + routes
+Application executes mutation
+Domain enforces rules
+Data persists
+Workers process async
+Controller reconciles
+🔷 2. THE CANONICAL EXECUTION FLOW
+🧩 End-to-End Flow
+UI Interaction
+    ↓
+Controller Action (governed)
+    ↓
+Transport Request (validated + authorized)
+    ↓
+Application Execution (transaction boundary)
+    ↓
+Domain Rules Applied
+    ↓
+Data Persistence (DB)
+    ↓
+Outbox Event (optional)
+    ↓
+Worker Execution (async)
+    ↓
+Authoritative Snapshot Returned
+    ↓
+Controller Reconciliation
+    ↓
+UI Updated (final truth)
+
+This is non-optional — every execution path must follow this.
+
+🔷 3. LAYER RESPONSIBILITIES IN EXECUTION
+🎨 UI LAYER — Intent Only
+Captures user actions (edit, save, trigger workflow)
+Displays state (dirty, saving, success, error)
+NEVER:
+mutates server state
+applies business logic
+
+👉 UI is input + display only
+
+🎮 CONTROLLER LAYER — Execution Governor
+
+The Controller is the entry point of execution.
+
+Responsibilities
+Owns draft state
+Tracks dirty state
+Decides when execution is allowed
+Triggers mutations
+Handles responses
+Reconciles state
+Critical Rule
+
+🔥 No execution occurs without the controller
+
+Example
+sectionController.save():
+  if (!dirty) return
+
+  sendMutation(payload)
+  await response
+
+  replaceLocalState(snapshot)
+  clearDirty()
+🌐 TRANSPORT LAYER — Execution Gate
+Responsibilities
+Validate request shape
+Enforce auth
+Enforce idempotency keys
+Normalize errors
+Route to application
+Critical Rule
+
+🔥 Transport does not execute logic — it protects execution
+
+⚙️ APPLICATION LAYER — Execution Engine
+
+This is where execution actually happens.
+
+Responsibilities
+Defines transaction boundary
+Coordinates use case
+Calls domain logic
+Writes all state changes
+Writes outbox events
+Guarantees idempotency
+Critical Rule
+
+🔥 ALL SYSTEM MUTATIONS HAPPEN HERE
+
+🧠 DOMAIN LAYER — Execution Authority
+Responsibilities
+Validates invariants
+Applies business rules
+Determines outcomes
+Calculates system state
+Critical Rule
+
+❗ Domain decides WHAT is valid — not how it is persisted
+
+🗄️ DATA LAYER — Execution Persistence
+Executes queries
+Applies locking if needed
+Ensures consistency
+⚙️ INFRA (WORKERS) — Deferred Execution
+Responsibilities
+Executes async workflows
+Retries safely
+Applies domain logic in background
+Updates system state
+Triggered by
+Application layer via outbox
+🔷 4. EXECUTION TYPES (SYSTEM-WIDE)
+
+All executions fall into one of these categories:
+
+💾 1. SYNCHRONOUS MUTATION (Section Save)
+
+Example: Save Material Section
+
+Flow:
+
+Controller.save()
+→ Transport (PATCH /section)
+→ Application (transaction)
+→ Domain validation
+→ DB writes
+→ Snapshot returned
+→ Controller replaces state
+
+🔑 Output:
+
+Immediate authoritative snapshot
+⚙️ 2. ASYNC WORKFLOW EXECUTION
+
+Example: Auto Allocation
+
+Flow:
+
+Controller.trigger()
+→ Transport
+→ Application writes outbox
+→ Worker picks job
+→ Domain logic executes
+→ DB updated
+→ Controller polling detects completion
+→ Controller refreshes snapshot
+
+🔑 Output:
+
+Eventually consistent → reconciled to snapshot
+🔁 3. RECONCILIATION EXECUTION
+
+Occurs when:
+
+Save completes
+Worker completes
+External update detected
+
+Controller rules:
+
+State	Behavior
+Clean	Auto apply snapshot
+Dirty	Block overwrite
+Worker complete	Force refresh
+
+👉 Defined in your system as reconciliation behavior
+
+🔷 5. CONTROLLER RECONCILIATION (CRITICAL)
+
+The controller is responsible for closing the execution loop.
+
+Responsibilities
+Replace local state with server snapshot
+Clear dirty flags
+Resolve conflicts
+Trigger UI updates
+Critical Rule
+
+🔥 Server state always wins
+
+🔷 6. AUTHORITATIVE SNAPSHOT MODEL
+
+Every execution must return or resolve to:
+
+{
+  data: FullRecordSnapshot,
+  revision: updatedAt,
+  status: success | error,
+}
+Rules
+Partial updates are NOT trusted
+UI state must be replaced, not patched
+Snapshot is the single source of truth
+🔷 7. IDEMPOTENT EXECUTION GUARANTEE
+
+All execution paths must be safe to repeat.
+
+Enforced In:
+Transport (idempotency keys)
+Application (dedupe logic)
+Infra (job deduplication)
+Guarantees
+No duplicate mutations
+No duplicate jobs
+Safe retries
+🔷 8. ERROR EXECUTION FLOW
+Domain → throws rule error
+→ Application catches/classifies
+→ Transport normalizes
+→ Controller receives
+→ UI displays (section-scoped)
+Rules
+Errors must be:
+deterministic
+scoped (section-level)
+user-actionable
+🔷 9. EXECUTION INVARIANTS (NON-NEGOTIABLE)
+
+These must NEVER be violated:
+
+1. Controller-Governed Execution
+No direct API calls from UI
+2. Application-Only Mutations
+No DB writes outside application layer
+3. Domain-Only Business Logic
+No rules in controller or UI
+4. Snapshot Authority
+Server response replaces client state
+5. Section as Execution Unit
+All execution scoped to a section
+6. Idempotent by Default
+All actions safe to retry
+7. Async = Outbox + Worker Only
+No direct background execution from request
+🔷 10. HOW THIS FITS YOUR ENGINE
+
+This execution model is what powers:
+
+Record View Engine sections
+Section items + allocation items
+Worker-driven workflows
+Reconciliation system
+
+It ensures:
+
+clean UI / controller governance
+safe backend execution
+consistent system state
+full reuse across all record types
+
+👉 This directly aligns with your system index and layered model
+
+🔥 FINAL MODEL
+
+You are not executing:
+
+❌ API calls
+❌ DB writes
+❌ UI events
+
+You are executing:
+
+✅ A governed, layered execution pipeline
+
+🧠 FINAL ONE-LINER
+
+Controller initiates
+Application commits
+Domain validates
+Workers execute
+Controller reconciles
+Server defines truth
