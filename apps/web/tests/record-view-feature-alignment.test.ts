@@ -67,6 +67,55 @@ describe("record view feature alignment", () => {
     }
   })
 
+  it("keeps the scoped field-section path on RecordFieldSection instead of RecordPrimarySectionInstance", async () => {
+    const engineFiles = [
+      "apps/web/features/shared/engines/record-view/sections/record-single-section-panel.tsx",
+      "apps/web/features/flooring/work-orders/record/panel/work-order-record-panel.tsx",
+      "apps/web/features/flooring/templates/record/panel/template-record-panel.tsx",
+    ]
+
+    for (const file of engineFiles) {
+      const source = await readWorkspaceFile(file)
+      expect(source).toContain("RecordFieldSection")
+      expect(source).not.toContain("RecordPrimarySectionInstance")
+    }
+
+    const primarySectionFiles = [
+      "apps/web/features/flooring/work-orders/record/panel/sections/work-order-primary-fields-section.tsx",
+      "apps/web/features/flooring/templates/record/panel/sections/template-primary-fields-section.tsx",
+    ]
+
+    for (const file of primarySectionFiles) {
+      const source = await readWorkspaceFile(file)
+      expect(source).not.toContain("RecordPrimarySectionInstance")
+      expect(source).not.toContain("showHeader")
+      expect(source).not.toContain("noticeMessage")
+      expect(source).not.toContain("onSave")
+    }
+  })
+
+  it("keeps scoped single-section record and create panels on the engine-owned single-section runtime", async () => {
+    const panelFiles = [
+      "apps/web/features/flooring/categories/record/panel/category-record-panel.tsx",
+      "apps/web/features/flooring/contacts/record/panel/contact-record-panel.tsx",
+      "apps/web/features/flooring/manufacturers/record/panel/manufacturer-record-panel.tsx",
+      "apps/web/features/flooring/services/record/panel/service-record-panel.tsx",
+      "apps/web/features/flooring/unit-of-measures/record/panel/unit-of-measure-record-panel.tsx",
+      "apps/web/features/flooring/categories/record/create/category-create-client.tsx",
+      "apps/web/features/flooring/contacts/record/create/contact-create-client.tsx",
+      "apps/web/features/flooring/manufacturers/record/create/manufacturer-create-client.tsx",
+      "apps/web/features/flooring/services/record/create/service-create-client.tsx",
+      "apps/web/features/flooring/unit-of-measures/record/create/unit-of-measure-create-client.tsx",
+    ]
+
+    for (const file of panelFiles) {
+      const source = await readWorkspaceFile(file)
+      expect(source).toContain("RecordSingleSectionPanel")
+      expect(source).not.toContain("RecordPrimarySectionInstance")
+      expect(source).not.toContain("RecordPanelFooter")
+    }
+  })
+
   it("keeps active row-heavy record sections off the old row surfaces", async () => {
     const sectionFiles = [
       "apps/web/features/flooring/work-orders/record/panel/sections/work-order-material-items-section.tsx",

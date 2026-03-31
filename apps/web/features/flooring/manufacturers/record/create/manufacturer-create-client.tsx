@@ -3,7 +3,6 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -48,28 +47,26 @@ function ManufacturerCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
-      <RecordSingleSectionPanel
-        title="Manufacturer Details"
-        controller={controller}
-        showHeader={false}
-        saveLabel="Create Manufacturer"
-        savingLabel="Creating Manufacturer..."
-      >
-        <ManufacturerPrimaryFieldsSection
-          manufacturer={EMPTY_MANUFACTURER_ROW}
-          draft={controller.primarySection.localValue}
-          disabled={controller.primarySection.isSaving}
-          onFieldChange={(field, value) => {
-            controller.primarySection.setLocalValue((previous) => ({
-              ...previous,
-              [field]: value,
-            }))
-          }}
-        />
-      </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    <RecordSingleSectionPanel
+      title="Manufacturer Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Create Manufacturer"
+      savingLabel="Creating Manufacturer..."
+      footer={{ onClose: page.closePage }}
+    >
+      <ManufacturerPrimaryFieldsSection
+        manufacturer={EMPTY_MANUFACTURER_ROW}
+        draft={controller.primarySection.localValue}
+        disabled={controller.primarySection.isSaving}
+        onFieldChange={(field, value) => {
+          controller.primarySection.setLocalValue((previous) => ({
+            ...previous,
+            [field]: value,
+          }))
+        }}
+      />
+    </RecordSingleSectionPanel>
   )
 }
 

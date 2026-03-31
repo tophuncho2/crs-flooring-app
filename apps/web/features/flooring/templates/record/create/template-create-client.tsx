@@ -3,7 +3,7 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
+  RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -59,7 +59,14 @@ function TemplateCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
+    <RecordSingleSectionPanel
+      title="Template Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Save"
+      savingLabel="Saving..."
+      footer={{ onClose: page.closePage }}
+    >
       <TemplatePrimaryFieldsSection
         draft={controller.primarySection.localValue}
         propertyOptions={propertyOptions}
@@ -67,18 +74,8 @@ function TemplateCreatePanel({
         padProductOptions={padProductOptions}
         propertyLocked={Boolean(initialPropertyId)}
         setDraft={controller.primarySection.setLocalValue}
-        error={controller.primarySection.error}
-        noticeMessage={controller.primarySection.noticeMessage}
-        noticeError={controller.primarySection.noticeError}
-        isDirty={controller.primarySection.isDirty}
-        isSaving={controller.primarySection.isSaving}
-        hasConflict={controller.primarySection.hasConflict}
-        onSave={() => void controller.primarySection.save()}
-        onDiscard={controller.primarySection.discard}
-        showHeader={false}
       />
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    </RecordSingleSectionPanel>
   )
 }
 

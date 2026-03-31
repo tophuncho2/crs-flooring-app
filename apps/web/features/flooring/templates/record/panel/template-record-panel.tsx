@@ -4,7 +4,13 @@ import { useCallback, useMemo } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { getConflictSnapshot, withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/shared/feedback/feedback-states"
-import { RecordMultiSectionPanel, RecordPrimarySectionInstance, useRecordDetailController, type RecordDetailClientScaffoldContext } from "@/features/shared/engines/record-view"
+import {
+  RecordFieldSection,
+  RecordMultiSectionPanel,
+  useRecordDetailController,
+  type RecordDetailClientScaffoldContext,
+  type RecordPanelSectionConfig,
+} from "@/features/shared/engines/record-view"
 import { buildRecordCalculationRowsFromSummary } from "@/features/flooring/shared/domain/record-calculation-rows"
 import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
 import { normalizeTemplateExpenseSummary } from "@/features/flooring/templates/domain/expense-summary"
@@ -162,6 +168,14 @@ export function TemplateRecordPanel({
     [currentExpenseSummary.customerCost, materialSection.localValue.length, serviceSection.localValue.length],
   )
 
+  const panelSummary = useMemo(
+    () => ({
+      metrics: currentSummaryMetrics,
+      payload: currentExpenseSummary,
+    }),
+    [currentExpenseSummary, currentSummaryMetrics],
+  )
+
   const deleteTemplate = useCallback(async () => {
     noticeController.clearNotices()
 
@@ -191,162 +205,155 @@ export function TemplateRecordPanel({
     return <CenteredErrorState title="Error" message="Template could not be loaded." onDismiss={page.closePage} />
   }
 
+  const sections: RecordPanelSectionConfig[] = [
+    {
+      key: "primary",
+      type: "field",
+      slot: "primary",
+      order: 0,
+      dirtyLabel: "Template",
+      controller: primarySection,
+      render: () => (
+        <RecordFieldSection
+          title="Template Details"
+          error={primarySection.error}
+          noticeMessage={primarySection.noticeMessage}
+          noticeError={primarySection.noticeError}
+          isDirty={primarySection.isDirty}
+          isSaving={primarySection.isSaving}
+          hasConflict={primarySection.hasConflict}
+          onSave={() => void primarySection.save()}
+          onDiscard={primarySection.discard}
+          saveLabel="Save Template"
+          savingLabel="Saving Template..."
+          showHeader={false}
+        >
+          <TemplatePrimaryFieldsSection
+            draft={primarySection.localValue}
+            propertyOptions={propertyOptions}
+            warehouseOptions={warehouseOptions}
+            padProductOptions={padProductOptions}
+            setDraft={(value) => {
+              primarySection.setLocalValue((previous) =>
+                typeof value === "function" ? value(previous) : value,
+              )
+            }}
+          />
+        </RecordFieldSection>
+      ),
+    },
+    {
+      key: "material-items",
+      type: "item",
+      order: 10,
+      dirtyLabel: "Material Items",
+      controller: materialSection,
+      render: () => (
+        <TemplateMaterialItemsSection
+          title="Material Items"
+          items={materialSection.localValue}
+          productOptions={productOptions}
+          loading={loading}
+          noticeMessage={materialSection.noticeMessage}
+          noticeError={materialSection.noticeError}
+          totalAmount={currentExpenseSummary.materialTotal}
+          itemErrors={materialSection.itemErrors}
+          onItemFieldChange={materialSection.changeField}
+          onDeleteItem={materialSection.deleteItem}
+          subHeader={{
+            isDirty: materialSection.isDirty,
+            isSaving: materialSection.isSaving,
+            hasConflict: materialSection.hasConflict,
+            error: materialSection.error,
+            onSave: () => void materialSection.save(),
+            onDiscard: () => materialSection.discard(),
+            actions: [{ key: "add-material-item", kind: "add-row", label: "Add Material Item", onClick: materialSection.addItem }],
+          }}
+        />
+      ),
+    },
+    {
+      key: "service-items",
+      type: "item",
+      order: 20,
+      dirtyLabel: "Service Items",
+      controller: serviceSection,
+      render: () => (
+        <TemplateServiceItemsSection
+          title="Service Items"
+          items={serviceSection.localValue}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          loading={loading}
+          noticeMessage={serviceSection.noticeMessage}
+          noticeError={serviceSection.noticeError}
+          totalAmount={currentExpenseSummary.serviceTotal}
+          itemErrors={serviceSection.itemErrors}
+          onItemFieldChange={serviceSection.changeField}
+          onDeleteItem={serviceSection.deleteItem}
+          subHeader={{
+            isDirty: serviceSection.isDirty,
+            isSaving: serviceSection.isSaving,
+            hasConflict: serviceSection.hasConflict,
+            error: serviceSection.error,
+            onSave: () => void serviceSection.save(),
+            onDiscard: () => serviceSection.discard(),
+            actions: [{ key: "add-service-item", kind: "add-row", label: "Add Service Item", onClick: serviceSection.addItem }],
+          }}
+        />
+      ),
+    },
+    {
+      key: "sales-reps",
+      type: "item",
+      order: 30,
+      dirtyLabel: "Sales Reps",
+      controller: salesRepSection,
+      render: () => (
+        <TemplateSalesRepsSection
+          title="Sales Reps"
+          items={salesRepSection.localValue}
+          salesRepOptions={salesRepOptions}
+          customerCost={currentExpenseSummary.customerCost}
+          totalAmount={currentExpenseSummary.salesRepExpense}
+          loading={loading}
+          noticeMessage={salesRepSection.noticeMessage}
+          noticeError={salesRepSection.noticeError}
+          itemErrors={salesRepSection.itemErrors}
+          onItemFieldChange={salesRepSection.changeField}
+          onDeleteItem={salesRepSection.deleteItem}
+          subHeader={{
+            isDirty: salesRepSection.isDirty,
+            isSaving: salesRepSection.isSaving,
+            hasConflict: salesRepSection.hasConflict,
+            error: salesRepSection.error,
+            onSave: () => void salesRepSection.save(),
+            onDiscard: () => salesRepSection.discard(),
+            actions: [{ key: "add-sales-rep", kind: "add-row", label: "Add Sales Rep", onClick: salesRepSection.addItem }],
+          }}
+        />
+      ),
+    },
+    {
+      key: "calculations",
+      type: "calculation",
+      order: 40,
+      render: () => (
+        <TemplateCalculationsSection
+          title="Calculations"
+          items={currentCalculationRows}
+          loading={loading}
+        />
+      ),
+    },
+  ]
+
   return (
     <RecordMultiSectionPanel
       page={page}
       notices={noticeController}
-      summary={{ metrics: currentSummaryMetrics, payload: currentExpenseSummary }}
-      sections={[
-        {
-          key: "primary",
-          type: "field",
-          slot: "primary",
-          order: 0,
-          dirtyLabel: "Template",
-          controller: primarySection,
-          render: () => (
-            <RecordPrimarySectionInstance
-              title="Template Details"
-              error={primarySection.error}
-              noticeMessage={primarySection.noticeMessage}
-              noticeError={primarySection.noticeError}
-              isDirty={primarySection.isDirty}
-              isSaving={primarySection.isSaving}
-              hasConflict={primarySection.hasConflict}
-              onSave={() => void primarySection.save()}
-              onDiscard={primarySection.discard}
-              saveLabel="Save Template"
-              savingLabel="Saving Template..."
-              showHeader={false}
-            >
-              <TemplatePrimaryFieldsSection
-                showHeader={false}
-                draft={primarySection.localValue}
-                propertyOptions={propertyOptions}
-                warehouseOptions={warehouseOptions}
-                padProductOptions={padProductOptions}
-                error={primarySection.error}
-                noticeMessage={primarySection.noticeMessage}
-                noticeError={primarySection.noticeError}
-                isDirty={primarySection.isDirty}
-                isSaving={primarySection.isSaving}
-                hasConflict={primarySection.hasConflict}
-                onSave={() => void primarySection.save()}
-                onDiscard={() => primarySection.discard()}
-                setDraft={(value) => {
-                  primarySection.setLocalValue((previous) =>
-                    typeof value === "function" ? value(previous) : value,
-                  )
-                }}
-              />
-            </RecordPrimarySectionInstance>
-          ),
-        },
-        {
-          key: "material-items",
-          type: "item",
-          order: 10,
-          dirtyLabel: "Material Items",
-          controller: materialSection,
-          render: () => (
-            <TemplateMaterialItemsSection
-              title="Material Items"
-              items={materialSection.localValue}
-              productOptions={productOptions}
-              loading={loading}
-              noticeMessage={materialSection.noticeMessage}
-              noticeError={materialSection.noticeError}
-              totalAmount={currentExpenseSummary.materialTotal}
-              itemErrors={materialSection.itemErrors}
-              onItemFieldChange={materialSection.changeField}
-              onDeleteItem={materialSection.deleteItem}
-              subHeader={{
-                isDirty: materialSection.isDirty,
-                isSaving: materialSection.isSaving,
-                hasConflict: materialSection.hasConflict,
-                error: materialSection.error,
-                onSave: () => void materialSection.save(),
-                onDiscard: () => materialSection.discard(),
-                actions: [{ key: "add-material-item", kind: "add-row", label: "Add Material Item", onClick: materialSection.addItem }],
-              }}
-            />
-          ),
-        },
-        {
-          key: "service-items",
-          type: "item",
-          order: 20,
-          dirtyLabel: "Service Items",
-          controller: serviceSection,
-          render: () => (
-            <TemplateServiceItemsSection
-              title="Service Items"
-              items={serviceSection.localValue}
-              serviceOptions={serviceOptions}
-              unitOptions={unitOptions}
-              loading={loading}
-              noticeMessage={serviceSection.noticeMessage}
-              noticeError={serviceSection.noticeError}
-              totalAmount={currentExpenseSummary.serviceTotal}
-              itemErrors={serviceSection.itemErrors}
-              onItemFieldChange={serviceSection.changeField}
-              onDeleteItem={serviceSection.deleteItem}
-              subHeader={{
-                isDirty: serviceSection.isDirty,
-                isSaving: serviceSection.isSaving,
-                hasConflict: serviceSection.hasConflict,
-                error: serviceSection.error,
-                onSave: () => void serviceSection.save(),
-                onDiscard: () => serviceSection.discard(),
-                actions: [{ key: "add-service-item", kind: "add-row", label: "Add Service Item", onClick: serviceSection.addItem }],
-              }}
-            />
-          ),
-        },
-        {
-          key: "sales-reps",
-          type: "item",
-          order: 30,
-          dirtyLabel: "Sales Reps",
-          controller: salesRepSection,
-          render: () => (
-            <TemplateSalesRepsSection
-              title="Sales Reps"
-              items={salesRepSection.localValue}
-              salesRepOptions={salesRepOptions}
-              customerCost={currentExpenseSummary.customerCost}
-              totalAmount={currentExpenseSummary.salesRepExpense}
-              loading={loading}
-              noticeMessage={salesRepSection.noticeMessage}
-              noticeError={salesRepSection.noticeError}
-              itemErrors={salesRepSection.itemErrors}
-              onItemFieldChange={salesRepSection.changeField}
-              onDeleteItem={salesRepSection.deleteItem}
-              subHeader={{
-                isDirty: salesRepSection.isDirty,
-                isSaving: salesRepSection.isSaving,
-                hasConflict: salesRepSection.hasConflict,
-                error: salesRepSection.error,
-                onSave: () => void salesRepSection.save(),
-                onDiscard: () => salesRepSection.discard(),
-                actions: [{ key: "add-sales-rep", kind: "add-row", label: "Add Sales Rep", onClick: salesRepSection.addItem }],
-              }}
-            />
-          ),
-        },
-        {
-          key: "calculations",
-          type: "calculation",
-          order: 40,
-          render: () => (
-            <TemplateCalculationsSection
-              title="Calculations"
-              items={currentCalculationRows}
-              loading={loading}
-            />
-          ),
-        },
-      ]}
+      summary={panelSummary}
+      sections={sections}
       footer={{
         deleteLabel: "Delete Template",
         deleteConfirmMessage: buildDeleteConfirmationMessage("template"),

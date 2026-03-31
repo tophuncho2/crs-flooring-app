@@ -22,31 +22,29 @@ export function ContactRecordPanel({
   })
 
   return (
-    <div className="space-y-4">
-      <RecordSingleSectionPanel
-        title="Contact Details"
-        controller={controller}
-        showHeader={false}
-        saveLabel="Save Contact"
-        savingLabel="Saving Contact..."
-        deleteLabel="Delete Contact"
-        deleteConfirmationMessage={buildSingleSectionDeleteConfirmationMessage({
-          entityLabel: "contact",
-          description: "If this contact is linked to templates or work orders, deletion will be blocked.",
-        })}
-      >
-        <ContactPrimaryFieldsSection
-          contact={controller.record}
-          draft={controller.primarySection.localValue}
-          disabled={controller.primarySection.isSaving}
-          onFieldChange={(field, value) => {
-            controller.primarySection.setLocalValue((previous: ContactForm) => ({
-              ...previous,
-              [field]: value,
-            }))
-          }}
-        />
-      </RecordSingleSectionPanel>
-    </div>
+    <RecordSingleSectionPanel
+      title="Contact Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Save Contact"
+      savingLabel="Saving Contact..."
+      deleteLabel="Delete Contact"
+      deleteConfirmationMessage={buildSingleSectionDeleteConfirmationMessage({
+        entityLabel: "contact",
+        description: "If this contact is linked to templates or work orders, deletion will be blocked.",
+      })}
+    >
+      <ContactPrimaryFieldsSection
+        contact={controller.record}
+        draft={controller.primarySection.localValue}
+        disabled={controller.primarySection.isSaving}
+        onFieldChange={(field, value) => {
+          controller.primarySection.setLocalValue((previous: ContactForm) => ({
+            ...previous,
+            [field]: value,
+          }))
+        }}
+      />
+    </RecordSingleSectionPanel>
   )
 }

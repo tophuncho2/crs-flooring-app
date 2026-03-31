@@ -3,7 +3,6 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -46,28 +45,26 @@ function ContactCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
-      <RecordSingleSectionPanel
-        title="Contact Details"
-        controller={controller}
-        showHeader={false}
-        saveLabel="Create Contact"
-        savingLabel="Creating Contact..."
-      >
-        <ContactPrimaryFieldsSection
-          contact={EMPTY_CONTACT}
-          draft={controller.primarySection.localValue}
-          disabled={controller.primarySection.isSaving}
-          onFieldChange={(field, value) => {
-            controller.primarySection.setLocalValue((previous) => ({
-              ...previous,
-              [field]: value,
-            }))
-          }}
-        />
-      </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    <RecordSingleSectionPanel
+      title="Contact Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Create Contact"
+      savingLabel="Creating Contact..."
+      footer={{ onClose: page.closePage }}
+    >
+      <ContactPrimaryFieldsSection
+        contact={EMPTY_CONTACT}
+        draft={controller.primarySection.localValue}
+        disabled={controller.primarySection.isSaving}
+        onFieldChange={(field, value) => {
+          controller.primarySection.setLocalValue((previous) => ({
+            ...previous,
+            [field]: value,
+          }))
+        }}
+      />
+    </RecordSingleSectionPanel>
   )
 }
 

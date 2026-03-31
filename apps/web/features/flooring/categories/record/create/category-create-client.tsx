@@ -3,7 +3,6 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -61,29 +60,27 @@ function CategoryCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
-      <RecordSingleSectionPanel
-        title="Category Details"
-        controller={controller}
-        showHeader={false}
-        saveLabel="Create Category"
-        savingLabel="Creating Category..."
-      >
-        <CategoryPrimaryFieldsSection
-          category={EMPTY_CATEGORY}
-          draft={controller.primarySection.localValue}
-          unitOfMeasureOptions={unitOfMeasureOptions}
-          disabled={controller.primarySection.isSaving}
-          onFieldChange={(field, value) => {
-            controller.primarySection.setLocalValue((previous) => ({
-              ...previous,
-              [field]: value,
-            }))
-          }}
-        />
-      </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    <RecordSingleSectionPanel
+      title="Category Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Create Category"
+      savingLabel="Creating Category..."
+      footer={{ onClose: page.closePage }}
+    >
+      <CategoryPrimaryFieldsSection
+        category={EMPTY_CATEGORY}
+        draft={controller.primarySection.localValue}
+        unitOfMeasureOptions={unitOfMeasureOptions}
+        disabled={controller.primarySection.isSaving}
+        onFieldChange={(field, value) => {
+          controller.primarySection.setLocalValue((previous) => ({
+            ...previous,
+            [field]: value,
+          }))
+        }}
+      />
+    </RecordSingleSectionPanel>
   )
 }
 

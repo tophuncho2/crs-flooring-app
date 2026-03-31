@@ -3,7 +3,6 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -50,29 +49,27 @@ function ServiceCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
-      <RecordSingleSectionPanel
-        title="Service Details"
-        controller={controller}
-        showHeader={false}
-        saveLabel="Create Service"
-        savingLabel="Creating Service..."
-      >
-        <ServicePrimaryFieldsSection
-          service={EMPTY_SERVICE}
-          draft={controller.primarySection.localValue}
-          unitOptions={unitOptions}
-          disabled={controller.primarySection.isSaving}
-          onFieldChange={(field, value) => {
-            controller.primarySection.setLocalValue((previous) => ({
-              ...previous,
-              [field]: value,
-            }))
-          }}
-        />
-      </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    <RecordSingleSectionPanel
+      title="Service Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Create Service"
+      savingLabel="Creating Service..."
+      footer={{ onClose: page.closePage }}
+    >
+      <ServicePrimaryFieldsSection
+        service={EMPTY_SERVICE}
+        draft={controller.primarySection.localValue}
+        unitOptions={unitOptions}
+        disabled={controller.primarySection.isSaving}
+        onFieldChange={(field, value) => {
+          controller.primarySection.setLocalValue((previous) => ({
+            ...previous,
+            [field]: value,
+          }))
+        }}
+      />
+    </RecordSingleSectionPanel>
   )
 }
 

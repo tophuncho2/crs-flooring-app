@@ -7,8 +7,9 @@ import { CenteredErrorState, CenteredLoadingState } from "@/features/dashboard/s
 import {
   buildRecordActionConfirmationMessage,
   confirmRecordAction,
+  RecordFieldSection,
   RecordMultiSectionPanel,
-  RecordPrimarySectionInstance,
+  type RecordPanelSectionConfig,
   RecordSectionStatusBadge,
   formatRecordSectionWorkflowPhase,
   useRecordDetailController,
@@ -345,6 +346,14 @@ export function WorkOrderRecordPanel({
     [currentExpenseSummary.customerCost, materialSection.localValue.length, serviceSection.localValue.length],
   )
 
+  const panelSummary = useMemo(
+    () => ({
+      metrics: currentSummaryMetrics,
+      payload: currentExpenseSummary,
+    }),
+    [currentExpenseSummary, currentSummaryMetrics],
+  )
+
   const deleteWorkOrder = useCallback(async () => {
     clearNotices()
 
@@ -407,6 +416,211 @@ export function WorkOrderRecordPanel({
     return <CenteredErrorState title="Error" message="Work order could not be loaded." onDismiss={page.closePage} />
   }
 
+  const sections: RecordPanelSectionConfig[] = [
+    {
+      key: "primary",
+      type: "field",
+      slot: "primary",
+      order: 0,
+      dirtyLabel: "Work Order",
+      controller: primarySection,
+      render: () => (
+        <RecordFieldSection
+          title="Work Order Details"
+          error={primarySection.error}
+          noticeMessage={primarySection.noticeMessage}
+          noticeError={primarySection.noticeError}
+          isDirty={primarySection.isDirty}
+          isSaving={primarySection.isSaving}
+          hasConflict={primarySection.hasConflict}
+          onSave={() => void primarySection.save()}
+          onDiscard={primarySection.discard}
+          saveLabel="Save Work Order"
+          savingLabel="Saving Work Order..."
+          showHeader={false}
+        >
+          <WorkOrderPrimaryFieldsSection
+            draft={primarySection.localValue}
+            propertyOptions={propertyOptions}
+            warehouseOptions={warehouseOptions}
+            selectedAddressValue={selectedAddress(
+              propertyOptions,
+              primarySection.localValue,
+              currentWorkOrder.propertyAddress,
+            )}
+            unitType={currentWorkOrder.unitType}
+            setDraft={(value) => {
+              primarySection.setLocalValue((previous) => {
+                const nextValue =
+                  typeof value === "function"
+                    ? (value as (previous: DraftWorkOrder | null) => DraftWorkOrder | null)(previous)
+                    : value
+                return nextValue ?? previous
+              })
+            }}
+          />
+        </RecordFieldSection>
+      ),
+    },
+    {
+      key: "material-items",
+      type: "item",
+      order: 10,
+      dirtyLabel: "Material Items",
+      controller: materialSection,
+      render: () => (
+        <WorkOrderMaterialItemsSection
+          title="Material Items"
+          items={materialSection.localValue}
+          productOptions={productOptions}
+          loading={loading}
+          noticeMessage={materialSection.noticeMessage}
+          noticeError={materialSection.noticeError}
+          subHeader={{
+            isDirty: materialSection.isDirty,
+            isSaving: materialSection.isSaving,
+            hasConflict: materialSection.hasConflict,
+            error: materialSection.error ?? autoAllocationWorkflow.error,
+            onSave: () => void materialSection.save(),
+            onDiscard: () => materialSection.discard(),
+            statusExtra: (
+              <>
+                <RecordSectionStatusBadge
+                  tone={
+                    autoAllocationWorkflow.phase === "completed"
+                      ? "success"
+                      : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
+                        ? "error"
+                        : autoAllocationWorkflow.isPending
+                          ? "processing"
+                          : "neutral"
+                  }
+                >
+                  Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
+                </RecordSectionStatusBadge>
+                {autoAllocationWorkflow.isStalled ? (
+                  <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
+                ) : null}
+              </>
+            ),
+            actions: [
+              { key: "add-material-item", kind: "add-row", label: "Add Material Item", onClick: materialSection.addItem },
+              {
+                key: "run-auto-allocation",
+                kind: "workflow",
+                label: autoAllocationButtonLabel,
+                onClick: requestAutoAllocation,
+                disabled: autoAllocationRequestBlocked || materialSection.localValue.length === 0,
+              },
+              ...(autoAllocationWorkflow.isPending
+                ? [
+                    {
+                      key: "refresh-auto-allocation",
+                      kind: "workflow" as const,
+                      label: "Refresh Status",
+                      onClick: () => void autoAllocationWorkflow.refresh(),
+                    },
+                  ]
+                : []),
+            ],
+          }}
+          itemErrors={materialSection.itemErrors}
+          expandedItemIds={materialSection.expandedItemIds}
+          onToggleExpandedItem={materialSection.toggleExpandedItem}
+          onItemFieldChange={materialSection.changeItemField}
+          onDeleteItem={materialSection.deleteItem}
+          renderAllocationSection={(item) => (
+            <MaterialAllocationsEditor
+              allocations={item.allocations}
+              allocationOptions={materialSection.allocationOptionsByItemId[item.id] ?? []}
+              loadingOptions={materialSection.loadingAllocationOptionsByItemId[item.id] ?? false}
+              onAddAllocation={() => void materialSection.addAllocation(item.id)}
+              itemErrors={materialSection.allocationErrorsByItemId[item.id] ?? {}}
+              onAllocationFieldChange={(allocationId, field, value) =>
+                materialSection.changeAllocationField(item.id, allocationId, field, value)
+              }
+              onDeleteAllocation={(allocationId) => materialSection.deleteAllocation(item.id, allocationId)}
+            />
+          )}
+        />
+      ),
+    },
+    {
+      key: "service-items",
+      type: "item",
+      order: 20,
+      dirtyLabel: "Service Items",
+      controller: serviceSection,
+      render: () => (
+        <WorkOrderServiceItemsSection
+          title="Service Items"
+          items={serviceSection.localValue}
+          serviceOptions={serviceOptions}
+          unitOptions={unitOptions}
+          totalAmount={currentExpenseSummary.serviceExpense}
+          loading={loading}
+          noticeMessage={serviceSection.noticeMessage}
+          noticeError={serviceSection.noticeError}
+          subHeader={{
+            isDirty: serviceSection.isDirty,
+            isSaving: serviceSection.isSaving,
+            hasConflict: serviceSection.hasConflict,
+            error: serviceSection.error,
+            onSave: () => void serviceSection.save(),
+            onDiscard: () => serviceSection.discard(),
+            actions: [{ key: "add-service-item", kind: "add-row", label: "Add Service Item", onClick: serviceSection.addItem }],
+          }}
+          itemErrors={serviceSection.itemErrors}
+          onItemFieldChange={serviceSection.changeField}
+          onDeleteItem={serviceSection.deleteItem}
+        />
+      ),
+    },
+    {
+      key: "sales-reps",
+      type: "item",
+      order: 30,
+      dirtyLabel: "Sales Reps",
+      controller: salesRepSection,
+      render: () => (
+        <WorkOrderSalesRepsSection
+          title="Sales Reps"
+          items={salesRepSection.localValue}
+          salesRepOptions={salesRepOptions as SalesRepOption[]}
+          customerCost={currentExpenseSummary.customerCost}
+          totalAmount={currentExpenseSummary.salesRepExpense}
+          loading={loading}
+          noticeMessage={salesRepSection.noticeMessage}
+          noticeError={salesRepSection.noticeError}
+          subHeader={{
+            isDirty: salesRepSection.isDirty,
+            isSaving: salesRepSection.isSaving,
+            hasConflict: salesRepSection.hasConflict,
+            error: salesRepSection.error,
+            onSave: () => void salesRepSection.save(),
+            onDiscard: () => salesRepSection.discard(),
+            actions: [{ key: "add-sales-rep", kind: "add-row", label: "Add Sales Rep", onClick: salesRepSection.addItem }],
+          }}
+          itemErrors={salesRepSection.itemErrors}
+          onItemFieldChange={salesRepSection.changeField}
+          onDeleteItem={salesRepSection.deleteItem}
+        />
+      ),
+    },
+    {
+      key: "calculations",
+      type: "calculation",
+      order: 40,
+      render: () => (
+        <WorkOrderCalculationsSection
+          title="Calculations"
+          items={currentCalculationRows}
+          loading={false}
+        />
+      ),
+    },
+  ]
+
   return (
     <RecordMultiSectionPanel
       page={page}
@@ -440,220 +654,8 @@ export function WorkOrderRecordPanel({
           </div>
         ) : null
       }
-      summary={{ metrics: currentSummaryMetrics, payload: currentExpenseSummary }}
-      sections={[
-        {
-          key: "primary",
-          type: "field",
-          slot: "primary",
-          order: 0,
-          dirtyLabel: "Work Order",
-          controller: primarySection,
-          render: () => (
-            <RecordPrimarySectionInstance
-              title="Work Order Details"
-              error={primarySection.error}
-              noticeMessage={primarySection.noticeMessage}
-              noticeError={primarySection.noticeError}
-              isDirty={primarySection.isDirty}
-              isSaving={primarySection.isSaving}
-              hasConflict={primarySection.hasConflict}
-              onSave={() => void primarySection.save()}
-              onDiscard={primarySection.discard}
-              saveLabel="Save Work Order"
-              savingLabel="Saving Work Order..."
-              showHeader={false}
-            >
-              <WorkOrderPrimaryFieldsSection
-                showHeader={false}
-                draft={primarySection.localValue}
-                propertyOptions={propertyOptions}
-                warehouseOptions={warehouseOptions}
-                selectedAddressValue={selectedAddress(
-                  propertyOptions,
-                  primarySection.localValue,
-                  currentWorkOrder.propertyAddress,
-                )}
-                unitType={currentWorkOrder.unitType}
-                error={primarySection.error}
-                noticeMessage={primarySection.noticeMessage}
-                noticeError={primarySection.noticeError}
-                isDirty={primarySection.isDirty}
-                isSaving={primarySection.isSaving}
-                hasConflict={primarySection.hasConflict}
-                onSave={() => void primarySection.save()}
-                onDiscard={() => primarySection.discard()}
-                setDraft={(value) => {
-                  primarySection.setLocalValue((previous) => {
-                    const nextValue =
-                      typeof value === "function"
-                        ? (value as (previous: DraftWorkOrder | null) => DraftWorkOrder | null)(previous)
-                        : value
-                    return nextValue ?? previous
-                  })
-                }}
-              />
-            </RecordPrimarySectionInstance>
-          ),
-        },
-        {
-          key: "material-items",
-          type: "item",
-          order: 10,
-          dirtyLabel: "Material Items",
-          controller: materialSection,
-          render: () => (
-            <WorkOrderMaterialItemsSection
-              title="Material Items"
-              items={materialSection.localValue}
-              productOptions={productOptions}
-              loading={loading}
-              noticeMessage={materialSection.noticeMessage}
-              noticeError={materialSection.noticeError}
-              subHeader={{
-                isDirty: materialSection.isDirty,
-                isSaving: materialSection.isSaving,
-                hasConflict: materialSection.hasConflict,
-                error: materialSection.error ?? autoAllocationWorkflow.error,
-                onSave: () => void materialSection.save(),
-                onDiscard: () => materialSection.discard(),
-                statusExtra: (
-                  <>
-                    <RecordSectionStatusBadge
-                      tone={
-                        autoAllocationWorkflow.phase === "completed"
-                          ? "success"
-                          : autoAllocationWorkflow.phase === "failed" || autoAllocationWorkflow.phase === "superseded"
-                            ? "error"
-                            : autoAllocationWorkflow.isPending
-                              ? "processing"
-                              : "neutral"
-                      }
-                    >
-                      Auto Allocate: {formatRecordSectionWorkflowPhase(autoAllocationWorkflow.phase)}
-                    </RecordSectionStatusBadge>
-                    {autoAllocationWorkflow.isStalled ? (
-                      <RecordSectionStatusBadge tone="warning">Polling Slowed</RecordSectionStatusBadge>
-                    ) : null}
-                  </>
-                ),
-                actions: [
-                  { key: "add-material-item", kind: "add-row", label: "Add Material Item", onClick: materialSection.addItem },
-                  {
-                    key: "run-auto-allocation",
-                    kind: "workflow",
-                    label: autoAllocationButtonLabel,
-                    onClick: requestAutoAllocation,
-                    disabled: autoAllocationRequestBlocked || materialSection.localValue.length === 0,
-                  },
-                  ...(autoAllocationWorkflow.isPending
-                    ? [
-                        {
-                          key: "refresh-auto-allocation",
-                          kind: "workflow" as const,
-                          label: "Refresh Status",
-                          onClick: () => void autoAllocationWorkflow.refresh(),
-                        },
-                      ]
-                    : []),
-                ],
-              }}
-              itemErrors={materialSection.itemErrors}
-              expandedItemIds={materialSection.expandedItemIds}
-              onToggleExpandedItem={materialSection.toggleExpandedItem}
-              onItemFieldChange={materialSection.changeItemField}
-              onDeleteItem={materialSection.deleteItem}
-              renderAllocationSection={(item) => (
-                <MaterialAllocationsEditor
-                  allocations={item.allocations}
-                  allocationOptions={materialSection.allocationOptionsByItemId[item.id] ?? []}
-                  loadingOptions={materialSection.loadingAllocationOptionsByItemId[item.id] ?? false}
-                  onAddAllocation={() => void materialSection.addAllocation(item.id)}
-                  itemErrors={materialSection.allocationErrorsByItemId[item.id] ?? {}}
-                  onAllocationFieldChange={(allocationId, field, value) =>
-                    materialSection.changeAllocationField(item.id, allocationId, field, value)
-                  }
-                  onDeleteAllocation={(allocationId) => materialSection.deleteAllocation(item.id, allocationId)}
-                />
-              )}
-            />
-          ),
-        },
-        {
-          key: "service-items",
-          type: "item",
-          order: 20,
-          dirtyLabel: "Service Items",
-          controller: serviceSection,
-          render: () => (
-            <WorkOrderServiceItemsSection
-              title="Service Items"
-              items={serviceSection.localValue}
-              serviceOptions={serviceOptions}
-              unitOptions={unitOptions}
-              totalAmount={currentExpenseSummary.serviceExpense}
-              loading={loading}
-              noticeMessage={serviceSection.noticeMessage}
-              noticeError={serviceSection.noticeError}
-              subHeader={{
-                isDirty: serviceSection.isDirty,
-                isSaving: serviceSection.isSaving,
-                hasConflict: serviceSection.hasConflict,
-                error: serviceSection.error,
-                onSave: () => void serviceSection.save(),
-                onDiscard: () => serviceSection.discard(),
-                actions: [{ key: "add-service-item", kind: "add-row", label: "Add Service Item", onClick: serviceSection.addItem }],
-              }}
-              itemErrors={serviceSection.itemErrors}
-              onItemFieldChange={serviceSection.changeField}
-              onDeleteItem={serviceSection.deleteItem}
-            />
-          ),
-        },
-        {
-          key: "sales-reps",
-          type: "item",
-          order: 30,
-          dirtyLabel: "Sales Reps",
-          controller: salesRepSection,
-          render: () => (
-            <WorkOrderSalesRepsSection
-              title="Sales Reps"
-              items={salesRepSection.localValue}
-              salesRepOptions={salesRepOptions as SalesRepOption[]}
-              customerCost={currentExpenseSummary.customerCost}
-              totalAmount={currentExpenseSummary.salesRepExpense}
-              loading={loading}
-              noticeMessage={salesRepSection.noticeMessage}
-              noticeError={salesRepSection.noticeError}
-              subHeader={{
-                isDirty: salesRepSection.isDirty,
-                isSaving: salesRepSection.isSaving,
-                hasConflict: salesRepSection.hasConflict,
-                error: salesRepSection.error,
-                onSave: () => void salesRepSection.save(),
-                onDiscard: () => salesRepSection.discard(),
-                actions: [{ key: "add-sales-rep", kind: "add-row", label: "Add Sales Rep", onClick: salesRepSection.addItem }],
-              }}
-              itemErrors={salesRepSection.itemErrors}
-              onItemFieldChange={salesRepSection.changeField}
-              onDeleteItem={salesRepSection.deleteItem}
-            />
-          ),
-        },
-        {
-          key: "calculations",
-          type: "calculation",
-          order: 40,
-          render: () => (
-            <WorkOrderCalculationsSection
-              title="Calculations"
-              items={currentCalculationRows}
-              loading={false}
-            />
-          ),
-        },
-      ]}
+      summary={panelSummary}
+      sections={sections}
       footer={{
         deleteLabel: "Delete Work Order",
         deleteConfirmMessage: "Delete this work order? This cannot be undone.",

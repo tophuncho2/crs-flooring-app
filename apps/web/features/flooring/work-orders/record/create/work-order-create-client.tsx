@@ -4,7 +4,7 @@ import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
+  RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -56,7 +56,14 @@ function WorkOrderCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
+    <RecordSingleSectionPanel
+      title="Work Order Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Save"
+      savingLabel="Saving..."
+      footer={{ onClose: page.closePage }}
+    >
       <WorkOrderPrimaryFieldsSection
         draft={controller.primarySection.localValue}
         propertyOptions={propertyOptions}
@@ -69,18 +76,8 @@ function WorkOrderCreatePanel({
             return nextValue ?? previous
           })
         }}
-        error={controller.primarySection.error}
-        noticeMessage={controller.primarySection.noticeMessage}
-        noticeError={controller.primarySection.noticeError}
-        isDirty={controller.primarySection.isDirty}
-        isSaving={controller.primarySection.isSaving}
-        hasConflict={controller.primarySection.hasConflict}
-        onSave={() => void controller.primarySection.save()}
-        onDiscard={controller.primarySection.discard}
-        showHeader={false}
       />
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    </RecordSingleSectionPanel>
   )
 }
 

@@ -1,13 +1,11 @@
 "use client"
 
-import type { Dispatch, ReactNode, SetStateAction } from "react"
-import type { RecordSectionError } from "@/features/shared/engines/record-view"
+import type { Dispatch, SetStateAction } from "react"
 import {
   AutoGrowTextarea,
   RECORD_FIELD_CONTROL_CLASS_NAME,
   RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
-  RecordPrimarySectionInstance,
 } from "@/features/shared/engines/record-view"
 import {
   RecordPrimaryFieldCell,
@@ -32,15 +30,6 @@ export function WorkOrderPrimaryFieldsSection({
   selectedAddressValue,
   unitType,
   setDraft,
-  error,
-  noticeMessage,
-  noticeError,
-  isDirty,
-  isSaving,
-  hasConflict,
-  onSave,
-  onDiscard,
-  showHeader = true,
 }: {
   draft: DraftWorkOrder
   propertyOptions: PropertyOption[]
@@ -48,17 +37,8 @@ export function WorkOrderPrimaryFieldsSection({
   selectedAddressValue: string
   unitType: string
   setDraft: Dispatch<SetStateAction<DraftWorkOrder | null>>
-  error?: ReactNode | RecordSectionError | null
-  noticeMessage?: string
-  noticeError?: string
-  isDirty: boolean
-  isSaving: boolean
-  hasConflict: boolean
-  onSave: () => void | Promise<void>
-  onDiscard: () => void
-  showHeader?: boolean
 }) {
-  const content = (
+  return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="side">
         <RecordPrimaryFieldsGrid variant="side">
@@ -207,22 +187,5 @@ export function WorkOrderPrimaryFieldsSection({
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>
     </RecordPrimarySection>
-  )
-
-  return (
-    <RecordPrimarySectionInstance
-      title="Work Order Details"
-      error={error}
-      noticeMessage={noticeMessage}
-      noticeError={noticeError}
-      isDirty={isDirty}
-      isSaving={isSaving}
-      hasConflict={hasConflict}
-      onSave={onSave}
-      onDiscard={onDiscard}
-      showHeader={showHeader}
-    >
-      {content}
-    </RecordPrimarySectionInstance>
   )
 }

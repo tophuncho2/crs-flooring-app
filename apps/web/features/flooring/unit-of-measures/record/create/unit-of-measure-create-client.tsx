@@ -3,7 +3,6 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -47,25 +46,23 @@ function UnitOfMeasureCreatePanel({
   })
 
   return (
-    <div className="space-y-4">
-      <RecordSingleSectionPanel
-        title="Unit Of Measure Details"
-        controller={controller}
-        showHeader={false}
-        saveLabel="Create Unit Of Measure"
-        savingLabel="Creating Unit Of Measure..."
-      >
-        <UnitOfMeasurePrimaryFieldsSection
-          unitOfMeasure={EMPTY_UNIT_OF_MEASURE}
-          draft={controller.primarySection.localValue}
-          disabled={controller.primarySection.isSaving}
-          onChange={(value) => {
-            controller.primarySection.setLocalValue({ name: value })
-          }}
-        />
-      </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
-    </div>
+    <RecordSingleSectionPanel
+      title="Unit Of Measure Details"
+      controller={controller}
+      showHeader={false}
+      saveLabel="Create Unit Of Measure"
+      savingLabel="Creating Unit Of Measure..."
+      footer={{ onClose: page.closePage }}
+    >
+      <UnitOfMeasurePrimaryFieldsSection
+        unitOfMeasure={EMPTY_UNIT_OF_MEASURE}
+        draft={controller.primarySection.localValue}
+        disabled={controller.primarySection.isSaving}
+        onChange={(value) => {
+          controller.primarySection.setLocalValue({ name: value })
+        }}
+      />
+    </RecordSingleSectionPanel>
   )
 }
 
