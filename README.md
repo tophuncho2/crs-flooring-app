@@ -59,6 +59,8 @@ Local development uses the repo-root `.env` as the single source of truth for:
 
 - `DATABASE_URL` is required for all DB-backed workspaces
 - `NEXTAUTH_*` variables are only required when auth/session flows are used
+- `NEXT_PUBLIC_SENTRY_DSN` is optional and enables Sentry for `apps/web`
+- `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are optional until you want build-time source map upload
 - `AWS_*` variables are only required when storage/file flows are used
 - `RATE_LIMIT_REDIS_URL` configures web-only rate limiting
 - `QUEUE_REDIS_URL` configures BullMQ for `apps/relay` and `apps/worker`
