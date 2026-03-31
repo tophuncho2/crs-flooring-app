@@ -6,6 +6,7 @@ import {
   RecordSectionGrid,
   RecordSectionGridRow,
   RecordServiceRowBuilder,
+  resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
@@ -81,7 +82,10 @@ export function WorkOrderServiceItemsSection({
       >
         {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
-          const isLocalOnlyItem = item.id.startsWith("temp:")
+          const status = resolveRecordRowStatus({
+            hasErrors: hasFieldErrors(rowErrors),
+            isUnsaved: item.id.startsWith("temp:"),
+          })
 
           return (
             <RecordSectionGridRow key={item.id} columns={WORK_ORDER_SERVICE_COLUMNS}>
@@ -130,12 +134,7 @@ export function WorkOrderServiceItemsSection({
                   capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
                   status: {
                     content: (
-                      <>
-                        <RecordRowStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-                          {isLocalOnlyItem ? "Unsaved" : "Ready"}
-                        </RecordRowStatusBadge>
-                        {hasFieldErrors(rowErrors) ? <RecordRowStatusBadge tone="error">Needs review</RecordRowStatusBadge> : null}
-                      </>
+                      <RecordRowStatusBadge tone={status.tone}>{status.label}</RecordRowStatusBadge>
                     ),
                   },
                   remove: {

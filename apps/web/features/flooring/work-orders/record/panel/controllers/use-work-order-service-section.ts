@@ -5,8 +5,9 @@ import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
   createRecordSectionError,
-  useRecordItemController,
   isLocalOnlyRecordRow,
+  useRecordItemController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   clearRowFieldError,
@@ -17,7 +18,6 @@ import {
   type ServiceItemField,
   validateServiceItemFields,
 } from "@/features/flooring/shared/line-items/service-items-editor"
-import { useWorkOrderSectionController } from "./use-work-order-section-controller"
 import {
   areServiceItemsEqual,
   cloneServiceItems,
@@ -43,10 +43,10 @@ export function useWorkOrderServiceSection(input: {
   } = input
   const [itemErrors, setItemErrors] = useState<RowFieldErrors<ServiceItemField>>({})
 
-  const controller = useWorkOrderSectionController<EditableServiceItem[], EditableServiceItem[]>({
+  const controller = useRecordScopedSectionController<EditableServiceItem[], EditableServiceItem[]>({
     currentUserId,
-    workOrderId,
-    section: "service",
+    recordId: workOrderId,
+    sectionKey: "service",
     serverValue: workOrder.serviceItems,
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: cloneServiceItems,

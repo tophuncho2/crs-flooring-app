@@ -13,22 +13,23 @@ import WorkOrderDetailClient from "@/features/flooring/work-orders/detail/work-o
 const { workOrderRecordPanelMock } = vi.hoisted(() => ({
   workOrderRecordPanelMock: () => ({
   WorkOrderRecordPanel: ({
+    page,
     workOrderId,
-    notices,
-    onDirtySectionsChange,
   }: {
+    page: {
+      notices: { message?: string; error?: string }
+      setDirtySections: (value: string[]) => void
+    }
     workOrderId: string
-    notices?: { message?: string; error?: string }
-    onDirtySectionsChange?: (value: string[]) => void
   }) => {
     return (
       <>
         <div>
           <div>{`Panel ${workOrderId}`}</div>
-          {notices?.message ? <div>{notices.message}</div> : null}
-          {notices?.error ? <div>{notices.error}</div> : null}
-          <button type="button" onClick={() => onDirtySectionsChange?.(["Work Order"])}>Mark Dirty</button>
-          <button type="button" onClick={() => onDirtySectionsChange?.([])}>Clear Dirty</button>
+          {page.notices?.message ? <div>{page.notices.message}</div> : null}
+          {page.notices?.error ? <div>{page.notices.error}</div> : null}
+          <button type="button" onClick={() => page.setDirtySections(["Work Order"])}>Mark Dirty</button>
+          <button type="button" onClick={() => page.setDirtySections([])}>Clear Dirty</button>
         </div>
       </>
     )

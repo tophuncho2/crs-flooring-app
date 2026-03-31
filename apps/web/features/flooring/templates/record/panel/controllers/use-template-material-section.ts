@@ -7,6 +7,7 @@ import {
   createRecordSectionError,
   isLocalOnlyRecordRow,
   useRecordItemController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   clearRowFieldError,
@@ -17,7 +18,6 @@ import {
   type MaterialItemField,
   validateMaterialItemFields,
 } from "@/features/flooring/shared/line-items/material-items-editor"
-import { useTemplateSectionController } from "./use-template-section-controller"
 import {
   areMaterialItemsEqual,
   cloneMaterialItems,
@@ -45,10 +45,10 @@ export function useTemplateMaterialSection(input: {
   } = input
   const [itemErrors, setItemErrors] = useState<RowFieldErrors<MaterialItemField>>({})
 
-  const controller = useTemplateSectionController<EditableMaterialItem[], EditableMaterialItem[]>({
+  const controller = useRecordScopedSectionController<EditableMaterialItem[], EditableMaterialItem[]>({
     currentUserId,
-    templateId,
-    section: "material",
+    recordId: templateId,
+    sectionKey: "material",
     serverValue: template.items,
     serverRevisionKey: template.updatedAt,
     createLocalValue: cloneMaterialItems,

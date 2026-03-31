@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import {
-  RecordPanelFooter,
+  RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-  RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
@@ -43,78 +42,87 @@ export function PropertyRecordPanel({
     [page, templateNavigation],
   )
 
-  useEffect(() => {
-    page.setDirtySections(controller.primarySection.isDirty ? ["primary"] : [])
-  }, [controller.primarySection.isDirty, page])
-
   return (
-    <div className="space-y-4">
-      <RecordSectionStack>
-        {page.isPrimarySectionOpen ? (
-          <RecordPrimarySectionInstance
-            title="Property Details"
-            error={controller.primarySection.error}
-            noticeMessage={controller.primarySection.noticeMessage}
-            noticeError={controller.primarySection.noticeError}
-            isDirty={controller.primarySection.isDirty}
-            isSaving={controller.primarySection.isSaving}
-            hasConflict={controller.primarySection.hasConflict}
-            onSave={() => void controller.primarySection.save()}
-            onDiscard={controller.primarySection.discard}
-            saveLabel="Save Property"
-            savingLabel="Saving Property..."
-            showHeader={false}
-          >
-            <PropertyPrimaryFieldsSection
-              property={controller.record}
-              draft={controller.primarySection.localValue}
-              managementOptions={managementOptions}
-              disabled={controller.primarySection.isSaving}
-              onFieldChange={(field, value) => {
-                controller.primarySection.setLocalValue((previous: PropertyPrimaryForm) => ({
-                  ...previous,
-                  [field]: field === "state" ? normalizeAddressState(value) : value,
-                }))
+    <RecordMultiSectionPanel
+      page={page}
+      sections={[
+        {
+          key: "primary",
+          type: "field",
+          slot: "primary",
+          order: 0,
+          dirtyLabel: "primary",
+          controller: controller.primarySection,
+          render: () => (
+            <RecordPrimarySectionInstance
+              title="Property Details"
+              error={controller.primarySection.error}
+              noticeMessage={controller.primarySection.noticeMessage}
+              noticeError={controller.primarySection.noticeError}
+              isDirty={controller.primarySection.isDirty}
+              isSaving={controller.primarySection.isSaving}
+              hasConflict={controller.primarySection.hasConflict}
+              onSave={() => void controller.primarySection.save()}
+              onDiscard={controller.primarySection.discard}
+              saveLabel="Save Property"
+              savingLabel="Saving Property..."
+              showHeader={false}
+            >
+              <PropertyPrimaryFieldsSection
+                property={controller.record}
+                draft={controller.primarySection.localValue}
+                managementOptions={managementOptions}
+                disabled={controller.primarySection.isSaving}
+                onFieldChange={(field, value) => {
+                  controller.primarySection.setLocalValue((previous: PropertyPrimaryForm) => ({
+                    ...previous,
+                    [field]: field === "state" ? normalizeAddressState(value) : value,
+                  }))
+                }}
+              />
+            </RecordPrimarySectionInstance>
+          ),
+        },
+        {
+          key: "templates",
+          type: "item",
+          order: 10,
+          render: () => (
+            <PropertyTemplatesSection
+              subHeader={{
+                isDirty: false,
+                isSaving: false,
+                hasConflict: false,
+                canManage: false,
+                showStatus: false,
+                actions: [
+                  {
+                    key: "add-template",
+                    kind: "route-add",
+                    label: "Add Template",
+                    tone: "primary",
+                    onClick: () => {
+                      page.confirmNavigation(() => {
+                        templateNavigation.openCreate({
+                          propertyId: controller.record.id,
+                        })
+                      })
+                    },
+                  },
+                ],
               }}
+              templates={controller.record.templates}
+              loadingTemplateId={loadingTemplateId}
+              onOpenTemplate={handleOpenTemplate}
             />
-          </RecordPrimarySectionInstance>
-        ) : null}
-
-        <PropertyTemplatesSection
-          subHeader={{
-            isDirty: false,
-            isSaving: false,
-            hasConflict: false,
-            canManage: false,
-            showStatus: false,
-            actions: [
-              {
-                key: "add-template",
-                kind: "route-add",
-                label: "Add Template",
-                tone: "primary",
-                onClick: () => {
-                  page.confirmNavigation(() => {
-                    templateNavigation.openCreate({
-                      propertyId: controller.record.id,
-                    })
-                  })
-                },
-              },
-            ],
-          }}
-          templates={controller.record.templates}
-          loadingTemplateId={loadingTemplateId}
-          onOpenTemplate={handleOpenTemplate}
-        />
-      </RecordSectionStack>
-
-      <RecordPanelFooter
-        deleteLabel="Delete Property"
-        deleteConfirmMessage={buildDeleteConfirmationMessage("property")}
-        onDelete={() => void controller.deleteRecord()}
-        onClose={page.closePage}
-      />
-    </div>
+          ),
+        },
+      ]}
+      footer={{
+        deleteLabel: "Delete Property",
+        deleteConfirmMessage: buildDeleteConfirmationMessage("property"),
+        onDelete: () => void controller.deleteRecord(),
+      }}
+    />
   )
 }

@@ -2,9 +2,8 @@
 
 import { useEffect } from "react"
 import {
-  RecordPanelFooter,
+  RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-  RecordSectionStack,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
@@ -37,94 +36,95 @@ export function ImportRecordPanel({
     publishRecord: controller.publishRecord,
   })
 
-  useEffect(() => {
-    const dirtySections: string[] = []
-
-    if (controller.primarySection.isDirty) {
-      dirtySections.push("primary")
-    }
-
-    if (inventoryRowsSection.isDirty) {
-      dirtySections.push("inventory rows")
-    }
-
-    page.setDirtySections(dirtySections)
-  }, [controller.primarySection.isDirty, inventoryRowsSection.isDirty, page])
-
   return (
-    <div className="space-y-4">
-      <RecordSectionStack>
-        {page.isPrimarySectionOpen ? (
-          <RecordPrimarySectionInstance
-            title="Import Details"
-            error={controller.primarySection.error}
-            noticeMessage={controller.primarySection.noticeMessage}
-            noticeError={controller.primarySection.noticeError}
-            isDirty={controller.primarySection.isDirty}
-            isSaving={controller.primarySection.isSaving}
-            hasConflict={controller.primarySection.hasConflict}
-            onSave={() => void controller.primarySection.save()}
-            onDiscard={controller.primarySection.discard}
-            saveLabel="Save Import"
-            savingLabel="Saving Import..."
-            showHeader={false}
-          >
-            <ImportPrimaryFieldsSection
-              entry={controller.record}
-              draft={controller.primarySection.localValue}
-              warehouseOptions={warehouseOptions}
-              disabled={controller.primarySection.isSaving}
-              onFieldChange={(field, value) => {
-                controller.primarySection.setLocalValue((previous) => ({
-                  ...previous,
-                  [field]: value,
-                }))
-                if (field === "warehouseId") {
-                  inventoryRowsSection.handleWarehouseChange(value)
-                }
+    <RecordMultiSectionPanel
+      page={page}
+      sections={[
+        {
+          key: "primary",
+          type: "field",
+          slot: "primary",
+          order: 0,
+          dirtyLabel: "primary",
+          controller: controller.primarySection,
+          render: () => (
+            <RecordPrimarySectionInstance
+              title="Import Details"
+              error={controller.primarySection.error}
+              noticeMessage={controller.primarySection.noticeMessage}
+              noticeError={controller.primarySection.noticeError}
+              isDirty={controller.primarySection.isDirty}
+              isSaving={controller.primarySection.isSaving}
+              hasConflict={controller.primarySection.hasConflict}
+              onSave={() => void controller.primarySection.save()}
+              onDiscard={controller.primarySection.discard}
+              saveLabel="Save Import"
+              savingLabel="Saving Import..."
+              showHeader={false}
+            >
+              <ImportPrimaryFieldsSection
+                entry={controller.record}
+                draft={controller.primarySection.localValue}
+                warehouseOptions={warehouseOptions}
+                disabled={controller.primarySection.isSaving}
+                onFieldChange={(field, value) => {
+                  controller.primarySection.setLocalValue((previous) => ({
+                    ...previous,
+                    [field]: value,
+                  }))
+                  if (field === "warehouseId") {
+                    inventoryRowsSection.handleWarehouseChange(value)
+                  }
+                }}
+              />
+            </RecordPrimarySectionInstance>
+          ),
+        },
+        {
+          key: "inventory-rows",
+          type: "item",
+          order: 10,
+          dirtyLabel: "inventory rows",
+          controller: inventoryRowsSection,
+          render: () => (
+            <ImportInventoryRowsSection
+              subHeader={{
+                isDirty: inventoryRowsSection.isDirty,
+                isSaving: inventoryRowsSection.isSaving,
+                hasConflict: inventoryRowsSection.hasConflict,
+                error: inventoryRowsSection.error,
+                onSave: () => void inventoryRowsSection.save(),
+                onDiscard: () => inventoryRowsSection.discard(),
+                saveLabel: "Save Rows",
+                savingLabel: "Saving Rows...",
+                actions: [
+                  {
+                    key: "add-row",
+                    kind: "add-row",
+                    label: "Add Row",
+                    onClick: inventoryRowsSection.addRow,
+                    disabled: inventoryRowsSection.isSaving,
+                  },
+                ],
               }}
+              rows={inventoryRowsSection.localValue}
+              warehouseId={controller.record.warehouseId}
+              productOptions={productOptions}
+              warehouseOptions={warehouseOptions}
+              locationOptions={locationOptions}
+              noticeMessage={inventoryRowsSection.noticeMessage}
+              noticeError={inventoryRowsSection.noticeError}
+              onRowFieldChange={inventoryRowsSection.setRowField}
+              onRemoveRow={inventoryRowsSection.removeRow}
             />
-          </RecordPrimarySectionInstance>
-        ) : null}
-
-        <ImportInventoryRowsSection
-          subHeader={{
-            isDirty: inventoryRowsSection.isDirty,
-            isSaving: inventoryRowsSection.isSaving,
-            hasConflict: inventoryRowsSection.hasConflict,
-            error: inventoryRowsSection.error,
-            onSave: () => void inventoryRowsSection.save(),
-            onDiscard: () => inventoryRowsSection.discard(),
-            saveLabel: "Save Rows",
-            savingLabel: "Saving Rows...",
-            actions: [
-              {
-                key: "add-row",
-                kind: "add-row",
-                label: "Add Row",
-                onClick: inventoryRowsSection.addRow,
-                disabled: inventoryRowsSection.isSaving,
-              },
-            ],
-          }}
-          rows={inventoryRowsSection.localValue}
-          warehouseId={controller.record.warehouseId}
-          productOptions={productOptions}
-          warehouseOptions={warehouseOptions}
-          locationOptions={locationOptions}
-          noticeMessage={inventoryRowsSection.noticeMessage}
-          noticeError={inventoryRowsSection.noticeError}
-          onRowFieldChange={inventoryRowsSection.setRowField}
-          onRemoveRow={inventoryRowsSection.removeRow}
-        />
-      </RecordSectionStack>
-
-      <RecordPanelFooter
-        deleteLabel="Delete Import"
-        deleteConfirmMessage={buildDeleteConfirmationMessage("import")}
-        onDelete={() => void controller.deleteRecord()}
-        onClose={page.closePage}
-      />
-    </div>
+          ),
+        },
+      ]}
+      footer={{
+        deleteLabel: "Delete Import",
+        deleteConfirmMessage: buildDeleteConfirmationMessage("import"),
+        onDelete: () => void controller.deleteRecord(),
+      }}
+    />
   )
 }

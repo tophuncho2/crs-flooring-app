@@ -3,9 +3,8 @@
 import { useCallback, useState } from "react"
 import {
   RecordDetailClientScaffoldContext,
-  RecordPanelFooter,
+  RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-  RecordSectionStack,
 } from "@/features/shared/engines/record-view"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
@@ -74,66 +73,79 @@ export function ProductRecordPanel({
   }, [inventoryNavigation, page])
 
   return (
-    <div className="space-y-4">
-      <RecordSectionStack>
-        {page.isPrimarySectionOpen ? (
-          <RecordPrimarySectionInstance
-            title="Product Details"
-            error={controller.primarySection.error}
-            noticeMessage={controller.primarySection.noticeMessage}
-            noticeError={controller.primarySection.noticeError}
-            isDirty={controller.primarySection.isDirty}
-            isSaving={controller.primarySection.isSaving}
-            hasConflict={controller.primarySection.hasConflict}
-            onSave={() => void controller.primarySection.save()}
-            onDiscard={controller.primarySection.discard}
-            saveLabel="Save Product"
-            savingLabel="Saving Product..."
-            showHeader={false}
-          >
-            <ProductPrimaryFieldsSection
-              product={controller.record}
-              draft={controller.primarySection.localValue}
-              categoryOptions={categoryOptions}
-              manufacturerOptions={manufacturerOptions}
-              customBaseColors={customBaseColors}
-              newBaseColor={newBaseColor}
-              disabled={controller.primarySection.isSaving}
-              onFieldChange={(field, value) => {
-                controller.primarySection.setLocalValue((previous) => ({
-                  ...previous,
-                  [field]: value,
-                }))
+    <RecordMultiSectionPanel
+      page={page}
+      sections={[
+        {
+          key: "primary",
+          type: "field",
+          slot: "primary",
+          order: 0,
+          dirtyLabel: "primary",
+          controller: controller.primarySection,
+          render: () => (
+            <RecordPrimarySectionInstance
+              title="Product Details"
+              error={controller.primarySection.error}
+              noticeMessage={controller.primarySection.noticeMessage}
+              noticeError={controller.primarySection.noticeError}
+              isDirty={controller.primarySection.isDirty}
+              isSaving={controller.primarySection.isSaving}
+              hasConflict={controller.primarySection.hasConflict}
+              onSave={() => void controller.primarySection.save()}
+              onDiscard={controller.primarySection.discard}
+              saveLabel="Save Product"
+              savingLabel="Saving Product..."
+              showHeader={false}
+            >
+              <ProductPrimaryFieldsSection
+                product={controller.record}
+                draft={controller.primarySection.localValue}
+                categoryOptions={categoryOptions}
+                manufacturerOptions={manufacturerOptions}
+                customBaseColors={customBaseColors}
+                newBaseColor={newBaseColor}
+                disabled={controller.primarySection.isSaving}
+                onFieldChange={(field, value) => {
+                  controller.primarySection.setLocalValue((previous) => ({
+                    ...previous,
+                    [field]: value,
+                  }))
+                }}
+                onNewBaseColorChange={setNewBaseColor}
+                onAddBaseColorOption={handleAddBaseColorOption}
+              />
+            </RecordPrimarySectionInstance>
+          ),
+        },
+        {
+          key: "inventory-rows",
+          type: "item",
+          order: 10,
+          render: () => (
+            <ProductInventoryRowsSection
+              subHeader={{
+                summary: "Open inventory rows to manage stock, location, and cut logs.",
+                isDirty: false,
+                isSaving: false,
+                hasConflict: false,
+                canManage: false,
+                showStatus: false,
               }}
-              onNewBaseColorChange={setNewBaseColor}
-              onAddBaseColorOption={handleAddBaseColorOption}
+              inventoryRows={inventoryRows}
+              expandedInventoryIds={expandedInventoryIds}
+              loadingInventoryId={loadingInventoryId}
+              onToggleInventoryCutLogs={handleToggleInventoryCutLogs}
+              onOpenInventory={handleOpenInventory}
             />
-          </RecordPrimarySectionInstance>
-        ) : null}
-
-        <ProductInventoryRowsSection
-          subHeader={{
-            summary: "Open inventory rows to manage stock, location, and cut logs.",
-            isDirty: false,
-            isSaving: false,
-            hasConflict: false,
-            canManage: false,
-            showStatus: false,
-          }}
-          inventoryRows={inventoryRows}
-          expandedInventoryIds={expandedInventoryIds}
-          loadingInventoryId={loadingInventoryId}
-          onToggleInventoryCutLogs={handleToggleInventoryCutLogs}
-          onOpenInventory={handleOpenInventory}
-        />
-      </RecordSectionStack>
-
-      <RecordPanelFooter
-        deleteLabel="Delete Product"
-        deleteConfirmMessage={buildDeleteConfirmationMessage("product")}
-        onDelete={() => void controller.deleteRecord()}
-        onClose={page.closePage}
-      />
-    </div>
+          ),
+        },
+      ]}
+      footer={{
+        deleteLabel: "Delete Product",
+        deleteConfirmMessage: buildDeleteConfirmationMessage("product"),
+        onDelete: () => void controller.deleteRecord(),
+      }}
+    />
   )
 }

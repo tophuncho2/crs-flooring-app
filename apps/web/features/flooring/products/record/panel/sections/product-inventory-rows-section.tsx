@@ -1,17 +1,15 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
 import { calculateProductInventorySummary } from "../../../domain/inventory-summary"
 import { formatInventoryImportNumber, formatInventoryQuantity } from "@/features/flooring/inventory/domain/formatters"
 import {
-  RecordAllocationItemRow,
-  RecordAllocationItemsPanel,
+  RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
-  RecordItemCell,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   RecordRowLayout,
-  RecordSectionItem,
   TextCell,
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
@@ -19,56 +17,29 @@ import {
 import type { ProductInventoryRow } from "../../../domain/types"
 
 const INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
-  { key: "itemNumber", minWidth: 140, grow: 1 },
-  { key: "location", minWidth: 280, grow: 2 },
-  { key: "stock", minWidth: 140, grow: 1, align: "center" },
-  { key: "cost", minWidth: 132, grow: 1, align: "end" },
-  { key: "freight", minWidth: 132, grow: 1, align: "end" },
-  { key: "cutTotal", minWidth: 148, grow: 1, align: "center" },
-  { key: "runningBalance", minWidth: 168, grow: 1, align: "center" },
-  { key: "toggle", minWidth: 120, grow: 0, align: "center" },
-  { key: "open", minWidth: 108, grow: 0, align: "center" },
+  { key: "itemNumber", minWidth: 140, grow: 1, label: "Item #" },
+  { key: "location", minWidth: 280, grow: 2, label: "Location" },
+  { key: "importNumber", minWidth: 168, grow: 1, label: "Import" },
+  { key: "stock", minWidth: 140, grow: 1, align: "center", label: "Stock" },
+  { key: "cost", minWidth: 132, grow: 1, align: "end", label: "Cost" },
+  { key: "freight", minWidth: 132, grow: 1, align: "end", label: "Freight" },
+  { key: "cutTotal", minWidth: 148, grow: 1, align: "center", label: "Cut Total" },
+  { key: "runningBalance", minWidth: 168, grow: 1, align: "center", label: "Running Balance" },
+  { key: "toggle", minWidth: 120, grow: 0, align: "center", label: "Show / Hide" },
+  { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
 
 const CUT_LOG_COLUMNS: RecordRowColumnSpec[] = [
-  { key: "createdAt", minWidth: 176 },
-  { key: "cut", minWidth: 144, align: "center" },
-  { key: "before", minWidth: 144, align: "center" },
-  { key: "after", minWidth: 144, align: "center" },
-  { key: "notes", minWidth: 320, grow: 2 },
+  { key: "createdAt", minWidth: 176, label: "Created" },
+  { key: "cut", minWidth: 144, align: "center", label: "Cut" },
+  { key: "before", minWidth: 144, align: "center", label: "Before" },
+  { key: "after", minWidth: 144, align: "center", label: "After" },
+  { key: "notes", minWidth: 320, grow: 2, label: "Notes" },
 ]
 
 function readLocationLabel(row: ProductInventoryRow) {
   const parts = [row.warehouseName, row.sectionName, row.locationCode].filter(Boolean)
   return parts.length > 0 ? parts.join(" / ") : "No location"
-}
-
-function ProductCutLogRow({
-  row,
-}: {
-  row: ProductInventoryRow["cutLogs"][number]
-}) {
-  return (
-    <RecordAllocationItemRow>
-      <RecordRowLayout columns={CUT_LOG_COLUMNS}>
-        <RecordItemCell label="Created" columnKey="createdAt" tone="allocation" density="compact">
-          <TextCell>{formatStableDateTime(row.createdAt)}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Cut" columnKey="cut" tone="allocation" density="compact">
-          <TextCell align="center">{row.cut}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Before" columnKey="before" tone="allocation" density="compact">
-          <TextCell align="center">{row.before}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="After" columnKey="after" tone="allocation" density="compact">
-          <TextCell align="center">{row.after}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Notes" columnKey="notes" tone="allocation" density="compact">
-          <TextCell noWrap={false}>{row.notes || "-"}</TextCell>
-        </RecordItemCell>
-      </RecordRowLayout>
-    </RecordAllocationItemRow>
-  )
 }
 
 export function ProductInventoryRowsSection({
@@ -91,7 +62,7 @@ export function ProductInventoryRowsSection({
   return (
     <RecordItemSection
       title="Inventory Rows"
-      bodyClassName="space-y-4"
+      bodyClassName="space-y-0"
       subHeader={subHeader}
       metrics={[
         { label: "Rows", value: String(summary.rowCount) },
@@ -105,72 +76,99 @@ export function ProductInventoryRowsSection({
         supportsOpenRow: true,
       }}
       isEmpty={inventoryRows.length === 0}
-      emptyState={(
-        <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
-          No inventory rows found for this product.
-        </div>
-      )}
+      emptyState="No inventory rows found for this product."
     >
+      <RecordSectionGrid
+        columns={INVENTORY_ROW_COLUMNS}
+        isEmpty={inventoryRows.length === 0}
+        emptyState="No inventory rows found for this product."
+      >
+        {inventoryRows.map((row, index) => {
+          const isExpanded = expandedInventoryIds.includes(row.id)
 
-      {inventoryRows.map((row) => {
-        const isExpanded = expandedInventoryIds.includes(row.id)
-
-        return (
-          <RecordSectionItem
-            key={row.id}
-            nestedContent={
-              isExpanded ? (
-                <RecordAllocationItemsPanel emptyState="No cut logs recorded for this inventory row.">
-                  {row.cutLogs.map((cutLog) => (
-                    <ProductCutLogRow key={cutLog.id} row={cutLog} />
-                  ))}
-                </RecordAllocationItemsPanel>
-              ) : null
-            }
-          >
-            <RecordRowLayout columns={INVENTORY_ROW_COLUMNS}>
-              <RecordItemCell label="Item #" columnKey="itemNumber">
-                <TextCell className="font-medium">{row.itemNumber}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Location" columnKey="location">
-                <div className="space-y-1 text-left">
+          return (
+            <RecordSectionGridRow
+              key={row.id}
+              columns={INVENTORY_ROW_COLUMNS}
+              nestedContent={
+                isExpanded ? (
+                  <RecordSectionGrid
+                    columns={CUT_LOG_COLUMNS}
+                    surface="nested"
+                    isEmpty={row.cutLogs.length === 0}
+                    emptyState="No cut logs recorded for this inventory row."
+                  >
+                    {row.cutLogs.map((cutLog, cutLogIndex) => (
+                      <RecordSectionGridRow
+                        key={cutLog.id}
+                        columns={CUT_LOG_COLUMNS}
+                        rowTone="allocation"
+                      >
+                        <RecordItemCell columnKey="createdAt" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                          <TextCell>{formatStableDateTime(cutLog.createdAt)}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemCell columnKey="cut" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                          <TextCell align="center">{cutLog.cut}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemCell columnKey="before" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                          <TextCell align="center">{cutLog.before}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemCell columnKey="after" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                          <TextCell align="center">{cutLog.after}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemCell columnKey="notes" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                          <TextCell noWrap={false}>{cutLog.notes || "-"}</TextCell>
+                        </RecordItemCell>
+                      </RecordSectionGridRow>
+                    ))}
+                  </RecordSectionGrid>
+                ) : null
+              }
+            >
+              <RecordRowLayout columns={INVENTORY_ROW_COLUMNS}>
+                <RecordItemCell columnKey="itemNumber" chrome="grid" showLabel={index === 0}>
+                  <TextCell className="font-medium">{row.itemNumber}</TextCell>
+                </RecordItemCell>
+                <RecordItemCell columnKey="location" chrome="grid" showLabel={index === 0}>
                   <TextCell noWrap={false}>{readLocationLabel(row)}</TextCell>
-                  <div className="text-xs text-[var(--foreground)]/55">
-                    {row.importNumber ? formatInventoryImportNumber(row.importNumber) : "No import"}
-                  </div>
-                </div>
-              </RecordItemCell>
-              <RecordItemCell label="Stock" columnKey="stock">
-                <TextCell align="center">{formatInventoryQuantity(row.stockCount, row.stockUnit)}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Cost" columnKey="cost">
-                <TextCell align="right">{row.cost ? `$${row.cost}` : "-"}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Freight" columnKey="freight">
-                <TextCell align="right">{row.freight ? `$${row.freight}` : "-"}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Cut Total" columnKey="cutTotal">
-                <TextCell align="center">{formatInventoryQuantity(row.cutTotal, row.stockUnit)}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell label="Running Balance" columnKey="runningBalance">
-                <TextCell align="center">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</TextCell>
-              </RecordItemCell>
-              <RecordItemSectionControls
-                capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
-                toggle={{
-                  expanded: isExpanded,
-                  onToggle: () => onToggleInventoryCutLogs(row.id),
-                  ariaLabel: isExpanded ? `Hide cut logs for inventory ${row.itemNumber}` : `Show cut logs for inventory ${row.itemNumber}`,
-                }}
-                open={{
-                  onOpen: () => onOpenInventory(row.id),
-                  loading: loadingInventoryId === row.id,
-                }}
-              />
-            </RecordRowLayout>
-          </RecordSectionItem>
-        )
-      })}
+                </RecordItemCell>
+                <RecordItemCell columnKey="importNumber" chrome="grid" showLabel={index === 0}>
+                  <TextCell>{row.importNumber ? formatInventoryImportNumber(row.importNumber) : "No import"}</TextCell>
+                </RecordItemCell>
+                <RecordItemCell columnKey="stock" chrome="grid" showLabel={index === 0}>
+                  <TextCell align="center">{formatInventoryQuantity(row.stockCount, row.stockUnit)}</TextCell>
+                </RecordItemCell>
+                <RecordItemCell columnKey="cost" chrome="grid" showLabel={index === 0}>
+                  <TextCell align="right">{row.cost ? `$${row.cost}` : "-"}</TextCell>
+                </RecordItemCell>
+                <RecordItemCell columnKey="freight" chrome="grid" showLabel={index === 0}>
+                  <TextCell align="right">{row.freight ? `$${row.freight}` : "-"}</TextCell>
+                </RecordItemCell>
+                <RecordItemCell columnKey="cutTotal" chrome="grid" showLabel={index === 0}>
+                  <TextCell align="center">{formatInventoryQuantity(row.cutTotal, row.stockUnit)}</TextCell>
+                </RecordItemCell>
+                <RecordItemCell columnKey="runningBalance" chrome="grid" showLabel={index === 0}>
+                  <TextCell align="center">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</TextCell>
+                </RecordItemCell>
+                <RecordItemSectionControls
+                  capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
+                  cellChrome="grid"
+                  showCellLabels={index === 0}
+                  toggle={{
+                    expanded: isExpanded,
+                    onToggle: () => onToggleInventoryCutLogs(row.id),
+                    ariaLabel: isExpanded ? `Hide cut logs for inventory ${row.itemNumber}` : `Show cut logs for inventory ${row.itemNumber}`,
+                  }}
+                  open={{
+                    onOpen: () => onOpenInventory(row.id),
+                    loading: loadingInventoryId === row.id,
+                  }}
+                />
+              </RecordRowLayout>
+            </RecordSectionGridRow>
+          )
+        })}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }

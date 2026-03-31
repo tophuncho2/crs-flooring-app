@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import type { RecordDetailClientScaffoldContext } from "./record-detail-client-scaffold"
-import { useRecordSectionController } from "./use-record-section-controller"
+import { useRecordScopedSectionController } from "./use-record-scoped-section-controller"
 
 export function useSingleSectionCreateController<TLocal>({
   page,
@@ -28,10 +28,13 @@ export function useSingleSectionCreateController<TLocal>({
     initialValueRef.current = createInitialValue()
   }
 
-  const primarySection = useRecordSectionController<TLocal, TLocal>({
+  const primarySection = useRecordScopedSectionController<TLocal, TLocal>({
+    recordId: "create",
+    sectionKey: "primary",
     serverValue: initialValueRef.current,
     serverRevisionKey: "create",
     createLocalValue: (serverValue) => serverValue,
+    persistDraft: false,
     isEqual,
     onSave: async (localValue) => {
       const result = await createRecord(localValue)

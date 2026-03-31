@@ -7,6 +7,7 @@ import {
   createRecordSectionError,
   isLocalOnlyRecordRow,
   useRecordItemController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   clearRowFieldError,
@@ -17,7 +18,6 @@ import {
   type ServiceItemField,
   validateServiceItemFields,
 } from "@/features/flooring/shared/line-items/service-items-editor"
-import { useTemplateSectionController } from "./use-template-section-controller"
 import {
   areServiceItemsEqual,
   cloneServiceItems,
@@ -45,10 +45,10 @@ export function useTemplateServiceSection(input: {
   } = input
   const [itemErrors, setItemErrors] = useState<RowFieldErrors<ServiceItemField>>({})
 
-  const controller = useTemplateSectionController<EditableServiceItem[], EditableServiceItem[]>({
+  const controller = useRecordScopedSectionController<EditableServiceItem[], EditableServiceItem[]>({
     currentUserId,
-    templateId,
-    section: "service",
+    recordId: templateId,
+    sectionKey: "service",
     serverValue: template.serviceItems,
     serverRevisionKey: template.updatedAt,
     createLocalValue: cloneServiceItems,

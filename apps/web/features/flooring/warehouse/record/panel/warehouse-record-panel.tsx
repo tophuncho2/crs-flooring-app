@@ -3,10 +3,8 @@
 import { useCallback, useEffect } from "react"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
-  RecordPageActionNotices,
-  RecordPanelFooter,
+  RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-  RecordSectionStack,
   useRecordNotices,
   type RecordDetailClientScaffoldContext,
 } from "@/features/shared/engines/record-view"
@@ -34,19 +32,6 @@ export function WarehouseRecordPanel({
     publishRecord: controller.publishRecord,
   })
 
-  useEffect(() => {
-    const dirtySections: string[] = []
-
-    if (controller.primarySection.isDirty) {
-      dirtySections.push("primary")
-    }
-    if (sectionsSection.isDirty) {
-      dirtySections.push("sections")
-    }
-
-    page.setDirtySections(dirtySections)
-  }, [controller.primarySection.isDirty, page, sectionsSection.isDirty])
-
   const deleteWarehouse = useCallback(async () => {
     notices.clearNotices()
 
@@ -62,77 +47,91 @@ export function WarehouseRecordPanel({
   }, [controller, notices, page])
 
   return (
-    <div className="space-y-4">
-      <RecordPageActionNotices message={notices.message} error={notices.error} />
-
-      <RecordSectionStack>
-        {page.isPrimarySectionOpen ? (
-          <RecordPrimarySectionInstance
-            title="Warehouse Details"
-            error={controller.primarySection.error}
-            noticeMessage={controller.primarySection.noticeMessage}
-            noticeError={controller.primarySection.noticeError}
-            isDirty={controller.primarySection.isDirty}
-            isSaving={controller.primarySection.isSaving}
-            hasConflict={controller.primarySection.hasConflict}
-            onSave={() => void controller.primarySection.save()}
-            onDiscard={controller.primarySection.discard}
-            saveLabel="Save Warehouse"
-            savingLabel="Saving Warehouse..."
-            showHeader={false}
-          >
-            <WarehousePrimaryFieldsSection
-              warehouse={controller.record}
-              draft={controller.primarySection.localValue}
-              disabled={controller.primarySection.isSaving}
-              onFieldChange={(field, value) => {
-                controller.primarySection.setLocalValue((previous) => ({
-                  ...previous,
-                  [field]: value,
-                }))
+    <RecordMultiSectionPanel
+      page={page}
+      notices={notices}
+      sections={[
+        {
+          key: "primary",
+          type: "field",
+          slot: "primary",
+          order: 0,
+          dirtyLabel: "primary",
+          controller: controller.primarySection,
+          render: () => (
+            <RecordPrimarySectionInstance
+              title="Warehouse Details"
+              error={controller.primarySection.error}
+              noticeMessage={controller.primarySection.noticeMessage}
+              noticeError={controller.primarySection.noticeError}
+              isDirty={controller.primarySection.isDirty}
+              isSaving={controller.primarySection.isSaving}
+              hasConflict={controller.primarySection.hasConflict}
+              onSave={() => void controller.primarySection.save()}
+              onDiscard={controller.primarySection.discard}
+              saveLabel="Save Warehouse"
+              savingLabel="Saving Warehouse..."
+              showHeader={false}
+            >
+              <WarehousePrimaryFieldsSection
+                warehouse={controller.record}
+                draft={controller.primarySection.localValue}
+                disabled={controller.primarySection.isSaving}
+                onFieldChange={(field, value) => {
+                  controller.primarySection.setLocalValue((previous) => ({
+                    ...previous,
+                    [field]: value,
+                  }))
+                }}
+              />
+            </RecordPrimarySectionInstance>
+          ),
+        },
+        {
+          key: "sections",
+          type: "item",
+          order: 10,
+          dirtyLabel: "sections",
+          controller: sectionsSection,
+          render: () => (
+            <WarehouseSectionsSection
+              rows={sectionsSection.rows}
+              locations={sectionsSection.locations}
+              noticeMessage={sectionsSection.noticeMessage}
+              noticeError={sectionsSection.noticeError}
+              onNameChange={sectionsSection.setSectionName}
+              onRemoveRow={sectionsSection.removeSection}
+              onAddLocation={sectionsSection.addLocation}
+              onLocationCodeChange={sectionsSection.setLocationCode}
+              onRemoveLocation={sectionsSection.removeLocation}
+              subHeader={{
+                isDirty: sectionsSection.isDirty,
+                isSaving: sectionsSection.isSaving,
+                hasConflict: sectionsSection.hasConflict,
+                error: sectionsSection.error,
+                onSave: () => void sectionsSection.save(),
+                onDiscard: () => sectionsSection.discard(),
+                saveLabel: "Save Sections",
+                savingLabel: "Saving Sections...",
+                actions: [
+                  {
+                    key: "add-section",
+                    kind: "add-row",
+                    label: "Add Section",
+                    onClick: sectionsSection.addSection,
+                    disabled: sectionsSection.isSaving,
+                  },
+                ],
               }}
             />
-          </RecordPrimarySectionInstance>
-        ) : null}
-
-        <WarehouseSectionsSection
-          rows={sectionsSection.rows}
-          locations={sectionsSection.locations}
-          noticeMessage={sectionsSection.noticeMessage}
-          noticeError={sectionsSection.noticeError}
-          onNameChange={sectionsSection.setSectionName}
-          onRemoveRow={sectionsSection.removeSection}
-          onAddLocation={sectionsSection.addLocation}
-          onLocationCodeChange={sectionsSection.setLocationCode}
-          onRemoveLocation={sectionsSection.removeLocation}
-          subHeader={{
-            isDirty: sectionsSection.isDirty,
-            isSaving: sectionsSection.isSaving,
-            hasConflict: sectionsSection.hasConflict,
-            error: sectionsSection.error,
-            onSave: () => void sectionsSection.save(),
-            onDiscard: () => sectionsSection.discard(),
-            saveLabel: "Save Sections",
-            savingLabel: "Saving Sections...",
-            actions: [
-              {
-                key: "add-section",
-                kind: "add-row",
-                label: "Add Section",
-                onClick: sectionsSection.addSection,
-                disabled: sectionsSection.isSaving,
-              },
-            ],
-          }}
-        />
-      </RecordSectionStack>
-
-      <RecordPanelFooter
-        deleteLabel="Delete Warehouse"
-        deleteConfirmMessage={buildDeleteConfirmationMessage("warehouse")}
-        onDelete={() => void deleteWarehouse()}
-        onClose={page.closePage}
-      />
-    </div>
+          ),
+        },
+      ]}
+      footer={{
+        deleteLabel: "Delete Warehouse",
+        deleteConfirmMessage: buildDeleteConfirmationMessage("warehouse"),
+        onDelete: () => void deleteWarehouse(),
+      }}
+    />
   )
 }

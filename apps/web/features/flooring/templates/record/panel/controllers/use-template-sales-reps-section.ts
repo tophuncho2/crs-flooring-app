@@ -7,6 +7,7 @@ import {
   createRecordSectionError,
   isLocalOnlyRecordRow,
   useRecordItemController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   clearRowFieldError,
@@ -17,7 +18,6 @@ import {
   type SalesRepField,
   validateSalesRepFields,
 } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import { useTemplateSectionController } from "./use-template-section-controller"
 import {
   areSalesRepItemsEqual,
   cloneSalesRepItems,
@@ -45,10 +45,10 @@ export function useTemplateSalesRepsSection(input: {
   } = input
   const [itemErrors, setItemErrors] = useState<RowFieldErrors<SalesRepField>>({})
 
-  const controller = useTemplateSectionController<TemplateDetail["salesReps"], TemplateDetail["salesReps"]>({
+  const controller = useRecordScopedSectionController<TemplateDetail["salesReps"], TemplateDetail["salesReps"]>({
     currentUserId,
-    templateId,
-    section: "sales",
+    recordId: templateId,
+    sectionKey: "sales",
     serverValue: template.salesReps,
     serverRevisionKey: template.updatedAt,
     createLocalValue: cloneSalesRepItems,

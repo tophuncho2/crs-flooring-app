@@ -1,12 +1,12 @@
 "use client"
 
-import type { ReactNode } from "react"
 import {
+  RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
-  RecordItemCell,
   RecordRowLayout,
-  RecordSectionItem,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   TextCell,
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
@@ -14,10 +14,10 @@ import {
 import type { PropertyTemplateRow } from "../../../domain/types"
 
 const TEMPLATE_COLUMNS: RecordRowColumnSpec[] = [
-  { key: "template", minWidth: 220, grow: 2 },
-  { key: "warehouse", minWidth: 220, grow: 2 },
-  { key: "items", minWidth: 120, grow: 1, align: "center" },
-  { key: "open", minWidth: 108, grow: 0, align: "center" },
+  { key: "template", minWidth: 220, grow: 2, label: "Template" },
+  { key: "warehouse", minWidth: 220, grow: 2, label: "Warehouse" },
+  { key: "items", minWidth: 120, grow: 1, align: "center", label: "Rows" },
+  { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
 
 export function PropertyTemplatesSection({
@@ -34,7 +34,7 @@ export function PropertyTemplatesSection({
   return (
     <RecordItemSection
       title="Templates"
-      bodyClassName="space-y-4"
+      bodyClassName="space-y-0"
       subHeader={subHeader}
       metrics={[{ label: "Templates", value: String(templates.length) }]}
       capabilities={{
@@ -45,35 +45,41 @@ export function PropertyTemplatesSection({
         supportsRouteAdd: true,
       }}
       isEmpty={templates.length === 0}
-      emptyState={(
-        <div className="rounded-2xl border border-dashed border-[var(--panel-border)] px-4 py-8 text-center text-[var(--foreground)]/65">
-          No templates linked to this property yet.
-        </div>
-      )}
+      emptyState="No templates linked to this property yet."
     >
-
-      {templates.map((template) => (
-        <RecordSectionItem key={template.id}>
-          <RecordRowLayout columns={TEMPLATE_COLUMNS}>
-            <RecordItemCell label="Template" columnKey="template">
-              <TextCell className="font-medium">{template.templateTag}</TextCell>
-            </RecordItemCell>
-            <RecordItemCell label="Warehouse" columnKey="warehouse">
-              <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
-            </RecordItemCell>
-            <RecordItemCell label="Rows" columnKey="items">
-              <TextCell align="center">{template.itemsCount}</TextCell>
-            </RecordItemCell>
-            <RecordItemSectionControls
-              capabilities={{ supportsOpenRow: true }}
-              open={{
-                onOpen: () => onOpenTemplate(template.id),
-                loading: loadingTemplateId === template.id,
-              }}
-            />
-          </RecordRowLayout>
-        </RecordSectionItem>
-      ))}
+      <RecordSectionGrid
+        columns={TEMPLATE_COLUMNS}
+        isEmpty={templates.length === 0}
+        emptyState="No templates linked to this property yet."
+      >
+        {templates.map((template, index) => (
+          <RecordSectionGridRow
+            key={template.id}
+            columns={TEMPLATE_COLUMNS}
+          >
+            <RecordRowLayout columns={TEMPLATE_COLUMNS}>
+              <RecordItemCell columnKey="template" chrome="grid" showLabel={index === 0}>
+                <TextCell className="font-medium">{template.templateTag}</TextCell>
+              </RecordItemCell>
+              <RecordItemCell columnKey="warehouse" chrome="grid" showLabel={index === 0}>
+                <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
+              </RecordItemCell>
+              <RecordItemCell columnKey="items" chrome="grid" showLabel={index === 0}>
+                <TextCell align="center">{template.itemsCount}</TextCell>
+              </RecordItemCell>
+              <RecordItemSectionControls
+                capabilities={{ supportsOpenRow: true }}
+                cellChrome="grid"
+                showCellLabels={index === 0}
+                open={{
+                  onOpen: () => onOpenTemplate(template.id),
+                  loading: loadingTemplateId === template.id,
+                }}
+              />
+            </RecordRowLayout>
+          </RecordSectionGridRow>
+        ))}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }

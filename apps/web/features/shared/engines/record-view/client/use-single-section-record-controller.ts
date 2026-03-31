@@ -6,9 +6,9 @@ import { normalizeRecordSectionError } from "../contracts"
 import type { RecordDetailClientScaffoldContext } from "./record-detail-client-scaffold"
 import { useRecordDetailController } from "./use-record-detail-controller"
 import {
-  useRecordSectionController,
+  useRecordScopedSectionController,
   type RecordSectionSaveResult,
-} from "./use-record-section-controller"
+} from "./use-record-scoped-section-controller"
 
 type BaseRecord = {
   id: string
@@ -65,7 +65,9 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
 
   const currentRecord = detail.record ?? initialRecord
 
-  const primarySection = useRecordSectionController<TRecord, TLocal>({
+  const primarySection = useRecordScopedSectionController<TRecord, TLocal>({
+    recordId: id,
+    sectionKey: "primary",
     serverValue: currentRecord,
     serverRevisionKey: currentRecord.updatedAt,
     createLocalValue,

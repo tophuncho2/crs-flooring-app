@@ -1,23 +1,23 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useRecordCloseGuard } from "./use-record-close-guard"
 import { useRecordNotices, type RecordNotices } from "./use-record-notices"
 
-type SummaryLine = {
-  quantity: string
-  unitPrice: string
+export type RecordPageSummaryMetric = {
+  key?: string
+  label: string
+  value: ReactNode
 }
 
-type RecordPageSummary = {
-  materialItems: SummaryLine[]
-  serviceItems: SummaryLine[]
+export type RecordPageSummary = {
+  metrics?: RecordPageSummaryMetric[]
+  payload?: unknown
 }
 
 const EMPTY_SUMMARY: RecordPageSummary = {
-  materialItems: [],
-  serviceItems: [],
+  metrics: [],
 }
 
 export type RecordPageController = {

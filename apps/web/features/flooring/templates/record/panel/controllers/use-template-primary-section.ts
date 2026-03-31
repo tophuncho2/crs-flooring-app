@@ -2,7 +2,7 @@
 
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
-import { useTemplateSectionController } from "./use-template-section-controller"
+import { useRecordScopedSectionController } from "@/features/shared/engines/record-view"
 import {
   areTemplateDraftsEqual,
   cloneDraftTemplate,
@@ -27,10 +27,10 @@ export function useTemplatePrimarySection(input: {
     applyConflictTemplateSnapshot,
   } = input
 
-  return useTemplateSectionController<TemplateDetail, DraftTemplate>({
+  return useRecordScopedSectionController<TemplateDetail, DraftTemplate>({
     currentUserId,
-    templateId,
-    section: "primary",
+    recordId: templateId,
+    sectionKey: "primary",
     serverValue: template,
     serverRevisionKey: template.updatedAt,
     createLocalValue: toTemplateDraft,

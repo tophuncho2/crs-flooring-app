@@ -170,10 +170,10 @@ describe("WarehouseDetailClient", () => {
       />,
     )
 
-    const showroomRow = screen.getByDisplayValue("Showroom").closest("section")
-    expect(showroomRow).toBeTruthy()
+    expect(screen.getByDisplayValue("Showroom")).toBeTruthy()
 
-    await user.click(within(showroomRow as HTMLElement).getByRole("button", { name: "Remove" }))
+    const removeButtons = screen.getAllByRole("button", { name: "Remove" })
+    await user.click(removeButtons[removeButtons.length - 1])
     await user.click(screen.getByRole("button", { name: "Save Sections" }))
 
     await waitFor(() => {

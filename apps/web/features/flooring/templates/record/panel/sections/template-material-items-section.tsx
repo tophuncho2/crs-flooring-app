@@ -6,6 +6,7 @@ import {
   RecordRowStatusBadge,
   RecordSectionGrid,
   RecordSectionGridRow,
+  resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
@@ -21,24 +22,6 @@ import type {
 } from "@/features/flooring/shared/line-items/material-items-editor"
 import { TEMPLATE_MATERIAL_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateMaterialSectionMetrics } from "./template-section-metrics"
-
-function readStatusLabel(item: EditableMaterialItem, hasErrors: boolean) {
-  if (hasErrors) {
-    return "Needs Review"
-  }
-
-  if (item.id.startsWith("temp:")) {
-    return "Unsaved"
-  }
-
-  return "Ready"
-}
-
-function readStatusTone(item: EditableMaterialItem, hasErrors: boolean) {
-  if (hasErrors) return "error" as const
-  if (item.id.startsWith("temp:")) return "warning" as const
-  return "neutral" as const
-}
 
 export function TemplateMaterialItemsSection({
   title,
@@ -96,7 +79,10 @@ export function TemplateMaterialItemsSection({
       >
         {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
-          const hasErrors = hasFieldErrors(rowErrors)
+          const status = resolveRecordRowStatus({
+            hasErrors: hasFieldErrors(rowErrors),
+            isUnsaved: item.id.startsWith("temp:"),
+          })
 
           return (
             <RecordSectionGridRow key={item.id} columns={TEMPLATE_MATERIAL_COLUMNS}>
@@ -125,8 +111,8 @@ export function TemplateMaterialItemsSection({
                   capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
                   status: {
                     content: (
-                      <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
-                        {readStatusLabel(item, hasErrors)}
+                      <RecordRowStatusBadge tone={status.tone}>
+                        {status.label}
                       </RecordRowStatusBadge>
                     ),
                   },

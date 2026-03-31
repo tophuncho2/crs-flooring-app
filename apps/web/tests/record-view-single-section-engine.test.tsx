@@ -11,17 +11,24 @@ import {
   RecordGridCellInput,
   RecordItemCell,
   RecordItemSectionControls,
+  RecordMultiSectionPanel,
   RecordPageActionNotices,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   RecordRowLayout,
   RecordRowToggleButton,
-  RecordSectionItem,
   RecordSectionSubHeader,
   RecordSingleSectionPanel,
   RecordSectionShell,
-  RecordAllocationItemRow,
+  formatRecordCalculationValue,
+  getGenericRecordRowStatus,
+  getRecordAllocationStateStatus,
+  resolveRecordRowStatus,
   useRecordPageController,
+  useRecordScopedSectionController,
   useSingleSectionRecordController,
 } from "@/features/shared/engines/record-view"
+import * as RecordViewEngine from "@/features/shared/engines/record-view"
 
 function renderSingleSectionHarness() {
   const saveSection = vi.fn().mockImplementation(async ({ localValue }) => ({
@@ -78,6 +85,67 @@ function renderSingleSectionHarness() {
   return { saveSection, ...render(<Harness />) }
 }
 
+function renderScopedSectionHarness() {
+  const saveSection = vi.fn().mockImplementation(async ({ name }: { name: string }) => ({
+    serverValue: {
+      id: "rec-1",
+      updatedAt: "2026-03-21T00:00:00.000Z",
+      name,
+    },
+    serverRevisionKey: "2026-03-21T00:00:00.000Z",
+    noticeMessage: "Scoped section saved",
+  }))
+
+  function Harness() {
+    const controller = useRecordScopedSectionController<
+      { id: string; updatedAt: string; name: string },
+      { name: string }
+    >({
+      currentUserId: "user-1",
+      recordId: "rec-1",
+      sectionKey: "primary",
+      serverValue: {
+        id: "rec-1",
+        updatedAt: "2026-03-20T00:00:00.000Z",
+        name: "Original",
+      },
+      serverRevisionKey: "2026-03-20T00:00:00.000Z",
+      createLocalValue: (record) => ({ name: record.name }),
+      cloneLocalValue: (value) => ({ ...value }),
+      onSave: async (localValue) => saveSection(localValue),
+      persistDraft: false,
+      policy: {
+        addRowPlacement: "bottom",
+        childRows: "inline",
+      },
+    })
+
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => controller.setLocalValue({ name: "Scoped Updated" })}
+        >
+          Change Scoped
+        </button>
+        <button type="button" onClick={() => void controller.save()}>
+          Save Scoped
+        </button>
+        <button type="button" onClick={() => controller.discard()}>
+          Discard Scoped
+        </button>
+        <div data-testid="scoped-name">{controller.localValue.name}</div>
+        <div data-testid="scoped-dirty">{String(controller.isDirty)}</div>
+        <div data-testid="scoped-notice">{controller.noticeMessage}</div>
+        <div data-testid="scoped-placement">{controller.policy.addRowPlacement}</div>
+        <div data-testid="scoped-child-rows">{controller.policy.childRows}</div>
+      </div>
+    )
+  }
+
+  return { saveSection, ...render(<Harness />) }
+}
+
 describe("record view single-section engine", () => {
   it("single-section controller owns dirty, discard, and authoritative reseed", async () => {
     const user = userEvent.setup()
@@ -102,6 +170,34 @@ describe("record view single-section engine", () => {
       expect(saveSection).toHaveBeenCalledTimes(1)
       expect(screen.getByTestId("record-name").textContent).toBe("Updated")
       expect(screen.getByTestId("dirty").textContent).toBe("false")
+    })
+  })
+
+  it("record-scoped section controller is the canonical section save/discard runtime", async () => {
+    const user = userEvent.setup()
+    const { saveSection } = renderScopedSectionHarness()
+
+    expect(screen.getByTestId("scoped-name").textContent).toBe("Original")
+    expect(screen.getByTestId("scoped-dirty").textContent).toBe("false")
+    expect(screen.getByTestId("scoped-placement").textContent).toBe("bottom")
+    expect(screen.getByTestId("scoped-child-rows").textContent).toBe("inline")
+
+    await user.click(screen.getByRole("button", { name: "Change Scoped" }))
+    expect(screen.getByTestId("scoped-name").textContent).toBe("Scoped Updated")
+    expect(screen.getByTestId("scoped-dirty").textContent).toBe("true")
+
+    await user.click(screen.getByRole("button", { name: "Discard Scoped" }))
+    expect(screen.getByTestId("scoped-name").textContent).toBe("Original")
+    expect(screen.getByTestId("scoped-dirty").textContent).toBe("false")
+
+    await user.click(screen.getByRole("button", { name: "Change Scoped" }))
+    await user.click(screen.getByRole("button", { name: "Save Scoped" }))
+
+    await waitFor(() => {
+      expect(saveSection).toHaveBeenCalledTimes(1)
+      expect(screen.getByTestId("scoped-name").textContent).toBe("Scoped Updated")
+      expect(screen.getByTestId("scoped-dirty").textContent).toBe("false")
+      expect(screen.getByTestId("scoped-notice").textContent).toBe("Scoped section saved")
     })
   })
 
@@ -220,6 +316,84 @@ describe("record view single-section engine", () => {
     expect(screen.getByText("4")).toBeTruthy()
   })
 
+  it("multi-section panel config governs ordering, visibility, dirty aggregation, and generic summary payloads", async () => {
+    const user = userEvent.setup()
+
+    function Harness() {
+      const page = useRecordPageController({
+        backHref: "/dashboard/test",
+        dirtyMessage: "Unsaved changes",
+      })
+      const [showSecondary, setShowSecondary] = React.useState(true)
+      const summary = React.useMemo(
+        () => ({
+          metrics: [{ key: "rows", label: "Rows", value: "3" }],
+          payload: { kind: "custom-summary", total: 3 },
+        }),
+        [],
+      )
+      const sections = React.useMemo(
+        () => [
+          {
+            key: "secondary",
+            type: "item" as const,
+            order: 20,
+            dirtyLabel: "Secondary Grid",
+            controller: { isDirty: true, isSaving: false, hasConflict: false },
+            visibleWhen: () => showSecondary,
+            render: () => <div data-testid="section-row">Secondary Section</div>,
+          },
+          {
+            key: "primary",
+            type: "field" as const,
+            order: 10,
+            slot: "primary" as const,
+            controller: { isDirty: false, isSaving: false, hasConflict: false },
+            render: () => <div data-testid="section-row">Primary Section</div>,
+          },
+        ],
+        [showSecondary],
+      )
+
+      return (
+        <div>
+          <button type="button" onClick={() => setShowSecondary((current) => !current)}>
+            Toggle Secondary
+          </button>
+          <RecordMultiSectionPanel
+            page={page}
+            summary={summary}
+            sections={sections}
+          />
+          <div data-testid="panel-dirty">{page.dirtySections.join(",")}</div>
+          <div data-testid="panel-summary">
+            {page.summary.metrics?.map((metric) => `${metric.label}:${metric.value}`).join("|")}
+          </div>
+          <div data-testid="panel-payload">{JSON.stringify(page.summary.payload)}</div>
+        </div>
+      )
+    }
+
+    const { container } = render(<Harness />)
+
+    expect(screen.getAllByTestId("section-row").map((node) => node.textContent)).toEqual([
+      "Primary Section",
+      "Secondary Section",
+    ])
+    expect(screen.getByTestId("panel-dirty").textContent).toBe("Secondary Grid")
+    expect(screen.getByTestId("panel-summary").textContent).toBe("Rows:3")
+    expect(screen.getByTestId("panel-payload").textContent).toBe(
+      JSON.stringify({ kind: "custom-summary", total: 3 }),
+    )
+    expect(container.textContent?.indexOf("Primary Section")).toBeLessThan(
+      container.textContent?.indexOf("Secondary Section") ?? Number.POSITIVE_INFINITY,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Toggle Secondary" }))
+    expect(screen.queryByText("Secondary Section")).toBeNull()
+    expect(screen.getByText("Primary Section")).toBeTruthy()
+  })
+
   it("section shell reports open-state changes after toggle, not during render", async () => {
     const user = userEvent.setup()
     const onOpenChange = vi.fn()
@@ -260,21 +434,38 @@ describe("record view single-section engine", () => {
     const toggle = vi.fn()
 
     render(
-      <div>
-        <RecordSectionItem onOpen={openItem} openAriaLabel="Open property Oak">
+      <RecordSectionGrid columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}>
+        <RecordSectionGridRow
+          columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}
+          onOpen={openItem}
+          openAriaLabel="Open property Oak"
+          nestedContent={(
+            <RecordSectionGrid columns={[{ key: "allocation", minWidth: 180 }]} surface="nested">
+              <RecordSectionGridRow
+                columns={[{ key: "allocation", minWidth: 180 }]}
+                onOpen={openAllocation}
+                openAriaLabel="Open template T-100"
+                rowTone="allocation"
+              >
+                <RecordRowLayout columns={[{ key: "allocation", minWidth: 180 }]}>
+                  <RecordItemCell columnKey="allocation" chrome="grid" tone="allocation">
+                    Template Row
+                  </RecordItemCell>
+                </RecordRowLayout>
+              </RecordSectionGridRow>
+            </RecordSectionGrid>
+          )}
+        >
           <RecordRowLayout columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}>
-            <RecordItemCell label="Show / Hide" columnKey="toggle">
+            <RecordItemCell label="Show / Hide" columnKey="toggle" chrome="grid">
               <RecordRowToggleButton expanded={false} onToggle={toggle} ariaLabel="Show templates for Oak" />
             </RecordItemCell>
-            <RecordItemCell label="Open" columnKey="open">
+            <RecordItemCell label="Open" columnKey="open" chrome="grid">
               <span>Open</span>
             </RecordItemCell>
           </RecordRowLayout>
-        </RecordSectionItem>
-        <RecordAllocationItemRow onOpen={openAllocation} openAriaLabel="Open template T-100">
-          <div>Template Row</div>
-        </RecordAllocationItemRow>
-      </div>,
+        </RecordSectionGridRow>
+      </RecordSectionGrid>,
     )
 
     await user.click(screen.getByRole("button", { name: "Show templates for Oak" }))
@@ -336,6 +527,10 @@ describe("record view single-section engine", () => {
         items={[{ key: "subtotal", label: "Subtotal", value: "$12.00" }]}
         loading={false}
         metrics={[{ label: "Rows", value: "1" }]}
+        columns={[
+          { key: "name", minWidth: 180 },
+          { key: "value", minWidth: 120, align: "end" },
+        ]}
         renderItem={(item) => (
           <RecordRowLayout
             columns={[
@@ -370,5 +565,74 @@ describe("record view single-section engine", () => {
 
     expect(screen.getByText("Delete failed")).toBeTruthy()
     expect(screen.getByText("Workflow retry required")).toBeTruthy()
+  })
+
+  it("row status adapters resolve generic and allocation states through the engine", () => {
+    expect(getGenericRecordRowStatus("unsaved")).toEqual({
+      key: "unsaved",
+      label: "Unsaved",
+      tone: "warning",
+    })
+
+    expect(getRecordAllocationStateStatus("PARTIALLY_ALLOCATED")).toEqual({
+      key: "allocation-partial",
+      label: "Partially Allocated",
+      tone: "warning",
+    })
+
+    expect(
+      resolveRecordRowStatus({
+        isUnsaved: true,
+        override: {
+          key: "custom",
+          label: "Custom",
+          tone: "success",
+        },
+      }),
+    ).toEqual({
+      key: "unsaved",
+      label: "Unsaved",
+      tone: "warning",
+    })
+
+    expect(
+      resolveRecordRowStatus({
+        fallback: {
+          key: "custom-ready",
+          label: "Custom Ready",
+          tone: "success",
+        },
+      }),
+    ).toEqual({
+      key: "custom-ready",
+      label: "Custom Ready",
+      tone: "success",
+    })
+  })
+
+  it("calculation format adapter is canonical for currency, percentage, and unitized values", () => {
+    expect(formatRecordCalculationValue({ value: 12.5, format: "currency" })).toBe("$12.50")
+    expect(formatRecordCalculationValue({ value: 0.125, format: "percentage" })).toBe("12.50%")
+    expect(
+      formatRecordCalculationValue({
+        value: 42,
+        format: "unitized",
+        unitLabel: "sqft",
+      }),
+    ).toBe("42 sqft")
+    expect(
+      formatRecordCalculationValue({
+        value: 3.5,
+        format: "unitized-total",
+        unitLabel: "sqft",
+      }),
+    ).toBe("$3.50 / sqft")
+  })
+
+  it("old row surfaces are not public engine exports", () => {
+    expect("RecordSectionItem" in RecordViewEngine).toBe(false)
+    expect("RecordAllocationItemsPanel" in RecordViewEngine).toBe(false)
+    expect("RecordAllocationItemRow" in RecordViewEngine).toBe(false)
+    expect("RecordSectionGridHeader" in RecordViewEngine).toBe(false)
   })
 })

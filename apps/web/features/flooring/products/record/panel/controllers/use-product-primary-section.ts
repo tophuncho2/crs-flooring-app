@@ -28,6 +28,7 @@ export function useProductPrimarySection({
     detailUrl: `/api/flooring/products/${product.id}`,
     payloadKey: "product",
     createLocalValue: toProductForm,
+    manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
       const validationError = validateProductPrimaryForm(localValue)
       if (validationError) {

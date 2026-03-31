@@ -5,7 +5,7 @@ import {
   createLocalRecordRowId,
   createRecordSectionError,
   isLocalOnlyRecordRow,
-  useRecordSectionController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   createWarehouseDetail,
@@ -61,10 +61,17 @@ export function useWarehouseSectionsSection({
   record: WarehouseDetail
   publishRecord: (record: WarehouseDetail) => void
 }) {
-  const section = useRecordSectionController<WarehouseDetail, WarehouseSectionsLocalState>({
+  const section = useRecordScopedSectionController<WarehouseDetail, WarehouseSectionsLocalState>({
+    recordId: record.id,
+    sectionKey: "sections",
     serverValue: record,
     serverRevisionKey: createSectionsRevisionKey(record),
     createLocalValue: createLocalState,
+    persistDraft: false,
+    policy: {
+      addRowPlacement: "top",
+      childRows: "inline",
+    },
     onSave: async (localValue, currentRecord) => {
       const normalizedSections = localValue.sections.map((row) => ({
         ...row,
@@ -348,13 +355,13 @@ export function useWarehouseSectionsSection({
     section.setLocalValue((previous) => ({
       ...previous,
       locations: [
+        ...previous.locations,
         {
           id: createLocalRecordRowId("warehouse-location"),
           locationCode: "",
           sectionId,
           sectionName: previous.sections.find((row) => row.id === sectionId)?.name ?? null,
         },
-        ...previous.locations,
       ],
     }))
     section.setError(null)

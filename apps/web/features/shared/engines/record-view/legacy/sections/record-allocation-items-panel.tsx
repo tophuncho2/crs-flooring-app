@@ -1,12 +1,12 @@
 "use client"
 
 import type { KeyboardEvent, ReactNode } from "react"
-import { useRecordScrollSync } from "./record-scroll-sync"
+import { useRecordScrollSync } from "../../sections/record-scroll-sync"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
   RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
-} from "./record-section-tokens"
+} from "../../sections/record-section-tokens"
 
 export function RecordAllocationItemRow({
   children,

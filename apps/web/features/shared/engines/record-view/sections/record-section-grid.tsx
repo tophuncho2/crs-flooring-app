@@ -1,24 +1,12 @@
 "use client"
 
 import type { KeyboardEvent, ReactNode } from "react"
-import { getRecordRowColumnStyle, RecordRowLayout, type RecordGridColumnSpec } from "./record-row-layout"
+import { RecordRowLayout, type RecordGridColumnSpec } from "./record-row-layout"
 import { useRecordScrollSync } from "./record-scroll-sync"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
 } from "./record-section-tokens"
-
-function resolveAlignClassName(align: RecordGridColumnSpec["align"]) {
-  if (align === "center") {
-    return "text-center"
-  }
-
-  if (align === "end") {
-    return "text-right"
-  }
-
-  return "text-left"
-}
 
 export function RecordSectionGrid({
   columns,
@@ -85,46 +73,6 @@ export function RecordSectionGrid({
           {footer}
         </div>
       ) : null}
-    </div>
-  )
-}
-
-export function RecordSectionGridHeader({
-  columns,
-  group,
-  className,
-}: {
-  columns: RecordGridColumnSpec[]
-  group: "parent" | "allocation"
-  className?: string
-}) {
-  const { scrollRef, onScroll } = useRecordScrollSync(group)
-
-  return (
-    <div className={joinRecordSectionClasses("border-b bg-[var(--panel-hover)]", RECORD_SECTION_BORDER_CLASS_NAME, className)}>
-      <div ref={scrollRef} onScroll={onScroll} className="overflow-x-auto overscroll-x-contain">
-        <RecordRowLayout
-          columns={columns}
-          className={joinRecordSectionClasses(
-            "bg-[var(--panel-hover)]",
-            "[&>*+*]:border-l",
-            RECORD_SECTION_BORDER_CLASS_NAME,
-          )}
-        >
-          {columns.map((column) => (
-            <div
-              key={column.key}
-              className={joinRecordSectionClasses(
-                "shrink-0 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground)]/70",
-                resolveAlignClassName(column.align),
-              )}
-              style={getRecordRowColumnStyle(column)}
-            >
-              {column.label}
-            </div>
-          ))}
-        </RecordRowLayout>
-      </div>
     </div>
   )
 }

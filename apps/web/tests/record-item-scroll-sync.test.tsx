@@ -4,12 +4,11 @@ import React from "react"
 import { describe, expect, it } from "vitest"
 import { fireEvent, render } from "@testing-library/react"
 import {
-  RecordAllocationItemRow,
-  RecordAllocationItemsPanel,
   RecordItemCell,
   RecordItemSection,
   RecordRowLayout,
-  RecordSectionItem,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   type RecordRowColumnSpec,
 } from "@/features/shared/engines/record-view"
 
@@ -24,28 +23,35 @@ const ALLOCATION_COLUMNS: RecordRowColumnSpec[] = [
 function SyncHarness() {
   return (
     <RecordItemSection title="Rows">
-      {[0, 1].map((rowIndex) => (
-        <RecordSectionItem
-          key={rowIndex}
-          nestedContent={(
-            <RecordAllocationItemsPanel>
-              {[0].map((allocationIndex) => (
-                <RecordAllocationItemRow key={allocationIndex}>
-                  <RecordRowLayout columns={ALLOCATION_COLUMNS}>
-                    <RecordItemCell columnKey="inventory" tone="allocation">
-                      Allocation {rowIndex + 1}
-                    </RecordItemCell>
-                  </RecordRowLayout>
-                </RecordAllocationItemRow>
-              ))}
-            </RecordAllocationItemsPanel>
-          )}
-        >
-          <RecordRowLayout columns={ITEM_COLUMNS}>
-            <RecordItemCell columnKey="name">Row {rowIndex + 1}</RecordItemCell>
-          </RecordRowLayout>
-        </RecordSectionItem>
-      ))}
+      <RecordSectionGrid columns={ITEM_COLUMNS}>
+        {[0, 1].map((rowIndex) => (
+          <RecordSectionGridRow
+            key={rowIndex}
+            columns={ITEM_COLUMNS}
+            nestedContent={(
+              <RecordSectionGrid columns={ALLOCATION_COLUMNS} surface="nested">
+                {[0].map((allocationIndex) => (
+                  <RecordSectionGridRow
+                    key={allocationIndex}
+                    columns={ALLOCATION_COLUMNS}
+                    rowTone="allocation"
+                  >
+                    <RecordRowLayout columns={ALLOCATION_COLUMNS}>
+                      <RecordItemCell columnKey="inventory" chrome="grid" tone="allocation">
+                        Allocation {rowIndex + 1}
+                      </RecordItemCell>
+                    </RecordRowLayout>
+                  </RecordSectionGridRow>
+                ))}
+              </RecordSectionGrid>
+            )}
+          >
+            <RecordRowLayout columns={ITEM_COLUMNS}>
+              <RecordItemCell columnKey="name" chrome="grid">Row {rowIndex + 1}</RecordItemCell>
+            </RecordRowLayout>
+          </RecordSectionGridRow>
+        ))}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }
@@ -55,14 +61,13 @@ describe("Record item section scroll sync", () => {
     const { container } = render(<SyncHarness />)
     const scrollContainers = Array.from(container.querySelectorAll(".overflow-x-auto")) as HTMLDivElement[]
 
-    expect(scrollContainers).toHaveLength(4)
+    expect(scrollContainers).toHaveLength(3)
 
-    const [parentOne, allocationOne, parentTwo, allocationTwo] = scrollContainers
+    const [sectionGrid, allocationOne, allocationTwo] = scrollContainers
 
-    parentOne.scrollLeft = 96
-    fireEvent.scroll(parentOne)
+    sectionGrid.scrollLeft = 96
+    fireEvent.scroll(sectionGrid)
 
-    expect(parentTwo.scrollLeft).toBe(96)
     expect(allocationOne.scrollLeft).toBe(96)
     expect(allocationTwo.scrollLeft).toBe(96)
 
@@ -70,7 +75,6 @@ describe("Record item section scroll sync", () => {
     fireEvent.scroll(allocationOne)
 
     expect(allocationTwo.scrollLeft).toBe(144)
-    expect(parentOne.scrollLeft).toBe(144)
-    expect(parentTwo.scrollLeft).toBe(144)
+    expect(sectionGrid.scrollLeft).toBe(144)
   })
 })

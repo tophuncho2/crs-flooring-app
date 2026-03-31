@@ -72,7 +72,7 @@ describe("ManagementCompanyDetailClient", () => {
     expect(screen.getByText("TPL-100")).toBeTruthy()
     expect(navigationMocks.push).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole("button", { name: "Open property Oak Apartments" }))
+    await user.click(screen.getAllByRole("button", { name: "Open" })[0])
     await waitFor(() => {
       expect(navigationMocks.push).toHaveBeenCalledWith(
         expect.stringContaining("/dashboard/flooring/properties/prop-1"),

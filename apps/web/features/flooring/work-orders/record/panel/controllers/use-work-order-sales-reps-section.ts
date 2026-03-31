@@ -5,8 +5,9 @@ import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
   createRecordSectionError,
-  useRecordItemController,
   isLocalOnlyRecordRow,
+  useRecordItemController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   clearRowFieldError,
@@ -17,7 +18,6 @@ import {
   type SalesRepField,
   validateSalesRepFields,
 } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import { useWorkOrderSectionController } from "./use-work-order-section-controller"
 import {
   areSalesRepItemsEqual,
   cloneSalesRepItems,
@@ -43,10 +43,10 @@ export function useWorkOrderSalesRepsSection(input: {
   } = input
   const [itemErrors, setItemErrors] = useState<RowFieldErrors<SalesRepField>>({})
 
-  const controller = useWorkOrderSectionController<WorkOrderDetail["salesReps"], WorkOrderDetail["salesReps"]>({
+  const controller = useRecordScopedSectionController<WorkOrderDetail["salesReps"], WorkOrderDetail["salesReps"]>({
     currentUserId,
-    workOrderId,
-    section: "sales",
+    recordId: workOrderId,
+    sectionKey: "sales",
     serverValue: workOrder.salesReps,
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: cloneSalesRepItems,

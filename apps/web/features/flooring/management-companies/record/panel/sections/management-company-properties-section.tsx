@@ -1,15 +1,12 @@
 "use client"
 
-import type { ReactNode } from "react"
 import {
-  RecordAllocationItemRow,
-  RecordAllocationItemsPanel,
+  RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
-  RecordItemCell,
   RecordRowLayout,
-  RecordRowOpenButton,
-  RecordSectionItem,
+  RecordSectionGrid,
+  RecordSectionGridRow,
   TextCell,
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
@@ -17,18 +14,18 @@ import {
 import type { ManagementCompanyPropertyRow, ManagementCompanyTemplateRow } from "../../../domain/types"
 
 const PROPERTY_COLUMNS: RecordRowColumnSpec[] = [
-  { key: "property", minWidth: 240, grow: 2 },
-  { key: "address", minWidth: 280, grow: 2 },
-  { key: "templates", minWidth: 120, grow: 1, align: "center" },
-  { key: "toggle", minWidth: 120, grow: 0, align: "center" },
-  { key: "open", minWidth: 108, grow: 0, align: "center" },
+  { key: "property", minWidth: 240, grow: 2, label: "Property" },
+  { key: "address", minWidth: 280, grow: 2, label: "Address" },
+  { key: "templates", minWidth: 120, grow: 1, align: "center", label: "Templates" },
+  { key: "toggle", minWidth: 120, grow: 0, align: "center", label: "Show / Hide" },
+  { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
 
 const TEMPLATE_COLUMNS: RecordRowColumnSpec[] = [
-  { key: "template", minWidth: 220, grow: 2 },
-  { key: "warehouse", minWidth: 220, grow: 2 },
-  { key: "items", minWidth: 120, grow: 1, align: "center" },
-  { key: "open", minWidth: 108, grow: 0, align: "center" },
+  { key: "template", minWidth: 220, grow: 2, label: "Template" },
+  { key: "warehouse", minWidth: 220, grow: 2, label: "Warehouse" },
+  { key: "items", minWidth: 120, grow: 1, align: "center", label: "Rows" },
+  { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
 
 function buildPropertiesMetrics(properties: ManagementCompanyPropertyRow[]) {
@@ -38,43 +35,6 @@ function buildPropertiesMetrics(properties: ManagementCompanyPropertyRow[]) {
     { label: "Properties", value: String(properties.length) },
     { label: "Templates", value: String(templateCount) },
   ]
-}
-
-function PropertyTemplateRow({
-  template,
-  loading,
-  onOpen,
-}: {
-  template: ManagementCompanyTemplateRow
-  loading: boolean
-  onOpen: () => void
-}) {
-  return (
-    <RecordAllocationItemRow
-      onOpen={onOpen}
-      openAriaLabel={`Open template ${template.templateTag}`}
-    >
-      <RecordRowLayout columns={TEMPLATE_COLUMNS}>
-        <RecordItemCell label="Template" columnKey="template" tone="allocation" density="compact">
-          <TextCell className="font-medium">{template.templateTag}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Warehouse" columnKey="warehouse" tone="allocation" density="compact">
-          <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Rows" columnKey="items" tone="allocation" density="compact">
-          <TextCell align="center">{template.itemsCount}</TextCell>
-        </RecordItemCell>
-        <RecordItemCell label="Open" columnKey="open" tone="allocation" density="compact">
-          <div className="flex min-h-[2.5rem] items-center justify-center">
-            <RecordRowOpenButton
-              onOpen={onOpen}
-              loading={loading}
-            />
-          </div>
-        </RecordItemCell>
-      </RecordRowLayout>
-    </RecordAllocationItemRow>
-  )
 }
 
 export function ManagementCompanyPropertiesSection({
@@ -99,7 +59,7 @@ export function ManagementCompanyPropertiesSection({
   return (
     <RecordItemSection
       title="Linked Properties"
-      bodyClassName="space-y-4"
+      bodyClassName="space-y-0"
       subHeader={subHeader}
       metrics={buildPropertiesMetrics(properties)}
       capabilities={{
@@ -111,52 +71,74 @@ export function ManagementCompanyPropertiesSection({
         supportsRouteAdd: true,
       }}
       isEmpty={properties.length === 0}
-      emptyState={(
-        <div className="rounded-2xl border border-dashed border-[rgba(58,58,58,0.72)] px-4 py-8 text-center text-[var(--foreground)]/65">
-          No properties linked to this management company yet.
-        </div>
-      )}
+      emptyState="No properties linked to this management company yet."
     >
-      {properties.length > 0 ? (
-        properties.map((property) => {
+      <RecordSectionGrid
+        columns={PROPERTY_COLUMNS}
+        isEmpty={properties.length === 0}
+        emptyState="No properties linked to this management company yet."
+      >
+        {properties.map((property, index) => {
           const isExpanded = expandedPropertyIds.includes(property.id)
 
           return (
-            <RecordSectionItem
+            <RecordSectionGridRow
               key={property.id}
-              onOpen={() => onOpenProperty(property.id)}
-              openAriaLabel={`Open property ${property.name}`}
+              columns={PROPERTY_COLUMNS}
               nestedContent={
                 isExpanded ? (
-                  <RecordAllocationItemsPanel
+                  <RecordSectionGrid
+                    columns={TEMPLATE_COLUMNS}
+                    surface="nested"
+                    isEmpty={property.templates.length === 0}
                     emptyState="No templates linked to this property."
                   >
-                    {property.templates.length > 0
-                      ? property.templates.map((template) => (
-                          <PropertyTemplateRow
-                            key={template.id}
-                            template={template}
-                            loading={loadingTemplateId === template.id}
-                            onOpen={() => onOpenTemplate(template.id)}
-                          />
-                        ))
-                      : null}
-                  </RecordAllocationItemsPanel>
+                    {property.templates.map((template, templateIndex) => (
+                      <RecordSectionGridRow
+                        key={template.id}
+                        columns={TEMPLATE_COLUMNS}
+                        rowTone="allocation"
+                        onOpen={() => onOpenTemplate(template.id)}
+                        openAriaLabel={`Open template ${template.templateTag}`}
+                      >
+                        <RecordItemCell columnKey="template" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
+                          <TextCell className="font-medium">{template.templateTag}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemCell columnKey="warehouse" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
+                          <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemCell columnKey="items" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
+                          <TextCell align="center">{template.itemsCount}</TextCell>
+                        </RecordItemCell>
+                        <RecordItemSectionControls
+                          capabilities={{ supportsOpenRow: true }}
+                          cellChrome="grid"
+                          showCellLabels={templateIndex === 0}
+                          open={{
+                            onOpen: () => onOpenTemplate(template.id),
+                            loading: loadingTemplateId === template.id,
+                          }}
+                        />
+                      </RecordSectionGridRow>
+                    ))}
+                  </RecordSectionGrid>
                 ) : null
               }
             >
               <RecordRowLayout columns={PROPERTY_COLUMNS}>
-                <RecordItemCell label="Property" columnKey="property">
+                <RecordItemCell columnKey="property" chrome="grid" showLabel={index === 0}>
                   <TextCell className="font-medium">{property.name}</TextCell>
                 </RecordItemCell>
-                <RecordItemCell label="Address" columnKey="address">
+                <RecordItemCell columnKey="address" chrome="grid" showLabel={index === 0}>
                   <TextCell noWrap={false}>{property.fullAddress || "No address"}</TextCell>
                 </RecordItemCell>
-                <RecordItemCell label="Templates" columnKey="templates">
+                <RecordItemCell columnKey="templates" chrome="grid" showLabel={index === 0}>
                   <TextCell align="center">{property.templateCount}</TextCell>
                 </RecordItemCell>
                 <RecordItemSectionControls
                   capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
+                  cellChrome="grid"
+                  showCellLabels={index === 0}
                   toggle={{
                     expanded: isExpanded,
                     onToggle: () => onTogglePropertyTemplates(property.id),
@@ -168,10 +150,10 @@ export function ManagementCompanyPropertiesSection({
                   }}
                 />
               </RecordRowLayout>
-            </RecordSectionItem>
+            </RecordSectionGridRow>
           )
-        })
-      ) : null}
+        })}
+      </RecordSectionGrid>
     </RecordItemSection>
   )
 }

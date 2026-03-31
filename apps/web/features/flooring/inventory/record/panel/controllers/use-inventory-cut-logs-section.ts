@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
-  useRecordSectionController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
@@ -38,10 +38,17 @@ export function useInventoryCutLogsSection({
   record: InventoryRow
   publishRecord: (record: InventoryRow) => void
 }) {
-  const section = useRecordSectionController<InventoryRow, InventoryCutLogDraft | null>({
+  const section = useRecordScopedSectionController<InventoryRow, InventoryCutLogDraft | null>({
+    recordId: record.id,
+    sectionKey: "cut-logs",
     serverValue: record,
     serverRevisionKey: createCutLogsRevisionKey(record),
     createLocalValue: () => null,
+    persistDraft: false,
+    policy: {
+      addRowPlacement: "top",
+      childRows: "none",
+    },
     onSave: async (draft, currentRecord) => {
       if (!draft) {
         throw createRecordSectionError({

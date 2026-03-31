@@ -3,7 +3,7 @@
 import {
   createLocalRecordRowId,
   createRecordSectionError,
-  useRecordSectionController,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import {
@@ -42,10 +42,17 @@ export function useImportInventoryRowsSection({
   locationOptions: LocationOption[]
   publishRecord: (record: ImportRow) => void
 }) {
-  const section = useRecordSectionController<ImportRow, ImportInventoryRowDraft[]>({
+  const section = useRecordScopedSectionController<ImportRow, ImportInventoryRowDraft[]>({
+    recordId: record.id,
+    sectionKey: "inventory-rows",
     serverValue: record,
     serverRevisionKey: createRowsRevisionKey(record),
     createLocalValue: toImportInventoryDrafts,
+    persistDraft: false,
+    policy: {
+      addRowPlacement: "top",
+      childRows: "none",
+    },
     onSave: async (localValue, currentRecord) => {
       const validationError = validateImportInventoryDrafts(localValue)
       if (validationError) {

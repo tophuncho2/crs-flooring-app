@@ -2,11 +2,13 @@
 
 import type { ReactNode } from "react"
 import {
+  getRecordAllocationStateStatus,
   RecordItemSection,
   RecordMaterialRowBuilder,
   RecordRowStatusBadge,
   RecordSectionGrid,
   RecordSectionGridRow,
+  resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
@@ -30,42 +32,6 @@ function readProductLabel(options: MaterialItemOption[], productId: string, fall
 
 function readProductUnit(options: MaterialItemOption[], productId: string, fallback: string) {
   return options.find((product) => product.id === productId)?.sendUnit || fallback || "-"
-}
-
-function readMaterialRowStatus(item: WorkOrderMaterialItem, hasErrors: boolean) {
-  if (hasErrors) {
-    return "Needs Review"
-  }
-
-  if (item.id.startsWith("temp:")) {
-    return "Unsaved"
-  }
-
-  return item.allocationStatus.replaceAll("_", " ")
-}
-
-function readMaterialRowStatusTone(item: WorkOrderMaterialItem, hasErrors: boolean) {
-  if (hasErrors) {
-    return "error" as const
-  }
-
-  if (item.id.startsWith("temp:")) {
-    return "warning" as const
-  }
-
-  if (item.allocationStatus === "FULLY_ALLOCATED") {
-    return "success" as const
-  }
-
-  if (item.allocationStatus === "SHORTAGE") {
-    return "error" as const
-  }
-
-  if (item.allocationStatus === "PARTIALLY_ALLOCATED") {
-    return "warning" as const
-  }
-
-  return "neutral" as const
 }
 
 export function WorkOrderMaterialItemsSection({
@@ -133,6 +99,11 @@ export function WorkOrderMaterialItemsSection({
           const productUnit = readProductUnit(productOptions, item.productId, item.sendUnit)
           const hasErrors = hasFieldErrors(rowErrors)
           const isExpanded = expandedItemIds.includes(item.id)
+          const status = resolveRecordRowStatus({
+            hasErrors,
+            isUnsaved: item.id.startsWith("temp:"),
+            override: getRecordAllocationStateStatus(item.allocationStatus),
+          })
 
           return (
             <RecordSectionGridRow
@@ -171,8 +142,8 @@ export function WorkOrderMaterialItemsSection({
                   },
                   status: {
                     content: (
-                      <RecordRowStatusBadge tone={readMaterialRowStatusTone(item, hasErrors)}>
-                        {readMaterialRowStatus(item, hasErrors)}
+                      <RecordRowStatusBadge tone={status.tone}>
+                        {status.label}
                       </RecordRowStatusBadge>
                     ),
                   },

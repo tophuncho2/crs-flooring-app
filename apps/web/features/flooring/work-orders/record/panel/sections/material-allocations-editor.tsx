@@ -5,6 +5,7 @@ import {
   RecordRowStatusBadge,
   RecordSectionGrid,
   RecordSectionGridRow,
+  resolveRecordRowStatus,
 } from "@/features/shared/engines/record-view"
 import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
 import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
@@ -53,30 +54,6 @@ function readAllocationUnit(options: InventoryAllocationOption[], allocation: Wo
     || "-"
 }
 
-function readAllocationRowStatus(allocation: WorkOrderItemAllocationRow, hasErrors: boolean) {
-  if (hasErrors) {
-    return "Needs Review"
-  }
-
-  if (allocation.id.startsWith("temp:")) {
-    return "Unsaved"
-  }
-
-  return "Ready"
-}
-
-function readAllocationRowStatusTone(allocation: WorkOrderItemAllocationRow, hasErrors: boolean) {
-  if (hasErrors) {
-    return "error" as const
-  }
-
-  if (allocation.id.startsWith("temp:")) {
-    return "warning" as const
-  }
-
-  return "neutral" as const
-}
-
 export function MaterialAllocationsEditor({
   allocations,
   allocationOptions,
@@ -117,6 +94,10 @@ export function MaterialAllocationsEditor({
         const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
         const quantityValue = Number(allocation.quantity || 0)
         const hasErrors = hasFieldErrors(rowErrors)
+        const status = resolveRecordRowStatus({
+          hasErrors,
+          isUnsaved: allocation.id.startsWith("temp:"),
+        })
 
         return (
           <RecordSectionGridRow
@@ -146,8 +127,8 @@ export function MaterialAllocationsEditor({
                 capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
                 status: {
                   content: (
-                    <RecordRowStatusBadge tone={readAllocationRowStatusTone(allocation, hasErrors)}>
-                      {readAllocationRowStatus(allocation, hasErrors)}
+                    <RecordRowStatusBadge tone={status.tone}>
+                      {status.label}
                     </RecordRowStatusBadge>
                   ),
                 },

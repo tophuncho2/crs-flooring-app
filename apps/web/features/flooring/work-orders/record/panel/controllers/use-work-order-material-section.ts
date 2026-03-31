@@ -5,9 +5,10 @@ import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import {
   createRecordSectionError,
+  isLocalOnlyRecordRow,
   useRecordAllocationController,
   useRecordItemController,
-  isLocalOnlyRecordRow,
+  useRecordScopedSectionController,
 } from "@/features/shared/engines/record-view"
 import {
   clearRowFieldError,
@@ -20,7 +21,6 @@ import {
   type MaterialItemOption,
   validateMaterialItemFields,
 } from "@/features/flooring/shared/line-items/material-items-editor"
-import { useWorkOrderSectionController } from "./use-work-order-section-controller"
 import {
   areMaterialItemsEqual,
   cloneMaterialItems,
@@ -63,15 +63,19 @@ export function useWorkOrderMaterialSection(input: {
   const [allocationOptionsByItemId, setAllocationOptionsByItemId] = useState<Record<string, InventoryAllocationOption[]>>({})
   const [loadingAllocationOptionsByItemId, setLoadingAllocationOptionsByItemId] = useState<Record<string, boolean>>({})
 
-  const controller = useWorkOrderSectionController<WorkOrderMaterialItem[], WorkOrderMaterialItem[]>({
+  const controller = useRecordScopedSectionController<WorkOrderMaterialItem[], WorkOrderMaterialItem[]>({
     currentUserId,
-    workOrderId,
-    section: "material",
+    recordId: workOrderId,
+    sectionKey: "material",
     serverValue: workOrder.items,
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: cloneMaterialItems,
     cloneLocalValue: cloneMaterialItems,
     isEqual: areMaterialItemsEqual,
+    policy: {
+      addRowPlacement: "top",
+      childRows: "inline",
+    },
     onSave: async (items, _serverItems, serverRevisionKey) => {
       const nextItemErrors: RowFieldErrors<MaterialItemField> = {}
       const nextAllocationErrors: Record<string, RowFieldErrors<AllocationField>> = {}

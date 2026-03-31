@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold } from "@/features/shared/engines/record-view"
-import type { EditableMaterialItem, MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { EditableServiceItem, ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
 import { TemplateRecordPanel } from "../panel/template-record-panel"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 
@@ -39,6 +39,7 @@ export function TemplateDetailClient({
       {(page) => {
         return (
           <TemplateRecordPanel
+            page={page}
             currentUserId={currentUserId}
             templateId={template.id}
             initialTemplate={template}
@@ -49,12 +50,6 @@ export function TemplateDetailClient({
             serviceOptions={serviceOptions}
             salesRepOptions={salesRepOptions}
             unitOptions={unitOptions}
-            showPrimaryFields={page.isPrimarySectionOpen}
-            usePageHeaderForPrimarySection
-            onClose={page.closePage}
-            notices={page.notices}
-            onSummaryChange={page.setSummary as (summary: { materialItems: EditableMaterialItem[]; serviceItems: EditableServiceItem[] }) => void}
-            onDirtyChange={page.setIsDirty}
             onTemplateDeleted={() => {
               page.redirectToBack()
             }}

@@ -2,7 +2,7 @@
 
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
-import { useWorkOrderSectionController } from "./use-work-order-section-controller"
+import { useRecordScopedSectionController } from "@/features/shared/engines/record-view"
 import {
   areWorkOrderDraftsEqual,
   cloneDraftWorkOrder,
@@ -21,10 +21,10 @@ export function useWorkOrderPrimarySection(input: {
   const { currentUserId, workOrderId, workOrder, publishWorkOrder, onWorkOrderSaved, applyConflictWorkOrderSnapshot } =
     input
 
-  return useWorkOrderSectionController<WorkOrderDetail, DraftWorkOrder>({
+  return useRecordScopedSectionController<WorkOrderDetail, DraftWorkOrder>({
     currentUserId,
-    workOrderId,
-    section: "primary",
+    recordId: workOrderId,
+    sectionKey: "primary",
     serverValue: workOrder,
     serverRevisionKey: workOrder.updatedAt,
     createLocalValue: toWorkOrderDraft,

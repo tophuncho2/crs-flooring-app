@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  resolveRecordRowStatus,
   RecordItemSection,
   RecordRowStatusBadge,
   RecordSectionGrid,
@@ -22,18 +23,6 @@ import type {
 } from "@/features/flooring/shared/line-items/service-items-editor"
 import { TEMPLATE_SERVICE_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateServiceSectionMetrics } from "./template-section-metrics"
-
-function readStatusLabel(item: EditableServiceItem, hasErrors: boolean) {
-  if (hasErrors) return "Needs Review"
-  if (item.id.startsWith("temp:")) return "Unsaved"
-  return "Ready"
-}
-
-function readStatusTone(item: EditableServiceItem, hasErrors: boolean) {
-  if (hasErrors) return "error" as const
-  if (item.id.startsWith("temp:")) return "warning" as const
-  return "neutral" as const
-}
 
 export function TemplateServiceItemsSection({
   title,
@@ -93,7 +82,10 @@ export function TemplateServiceItemsSection({
       >
         {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
-          const hasErrors = hasFieldErrors(rowErrors)
+          const status = resolveRecordRowStatus({
+            hasErrors: hasFieldErrors(rowErrors),
+            isUnsaved: item.id.startsWith("temp:"),
+          })
 
           return (
             <RecordSectionGridRow key={item.id} columns={TEMPLATE_SERVICE_COLUMNS}>
@@ -142,8 +134,8 @@ export function TemplateServiceItemsSection({
                   capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
                   status: {
                     content: (
-                      <RecordRowStatusBadge tone={readStatusTone(item, hasErrors)}>
-                        {readStatusLabel(item, hasErrors)}
+                      <RecordRowStatusBadge tone={status.tone}>
+                        {status.label}
                       </RecordRowStatusBadge>
                     ),
                   },

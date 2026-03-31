@@ -6,6 +6,7 @@ import {
   RecordSalesRepRowBuilder,
   RecordSectionGrid,
   RecordSectionGridRow,
+  resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
 import {
@@ -81,7 +82,10 @@ export function WorkOrderSalesRepsSection({
       >
         {items.map((item, index) => {
           const rowErrors = itemErrors[item.id]
-          const isLocalOnlyItem = item.id.startsWith("temp:")
+          const status = resolveRecordRowStatus({
+            hasErrors: hasFieldErrors(rowErrors),
+            isUnsaved: item.id.startsWith("temp:"),
+          })
 
           return (
             <RecordSectionGridRow key={item.id} columns={WORK_ORDER_SALES_REP_COLUMNS}>
@@ -106,12 +110,7 @@ export function WorkOrderSalesRepsSection({
                   capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
                   status: {
                     content: (
-                      <>
-                        <RecordRowStatusBadge tone={isLocalOnlyItem ? "warning" : "neutral"}>
-                          {isLocalOnlyItem ? "Unsaved" : "Ready"}
-                        </RecordRowStatusBadge>
-                        {hasFieldErrors(rowErrors) ? <RecordRowStatusBadge tone="error">Needs review</RecordRowStatusBadge> : null}
-                      </>
+                      <RecordRowStatusBadge tone={status.tone}>{status.label}</RecordRowStatusBadge>
                     ),
                   },
                   remove: {

@@ -1,5 +1,3 @@
-export * from "./basic-record-page"
-export * from "./basic-record-panel"
 export * from "./record-action-buttons"
 export * from "./record-detail-page-shell"
 export * from "./record-options-menu"
