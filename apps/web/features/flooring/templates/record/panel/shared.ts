@@ -4,8 +4,8 @@ import {
   createLocalRecordRowId,
   isLocalOnlyRecordRow,
 } from "@/features/shared/engines/record-view"
-import type { EditableMaterialItem } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { EditableMaterialItem } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import type { DraftTemplate, TemplateDetail } from "@/features/flooring/templates/types"
 
 function normalizeComparableText(value: string | null | undefined) {

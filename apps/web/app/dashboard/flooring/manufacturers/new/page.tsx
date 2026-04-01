@@ -1,5 +1,5 @@
 import { requireManufacturersAccess } from "@/features/flooring/shared/access/lookup-domains"
-import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { ManufacturerCreateClient } from "@/features/flooring/manufacturers/record/create/manufacturer-create-client"
 
 export default async function ManufacturerCreatePage({

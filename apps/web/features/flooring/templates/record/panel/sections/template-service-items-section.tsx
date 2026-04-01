@@ -9,18 +9,18 @@ import {
   RecordServiceRowBuilder,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
-import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
-import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
+import { formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
+import { normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import {
   hasFieldErrors,
   type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
+} from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import type {
   EditableServiceItem,
   ServiceItemField,
   ServiceOption,
   UnitOption,
-} from "@/features/flooring/shared/line-items/service-items-editor"
+} from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { TEMPLATE_SERVICE_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateServiceSectionMetrics } from "./template-section-metrics"
 

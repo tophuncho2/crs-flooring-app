@@ -8,8 +8,8 @@ import {
   RecordOptionsMenu,
 } from "@/features/shared/engines/record-view"
 import { WorkOrderRecordPanel } from "../panel/work-order-record-panel"
-import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import type { PropertyOption, SalesRepContactOption, WarehouseOption, WorkOrderDetail } from "../../types"
 
 export default function WorkOrderDetailClient({

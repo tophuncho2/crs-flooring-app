@@ -9,7 +9,7 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/features/shared/engines/record-view"
-import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
+import { formatStableDateTime } from "@/features/flooring/shared/date-format"
 import { CONTACT_TYPE_LABELS, CONTACT_TYPE_OPTIONS, type ContactDetail, type ContactForm } from "../../../domain/types"
 
 export function ContactPrimaryFieldsSection({

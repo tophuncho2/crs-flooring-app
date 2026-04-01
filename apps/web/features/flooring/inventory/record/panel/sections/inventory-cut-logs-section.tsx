@@ -1,6 +1,6 @@
 "use client"
 
-import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
+import { formatStableDateTime } from "@/features/flooring/shared/date-format"
 import {
   RecordGridCellInput,
   RecordItemCell,

@@ -1,7 +1,7 @@
-import { formatCurrencyValue, sumLineTotals } from "@/features/flooring/shared/line-items/line-totals"
-import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
-import type { EditableSalesRepItem } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import type { DisplayCalculationRow } from "@/features/flooring/shared/line-items/calculation-rows-table"
+import { formatCurrencyValue, sumLineTotals } from "@/features/flooring/shared/domain/line-totals"
+import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
+import type { EditableSalesRepItem } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
+import type { DisplayCalculationRow } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
 import type { WorkOrderMaterialItem } from "@/features/flooring/work-orders/types"
 
 export type WorkOrderSectionMetricValue = {

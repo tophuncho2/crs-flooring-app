@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { getClientErrorMessage } from "@/features/flooring/shared/transport/client-errors"
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/table/confirm-delete"
+import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/dashboard/shared/table/confirm-delete"
 import { useRecordNotices } from "@/features/shared/engines/record-view"
 import type { TemplateRow } from "../types"
 

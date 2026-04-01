@@ -2,7 +2,7 @@ import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { canEditUnitOfMeasures } from "@/server/auth/access-control"
 import { requireUnitOfMeasuresAccess } from "@/features/flooring/shared/access/lookup-domains"
-import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getUnitOfMeasureDetailPageData } from "@/features/flooring/unit-of-measures/data/queries"
 import { UnitOfMeasureDetailClient } from "@/features/flooring/unit-of-measures/record/detail/unit-of-measure-detail-client"
 

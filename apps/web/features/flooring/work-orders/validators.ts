@@ -1,6 +1,6 @@
 import { FlooringVacancyStatus, FlooringWorkOrderStatus, Prisma } from "@builders/db"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/features/flooring/shared/line-items/child-item-validation"
+import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/features/flooring/shared/domain/child-item-validation"
 import { vacancyStatuses, workOrderStatuses } from "./services"
 
 export type WorkOrderMaterialItemInput = {

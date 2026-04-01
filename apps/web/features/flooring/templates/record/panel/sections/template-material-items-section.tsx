@@ -9,17 +9,17 @@ import {
   resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
 } from "@/features/shared/engines/record-view"
-import { formatLineTotal } from "@/features/flooring/shared/line-items/line-totals"
-import { normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
+import { formatLineTotal } from "@/features/flooring/shared/domain/line-totals"
+import { normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import {
   hasFieldErrors,
   type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
+} from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import type {
   EditableMaterialItem,
   MaterialItemField,
   MaterialItemOption,
-} from "@/features/flooring/shared/line-items/material-items-editor"
+} from "@/features/flooring/shared/ui/record-items/material-items-editor"
 import { TEMPLATE_MATERIAL_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateMaterialSectionMetrics } from "./template-section-metrics"
 

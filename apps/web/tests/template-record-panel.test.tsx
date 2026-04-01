@@ -19,8 +19,8 @@ vi.mock("@/features/flooring/shared/domain/record-summary", () => ({
   emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
 }))
 
-vi.mock("@/features/flooring/shared/line-items/material-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/flooring/shared/line-items/material-items-editor")>()
+vi.mock("@/features/flooring/shared/ui/record-items/material-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/material-items-editor")>()
 
   return {
     ...actual,
@@ -28,8 +28,8 @@ vi.mock("@/features/flooring/shared/line-items/material-items-editor", async (im
   }
 })
 
-vi.mock("@/features/flooring/shared/line-items/service-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/flooring/shared/line-items/service-items-editor")>()
+vi.mock("@/features/flooring/shared/ui/record-items/service-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/service-items-editor")>()
 
   return {
     ...actual,
@@ -37,8 +37,8 @@ vi.mock("@/features/flooring/shared/line-items/service-items-editor", async (imp
   }
 })
 
-vi.mock("@/features/flooring/shared/line-items/sales-rep-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/flooring/shared/line-items/sales-rep-items-editor")>()
+vi.mock("@/features/flooring/shared/ui/record-items/sales-rep-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/flooring/shared/ui/record-items/sales-rep-items-editor")>()
 
   return {
     ...actual,

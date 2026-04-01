@@ -8,14 +8,14 @@ import {
   setFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
+} from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import {
   validateSalesRepFields,
   type EditableSalesRepItem,
   type SalesRepDraft,
   type SalesRepField,
   type SalesRepFieldErrors,
-} from "@/features/flooring/shared/line-items/sales-rep-items-editor"
+} from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
 import type { RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
 

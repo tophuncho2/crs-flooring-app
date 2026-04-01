@@ -9,7 +9,7 @@ import {
   ClickableTableRow,
   TableEmptyRow,
 } from "@/features/dashboard/shared/table/table-shell"
-import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
+import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
 import type { ServiceRow } from "../../domain/types"
 

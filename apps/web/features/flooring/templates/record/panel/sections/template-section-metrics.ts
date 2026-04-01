@@ -1,8 +1,8 @@
-import { formatCurrencyValue, sumLineTotals } from "@/features/flooring/shared/line-items/line-totals"
-import type { EditableMaterialItem } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
+import { formatCurrencyValue, sumLineTotals } from "@/features/flooring/shared/domain/line-totals"
+import type { EditableMaterialItem } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import type { EditableTemplateSalesRep } from "@/features/flooring/templates/domain/sales-reps"
-import type { DisplayCalculationRow } from "@/features/flooring/shared/line-items/calculation-rows-table"
+import type { DisplayCalculationRow } from "@/features/flooring/shared/ui/record-items/calculation-rows-table"
 
 export type TemplateSectionMetricValue = {
   label: string

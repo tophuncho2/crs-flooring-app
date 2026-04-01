@@ -14,13 +14,13 @@ import {
   clearRowFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
+} from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import {
   type EditableMaterialItem,
   type MaterialItemField,
   type MaterialItemOption,
   validateMaterialItemFields,
-} from "@/features/flooring/shared/line-items/material-items-editor"
+} from "@/features/flooring/shared/ui/record-items/material-items-editor"
 import {
   areMaterialItemsEqual,
   cloneMaterialItems,

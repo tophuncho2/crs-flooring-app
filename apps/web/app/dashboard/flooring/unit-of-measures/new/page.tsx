@@ -1,5 +1,5 @@
 import { requireUnitOfMeasuresAccess } from "@/features/flooring/shared/access/lookup-domains"
-import { resolveReturnTo } from "@/features/flooring/shared/record-page/detail-routes"
+import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { UnitOfMeasureCreateClient } from "@/features/flooring/unit-of-measures/record/create/unit-of-measure-create-client"
 
 export default async function UnitOfMeasureCreatePage({

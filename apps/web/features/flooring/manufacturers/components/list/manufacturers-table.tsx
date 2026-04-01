@@ -10,7 +10,7 @@ import {
   TableEmptyRow,
 } from "@/features/dashboard/shared/table/table-shell"
 import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
-import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
+import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { ManufacturerRow } from "../../domain/types"
 
 export function ManufacturersTable({

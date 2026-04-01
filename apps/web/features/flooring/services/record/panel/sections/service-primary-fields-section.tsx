@@ -9,7 +9,7 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/features/shared/engines/record-view"
-import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
+import { formatStableDateTime } from "@/features/flooring/shared/date-format"
 import type { ServiceForm, ServiceRow, UnitOption } from "../../../domain/types"
 
 export function ServicePrimaryFieldsSection({

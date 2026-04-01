@@ -8,21 +8,21 @@ import {
   setFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
+} from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import {
   validateMaterialItemFields,
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemField,
   type MaterialItemFieldErrors,
-} from "@/features/flooring/shared/line-items/material-items-editor"
+} from "@/features/flooring/shared/ui/record-items/material-items-editor"
 import {
   validateServiceItemFields,
   type EditableServiceItem,
   type ServiceItemDraft,
   type ServiceItemField,
   type ServiceItemFieldErrors,
-} from "@/features/flooring/shared/line-items/service-items-editor"
+} from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import type { RecordNotices } from "@/features/dashboard/shared/record-view/client/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/ui/table/confirm-delete"
 

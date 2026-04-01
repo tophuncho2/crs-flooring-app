@@ -7,13 +7,13 @@ import {
   RecordSectionGridRow,
   resolveRecordRowStatus,
 } from "@/features/shared/engines/record-view"
-import { formatCurrencyValue } from "@/features/flooring/shared/line-items/line-totals"
-import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/line-items/child-item-validation"
+import { formatCurrencyValue } from "@/features/flooring/shared/domain/line-totals"
+import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/features/flooring/shared/domain/child-item-validation"
 import {
   hasFieldErrors,
   type FieldErrorMap,
   type RowFieldErrors,
-} from "@/features/flooring/shared/line-items/record-field-errors"
+} from "@/features/flooring/shared/ui/record-items/record-field-errors"
 import { WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS } from "./material-grid-layout"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "@/features/flooring/work-orders/types"
 

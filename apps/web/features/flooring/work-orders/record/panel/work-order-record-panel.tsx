@@ -50,9 +50,9 @@ import type {
   WorkOrderExpenseSummary,
   WorkOrderReconciliationStatus,
 } from "@/features/flooring/work-orders/types"
-import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { SalesRepOption } from "@/features/flooring/shared/line-items/sales-rep-items-editor"
-import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { SalesRepOption } from "@/features/flooring/shared/ui/record-items/sales-rep-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 
 function buildWorkOrderReconciliationKey(input: {
   updatedAt: string

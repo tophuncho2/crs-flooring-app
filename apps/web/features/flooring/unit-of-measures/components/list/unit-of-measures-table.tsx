@@ -9,8 +9,8 @@ import {
   TableEmptyRow,
 } from "@/features/dashboard/shared/table/table-shell"
 import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render-grouped-table-rows"
-import type { GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
-import { formatStableDateTime } from "@/features/flooring/shared/utils/date-format"
+import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import { formatStableDateTime } from "@/features/flooring/shared/date-format"
 import type { UnitOfMeasureRow } from "../../domain/types"
 
 export function UnitOfMeasuresTable({

@@ -4,7 +4,7 @@ import React from "react"
 import { describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { WorkOrderServiceItemsSection } from "@/features/flooring/work-orders/record/panel/sections/work-order-service-items-section"
-import type { EditableServiceItem } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { EditableServiceItem } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 
 const serviceOptions = [
   { id: "service-1", name: "Install", baseCost: "12.50", unitId: "unit-1", unitName: "EA" },

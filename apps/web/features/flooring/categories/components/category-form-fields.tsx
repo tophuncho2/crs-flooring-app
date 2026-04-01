@@ -1,6 +1,6 @@
 "use client"
 
-import { RecordFormField } from "@/features/flooring/shared/forms/record-form"
+import { RecordFormField } from "@/features/flooring/shared/ui/forms/record-form"
 import type { CategoryForm, UnitOfMeasureOption } from "../domain/types"
 
 function UnitSelect({

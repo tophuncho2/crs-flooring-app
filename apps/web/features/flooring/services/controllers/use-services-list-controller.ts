@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRecordNotices } from "@/features/flooring/shared/use-record-notices"
-import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/flooring/shared/table/confirm-delete"
+import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/dashboard/shared/table/confirm-delete"
 import { deleteServiceRequest } from "../data/mutations"
 import type { ServiceRow } from "../domain/types"
 

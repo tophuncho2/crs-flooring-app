@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { WorkOrderMaterialItemsSection } from "@/features/flooring/work-orders/record/panel/sections/work-order-material-items-section"
-import type { MaterialItemDraft } from "@/features/flooring/shared/line-items/material-items-editor"
+import type { MaterialItemDraft } from "@/features/flooring/shared/ui/record-items/material-items-editor"
 import type { WorkOrderMaterialItem } from "@/features/flooring/work-orders/types"
 
 afterEach(() => {

@@ -24,8 +24,8 @@ import { useTemplateMaterialSection } from "./controllers/use-template-material-
 import { useTemplatePrimarySection } from "./controllers/use-template-primary-section"
 import { useTemplateSalesRepsSection } from "./controllers/use-template-sales-reps-section"
 import { useTemplateServiceSection } from "./controllers/use-template-service-section"
-import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 
 function buildSummaryMetrics(input: {

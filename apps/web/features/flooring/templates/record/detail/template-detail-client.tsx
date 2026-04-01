@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold } from "@/features/shared/engines/record-view"
-import type { MaterialItemOption } from "@/features/flooring/shared/line-items/material-items-editor"
-import type { ServiceOption, UnitOption } from "@/features/flooring/shared/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/features/flooring/shared/ui/record-items/material-items-editor"
+import type { ServiceOption, UnitOption } from "@/features/flooring/shared/ui/record-items/service-items-editor"
 import { TemplateRecordPanel } from "../panel/template-record-panel"
 import type { SalesRepContactOption, TemplateDetail } from "@/features/flooring/templates/types"
 
