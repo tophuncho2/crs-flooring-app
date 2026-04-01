@@ -1,0 +1,202 @@
+UNIT OF MEASURES — EXECUTION LAYER STATUS REPORT
+Last updated: 2026-03-31
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OVERALL STATUS: COMPLETE — ALL FLAWS RESOLVED
+Typecheck: PASS (0 errors, all 8 workspaces)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────
+WHAT THIS TABLE IS
+─────────────────────────────────────────────────────
+
+Unit of Measures is the canonical first table fully governed by the
+execution layer architecture. It is a simple (non-child-scoped) table
+with three operations: create, update, delete.
+
+It was chosen as the first table deliberately:
+- No ChildScopedRows, no async workflows, no outbox
+- Smallest possible surface area
+- Establishes the template all subsequent tables will follow
+
+─────────────────────────────────────────────────────
+FILE INVENTORY — FINAL STATE
+─────────────────────────────────────────────────────
+
+packages/domain/src/flooring/unit-of-measures/
+  delete-rules.ts         Domain rules: isUnitOfMeasureDeleteBlocked,
+                          getUnitOfMeasureDeleteBlockedMessage,
+                          UnitOfMeasureDeleteLinkState
+  name-rules.ts           Domain rules: normalizeUnitOfMeasureNameForUniqueness
+
+packages/db/src/flooring/unit-of-measures/
+  read-repository.ts      listUnitOfMeasures, getUnitOfMeasureById,
+                          getUnitOfMeasuresPageData, getUnitOfMeasureDetailPageData,
+                          unitOfMeasureNameExists, getUnitOfMeasureDeleteState,
+                          UnitOfMeasureRecord, UnitOfMeasureDeleteStateResult
+  write-repository.ts     createUnitOfMeasureRecord, updateUnitOfMeasureRecord,
+                          deleteUnitOfMeasureRecord
+
+packages/execution/src/flooring/unit-of-measures/
+  errors.ts               UnitOfMeasureExecutionError, isUnitOfMeasureExecutionError
+  create-unit-of-measure.ts   createUnitOfMeasureUseCase
+  update-unit-of-measure.ts   updateUnitOfMeasureUseCase
+  delete-unit-of-measure.ts   deleteUnitOfMeasureUseCase
+  index.ts                barrel export
+
+apps/web/features/flooring/unit-of-measures/
+  application/manage-unit-of-measure.ts   validateUpdateUnitOfMeasurePrimarySectionInput only
+  data/queries.ts                         thin re-exports from @builders/db
+  data/server-records.ts                  DELETED
+  domain/unit-of-measure-rules.ts         re-exports from @builders/domain
+
+apps/web/app/api/builder/unit-of-measures/
+  route.ts                    GET → listUnitOfMeasures, POST → createUnitOfMeasureUseCase
+  [id]/route.ts               PATCH → updateUnitOfMeasureUseCase, DELETE → deleteUnitOfMeasureUseCase
+  [id]/primary/section/route.ts   PATCH → updateUnitOfMeasureUseCase
+
+apps/web/server/builder/unit-of-measures.ts
+  normalizeUnitOfMeasureInput (transport parsing, stays here)
+  listUnitOfMeasures (delegates to @builders/db, no Prisma)
+
+─────────────────────────────────────────────────────
+FLAWS FOUND AND RESOLVED
+─────────────────────────────────────────────────────
+
+Seven flaws were identified in the initial execution layer implementation
+against the execution engine plan. All were resolved.
+
+FLAW 1 — CRITICAL — Race condition on create (FIXED)
+  Problem:  unitOfMeasureNameExists + createUnitOfMeasureRecord were two
+            un-transacted round-trips. Two concurrent creates with the same
+            name could both pass the uniqueness check before either insert
+            completed. P2002 catch was a band-aid, not a boundary.
+  Fix:      createUnitOfMeasureUseCase wrapped in withDatabaseTransaction.
+            Both the check and the write execute inside the same transaction.
+  File:     packages/execution/src/flooring/unit-of-measures/create-unit-of-measure.ts
+
+FLAW 2 — CRITICAL — Race condition on update + un-transacted read-back (FIXED)
+  Problem:  unitOfMeasureNameExists + updateUnitOfMeasureRecord were two
+            un-transacted round-trips (same race condition as Flaw 1).
+            Additionally, getUnitOfMeasureById was called after the write
+            in a separate un-transacted trip. A concurrent mutation between
+            write and read-back would return a snapshot that did not reflect
+            the committed write — violating the authoritative snapshot model.
+  Fix:      updateUnitOfMeasureUseCase wrapped in withDatabaseTransaction.
+            The uniqueness check, write, and read-back all execute inside
+            the same transaction. The returned snapshot is guaranteed to
+            reflect exactly the write that was committed.
+  File:     packages/execution/src/flooring/unit-of-measures/update-unit-of-measure.ts
+
+FLAW 3 — MEDIUM — Prisma _count shape leaking into Application layer (FIXED)
+  Problem:  deleteUnitOfMeasureUseCase directly accessed deleteState._count.*
+            fields (sendUnitCategories, stockUnitCategories, etc.) to compute
+            categoryLinks and serviceLinks. The classification of which schema
+            relations constitute a "category link" vs a "service link" is a
+            business rule — it was executing in Application on a raw Prisma struct.
+  Fix:      getUnitOfMeasureDeleteState in the DB layer now returns
+            UnitOfMeasureDeleteStateResult = { categoryLinks: number, serviceLinks: number }
+            directly. The aggregation of _count fields happens inside the DB
+            function, which owns the schema knowledge. Application receives the
+            clean semantic shape and hands it straight to isUnitOfMeasureDeleteBlocked
+            from @builders/domain. No _count access anywhere outside the db layer.
+  Files:    packages/db/src/flooring/unit-of-measures/read-repository.ts
+            packages/execution/src/flooring/unit-of-measures/delete-unit-of-measure.ts
+
+FLAW 4 — MEDIUM — normalizeNameForUniqueness duplicated across both use cases (FIXED)
+  Problem:  An identical private function was defined independently inside
+            create-unit-of-measure.ts and update-unit-of-measure.ts. This is
+            a domain rule (what "normalized for uniqueness" means for a UOM name)
+            living outside the domain package, duplicated.
+  Fix:      Promoted to packages/domain/src/flooring/unit-of-measures/name-rules.ts
+            as normalizeUnitOfMeasureNameForUniqueness. Exported from
+            @builders/domain index. Both use cases now import from @builders/domain.
+            The features domain file (unit-of-measure-rules.ts) re-exports it
+            from @builders/domain instead of defining it locally.
+  Files:    packages/domain/src/flooring/unit-of-measures/name-rules.ts (NEW)
+            packages/domain/src/index.ts
+            packages/execution/src/flooring/unit-of-measures/create-unit-of-measure.ts
+            packages/execution/src/flooring/unit-of-measures/update-unit-of-measure.ts
+            apps/web/features/flooring/unit-of-measures/domain/unit-of-measure-rules.ts
+
+FLAW 5 — LOW — Missing type guard on UnitOfMeasureExecutionError (FIXED)
+  Problem:  The allocation reference implementation exports
+            isWorkOrderAllocationExecutionError as a type guard. The UOM
+            error class had no equivalent. Callers needing to conditionally
+            handle UOM errors had no safe guard to use.
+  Fix:      isUnitOfMeasureExecutionError added to errors.ts.
+  File:     packages/execution/src/flooring/unit-of-measures/errors.ts
+
+FLAW 6 — LOW — Missing payload field on UnitOfMeasureExecutionError (FIXED)
+  Problem:  The allocation error class carries readonly payload?: Record<string, unknown>
+            for structured error metadata. UOM omitted it, diverging from the
+            reference pattern and requiring a breaking change if payload is ever needed.
+  Fix:      payload field added to UnitOfMeasureExecutionError constructor and class body.
+  File:     packages/execution/src/flooring/unit-of-measures/errors.ts
+
+FLAW 7 — LOW — Split import blocks from same package (FIXED)
+  Problem:  create-unit-of-measure.ts and update-unit-of-measure.ts each had
+            two separate import statements from @builders/db (one for Prisma,
+            one for repository functions).
+  Fix:      Consolidated into a single import block per package in both files.
+  Files:    packages/execution/src/flooring/unit-of-measures/create-unit-of-measure.ts
+            packages/execution/src/flooring/unit-of-measures/update-unit-of-measure.ts
+
+─────────────────────────────────────────────────────
+LAYER COMPLIANCE — FINAL ASSESSMENT
+─────────────────────────────────────────────────────
+
+Execution engine invariant                    Status
+─────────────────────────────────────────────────────
+1. Controller-Governed Execution              PASS — no direct API calls from UI
+2. Application-Only Mutations                 PASS — all DB writes in use cases only
+3. Domain-Only Business Logic                 PASS — name rules + delete rules in @builders/domain
+4. Snapshot Authority                         PASS — update returns read-back inside same transaction
+5. Section as Execution Unit                  PASS — each route maps to one use case
+6. Idempotent by Default                      PASS — enforceMutationReceipt on all routes
+7. Async = Outbox + Worker Only               N/A  — UOM has no async workflows
+
+Transaction boundary                          PASS — create and update wrapped in withDatabaseTransaction
+Layer boundary (no Prisma in Application)     PASS — _count aggregation moved to DB layer
+Domain authority (no rules outside domain)    PASS — normalize function moved to @builders/domain
+Error pattern consistency                     PASS — matches WorkOrderAllocationExecutionError exactly
+
+─────────────────────────────────────────────────────
+WHAT THIS TABLE IS NOT
+─────────────────────────────────────────────────────
+
+UOM is intentionally minimal. The following concerns present in other
+tables do NOT apply here and were not implemented:
+
+- No ChildScopedRows (no line items, no nested records)
+- No outbox events (no async workflows triggered on mutation)
+- No worker execution (no background processing)
+- No reconciliation polling (no eventually-consistent state)
+- No soft delete (hard delete only, blocked by link check)
+- No audit log (not required at this layer for this table)
+
+─────────────────────────────────────────────────────
+TEMPLATE NOTES FOR SUBSEQUENT TABLES
+─────────────────────────────────────────────────────
+
+This table establishes the canonical pattern. When implementing the next
+simple table (categories, services, manufacturers, etc.), the following
+rules apply:
+
+1. withDatabaseTransaction wraps every use case that performs a
+   check-then-write. No exceptions.
+
+2. DB layer functions aggregate raw _count fields into semantic types
+   before returning. Application never accesses _count directly.
+
+3. Domain rules (name normalization, delete block logic) live in
+   @builders/domain, not inline in use cases.
+
+4. Error class follows UnitOfMeasureExecutionError exactly:
+   code, message, status, field?, payload? — plus a companion type guard.
+
+5. Update use cases return getById called within the same transaction
+   as the write. Never a separate un-guarded round-trip.
+
+6. The features domain file is a thin re-export layer from @builders/domain.
+   No business logic is defined there.

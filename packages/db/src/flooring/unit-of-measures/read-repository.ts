@@ -100,11 +100,18 @@ export async function unitOfMeasureNameExists(
   return Boolean(existing)
 }
 
-export async function getUnitOfMeasureDeleteState(id: string, client: UnitOfMeasureDbClient = db) {
-  return client.flooringUnitOfMeasure.findUnique({
+export type UnitOfMeasureDeleteStateResult = {
+  categoryLinks: number
+  serviceLinks: number
+}
+
+export async function getUnitOfMeasureDeleteState(
+  id: string,
+  client: UnitOfMeasureDbClient = db,
+): Promise<UnitOfMeasureDeleteStateResult | null> {
+  const row = await client.flooringUnitOfMeasure.findUnique({
     where: { id },
     select: {
-      id: true,
       _count: {
         select: {
           sendUnitCategories: true,
@@ -119,4 +126,19 @@ export async function getUnitOfMeasureDeleteState(id: string, client: UnitOfMeas
       },
     },
   })
+
+  if (!row) return null
+
+  return {
+    categoryLinks:
+      row._count.sendUnitCategories +
+      row._count.stockUnitCategories +
+      row._count.coverageAvailableUnitCategories +
+      row._count.itemCoverageUnitCategories +
+      row._count.serviceUnitCategories,
+    serviceLinks:
+      row._count.services +
+      row._count.templateServiceItems +
+      row._count.workOrderServiceItems,
+  }
 }
