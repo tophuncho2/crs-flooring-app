@@ -49,8 +49,6 @@ export default function FlooringProductsClient({
     message,
     error,
     openCreateProduct,
-    deletingProductId,
-    deleteProduct,
     openProductRecord,
   } = useProductsListController({
     initialProducts,
@@ -101,7 +99,6 @@ export default function FlooringProductsClient({
       { key: "thickness", label: "Thickness", getValue: (row) => row.thickness, groupable: false },
       { key: "unitWeight", label: "Unit Weight", getValue: (row) => row.unitWeight, groupable: false },
       { key: "photos", label: "Photos", getValue: (row) => String(row.photoUrls.length), groupable: false },
-      { key: "actions", label: "Actions", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "product",
@@ -164,8 +161,6 @@ export default function FlooringProductsClient({
           hasNextPage={hasNextPage}
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
-          deletingProductId={deletingProductId}
-          onDeleteProduct={deleteProduct}
           onOpenProduct={openProductRecord}
         />
       }

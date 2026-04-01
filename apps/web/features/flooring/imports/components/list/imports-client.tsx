@@ -58,10 +58,8 @@ export default function ImportsClient({
 }) {
   const {
     imports,
-    deletingId,
     message,
     pageError,
-    deleteImport,
     openCreate,
     openImport,
   } = useImportsListController({
@@ -104,7 +102,6 @@ export default function ImportsClient({
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName, groupable: true },
       { key: "created", label: "Created", getValue: (row) => row.createdAt, groupable: false },
       { key: "items", label: "Items", getValue: (row) => String(row.itemsCount), groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => String(row.importNumber),
     sortFieldKey: "importNumber",
@@ -176,8 +173,6 @@ export default function ImportsClient({
             hasNextPage={hasNextPage}
             onPreviousPage={goToPreviousPage}
             onNextPage={goToNextPage}
-            deletingImportId={deletingId}
-            onDeleteImport={deleteImport}
             onOpenImport={openImport}
           />
         }

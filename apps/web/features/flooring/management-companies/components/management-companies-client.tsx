@@ -10,7 +10,6 @@ import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
   ClickableTableRow,
@@ -21,7 +20,6 @@ import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
-import { requestJson } from "@/features/flooring/shared/transport/http"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 
 type ManagementCompanyRow = {
@@ -65,10 +63,7 @@ export default function ManagementCompaniesClient({
   pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
 }) {
-  const [companies, setCompanies] = useState<ManagementCompanyRow[]>(initialCompanies)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [noticeMessage, setNoticeMessage] = useState("")
-  const [noticeError, setNoticeError] = useState("")
+  const [companies] = useState<ManagementCompanyRow[]>(initialCompanies)
   const companyNavigation = useRecordEntryNavigation("/dashboard/flooring/management-companies")
   const {
     searchQuery,
@@ -106,8 +101,6 @@ export default function ManagementCompaniesClient({
       { key: "phone", label: "Phone", getValue: (row) => row.phone },
       { key: "email", label: "Email", getValue: (row) => row.email },
       { key: "fullAddress", label: "Full Address", getValue: (row) => row.fullAddress },
-      { key: "properties", label: "Properties", getValue: (row) => row.propertyPreviewNames.join(" ") },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "company",
@@ -122,25 +115,7 @@ export default function ManagementCompaniesClient({
     disableClientPagination: true,
   })
 
-  async function deleteCompany(id: string) {
-    setNoticeError("")
-    setNoticeMessage("")
-    setDeletingId(id)
-
-    try {
-      await requestJson<{ ok: boolean }>(`/api/flooring/management-companies/${id}`, { method: "DELETE" })
-      setCompanies((previous) => previous.filter((company) => company.id !== id))
-      setNoticeMessage("Management company deleted")
-    } catch (deleteError) {
-      setNoticeError(deleteError instanceof Error ? deleteError.message : "Failed to delete company")
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
   function renderCompanyRow(row: ManagementCompanyRow) {
-    const linkedProperties = row.propertyPreviewNames.join(", ") || "-"
-    const remainingPropertyCount = Math.max(0, row.propertyCount - row.propertyPreviewNames.length)
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       company: (columnIndex) => (
         <DashboardListRowCell key="company" columnIndex={columnIndex} className="font-medium text-blue-500">
@@ -154,21 +129,6 @@ export default function ManagementCompaniesClient({
       phone: (columnIndex) => <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>,
       email: (columnIndex) => <DashboardListRowCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardListRowCell>,
       fullAddress: (columnIndex) => <DashboardListRowCell key="fullAddress" columnIndex={columnIndex}>{row.fullAddress || "-"}</DashboardListRowCell>,
-      properties: (columnIndex) => (
-        <DashboardListRowCell key="properties" columnIndex={columnIndex}>
-          <p className="text-xs text-[var(--foreground)]/70">
-            {linkedProperties}
-            {remainingPropertyCount > 0 ? ` +${remainingPropertyCount} more` : ""}
-          </p>
-        </DashboardListRowCell>
-      ),
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => void deleteCompany(row.id)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (
@@ -209,7 +169,7 @@ export default function ManagementCompaniesClient({
           }
         />
       }
-      notices={<FormStatusNotices message={noticeMessage} error={noticeError} />}
+      notices={<FormStatusNotices message="" error="" />}
       table={
         <DashboardListPageTable minWidthClass="min-w-[1320px]" columns={visibleCompanyColumns}>
           {isGroupingEnabled

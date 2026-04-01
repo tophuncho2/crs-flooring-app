@@ -6,7 +6,6 @@ import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dash
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
 import { formatStableDate } from "@/features/flooring/shared/domain/date-format"
 import { StatusPill } from "@/features/dashboard/shared/feedback/status-pill"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -38,8 +37,6 @@ export function InventoryTable({
   hasNextPage,
   onPreviousPage,
   onNextPage,
-  deletingInventoryId,
-  onDeleteInventory,
   onOpenInventory,
 }: {
   rows: InventoryRow[]
@@ -63,8 +60,6 @@ export function InventoryTable({
   hasNextPage: boolean
   onPreviousPage: () => void
   onNextPage: () => void
-  deletingInventoryId: string | null
-  onDeleteInventory: (id: string) => void
   onOpenInventory: (id: string) => void
 }) {
   function renderRow(row: InventoryRow) {
@@ -108,13 +103,6 @@ export function InventoryTable({
       freight: (columnIndex) => <DashboardListRowCell key="freight" columnIndex={columnIndex}>{row.freight || "-"}</DashboardListRowCell>,
       notes: (columnIndex) => <DashboardListRowCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardListRowCell>,
       updated: (columnIndex) => <DashboardListRowCell key="updated" columnIndex={columnIndex}>{formatStableDate(row.updatedAt)}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => onDeleteInventory(row.id)} disabled={deletingInventoryId === row.id}>
-            {deletingInventoryId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (

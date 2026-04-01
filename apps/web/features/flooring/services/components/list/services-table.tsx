@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -18,17 +17,13 @@ export function ServicesTable({
   visibleColumns,
   groupedRows,
   isGroupingEnabled,
-  deletingId,
   onOpen,
-  onDelete,
 }: {
   rows: ServiceRow[]
   visibleColumns: Array<{ key: string; label: string }>
   groupedRows: GroupedRowTree<ServiceRow>[]
   isGroupingEnabled: boolean
-  deletingId: string | null
   onOpen: (row: ServiceRow) => void
-  onDelete: (row: ServiceRow) => void
 }) {
   function renderRow(row: ServiceRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
@@ -36,14 +31,6 @@ export function ServicesTable({
       unit: (columnIndex) => <DashboardListRowCell key="unit" columnIndex={columnIndex}>{row.unitName}</DashboardListRowCell>,
       cost: (columnIndex) => <DashboardListRowCell key="cost" columnIndex={columnIndex}>{row.baseCost}</DashboardListRowCell>,
       notes: (columnIndex) => <DashboardListRowCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardListRowCell>,
-      usage: (columnIndex) => <DashboardListRowCell key="usage" columnIndex={columnIndex}>{row.usageCount}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (

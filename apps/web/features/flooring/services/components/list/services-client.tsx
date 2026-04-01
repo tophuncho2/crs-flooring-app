@@ -66,8 +66,6 @@ export default function ServicesClient({
       { key: "unit", label: "Unit", getValue: (row) => row.unitName, groupable: true },
       { key: "cost", label: "Cost", getValue: (row) => row.baseCost, groupable: false },
       { key: "notes", label: "Notes", getValue: (row) => row.notes, groupable: false },
-      { key: "usage", label: "Usage", getValue: (row) => String(row.usageCount), groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "name",
@@ -118,9 +116,7 @@ export default function ServicesClient({
             visibleColumns={visibleColumns}
             groupedRows={groupedRowTree as GroupedRowTree<ServiceRow>[]}
             isGroupingEnabled={isGroupingEnabled}
-            deletingId={controller.deletingId}
             onOpen={(row) => navigation.openRecord(row.id)}
-            onDelete={(row) => void controller.removeRow(row)}
           />
         }
         pagination={

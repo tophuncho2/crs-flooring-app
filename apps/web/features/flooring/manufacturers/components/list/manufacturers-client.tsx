@@ -65,7 +65,6 @@ export default function ManufacturersClient({
       { key: "website", label: "Website", getValue: (row) => row.website, groupable: false },
       { key: "phone", label: "Phone", getValue: (row) => row.phone, groupable: false },
       { key: "email", label: "Email", getValue: (row) => row.email, groupable: false },
-      { key: "products", label: "Products", getValue: (row) => String(row.productsCount), groupable: false },
     ],
     sortField: (row) => row.companyName || row.agentName,
     sortFieldKey: "companyName",

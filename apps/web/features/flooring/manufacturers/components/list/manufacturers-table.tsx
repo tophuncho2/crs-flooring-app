@@ -32,7 +32,6 @@ export function ManufacturersTable({
       website: (columnIndex) => <DashboardListRowCell key="website" columnIndex={columnIndex}>{row.website || "-"}</DashboardListRowCell>,
       phone: (columnIndex) => <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>,
       email: (columnIndex) => <DashboardListRowCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardListRowCell>,
-      products: (columnIndex) => <DashboardListRowCell key="products" columnIndex={columnIndex}>{row.productsCount}</DashboardListRowCell>,
     }
 
     return (

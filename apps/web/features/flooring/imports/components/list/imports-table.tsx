@@ -6,7 +6,6 @@ import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dash
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
 import { formatStableDate } from "@/features/flooring/shared/domain/date-format"
 import { StatusPill } from "@/features/dashboard/shared/feedback/status-pill"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -37,8 +36,6 @@ export function ImportsTable({
   hasNextPage,
   onPreviousPage,
   onNextPage,
-  deletingImportId,
-  onDeleteImport,
   onOpenImport,
 }: {
   rows: ImportRow[]
@@ -62,8 +59,6 @@ export function ImportsTable({
   hasNextPage: boolean
   onPreviousPage: () => void
   onNextPage: () => void
-  deletingImportId: string | null
-  onDeleteImport: (id: string) => void
   onOpenImport: (id: string) => void
 }) {
   function renderRow(row: ImportRow) {
@@ -87,16 +82,6 @@ export function ImportsTable({
       warehouse: (columnIndex) => <DashboardListRowCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardListRowCell>,
       created: (columnIndex) => <DashboardListRowCell key="created" columnIndex={columnIndex}>{formatStableDate(row.createdAt)}</DashboardListRowCell>,
       items: (columnIndex) => <DashboardListRowCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton
-            onClick={() => onDeleteImport(row.id)}
-            disabled={deletingImportId === row.id}
-          >
-            {deletingImportId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (

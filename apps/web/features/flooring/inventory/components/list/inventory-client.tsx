@@ -49,9 +49,7 @@ export default function InventoryClient({
   const {
     rows,
     notices,
-    deletingInventoryId,
     openInventory,
-    deleteInventory,
   } = useInventoryListController({
     initialInventory,
   })
@@ -104,7 +102,6 @@ export default function InventoryClient({
       { key: "freight", label: "Freight $", getValue: (row) => row.freight, defaultHidden: true, groupable: false },
       { key: "notes", label: "Notes", getValue: (row) => row.notes, defaultHidden: true, groupable: false },
       { key: "updated", label: "Updated", getValue: (row) => row.updatedAt.split("T")[0], defaultHidden: true, groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.itemNumber,
     sortFieldKey: "itemNumber",
@@ -170,8 +167,6 @@ export default function InventoryClient({
           hasNextPage={hasNextPage}
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
-          deletingInventoryId={deletingInventoryId}
-          onDeleteInventory={deleteInventory}
           onOpenInventory={openInventory}
         />
       }

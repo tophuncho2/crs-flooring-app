@@ -10,7 +10,6 @@ import {
   TableEmptyRow,
   TablePaginationControls,
 } from "@/features/dashboard/shared/table/table-shell"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { ProductRow } from "@/features/flooring/products/controllers/use-products-list-controller"
 
@@ -29,8 +28,6 @@ export function ProductsTable({
   hasNextPage,
   onPreviousPage,
   onNextPage,
-  deletingProductId,
-  onDeleteProduct,
   onOpenProduct,
 }: {
   rows: ProductRow[]
@@ -54,8 +51,6 @@ export function ProductsTable({
   hasNextPage: boolean
   onPreviousPage: () => void
   onNextPage: () => void
-  deletingProductId: string | null
-  onDeleteProduct: (product: ProductRow) => void
   onOpenProduct: (productId: string) => void
 }) {
   function renderRow(product: ProductRow) {
@@ -76,16 +71,6 @@ export function ProductsTable({
       thickness: (columnIndex) => <DashboardListRowCell key="thickness" columnIndex={columnIndex}>{product.thickness || "-"}</DashboardListRowCell>,
       unitWeight: (columnIndex) => <DashboardListRowCell key="unitWeight" columnIndex={columnIndex}>{product.unitWeight || "-"}</DashboardListRowCell>,
       photos: (columnIndex) => <DashboardListRowCell key="photos" columnIndex={columnIndex}>{product.photoUrls.length}</DashboardListRowCell>,
-      actions: (columnIndex) => (
-        <DashboardListRowCell key="actions" columnIndex={columnIndex}>
-          <DeleteRowButton
-            onClick={() => onDeleteProduct(product)}
-            disabled={deletingProductId === product.id}
-          >
-            {deletingProductId === product.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (
