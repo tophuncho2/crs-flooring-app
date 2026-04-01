@@ -1,6 +1,4 @@
-import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
-import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
-import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
+import { buildFlooringProductDisplayName, buildRecordSummary, type LineTotalInput } from "@builders/domain"
 import type { PricingLine } from "@/features/flooring/templates/services"
 import {
   buildWorkOrderItemAllocationSummary,

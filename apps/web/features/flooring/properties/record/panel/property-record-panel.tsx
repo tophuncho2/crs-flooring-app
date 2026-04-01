@@ -8,7 +8,7 @@ import {
 } from "@/features/shared/engines/record-view"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/features/flooring/shared/ui/table/confirm-delete"
-import { normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
+import { normalizeAddressState } from "@builders/domain"
 import { usePropertyPrimarySection } from "./controllers/use-property-primary-section"
 import { PropertyPrimaryFieldsSection } from "./sections/property-primary-fields-section"
 import { PropertyTemplatesSection } from "./sections/property-templates-section"

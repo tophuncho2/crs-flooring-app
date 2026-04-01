@@ -1,7 +1,7 @@
 "use client"
 
 import { requestJson } from "@/features/flooring/shared/transport/http"
-import { normalizeAddressState } from "@/features/flooring/shared/domain/address-helpers"
+import { normalizeAddressState } from "@builders/domain"
 import {
   RecordCreateClientScaffold,
   RecordPanelFooter,

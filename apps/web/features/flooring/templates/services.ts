@@ -1,6 +1,4 @@
-import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
-import type { LineTotalInput } from "@/features/flooring/shared/domain/line-totals"
-import { buildRecordSummary } from "@/features/flooring/shared/domain/record-summary"
+import { buildFlooringProductDisplayName, buildPadProductDisplayName, buildRecordSummary, type LineTotalInput } from "@builders/domain"
 import { normalizeTemplateExpenseSummary } from "./domain/expense-summary"
 import { normalizeTemplateSalesRep } from "./domain/sales-reps"
 
