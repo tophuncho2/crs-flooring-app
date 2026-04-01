@@ -1,16 +1,16 @@
-import { createCategoryRecord, validateUpdateCategoryPrimarySectionInput } from "@/features/flooring/categories/application/manage-category"
-import { listCategories } from "@/features/flooring/categories/data/queries"
-import { authorizeCategoriesRoute } from "@/features/flooring/shared/access/lookup-domains"
-import {
-  enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+import { createCategoryUseCase } from "@builders/execution"
+import { listCategories } from "@builders/db"
+import { validateCategoryPrimarySectionInput } from "@/features/flooring/categories/transport/validate-category-input"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { CATEGORIES_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
-  const access = await authorizeCategoriesRoute(request)
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: CATEGORIES_TOOL_SLUG,
+  })
   if (access instanceof Response) return access
 
   try {
@@ -21,40 +21,33 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await authorizeCategoriesRoute(request, { capability: "categories.edit" })
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "categories.write",
-    limit: 20,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/flooring/categories",
+  const access = await applyRoutePolicy(request, {
+    capability: "categories.edit",
+    toolSlug: CATEGORIES_TOOL_SLUG,
+    rateLimit: {
+      scope: "categories.create",
+      limit: 20,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/flooring/categories",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const category = await createCategoryRecord(validateUpdateCategoryPrimarySectionInput(body))
-    logRouteMutationSuccess(access, {
-      message: "Category created",
-      action: "categories.create",
-      route: "/api/flooring/categories",
-      entityType: "flooringCategory",
-      entityId: category.id,
-    })
-
-    return routeJson(access, { category }, { status: 201 })
-  } catch (error) {
-    logRouteMutationFailure(
+    const category = await withMutationTelemetry(
       access,
       {
-        message: "Category creation failed",
-        action: "categories.create.error",
+        message: "Category created",
+        action: "categories.create",
         route: "/api/flooring/categories",
         entityType: "flooringCategory",
       },
-      error,
+      () => createCategoryUseCase(validateCategoryPrimarySectionInput(body)),
     )
+
+    return routeJson(access, { category }, { status: 201 })
+  } catch (error) {
     return routeError(access, error)
   }
 }

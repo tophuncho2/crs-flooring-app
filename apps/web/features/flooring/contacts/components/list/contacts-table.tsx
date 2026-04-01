@@ -17,9 +17,7 @@ export function ContactsTable({
   visibleColumns,
   groupedRows,
   isGroupingEnabled,
-  deletingId,
   onOpen,
-  onDelete,
 }: {
   rows: ContactRow[]
   visibleColumns: Array<{ key: string; label: string }>

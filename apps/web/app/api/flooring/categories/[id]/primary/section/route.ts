@@ -1,9 +1,7 @@
+import { updateCategoryUseCase } from "@builders/execution"
+import { getCategoryById } from "@builders/db"
+import { validateCategoryPrimarySectionInput } from "@/features/flooring/categories/transport/validate-category-input"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { getCategoryById } from "@/features/flooring/categories/data/queries"
-import {
-  replaceCategoryPrimarySection,
-  validateUpdateCategoryPrimarySectionInput,
-} from "@/features/flooring/categories/application/manage-category"
 import { CATEGORIES_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -36,7 +34,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateCategoryPrimarySectionInput, {
+    const { input, mutation } = parseMutationEnvelope(body, validateCategoryPrimarySectionInput, {
       requireExpectedUpdatedAt: true,
     })
     const currentSnapshot = await getCategoryById(id)
@@ -57,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return receipt.replay
     }
 
-    await withMutationTelemetry(
+    const category = await withMutationTelemetry(
       access,
       {
         message: "Category primary section replaced",
@@ -66,12 +64,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringCategory",
         entityId: id,
       },
-      () => replaceCategoryPrimarySection(id, input),
+      () => updateCategoryUseCase(id, input),
     )
 
-    const responseBody = {
-      category: await getCategoryById(id),
-    }
+    const responseBody = { category }
     await finalizeMutationReceipt({
       scope: "categories.primary.section.replace",
       access,

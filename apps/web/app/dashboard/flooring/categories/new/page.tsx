@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
-import { getCategoryCreatePageData } from "@/features/flooring/categories/data/queries"
+import { getCategoryCreatePageData } from "@builders/db"
 import { CategoryCreateClient } from "@/features/flooring/categories/record/create/category-create-client"
 
 export default async function CategoryCreatePage({

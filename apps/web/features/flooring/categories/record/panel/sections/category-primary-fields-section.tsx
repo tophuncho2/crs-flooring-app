@@ -124,9 +124,6 @@ export function CategoryPrimaryFieldsSection({
 
       <RecordPrimaryPane variant="side">
         <RecordPrimaryFieldsGrid variant="side">
-          <RecordFormField label="Products">
-            <RecordStaticFieldValue>{category.productCount}</RecordStaticFieldValue>
-          </RecordFormField>
           <RecordFormField label="Created">
             <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>

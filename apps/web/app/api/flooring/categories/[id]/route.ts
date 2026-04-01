@@ -1,9 +1,10 @@
 import {
-  deleteCategoryRecord,
-  replaceCategoryPrimarySection,
-  validateUpdateCategoryPrimarySectionInput,
-} from "@/features/flooring/categories/application/manage-category"
-import { getCategoryById } from "@/features/flooring/categories/data/queries"
+  deleteCategoryUseCase,
+  updateCategoryUseCase,
+} from "@builders/execution"
+import { getCategoryById } from "@builders/db"
+import { validateCategoryPrimarySectionInput } from "@/features/flooring/categories/transport/validate-category-input"
+import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 import { CATEGORIES_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -13,7 +14,6 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -35,7 +35,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateCategoryPrimarySectionInput, {
+    const { input, mutation } = parseMutationEnvelope(body, validateCategoryPrimarySectionInput, {
       requireExpectedUpdatedAt: true,
     })
     const currentSnapshot = await getCategoryById(id)
@@ -65,7 +65,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringCategory",
         entityId: id,
       },
-      () => replaceCategoryPrimarySection(id, input),
+      () => updateCategoryUseCase(id, input),
     )
 
     const responseBody = {
@@ -130,7 +130,7 @@ export async function DELETE(request: Request, context: RouteContext) {
         entityType: "flooringCategory",
         entityId: id,
       },
-      () => deleteCategoryRecord(id),
+      () => deleteCategoryUseCase(id),
     )
     const responseBody = { ok: true as const }
     await finalizeMutationReceipt({

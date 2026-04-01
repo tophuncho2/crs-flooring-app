@@ -2,7 +2,7 @@ import { canEditCategories } from "@/server/auth/access-control"
 import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
 import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import CategoriesClient from "@/features/flooring/categories/components/list/categories-client"
-import { getCategoriesPageData } from "@/features/flooring/categories/data/queries"
+import { getCategoriesPageData } from "@builders/db"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { parseServerTableQueryState } from "@/server/pagination"
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { CategoryForm, CategoryRow } from "../domain/types"
 
 export async function createCategoryRequest(input: CategoryForm) {
@@ -19,8 +20,10 @@ export async function updateCategoryRequest(id: string, input: CategoryForm) {
   })
 }
 
-export async function deleteCategoryRequest(id: string) {
-  return requestJson<{ success: boolean }>(`/api/flooring/categories/${id}`, {
+export async function deleteCategoryRequest(id: string, updatedAt: string) {
+  return requestJson<{ ok: true }>(`/api/flooring/categories/${id}`, {
     method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
 }

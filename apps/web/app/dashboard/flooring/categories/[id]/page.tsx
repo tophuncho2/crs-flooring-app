@@ -4,7 +4,7 @@ import { canEditCategories } from "@/server/auth/access-control"
 import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { CategoryDetailClient } from "@/features/flooring/categories/record/detail/category-detail-client"
-import { getCategoryDetailPageData } from "@/features/flooring/categories/data/queries"
+import { getCategoryDetailPageData } from "@builders/db"
 
 export default async function CategoryDetailPage({
   params,
