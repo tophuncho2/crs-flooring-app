@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templates-work-orders"

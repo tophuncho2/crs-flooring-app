@@ -1,5 +1,5 @@
 import { canEditCategories } from "@/server/auth/access-control"
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireCategoriesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import CategoriesClient from "@/features/flooring/categories/components/list/categories-client"
 import { getCategoriesPageData } from "@builders/db"

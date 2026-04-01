@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireServicesAccess } from "@/features/flooring/shared/access/lookup-domains"
 import ServicesClient from "@/features/flooring/services/components/list/services-client"
 import { getServicesPageData } from "@/features/flooring/services/data/queries"

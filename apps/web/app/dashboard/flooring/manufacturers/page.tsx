@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireManufacturersAccess } from "@/features/flooring/shared/access/lookup-domains"
 import ManufacturersClient from "@/features/flooring/manufacturers/components/list/manufacturers-client"
 import { getManufacturersPageData } from "@/features/flooring/manufacturers/data/queries"

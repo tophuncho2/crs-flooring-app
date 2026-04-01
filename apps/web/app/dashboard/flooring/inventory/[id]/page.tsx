@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { InventoryDetailClient } from "@/features/flooring/inventory/record/detail/inventory-detail-client"

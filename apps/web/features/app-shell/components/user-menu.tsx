@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
 import { requestJson } from "@/features/flooring/shared/http"
-import { useFlooringHotkeys } from "./use-flooring-hotkeys"
+import { useFlooringHotkeys } from "../hooks/use-hotkeys"
 
 type HotkeyRow = {
   id: string

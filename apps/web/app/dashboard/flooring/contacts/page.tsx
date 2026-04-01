@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireContactsAccess } from "@/features/flooring/shared/access/lookup-domains"
 import ContactsClient from "@/features/flooring/contacts/components/list/contacts-client"
 import { getContactsPageData } from "@/features/flooring/contacts/data/queries"

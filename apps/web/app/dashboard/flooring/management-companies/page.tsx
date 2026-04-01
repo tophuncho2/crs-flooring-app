@@ -1,7 +1,7 @@
 import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { getManagementCompaniesPageData } from "@/features/flooring/management-companies/queries"
 import ManagementCompaniesClient from "@/features/flooring/management-companies/components/management-companies-client"
 

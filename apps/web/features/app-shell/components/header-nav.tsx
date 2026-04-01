@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
-import type { FlooringNavItem } from "./flooring-navigation"
-import { isActiveFlooringItem, isFlooringRoute } from "./flooring-navigation"
+import type { FlooringNavItem } from "@/features/flooring/navigation/definitions"
+import { isActiveFlooringItem, isFlooringRoute } from "@/features/flooring/navigation/definitions"
 
 type FlooringHeaderNavProps = {
   canUseTools: boolean

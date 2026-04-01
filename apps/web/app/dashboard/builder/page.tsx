@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { canAccessBuilderPanel } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
-import BuilderUsersPanel from "./users-panel"
+import BuilderUsersPanel from "@/features/builder/components/users-panel"
 
 export default async function BuilderPage() {
   const user = await requireSessionUser()

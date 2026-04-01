@@ -1,10 +1,10 @@
 "use client"
 
 import type { UserToolRow } from "@/server/platform/tool-subscriptions"
-import FlooringHeaderNav from "./flooring-header-nav"
-import FlooringToolsMenu from "./flooring-tools-menu"
+import FlooringHeaderNav from "./header-nav"
+import FlooringToolsMenu from "./tools-menu"
 import UserMenu from "./user-menu"
-import { useFlooringNavigationState } from "./use-flooring-navigation-state"
+import { useFlooringNavigationState } from "../hooks/use-navigation-state"
 
 type HeaderControlsProps = {
   email: string

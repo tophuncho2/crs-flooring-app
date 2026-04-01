@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { getTemplateDetailPageData } from "@/features/flooring/templates/queries"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"

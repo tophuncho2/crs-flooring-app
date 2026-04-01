@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireWorkOrdersAccess } from "@/features/flooring/shared/access/templates-work-orders"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getWorkOrdersPageData, listWorkOrdersPageFilterOptions } from "@/features/flooring/work-orders/queries"

@@ -1,5 +1,5 @@
 import { canEditUnitOfMeasures } from "@/server/auth/access-control"
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireUnitOfMeasuresAccess } from "@/features/flooring/shared/access/lookup-domains"
 import UnitOfMeasuresClient from "@/features/flooring/unit-of-measures/components/list/unit-of-measures-client"
 import { getUnitOfMeasuresPageData } from "@/features/flooring/unit-of-measures/data/queries"

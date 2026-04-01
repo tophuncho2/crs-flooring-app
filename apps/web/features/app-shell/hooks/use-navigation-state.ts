@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react"
 import type { UserToolRow } from "@/server/platform/tool-subscriptions"
 import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
-import { orderFlooringNavItems, type FlooringNavItem } from "./flooring-navigation"
+import { orderFlooringNavItems, type FlooringNavItem } from "@/features/flooring/navigation/definitions"
 
 export function useFlooringNavigationState({
   canUseTools,

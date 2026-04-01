@@ -20,7 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
 import { Boxes, GripVertical } from "lucide-react"
-import type { FlooringNavItem } from "./flooring-navigation"
+import type { FlooringNavItem } from "@/features/flooring/navigation/definitions"
 
 type FlooringToolsMenuProps = {
   canUseTools: boolean

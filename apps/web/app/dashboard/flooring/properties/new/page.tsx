@@ -1,4 +1,4 @@
-import DashboardErrorState from "@/app/dashboard/dashboard-error-state"
+import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveReturnTo } from "@/features/dashboard/shared/navigation/detail-routes"
 import { getPropertyCreatePageOptions } from "@/features/flooring/properties/queries"
