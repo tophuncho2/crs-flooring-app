@@ -51,7 +51,6 @@ export default function HeaderControls({
           hasBuilderPanelAccess={hasBuilderPanelAccess}
           visibleSlugs={navigation.visibleSlugs}
           orderedItems={navigation.orderedItems}
-          hotkeyByPath={navigation.hotkeyByPath}
           canOpenItem={navigation.canOpenItem}
           onVisibleSlugsChange={navigation.setVisibleSlugs}
           onOrderedSlugsChange={navigation.setOrderedSlugs}

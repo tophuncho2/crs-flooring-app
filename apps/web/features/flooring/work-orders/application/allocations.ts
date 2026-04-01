@@ -7,7 +7,7 @@ import {
   reconcileWorkOrderAllocationStatusesUseCase,
   removeWorkOrderItemAllocationUseCase,
   requestWorkOrderAutoAllocationUseCase as requestSharedWorkOrderAutoAllocationUseCase,
-} from "@builders/execution"
+} from "@builders/application"
 import {
   db,
   findActiveWorkOrderAllocationRunRow,

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
+import { validateInventoryLocationSelection } from "@/server/inventory/location-integrity"
 
 function createDbMock(overrides: Partial<{
   location: unknown

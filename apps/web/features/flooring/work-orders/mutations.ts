@@ -10,7 +10,7 @@ import {
   applyManualAllocationChangeUseCase,
   reconcileWorkOrderAllocationStatusesUseCase,
   removeWorkOrderItemAllocationUseCase,
-} from "@builders/execution"
+} from "@builders/application"
 import { collectAffectedReservationInventoryIds } from "@builders/domain"
 import { createAppError } from "@/server/http/api-helpers"
 import { applyTemplateSnapshotToNewWorkOrder, loadTemplateSnapshot } from "@/features/flooring/templates/domain/template-snapshot"

@@ -56,7 +56,7 @@ vi.mock("@/server/http/route-helpers", () => ({
   logRouteMutationFailure: vi.fn(),
 }))
 
-vi.mock("@/server/flooring/location-integrity", () => ({
+vi.mock("@/server/inventory/location-integrity", () => ({
   validateInventoryLocationSelection: validateInventoryLocationSelectionMock,
 }))
 

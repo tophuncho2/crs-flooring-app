@@ -1,7 +1,7 @@
 import {
   processWorkOrderAutoAllocationRunUseCase,
   type WorkOrderAutoAllocationAttemptContext,
-} from "@builders/execution"
+} from "@builders/application"
 import type { AutoAllocateWorkOrderJobV1 } from "@builders/domain"
 import type { WorkerEnvironment } from "../env.js"
 

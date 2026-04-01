@@ -1,5 +1,5 @@
 import { runUseCase } from "@/features/flooring/shared/application/run-use-case"
-import type { SyncInventoryJob } from "@/server/queues/jobs/sync-inventory"
+import type { SyncInventoryJob } from "@builders/domain"
 
 export function runInventorySyncUseCase(job: SyncInventoryJob) {
   return runUseCase(async () => ({

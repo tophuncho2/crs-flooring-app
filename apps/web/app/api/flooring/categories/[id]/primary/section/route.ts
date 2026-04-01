@@ -1,4 +1,4 @@
-import { updateCategoryUseCase } from "@builders/execution"
+import { updateCategoryUseCase } from "@builders/application"
 import { getCategoryById } from "@builders/db"
 import { validateCategoryPrimarySectionInput } from "@/features/flooring/categories/transport/validate-category-input"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"

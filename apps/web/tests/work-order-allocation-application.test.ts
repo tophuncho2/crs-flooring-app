@@ -32,7 +32,7 @@ vi.mock("@builders/db", () => ({
   getWorkOrderAllocationRunRowById: vi.fn(),
 }))
 
-vi.mock("@builders/execution", () => ({
+vi.mock("@builders/application", () => ({
   applyManualAllocationChangeUseCase: applyManualAllocationChangeUseCaseMock,
   reconcileWorkOrderAllocationStatusesUseCase: reconcileWorkOrderAllocationStatusesUseCaseMock,
   removeWorkOrderItemAllocationUseCase: removeWorkOrderItemAllocationUseCaseMock,

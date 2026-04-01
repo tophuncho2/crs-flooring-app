@@ -2,7 +2,7 @@ import type {
   InventoryAllocationOptionRecord,
   WorkOrderAllocationRunRecord,
   WorkOrderItemAllocationRecord,
-} from "@builders/execution"
+} from "@builders/application"
 import { isWorkOrderAutoAllocationPendingStatus } from "@builders/domain"
 
 export type WorkOrderItemAllocationListResponse = {

@@ -5,35 +5,6 @@ import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import type { ToolSlug } from "@/server/platform/tool-subscriptions"
 import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/features/flooring/shared/accent-styles"
-import { requestJson } from "@/features/flooring/shared/http"
-import { useFlooringHotkeys } from "../hooks/use-hotkeys"
-
-type HotkeyRow = {
-  id: string
-  key: string
-  combination: string
-  action: string
-}
-
-function KeyVisualization({ combination }: { combination: string }) {
-  const keys = combination
-    .split("+")
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {keys.map((keyPart, index) => (
-        <kbd
-          key={`${combination}-${index}`}
-          className="rounded border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-0.5 text-[11px] font-semibold"
-        >
-          {keyPart}
-        </kbd>
-      ))}
-    </div>
-  )
-}
 
 type UserMenuProps = {
   email: string
@@ -45,10 +16,6 @@ type UserMenuProps = {
 export default function UserMenu({ email, role, canUseTools: canUseToolsProp, unlockedToolSlugs = [] }: UserMenuProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [hotkeysOpen, setHotkeysOpen] = useState(false)
-  const [hotkeys, setHotkeys] = useState<HotkeyRow[]>([])
-  const [hotkeysLoading, setHotkeysLoading] = useState(false)
-  const [hotkeysError, setHotkeysError] = useState("")
   const [isMobile, setIsMobile] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -87,32 +54,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
   async function handleLogout() {
     await signOut({ callbackUrl: "/login" })
   }
-
-  useFlooringHotkeys({
-    enabled: !isMobile,
-    canOpenTool,
-  })
-
-  const fetchHotkeys = useCallback(async () => {
-    setHotkeysLoading(true)
-    setHotkeysError("")
-
-    try {
-      const payload = await requestJson<{ hotkeys?: HotkeyRow[] }>("/api/hotkeys")
-      setHotkeys(payload.hotkeys ?? [])
-    } catch (error) {
-      setHotkeysError(error instanceof Error ? error.message : "Failed to load hotkeys")
-    } finally {
-      setHotkeysLoading(false)
-    }
-  }, [])
-
-  const openHotkeysModal = useCallback(async () => {
-    setOpen(false)
-    setHotkeysError("")
-    setHotkeysOpen(true)
-    await fetchHotkeys()
-  }, [fetchHotkeys])
 
   return (
     <>
@@ -165,12 +106,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
             )}
 
             <button
-              onClick={() => void openHotkeysModal()}
-              className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-            >
-              Hotkeys
-            </button>
-            <button
               onClick={() => void handleLogout()}
               className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
             >
@@ -180,79 +115,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
         )}
       </div>
 
-      {hotkeysOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-4xl rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold">Hotkeys</h2>
-                <p className="text-xs text-[var(--foreground)]/70">
-                  Hotkeys are disabled on mobile devices.
-                </p>
-              </div>
-              <button
-                onClick={() => setHotkeysOpen(false)}
-                className="rounded-md border border-[var(--panel-border)] px-3 py-1 text-sm hover:bg-[var(--panel-hover)]"
-              >
-                Close
-              </button>
-            </div>
-
-            {hotkeysError && (
-              <p className="mb-2 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600">
-                {hotkeysError}
-              </p>
-            )}
-
-            <div className="overflow-x-auto rounded-lg border border-[var(--panel-border)]">
-              <table className="min-w-full text-sm">
-                <thead className="bg-[var(--panel-hover)] text-left">
-                  <tr>
-                    <th className="px-3 py-2">Key</th>
-                    <th className="px-3 py-2">Combination</th>
-                    <th className="px-3 py-2">Action</th>
-                    {!isMobile && <th className="px-3 py-2">Visualization</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {hotkeysLoading ? (
-                    <tr>
-                      <td
-                        colSpan={isMobile ? 3 : 4}
-                        className="px-3 py-8 text-center text-[var(--foreground)]/70"
-                      >
-                        Loading hotkeys...
-                      </td>
-                    </tr>
-                  ) : hotkeys.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={isMobile ? 3 : 4}
-                        className="px-3 py-8 text-center text-[var(--foreground)]/70"
-                      >
-                        No hotkeys configured.
-                      </td>
-                    </tr>
-                  ) : (
-                    hotkeys.map((hotkey) => (
-                      <tr key={hotkey.id} className="border-t border-[var(--panel-border)]">
-                        <td className="px-3 py-2">{hotkey.key}</td>
-                        <td className="px-3 py-2">{hotkey.combination}</td>
-                        <td className="px-3 py-2">{hotkey.action}</td>
-                        {!isMobile && (
-                          <td className="px-3 py-2">
-                            <KeyVisualization combination={hotkey.combination} />
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }

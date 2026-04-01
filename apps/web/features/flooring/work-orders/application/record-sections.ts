@@ -9,7 +9,7 @@ import {
   applyManualAllocationChangeUseCase,
   reconcileWorkOrderAllocationStatusesUseCase,
   removeWorkOrderItemAllocationUseCase,
-} from "@builders/execution"
+} from "@builders/application"
 import { createAppError } from "@/server/http/api-helpers"
 import { normalizeWorkOrderAllocationApplicationError } from "./allocation-errors"
 import type {

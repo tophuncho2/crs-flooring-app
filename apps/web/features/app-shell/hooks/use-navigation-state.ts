@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type { UserToolRow } from "@/server/platform/tool-subscriptions"
-import { FLOORING_HOTKEYS } from "@/server/flooring/hotkeys"
 import { orderFlooringNavItems, type FlooringNavItem } from "@/features/flooring/navigation/definitions"
 
 export function useFlooringNavigationState({
@@ -25,11 +24,6 @@ export function useFlooringNavigationState({
   const visibleSlugSet = useMemo(() => new Set(visibleSlugs), [visibleSlugs])
   const unlockedToolSlugs = useMemo(() => tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug), [tools])
   const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
-  const hotkeyByPath = useMemo(
-    () => new Map(FLOORING_HOTKEYS.filter((hotkey) => hotkey.path).map((hotkey) => [hotkey.path!, hotkey.combination])),
-    [],
-  )
-
   const canOpenItem = useCallback(
     (item: FlooringNavItem) => {
       if (item.builderOnly) {
@@ -50,7 +44,6 @@ export function useFlooringNavigationState({
     visibleSlugSet,
     unlockedToolSlugs,
     unlockedToolSet,
-    hotkeyByPath,
     canOpenItem,
   }
 }

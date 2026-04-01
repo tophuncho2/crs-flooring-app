@@ -21,7 +21,6 @@ describe("access-control capability matrix", () => {
 
   it("keeps builders operational but non-governing", () => {
     expect(hasCapability("BUILDER", "system.access")).toBe(true)
-    expect(hasCapability("BUILDER", "hotkeys.view")).toBe(true)
     expect(hasCapability("BUILDER", "users.manage")).toBe(false)
     expect(canManageUsers("builder@test.com", "BUILDER")).toBe(false)
     expect(canEditCategories("BUILDER")).toBe(false)

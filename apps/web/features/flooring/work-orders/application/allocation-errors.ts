@@ -1,6 +1,6 @@
 import {
   isWorkOrderAllocationExecutionError,
-} from "@builders/execution"
+} from "@builders/application"
 import {
   isWorkOrderAllocationDomainError,
   type WorkOrderAllocationDomainErrorCode,

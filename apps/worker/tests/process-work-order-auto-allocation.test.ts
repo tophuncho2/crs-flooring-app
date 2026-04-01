@@ -4,7 +4,7 @@ const { processWorkOrderAutoAllocationRunUseCaseMock } = vi.hoisted(() => ({
   processWorkOrderAutoAllocationRunUseCaseMock: vi.fn(),
 }))
 
-vi.mock("@builders/execution", () => ({
+vi.mock("@builders/application", () => ({
   processWorkOrderAutoAllocationRunUseCase: processWorkOrderAutoAllocationRunUseCaseMock,
 }))
 

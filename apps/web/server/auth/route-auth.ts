@@ -3,7 +3,7 @@ import {
   canBypassVerification,
   canManageUsers,
   hasCapability,
-  canManageHotkeys,
+  hasGovernanceAccess,
   hasSystemAccess,
   type Capability,
 } from "@/server/auth/access-control"
@@ -123,7 +123,7 @@ export async function ensureGovernanceUser() {
     return jsonWithRequestId({ error: "Unauthorized" }, getRequestId(), { status: 401 })
   }
 
-  if (!canManageHotkeys(user.email, user.role)) {
+  if (!hasGovernanceAccess(user.role)) {
     return jsonWithRequestId({ error: "Forbidden" }, getRequestId(), { status: 403 })
   }
 

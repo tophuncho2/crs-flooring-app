@@ -1,7 +1,7 @@
 import { Prisma, prisma, type PrismaClient } from "@builders/db"
 import { buildInventoryAllocationTotals, calculateInventoryPricePerUnit } from "@builders/domain"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { validateInventoryLocationSelection } from "@/server/flooring/location-integrity"
+import { validateInventoryLocationSelection } from "@/server/inventory/location-integrity"
 import { buildFlooringProductDisplayName } from "@/features/flooring/shared/domain/product-display-name"
 import { canCreateInventoryCutLogs, getInventoryCutLogBlockedReason } from "@/features/flooring/inventory/domain/filters"
 

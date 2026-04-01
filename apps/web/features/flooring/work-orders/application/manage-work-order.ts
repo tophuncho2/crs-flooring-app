@@ -1,6 +1,6 @@
 import { Prisma, clearAllocationsForWorkOrder, listWorkOrderAllocationInventoryIds, prisma, refreshInventoryReservedStockCounts } from "@builders/db"
 import { collectAffectedReservationInventoryIds } from "@builders/domain"
-import { reconcileWorkOrderAllocationStatusesUseCase } from "@builders/execution"
+import { reconcileWorkOrderAllocationStatusesUseCase } from "@builders/application"
 import type { CreateWorkOrderInput, UpdateWorkOrderInput } from "@/features/flooring/work-orders/validators"
 import { createWorkOrder } from "@/features/flooring/work-orders/mutations"
 import { getWorkOrderById } from "../queries"

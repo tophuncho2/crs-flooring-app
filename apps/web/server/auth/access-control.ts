@@ -5,8 +5,6 @@ export const CAPABILITIES = [
   "governance.access",
   "builderPanel.access",
   "users.manage",
-  "hotkeys.view",
-  "hotkeys.manage",
   "categories.edit",
   "unitOfMeasures.edit",
   "tool.admin",
@@ -25,8 +23,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "governance.access",
     "builderPanel.access",
     "users.manage",
-    "hotkeys.view",
-    "hotkeys.manage",
     "categories.edit",
     "unitOfMeasures.edit",
     "tool.admin",
@@ -41,8 +37,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "governance.access",
     "builderPanel.access",
     "users.manage",
-    "hotkeys.view",
-    "hotkeys.manage",
     "categories.edit",
     "unitOfMeasures.edit",
     "workOrders.read",
@@ -53,7 +47,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
   ]),
   BUILDER: new Set<Capability>([
     "system.access",
-    "hotkeys.view",
     "workOrders.read",
     "workOrders.write",
     "workOrders.delete",
@@ -106,10 +99,6 @@ export function canEditRole(): boolean {
 
 export function canManageUsers(_email: string, role: Role): boolean {
   return hasCapability(role, "users.manage")
-}
-
-export function canManageHotkeys(_email: string, role: Role): boolean {
-  return hasCapability(role, "hotkeys.manage")
 }
 
 export function canEditCategories(role: Role): boolean {

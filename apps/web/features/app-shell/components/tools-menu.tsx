@@ -27,7 +27,6 @@ type FlooringToolsMenuProps = {
   hasBuilderPanelAccess: boolean
   visibleSlugs: string[]
   orderedItems: FlooringNavItem[]
-  hotkeyByPath: Map<string, string>
   canOpenItem: (item: FlooringNavItem) => boolean
   onVisibleSlugsChange: (slugs: string[]) => void
   onOrderedSlugsChange: (slugs: string[]) => void
@@ -37,7 +36,6 @@ function SortableFlooringNavRow({
   tool,
   canOpen,
   isVisible,
-  hotkeyLabel,
   visibleSlugs,
   onVisibleSlugsChange,
   onNavigate,
@@ -45,7 +43,6 @@ function SortableFlooringNavRow({
   tool: FlooringNavItem
   canOpen: boolean
   isVisible: boolean
-  hotkeyLabel?: string
   visibleSlugs: string[]
   onVisibleSlugsChange: (slugs: string[]) => void
   onNavigate: (href: string) => void
@@ -103,11 +100,6 @@ function SortableFlooringNavRow({
           className="h-4 w-4 accent-blue-500"
         />
       </label>
-      {hotkeyLabel ? (
-        <span className="min-w-[88px] shrink-0 rounded border border-[var(--panel-border)] bg-[var(--panel-hover)]/50 px-2 py-1 text-center text-[10px] font-semibold tracking-wide text-[var(--foreground)]/70">
-          {hotkeyLabel}
-        </span>
-      ) : null}
     </div>
   )
 }
@@ -117,7 +109,6 @@ export default function FlooringToolsMenu({
   hasBuilderPanelAccess,
   visibleSlugs,
   orderedItems,
-  hotkeyByPath,
   canOpenItem,
   onVisibleSlugsChange,
   onOrderedSlugsChange,
@@ -263,7 +254,6 @@ export default function FlooringToolsMenu({
               {orderedItems.map((tool) => {
                 const canOpen = canOpenItem(tool)
                 const isVisible = visibleSlugs.includes(tool.slug)
-                const hotkeyLabel = hotkeyByPath.get(tool.href)
 
                 return (
                   <SortableFlooringNavRow
@@ -271,7 +261,6 @@ export default function FlooringToolsMenu({
                     tool={tool}
                     canOpen={canOpen}
                     isVisible={isVisible}
-                    hotkeyLabel={hotkeyLabel}
                     visibleSlugs={visibleSlugs}
                     onVisibleSlugsChange={onVisibleSlugsChange}
                     onNavigate={navigateToTool}

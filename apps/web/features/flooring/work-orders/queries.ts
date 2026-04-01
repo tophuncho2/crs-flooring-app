@@ -9,7 +9,7 @@ import {
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import { mapWorkOrderAllocationRunRowToRecord } from "@builders/execution"
+import { mapWorkOrderAllocationRunRowToRecord } from "@builders/application"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import {
   buildInventoryAllocationTotals,

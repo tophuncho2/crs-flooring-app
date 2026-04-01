@@ -1,4 +1,4 @@
-import { createUnitOfMeasureUseCase } from "@builders/execution"
+import { createUnitOfMeasureUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
 import { listUnitOfMeasures } from "@/server/builder/unit-of-measures"
