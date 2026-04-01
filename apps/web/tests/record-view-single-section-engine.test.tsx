@@ -514,8 +514,8 @@ describe("record view single-section engine", () => {
           columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}
           onOpen={openItem}
           openAriaLabel="Open property Oak"
-          nestedContent={(
-            <RecordSectionGrid columns={[{ key: "allocation", minWidth: 180 }]} surface="nested">
+          scopedContent={(
+            <RecordSectionGrid columns={[{ key: "allocation", minWidth: 180 }]} surface="scoped">
               <RecordSectionGridRow
                 columns={[{ key: "allocation", minWidth: 180 }]}
                 onOpen={openAllocation}
@@ -566,7 +566,7 @@ describe("record view single-section engine", () => {
       >
         <RecordItemSectionControls
           capabilities={{
-            supportsNestedAllocations: true,
+            supportsScopedRows: true,
             supportsOpenRow: false,
             supportsStatusColumn: true,
             supportsRemoveRow: false,

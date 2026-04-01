@@ -7,7 +7,7 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-export type TableBleedVariant = "dashboard" | "record" | "nested"
+export type TableBleedVariant = "dashboard" | "record" | "scoped"
 
 export const PAGE_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--panel-hover)] text-left"
 export const MODAL_TABLE_HEAD_TONE_CLASS_NAME = "bg-[var(--subpanel-header-background)] text-left"
@@ -22,7 +22,7 @@ function tableBleedClassName(variant: TableBleedVariant) {
       return "-mx-4 sm:-mx-5"
     case "record":
       return "-mx-5"
-    case "nested":
+    case "scoped":
       return "-mx-4"
     default:
       return ""

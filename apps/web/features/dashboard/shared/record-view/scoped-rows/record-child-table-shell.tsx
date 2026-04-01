@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { CollapsibleTableSection } from "@/features/dashboard/shared/record-view/child-tables/collapsible-table-section"
+import { CollapsibleTableSection } from "@/features/dashboard/shared/record-view/scoped-rows/collapsible-table-section"
 import { ModalTableHead, ModalTableShell, TableBleed, type TableBleedVariant } from "@/features/dashboard/shared/table/table-shell"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
@@ -10,7 +10,7 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
 
 export function RecordChildTableShell({
   minWidthClass = "min-w-full",
-  bleedVariant = "nested",
+  bleedVariant = "scoped",
   surface = "card",
   className,
   children,
@@ -52,7 +52,7 @@ export function RecordChildTableSection({
   collapsible = true,
   beforeTable,
   afterTable,
-  bleedVariant = "nested",
+  bleedVariant = "scoped",
   children,
 }: {
   title: string

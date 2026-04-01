@@ -75,7 +75,7 @@ export function MaterialAllocationsEditor({
     <RecordSectionGrid
       columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS}
       group="allocation"
-      surface="nested"
+      surface="scoped"
       isEmpty={allocations.length === 0}
       emptyState="No allocations yet."
       footer={(

@@ -25,7 +25,7 @@ export function RecordSectionGrid({
   isEmpty?: boolean
   emptyState?: ReactNode
   footer?: ReactNode
-  surface?: "outer" | "nested"
+  surface?: "outer" | "scoped"
   className?: string
   headerClassName?: string
 }) {
@@ -81,7 +81,7 @@ export function RecordSectionGridRow({
   columns,
   group: _group = "parent",
   children,
-  nestedContent,
+  scopedContent,
   onOpen,
   openAriaLabel,
   rowTone = "default",
@@ -90,7 +90,7 @@ export function RecordSectionGridRow({
   columns: RecordGridColumnSpec[]
   group?: "parent" | "allocation"
   children: ReactNode
-  nestedContent?: ReactNode
+  scopedContent?: ReactNode
   onOpen?: () => void
   openAriaLabel?: string
   rowTone?: "default" | "allocation" | "error"
@@ -137,9 +137,9 @@ export function RecordSectionGridRow({
           {children}
         </RecordRowLayout>
       </div>
-      {nestedContent ? (
+      {scopedContent ? (
         <div className={joinRecordSectionClasses("border-t", RECORD_SECTION_BORDER_CLASS_NAME)}>
-          {nestedContent}
+          {scopedContent}
         </div>
       ) : null}
     </div>

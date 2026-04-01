@@ -1,7 +1,7 @@
 import type { RecordGridColumnSpec } from "@/features/shared/engines/record-view"
 
 type ItemControlColumnOptions = {
-  supportsNestedAllocations?: boolean
+  supportsScopedRows?: boolean
   supportsOpenRow?: boolean
   supportsStatusColumn?: boolean
   supportsRemoveRow?: boolean
@@ -260,14 +260,14 @@ const ALLOCATION_BASE_COLUMNS = [
 ] satisfies RecordGridColumnSpec[]
 
 function buildItemControlColumns({
-  supportsNestedAllocations = false,
+  supportsScopedRows = false,
   supportsOpenRow = false,
   supportsStatusColumn = false,
   supportsRemoveRow = false,
 }: ItemControlColumnOptions) {
   const columns: RecordGridColumnSpec[] = []
 
-  if (supportsNestedAllocations) {
+  if (supportsScopedRows) {
     columns.push({
       key: "allocations",
       label: "Show / Hide",

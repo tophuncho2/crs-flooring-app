@@ -54,7 +54,7 @@ export function WarehouseSectionsSection({
         supportsRemoveRow: true,
         supportsSaveDiscard: true,
         supportsEmptyState: true,
-        supportsNestedAllocations: true,
+        supportsScopedRows: true,
       }}
       isEmpty={rows.length === 0}
       emptyState="No sections yet."
@@ -72,11 +72,11 @@ export function WarehouseSectionsSection({
             <RecordSectionGridRow
               key={section.id}
               columns={WAREHOUSE_SECTION_COLUMNS}
-              nestedContent={
+              scopedContent={
                 isExpanded ? (
                   <RecordSectionGrid
                     columns={WAREHOUSE_LOCATION_COLUMNS}
-                    surface="nested"
+                    surface="scoped"
                     isEmpty={sectionLocations.length === 0}
                     emptyState="No locations in this section yet."
                     footer={
@@ -128,7 +128,7 @@ export function WarehouseSectionsSection({
                   <RecordStaticFieldValue>{section.locationsCount}</RecordStaticFieldValue>
                 </RecordItemCell>
                 <RecordItemSectionControls
-                  capabilities={{ supportsNestedAllocations: true, supportsRemoveRow: true }}
+                  capabilities={{ supportsScopedRows: true, supportsRemoveRow: true }}
                   cellChrome="grid"
                   showCellLabels={index === 0}
                   toggle={{

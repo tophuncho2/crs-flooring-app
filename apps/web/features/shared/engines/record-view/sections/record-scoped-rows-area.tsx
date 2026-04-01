@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
-import { joinRecordSectionClasses } from "@/features/dashboard/shared/record-view/sections/record-section-tokens"
+import { joinRecordSectionClasses } from "./record-section-tokens"
 
-export function RecordNestedArea({
+export function RecordScopedRowsArea({
   children,
   className,
 }: {

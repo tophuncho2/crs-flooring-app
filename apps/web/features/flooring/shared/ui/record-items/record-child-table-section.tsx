@@ -1,1 +1,1 @@
-export * from "@/features/dashboard/shared/record-view/child-tables/record-child-table-shell"
+export * from "@/features/dashboard/shared/record-view/scoped-rows/record-child-table-shell"

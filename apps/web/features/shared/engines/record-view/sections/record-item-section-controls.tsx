@@ -51,7 +51,7 @@ export function RecordItemSectionControls({
 
   return (
     <>
-      {resolvedCapabilities.supportsNestedAllocations && toggle ? (
+      {resolvedCapabilities.supportsScopedRows && toggle ? (
         <RecordItemCell
           label={toggle.label ?? "Show / Hide"}
           columnKey={toggle.columnKey ?? "toggle"}

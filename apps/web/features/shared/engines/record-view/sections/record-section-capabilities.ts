@@ -6,7 +6,7 @@ export type RecordSectionCapabilities = {
   editable?: boolean
   supportsAddRow?: boolean
   supportsRouteAdd?: boolean
-  supportsNestedAllocations?: boolean
+  supportsScopedRows?: boolean
   supportsOpenRow?: boolean
   supportsRemoveRow?: boolean
   supportsStatusColumn?: boolean
@@ -21,7 +21,7 @@ const DEFAULT_CAPABILITIES: Record<RecordSectionType, Required<RecordSectionCapa
     editable: true,
     supportsAddRow: false,
     supportsRouteAdd: false,
-    supportsNestedAllocations: false,
+    supportsScopedRows: false,
     supportsOpenRow: false,
     supportsRemoveRow: false,
     supportsStatusColumn: false,
@@ -34,7 +34,7 @@ const DEFAULT_CAPABILITIES: Record<RecordSectionType, Required<RecordSectionCapa
     editable: false,
     supportsAddRow: false,
     supportsRouteAdd: false,
-    supportsNestedAllocations: false,
+    supportsScopedRows: false,
     supportsOpenRow: false,
     supportsRemoveRow: false,
     supportsStatusColumn: false,
@@ -47,7 +47,7 @@ const DEFAULT_CAPABILITIES: Record<RecordSectionType, Required<RecordSectionCapa
     editable: false,
     supportsAddRow: false,
     supportsRouteAdd: false,
-    supportsNestedAllocations: false,
+    supportsScopedRows: false,
     supportsOpenRow: false,
     supportsRemoveRow: false,
     supportsStatusColumn: false,
@@ -60,7 +60,7 @@ const DEFAULT_CAPABILITIES: Record<RecordSectionType, Required<RecordSectionCapa
     editable: false,
     supportsAddRow: false,
     supportsRouteAdd: false,
-    supportsNestedAllocations: false,
+    supportsScopedRows: false,
     supportsOpenRow: false,
     supportsRemoveRow: false,
     supportsStatusColumn: false,

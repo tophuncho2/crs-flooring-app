@@ -72,7 +72,7 @@ export function ProductInventoryRowsSection({
         supportsMetrics: true,
         supportsSummary: true,
         supportsEmptyState: true,
-        supportsNestedAllocations: true,
+        supportsScopedRows: true,
         supportsOpenRow: true,
       }}
       isEmpty={inventoryRows.length === 0}
@@ -90,11 +90,11 @@ export function ProductInventoryRowsSection({
             <RecordSectionGridRow
               key={row.id}
               columns={INVENTORY_ROW_COLUMNS}
-              nestedContent={
+              scopedContent={
                 isExpanded ? (
                   <RecordSectionGrid
                     columns={CUT_LOG_COLUMNS}
-                    surface="nested"
+                    surface="scoped"
                     isEmpty={row.cutLogs.length === 0}
                     emptyState="No cut logs recorded for this inventory row."
                   >
@@ -151,7 +151,7 @@ export function ProductInventoryRowsSection({
                   <TextCell align="center">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</TextCell>
                 </RecordItemCell>
                 <RecordItemSectionControls
-                  capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
+                  capabilities={{ supportsScopedRows: true, supportsOpenRow: true }}
                   cellChrome="grid"
                   showCellLabels={index === 0}
                   toggle={{

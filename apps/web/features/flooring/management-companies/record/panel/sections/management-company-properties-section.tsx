@@ -66,7 +66,7 @@ export function ManagementCompanyPropertiesSection({
         supportsMetrics: true,
         supportsSummary: true,
         supportsEmptyState: true,
-        supportsNestedAllocations: true,
+        supportsScopedRows: true,
         supportsOpenRow: true,
         supportsRouteAdd: true,
       }}
@@ -85,11 +85,11 @@ export function ManagementCompanyPropertiesSection({
             <RecordSectionGridRow
               key={property.id}
               columns={PROPERTY_COLUMNS}
-              nestedContent={
+              scopedContent={
                 isExpanded ? (
                   <RecordSectionGrid
                     columns={TEMPLATE_COLUMNS}
-                    surface="nested"
+                    surface="scoped"
                     isEmpty={property.templates.length === 0}
                     emptyState="No templates linked to this property."
                   >
@@ -136,7 +136,7 @@ export function ManagementCompanyPropertiesSection({
                   <TextCell align="center">{property.templateCount}</TextCell>
                 </RecordItemCell>
                 <RecordItemSectionControls
-                  capabilities={{ supportsNestedAllocations: true, supportsOpenRow: true }}
+                  capabilities={{ supportsScopedRows: true, supportsOpenRow: true }}
                   cellChrome="grid"
                   showCellLabels={index === 0}
                   toggle={{

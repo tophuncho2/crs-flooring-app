@@ -9,7 +9,7 @@ import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErr
 import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/features/dashboard/shared/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/features/flooring/shared/ui/table/table-size-classes"
 import { LineItemPriceField, LineItemQuantityField, LineItemTotalField } from "./line-item-table-cells"
-import { RecordNestedChildRowSection } from "./record-nested-child-row-section"
+import { RecordScopedRowsSection } from "./record-scoped-rows-section"
 
 export type MaterialItemOption = {
   id: string
@@ -233,9 +233,9 @@ export function MaterialItemsEditor({
                 {hasExpandableRows && expandedItemIds?.includes(item.id) ? (
                   <tr className="border-t border-[var(--panel-border)]">
                     <td colSpan={colSpan} className="p-0">
-                      <RecordNestedChildRowSection className="w-full">
+                      <RecordScopedRowsSection className="w-full">
                         {renderExpandedRow?.(item)}
-                      </RecordNestedChildRowSection>
+                      </RecordScopedRowsSection>
                     </td>
                   </tr>
                 ) : null}

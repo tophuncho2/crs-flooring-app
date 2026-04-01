@@ -6,7 +6,7 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-export function RecordNestedChildRowSection({
+export function RecordScopedRowsSection({
   children,
   className,
 }: {

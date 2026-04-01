@@ -7,7 +7,7 @@ import {
 } from "@/features/flooring/shared/line-items/record-grid"
 
 export const WORK_ORDER_MATERIAL_COLUMNS = buildMaterialItemColumns({
-  supportsNestedAllocations: true,
+  supportsScopedRows: true,
   supportsStatusColumn: true,
   supportsRemoveRow: true,
 })

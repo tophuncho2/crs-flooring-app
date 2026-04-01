@@ -9,7 +9,7 @@ import {
 import {
   ModalTableHead,
   RecordChildTableSection,
-} from "@/features/dashboard/shared/record-view/child-tables/record-child-table-shell"
+} from "@/features/dashboard/shared/record-view/scoped-rows/record-child-table-shell"
 
 export type RecordLinkedChildTableRow = {
   id: string

@@ -76,7 +76,7 @@ export function WorkOrderMaterialItemsSection({
       capabilities={{
         editable: true,
         supportsAddRow: true,
-        supportsNestedAllocations: true,
+        supportsScopedRows: true,
         supportsRemoveRow: true,
         supportsStatusColumn: true,
         supportsSaveDiscard: true,
@@ -109,7 +109,7 @@ export function WorkOrderMaterialItemsSection({
             <RecordSectionGridRow
               key={item.id}
               columns={WORK_ORDER_MATERIAL_COLUMNS}
-              nestedContent={isExpanded ? renderAllocationSection(item) : null}
+              scopedContent={isExpanded ? renderAllocationSection(item) : null}
             >
               <RecordMaterialRowBuilder
                 productValue={item.productId}
@@ -132,7 +132,7 @@ export function WorkOrderMaterialItemsSection({
                 onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}
                 onNotesChange={(value) => onItemFieldChange(item.id, "notes", value)}
                 controls={{
-                  capabilities: { supportsNestedAllocations: true, supportsStatusColumn: true, supportsRemoveRow: true },
+                  capabilities: { supportsScopedRows: true, supportsStatusColumn: true, supportsRemoveRow: true },
                   toggle: {
                     columnKey: "allocations",
                     label: "Show / Hide",

@@ -28,8 +28,8 @@ function SyncHarness() {
           <RecordSectionGridRow
             key={rowIndex}
             columns={ITEM_COLUMNS}
-            nestedContent={(
-              <RecordSectionGrid columns={ALLOCATION_COLUMNS} surface="nested">
+            scopedContent={(
+              <RecordSectionGrid columns={ALLOCATION_COLUMNS} surface="scoped">
                 {[0].map((allocationIndex) => (
                   <RecordSectionGridRow
                     key={allocationIndex}
