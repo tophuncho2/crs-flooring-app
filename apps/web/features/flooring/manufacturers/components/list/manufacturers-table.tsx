@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -18,17 +17,13 @@ export function ManufacturersTable({
   visibleColumns,
   groupedRows,
   isGroupingEnabled,
-  deletingId,
   onOpen,
-  onDelete,
 }: {
   rows: ManufacturerRow[]
   visibleColumns: Array<{ key: string; label: string }>
   groupedRows: GroupedRowTree<ManufacturerRow>[]
   isGroupingEnabled: boolean
-  deletingId: string | null
   onOpen: (row: ManufacturerRow) => void
-  onDelete: (row: ManufacturerRow) => void
 }) {
   function renderRow(row: ManufacturerRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
@@ -38,13 +33,6 @@ export function ManufacturersTable({
       phone: (columnIndex) => <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>,
       email: (columnIndex) => <DashboardListRowCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardListRowCell>,
       products: (columnIndex) => <DashboardListRowCell key="products" columnIndex={columnIndex}>{row.productsCount}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (

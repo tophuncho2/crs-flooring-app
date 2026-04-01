@@ -66,7 +66,6 @@ export default function ManufacturersClient({
       { key: "phone", label: "Phone", getValue: (row) => row.phone, groupable: false },
       { key: "email", label: "Email", getValue: (row) => row.email, groupable: false },
       { key: "products", label: "Products", getValue: (row) => String(row.productsCount), groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.companyName || row.agentName,
     sortFieldKey: "companyName",
@@ -117,9 +116,7 @@ export default function ManufacturersClient({
             visibleColumns={visibleColumns}
             groupedRows={groupedRowTree as GroupedRowTree<ManufacturerRow>[]}
             isGroupingEnabled={isGroupingEnabled}
-            deletingId={controller.deletingId}
             onOpen={(row) => navigation.openRecord(row.id)}
-            onDelete={(row) => void controller.removeRow(row)}
           />
         }
         pagination={
