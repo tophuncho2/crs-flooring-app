@@ -1,7 +1,7 @@
 import { updateUnitOfMeasureUseCase } from "@builders/execution"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { getUnitOfMeasureById } from "@/features/flooring/unit-of-measures/data/queries"
 import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
+import { getUnitOfMeasureById } from "@/features/flooring/unit-of-measures/data/queries"
 import { UNIT_OF_MEASURES_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return receipt.replay
     }
 
-    await withMutationTelemetry(
+    const unitOfMeasure = await withMutationTelemetry(
       access,
       {
         message: "Unit of measure primary section replaced",
@@ -67,9 +67,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       () => updateUnitOfMeasureUseCase(id, input),
     )
 
-    const responseBody = {
-      unitOfMeasure: await getUnitOfMeasureById(id),
-    }
+    const responseBody = { unitOfMeasure }
     await finalizeMutationReceipt({
       scope: "builder.unitOfMeasures.primary.section.replace",
       access,
