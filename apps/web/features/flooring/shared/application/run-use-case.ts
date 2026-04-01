@@ -1,5 +1,16 @@
 import { normalizePrismaError } from "@/server/http/api-helpers"
-import type { AppResult } from "./contracts"
+
+type AppResultIssue = {
+  code: string
+  message: string
+  field?: string
+  status: number
+  retryable: boolean
+}
+
+export type AppResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; issue: AppResultIssue }
 
 export async function runUseCase<T>(operation: () => Promise<T>): Promise<AppResult<T>> {
   try {
