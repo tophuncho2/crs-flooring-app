@@ -6,7 +6,6 @@ import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/das
 import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
 import { TableFilterControls } from "@/features/dashboard/shared/table/table-filter-controls"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
   ClickableTableRow,
@@ -110,7 +109,6 @@ export default function WorkOrdersClient({
       { key: "instructions", label: "Instructions", getValue: (row) => row.instructions, groupable: false },
       { key: "notes", label: "Notes", getValue: (row) => row.notes, groupable: false },
       { key: "items", label: "Items", getValue: (row) => String(row.itemsCount ?? 0), groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.workOrderNumber,
     sortFieldKey: "wo",
@@ -164,13 +162,6 @@ export default function WorkOrdersClient({
       instructions: (columnIndex) => <DashboardListRowCell key="instructions" columnIndex={columnIndex}>{row.instructions || "-"}</DashboardListRowCell>,
       notes: (columnIndex) => <DashboardListRowCell key="notes" columnIndex={columnIndex}>{row.notes || "-"}</DashboardListRowCell>,
       items: (columnIndex) => <DashboardListRowCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => void controller.deleteWorkOrder(row.id)} disabled={controller.deletingId === row.id}>
-            {controller.deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (

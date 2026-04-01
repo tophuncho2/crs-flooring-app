@@ -5,7 +5,6 @@ import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
 import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
   ClickableTableRow,
@@ -81,7 +80,6 @@ export default function TemplatesClient({
       { key: "instructions", label: "Instructions", getValue: (row) => row.instructions, groupable: false },
       { key: "padType", label: "Pad Type", getValue: (row) => row.padTypeLabel, groupable: true },
       { key: "templateNotes", label: "Template Notes", getValue: (row) => row.templateNotes, groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => `${row.propertyName} ${row.templateTag}`,
     sortFieldKey: "templateTag",
@@ -109,13 +107,6 @@ export default function TemplatesClient({
       instructions: (columnIndex) => <DashboardListRowCell key="instructions" columnIndex={columnIndex}>{row.instructions || "-"}</DashboardListRowCell>,
       padType: (columnIndex) => <DashboardListRowCell key="padType" columnIndex={columnIndex}>{row.padTypeLabel || "-"}</DashboardListRowCell>,
       templateNotes: (columnIndex) => <DashboardListRowCell key="templateNotes" columnIndex={columnIndex}>{row.templateNotes || "-"}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => void controller.deleteTemplate(row.id)} disabled={controller.deletingId === row.id}>
-            {controller.deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (

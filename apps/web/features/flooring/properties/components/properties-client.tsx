@@ -10,7 +10,6 @@ import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
 import {
   ClickableTableRow,
@@ -21,7 +20,6 @@ import { renderGroupedTableRows } from "@/features/dashboard/shared/table/render
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
-import { requestJson } from "@/features/flooring/shared/transport/http"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 
 type PropertyManagementCompany = {
@@ -71,10 +69,7 @@ export default function PropertiesClient({
   pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
 }) {
-  const [properties, setProperties] = useState<PropertyRow[]>(initialProperties)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [noticeMessage, setNoticeMessage] = useState("")
-  const [noticeError, setNoticeError] = useState("")
+  const [properties] = useState<PropertyRow[]>(initialProperties)
   const propertyNavigation = useRecordEntryNavigation("/dashboard/flooring/properties")
   const {
     searchQuery,
@@ -113,7 +108,6 @@ export default function PropertiesClient({
       { key: "email", label: "Email", getValue: (row) => row.email, groupable: false },
       { key: "fullAddress", label: "Full Address", getValue: (row) => row.fullAddress, groupable: false },
       { key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompany?.name ?? "No management company", groupable: true },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "property",
@@ -127,22 +121,6 @@ export default function PropertiesClient({
     disableClientSorting: true,
     disableClientPagination: true,
   })
-
-  async function deleteProperty(id: string) {
-    setNoticeError("")
-    setNoticeMessage("")
-    setDeletingId(id)
-
-    try {
-      await requestJson<{ ok: boolean }>(`/api/flooring/properties/${id}`, { method: "DELETE" })
-      setProperties((previous) => previous.filter((property) => property.id !== id))
-      setNoticeMessage("Property deleted")
-    } catch (deleteError) {
-      setNoticeError(deleteError instanceof Error ? deleteError.message : "Failed to delete property")
-    } finally {
-      setDeletingId(null)
-    }
-  }
 
   function renderPropertyRow(row: PropertyRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
@@ -161,13 +139,6 @@ export default function PropertiesClient({
       managementCompany: (columnIndex) => (
         <DashboardListRowCell key="managementCompany" columnIndex={columnIndex}>
           {row.managementCompany?.name || "No management company"}
-        </DashboardListRowCell>
-      ),
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => void deleteProperty(row.id)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
         </DashboardListRowCell>
       ),
     }
@@ -210,7 +181,7 @@ export default function PropertiesClient({
           }
         />
       }
-      notices={<FormStatusNotices message={noticeMessage} error={noticeError} />}
+      notices={<FormStatusNotices message="" error="" />}
       table={
         <DashboardListPageTable minWidthClass="min-w-[1320px]" columns={visiblePropertyColumns}>
           {isGroupingEnabled

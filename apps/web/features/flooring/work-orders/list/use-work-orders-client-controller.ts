@@ -4,7 +4,6 @@ import { useMemo, useState } from "react"
 import { getClientErrorMessage } from "@/features/flooring/shared/transport/client-errors"
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
-import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/features/dashboard/shared/table/confirm-delete"
 import { useRecordNotices } from "@/features/shared/engines/record-view"
 import type { PropertyOption, TemplateOption, WorkOrderRow } from "../types"
 
@@ -27,7 +26,6 @@ export function useWorkOrdersClientController({
   const [selectedSyncTemplateId, setSelectedSyncTemplateId] = useState("")
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const notices = useRecordNotices()
 
   const filteredSyncTemplates = useMemo(() => {
@@ -119,35 +117,8 @@ export function useWorkOrdersClientController({
     }
   }
 
-  async function deleteWorkOrder(id: string) {
-    if (!confirmRecordDelete(buildDeleteConfirmationMessage("work order"))) {
-      return false
-    }
-
-    notices.clearNotices()
-    setDeletingId(id)
-
-    try {
-      await requestJson<{ ok: boolean }>(`/api/flooring/work-orders/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(withMutationMeta({}, rows.find((row) => row.id === id)?.updatedAt)),
-      })
-
-      setRows((previous) => previous.filter((row) => row.id !== id))
-      notices.showSuccess("Work order deleted")
-      return true
-    } catch (error) {
-      notices.showError(getClientErrorMessage(error, "Failed to delete work order"))
-      return false
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
   return {
     rows,
-    deletingId,
     filteredSyncTemplates,
     isCreatingFromTemplate,
     isSyncModalOpen,
@@ -158,7 +129,6 @@ export function useWorkOrdersClientController({
     openSyncModal,
     closeSyncModal,
     createWorkOrderFromTemplate,
-    deleteWorkOrder,
     setSelectedSyncTemplateId,
     setSyncProperty,
     setSyncTemplateSearch,
