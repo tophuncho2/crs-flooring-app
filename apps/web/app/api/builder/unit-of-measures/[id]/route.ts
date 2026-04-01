@@ -1,10 +1,10 @@
+import {
+  deleteUnitOfMeasureUseCase,
+  updateUnitOfMeasureUseCase,
+} from "@builders/execution"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
 import { getUnitOfMeasureById } from "@/features/flooring/unit-of-measures/data/queries"
-import {
-  deleteUnitOfMeasureRecord,
-  replaceUnitOfMeasurePrimarySection,
-  validateUpdateUnitOfMeasurePrimarySectionInput,
-} from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
+import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -63,7 +63,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringUnitOfMeasure",
         entityId: id,
       },
-      () => replaceUnitOfMeasurePrimarySection(id, input),
+      () => updateUnitOfMeasureUseCase(id, input),
     )
     const responseBody = { unitOfMeasure }
     await finalizeMutationReceipt({
@@ -124,7 +124,7 @@ export async function DELETE(request: Request, context: RouteContext) {
         entityType: "flooringUnitOfMeasure",
         entityId: id,
       },
-      () => deleteUnitOfMeasureRecord(id),
+      () => deleteUnitOfMeasureUseCase(id),
     )
     const responseBody = { ok: true as const }
     await finalizeMutationReceipt({

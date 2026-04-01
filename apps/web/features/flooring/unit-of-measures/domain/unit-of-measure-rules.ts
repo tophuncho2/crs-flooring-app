@@ -1,14 +1,13 @@
-export function normalizeUnitOfMeasureNameForUniqueness(value: string) {
+export {
+  isUnitOfMeasureDeleteBlocked,
+  getUnitOfMeasureDeleteBlockedMessage,
+  type UnitOfMeasureDeleteLinkState,
+} from "@builders/domain"
+
+export function normalizeUnitOfMeasureNameForUniqueness(value: string): string {
   return value.trim().toLowerCase()
 }
 
-export function isUnitOfMeasureNameConflict(exists: boolean) {
+export function isUnitOfMeasureNameConflict(exists: boolean): boolean {
   return exists
-}
-
-export function isUnitOfMeasureDeleteBlocked(input: {
-  categoryLinks: number
-  serviceLinks: number
-}) {
-  return input.categoryLinks > 0 || input.serviceLinks > 0
 }

@@ -1,5 +1,6 @@
+import { createUnitOfMeasureUseCase } from "@builders/execution"
 import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { createUnitOfMeasureRecord, validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
+import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
 import { listUnitOfMeasures } from "@/server/builder/unit-of-measures"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy } from "@/server/http/route-policy"
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
         route: "/api/builder/unit-of-measures",
         entityType: "flooringUnitOfMeasure",
       },
-      () => createUnitOfMeasureRecord(validateUpdateUnitOfMeasurePrimarySectionInput(body)),
+      () => createUnitOfMeasureUseCase(validateUpdateUnitOfMeasurePrimarySectionInput(body)),
     )
 
     return routeJson(access, { unitOfMeasure }, { status: 201 })
