@@ -12,12 +12,12 @@ import {
 import {
   clearRowFieldError,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import {
   type EditableSalesRepItem,
   type SalesRepField,
   validateSalesRepFields,
-} from "@/modules/shared/ui/record-items/sales-rep-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
 import {
   areSalesRepItemsEqual,
   cloneSalesRepItems,

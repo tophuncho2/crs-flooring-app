@@ -2,10 +2,10 @@
 
 import { DeleteRowButton, SaveRowButton } from "@/modules/shared/engines/list-view/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/modules/shared/engines/record-view/scoped-rows/collapsible-table-section"
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
-import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/modules/shared/domain/child-item-validation"
-import { calculateRecordSalesRepLineAmount } from "@/modules/shared/domain/record-sales-reps"
-import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
+import { formatCurrencyValue } from "@builders/domain"
+import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
+import { calculateRecordSalesRepLineAmount } from "@/modules/shared/engines/record-view/contracts/record-sales-reps"
+import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "../feedback/record-field-errors"
 import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/modules/shared/engines/list-view/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/modules/shared/engines/list-view/table/table-size-classes"
 

@@ -1,6 +1,6 @@
 import { prisma, withPrismaConnectivityHandling } from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { buildFlooringProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName } from "@builders/domain"
 
 export type CutLogPageRow = {
   id: string

@@ -1,4 +1,4 @@
-import { loadSharedRecordOptionData, loadTemplateRecordOptionData } from "@/modules/shared/data/record-detail-options"
+import { loadSharedRecordOptionData, loadTemplateRecordOptionData } from "./record-detail-options-loader"
 
 export async function loadSharedRecordDetailOptions() {
   return loadSharedRecordOptionData()

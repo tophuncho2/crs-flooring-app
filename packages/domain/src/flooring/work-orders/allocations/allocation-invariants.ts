@@ -1,4 +1,4 @@
-import { buildInventoryAllocationTotals } from "../../shared/inventory-allocation-totals.js"
+import { buildInventoryAllocationTotals } from "../../../shared/inventory-allocation-totals.js"
 import { createWorkOrderAllocationDomainError } from "./errors.js"
 import { toAllocationNumber } from "./shared.js"
 

@@ -4,7 +4,7 @@ import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { MaterialItemsEditor, type MaterialItemDraft } from "@/modules/shared/ui/record-items/material-items-editor"
+import { MaterialItemsEditor, type MaterialItemDraft } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
 
 afterEach(() => {
   cleanup()

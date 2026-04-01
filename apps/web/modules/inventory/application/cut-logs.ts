@@ -10,7 +10,7 @@ import {
   updateCutLogBalanceRows,
 } from "@/modules/inventory/data/cut-logs"
 import { createAppError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { buildFlooringProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName } from "@builders/domain"
 import { canCreateInventoryCutLogs, getInventoryCutLogBlockedReason } from "@/modules/inventory/domain/filters"
 
 function normalizeCutLog(log: {

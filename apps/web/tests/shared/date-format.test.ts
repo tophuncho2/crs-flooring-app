@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatStableDate, formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDate, formatStableDateTime } from "@builders/domain"
 
 describe("stable date formatting", () => {
   it("formats date-only strings in UTC-stable form", () => {

@@ -3,9 +3,9 @@ import {
   calculateRecordSalesRepExpense,
   normalizeRecordExpenseSummary,
   type RecordExpenseSummary,
+  type LineTotalInput,
   type SalesRepPercentInput,
-} from "@/modules/shared/domain/record-expense-summary"
-import type { LineTotalInput } from "@/modules/shared/domain/line-totals"
+} from "@builders/domain"
 
 export type TemplateExpenseSummary = RecordExpenseSummary
 

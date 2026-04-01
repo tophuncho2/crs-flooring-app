@@ -1,7 +1,7 @@
 import { prisma } from "@builders/db"
 import { listSalesRepContactOptions } from "@/modules/contacts/data/queries"
 import { listServiceOptions } from "@/modules/services/data/queries"
-import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@builders/domain"
 
 type PadProductOptionSource = {
   id: string

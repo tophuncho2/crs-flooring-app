@@ -3,7 +3,7 @@ import {
   buildFlooringProductDisplayName,
   buildPadProductDisplayName,
   buildStoredFlooringProductName,
-} from "@/modules/shared/domain/product-display-name"
+} from "@builders/domain"
 
 describe("product display naming", () => {
   it("builds the stored product name from category, style, and color", () => {

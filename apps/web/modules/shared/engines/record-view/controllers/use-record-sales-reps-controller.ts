@@ -8,14 +8,14 @@ import {
   setFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import {
   validateSalesRepFields,
   type EditableSalesRepItem,
   type SalesRepDraft,
   type SalesRepField,
   type SalesRepFieldErrors,
-} from "@/modules/shared/ui/record-items/sales-rep-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
 import type { RecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/modules/shared/engines/common/feedback/confirm-delete"
 

@@ -4,7 +4,7 @@ import {
   type EditableRecordSalesRep,
   type RecordSalesRepDraft,
   type SalesRepContactOption,
-} from "@/modules/shared/domain/record-sales-reps"
+} from "@/modules/shared/engines/record-view/contracts/record-sales-reps"
 
 export type EditableWorkOrderSalesRep = EditableRecordSalesRep
 export type WorkOrderSalesRepDraft = RecordSalesRepDraft

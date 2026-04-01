@@ -1,5 +1,5 @@
 import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
-import { buildPadProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildPadProductDisplayName } from "@builders/domain"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { normalizeProperty, normalizePropertyListRow, normalizePropertyOption } from "./services"

@@ -2,7 +2,7 @@ import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withP
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 import { getImportEntryById, listImportLocationOptions, normalizeImportEntry } from "@/modules/imports/api"
-import { buildFlooringProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName } from "@builders/domain"
 import {
   type ImportPageFilterState,
 } from "@/modules/imports/domain/filters"

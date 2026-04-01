@@ -9,18 +9,18 @@ import {
   RecordServiceRowBuilder,
   type RecordSectionSubHeaderProps,
 } from "@/modules/shared/engines/record-view"
-import { formatLineTotal } from "@/modules/shared/domain/line-totals"
-import { normalizeEditableDecimalInput } from "@/modules/shared/domain/child-item-validation"
+import { formatLineTotal } from "@builders/domain"
+import { normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
 import {
   hasFieldErrors,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import type {
   EditableServiceItem,
   ServiceItemField,
   ServiceOption,
   UnitOption,
-} from "@/modules/shared/ui/record-items/service-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/service-items-editor"
 import { TEMPLATE_SERVICE_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateServiceSectionMetrics } from "./template-section-metrics"
 

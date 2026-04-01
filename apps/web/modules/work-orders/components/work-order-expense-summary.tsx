@@ -1,6 +1,6 @@
 "use client"
 
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
+import { formatCurrencyValue } from "@builders/domain"
 import type { WorkOrderExpenseSummary } from "../types"
 
 const EMPTY_EXPENSE_SUMMARY: WorkOrderExpenseSummary = {

@@ -12,12 +12,12 @@ import {
 import {
   clearRowFieldError,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import {
   type EditableMaterialItem,
   type MaterialItemField,
   validateMaterialItemFields,
-} from "@/modules/shared/ui/record-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
 import {
   areMaterialItemsEqual,
   cloneMaterialItems,

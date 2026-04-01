@@ -8,21 +8,21 @@ import {
   setFieldError,
   setRowFieldErrors,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import {
   validateMaterialItemFields,
   type EditableMaterialItem,
   type MaterialItemDraft,
   type MaterialItemField,
   type MaterialItemFieldErrors,
-} from "@/modules/shared/ui/record-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
 import {
   validateServiceItemFields,
   type EditableServiceItem,
   type ServiceItemDraft,
   type ServiceItemField,
   type ServiceItemFieldErrors,
-} from "@/modules/shared/ui/record-items/service-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/service-items-editor"
 import type { RecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/modules/shared/engines/common/feedback/confirm-delete"
 

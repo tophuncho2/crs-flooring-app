@@ -11,17 +11,17 @@ import {
   resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
 } from "@/modules/shared/engines/record-view"
-import { formatLineTotal } from "@/modules/shared/domain/line-totals"
-import { normalizeEditableDecimalInput } from "@/modules/shared/domain/child-item-validation"
+import { formatLineTotal } from "@builders/domain"
+import { normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
 import {
   hasFieldErrors,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import type {
   EditableMaterialItem,
   MaterialItemField,
   MaterialItemOption,
-} from "@/modules/shared/ui/record-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
 import { WORK_ORDER_MATERIAL_COLUMNS } from "./work-order-line-item-grid"
 import { buildMaterialSectionMetrics } from "./work-order-section-metrics"
 import type { WorkOrderMaterialItem } from "@/modules/work-orders/types"

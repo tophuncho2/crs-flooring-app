@@ -1,4 +1,4 @@
-import type { EditableCutLog } from "@/modules/shared/ui/record-items/cut-logs-editor"
+import type { EditableCutLog } from "@/modules/shared/engines/record-view/line-items/cut-logs-editor"
 import type { InventoryPageFilterState } from "@/modules/inventory/domain/filters"
 
 export type CutLogRow = EditableCutLog & {

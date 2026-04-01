@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import { formatStableDate } from "@/modules/shared/domain/date-format"
+import { formatStableDate } from "@builders/domain"
 import { StatusPill } from "@/modules/shared/engines/common/feedback/status-pill"
 import {
   ClickableTableRow,

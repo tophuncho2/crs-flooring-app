@@ -14,13 +14,17 @@ vi.mock("@/modules/shared/engines/common/feedback/feedback-states", () => ({
   CenteredLoadingState: ({ label }: { label: string }) => <div>{label}</div>,
 }))
 
-vi.mock("@/modules/shared/domain/record-summary", () => ({
-  buildRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
-  emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
-}))
+vi.mock("@builders/domain", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@builders/domain")>()
+  return {
+    ...actual,
+    buildRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
+    emptyRecordSummary: () => ({ materialTotal: 0, serviceTotal: 0, grandTotal: 0 }),
+  }
+})
 
-vi.mock("@/modules/shared/ui/record-items/material-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/modules/shared/ui/record-items/material-items-editor")>()
+vi.mock("@/modules/shared/engines/record-view/line-items/material-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/shared/engines/record-view/line-items/material-items-editor")>()
 
   return {
     ...actual,
@@ -28,8 +32,8 @@ vi.mock("@/modules/shared/ui/record-items/material-items-editor", async (importO
   }
 })
 
-vi.mock("@/modules/shared/ui/record-items/service-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/modules/shared/ui/record-items/service-items-editor")>()
+vi.mock("@/modules/shared/engines/record-view/line-items/service-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/shared/engines/record-view/line-items/service-items-editor")>()
 
   return {
     ...actual,
@@ -37,8 +41,8 @@ vi.mock("@/modules/shared/ui/record-items/service-items-editor", async (importOr
   }
 })
 
-vi.mock("@/modules/shared/ui/record-items/sales-rep-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/modules/shared/ui/record-items/sales-rep-items-editor")>()
+vi.mock("@/modules/shared/engines/record-view/line-items/sales-rep-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/shared/engines/record-view/line-items/sales-rep-items-editor")>()
 
   return {
     ...actual,
@@ -46,8 +50,8 @@ vi.mock("@/modules/shared/ui/record-items/sales-rep-items-editor", async (import
   }
 })
 
-vi.mock("@/modules/shared/ui/record-items/material-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/modules/shared/ui/record-items/material-items-editor")>()
+vi.mock("@/modules/shared/engines/record-view/line-items/material-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/shared/engines/record-view/line-items/material-items-editor")>()
 
   return {
     ...actual,
@@ -85,8 +89,8 @@ vi.mock("@/modules/shared/ui/record-items/material-items-editor", async (importO
   }
 })
 
-vi.mock("@/modules/shared/ui/record-items/service-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/modules/shared/ui/record-items/service-items-editor")>()
+vi.mock("@/modules/shared/engines/record-view/line-items/service-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/shared/engines/record-view/line-items/service-items-editor")>()
 
   return {
     ...actual,
@@ -126,8 +130,8 @@ vi.mock("@/modules/shared/ui/record-items/service-items-editor", async (importOr
   }
 })
 
-vi.mock("@/modules/shared/ui/record-items/sales-rep-items-editor", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/modules/shared/ui/record-items/sales-rep-items-editor")>()
+vi.mock("@/modules/shared/engines/record-view/line-items/sales-rep-items-editor", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/shared/engines/record-view/line-items/sales-rep-items-editor")>()
 
   return {
     ...actual,

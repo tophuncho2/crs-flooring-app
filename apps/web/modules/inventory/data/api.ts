@@ -1,8 +1,7 @@
 import { Prisma, prisma, type PrismaClient } from "@builders/db"
-import { buildInventoryAllocationTotals, calculateInventoryPricePerUnit } from "@builders/domain"
+import { buildFlooringProductDisplayName, buildInventoryAllocationTotals, calculateInventoryPricePerUnit } from "@builders/domain"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { validateInventoryLocationSelection } from "@/server/inventory/location-integrity"
-import { buildFlooringProductDisplayName } from "@/modules/shared/domain/product-display-name"
 import { canCreateInventoryCutLogs, getInventoryCutLogBlockedReason } from "@/modules/inventory/domain/filters"
 
 type DbClient = Prisma.TransactionClient | PrismaClient

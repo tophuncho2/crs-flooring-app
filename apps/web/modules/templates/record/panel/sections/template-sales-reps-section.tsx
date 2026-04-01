@@ -14,13 +14,13 @@ import {
   type EditableSalesRepItem,
   type SalesRepField,
   type SalesRepOption,
-} from "@/modules/shared/ui/record-items/sales-rep-items-editor"
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
-import { normalizeEditableDecimalInput } from "@/modules/shared/domain/child-item-validation"
+} from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
+import { formatCurrencyValue } from "@builders/domain"
+import { normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
 import {
   hasFieldErrors,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import { TEMPLATE_SALES_REP_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateSalesRepSectionMetrics } from "./template-section-metrics"
 

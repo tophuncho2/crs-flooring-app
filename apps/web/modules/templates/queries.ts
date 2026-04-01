@@ -1,7 +1,6 @@
 import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-import { buildRecordCalculationRows } from "@/modules/shared/domain/record-calculation-rows"
-import { buildPadProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildPadProductDisplayName, buildRecordCalculationRows } from "@builders/domain"
 import { loadTemplateRecordDetailOptions } from "@/modules/shared/engines/common/transport/record-detail-options"
 import { normalizeTemplate, normalizeTemplateExpenseTotals, normalizeTemplateItem, normalizeTemplateSalesRep, normalizeTemplateServiceItem, normalizeTemplateSummary } from "./services"
 

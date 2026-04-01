@@ -11,8 +11,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/modules/shared/engines/record-view"
-import { buildRecordCalculationRowsFromSummary } from "@/modules/shared/domain/record-calculation-rows"
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
+import { buildRecordCalculationRowsFromSummary, formatCurrencyValue } from "@builders/domain"
 import { normalizeTemplateExpenseSummary } from "@/modules/templates/domain/expense-summary"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { TemplateCalculationsSection } from "./sections/template-calculations-section"
@@ -24,8 +23,8 @@ import { useTemplateMaterialSection } from "./controllers/use-template-material-
 import { useTemplatePrimarySection } from "./controllers/use-template-primary-section"
 import { useTemplateSalesRepsSection } from "./controllers/use-template-sales-reps-section"
 import { useTemplateServiceSection } from "./controllers/use-template-service-section"
-import type { MaterialItemOption } from "@/modules/shared/ui/record-items/material-items-editor"
-import type { ServiceOption, UnitOption } from "@/modules/shared/ui/record-items/service-items-editor"
+import type { MaterialItemOption } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+import type { ServiceOption, UnitOption } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
 import type { SalesRepContactOption, TemplateDetail } from "@/modules/templates/types"
 
 function buildSummaryMetrics(input: {

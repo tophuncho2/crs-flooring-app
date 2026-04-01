@@ -12,12 +12,12 @@ import {
 import {
   clearRowFieldError,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import {
   type EditableServiceItem,
   type ServiceItemField,
   validateServiceItemFields,
-} from "@/modules/shared/ui/record-items/service-items-editor"
+} from "@/modules/shared/engines/record-view/line-items/service-items-editor"
 import {
   areServiceItemsEqual,
   cloneServiceItems,

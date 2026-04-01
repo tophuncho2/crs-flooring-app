@@ -10,7 +10,7 @@ import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState
 import {
   type InventoryPageFilterState,
 } from "@/modules/inventory/domain/filters"
-import { buildFlooringProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName } from "@builders/domain"
 
 function coerceFilterArray(value: string[] | string | undefined) {
   if (Array.isArray(value)) {

@@ -4,9 +4,9 @@ import {
   calculateRecordSalesRepExpense,
   sumLineTotals,
   type WorkOrderFinancialCalculationRow,
+  type LineTotalInput,
   type WorkOrderFinancialSummary,
 } from "@builders/domain"
-import type { LineTotalInput } from "@/modules/shared/domain/line-totals"
 
 export type WorkOrderExpenseSummary = WorkOrderFinancialSummary
 export type WorkOrderCalculationRow = WorkOrderFinancialCalculationRow

@@ -5,7 +5,7 @@ import {
   parseOptionalString,
   parseRequiredString,
 } from "@/server/http/api-helpers"
-import { buildFlooringProductDisplayName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName } from "@builders/domain"
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 type RootDbClient = PrismaClient

@@ -20,7 +20,7 @@ import {
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
-import { formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDateTime } from "@builders/domain"
 import type { CutLogPageRow } from "@/modules/cut-logs/data/queries"
 
 export default function CutLogsClient({

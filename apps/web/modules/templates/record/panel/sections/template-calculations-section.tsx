@@ -7,7 +7,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { TEMPLATE_CALCULATION_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateCalculationSectionMetrics } from "./template-section-metrics"
-import { type DisplayCalculationRow } from "@/modules/shared/ui/record-items/calculation-rows-table"
+import { type DisplayCalculationRow } from "@/modules/shared/engines/record-view/line-items/calculation-rows-table"
 export function TemplateCalculationsSection({
   title,
   items,

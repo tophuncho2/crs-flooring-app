@@ -1,6 +1,6 @@
 import { Prisma } from "@builders/db"
 import { normalizeCategoryUnitValues } from "@/server/categories/unit-measures"
-import { buildFlooringProductDisplayName, buildStoredFlooringProductName } from "@/modules/shared/domain/product-display-name"
+import { buildFlooringProductDisplayName, buildStoredFlooringProductName } from "@builders/domain"
 
 export function buildProductName(product: {
   name?: string | null

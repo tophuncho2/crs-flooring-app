@@ -1,6 +1,6 @@
 "use client"
 
-import { formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDateTime } from "@builders/domain"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/modules/shared/engines/record-view/scoped-rows/collapsible-table-section"
 import { DeleteRowButton, SaveRowButton } from "@/modules/shared/engines/list-view/table/row-action-buttons"
 import { ModalTableHead, ModalTableShell, TableEmptyRow, TableHeaderCell } from "@/modules/shared/engines/list-view/table/table-shell"

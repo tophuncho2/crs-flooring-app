@@ -4,7 +4,7 @@ import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { SalesRepItemsEditor, type SalesRepDraft } from "@/modules/shared/ui/record-items/sales-rep-items-editor"
+import { SalesRepItemsEditor, type SalesRepDraft } from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
 
 afterEach(() => {
   cleanup()

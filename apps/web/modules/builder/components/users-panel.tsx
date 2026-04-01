@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { DASHBOARD_PAGE_SHELL_DENSE_CLASS_NAME, DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { formatStableDate, formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDate, formatStableDateTime } from "@builders/domain"
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 
 type UserRow = {

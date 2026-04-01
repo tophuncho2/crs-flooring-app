@@ -1,6 +1,6 @@
-import { buildRecordSummary } from "../shared/record-summary.js"
-import { calculateRecordSalesRepExpense, type SalesRepPercentInput } from "../shared/record-expense-summary.js"
-import { formatCurrencyValue, sumLineTotals, type LineTotalInput } from "../shared/line-totals.js"
+import { buildRecordSummary } from "../../shared/record-summary.js"
+import { calculateRecordSalesRepExpense, type SalesRepPercentInput } from "../../shared/record-expense-summary.js"
+import { formatCurrencyValue, sumLineTotals, type LineTotalInput } from "../../shared/line-totals.js"
 import { toAllocationNumber } from "./allocations/shared.js"
 
 export * from "./allocations/index.js"

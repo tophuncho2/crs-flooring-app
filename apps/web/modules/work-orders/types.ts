@@ -1,5 +1,5 @@
-import type { EditableMaterialItem } from "@/modules/shared/ui/record-items/material-items-editor"
-import type { EditableServiceItem } from "@/modules/shared/ui/record-items/service-items-editor"
+import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+import type { EditableServiceItem } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
 import type { WorkOrderExpenseSummary } from "./domain/expense-summary"
 import type { WorkOrderPageFilterState } from "./domain/filters"
 import type { EditableWorkOrderSalesRep, SalesRepContactOption, WorkOrderSalesRepDraft } from "./domain/sales-reps"

@@ -7,13 +7,13 @@ import {
   RecordSectionGridRow,
   resolveRecordRowStatus,
 } from "@/modules/shared/engines/record-view"
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
-import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/modules/shared/domain/child-item-validation"
+import { formatCurrencyValue } from "@builders/domain"
+import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
 import {
   hasFieldErrors,
   type FieldErrorMap,
   type RowFieldErrors,
-} from "@/modules/shared/ui/record-items/record-field-errors"
+} from "@/modules/shared/engines/record-view/feedback/record-field-errors"
 import { WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS } from "./material-grid-layout"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "@/modules/work-orders/types"
 

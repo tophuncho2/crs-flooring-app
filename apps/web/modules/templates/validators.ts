@@ -1,6 +1,6 @@
 import { Prisma } from "@builders/db"
 import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/modules/shared/domain/child-item-validation"
+import { requireNonNegativeDecimal, requirePositiveDecimal, requireServiceNameWhenCustom } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
 
 export type TemplateMaterialItemInput = {
   productId: string

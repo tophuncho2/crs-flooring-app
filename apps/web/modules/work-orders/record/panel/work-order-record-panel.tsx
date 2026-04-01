@@ -15,7 +15,7 @@ import {
   useRecordDetailController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
+import { formatCurrencyValue } from "@builders/domain"
 import {
   buildWorkOrderCalculationRowsFromSummary,
   normalizeWorkOrderExpenseSummary,
@@ -50,9 +50,9 @@ import type {
   WorkOrderExpenseSummary,
   WorkOrderReconciliationStatus,
 } from "@/modules/work-orders/types"
-import type { MaterialItemOption } from "@/modules/shared/ui/record-items/material-items-editor"
-import type { SalesRepOption } from "@/modules/shared/ui/record-items/sales-rep-items-editor"
-import type { ServiceOption, UnitOption } from "@/modules/shared/ui/record-items/service-items-editor"
+import type { MaterialItemOption } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+import type { SalesRepOption } from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
+import type { ServiceOption, UnitOption } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
 
 function buildWorkOrderReconciliationKey(input: {
   updatedAt: string

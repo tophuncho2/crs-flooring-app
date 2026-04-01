@@ -1,4 +1,4 @@
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
+import { formatCurrencyValue } from "@builders/domain"
 
 export type ImportSummaryItem = {
   stockCount: string | number

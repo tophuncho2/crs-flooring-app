@@ -1,6 +1,6 @@
 "use client"
 
-import { formatCurrencyValue, sumLineTotals, type LineTotalInput } from "@/modules/shared/domain/line-totals"
+import { formatCurrencyValue, sumLineTotals, type LineTotalInput } from "@builders/domain"
 
 export function RecordLineSummary({
   materialItems,

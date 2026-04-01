@@ -9,7 +9,7 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
-import { formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDateTime } from "@builders/domain"
 import type { CategoryForm, CategoryRow, UnitOfMeasureOption } from "../../../domain/types"
 
 function CategoryUnitSelect({

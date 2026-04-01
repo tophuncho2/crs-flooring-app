@@ -1,6 +1,6 @@
 "use client"
 
-import { formatCurrencyValue } from "@/modules/shared/domain/line-totals"
+import { formatCurrencyValue } from "@builders/domain"
 import { CollapsibleTableSection } from "@/modules/shared/engines/record-view/scoped-rows/collapsible-table-section"
 import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/modules/shared/engines/list-view/table/table-shell"
 import { SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/modules/shared/engines/list-view/table/table-size-classes"

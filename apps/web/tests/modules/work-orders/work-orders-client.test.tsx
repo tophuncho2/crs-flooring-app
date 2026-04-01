@@ -70,7 +70,7 @@ vi.mock("@/modules/shared/engines/list-view/controllers/use-server-table-query-c
   }),
 }))
 
-vi.mock("@/modules/shared/ui/display/record-line-summary", () => ({
+vi.mock("@/modules/shared/engines/record-view/sections/record-line-summary", () => ({
   RecordLineSummary: () => null,
 }))
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDateTime } from "@builders/domain"
 import {
   RecordGridCellInput,
   RecordItemCell,

@@ -3,13 +3,13 @@
 import { Fragment, type ReactNode } from "react"
 import { DeleteRowButton, SaveRowButton } from "@/modules/shared/engines/list-view/table/row-action-buttons"
 import { CollapsibleTableSection, InlineAddRowButton, useInlineCreateRow } from "@/modules/shared/engines/record-view/scoped-rows/collapsible-table-section"
-import { formatCurrencyValue, formatLineTotal } from "@/modules/shared/domain/line-totals"
-import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/modules/shared/domain/child-item-validation"
-import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "./record-field-errors"
+import { formatCurrencyValue, formatLineTotal } from "@builders/domain"
+import { isEditableDecimalInput, normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
+import { FieldErrorText, getFieldControlClassName, hasFieldErrors, type FieldErrorMap, type RowFieldErrors } from "../feedback/record-field-errors"
 import { RecordTableHead, RecordTableShell, TableBleed, TableHeaderCell } from "@/modules/shared/engines/list-view/table/table-shell"
 import { MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS } from "@/modules/shared/engines/list-view/table/table-size-classes"
 import { LineItemPriceField, LineItemQuantityField, LineItemTotalField } from "./line-item-table-cells"
-import { RecordScopedRowsSection } from "./record-scoped-rows-section"
+import { RecordScopedRowsSection } from "../scoped-rows/record-scoped-rows-section"
 
 export type MaterialItemOption = {
   id: string

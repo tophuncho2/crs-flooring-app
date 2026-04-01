@@ -1,6 +1,6 @@
 "use client"
 
-import { formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDateTime } from "@builders/domain"
 import { calculateProductInventorySummary } from "../../../domain/inventory-summary"
 import { formatInventoryImportNumber, formatInventoryQuantity } from "@/modules/inventory/domain/formatters"
 import {

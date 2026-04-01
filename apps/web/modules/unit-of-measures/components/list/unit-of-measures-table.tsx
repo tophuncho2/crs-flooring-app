@@ -10,7 +10,7 @@ import {
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import { formatStableDateTime } from "@/modules/shared/domain/date-format"
+import { formatStableDateTime } from "@builders/domain"
 import type { UnitOfMeasureRow } from "../../domain/types"
 
 export function UnitOfMeasuresTable({

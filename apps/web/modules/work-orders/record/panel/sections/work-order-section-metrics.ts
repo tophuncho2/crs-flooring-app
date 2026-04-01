@@ -1,7 +1,7 @@
-import { formatCurrencyValue, sumLineTotals } from "@/modules/shared/domain/line-totals"
-import type { EditableServiceItem } from "@/modules/shared/ui/record-items/service-items-editor"
-import type { EditableSalesRepItem } from "@/modules/shared/ui/record-items/sales-rep-items-editor"
-import type { DisplayCalculationRow } from "@/modules/shared/ui/record-items/calculation-rows-table"
+import { formatCurrencyValue, sumLineTotals } from "@builders/domain"
+import type { EditableServiceItem } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { EditableSalesRepItem } from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
+import type { DisplayCalculationRow } from "@/modules/shared/engines/record-view/line-items/calculation-rows-table"
 import type { WorkOrderMaterialItem } from "@/modules/work-orders/types"
 
 export type WorkOrderSectionMetricValue = {

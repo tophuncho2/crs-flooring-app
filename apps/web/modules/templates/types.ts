@@ -1,6 +1,6 @@
-import type { EditableMaterialItem } from "@/modules/shared/ui/record-items/material-items-editor"
-import type { EditableServiceItem } from "@/modules/shared/ui/record-items/service-items-editor"
-import type { SalesRepContactOption } from "@/modules/shared/domain/record-sales-reps"
+import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+import type { EditableServiceItem } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { SalesRepContactOption } from "@/modules/shared/engines/record-view/contracts/record-sales-reps"
 import type { EditableTemplateSalesRep } from "./domain/sales-reps"
 import type { TemplateExpenseSummary } from "./domain/expense-summary"
 
