@@ -1,16 +1,14 @@
 "use client"
 
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME, FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
 import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
 import { FormStatusNotices } from "@/features/dashboard/shared/feedback/notices"
-import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
-import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
-import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
+import { TableActionsSummary, TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useConfiguredTableState } from "@/features/flooring/shared/table/use-configured-table-state"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
-import { type GroupedRowTree, MAX_GROUP_FIELDS } from "@/features/flooring/shared/table/use-table-controls"
+import { type GroupedRowTree } from "@/features/flooring/shared/table/use-table-controls"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import type { UnitOfMeasureRow } from "../../domain/types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
@@ -35,10 +33,8 @@ export default function UnitOfMeasuresClient({
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
   const navigation = useRecordEntryNavigation("/dashboard/flooring/unit-of-measures")
   const {
-    searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -49,15 +45,8 @@ export default function UnitOfMeasuresClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns,
     visibleColumns,
-    hiddenColumnKeys,
-    toggleColumnVisibility,
-    moveColumn,
-    setColumnOrder,
-    onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "unit-of-measures-main",
@@ -80,36 +69,32 @@ export default function UnitOfMeasuresClient({
       <DashboardListPageScaffold
         title={<DashboardCardTitle>Unit Of Measures</DashboardCardTitle>}
         controls={
-          <DashboardListPageControls
-            count={filteredRows.length}
-            searchQuery={searchQuery}
-            onSearchQueryChange={onSearchQueryChange}
-            searchPlaceholder="Search unit of measure"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={onToggleSort}
-            columnSettingsSlot={
-              <TableColumnSettings
-                columns={allColumns}
-                hiddenColumnKeys={hiddenColumnKeys}
-                onToggleColumn={toggleColumnVisibility}
-                onMoveColumn={moveColumn}
-                onSetColumnOrder={setColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            }
-            primaryAction={canManage ? (
+          <TableActionsSummary count={filteredRows.length}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 type="button"
-                onClick={() => navigation.openCreate()}
-                className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
+                onClick={onToggleSort}
+                className={[
+                  "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
+                  isAscendingSort
+                    ? `border-blue-500 ${FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME}`
+                    : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
+                ].join(" ")}
               >
-                <Plus size={16} />
-                Unit Of Measure
+                {isAscendingSort ? "A-Z" : "Z-A"}
               </button>
-            ) : undefined}
-          />
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => navigation.openCreate()}
+                  className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
+                >
+                  <Plus size={16} />
+                  Unit Of Measure
+                </button>
+              )}
+            </div>
+          </TableActionsSummary>
         }
         notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
         table={
