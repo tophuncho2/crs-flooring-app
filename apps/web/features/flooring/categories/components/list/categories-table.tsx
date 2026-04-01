@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -18,19 +17,13 @@ export function CategoriesTable({
   visibleColumns,
   groupedRows,
   isGroupingEnabled,
-  canManage,
-  deletingId,
   onOpen,
-  onDelete,
 }: {
   rows: CategoryRow[]
   visibleColumns: Array<{ key: string; label: string }>
   groupedRows: GroupedRowTree<CategoryRow>[]
   isGroupingEnabled: boolean
-  canManage: boolean
-  deletingId: string | null
   onOpen: (row: CategoryRow) => void
-  onDelete: (row: CategoryRow) => void
 }) {
   function renderRow(row: CategoryRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
@@ -41,17 +34,6 @@ export function CategoriesTable({
       itemCoverageUnit: (columnIndex) => <DashboardListRowCell key="itemCoverageUnit" columnIndex={columnIndex}>{row.itemCoverageUnit || "-"}</DashboardListRowCell>,
       serviceUnit: (columnIndex) => <DashboardListRowCell key="serviceUnit" columnIndex={columnIndex}>{row.serviceUnit || "-"}</DashboardListRowCell>,
       products: (columnIndex) => <DashboardListRowCell key="products" columnIndex={columnIndex}>{row.productCount}</DashboardListRowCell>,
-      ...(canManage
-        ? {
-            delete: (columnIndex: number) => (
-              <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-                <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
-                  {deletingId === row.id ? "Deleting..." : "Delete"}
-                </DeleteRowButton>
-              </DashboardListRowCell>
-            ),
-          }
-        : {}),
     }
 
     return (

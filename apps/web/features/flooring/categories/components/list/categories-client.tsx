@@ -71,7 +71,6 @@ export default function CategoriesClient({
       { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row) => row.itemCoverageUnit, groupable: true },
       { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit, groupable: true },
       { key: "products", label: "Products", getValue: (row) => String(row.productCount), groupable: false },
-      ...(canManage ? [{ key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false } as const] : []),
     ],
     sortField: (row) => row.name,
     sortFieldKey: "name",
@@ -122,10 +121,7 @@ export default function CategoriesClient({
             visibleColumns={visibleColumns}
             groupedRows={groupedRowTree as GroupedRowTree<CategoryRow>[]}
             isGroupingEnabled={isGroupingEnabled}
-            canManage={canManage}
-            deletingId={controller.deletingId}
             onOpen={(row) => navigation.openRecord(row.id)}
-            onDelete={(row) => void controller.removeRow(row)}
           />
         }
         pagination={
