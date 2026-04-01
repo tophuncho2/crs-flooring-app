@@ -1,0 +1,596 @@
+🧠 CATEGORIES — RECORD VIEW + EXECUTION LAYER SPEC
+Second Fully Governed Table Under the Record View Engine
+🔷 0. PURPOSE
+
+Categories is the second system entity to be fully governed by:
+
+* Record View Engine (UI + Controller)
+* Execution Layer (Transport → Application → Domain → Data → Infra)
+
+UOM established the seed pattern. Categories follows it exactly — with one
+meaningful increase in complexity: a richer form (5 UOM unit selectors) and
+a delete rule that must be expanded to a structured link state object.
+
+This spec documents what needs to move, what is already correct, and where
+the current implementation diverges from the canonical execution standard.
+
+---
+
+🔷 1. ENTITY DEFINITION
+
+📦 Category
+
+Represents a flooring product category. Categories govern how products are
+measured and grouped across the system.
+
+Fields:
+* id
+* name (unique)
+* sendUnitId (FK → FlooringUnitOfMeasure)
+* stockUnitId (FK → FlooringUnitOfMeasure)
+* coverageAvailableUnitId (FK → FlooringUnitOfMeasure)
+* itemCoverageUnitId (FK → FlooringUnitOfMeasure)
+* serviceUnitId (FK → FlooringUnitOfMeasure)
+* createdAt
+* updatedAt
+
+---
+
+🔗 Relationships
+
+* A Category has 5 UOM unit fields (send, stock, coverageAvailable, itemCoverage, service)
+  — these are FKs from Category TO UnitOfMeasure. Deleting a UOM is blocked if
+    it is linked to a Category (handled by the UOM spec, not here).
+* A Category can be linked to Products (FlooringProduct[])
+* A Category CANNOT be deleted if any products reference it
+
+
+
+---
+
+🔴 CRITICAL BUSINESS RULE
+
+❗ A Category CANNOT be deleted if it is referenced by any Product record.
+
+Ownership of this Rule:
+👉 Domain Layer (source of truth)
+
+Current gap:
+The existing `isCategoryDeleteBlocked(productCount: number)` takes a raw number.
+This must be refactored to accept a `CategoryDeleteLinkState` struct — consistent
+with the pattern established by UOM, Contacts, and Services in packages/domain.
+
+Correct target:
+  isCategoryDeleteBlocked({ productLinks }: CategoryDeleteLinkState): boolean
+  getCategoryDeleteBlockedMessage(state: CategoryDeleteLinkState): string
+
+Enforcement also appears at:
+* Application (final guard before mutation, inside transaction)
+* Transport (early rejection via assertExpectedUpdatedAt + enforceMutationReceipt)
+* Data (FK constraints as a last-resort defensive layer)
+
+---
+
+🔷 2. RECORD VIEW ENGINE STRUCTURE (CATEGORIES)
+
+Categories is a single-section record view.
+It is more complex than UOM due to its 5 UOM unit selectors but follows
+the exact same structural pattern.
+
+Structure:
+
+RecordView: Category
+  → FieldSection: General (PrimaryRow: Category)
+      Fields: name, sendUnitId, stockUnitId, coverageAvailableUnitId,
+              itemCoverageUnitId, serviceUnitId
+      Actions: Save, Delete
+
+Why This Matters:
+* All 5 unit selectors live in a single section
+* Save replaces the full section snapshot
+* Delete is guarded by domain rules at the application layer
+
+---
+
+🔷 3. CURRENT FILE STRUCTURE (apps/web)
+
+features/flooring/categories/
+  application/
+    manage-category.ts            ← ❌ HAS Prisma import — must move to packages/execution
+  components/
+    categories-client.tsx          ← legacy, superseded by components/list/
+    category-form-fields.tsx       ← UI form component (correct, stays)
+    list/
+      categories-client.tsx        ← dashboard list client (correct, stays)
+      categories-table.tsx         ← dashboard table (correct, stays)
+  controllers/
+    use-categories-list-controller.ts   ← (correct, stays — simplified)
+    use-category-record-controller.ts   ← (correct, stays if used)
+  data/
+    mutations.ts                   ← ⚠️ client-side HTTP transport (correct layer, stays)
+                                      ❌ deleteCategoryRequest sends no body — missing withMutationMeta
+    queries.ts                     ← ❌ has direct Prisma imports — reads must move to packages/db
+    server-records.ts              ← ❌ has direct Prisma imports — writes must move to packages/db
+  domain/
+    category-rules.ts              ← ❌ must move to packages/domain/src/flooring/categories/
+                                      ❌ isCategoryDeleteBlocked takes raw number — must take struct
+    types.ts                       ← ✅ form types, row types (correct, stays)
+    validators.ts                  ← ❌ duplicate of root validators.ts — dead weight, delete
+  validators.ts                    ← ⚠️ root-level duplicate — consolidate into domain/validators.ts
+                                      (used by manage-category.ts today)
+  record/
+    panel/
+      controllers/
+        use-category-primary-section.ts  ← ✅ correct — uses useSingleSectionRecordController,
+                                             sends withMutationMeta inline for delete
+      sections/
+        category-primary-fields-section.tsx  ← ✅ correct, stays
+      category-record-panel.tsx            ← ✅ correct, stays
+    create/
+      category-create-client.tsx   ← ✅ correct, stays
+    detail/
+      category-detail-client.tsx   ← ✅ correct, stays
+  queries.ts                       ← ❌ legacy top-level file, superseded by data/queries.ts — delete
+
+app/api/flooring/categories/
+  route.ts                         ← ⚠️ GET uses manual auth pattern — not applyRoutePolicy
+                                      ⚠️ POST uses manual enforceRouteRateLimit — not applyRoutePolicy
+                                      ❌ calls application/manage-category — must call packages/execution
+  [id]/
+    route.ts                       ← ✅ uses applyRoutePolicy, parseMutationEnvelope,
+                                         assertExpectedUpdatedAt, enforceMutationReceipt,
+                                         finalizeMutationReceipt — correct pattern
+                                      ❌ calls application/manage-category — must call packages/execution
+    primary/section/route.ts       ← ✅ same — correct policy pattern
+                                      ❌ calls application/manage-category — must call packages/execution
+
+---
+
+🔷 4. TARGET FILE STRUCTURE (FULLY GOVERNED)
+
+packages/domain/src/flooring/categories/
+  delete-rules.ts                  ← isCategoryDeleteBlocked, getCategoryDeleteBlockedMessage
+  name-rules.ts                    ← normalizeCategoryNameForUniqueness, isCategoryNameConflict
+
+packages/db/src/flooring/categories/
+  read-repository.ts               ← listCategories, getCategoryById, getCategoryDeleteState,
+                                      categoryNameExists, getCategoryDetailPageData,
+                                      getCategoryCreatePageData
+  write-repository.ts              ← createCategoryRecord, updateCategoryRecord,
+                                      deleteCategoryRecord
+
+packages/execution/src/flooring/categories/
+  errors.ts                        ← CategoryExecutionError, isCategoryExecutionError
+  create-category.ts               ← createCategoryUseCase
+  update-category.ts               ← updateCategoryUseCase
+  delete-category.ts               ← deleteCategoryUseCase
+  index.ts                         ← re-exports
+
+apps/web/features/flooring/categories/
+  application/ removed             ← logic fully moved to packages/execution
+  domain/
+    category-rules.ts removed      ← moved to packages/domain
+    validators.ts removed          ← duplicate, deleted
+    types.ts                       ← stays (form types, row types, helpers)
+  validators.ts removed            ← consolidate into domain/types.ts or delete
+  data/
+    mutations.ts                   ← stays — fix deleteCategoryRequest to accept updatedAt
+                                      and send withMutationMeta body
+    queries.ts removed             ← Prisma reads moved to packages/db
+    server-records.ts removed      ← Prisma writes moved to packages/db
+  queries.ts removed               ← legacy, already superseded
+  record/ (stays — UI and controller)
+  controllers/ (stays)
+  components/ (stays)
+
+---
+
+🔷 5. LAYER RESPONSIBILITIES (CATEGORIES EXECUTION)
+
+🎨 1. UI LAYER (Rendering)
+
+Responsibilities:
+* Render: Category record view shell, General section, name + 5 unit selector fields
+* Display: validation errors, success states, delete-blocked notice
+* Trigger: save, delete
+
+Rules:
+* ❗ No business logic
+* ❗ No knowledge of product linkage rules
+* ❗ Reflects controller state only
+
+---
+
+🎮 2. CONTROLLER LAYER (Orchestration)
+
+File: record/panel/controllers/use-category-primary-section.ts
+
+Current state: ✅ already correct
+* Uses useSingleSectionRecordController
+* Save calls PATCH /api/flooring/categories/:id/primary/section with withMutationMeta
+* Delete calls DELETE /api/flooring/categories/:id with withMutationMeta inline
+
+No controller changes required.
+
+The deleteErrorMessage currently set to "Failed to delete category" is generic.
+When the application layer returns a structured CategoryExecutionError (code: CATEGORY_IN_USE),
+the record view engine will surface the server error message directly — no controller
+change needed.
+
+---
+
+🌐 3. TRANSPORT LAYER (API Boundary)
+
+Endpoints:
+  GET    /api/flooring/categories                   ← list
+  POST   /api/flooring/categories                   ← create
+  PATCH  /api/flooring/categories/:id               ← update (legacy — prefer primary/section)
+  PATCH  /api/flooring/categories/:id/primary/section  ← update primary section
+  DELETE /api/flooring/categories/:id               ← delete
+
+Gaps to fix:
+* route.ts GET: upgrade from manual auth to applyRoutePolicy
+* route.ts POST: upgrade from manual enforceRouteRateLimit to applyRoutePolicy
+* All routes: replace manage-category.ts imports with packages/execution use cases
+
+Already correct on [id]/route.ts and primary/section/route.ts:
+* applyRoutePolicy (auth + rate limit)
+* parseMutationEnvelope
+* assertExpectedUpdatedAt
+* enforceMutationReceipt / finalizeMutationReceipt
+* withMutationTelemetry
+
+---
+
+⚙️ 4. APPLICATION LAYER (Execution + Transactions)
+
+Target location: packages/execution/src/flooring/categories/
+
+Use Cases:
+
+createCategoryUseCase(input: CategoryForm):
+  normalizedName = domain.normalizeCategoryNameForUniqueness(input.name)
+  exists = db.categoryNameExists(normalizedName)
+  domain.assertCategoryNameAvailable(exists)
+  record = db.createCategoryRecord(input)
+  return record
+
+updateCategoryUseCase(id: string, input: CategoryForm):
+  normalizedName = domain.normalizeCategoryNameForUniqueness(input.name)
+  exists = db.categoryNameExists(normalizedName, excludeId: id)
+  domain.assertCategoryNameAvailable(exists)
+  db.updateCategoryRecord(id, input)
+  return db.getCategoryById(id)
+
+deleteCategoryUseCase(id: string):
+  deleteState = db.getCategoryDeleteState(id)
+  if not found → throw CategoryExecutionError({ code: "CATEGORY_NOT_FOUND", status: 404 })
+
+  if domain.isCategoryDeleteBlocked(deleteState):
+    throw CategoryExecutionError({
+      code: "CATEGORY_IN_USE",
+      message: domain.getCategoryDeleteBlockedMessage(deleteState),
+      status: 409,
+    })
+
+  db.deleteCategoryRecord(id)
+  return { ok: true }
+
+---
+
+🧠 5. DOMAIN LAYER (Business Rules — Source of Truth)
+
+Target location: packages/domain/src/flooring/categories/
+
+delete-rules.ts:
+
+  type CategoryDeleteLinkState = {
+    productLinks: number
+  }
+
+  isCategoryDeleteBlocked(state: CategoryDeleteLinkState): boolean
+    return state.productLinks > 0
+
+  getCategoryDeleteBlockedMessage(state: CategoryDeleteLinkState): string
+    if state.productLinks > 0:
+      return "This category is linked to products and cannot be deleted"
+    return ""
+
+name-rules.ts:
+
+  normalizeCategoryNameForUniqueness(value: string): string
+    return value.trim().toLowerCase()
+
+  isCategoryNameConflict(exists: boolean): boolean
+    return exists
+
+  assertCategoryNameAvailable(exists: boolean): void
+    if isCategoryNameConflict(exists):
+      throw CategoryExecutionError({ code: "CATEGORY_NAME_CONFLICT", status: 409, field: "name" })
+
+Rules:
+* ❗ Domain has no Prisma imports
+* ❗ Domain has no HTTP imports
+* ❗ Domain functions are pure — input in, decision out
+
+---
+
+🗄️ 6. DATA LAYER (Persistence)
+
+Target location: packages/db/src/flooring/categories/
+
+Read Repository (read-repository.ts):
+  listCategories(): list all, ordered by name
+  getCategoryById(id): throws if not found
+  getCategoryDeleteState(id): returns CategoryDeleteLinkState or null
+    → select: { _count: { select: { products: true } } }
+  categoryNameExists(normalizedName, currentId?): boolean
+  getCategoryDetailPageData(id): PrismaDetailPageResult<{ category, unitOfMeasureOptions }>
+  getCategoryCreatePageData(): { unitOfMeasureOptions }
+
+Write Repository (write-repository.ts):
+  createCategoryRecord(input: CategoryForm): CategoryRow
+  updateCategoryRecord(id, input: CategoryForm): void
+  deleteCategoryRecord(id): void
+
+Note on normalizeCategory:
+The normalizer function (currently in both queries.ts and server-records.ts — duplicated)
+moves into the read-repository as the single source of normalization for DB rows.
+The `flooringCategoryUnitInclude` and `normalizeCategoryUnitValues` helpers imported
+from @/server/flooring/unit-measures should be replicated or re-exported through
+packages/db so that the repository has no dependency on the web app layer.
+
+---
+
+🔷 6. CLIENT-SIDE TRANSPORT FIX (mutations.ts)
+
+Current gap in data/mutations.ts:
+
+  export async function deleteCategoryRequest(id: string) {
+    return requestJson<{ success: boolean }>(`/api/flooring/categories/${id}`, {
+      method: "DELETE",
+    })
+  }
+
+❌ Sends no body — the DELETE route requires expectedUpdatedAt via parseMutationEnvelope.
+The record panel controller works correctly because it calls requestJson inline with
+withMutationMeta. But the mutations.ts exported function is broken for any caller
+that uses it directly.
+
+Target fix:
+
+  export async function deleteCategoryRequest(id: string, updatedAt: string) {
+    return requestJson<{ ok: true }>(`/api/flooring/categories/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta({}, updatedAt)),
+    })
+  }
+
+This aligns with the pattern established by deleteUnitOfMeasure in unit-of-measures/data/mutations.ts.
+
+---
+
+🔷 7. END-TO-END FLOWS
+
+💾 Save (Update Primary Section)
+
+User edits name or any unit selector
+    ↓
+Controller detects dirty state
+    ↓
+User clicks Save
+    ↓
+Controller → Transport (PATCH /api/flooring/categories/:id/primary/section)
+    ↓
+Transport: applyRoutePolicy (auth + rate limit) + parseMutationEnvelope
+    + assertExpectedUpdatedAt + enforceMutationReceipt
+    ↓
+Application.updateCategoryUseCase(id, input) — orchestrates:
+    ↓
+  [1] Application asks Domain → normalizeCategoryNameForUniqueness (pure)
+    ↓
+  [2] Application asks Data → categoryNameExists (fetch the fact)
+    ↓
+  [3] Application asks Domain → assertCategoryNameAvailable (evaluate the rule)
+    ↓
+  [4] Application asks Data → updateCategoryRecord (execute the mutation)
+    ↓
+  [5] Application asks Data → getCategoryById (fetch authoritative snapshot)
+    ↓
+Transport returns { category: snapshot }
+    ↓
+Controller replaces state with snapshot
+    ↓
+dirty = false, UI updates
+
+🗑️ Delete
+
+User clicks Delete
+    ↓
+UI: confirmation dialog
+    ↓
+Controller → Transport (DELETE /api/flooring/categories/:id)
+    body: withMutationMeta({}, record.updatedAt)
+    ↓
+Transport: applyRoutePolicy + parseMutationEnvelope
+    + assertExpectedUpdatedAt + enforceMutationReceipt
+    ↓
+Application.deleteCategoryUseCase(id) — orchestrates:
+    ↓
+  [1] Application asks Data → getCategoryDeleteState(id)
+         ↳ returns { productLinks: number } or null
+    ↓
+  [2] if null → throw CategoryExecutionError({ code: "CATEGORY_NOT_FOUND", status: 404 })
+    ↓
+  [3] Application asks Domain → isCategoryDeleteBlocked(deleteState)
+         ↳ Domain is the authority — evaluates the rule, no DB access
+    ↓
+  ❌ Domain blocks → Application throws CategoryExecutionError({ code: "CATEGORY_IN_USE", status: 409 })
+         ↓
+      Transport normalizes → routeError returns { error: { code, message } }
+         ↓
+      Controller surfaces error to UI
+         ↓
+      UI displays: "This category is linked to products and cannot be deleted"
+    ↓
+  ✅ Domain approves → Application asks Data → deleteCategoryRecord(id)
+    ↓
+Transport returns { ok: true }
+    ↓
+Controller navigates away or refreshes list
+
+---
+
+🔷 8. ERROR HANDLING
+
+Domain Error Shape:
+{
+  code: "CATEGORY_IN_USE",
+  message: "This category is linked to products and cannot be deleted",
+  status: 409,
+}
+
+{
+  code: "CATEGORY_NAME_CONFLICT",
+  message: "Category name must be unique",
+  status: 409,
+  field: "name",
+}
+
+{
+  code: "CATEGORY_NOT_FOUND",
+  message: "Category not found",
+  status: 404,
+}
+
+Error Flow:
+Domain throws → Application classifies → Transport normalizes → Controller receives → UI displays
+
+UI Behavior:
+* Show error in section (scoped to the action, not the whole page)
+* Error dismisses on next user action
+* Delete button remains active — blocked state is only surfaced after the attempt
+  (consistent with UOM behavior — we do not pre-query link counts on panel open)
+
+---
+
+🔷 9. GAPS SUMMARY (WHAT NEEDS TO CHANGE)
+
+❌ application/manage-category.ts
+   — Has Prisma import. Replace with packages/execution use cases.
+   — Delete file after use cases are wired.
+
+❌ domain/category-rules.ts
+   — Move to packages/domain/src/flooring/categories/delete-rules.ts and name-rules.ts.
+   — isCategoryDeleteBlocked must take CategoryDeleteLinkState struct, not raw number.
+
+❌ data/queries.ts
+   — Direct Prisma imports. Move to packages/db/src/flooring/categories/read-repository.ts.
+
+❌ data/server-records.ts
+   — Direct Prisma imports. Move to packages/db/src/flooring/categories/write-repository.ts.
+
+❌ data/mutations.ts → deleteCategoryRequest
+   — Missing body / withMutationMeta. Fix to accept updatedAt and send envelope.
+
+❌ domain/validators.ts
+   — Duplicate of root validators.ts. Delete.
+
+❌ validators.ts (root)
+   — Consolidate validateCategoryForm into domain/types.ts or delete. Not needed once
+     application layer parses and validates via execution use cases.
+
+❌ queries.ts (root)
+   — Legacy, superseded by data/queries.ts. Delete.
+
+⚠️ app/api/flooring/categories/route.ts (GET + POST)
+   — Upgrade GET to use applyRoutePolicy.
+   — Upgrade POST to use applyRoutePolicy (replaces manual enforceRouteRateLimit pattern).
+
+✅ [id]/route.ts — correct route policy pattern, only needs import swap
+✅ [id]/primary/section/route.ts — correct route policy pattern, only needs import swap
+✅ use-category-primary-section.ts — controller is correct, no changes needed
+✅ record/, components/, controllers/ UI files — correct, no changes needed
+
+---
+
+🔷 10. WHAT "DONE" MEANS (FULLY GOVERNED CATEGORIES)
+
+✅ UI
+* Uses Record View Engine components only
+* No custom state management
+* No business logic
+
+✅ Controller
+* Uses useSingleSectionRecordController (already done)
+* Save and delete send proper mutation envelopes (already done)
+* Delete-blocked error surfaces from server message — no special handling needed
+
+✅ Transport
+* All endpoints use applyRoutePolicy (auth, rate limit, validation)
+* expectedUpdatedAt enforced on PATCH and DELETE
+* Mutation receipt enforced on all write operations
+* Error responses normalized via routeError
+* Imports from packages/execution only — no application/ imports
+
+✅ Application (packages/execution/src/flooring/categories/)
+* createCategoryUseCase implemented
+* updateCategoryUseCase implemented
+* deleteCategoryUseCase implemented
+* CategoryExecutionError defined
+* No Prisma imports
+
+✅ Domain (packages/domain/src/flooring/categories/)
+* normalizeCategoryNameForUniqueness
+* isCategoryNameConflict
+* isCategoryDeleteBlocked (takes CategoryDeleteLinkState struct)
+* getCategoryDeleteBlockedMessage
+* No Prisma, no HTTP, no side effects
+
+✅ Data (packages/db/src/flooring/categories/)
+* Read repository implemented (listCategories, getCategoryById, getCategoryDeleteState,
+  categoryNameExists, getCategoryDetailPageData, getCategoryCreatePageData)
+* Write repository implemented (createCategoryRecord, updateCategoryRecord, deleteCategoryRecord)
+* All features/flooring/categories Prisma calls removed and replaced with repository imports
+
+✅ Cross-Cutters
+* Error handling standardized (domain → execution → transport → controller → UI)
+* Idempotency respected (mutation receipts at transport)
+* Telemetry logging on all writes (withMutationTelemetry)
+* Rate limiting on all mutation endpoints (via applyRoutePolicy)
+
+---
+
+🔷 11. HOW CATEGORIES RELATES TO UOM (THE SEED PATTERN)
+
+Categories follows the UOM pattern exactly with two differences:
+
+1. Richer form: 5 unit selector fields vs. 1 name field
+   — Same execution path, more payload fields. No structural difference.
+
+2. Delete rule input: CategoryDeleteLinkState vs. UnitOfMeasureDeleteLinkState
+   — UOM checks categoryLinks + serviceLinks (two link types)
+   — Category checks productLinks (one link type — schema only has products)
+   — Both use the same struct-based domain rule pattern
+
+Everything else is structurally identical:
+* Same error class shape (ExecutionError with code, message, status)
+* Same route policy pattern (applyRoutePolicy)
+* Same mutation envelope pattern (withMutationMeta)
+* Same controller hook (useSingleSectionRecordController)
+* Same packages split (domain / db / execution)
+
+---
+
+🔥 FINAL PRINCIPLE
+
+Categories is not the second table.
+It is the first confirmation that the UOM seed pattern scales.
+
+Every governed table that follows — manufacturers, contacts, services, warehouses —
+grows from the same root. The layers never change. The entity configures them.
+
+🧠 FINAL ONE-LINER
+
+UOM proved the pattern. Categories confirms it. Every table after is a variation.
