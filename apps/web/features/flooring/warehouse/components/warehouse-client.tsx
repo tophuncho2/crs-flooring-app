@@ -3,13 +3,11 @@
 import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/features/dashboard/shared/display/accent-styles"
 import { DashboardCardTitle } from "@/features/dashboard/shared/display/dashboard-card-title"
-import { DashboardListPageControls } from "@/features/dashboard/shared/list-page/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/features/dashboard/shared/list-page/dashboard-list-page-scaffold"
-import { TableColumnSettings } from "@/features/dashboard/shared/table/table-column-settings"
-import { TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
+import { TableActionsSummary, TablePaginationControls } from "@/features/dashboard/shared/table/table-shell"
 import { useRecordEntryNavigation } from "@/features/shared/engines/common/record-entry"
 import { useConfiguredTableState } from "@/features/flooring/shared/controllers/table/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
+import type { GroupedRowTree } from "@/features/flooring/shared/controllers/table/use-table-controls"
 import type { TablePreferencePayload } from "@/features/flooring/shared/controllers/table/table-preferences"
 import type { WarehouseRow } from "../types"
 import { WarehouseTable } from "./warehouse-table"
@@ -32,10 +30,8 @@ export default function WarehouseClient({
 }) {
   const warehouseNavigation = useRecordEntryNavigation("/dashboard/flooring/warehouse")
   const {
-    searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -46,15 +42,8 @@ export default function WarehouseClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns,
     visibleColumns,
-    hiddenColumnKeys,
-    toggleColumnVisibility,
-    moveColumn,
-    setColumnOrder,
-    onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: initialRows,
     tableKey: "warehouse-main",
@@ -81,26 +70,20 @@ export default function WarehouseClient({
       <DashboardListPageScaffold
         title={<DashboardCardTitle>Warehouse</DashboardCardTitle>}
         controls={
-          <DashboardListPageControls
-            count={filteredRows.length}
-            searchQuery={searchQuery}
-            onSearchQueryChange={onSearchQueryChange}
-            searchPlaceholder="Search warehouse, address, or phone"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={onToggleSort}
-            columnSettingsSlot={
-              <TableColumnSettings
-                columns={allColumns}
-                hiddenColumnKeys={hiddenColumnKeys}
-                onToggleColumn={toggleColumnVisibility}
-                onMoveColumn={moveColumn}
-                onSetColumnOrder={setColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            }
-            primaryAction={
+          <TableActionsSummary count={filteredRows.length}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={onToggleSort}
+                className={[
+                  "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
+                  isAscendingSort
+                    ? "border-blue-500 text-blue-500"
+                    : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
+                ].join(" ")}
+              >
+                {isAscendingSort ? "A-Z" : "Z-A"}
+              </button>
               <button
                 onClick={() => warehouseNavigation.openCreate()}
                 type="button"
@@ -109,8 +92,8 @@ export default function WarehouseClient({
                 <Plus size={16} />
                 Add Warehouse
               </button>
-            }
-          />
+            </div>
+          </TableActionsSummary>
         }
         table={
           <WarehouseTable
