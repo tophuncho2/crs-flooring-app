@@ -186,7 +186,9 @@ Example:
 
 ---
 
-🌐 3. TRANSPORT LAYER (API Boundary)
+
+Responsibilities:
+* Auth (capability: unitOfMeasures.edit)🌐 3. TRANSPORT LAYER (API Boundary)
 
 Endpoints:
   GET    /api/builder/unit-of-measures          ← list
@@ -194,8 +196,6 @@ Endpoints:
   PATCH  /api/builder/unit-of-measures/:id      ← update primary section
   DELETE /api/builder/unit-of-measures/:id      ← delete
 
-Responsibilities:
-* Auth (capability: unitOfMeasures.edit)
 * Rate limiting (create: 30/10min, update: 30/10min, delete: 20/10min)
 * Input validation (shape, types)
 * expectedUpdatedAt enforcement (optimistic concurrency)
@@ -315,7 +315,7 @@ Future Possibilities:
 * Cascade impact analysis if a UOM is edited (which products/templates are affected)
 * Dependency graph calculation
 
-These would be triggered via outbox event from the Application layer.
+These would be triggered via outbox event from the Application layer, this not for right now.
 
 ---
 
@@ -333,13 +333,19 @@ Controller → Transport (PATCH /api/builder/unit-of-measures/:id)
     ↓
 Transport: auth + validation + expectedUpdatedAt check + mutation receipt
     ↓
-Application.updateUnitOfMeasureUseCase(id, input)
+Application.updateUnitOfMeasureUseCase(id, input) — orchestrates:
     ↓
-Domain: normalizeForUniqueness, assertNameAvailable
+  [1] Application asks Domain → normalize and validate input (pure, no DB needed)
     ↓
-Data: nameExists check → updateRecord
+  [2] Application asks Data → nameExists check (fetch the fact Domain needs)
     ↓
-Application returns updated snapshot
+  [3] Application asks Domain → assertNameAvailable(exists) (evaluate the rule)
+    ↓
+  [4] Application asks Data → updateRecord (execute the mutation)
+    ↓
+  [5] Application asks Data → getById (fetch authoritative snapshot)
+    ↓
+Application returns snapshot
     ↓
 Transport returns { unitOfMeasure }
     ↓
@@ -357,25 +363,32 @@ Controller → Transport (DELETE /api/builder/unit-of-measures/:id)
     ↓
 Transport: auth + expectedUpdatedAt check + mutation receipt
     ↓
-Application.deleteUnitOfMeasureUseCase(id)
+Application.deleteUnitOfMeasureUseCase(id) — orchestrates:
     ↓
-Data: getDeleteState(id) — fetch all link counts
+  [1] Application asks Data → getDeleteState(id) (fetch the facts Domain needs)
+         ↳ Data has no opinion on whether deletion is allowed — it only fetches
     ↓
-Domain: assertUOMDeletable({ categoryLinks, serviceLinks })
+  [2] Application asks Domain → assertUOMDeletable({ categoryLinks, serviceLinks })
+         ↳ Domain is the authority — it evaluates the rule against the fetched facts
+         ↳ Domain has no DB access — Application feeds it what it needs
     ↓
-❌ If linked → throw DomainError("UOM_IN_USE")
+  ❌ Domain throws → Application propagates → Transport returns structured error
+         ↓
+      Controller surfaces error to UI
+         ↓
+      UI displays: "This unit of measure is linked and cannot be deleted"
     ↓
-Transport returns structured error
-    ↓
-Controller surfaces error to UI
-    ↓
-UI displays: "This unit of measure is linked and cannot be deleted"
-
-✅ If not linked → Data.deleteRecord(id)
+  ✅ Domain approves → Application asks Data → deleteRecord(id)
     ↓
 Transport returns { ok: true }
     ↓
 Controller navigates away or refreshes list
+
+Note on ordering:
+Data always fetches before Domain evaluates — not because Data outranks Domain,
+but because Domain is pure. It cannot query the database. Application fetches
+the facts first, then hands them to Domain for a decision. Domain still owns
+the rule. Application owns the orchestration sequence.
 
 ---
 
