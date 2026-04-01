@@ -1,1 +1,1 @@
-export * from "../../table/confirm-delete"
+export * from "@/features/dashboard/shared/table/confirm-delete"
