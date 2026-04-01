@@ -9,7 +9,7 @@ import {
   resetSimpleTableClientMocks,
 } from "../../helpers/simple-table-client-mocks"
 import { navigationMocks } from "../../helpers/next-navigation-mock"
-import CategoriesClient from "@/modules/categories/components/categories-client"
+import CategoriesClient from "@/modules/categories/components/list/categories-client"
 import { CategoryDetailClient } from "@/modules/categories/record/detail/category-detail-client"
 
 function categoryRow(overrides: Partial<{

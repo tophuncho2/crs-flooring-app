@@ -10,7 +10,6 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import { useCategoriesListController } from "../../controllers/use-categories-list-controller"
 import type { CategoryRow, UnitOfMeasureOption } from "../../domain/types"
 import { CategoriesTable } from "./categories-table"
 
@@ -32,7 +31,6 @@ export default function CategoriesClient({
     groupByKeys: string[]
   }
 }) {
-  const controller = useCategoriesListController(initialCategories)
   const navigation = useRecordEntryNavigation("/dashboard/categories")
   const {
     isAscendingSort,
@@ -50,7 +48,7 @@ export default function CategoriesClient({
     visibleColumns,
     onToggleSort,
   } = useConfiguredTableState({
-    rows: controller.rows,
+    rows: initialCategories,
     tableKey: "categories-main",
     fields: [
       { key: "name", label: "Category", getValue: (row) => row.name, groupable: false },
@@ -98,7 +96,7 @@ export default function CategoriesClient({
             </div>
           </TableActionsSummary>
         }
-        notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
+        notices={<FormStatusNotices message="" error="" />}
         table={
           <CategoriesTable
             rows={sortedRows}
