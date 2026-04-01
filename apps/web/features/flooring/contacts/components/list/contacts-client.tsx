@@ -63,7 +63,6 @@ export default function ContactsClient({
       { key: "name", label: "Contact Name", getValue: (row) => row.name, groupable: false },
       { key: "type", label: "Type", getValue: (row) => row.typeLabel, groupable: true },
       { key: "assignments", label: "Assignments", getValue: (row) => String(row.assignmentsCount), groupable: false },
-      { key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "name",
@@ -114,9 +113,7 @@ export default function ContactsClient({
             visibleColumns={visibleColumns}
             groupedRows={groupedRowTree as GroupedRowTree<ContactRow>[]}
             isGroupingEnabled={isGroupingEnabled}
-            deletingId={controller.deletingId}
             onOpen={(row) => navigation.openRecord(row.id)}
-            onDelete={(row) => void controller.removeRow(row)}
           />
         }
         pagination={

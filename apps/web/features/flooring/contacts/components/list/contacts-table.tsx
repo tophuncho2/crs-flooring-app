@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -26,22 +25,13 @@ export function ContactsTable({
   visibleColumns: Array<{ key: string; label: string }>
   groupedRows: GroupedRowTree<ContactRow>[]
   isGroupingEnabled: boolean
-  deletingId: string | null
   onOpen: (row: ContactRow) => void
-  onDelete: (row: ContactRow) => void
 }) {
   function renderRow(row: ContactRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
       type: (columnIndex) => <DashboardListRowCell key="type" columnIndex={columnIndex}>{row.typeLabel}</DashboardListRowCell>,
       assignments: (columnIndex) => <DashboardListRowCell key="assignments" columnIndex={columnIndex}>{row.assignmentsCount}</DashboardListRowCell>,
-      delete: (columnIndex) => (
-        <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-          <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
-            {deletingId === row.id ? "Deleting..." : "Delete"}
-          </DeleteRowButton>
-        </DashboardListRowCell>
-      ),
     }
 
     return (
