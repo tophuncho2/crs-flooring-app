@@ -33,7 +33,6 @@ export function CategoriesTable({
       coverageAvailableUnit: (columnIndex) => <DashboardListRowCell key="coverageAvailableUnit" columnIndex={columnIndex}>{row.coverageAvailableUnit || "-"}</DashboardListRowCell>,
       itemCoverageUnit: (columnIndex) => <DashboardListRowCell key="itemCoverageUnit" columnIndex={columnIndex}>{row.itemCoverageUnit || "-"}</DashboardListRowCell>,
       serviceUnit: (columnIndex) => <DashboardListRowCell key="serviceUnit" columnIndex={columnIndex}>{row.serviceUnit || "-"}</DashboardListRowCell>,
-      products: (columnIndex) => <DashboardListRowCell key="products" columnIndex={columnIndex}>{row.productCount}</DashboardListRowCell>,
     }
 
     return (

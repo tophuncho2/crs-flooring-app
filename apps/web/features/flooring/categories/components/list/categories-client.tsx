@@ -59,7 +59,6 @@ export default function CategoriesClient({
       { key: "coverageAvailableUnit", label: "Coverage Available Unit", getValue: (row) => row.coverageAvailableUnit, groupable: true },
       { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row) => row.itemCoverageUnit, groupable: true },
       { key: "serviceUnit", label: "Service Unit", getValue: (row) => row.serviceUnit, groupable: true },
-      { key: "products", label: "Products", getValue: (row) => String(row.productCount), groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "name",
