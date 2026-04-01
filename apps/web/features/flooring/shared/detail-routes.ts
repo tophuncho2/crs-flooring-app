@@ -1,1 +1,1 @@
-export * from "./controllers/record-page/detail-routes"
+export * from "@/features/dashboard/shared/navigation/detail-routes"

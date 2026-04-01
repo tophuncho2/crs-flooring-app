@@ -1,1 +1,1 @@
-export * from "./controllers/record-page/use-unsaved-changes-guard"
+export * from "@/features/dashboard/shared/navigation/use-unsaved-changes-guard"

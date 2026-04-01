@@ -1,1 +1,1 @@
-export * from "./controllers/record-page/use-record-notices"
+export * from "@/features/shared/engines/record-view/client/use-record-notices"
