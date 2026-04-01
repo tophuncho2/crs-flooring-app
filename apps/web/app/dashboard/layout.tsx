@@ -1,12 +1,12 @@
 import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
-import DashboardErrorState from "@/features/app-shell/components/dashboard-error-state"
-import HeaderControls from "@/features/app-shell/components/header-controls"
+import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
+import HeaderControls from "@/modules/app-shell/components/header-controls"
 import { getPrismaConnectivityIssue } from "@builders/db"
 import { hasSystemAccess } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
 import { getUserToolContext } from "@/server/platform/tool-subscriptions"
-import { FLOORING_NAV_SLUGS } from "@/features/flooring/navigation/definitions"
+import { FLOORING_NAV_SLUGS } from "@/modules/app-shell/navigation/definitions"
 import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
 
 const ALWAYS_VISIBLE_FLOORING_SLUGS = new Set(["flooring-services"])

@@ -1,4 +1,4 @@
-import { FLOORING_NAV_SLUGS } from "@/features/flooring/navigation/definitions"
+import { FLOORING_NAV_SLUGS } from "@/modules/app-shell/navigation/definitions"
 import { prisma, type DataAccessContext } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 

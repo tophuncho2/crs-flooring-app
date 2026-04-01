@@ -1,6 +1,6 @@
 import { createUnitOfMeasureUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/modules/unit-of-measures/application/manage-unit-of-measure"
 import { listUnitOfMeasures } from "@/server/builder/unit-of-measures"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy } from "@/server/http/route-policy"

@@ -1,12 +1,12 @@
 import { Prisma, prisma, type DataAccessContext } from "@builders/db"
 import { createAppError } from "@/server/http/api-helpers"
 import { logEvent } from "@/server/platform/logger"
-import { normalizeTableFilterValues } from "@/features/flooring/shared/controllers/table/table-filter-state"
+import { normalizeTableFilterValues } from "@/modules/shared/engines/list-view/controllers/table-filter-state"
 import {
   DEFAULT_TABLE_PREFERENCE_PAYLOAD,
   type TableFilterPreferenceMap,
   type TablePreferencePayload,
-} from "@/features/flooring/shared/controllers/table/table-preferences"
+} from "@/modules/shared/engines/list-view/controllers/table-preferences"
 
 export type TablePreferenceInput = Partial<TablePreferencePayload>
 export type ResolvedTablePreference = TablePreferencePayload & {

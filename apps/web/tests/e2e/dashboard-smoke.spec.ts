@@ -14,11 +14,11 @@ test.describe("dashboard smoke", () => {
     await page.getByPlaceholder("Password").fill(e2ePassword ?? "")
     await page.getByRole("button", { name: "Sign In" }).click()
 
-    await page.waitForURL("**/dashboard/flooring/inventory")
-    await expect(page).toHaveURL(/\/dashboard\/flooring\/inventory/)
+    await page.waitForURL("**/dashboard/inventory")
+    await expect(page).toHaveURL(/\/dashboard\/inventory/)
 
     await page.getByRole("link", { name: "Warehouse" }).click()
-    await page.waitForURL("**/dashboard/flooring/warehouse")
+    await page.waitForURL("**/dashboard/warehouse")
     await expect(page.getByRole("heading", { name: "Warehouse" })).toBeVisible()
 
     await page.getByRole("button", { name: "Add Warehouse" }).click()
@@ -26,7 +26,7 @@ test.describe("dashboard smoke", () => {
     await page.getByLabel("Address").fill("1 Smoke Test Way")
     await page.getByRole("button", { name: "Create Warehouse" }).click()
 
-    await page.waitForURL(/\/dashboard\/flooring\/warehouse\/.+/)
+    await page.waitForURL(/\/dashboard\/warehouse\/.+/)
     await expect(page.getByDisplayValue(warehouseName)).toBeVisible()
 
     await page.getByLabel("Store Phone").fill("555-0101")

@@ -1,5 +1,5 @@
 import { normalizeFlooringNavPreferenceInput, saveUserFlooringNavPreference } from "@/server/account/flooring-nav"
-import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy } from "@/server/http/route-policy"
 

@@ -1,0 +1,111 @@
+import { deleteInventoryRow } from "@/modules/inventory/api"
+import { updateInventoryDetailUseCase } from "@/modules/inventory/application/inventory-detail"
+import { getInventoryById } from "@/modules/inventory/data/queries"
+import {
+  enforceRouteRateLimit,
+  logRouteMutationFailure,
+  logRouteMutationSuccess,
+  requireRouteAccess,
+  routeError,
+  routeJson,
+} from "@/server/http/route-helpers"
+
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  try {
+    const { id } = await context.params
+    return routeJson(access, { inventory: await getInventoryById(id) })
+  } catch (error) {
+    return routeError(access, error)
+  }
+}
+
+export async function PATCH(request: Request, context: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "inventory.write",
+    limit: 60,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/inventory/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  try {
+    const { id } = await context.params
+    const body = (await request.json()) as Record<string, unknown>
+    const inventory = await updateInventoryDetailUseCase(id, body)
+    logRouteMutationSuccess(access, {
+      message: "Inventory updated",
+      action: "inventory.update",
+      route: "/api/inventory/[id]",
+      entityType: "flooringInventory",
+      entityId: inventory.id,
+      details: {
+        productId: inventory.productId,
+        locationId: inventory.locationId,
+      },
+    })
+
+    return routeJson(access, { inventory })
+  } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Inventory update failed",
+        action: "inventory.update.error",
+        route: "/api/inventory/[id]",
+        entityType: "flooringInventory",
+        entityId: (await context.params).id,
+      },
+      error,
+    )
+    return routeError(access, error)
+  }
+}
+
+export async function DELETE(request: Request, context: RouteContext) {
+  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  if (access instanceof Response) return access
+
+  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
+    scope: "inventory.delete",
+    limit: 40,
+    windowMs: 10 * 60 * 1000,
+    route: "/api/inventory/[id]",
+  })
+  if (rateLimitResponse) return rateLimitResponse
+
+  try {
+    const { id } = await context.params
+    await deleteInventoryRow(undefined, id)
+    logRouteMutationSuccess(access, {
+      message: "Inventory deleted",
+      action: "inventory.delete",
+      route: "/api/inventory/[id]",
+      entityType: "flooringInventory",
+      entityId: id,
+    })
+    return routeJson(access, { ok: true })
+  } catch (error) {
+    logRouteMutationFailure(
+      access,
+      {
+        message: "Inventory deletion failed",
+        action: "inventory.delete.error",
+        route: "/api/inventory/[id]",
+        entityType: "flooringInventory",
+        entityId: (await context.params).id,
+      },
+      error,
+    )
+    return routeError(access, error)
+  }
+}

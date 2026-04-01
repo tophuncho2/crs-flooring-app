@@ -1,4 +1,4 @@
-import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { deleteManagedUser, normalizeManagedUserUpdateInput, updateManagedUser } from "@/server/builder/users"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy } from "@/server/http/route-policy"

@@ -6,25 +6,25 @@ export const TOOL_CATALOG = [
     slug: "products",
     name: "Products",
     description: "Manage product categories and pricing.",
-    path: "/dashboard/flooring/products",
+    path: "/dashboard/products",
   },
   {
     slug: "templates",
     name: "Templates",
     description: "Manage property templates and linked material/service scopes.",
-    path: "/dashboard/flooring/templates",
+    path: "/dashboard/templates",
   },
   {
     slug: "properties",
     name: "Properties",
     description: "Manage management companies, properties, and related records.",
-    path: "/dashboard/flooring/properties",
+    path: "/dashboard/properties",
   },
   {
     slug: "warehouse",
     name: "Warehouse",
     description: "Manage flooring warehouses, sections, and locations.",
-    path: "/dashboard/flooring/warehouse",
+    path: "/dashboard/warehouse",
   },
 ] as const
 

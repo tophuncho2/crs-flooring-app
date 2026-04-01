@@ -2,9 +2,9 @@ import {
   deleteUnitOfMeasureUseCase,
   updateUnitOfMeasureUseCase,
 } from "@builders/application"
-import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { getUnitOfMeasureById } from "@/features/flooring/unit-of-measures/data/queries"
-import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { getUnitOfMeasureById } from "@/modules/unit-of-measures/data/queries"
+import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/modules/unit-of-measures/application/manage-unit-of-measure"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,

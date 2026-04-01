@@ -1,6 +1,6 @@
 "use client"
 
-import { CenteredErrorState } from "@/features/flooring/shared/feedback-states"
+import { CenteredErrorState } from "@/modules/shared/engines/common/feedback/feedback-states"
 
 export default function DashboardError({
   error,

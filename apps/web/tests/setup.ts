@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
     forward: navigationMocks.forward,
     prefetch: navigationMocks.prefetch,
   }),
-  usePathname: () => "/dashboard/flooring/test",
+  usePathname: () => "/dashboard/test",
   useSearchParams: () => new URLSearchParams(),
 }))
 

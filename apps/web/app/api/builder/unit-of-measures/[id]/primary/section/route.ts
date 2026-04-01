@@ -1,8 +1,8 @@
 import { updateUnitOfMeasureUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/features/flooring/shared/application/mutation-telemetry"
-import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/features/flooring/unit-of-measures/application/manage-unit-of-measure"
-import { getUnitOfMeasureById } from "@/features/flooring/unit-of-measures/data/queries"
-import { UNIT_OF_MEASURES_TOOL_SLUG } from "@/features/flooring/shared/access/lookup-domains"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/modules/unit-of-measures/application/manage-unit-of-measure"
+import { getUnitOfMeasureById } from "@/modules/unit-of-measures/data/queries"
+import { UNIT_OF_MEASURES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {

@@ -3,7 +3,7 @@
   "references": [
     { "path": "./packages/db" },
     { "path": "./packages/domain" },
-    { "path": "./packages/execution" },
+    { "path": "./packages/application" },
     { "path": "./packages/lib" },
     { "path": "./packages/ui" },
     { "path": "./apps/worker" },
