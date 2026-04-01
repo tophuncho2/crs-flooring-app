@@ -64,7 +64,6 @@ export default function UnitOfMeasuresClient({
     fields: [
       { key: "name", label: "Unit Of Measure", getValue: (row) => row.name, groupable: true },
       { key: "createdAt", label: "Created", getValue: (row) => row.createdAt, groupable: false },
-      ...(canManage ? [{ key: "delete", label: "Delete", getValue: () => "", searchable: false, groupable: false } as const] : []),
     ],
     sortField: (row) => row.name,
     sortFieldKey: "name",
@@ -119,10 +118,7 @@ export default function UnitOfMeasuresClient({
             visibleColumns={visibleColumns}
             groupedRows={groupedRowTree as GroupedRowTree<UnitOfMeasureRow>[]}
             isGroupingEnabled={isGroupingEnabled}
-            canManage={canManage}
-            deletingId={controller.deletingId}
             onOpen={(row) => navigation.openRecord(row.id)}
-            onDelete={(row) => void controller.removeRow(row)}
           />
         }
         pagination={

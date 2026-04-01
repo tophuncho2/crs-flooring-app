@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/features/dashboard/shared/list-page/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/features/dashboard/shared/list-page/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/features/dashboard/shared/list-page/render-dashboard-row-cells"
-import { DeleteRowButton } from "@/features/dashboard/shared/table/row-action-buttons"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -19,35 +18,18 @@ export function UnitOfMeasuresTable({
   visibleColumns,
   groupedRows,
   isGroupingEnabled,
-  canManage,
-  deletingId,
   onOpen,
-  onDelete,
 }: {
   rows: UnitOfMeasureRow[]
   visibleColumns: Array<{ key: string; label: string }>
   groupedRows: GroupedRowTree<UnitOfMeasureRow>[]
   isGroupingEnabled: boolean
-  canManage: boolean
-  deletingId: string | null
   onOpen: (row: UnitOfMeasureRow) => void
-  onDelete: (row: UnitOfMeasureRow) => void
 }) {
   function renderRow(row: UnitOfMeasureRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
       createdAt: (columnIndex) => <DashboardListRowCell key="createdAt" columnIndex={columnIndex}>{formatStableDateTime(row.createdAt)}</DashboardListRowCell>,
-      ...(canManage
-        ? {
-            delete: (columnIndex: number) => (
-              <DashboardListRowCell key="delete" columnIndex={columnIndex}>
-                <DeleteRowButton onClick={() => onDelete(row)} disabled={deletingId === row.id}>
-                  {deletingId === row.id ? "Deleting..." : "Delete"}
-                </DeleteRowButton>
-              </DashboardListRowCell>
-            ),
-          }
-        : {}),
     }
 
     return (
