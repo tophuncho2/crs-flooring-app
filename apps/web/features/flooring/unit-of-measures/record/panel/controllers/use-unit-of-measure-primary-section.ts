@@ -3,6 +3,7 @@
 import { requestJson } from "@/features/flooring/shared/transport/http"
 import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import { useSingleSectionRecordController, type RecordDetailClientScaffoldContext } from "@/features/shared/engines/record-view"
+import { deleteUnitOfMeasure } from "../../../data/mutations"
 import { toUnitOfMeasureForm, type UnitOfMeasureForm, type UnitOfMeasureRow } from "../../../domain/types"
 
 export function useUnitOfMeasurePrimarySection({
@@ -36,11 +37,7 @@ export function useUnitOfMeasurePrimarySection({
       }
     },
     deleteRecord: async (record) => {
-      await requestJson<{ ok: true }>(`/api/builder/unit-of-measures/${record.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(withMutationMeta({}, record.updatedAt)),
-      })
+      await deleteUnitOfMeasure(record.id, record.updatedAt)
     },
     deleteErrorMessage: "Failed to delete unit of measure",
   })

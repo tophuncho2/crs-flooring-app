@@ -19,7 +19,7 @@ export function useUnitOfMeasuresListController(initialRows: UnitOfMeasureRow[])
     notices.clearNotices()
     setDeletingId(row.id)
     try {
-      await deleteUnitOfMeasure(row.id)
+      await deleteUnitOfMeasure(row.id, row.updatedAt)
       setRows((previous) => previous.filter((item) => item.id !== row.id))
       notices.showSuccess("Unit of measure deleted")
       return true

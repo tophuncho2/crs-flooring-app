@@ -1,6 +1,7 @@
 "use client"
 
 import { requestJson } from "@/features/flooring/shared/transport/http"
+import { withMutationMeta } from "@/features/flooring/shared/transport/mutation"
 import type { UnitOfMeasureForm, UnitOfMeasureRow } from "../domain/types"
 
 export async function createUnitOfMeasure(input: UnitOfMeasureForm) {
@@ -19,8 +20,10 @@ export async function updateUnitOfMeasure(id: string, input: UnitOfMeasureForm) 
   })
 }
 
-export async function deleteUnitOfMeasure(id: string) {
-  return requestJson<{ success: boolean }>(`/api/builder/unit-of-measures/${id}`, {
+export async function deleteUnitOfMeasure(id: string, updatedAt: string) {
+  return requestJson<{ ok: true }>(`/api/builder/unit-of-measures/${id}`, {
     method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
 }
