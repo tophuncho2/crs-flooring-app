@@ -4,8 +4,8 @@ No deleting a Product IF
 
 Form Rules
 
-- Company name is  required
-- Company Name is unique
+- Category is  required
+- At least one other field is required
 
 List View UI / Controls (Engine Governed)
 - Sorting
