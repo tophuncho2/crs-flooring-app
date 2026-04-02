@@ -3,27 +3,55 @@ import { GET, POST } from "@/app/api/contacts/route"
 import { DELETE, PATCH } from "@/app/api/contacts/[id]/route"
 
 const {
+  applyRoutePolicyMock,
+  enforceMutationReceiptMock,
+  finalizeMutationReceiptMock,
+  withMutationTelemetryMock,
   authorizeContactsRouteMock,
   enforceRouteRateLimitMock,
+  enforceQueryRateLimitMock,
   logRouteMutationSuccessMock,
   logRouteMutationFailureMock,
   listContactsMock,
+  getContactByIdMock,
   createContactEntryMock,
   updateContactEntryMock,
   deleteContactEntryMock,
 } = vi.hoisted(() => ({
+  applyRoutePolicyMock: vi.fn(),
+  enforceMutationReceiptMock: vi.fn(),
+  finalizeMutationReceiptMock: vi.fn(),
+  withMutationTelemetryMock: vi.fn(),
   authorizeContactsRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
+  enforceQueryRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
   logRouteMutationFailureMock: vi.fn(),
   listContactsMock: vi.fn(),
+  getContactByIdMock: vi.fn(),
   createContactEntryMock: vi.fn(),
   updateContactEntryMock: vi.fn(),
   deleteContactEntryMock: vi.fn(),
 }))
 
 vi.mock("@/modules/shared/access/lookup-domains", () => ({
+  CONTACTS_TOOL_SLUG: "contacts",
   authorizeContactsRoute: authorizeContactsRouteMock,
+}))
+
+vi.mock("@/server/http/route-policy", async () => {
+  const actual = await vi.importActual<typeof import("@/server/http/route-policy")>("@/server/http/route-policy")
+  return {
+    ...actual,
+    applyRoutePolicy: applyRoutePolicyMock,
+    enforceMutationReceipt: enforceMutationReceiptMock,
+    finalizeMutationReceipt: finalizeMutationReceiptMock,
+    enforceQueryRateLimit: enforceQueryRateLimitMock,
+  }
+})
+
+vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
+  withMutationTelemetry: withMutationTelemetryMock,
 }))
 
 vi.mock("@/server/http/route-helpers", () => ({
@@ -54,6 +82,7 @@ vi.mock("@/server/http/route-helpers", () => ({
 
 vi.mock("@/modules/contacts/data/queries", () => ({
   listContacts: listContactsMock,
+  getContactById: getContactByIdMock,
 }))
 
 vi.mock("@/modules/contacts/application/manage-contact", () => ({
@@ -62,15 +91,24 @@ vi.mock("@/modules/contacts/application/manage-contact", () => ({
   deleteContactEntry: deleteContactEntryMock,
 }))
 
+const ACCESS_CONTEXT = {
+  requestId: "req-1",
+  clientIp: "127.0.0.1",
+  user: { id: "user-1", email: "owner@test.com" },
+}
+
 describe("contacts routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    authorizeContactsRouteMock.mockResolvedValue({
-      requestId: "req-1",
-      clientIp: "127.0.0.1",
-      user: { id: "user-1", email: "owner@test.com" },
-    })
+    authorizeContactsRouteMock.mockResolvedValue(ACCESS_CONTEXT)
     enforceRouteRateLimitMock.mockResolvedValue(null)
+    enforceQueryRateLimitMock.mockReturnValue(null)
+    applyRoutePolicyMock.mockResolvedValue(ACCESS_CONTEXT)
+    enforceMutationReceiptMock.mockResolvedValue({ replay: null, requestHash: "hash" })
+    finalizeMutationReceiptMock.mockResolvedValue(undefined)
+    withMutationTelemetryMock.mockImplementation(
+      async (_access: unknown, _meta: unknown, callback: () => Promise<unknown>) => callback(),
+    )
   })
 
   it("GET returns normalized contacts", async () => {
@@ -103,7 +141,10 @@ describe("contacts routes", () => {
       new Request("http://localhost/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "SALES_REP" }),
+        body: JSON.stringify({
+          type: "SALES_REP",
+          mutation: { idempotencyKey: "key-1" },
+        }),
       }),
     )
     expect((await missingNameResponse.json()).error).toBe("name is required")
@@ -112,7 +153,11 @@ describe("contacts routes", () => {
       new Request("http://localhost/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Jane Rep", type: "INVALID" }),
+        body: JSON.stringify({
+          name: "Jane Rep",
+          type: "INVALID",
+          mutation: { idempotencyKey: "key-2" },
+        }),
       }),
     )
     const invalidTypePayload = await invalidTypeResponse.json()
@@ -123,7 +168,7 @@ describe("contacts routes", () => {
     expect(createContactEntryMock).not.toHaveBeenCalled()
   })
 
-  it("POST, PATCH, and DELETE mutate contacts through the shared route flow", async () => {
+  it("POST creates a contact with valid form data and returns the full record", async () => {
     createContactEntryMock.mockResolvedValue({
       id: "contact-1",
       name: "Jane Rep",
@@ -133,21 +178,59 @@ describe("contacts routes", () => {
       createdAt: "2026-03-23T00:00:00.000Z",
       updatedAt: "2026-03-23T00:00:00.000Z",
     })
-    updateContactEntryMock.mockResolvedValue({
+
+    const response = await POST(
+      new Request("http://localhost/api/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Jane Rep",
+          type: "SALES_REP",
+          mutation: { idempotencyKey: "key-1" },
+        }),
+      }),
+    )
+    const payload = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(createContactEntryMock).toHaveBeenCalledWith({
+      name: "Jane Rep",
+      type: "SALES_REP",
+    })
+    expect(payload.contact).toEqual({
       id: "contact-1",
-      name: "Jane Contractor",
-      type: "CONTRACTOR",
-      typeLabel: "Contractor",
+      name: "Jane Rep",
+      type: "SALES_REP",
+      typeLabel: "Sales Rep",
       assignmentsCount: 0,
       createdAt: "2026-03-23T00:00:00.000Z",
-      updatedAt: "2026-03-23T01:00:00.000Z",
+      updatedAt: "2026-03-23T00:00:00.000Z",
     })
+  })
+
+  it("POST, PATCH, and DELETE mutate contacts through the shared route flow", async () => {
+    const contactSnapshot = {
+      id: "contact-1",
+      name: "Jane Rep",
+      type: "SALES_REP",
+      typeLabel: "Sales Rep",
+      assignmentsCount: 0,
+      createdAt: "2026-03-23T00:00:00.000Z",
+      updatedAt: "2026-03-23T00:00:00.000Z",
+    }
+
+    createContactEntryMock.mockResolvedValue(contactSnapshot)
+    getContactByIdMock.mockResolvedValue(contactSnapshot)
 
     const createResponse = await POST(
       new Request("http://localhost/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Jane Rep", type: "SALES_REP" }),
+        body: JSON.stringify({
+          name: "Jane Rep",
+          type: "SALES_REP",
+          mutation: { idempotencyKey: "key-create" },
+        }),
       }),
     )
     expect(createResponse.status).toBe(201)
@@ -156,11 +239,29 @@ describe("contacts routes", () => {
       type: "SALES_REP",
     })
 
+    const updatedSnapshot = {
+      ...contactSnapshot,
+      name: "Jane Contractor",
+      type: "CONTRACTOR",
+      typeLabel: "Contractor",
+      updatedAt: "2026-03-23T01:00:00.000Z",
+    }
+    getContactByIdMock
+      .mockResolvedValueOnce(contactSnapshot)
+      .mockResolvedValueOnce(updatedSnapshot)
+
     const patchResponse = await PATCH(
       new Request("http://localhost/api/contacts/contact-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Jane Contractor", type: "CONTRACTOR" }),
+        body: JSON.stringify({
+          name: "Jane Contractor",
+          type: "CONTRACTOR",
+          mutation: {
+            idempotencyKey: "key-patch",
+            expectedUpdatedAt: "2026-03-23T00:00:00.000Z",
+          },
+        }),
       }),
       { params: Promise.resolve({ id: "contact-1" }) },
     )
@@ -171,24 +272,55 @@ describe("contacts routes", () => {
       type: "CONTRACTOR",
     }))
 
-    const deleteResponse = await DELETE(new Request("http://localhost/api/contacts/contact-1"), {
-      params: Promise.resolve({ id: "contact-1" }),
-    })
+    getContactByIdMock.mockResolvedValueOnce(updatedSnapshot)
+
+    const deleteResponse = await DELETE(
+      new Request("http://localhost/api/contacts/contact-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "key-delete",
+            expectedUpdatedAt: "2026-03-23T01:00:00.000Z",
+          },
+        }),
+      }),
+      { params: Promise.resolve({ id: "contact-1" }) },
+    )
     expect(deleteResponse.status).toBe(200)
     expect(await deleteResponse.json()).toEqual({ ok: true })
     expect(deleteContactEntryMock).toHaveBeenCalledWith("contact-1")
   })
 
   it("DELETE returns a clear linked-contact error", async () => {
+    getContactByIdMock.mockResolvedValue({
+      id: "contact-1",
+      name: "Jane Rep",
+      type: "SALES_REP",
+      typeLabel: "Sales Rep",
+      assignmentsCount: 2,
+      createdAt: "2026-03-23T00:00:00.000Z",
+      updatedAt: "2026-03-23T00:00:00.000Z",
+    })
     deleteContactEntryMock.mockRejectedValue({
       kind: "app",
       status: 409,
       message: "This contact is linked to work orders and cannot be deleted",
     })
 
-    const response = await DELETE(new Request("http://localhost/api/contacts/contact-1"), {
-      params: Promise.resolve({ id: "contact-1" }),
-    })
+    const response = await DELETE(
+      new Request("http://localhost/api/contacts/contact-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mutation: {
+            idempotencyKey: "key-delete",
+            expectedUpdatedAt: "2026-03-23T00:00:00.000Z",
+          },
+        }),
+      }),
+      { params: Promise.resolve({ id: "contact-1" }) },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(409)
