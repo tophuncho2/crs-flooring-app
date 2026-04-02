@@ -15,6 +15,11 @@ import type { UnitOfMeasureRow } from "../../domain/types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
 import { UnitOfMeasuresTable } from "./unit-of-measures-table"
 
+const UOM_FIELDS = [
+  { key: "name", label: "Unit Of Measure", getValue: (row: UnitOfMeasureRow) => row.name, groupable: true },
+  { key: "createdAt", label: "Created", getValue: (row: UnitOfMeasureRow) => row.createdAt, groupable: false },
+]
+
 export default function UnitOfMeasuresClient({
   canManage,
   initialUnitOfMeasures,
@@ -33,10 +38,6 @@ export default function UnitOfMeasuresClient({
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
   const navigation = useRecordEntryNavigation("/dashboard/unit-of-measures")
-  const UOM_FIELDS = [
-    { key: "name", label: "Unit Of Measure", getValue: (row: UnitOfMeasureRow) => row.name, groupable: true },
-    { key: "createdAt", label: "Created", getValue: (row: UnitOfMeasureRow) => row.createdAt, groupable: false },
-  ]
   const engine = useListViewEngine({
     rows: controller.rows,
     tableKey: "unit-of-measures-main",

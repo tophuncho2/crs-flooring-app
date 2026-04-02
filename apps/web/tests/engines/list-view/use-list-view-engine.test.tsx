@@ -137,6 +137,28 @@ describe("useListViewEngine", () => {
     expect(result.current.processedRows[1].name).toBe("Bravo")
   })
 
+  it("pushNotice called twice replaces the first notice", () => {
+    const { result } = renderHook(() => useListViewEngine(createConfig()))
+
+    act(() => {
+      result.current.pushNotice({ type: "success", message: "First" })
+    })
+    expect(result.current.notice?.message).toBe("First")
+
+    act(() => {
+      result.current.pushNotice({ type: "error", message: "Second" })
+    })
+    expect(result.current.notice).toEqual({ type: "error", message: "Second" })
+  })
+
+  it("does not throw when initialized with an empty rows array", () => {
+    const config = { ...createConfig(), rows: [] }
+    const { result } = renderHook(() => useListViewEngine(config))
+
+    expect(result.current.processedRows).toHaveLength(0)
+    expect(result.current.page).toBe(1)
+  })
+
   it("groupField defaults to null when no group keys configured", () => {
     const { result } = renderHook(() => useListViewEngine(createConfig()))
 
