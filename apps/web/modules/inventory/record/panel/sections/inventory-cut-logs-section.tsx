@@ -5,7 +5,6 @@ import {
   RecordGridCellInput,
   RecordItemCell,
   RecordItemSection,
-  RecordRowLayout,
   RecordSectionGrid,
   RecordSectionGridRow,
   RecordRowStatusBadge,
@@ -84,84 +83,80 @@ export function InventoryCutLogsSection({
             columns={INVENTORY_CUT_LOG_COLUMNS}
             rowTone="allocation"
           >
-            <RecordRowLayout columns={INVENTORY_CUT_LOG_COLUMNS}>
-              <RecordItemCell columnKey="createdAt" chrome="grid" showLabel>
-                <span className="text-sm text-[var(--foreground)]/80">New</span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="cut" chrome="grid" showLabel>
-                <RecordGridCellInput
-                  aria-label="Cut Quantity"
-                  value={draft.quantityTaken}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  onChange={(event) => onDraftChange("quantityTaken", event.target.value)}
-                  align="center"
-                  controlSize="compact"
-                />
-              </RecordItemCell>
-              <RecordItemCell columnKey="before" chrome="grid" showLabel>
-                <span className="text-sm text-[var(--foreground)]/80">
-                  {formatInventoryQuantity(draftBefore, stockUnit)}
-                </span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="after" chrome="grid" showLabel>
-                <span className="text-sm text-[var(--foreground)]/80">
-                  {formatInventoryQuantity(draftAfter, stockUnit)}
-                </span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="notes" chrome="grid" showLabel>
-                <RecordGridCellInput
-                  aria-label="Cut Log Notes"
-                  value={draft.notes}
-                  onChange={(event) => onDraftChange("notes", event.target.value)}
-                  placeholder="Notes"
-                />
-              </RecordItemCell>
-              <RecordItemCell columnKey="status" chrome="grid" showLabel>
-                <div className="flex min-h-[2.5rem] items-center">
-                  <RecordRowStatusBadge tone={resolveRecordRowStatus({ isUnsaved: true }).tone}>
-                    {resolveRecordRowStatus({ isUnsaved: true }).label}
-                  </RecordRowStatusBadge>
-                </div>
-              </RecordItemCell>
-            </RecordRowLayout>
+            <RecordItemCell columnKey="createdAt" chrome="grid" showLabel>
+              <span className="text-sm text-[var(--foreground)]/80">New</span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="cut" chrome="grid" showLabel>
+              <RecordGridCellInput
+                aria-label="Cut Quantity"
+                value={draft.quantityTaken}
+                inputMode="decimal"
+                placeholder="0.00"
+                onChange={(event) => onDraftChange("quantityTaken", event.target.value)}
+                align="center"
+                controlSize="compact"
+              />
+            </RecordItemCell>
+            <RecordItemCell columnKey="before" chrome="grid" showLabel>
+              <span className="text-sm text-[var(--foreground)]/80">
+                {formatInventoryQuantity(draftBefore, stockUnit)}
+              </span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="after" chrome="grid" showLabel>
+              <span className="text-sm text-[var(--foreground)]/80">
+                {formatInventoryQuantity(draftAfter, stockUnit)}
+              </span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="notes" chrome="grid" showLabel>
+              <RecordGridCellInput
+                aria-label="Cut Log Notes"
+                value={draft.notes}
+                onChange={(event) => onDraftChange("notes", event.target.value)}
+                placeholder="Notes"
+              />
+            </RecordItemCell>
+            <RecordItemCell columnKey="status" chrome="grid" showLabel>
+              <div className="flex min-h-[2.5rem] items-center">
+                <RecordRowStatusBadge tone={resolveRecordRowStatus({ isUnsaved: true }).tone}>
+                  {resolveRecordRowStatus({ isUnsaved: true }).label}
+                </RecordRowStatusBadge>
+              </div>
+            </RecordItemCell>
           </RecordSectionGridRow>
         ) : null}
 
         {cutLogs.map((cutLog, index) => (
           <RecordSectionGridRow key={cutLog.id} columns={INVENTORY_CUT_LOG_COLUMNS}>
-            <RecordRowLayout columns={INVENTORY_CUT_LOG_COLUMNS}>
-              <RecordItemCell columnKey="createdAt" chrome="grid" showLabel={!draft && index === 0}>
-                <span className="text-sm text-[var(--foreground)]/80">{formatStableDateTime(cutLog.createdAt)}</span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="cut" chrome="grid" showLabel={!draft && index === 0}>
-                <span className="text-sm font-medium text-[var(--foreground)]">
-                  {formatInventoryQuantity(cutLog.cut, stockUnit)}
-                </span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="before" chrome="grid" showLabel={!draft && index === 0}>
-                <span className="text-sm text-[var(--foreground)]/80">
-                  {formatInventoryQuantity(cutLog.before, stockUnit)}
-                </span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="after" chrome="grid" showLabel={!draft && index === 0}>
-                <span className="text-sm text-[var(--foreground)]/80">
-                  {formatInventoryQuantity(cutLog.after, stockUnit)}
-                </span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="notes" chrome="grid" showLabel={!draft && index === 0}>
-                <span className="whitespace-pre-wrap text-sm text-[var(--foreground)]/80">
-                  {cutLog.notes || "-"}
-                </span>
-              </RecordItemCell>
-              <RecordItemCell columnKey="status" chrome="grid" showLabel={!draft && index === 0}>
-                <div className="flex min-h-[2.5rem] items-center">
-                  <RecordRowStatusBadge tone={resolveRecordRowStatus({}).tone}>
-                    {resolveRecordRowStatus({}).label}
-                  </RecordRowStatusBadge>
-                </div>
-              </RecordItemCell>
-            </RecordRowLayout>
+            <RecordItemCell columnKey="createdAt" chrome="grid" showLabel={!draft && index === 0}>
+              <span className="text-sm text-[var(--foreground)]/80">{formatStableDateTime(cutLog.createdAt)}</span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="cut" chrome="grid" showLabel={!draft && index === 0}>
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                {formatInventoryQuantity(cutLog.cut, stockUnit)}
+              </span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="before" chrome="grid" showLabel={!draft && index === 0}>
+              <span className="text-sm text-[var(--foreground)]/80">
+                {formatInventoryQuantity(cutLog.before, stockUnit)}
+              </span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="after" chrome="grid" showLabel={!draft && index === 0}>
+              <span className="text-sm text-[var(--foreground)]/80">
+                {formatInventoryQuantity(cutLog.after, stockUnit)}
+              </span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="notes" chrome="grid" showLabel={!draft && index === 0}>
+              <span className="whitespace-pre-wrap text-sm text-[var(--foreground)]/80">
+                {cutLog.notes || "-"}
+              </span>
+            </RecordItemCell>
+            <RecordItemCell columnKey="status" chrome="grid" showLabel={!draft && index === 0}>
+              <div className="flex min-h-[2.5rem] items-center">
+                <RecordRowStatusBadge tone={resolveRecordRowStatus({}).tone}>
+                  {resolveRecordRowStatus({}).label}
+                </RecordRowStatusBadge>
+              </div>
+            </RecordItemCell>
           </RecordSectionGridRow>
         ))}
       </RecordSectionGrid>
