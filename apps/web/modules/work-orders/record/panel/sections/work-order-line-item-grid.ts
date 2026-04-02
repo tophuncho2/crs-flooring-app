@@ -7,7 +7,7 @@ import {
   buildAllocationLayout,
   STATUS_CONTROL,
   REMOVE_CONTROL,
-} from "@/modules/shared/engines/record-view/line-items/record-grid"
+} from "@/modules/shared/engines/record-view/sections/rows/record-grid-columns"
 
 export const WORK_ORDER_MATERIAL_COLUMNS = buildMaterialItemColumns({
   supportsScopedRows: true,

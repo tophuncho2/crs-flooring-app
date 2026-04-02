@@ -7,8 +7,8 @@ import {
   RECORD_SECTION_BORDER_CLASS_NAME,
   RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
 } from "../structure/record-section-tokens"
-import { RecordSectionErrorPanel } from "../feedback"
-import type { RecordSectionError } from "../contracts"
+import { RecordSectionErrorPanel } from "../../feedback"
+import type { RecordSectionError } from "../../contracts"
 
 export function RecordSectionStatusBadge({
   children,

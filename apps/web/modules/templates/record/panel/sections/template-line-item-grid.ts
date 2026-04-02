@@ -3,7 +3,7 @@ import {
   buildMaterialItemColumns,
   buildSalesRepColumns,
   buildServiceItemColumns,
-} from "@/modules/shared/engines/record-view/line-items/record-grid"
+} from "@/modules/shared/engines/record-view/sections/rows/record-grid-columns"
 
 export const TEMPLATE_MATERIAL_COLUMNS = buildMaterialItemColumns({
   supportsStatusColumn: true,

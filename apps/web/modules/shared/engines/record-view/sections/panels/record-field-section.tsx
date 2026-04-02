@@ -1,8 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { RecordSectionError } from "../contracts"
-import { RecordFormNotices } from "../feedback"
+import type { RecordSectionError } from "../../contracts"
+import { RecordFormNotices } from "../../feedback"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,

@@ -115,22 +115,6 @@ export function RecordHeaderActionButton({ className, children, ...props }: Reco
   )
 }
 
-export function RecordHeaderDestructiveButton({ className, children, ...props }: RecordButtonProps) {
-  return (
-    <RecordActionButton className={joinClasses(RECORD_DESTRUCTIVE_ACTION_CLASS_NAME, className)} {...props}>
-      {children}
-    </RecordActionButton>
-  )
-}
-
-export function RecordHeaderPrimaryButton({ className, children, ...props }: RecordButtonProps) {
-  return (
-    <RecordActionButton className={joinClasses(RECORD_HEADER_PRIMARY_ACTION_CLASS_NAME, className)} {...props}>
-      {children}
-    </RecordActionButton>
-  )
-}
-
 export function RecordFooterNeutralButton({ className, children, ...props }: RecordButtonProps) {
   return (
     <RecordActionButton className={joinClasses(RECORD_NEUTRAL_ACTION_CLASS_NAME, className)} {...props}>

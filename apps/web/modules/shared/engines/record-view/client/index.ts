@@ -15,7 +15,6 @@ export * from "./controllers/use-single-section-record-controller"
 // hooks
 export * from "./hooks/use-pending-workflow-polling"
 export * from "./hooks/use-record-close-guard"
-export * from "./hooks/use-record-dirty-state"
 export * from "./hooks/use-record-notices"
 export * from "./hooks/use-record-section-workflow"
 

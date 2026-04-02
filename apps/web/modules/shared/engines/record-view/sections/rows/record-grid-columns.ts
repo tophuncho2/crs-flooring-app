@@ -1,4 +1,4 @@
-import type { RecordGridColumnSpec, RecordGridControlSpec, RecordGridLayout } from "@/modules/shared/engines/record-view"
+import type { RecordGridColumnSpec, RecordGridControlSpec, RecordGridLayout } from "./record-row-layout"
 
 type ItemControlColumnOptions = {
   supportsScopedRows?: boolean
@@ -355,22 +355,8 @@ export function buildMaterialAllocationColumns(options: Pick<ItemControlColumnOp
 
 // --- Two-zone layout: data columns + fixed-width control strip ---
 
-export const TOGGLE_CONTROL: RecordGridControlSpec = { key: "allocations", width: 144, label: "Show / Hide", kind: "toggle", align: "center" }
-export const OPEN_CONTROL: RecordGridControlSpec = { key: "open", width: 120, label: "Open", kind: "open", align: "center" }
 export const STATUS_CONTROL: RecordGridControlSpec = { key: "status", width: 184, label: "Status", kind: "status", align: "center" }
 export const REMOVE_CONTROL: RecordGridControlSpec = { key: "remove", width: 120, label: "Remove", kind: "remove", align: "end" }
-
-export function buildMaterialItemLayout(controls?: RecordGridControlSpec[]): RecordGridLayout {
-  return { dataColumns: MATERIAL_ITEM_BASE_COLUMNS, controlColumns: controls }
-}
-
-export function buildServiceItemLayout(controls?: RecordGridControlSpec[]): RecordGridLayout {
-  return { dataColumns: SERVICE_ITEM_BASE_COLUMNS, controlColumns: controls }
-}
-
-export function buildSalesRepLayout(controls?: RecordGridControlSpec[]): RecordGridLayout {
-  return { dataColumns: SALES_REP_BASE_COLUMNS, controlColumns: controls }
-}
 
 export function buildAllocationLayout(controls?: RecordGridControlSpec[]): RecordGridLayout {
   return { dataColumns: ALLOCATION_BASE_COLUMNS, controlColumns: controls }

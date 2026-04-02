@@ -1,12 +1,12 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { RecordSectionError } from "../contracts"
+import type { RecordSectionError } from "../../contracts"
 import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,
   RecordFooterPrimaryButton,
-} from "../shell/record-action-buttons"
+} from "../../shell/record-action-buttons"
 import { RecordSectionActionPanel } from "../status/record-section-action-panel"
 import { RecordSectionSaveStateIndicators } from "../status/record-section-status-indicators"
 import {

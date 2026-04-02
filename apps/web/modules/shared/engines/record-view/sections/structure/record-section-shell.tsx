@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { TableBleed } from "@/modules/shared/engines/list-view/table/table-shell"
-import { RecordFormNotices } from "../feedback"
+import { RecordFormNotices } from "../../feedback"
 import { RecordSectionHeader } from "./record-section-header"
 import { RecordSectionMetric, type RecordSectionMetricValue } from "../metrics/record-section-metric"
 import type { RecordSectionCapabilities, RecordSectionType } from "./record-section-capabilities"

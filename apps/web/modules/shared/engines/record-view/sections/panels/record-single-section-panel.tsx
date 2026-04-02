@@ -2,12 +2,12 @@
 
 import type { ReactNode } from "react"
 import { Fragment, useCallback, useMemo } from "react"
-import { buildRecordActionConfirmationMessage, confirmRecordAction } from "../client"
-import type { RecordDetailClientScaffoldContext } from "../client/record-detail-client-scaffold"
-import type { RecordSectionError } from "../contracts"
-import type { RecordPanelFooterConfig, RecordPanelSectionConfig } from "../panel"
-import { RecordPanelRenderer } from "../panel"
-import { RecordPanelFooter } from "../shell/record-panel-footer"
+import { buildRecordActionConfirmationMessage, confirmRecordAction } from "../../client"
+import type { RecordDetailClientScaffoldContext } from "../../client/scaffolds/record-detail-client-scaffold"
+import type { RecordSectionError } from "../../contracts"
+import type { RecordPanelFooterConfig, RecordPanelSectionConfig } from "../../panel"
+import { RecordPanelRenderer } from "../../panel"
+import { RecordPanelFooter } from "../../shell/record-panel-footer"
 import { RecordFieldSection } from "./record-field-section"
 import { RecordSectionStack } from "../structure/record-section-stack"
 

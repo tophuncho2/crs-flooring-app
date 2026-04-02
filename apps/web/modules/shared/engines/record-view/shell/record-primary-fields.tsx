@@ -88,16 +88,6 @@ export function RecordPrimaryFieldCell({
   return <div className={joinClasses(PRIMARY_FIELD_CELL_SIZE_CLASS_NAMES[size], className)}>{children}</div>
 }
 
-export function PrimaryRecordFieldsGrid({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
-  return <div className={joinClasses("grid gap-4 md:grid-cols-2 xl:grid-cols-4", className)}>{children}</div>
-}
-
 export function RecordStaticFieldValue({
   children,
   hasError = false,
