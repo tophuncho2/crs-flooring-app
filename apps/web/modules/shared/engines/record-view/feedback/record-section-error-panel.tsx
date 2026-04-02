@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { joinRecordSectionClasses } from "../sections/record-section-tokens"
+import { joinRecordSectionClasses } from "../sections/structure/record-section-tokens"
 import type { RecordSectionError } from "../contracts"
 
 function readSectionErrorToneClassName(kind: RecordSectionError["kind"]) {

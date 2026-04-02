@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, type ReactNode } from "react"
 import type { RecordNotices } from "../client/use-record-notices"
 import type { RecordPageSummary } from "../client/use-record-page-controller"
 import { RecordPageActionNotices } from "../feedback/record-page-action-notices"
-import { RecordSectionStack } from "../sections/record-section-stack"
+import { RecordSectionStack } from "../sections/structure/record-section-stack"
 import { RecordPanelFooter } from "../shell/record-panel-footer"
 import type {
   RecordPanelContext,
