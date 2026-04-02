@@ -1,8 +1,8 @@
 import { formatCurrencyValue, sumLineTotals } from "@builders/domain"
-import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
-import type { EditableServiceItem } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
+import type { EditableServiceItem } from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import type { EditableTemplateSalesRep } from "@/modules/templates/domain/sales-reps"
-import type { DisplayCalculationRow } from "@/modules/shared/engines/record-view/line-items/calculation-rows-table"
+import type { DisplayCalculationRow } from "@/modules/shared/engines/record-view/contracts/calculation-row-contracts"
 
 export type TemplateSectionMetricValue = {
   label: string

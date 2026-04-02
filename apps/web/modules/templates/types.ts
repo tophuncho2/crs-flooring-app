@@ -1,5 +1,5 @@
-import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
-import type { EditableServiceItem } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
+import type { EditableServiceItem } from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import type { SalesRepContactOption } from "@/modules/shared/engines/record-view/contracts/record-sales-reps"
 import type { EditableTemplateSalesRep } from "./domain/sales-reps"
 import type { TemplateExpenseSummary } from "./domain/expense-summary"

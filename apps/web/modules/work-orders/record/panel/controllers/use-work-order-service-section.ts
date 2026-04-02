@@ -17,7 +17,7 @@ import {
   type EditableServiceItem,
   type ServiceItemField,
   validateServiceItemFields,
-} from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import {
   areServiceItemsEqual,
   cloneServiceItems,

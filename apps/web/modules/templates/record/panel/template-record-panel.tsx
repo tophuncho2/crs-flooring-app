@@ -23,8 +23,8 @@ import { useTemplateMaterialSection } from "./controllers/use-template-material-
 import { useTemplatePrimarySection } from "./controllers/use-template-primary-section"
 import { useTemplateSalesRepsSection } from "./controllers/use-template-sales-reps-section"
 import { useTemplateServiceSection } from "./controllers/use-template-service-section"
-import type { MaterialItemOption } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
-import type { ServiceOption, UnitOption } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
+import type { ServiceOption, UnitOption } from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import type { SalesRepContactOption, TemplateDetail } from "@/modules/templates/types"
 
 function buildSummaryMetrics(input: {

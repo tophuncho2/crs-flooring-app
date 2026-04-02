@@ -14,7 +14,7 @@ import {
   type EditableSalesRepItem,
   type SalesRepField,
   type SalesRepOption,
-} from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/sales-rep-item-contracts"
 import { formatCurrencyValue } from "@builders/domain"
 import { normalizeEditableDecimalInput } from "@/modules/shared/engines/record-view/contracts/child-item-validation"
 import {

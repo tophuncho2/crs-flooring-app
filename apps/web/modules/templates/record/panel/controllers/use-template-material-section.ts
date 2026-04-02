@@ -17,7 +17,7 @@ import {
   type EditableMaterialItem,
   type MaterialItemField,
   validateMaterialItemFields,
-} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
 import {
   areMaterialItemsEqual,
   cloneMaterialItems,

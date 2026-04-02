@@ -18,7 +18,7 @@ import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "@/mo
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
-} from "@/modules/shared/engines/record-view/sections/record-section-tokens"
+} from "@/modules/shared/engines/record-view/sections/structure/record-section-tokens"
 
 export type AllocationDraft = {
   inventoryId: string

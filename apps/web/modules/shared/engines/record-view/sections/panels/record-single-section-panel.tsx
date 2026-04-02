@@ -9,7 +9,7 @@ import type { RecordPanelFooterConfig, RecordPanelSectionConfig } from "../panel
 import { RecordPanelRenderer } from "../panel"
 import { RecordPanelFooter } from "../shell/record-panel-footer"
 import { RecordFieldSection } from "./record-field-section"
-import { RecordSectionStack } from "./record-section-stack"
+import { RecordSectionStack } from "../structure/record-section-stack"
 
 type SingleSectionState = {
   isDirty: boolean

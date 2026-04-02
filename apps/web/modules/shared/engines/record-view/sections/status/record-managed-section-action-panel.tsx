@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import type { RecordSectionError } from "../contracts"
-import { RecordSectionSubHeader } from "./record-section-sub-header"
+import { RecordSectionSubHeader } from "../structure/record-section-sub-header"
 
 export function RecordManagedSectionActionPanel({
   summary,

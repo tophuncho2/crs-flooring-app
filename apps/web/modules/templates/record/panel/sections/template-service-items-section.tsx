@@ -20,7 +20,7 @@ import type {
   ServiceItemField,
   ServiceOption,
   UnitOption,
-} from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import { TEMPLATE_SERVICE_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateServiceSectionMetrics } from "./template-section-metrics"
 

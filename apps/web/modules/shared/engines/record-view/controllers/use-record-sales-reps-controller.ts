@@ -15,7 +15,7 @@ import {
   type SalesRepDraft,
   type SalesRepField,
   type SalesRepFieldErrors,
-} from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/sales-rep-item-contracts"
 import type { RecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/modules/shared/engines/common/feedback/confirm-delete"
 

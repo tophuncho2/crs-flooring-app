@@ -7,11 +7,11 @@ import { QuantityCell } from "../ui/cells/quantity-cell"
 import { RecordGridCellInput } from "../ui/cells/record-grid-cell-input"
 import { RecordGridCellSelect } from "../ui/cells/record-grid-cell-select"
 import { TextCell } from "../ui/cells/text-cell"
-import { RecordItemCell } from "./record-item-cell"
+import { RecordItemCell } from "../cells/record-item-cell"
 import {
   RecordItemSectionControls,
   type RecordItemSectionControlsProps,
-} from "./record-item-section-controls"
+} from "../panels/record-item-section-controls"
 
 export type RecordRowBuilderOption = {
   value: string

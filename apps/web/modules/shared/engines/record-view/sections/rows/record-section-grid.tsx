@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react"
 import { RecordRowLayout, type RecordGridColumnSpec } from "./record-row-layout"
-import { useRecordScrollSync } from "./record-scroll-sync"
+import { useRecordScrollSync } from "../structure/record-scroll-sync"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
-} from "./record-section-tokens"
+} from "../structure/record-section-tokens"
 
 export function RecordSectionGrid({
   columns,

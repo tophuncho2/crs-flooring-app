@@ -21,7 +21,7 @@ import type {
   EditableMaterialItem,
   MaterialItemField,
   MaterialItemOption,
-} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
 import { WORK_ORDER_MATERIAL_COLUMNS } from "./work-order-line-item-grid"
 import { buildMaterialSectionMetrics } from "./work-order-section-metrics"
 import type { WorkOrderMaterialItem } from "@/modules/work-orders/types"

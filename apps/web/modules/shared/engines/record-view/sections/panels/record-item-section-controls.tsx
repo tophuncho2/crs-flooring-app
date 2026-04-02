@@ -1,11 +1,11 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { RecordItemCell } from "./record-item-cell"
-import { RecordRowDeleteButton } from "./record-row-delete-button"
-import { RecordRowOpenButton } from "./record-row-open-button"
-import { RecordRowToggleButton } from "./record-row-toggle-button"
-import { resolveRecordSectionCapabilities, type RecordSectionCapabilities } from "./record-section-capabilities"
+import { RecordItemCell } from "../cells/record-item-cell"
+import { RecordRowDeleteButton } from "../rows/record-row-delete-button"
+import { RecordRowOpenButton } from "../rows/record-row-open-button"
+import { RecordRowToggleButton } from "../rows/record-row-toggle-button"
+import { resolveRecordSectionCapabilities, type RecordSectionCapabilities } from "../structure/record-section-capabilities"
 
 export type RecordItemSectionControlsProps = {
   capabilities?: RecordSectionCapabilities

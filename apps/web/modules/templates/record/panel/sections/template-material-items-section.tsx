@@ -19,7 +19,7 @@ import type {
   EditableMaterialItem,
   MaterialItemField,
   MaterialItemOption,
-} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
 import { TEMPLATE_MATERIAL_COLUMNS } from "./template-line-item-grid"
 import { buildTemplateMaterialSectionMetrics } from "./template-section-metrics"
 

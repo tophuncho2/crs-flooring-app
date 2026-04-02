@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { RecordSectionStatusBadge } from "./record-section-action-panel"
+import { RecordSectionStatusBadge } from "../status/record-section-action-panel"
 
 export function RecordRowStatusBadge({
   children,

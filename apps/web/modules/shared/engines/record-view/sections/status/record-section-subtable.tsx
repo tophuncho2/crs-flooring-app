@@ -1,1 +1,1 @@
-export * from "@/modules/shared/engines/record-view/sections/record-section-subtable"
+// Placeholder — subtable components have been consolidated into the section grid system.

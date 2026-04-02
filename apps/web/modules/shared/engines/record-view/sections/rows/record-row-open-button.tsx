@@ -1,7 +1,7 @@
 "use client"
 
 import { ExternalLink } from "lucide-react"
-import { joinRecordSectionClasses } from "./record-section-tokens"
+import { joinRecordSectionClasses } from "../structure/record-section-tokens"
 
 export function RecordRowOpenButton({
   onOpen,

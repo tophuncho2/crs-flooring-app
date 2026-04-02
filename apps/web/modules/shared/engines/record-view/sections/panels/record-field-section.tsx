@@ -6,16 +6,16 @@ import { RecordFormNotices } from "../feedback"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
-} from "./record-section-tokens"
-import { RecordSectionShell } from "./record-section-shell"
+} from "../structure/record-section-tokens"
+import { RecordSectionShell } from "../structure/record-section-shell"
 import {
   RecordSectionSubHeader,
   type RecordSectionSubHeaderProps,
-} from "./record-section-sub-header"
+} from "../structure/record-section-sub-header"
 import {
   resolveRecordSectionCapabilities,
   type RecordSectionCapabilities,
-} from "./record-section-capabilities"
+} from "../structure/record-section-capabilities"
 
 export type RecordFieldSectionProps = {
   title: string

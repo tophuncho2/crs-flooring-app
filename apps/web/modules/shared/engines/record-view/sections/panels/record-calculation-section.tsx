@@ -4,13 +4,13 @@ import type { ReactNode } from "react"
 import {
   resolveRecordSectionCapabilities,
   type RecordSectionCapabilities,
-} from "./record-section-capabilities"
+} from "../structure/record-section-capabilities"
 import { RecordItemSection } from "./record-item-section"
-import { RecordSectionGrid, RecordSectionGridRow } from "./record-section-grid"
-import type { RecordSectionMetricValue } from "./record-section-metric"
-import type { RecordSectionSubHeaderProps } from "./record-section-sub-header"
-import { RECORD_SECTION_BORDER_CLASS_NAME } from "./record-section-tokens"
-import type { RecordGridColumnSpec } from "./record-row-layout"
+import { RecordSectionGrid, RecordSectionGridRow } from "../rows/record-section-grid"
+import type { RecordSectionMetricValue } from "../metrics/record-section-metric"
+import type { RecordSectionSubHeaderProps } from "../structure/record-section-sub-header"
+import { RECORD_SECTION_BORDER_CLASS_NAME } from "../structure/record-section-tokens"
+import type { RecordGridColumnSpec } from "../rows/record-row-layout"
 
 export function RecordCalculationSection<TItem>({
   title,

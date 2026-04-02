@@ -5,7 +5,7 @@ import { RecordRowLayout, type RecordGridLayout } from "./record-row-layout"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
-} from "./record-section-tokens"
+} from "../structure/record-section-tokens"
 
 export function RecordScopedRow({
   layout,

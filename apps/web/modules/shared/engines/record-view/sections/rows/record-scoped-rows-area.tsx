@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { joinRecordSectionClasses } from "./record-section-tokens"
+import { joinRecordSectionClasses } from "../structure/record-section-tokens"
 
 export function RecordScopedRowsArea({
   children,

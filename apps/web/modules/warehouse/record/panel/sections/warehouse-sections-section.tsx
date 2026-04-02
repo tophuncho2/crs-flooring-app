@@ -17,7 +17,7 @@ import {
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
-} from "@/modules/shared/engines/record-view/sections/record-section-tokens"
+} from "@/modules/shared/engines/record-view/sections/structure/record-section-tokens"
 import type { WarehouseLocationDraft, WarehouseSectionDraft } from "../../../types"
 import { WAREHOUSE_LOCATION_COLUMNS, WAREHOUSE_SECTION_COLUMNS } from "./warehouse-item-grid"
 

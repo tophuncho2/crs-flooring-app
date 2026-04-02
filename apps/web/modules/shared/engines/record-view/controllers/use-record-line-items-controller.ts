@@ -15,14 +15,14 @@ import {
   type MaterialItemDraft,
   type MaterialItemField,
   type MaterialItemFieldErrors,
-} from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
 import {
   validateServiceItemFields,
   type EditableServiceItem,
   type ServiceItemDraft,
   type ServiceItemField,
   type ServiceItemFieldErrors,
-} from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import type { RecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
 import { buildDeleteConfirmationMessage, confirmRecordDelete } from "@/modules/shared/engines/common/feedback/confirm-delete"
 

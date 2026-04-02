@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { WorkOrderMaterialItemsSection } from "@/modules/work-orders/record/panel/sections/work-order-material-items-section"
-import type { MaterialItemDraft } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
+import type { MaterialItemDraft } from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
 import type { WorkOrderMaterialItem } from "@/modules/work-orders/types"
 
 afterEach(() => {

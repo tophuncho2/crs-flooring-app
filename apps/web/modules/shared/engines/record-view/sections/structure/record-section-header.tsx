@@ -7,7 +7,7 @@ import {
   RECORD_SECTION_HEADER_HOVER_CLASS_NAME,
   RECORD_SECTION_HEADER_SURFACE_CLASS_NAME,
 } from "./record-section-tokens"
-import { RecordSectionMetricsGroup } from "./record-section-metrics-group"
+import { RecordSectionMetricsGroup } from "../metrics/record-section-metrics-group"
 
 export function RecordSectionHeader({
   title,

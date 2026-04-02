@@ -69,7 +69,7 @@ describe("record view feature alignment", () => {
 
   it("keeps the scoped field-section path on RecordFieldSection instead of RecordPrimarySectionInstance", async () => {
     const engineFiles = [
-      "apps/web/modules/shared/engines/record-view/sections/record-single-section-panel.tsx",
+      "apps/web/modules/shared/engines/record-view/sections/panels/record-single-section-panel.tsx",
       "apps/web/modules/work-orders/record/panel/work-order-record-panel.tsx",
       "apps/web/modules/templates/record/panel/template-record-panel.tsx",
     ]

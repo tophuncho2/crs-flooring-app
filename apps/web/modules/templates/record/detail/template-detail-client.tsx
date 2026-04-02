@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold } from "@/modules/shared/engines/record-view"
-import type { MaterialItemOption } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
-import type { ServiceOption, UnitOption } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { MaterialItemOption } from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
+import type { ServiceOption, UnitOption } from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import { TemplateRecordPanel } from "../panel/template-record-panel"
 import type { SalesRepContactOption, TemplateDetail } from "@/modules/templates/types"
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { TextCell } from "./text-cell"
+import { TextCell } from "../cells/text-cell"
 
 export function RecordRowOpenIndicator({
   loading = false,

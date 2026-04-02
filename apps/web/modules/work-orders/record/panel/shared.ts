@@ -5,8 +5,8 @@ import {
   isLocalOnlyRecordRow,
   type RecordSectionWorkflowPhase,
 } from "@/modules/shared/engines/record-view"
-import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/line-items/material-items-editor"
-import type { EditableServiceItem } from "@/modules/shared/engines/record-view/line-items/service-items-editor"
+import type { EditableMaterialItem } from "@/modules/shared/engines/record-view/contracts/material-item-contracts"
+import type { EditableServiceItem } from "@/modules/shared/engines/record-view/contracts/service-item-contracts"
 import { reconcileMaterialItemDraft } from "@/modules/work-orders/domain/material-allocations"
 import type {
   DraftWorkOrder,

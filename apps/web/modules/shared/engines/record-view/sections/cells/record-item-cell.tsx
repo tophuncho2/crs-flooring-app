@@ -3,8 +3,8 @@ import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
   RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
-} from "./record-section-tokens"
-import { getRecordRowColumnStyle, useRecordRowColumn } from "./record-row-layout"
+} from "../structure/record-section-tokens"
+import { getRecordRowColumnStyle, useRecordRowColumn } from "../rows/record-row-layout"
 
 export function RecordItemCell({
   label,

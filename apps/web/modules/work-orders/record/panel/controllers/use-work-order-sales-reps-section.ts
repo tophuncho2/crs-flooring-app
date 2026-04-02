@@ -17,7 +17,7 @@ import {
   type EditableSalesRepItem,
   type SalesRepField,
   validateSalesRepFields,
-} from "@/modules/shared/engines/record-view/line-items/sales-rep-items-editor"
+} from "@/modules/shared/engines/record-view/contracts/sales-rep-item-contracts"
 import {
   areSalesRepItemsEqual,
   cloneSalesRepItems,

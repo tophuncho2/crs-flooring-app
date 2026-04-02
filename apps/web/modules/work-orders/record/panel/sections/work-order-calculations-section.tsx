@@ -7,7 +7,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { WORK_ORDER_CALCULATION_COLUMNS } from "./work-order-line-item-grid"
 import { buildCalculationSectionMetrics } from "./work-order-section-metrics"
-import { type DisplayCalculationRow } from "@/modules/shared/engines/record-view/line-items/calculation-rows-table"
+import { type DisplayCalculationRow } from "@/modules/shared/engines/record-view/contracts/calculation-row-contracts"
 export function WorkOrderCalculationsSection({
   title,
   items,

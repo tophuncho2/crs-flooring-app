@@ -7,8 +7,8 @@ import {
   RecordFooterNeutralButton,
   RecordFooterPrimaryButton,
 } from "../shell/record-action-buttons"
-import { RecordSectionActionPanel } from "./record-section-action-panel"
-import { RecordSectionSaveStateIndicators } from "./record-section-status-indicators"
+import { RecordSectionActionPanel } from "../status/record-section-action-panel"
+import { RecordSectionSaveStateIndicators } from "../status/record-section-status-indicators"
 import {
   resolveRecordSectionCapabilities,
   type RecordSectionCapabilities,

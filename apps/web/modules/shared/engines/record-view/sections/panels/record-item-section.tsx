@@ -4,15 +4,15 @@ import type { ReactNode } from "react"
 import {
   resolveRecordSectionCapabilities,
   type RecordSectionCapabilities,
-} from "./record-section-capabilities"
-import { RecordSectionShell } from "./record-section-shell"
-import type { RecordSectionMetricValue } from "./record-section-metric"
+} from "../structure/record-section-capabilities"
+import { RecordSectionShell } from "../structure/record-section-shell"
+import type { RecordSectionMetricValue } from "../metrics/record-section-metric"
 import {
   RecordSectionSubHeader,
   type RecordSectionSubHeaderProps,
-} from "./record-section-sub-header"
-import { RecordScrollSyncProvider } from "./record-scroll-sync"
-import { RECORD_SECTION_BORDER_CLASS_NAME } from "./record-section-tokens"
+} from "../structure/record-section-sub-header"
+import { RecordScrollSyncProvider } from "../structure/record-scroll-sync"
+import { RECORD_SECTION_BORDER_CLASS_NAME } from "../structure/record-section-tokens"
 
 export type RecordItemSectionProps = {
   title: string
