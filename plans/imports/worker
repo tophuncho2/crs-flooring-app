@@ -1,0 +1,15 @@
+Imports PROCESSING
+
+1. User navigates to imports list view
+2. Creates import
+3. Fills in primary fields
+4. saves
+5. Staged Inventory imports section appears
+6. User fills adds rows to the staged import rows. 
+7. Once shipment arrives. Users activate the worker from the import record view to import all or individual rows to the inventory. 
+8. Once all rows are imported the import is marked complete and inventory rows are useable
+
+
+Rules
+- Use a staged inventory import rows
+- Worker copies those rows to inventory and uses correct fields. 
