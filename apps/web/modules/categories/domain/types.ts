@@ -44,6 +44,10 @@ export function normalizeCategoryName(value: string) {
   return value.trim()
 }
 
+export function validateCategoryForm(input: CategoryForm) {
+  return normalizeCategoryName(input.name) ? "" : "Category name is required"
+}
+
 export function toCategoryForm(category: CategoryRow): CategoryForm {
   return {
     name: category.name,

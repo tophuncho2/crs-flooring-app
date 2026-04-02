@@ -1,12 +1,13 @@
 "use client"
 
 import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME, FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TableActionsSummary, TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
-import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
+import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
+import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
+import { useListViewEngine } from "@/modules/shared/engines/list-view/controllers/use-list-view-engine"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
@@ -32,35 +33,19 @@ export default function UnitOfMeasuresClient({
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
   const navigation = useRecordEntryNavigation("/dashboard/unit-of-measures")
-  const {
-    isAscendingSort,
-    isGroupingEnabled,
-    filteredRows,
-    sortedRows,
-    groupedRowTree,
-    page,
-    pageSize,
-    totalPages,
-    hasPreviousPage,
-    hasNextPage,
-    goToPreviousPage,
-    goToNextPage,
-    visibleColumns,
-    onToggleSort,
-  } = useConfiguredTableState({
+  const UOM_FIELDS = [
+    { key: "name", label: "Unit Of Measure", getValue: (row: UnitOfMeasureRow) => row.name, groupable: true },
+    { key: "createdAt", label: "Created", getValue: (row: UnitOfMeasureRow) => row.createdAt, groupable: false },
+  ]
+  const engine = useListViewEngine({
     rows: controller.rows,
     tableKey: "unit-of-measures-main",
-    fields: [
-      { key: "name", label: "Unit Of Measure", getValue: (row) => row.name, groupable: true },
-      { key: "createdAt", label: "Created", getValue: (row) => row.createdAt, groupable: false },
-    ],
+    fields: UOM_FIELDS,
     sortField: (row) => row.name,
     sortFieldKey: "name",
     initialSearchQuery: tableState.searchQuery,
-    defaultGrouped: tableState.isGroupingEnabled,
-    defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
-    urlSyncMode: "history",
+    defaultGroupKeys: tableState.groupByKeys,
     initialPreferences: initialTablePreferences,
   })
 
@@ -69,21 +54,11 @@ export default function UnitOfMeasuresClient({
       <DashboardListPageScaffold
         title={<DashboardCardTitle>Unit Of Measures</DashboardCardTitle>}
         controls={
-          <TableActionsSummary count={filteredRows.length}>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <button
-                type="button"
-                onClick={onToggleSort}
-                className={[
-                  "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition",
-                  isAscendingSort
-                    ? `border-blue-500 ${FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME}`
-                    : "border-[var(--panel-border)] text-[var(--foreground)] hover:bg-[var(--panel-hover)]",
-                ].join(" ")}
-              >
-                {isAscendingSort ? "A-Z" : "Z-A"}
-              </button>
-              {canManage && (
+          <DashboardListPageControls
+            engine={engine}
+            searchPlaceholder="Search units of measure..."
+            formSlot={
+              canManage ? (
                 <button
                   type="button"
                   onClick={() => navigation.openCreate()}
@@ -92,30 +67,33 @@ export default function UnitOfMeasuresClient({
                   <Plus size={16} />
                   Unit Of Measure
                 </button>
-              )}
-            </div>
-          </TableActionsSummary>
+              ) : undefined
+            }
+          />
         }
         notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
         table={
           <UnitOfMeasuresTable
-            rows={sortedRows}
-            visibleColumns={visibleColumns}
-            groupedRows={groupedRowTree as GroupedRowTree<UnitOfMeasureRow>[]}
-            isGroupingEnabled={isGroupingEnabled}
+            rows={engine.processedRows}
+            visibleColumns={engine.visibleColumns.map((key) => ({
+              key,
+              label: UOM_FIELDS.find((f) => f.key === key)?.label ?? key,
+            }))}
+            groupedRows={engine.groupedRowTree as GroupedRowTree<UnitOfMeasureRow>[]}
+            isGroupingEnabled={engine.isGroupingEnabled}
             onOpen={(row) => navigation.openRecord(row.id)}
           />
         }
         pagination={
           <TablePaginationControls
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredRows.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
+            page={engine.page}
+            totalPages={engine.totalPages}
+            pageSize={engine.pageSize}
+            totalItems={engine.processedRows.length}
+            hasPreviousPage={engine.hasPreviousPage}
+            hasNextPage={engine.hasNextPage}
+            onPreviousPage={engine.goToPreviousPage}
+            onNextPage={engine.goToNextPage}
           />
         }
       />

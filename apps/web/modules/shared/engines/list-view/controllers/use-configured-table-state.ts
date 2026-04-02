@@ -186,6 +186,10 @@ function sortFilterValuesByDefinition(definition: TableFilterDefinition, selecte
   return [...selectedValues].sort((left, right) => (optionOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (optionOrder.get(right) ?? Number.MAX_SAFE_INTEGER))
 }
 
+/**
+ * @deprecated Use `useListViewEngine` for new list views. This hook is the underlying
+ * implementation — consume it through the engine facade, not directly.
+ */
 export function useConfiguredTableState<T>({
   rows,
   tableKey,
@@ -411,7 +415,7 @@ export function useConfiguredTableState<T>({
         filters,
       )
       lastSearchQueryRef.current = tableControls.searchQuery
-    }, 250)
+    }, 300)
 
     return () => {
       if (searchDebounceTimerRef.current) {
