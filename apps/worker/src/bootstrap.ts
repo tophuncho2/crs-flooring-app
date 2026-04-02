@@ -2,9 +2,10 @@ import { getDatabaseEnvironment } from "@builders/db"
 import {
   WORK_ORDER_AUTO_ALLOCATION_QUEUE,
   parseAutoAllocateWorkOrderJob,
+  isWorkflowProcessingError,
   type AutoAllocateWorkOrderJobV1,
 } from "@builders/domain"
-import { QueueEvents, Worker } from "bullmq"
+import { QueueEvents, UnrecoverableError, Worker } from "bullmq"
 import { logStructuredEvent } from "@builders/lib"
 import { getWorkerEnvironment } from "./env.js"
 import { createWorkOrderAutoAllocationProcessor } from "./processors/process-work-order-auto-allocation.js"
@@ -17,11 +18,19 @@ async function main() {
   const processAutoAllocation = createWorkOrderAutoAllocationProcessor()
   const autoAllocationWorker = new Worker<AutoAllocateWorkOrderJobV1>(
     WORK_ORDER_AUTO_ALLOCATION_QUEUE,
-    async (job) =>
-      processAutoAllocation(parseAutoAllocateWorkOrderJob(job.data), env, {
-        attemptNumber: job.attemptsMade + 1,
-        maxAttempts: typeof job.opts.attempts === "number" ? job.opts.attempts : 1,
-      }),
+    async (job) => {
+      try {
+        return await processAutoAllocation(parseAutoAllocateWorkOrderJob(job.data), env, {
+          attemptNumber: job.attemptsMade + 1,
+          maxAttempts: typeof job.opts.attempts === "number" ? job.opts.attempts : 1,
+        })
+      } catch (error) {
+        if (isWorkflowProcessingError(error) && !error.retryable) {
+          throw new UnrecoverableError(error.message)
+        }
+        throw error
+      }
+    },
     {
       connection,
       concurrency: env.autoAllocationWorkerConcurrency,
@@ -119,6 +128,12 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error)
+  logStructuredEvent({
+    level: "error",
+    service: "worker",
+    message: "Worker fatal startup error",
+    action: "worker.fatal",
+    error,
+  })
   process.exitCode = 1
 })

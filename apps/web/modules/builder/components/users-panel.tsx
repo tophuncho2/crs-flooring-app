@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { DASHBOARD_PAGE_SHELL_DENSE_CLASS_NAME, DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
 import { formatStableDate, formatStableDateTime } from "@builders/domain"
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
+import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 
 type UserRow = {
   id: string
@@ -121,7 +122,7 @@ export default function BuilderUsersPanel() {
       const payload = await requestJson<{ user: UserRow }>(`/api/builder/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
+        body: JSON.stringify(withMutationMeta(next as Record<string, unknown>)),
       })
 
       setUsers((prev) => prev.map((user) => (user.id === userId ? payload.user : user)))
@@ -147,6 +148,8 @@ export default function BuilderUsersPanel() {
     try {
       await requestJson<{ success: boolean }>(`/api/builder/users/${userId}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withMutationMeta({})),
       })
 
       setUsers((prev) => prev.filter((user) => user.id !== userId))

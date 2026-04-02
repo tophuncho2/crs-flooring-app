@@ -1,6 +1,6 @@
-import { authorizeProductsRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { enforceRouteRateLimit, routeJson } from "@/server/http/route-helpers"
+import { applyRoutePolicy } from "@/server/http/route-policy"
+import { routeJson } from "@/server/http/route-helpers"
 import { uploadFileToBucket } from "@/server/storage/s3"
 
 function sanitizeFileName(value: string) {
@@ -59,17 +59,17 @@ function extensionForContentType(contentType: string) {
 }
 
 export async function POST(request: Request) {
-  const access = await authorizeProductsRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "uploads.productPhoto",
-    identifier: access.user.id,
-    limit: 25,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/product-photos",
+  const access = await applyRoutePolicy(request, {
+    toolSlug: "products",
+    rateLimit: {
+      scope: "uploads.productPhoto",
+      limit: 25,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/product-photos",
+      identifier: (context) => context.user.id,
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const formData = await request.formData()

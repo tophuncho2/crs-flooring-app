@@ -35,7 +35,7 @@ import type {
   WorkOrderServerFilterState,
 } from "../types"
 import { createWorkOrdersPageFilterDefinitions } from "../table-filters"
-import { useWorkOrdersClientController } from "./use-work-orders-client-controller"
+import { useWorkOrdersClientController } from "../controllers/use-work-orders-list-controller"
 import { WorkOrderSyncModal } from "../components/work-order-sync-modal"
 
 function workOrderStatusText(row: Pick<WorkOrderRow, "status" | "isComplete" | "hasShortage">) {

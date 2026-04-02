@@ -75,6 +75,12 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error)
+  logStructuredEvent({
+    level: "error",
+    service: "relay",
+    message: "Relay fatal startup error",
+    action: "relay.fatal",
+    error,
+  })
   process.exitCode = 1
 })

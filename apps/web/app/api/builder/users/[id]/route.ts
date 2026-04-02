@@ -1,7 +1,7 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { deleteManagedUser, normalizeManagedUserUpdateInput, updateManagedUser } from "@/server/builder/users"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy } from "@/server/http/route-policy"
+import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -22,7 +22,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const { id } = await params
 
   try {
-    const body = await request.json().catch(() => null)
+    const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, normalizeManagedUserUpdateInput)
+
+    const receipt = await enforceMutationReceipt({
+      scope: "users.update",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
     const user = await withMutationTelemetry(
       access,
       {
@@ -32,10 +43,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "user",
         entityId: id,
       },
-      () => updateManagedUser(access.user, id, normalizeManagedUserUpdateInput(body)),
+      () => updateManagedUser(access.user, id, input),
     )
 
-    return routeJson(access, { user })
+    const responseBody = { user }
+    await finalizeMutationReceipt({
+      scope: "users.update",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }
@@ -56,6 +75,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   const { id } = await params
 
   try {
+    const body = (await request.json()) as Record<string, unknown>
+    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value)
+
+    const receipt = await enforceMutationReceipt({
+      scope: "users.delete",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
     await withMutationTelemetry(
       access,
       {
@@ -68,7 +99,15 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       () => deleteManagedUser(access.user, id),
     )
 
-    return routeJson(access, { success: true })
+    const responseBody = { success: true as const }
+    await finalizeMutationReceipt({
+      scope: "users.delete",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }

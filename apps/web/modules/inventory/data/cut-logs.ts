@@ -87,6 +87,14 @@ export async function getCutLogTarget(id: string, db: DataAccessContext = prisma
   })
 }
 
+export async function getCutLogById(id: string, db: DataAccessContext = prisma) {
+  const cutLog = await db.flooringCutLog.findUniqueOrThrow({
+    where: { id },
+    select: { id: true, inventoryId: true, updatedAt: true },
+  })
+  return { ...cutLog, updatedAt: cutLog.updatedAt.toISOString() }
+}
+
 export async function getCutLogRebalanceState(
   inventoryId: string,
   excludingCutLogId: string,

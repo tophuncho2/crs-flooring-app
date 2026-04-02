@@ -1,21 +1,31 @@
 import { deleteInventoryRow } from "@/modules/inventory/api"
 import { updateInventoryDetailUseCase } from "@/modules/inventory/application/inventory-detail"
 import { getInventoryById } from "@/modules/inventory/data/queries"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
-  enforceRouteRateLimit,
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  requireRouteAccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+  applyRoutePolicy,
+  assertExpectedUpdatedAt,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: "warehouse",
+    rateLimit: {
+      scope: "query",
+      limit: 100,
+      windowMs: 60 * 1000,
+      route: "/api/inventory/[id]",
+    },
+  })
   if (access instanceof Response) return access
 
   try {
@@ -26,86 +36,127 @@ export async function GET(request: Request, context: RouteContext) {
   }
 }
 
-export async function PATCH(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+export async function PATCH(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    toolSlug: "warehouse",
+    rateLimit: {
+      scope: "inventory.write",
+      limit: 60,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/inventory/[id]",
+    },
+  })
   if (access instanceof Response) return access
 
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "inventory.write",
-    limit: 60,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/inventory/[id]",
-  })
-  if (rateLimitResponse) return rateLimitResponse
-
   try {
-    const { id } = await context.params
+    const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
-    const inventory = await updateInventoryDetailUseCase(id, body)
-    logRouteMutationSuccess(access, {
-      message: "Inventory updated",
-      action: "inventory.update",
-      route: "/api/inventory/[id]",
-      entityType: "flooringInventory",
-      entityId: inventory.id,
-      details: {
-        productId: inventory.productId,
-        locationId: inventory.locationId,
-      },
+    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody, {
+      requireExpectedUpdatedAt: true,
     })
 
-    return routeJson(access, { inventory })
-  } catch (error) {
-    logRouteMutationFailure(
+    const currentSnapshot = await getInventoryById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { inventory: currentSnapshot },
+      message: "Inventory changed before save completed. Refresh and try again.",
+    })
+
+    const receipt = await enforceMutationReceipt({
+      scope: "inventory.update",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
+    await withMutationTelemetry(
       access,
       {
-        message: "Inventory update failed",
-        action: "inventory.update.error",
+        message: "Inventory updated",
+        action: "inventory.update",
         route: "/api/inventory/[id]",
         entityType: "flooringInventory",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => updateInventoryDetailUseCase(id, input),
     )
+
+    const snapshot = await getInventoryById(id)
+    const responseBody = { inventory: snapshot }
+    await finalizeMutationReceipt({
+      scope: "inventory.update",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
     return routeError(access, error)
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
-  const access = await requireRouteAccess(request, { capability: "system.access", toolSlug: "warehouse" })
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    toolSlug: "warehouse",
+    rateLimit: {
+      scope: "inventory.delete",
+      limit: 40,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/inventory/[id]",
+    },
+  })
   if (access instanceof Response) return access
 
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "inventory.delete",
-    limit: 40,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/inventory/[id]",
-  })
-  if (rateLimitResponse) return rateLimitResponse
-
   try {
-    const { id } = await context.params
-    await deleteInventoryRow(undefined, id)
-    logRouteMutationSuccess(access, {
-      message: "Inventory deleted",
-      action: "inventory.delete",
-      route: "/api/inventory/[id]",
-      entityType: "flooringInventory",
-      entityId: id,
+    const { id } = await params
+    const body = (await request.json()) as Record<string, unknown>
+    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+      requireExpectedUpdatedAt: true,
     })
-    return routeJson(access, { ok: true })
-  } catch (error) {
-    logRouteMutationFailure(
+
+    const currentSnapshot = await getInventoryById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { inventory: currentSnapshot },
+      message: "Inventory changed before delete completed. Refresh and try again.",
+    })
+
+    const receipt = await enforceMutationReceipt({
+      scope: "inventory.delete",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
+    await withMutationTelemetry(
       access,
       {
-        message: "Inventory deletion failed",
-        action: "inventory.delete.error",
+        message: "Inventory deleted",
+        action: "inventory.delete",
         route: "/api/inventory/[id]",
         entityType: "flooringInventory",
-        entityId: (await context.params).id,
+        entityId: id,
       },
-      error,
+      () => deleteInventoryRow(undefined, id),
     )
+
+    const responseBody = { ok: true as const }
+    await finalizeMutationReceipt({
+      scope: "inventory.delete",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
     return routeError(access, error)
   }
 }

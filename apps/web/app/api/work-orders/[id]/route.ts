@@ -9,6 +9,7 @@ import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
@@ -20,6 +21,9 @@ type RouteContext = {
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await authorizeWorkOrdersRoute(request, { capability: "workOrders.read" })
   if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/work-orders/[id]")
+  if (rateLimited) return rateLimited
 
   try {
     const { id } = await params

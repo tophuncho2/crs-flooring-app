@@ -1,4 +1,4 @@
-import { getRuntimeEnvironmentLabel, getRuntimeServiceName } from "@/server/platform/env"
+import { logStructuredEvent } from "@builders/lib"
 
 type LogLevel = "info" | "warn" | "error"
 
@@ -17,42 +17,23 @@ type StructuredLogEvent = {
   error?: unknown
 }
 
-function serializeError(error: unknown) {
-  if (!error) {
-    return undefined
-  }
-
-  if (error instanceof Error) {
-    return {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-    }
-  }
-
-  return error
-}
-
 export function logEvent(event: StructuredLogEvent) {
-  const level = event.level ?? "info"
-  const payload = {
-    timestamp: new Date().toISOString(),
-    level,
-    environment: getRuntimeEnvironmentLabel(),
-    service: getRuntimeServiceName(),
-    message: event.message,
-    action: event.action,
-    route: event.route,
-    requestId: event.requestId,
-    userId: event.userId,
-    userEmail: event.userEmail,
-    clientIp: event.clientIp,
-    entityType: event.entityType,
-    entityId: event.entityId,
-    details: event.details,
-    error: serializeError(event.error),
+  const { route, userId, userEmail, clientIp, entityType, entityId, details, ...rest } = event
+
+  const extraDetails: Record<string, unknown> = {
+    ...details,
+    ...(route != null && { route }),
+    ...(userId != null && { userId }),
+    ...(userEmail != null && { userEmail }),
+    ...(clientIp != null && { clientIp }),
+    ...(entityType != null && { entityType }),
+    ...(entityId != null && { entityId }),
   }
 
-  const logger = level === "error" ? console.error : level === "warn" ? console.warn : console.info
-  logger(JSON.stringify(payload))
+  logStructuredEvent({
+    ...rest,
+    service: "web",
+    environment: process.env.NODE_ENV ?? "development",
+    details: Object.keys(extraDetails).length > 0 ? extraDetails : undefined,
+  })
 }

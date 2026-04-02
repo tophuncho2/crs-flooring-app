@@ -1,6 +1,5 @@
 export * from "./queue/send-work-order.js"
 export * from "./queue/sync-inventory.js"
-export * from "./queue/template-to-work-order.js"
 export * from "./queue/auto-allocate-work-order.js"
 export * from "./queue/workflow-processing.js"
 export * from "./shared/address-helpers.js"

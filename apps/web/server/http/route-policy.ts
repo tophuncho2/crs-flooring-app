@@ -82,6 +82,19 @@ function buildMutationRequestHash(input: {
     .digest("hex")
 }
 
+export async function enforceQueryRateLimit(
+  request: Request,
+  access: AuthorizedRouteContext,
+  route: string,
+): Promise<Response | null> {
+  return enforceRouteRateLimit(request, access, {
+    scope: "query",
+    limit: 100,
+    windowMs: 60 * 1000,
+    route,
+  })
+}
+
 export async function applyRoutePolicy(
   request: Request,
   policy: RoutePolicy = {},

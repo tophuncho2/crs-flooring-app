@@ -5,11 +5,14 @@ import { withWorkOrderCapabilities } from "@/modules/work-orders/transport/detai
 import { validateCreateWorkOrderInput } from "@/modules/work-orders/validators"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
   const access = await authorizeWorkOrdersRoute(request, { capability: "workOrders.read" })
   if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/work-orders")
+  if (rateLimited) return rateLimited
 
   try {
     return routeJson(access, {

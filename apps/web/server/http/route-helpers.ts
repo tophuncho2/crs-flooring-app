@@ -1,7 +1,6 @@
 import type { Capability } from "@/server/auth/access-control"
 import { authorizeRouteAccess, type AuthorizedRouteContext } from "@/server/auth/route-auth"
 import { normalizePrismaError } from "@/server/http/api-helpers"
-import { logEvent } from "@/server/platform/logger"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
 import { jsonWithRequestId } from "@/server/platform/request-context"
 import type { ToolSlug } from "@/server/platform/tool-access"
@@ -20,15 +19,10 @@ type RateLimitOptions = {
   route: string
 }
 
-type MutationLogOptions = {
-  message: string
-  action: string
-  route: string
-  entityType?: string
-  entityId?: string
-  details?: Record<string, unknown>
-}
-
+/**
+ * @deprecated Use applyRoutePolicy() from route-policy.ts
+ * @see apps/web/server/http/route-policy.ts
+ */
 export async function requireRouteAccess(
   request: Request,
   options: RouteAccessOptions = {},
@@ -37,6 +31,10 @@ export async function requireRouteAccess(
   return result
 }
 
+/**
+ * @deprecated Use applyRoutePolicy() from route-policy.ts
+ * @see apps/web/server/http/route-policy.ts
+ */
 export async function enforceRouteRateLimit(
   request: Request,
   context: AuthorizedRouteContext,
@@ -74,50 +72,4 @@ export function routeError(context: Pick<AuthorizedRouteContext, "requestId">, e
     context.requestId,
     { status: normalized.status },
   )
-}
-
-export function logRouteMutationSuccess(
-  context: AuthorizedRouteContext,
-  { message, action, route, entityType, entityId, details }: MutationLogOptions,
-) {
-  logEvent({
-    message,
-    action,
-    route,
-    requestId: context.requestId,
-    userId: context.user.id,
-    userEmail: context.user.email,
-    clientIp: context.clientIp,
-    entityType,
-    entityId,
-    details,
-  })
-}
-
-export function logRouteMutationFailure(
-  context: AuthorizedRouteContext,
-  {
-    message,
-    action,
-    route,
-    entityType,
-    entityId,
-    details,
-  }: MutationLogOptions,
-  error: unknown,
-) {
-  logEvent({
-    level: "error",
-    message,
-    action,
-    route,
-    requestId: context.requestId,
-    userId: context.user.id,
-    userEmail: context.user.email,
-    clientIp: context.clientIp,
-    entityType,
-    entityId,
-    details,
-    error,
-  })
 }

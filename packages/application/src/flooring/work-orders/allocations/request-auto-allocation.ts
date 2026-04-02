@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@builders/db"
 import {
   WORK_ORDER_AUTO_ALLOCATION_AGGREGATE_TYPE,
   WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC,

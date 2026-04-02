@@ -1,5 +1,6 @@
 "use client"
 
+import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   DndContext,
@@ -143,7 +144,7 @@ export default function FlooringToolsMenu({
     const response = await fetch("/api/account/flooring-nav", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visibleSlugs: nextVisibleSlugs, orderedSlugs: nextOrderedSlugs }),
+      body: JSON.stringify(withMutationMeta({ visibleSlugs: nextVisibleSlugs, orderedSlugs: nextOrderedSlugs })),
       keepalive: true,
     })
 

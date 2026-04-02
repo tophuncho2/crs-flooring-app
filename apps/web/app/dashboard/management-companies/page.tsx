@@ -2,7 +2,7 @@ import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { getManagementCompaniesPageData } from "@/modules/management-companies/queries"
+import { getManagementCompaniesPageData } from "@/modules/management-companies/data/queries"
 import ManagementCompaniesClient from "@/modules/management-companies/components/management-companies-client"
 
 export default async function ManagementCompaniesPage({

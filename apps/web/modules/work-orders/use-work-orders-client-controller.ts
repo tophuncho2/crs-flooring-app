@@ -1,1 +1,1 @@
-export * from "@/modules/work-orders/list/use-work-orders-client-controller"
+export * from "./controllers/use-work-orders-list-controller"

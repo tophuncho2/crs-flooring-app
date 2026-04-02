@@ -1,5 +1,6 @@
 "use client"
 
+import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import type { TableFilterPreferenceMap, TablePreferencePayload } from "./table-preferences"
 
 export type TablePreferencePatch = Partial<TablePreferencePayload>
@@ -38,13 +39,13 @@ export async function patchTablePreference({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       signal: requestAbortController.signal,
-      body: JSON.stringify({
+      body: JSON.stringify(withMutationMeta({
         state,
         ...(allowedColumnKeys ? { allowedColumnKeys } : {}),
         ...(allowedSortKeys ? { allowedSortKeys } : {}),
         ...(allowedGroupKeys ? { allowedGroupKeys } : {}),
         ...(allowedFilterValues ? { allowedFilterValues } : {}),
-      }),
+      })),
     })
     const payload = (await response.json().catch(() => ({}))) as { error?: string }
 

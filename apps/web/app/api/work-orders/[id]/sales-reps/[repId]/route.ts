@@ -1,15 +1,10 @@
-import { authorizeWorkOrdersRoute } from "@/modules/shared/access/templates-work-orders"
 import { createAppError } from "@/server/http/api-helpers"
 import { withWorkOrderCapabilities } from "@/modules/work-orders/transport/detail"
-import {
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import { deleteWorkOrderSalesRep, updateWorkOrderSalesRep } from "@/modules/work-orders/mutations"
 import { getWorkOrderById } from "@/modules/work-orders/queries"
 import { validateUpdateWorkOrderSalesRepInput } from "@/modules/work-orders/validators"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
@@ -62,16 +57,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (receipt.replay) {
       return receipt.replay
     }
-    const item = await updateWorkOrderSalesRep(repId, input)
+    const item = await withMutationTelemetry(
+      access,
+      {
+        message: "Work order sales rep updated",
+        action: "workOrders.salesReps.update",
+        route: "/api/work-orders/[id]/sales-reps/[repId]",
+        entityType: "flooringWorkOrderSalesRep",
+        entityId: repId,
+      },
+      () => updateWorkOrderSalesRep(repId, input),
+    )
     const nextSnapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
-    logRouteMutationSuccess(access, {
-      message: "Work order sales rep updated",
-      action: "workOrders.salesReps.update",
-      route: "/api/work-orders/[id]/sales-reps/[repId]",
-      entityType: "flooringWorkOrderSalesRep",
-      entityId: item.id,
-      details: { contactId: item.contactId },
-    })
     const responseBody = { item, workOrder: nextSnapshot }
     await finalizeMutationReceipt({
       scope: "workOrders.salesReps.update",
@@ -82,17 +79,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
-    logRouteMutationFailure(
-      access,
-      {
-        message: "Work order sales rep update failed",
-        action: "workOrders.salesReps.update.error",
-        route: "/api/work-orders/[id]/sales-reps/[repId]",
-        entityType: "flooringWorkOrderSalesRep",
-        entityId: repId,
-      },
-      error,
-    )
     return routeError(access, error)
   }
 }
@@ -137,15 +123,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     if (receipt.replay) {
       return receipt.replay
     }
-    await deleteWorkOrderSalesRep(repId)
+    await withMutationTelemetry(
+      access,
+      {
+        message: "Work order sales rep deleted",
+        action: "workOrders.salesReps.delete",
+        route: "/api/work-orders/[id]/sales-reps/[repId]",
+        entityType: "flooringWorkOrderSalesRep",
+        entityId: repId,
+      },
+      () => deleteWorkOrderSalesRep(repId),
+    )
     const nextSnapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
-    logRouteMutationSuccess(access, {
-      message: "Work order sales rep deleted",
-      action: "workOrders.salesReps.delete",
-      route: "/api/work-orders/[id]/sales-reps/[repId]",
-      entityType: "flooringWorkOrderSalesRep",
-      entityId: repId,
-    })
     const responseBody = { ok: true as const, workOrder: nextSnapshot }
     await finalizeMutationReceipt({
       scope: "workOrders.salesReps.delete",
@@ -156,17 +145,6 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
-    logRouteMutationFailure(
-      access,
-      {
-        message: "Work order sales rep deletion failed",
-        action: "workOrders.salesReps.delete.error",
-        route: "/api/work-orders/[id]/sales-reps/[repId]",
-        entityType: "flooringWorkOrderSalesRep",
-        entityId: repId,
-      },
-      error,
-    )
     return routeError(access, error)
   }
 }

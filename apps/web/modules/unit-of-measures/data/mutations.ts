@@ -8,7 +8,7 @@ export async function createUnitOfMeasure(input: UnitOfMeasureForm) {
   return requestJson<{ unitOfMeasure: UnitOfMeasureRow }>("/api/builder/unit-of-measures", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(withMutationMeta(input as Record<string, unknown>)),
   })
 }
 

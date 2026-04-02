@@ -87,6 +87,18 @@ async function handleDispatchFailure(
         failureMessage: error.message,
       }, tx)
     })
+    logStructuredEvent({
+      level: "error",
+      message: "Outbox event exhausted",
+      action: "outbox.event.exhausted",
+      service: "relay",
+      details: {
+        outboxEventId: event.id,
+        eventType: event.topic,
+        attempts: event.attemptCount,
+        lastError: error.message,
+      },
+    })
     return
   }
 
@@ -126,9 +138,22 @@ export function createWorkOrderAllocationOutboxDispatcher(
         }
 
         if (claimed.topic !== WORK_ORDER_AUTO_ALLOCATION_REQUESTED_OUTBOX_TOPIC) {
+          const unsupportedTopicError = `Unsupported outbox topic: ${claimed.topic}`
           await dependencies.exhaustEvent({
             eventId: claimed.id,
-            lastError: `Unsupported outbox topic: ${claimed.topic}`,
+            lastError: unsupportedTopicError,
+          })
+          logStructuredEvent({
+            level: "error",
+            message: "Outbox event exhausted",
+            action: "outbox.event.exhausted",
+            service: "relay",
+            details: {
+              outboxEventId: claimed.id,
+              eventType: claimed.topic,
+              attempts: claimed.attemptCount,
+              lastError: unsupportedTopicError,
+            },
           })
           continue
         }

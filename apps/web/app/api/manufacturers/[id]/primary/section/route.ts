@@ -1,5 +1,5 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { getManufacturerById } from "@/modules/manufacturers/queries"
+import { getManufacturerById } from "@/modules/manufacturers/data/queries"
 import {
   replaceManufacturerPrimarySection,
   validateUpdateManufacturerPrimarySectionInput,

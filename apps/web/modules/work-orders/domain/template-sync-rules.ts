@@ -1,7 +1,7 @@
 import { prisma } from "@builders/db"
+import { loadTemplateSnapshot } from "@/modules/templates/data/template-snapshot-queries"
+import { applyTemplateSync } from "@/modules/templates/data/template-snapshot-mutations"
 import {
-  applyTemplateSync,
-  loadTemplateSnapshot,
   previewTemplateSync,
   type TemplateSyncPreview,
 } from "@/modules/templates/domain/template-snapshot"

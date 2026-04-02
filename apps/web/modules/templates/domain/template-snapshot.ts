@@ -1,49 +1,21 @@
 import { createHash } from "crypto"
-import { Prisma } from "@builders/db"
+import type {
+  TemplateSnapshot,
+  TemplateSnapshotMaterialRow,
+  TemplateSnapshotServiceRow,
+  TemplateSnapshotSalesRepRow,
+} from "@/modules/templates/data/template-snapshot-queries"
 
-export type TemplateSnapshotMaterialRow = {
-  sourceTemplateItemId: string
-  productId: string
-  quantity: Prisma.Decimal
-  unitPrice: Prisma.Decimal
-  notes: string | null
-  changeOrderStatus: "SUFFICIENT"
-}
+export type { TemplateSnapshot, TemplateSnapshotMaterialRow, TemplateSnapshotServiceRow, TemplateSnapshotSalesRepRow }
 
-export type TemplateSnapshotServiceRow = {
-  sourceTemplateServiceItemId: string
-  serviceId: string | null
-  name: string
-  unitId: string
-  quantity: Prisma.Decimal
-  unitPrice: Prisma.Decimal
-  notes: string | null
-}
-
-export type TemplateSnapshotSalesRepRow = {
-  sourceTemplateSalesRepId: string
-  contactId: string
-  percent: Prisma.Decimal
-}
-
-export type TemplateSnapshot = {
-  templateId: string
-  propertyId: string
-  warehouseId: string | null
-  unitType: string | null
-  instructions: string | null
-  hash: string
-  items: TemplateSnapshotMaterialRow[]
-  serviceItems: TemplateSnapshotServiceRow[]
-  salesReps: TemplateSnapshotSalesRepRow[]
-}
+type DecimalLike = { toString(): string }
 
 type ExistingWorkOrderMaterialRow = {
   id: string
   sourceTemplateItemId: string | null
   productId: string
-  quantity: Prisma.Decimal
-  unitPrice: Prisma.Decimal
+  quantity: DecimalLike
+  unitPrice: DecimalLike
   notes: string | null
   changeOrderStatus: "SUFFICIENT" | "SHORTAGE" | null
 }
@@ -54,8 +26,8 @@ type ExistingWorkOrderServiceRow = {
   serviceId: string | null
   name: string
   unitId: string
-  quantity: Prisma.Decimal
-  unitPrice: Prisma.Decimal
+  quantity: DecimalLike
+  unitPrice: DecimalLike
   notes: string | null
 }
 
@@ -63,7 +35,7 @@ type ExistingWorkOrderSalesRepRow = {
   id: string
   sourceTemplateSalesRepId: string | null
   contactId: string
-  percent: Prisma.Decimal
+  percent: DecimalLike
 }
 
 type ExistingWorkOrderHeader = {
@@ -114,7 +86,7 @@ type SyncPlan = TemplateSyncPreview & {
   salesRepIdsToDelete: string[]
 }
 
-function buildSnapshotHash(snapshot: Omit<TemplateSnapshot, "hash">) {
+export function buildSnapshotHash(snapshot: Omit<TemplateSnapshot, "hash">) {
   const payload = JSON.stringify({
     templateId: snapshot.templateId,
     propertyId: snapshot.propertyId,
@@ -147,82 +119,7 @@ function buildSnapshotHash(snapshot: Omit<TemplateSnapshot, "hash">) {
   return createHash("sha256").update(payload).digest("hex")
 }
 
-export async function loadTemplateSnapshot(templateId: string, tx: Prisma.TransactionClient): Promise<TemplateSnapshot> {
-  const template = await tx.flooringTemplate.findUniqueOrThrow({
-    where: { id: templateId },
-    select: {
-      id: true,
-      propertyId: true,
-      templateTag: true,
-      warehouseId: true,
-      instructions: true,
-      items: {
-        select: {
-          id: true,
-          productId: true,
-          quantity: true,
-          unitPrice: true,
-          notes: true,
-        },
-      },
-      serviceItems: {
-        select: {
-          id: true,
-          serviceId: true,
-          name: true,
-          unitId: true,
-          quantity: true,
-          unitPrice: true,
-          notes: true,
-        },
-      },
-      salesReps: {
-        select: {
-          id: true,
-          contactId: true,
-          percent: true,
-        },
-      },
-    },
-  })
-
-  const snapshotWithoutHash = {
-    templateId: template.id,
-    propertyId: template.propertyId,
-    warehouseId: template.warehouseId,
-    unitType: template.templateTag,
-    instructions: template.instructions,
-    items: (template.items ?? []).map<TemplateSnapshotMaterialRow>((item) => ({
-      sourceTemplateItemId: item.id,
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      notes: item.notes,
-      changeOrderStatus: "SUFFICIENT",
-    })),
-    serviceItems: (template.serviceItems ?? []).map<TemplateSnapshotServiceRow>((item) => ({
-      sourceTemplateServiceItemId: item.id,
-      serviceId: item.serviceId,
-      name: item.name,
-      unitId: item.unitId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      notes: item.notes,
-    })),
-    salesReps: (template.salesReps ?? []).map<TemplateSnapshotSalesRepRow>((item) => ({
-      sourceTemplateSalesRepId: item.id,
-      contactId: item.contactId,
-      percent: item.percent,
-    })),
-  } satisfies Omit<TemplateSnapshot, "hash">
-
-  return {
-    ...snapshotWithoutHash,
-    hash: buildSnapshotHash(snapshotWithoutHash),
-  }
-}
-
-function buildSyncPlan(args: {
+export function buildSyncPlan(args: {
   mode: "overwrite" | "append"
   existingWorkOrder: ExistingWorkOrderHeader
   existingMaterialItems: ExistingWorkOrderMaterialRow[]
@@ -360,202 +257,5 @@ export function previewTemplateSync(args: {
     rowsToCreate: plan.rowsToCreate,
     rowsToDelete: plan.rowsToDelete,
     counts: plan.counts,
-  }
-}
-
-export async function applyTemplateSnapshotToNewWorkOrder(args: {
-  tx: Prisma.TransactionClient
-  workOrderId: string
-  snapshot: TemplateSnapshot
-  includeMaterialItems?: boolean
-  includeServiceItems?: boolean
-  includeSalesReps?: boolean
-}) {
-  if (args.includeMaterialItems !== false) {
-    for (const item of args.snapshot.items) {
-      await args.tx.flooringWorkOrderItem.create({
-        data: {
-          workOrderId: args.workOrderId,
-          sourceTemplateItemId: item.sourceTemplateItemId,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: item.notes,
-          allocationStatus: "NOT_STARTED",
-          changeOrderStatus: item.changeOrderStatus,
-        },
-      })
-    }
-  }
-
-  if (args.includeServiceItems !== false) {
-    for (const item of args.snapshot.serviceItems) {
-      await args.tx.flooringWorkOrderServiceItem.create({
-        data: {
-          workOrderId: args.workOrderId,
-          sourceTemplateServiceItemId: item.sourceTemplateServiceItemId,
-          serviceId: item.serviceId,
-          name: item.name,
-          unitId: item.unitId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          notes: item.notes,
-        },
-      })
-    }
-  }
-
-  if (args.includeSalesReps !== false) {
-    for (const item of args.snapshot.salesReps) {
-      await args.tx.flooringWorkOrderSalesRep.create({
-        data: {
-          workOrderId: args.workOrderId,
-          sourceTemplateSalesRepId: item.sourceTemplateSalesRepId,
-          contactId: item.contactId,
-          percent: item.percent,
-        },
-      })
-    }
-  }
-}
-
-export async function applyTemplateSync(args: {
-  tx: Prisma.TransactionClient
-  workOrderId: string
-  mode: "overwrite" | "append"
-  existingWorkOrder: ExistingWorkOrderHeader
-  existingMaterialItems: ExistingWorkOrderMaterialRow[]
-  existingServiceItems: ExistingWorkOrderServiceRow[]
-  existingSalesReps: ExistingWorkOrderSalesRepRow[]
-  snapshot: TemplateSnapshot
-}): Promise<TemplateSyncApplyResult> {
-  const plan = buildSyncPlan(args)
-
-  await args.tx.flooringWorkOrder.update({
-    where: { id: args.workOrderId },
-    data: {
-      templateId: args.snapshot.templateId,
-      warehouseId: args.snapshot.warehouseId,
-      unitType: args.snapshot.unitType,
-      instructions: args.snapshot.instructions,
-      templateSyncedAt: new Date(),
-      templateSyncMode: args.mode,
-      templateSnapshotHash: args.snapshot.hash,
-    },
-  })
-
-  if (args.mode === "overwrite") {
-    for (const item of plan.materialItemsToUpdate) {
-      await args.tx.flooringWorkOrderItem.update({
-        where: { id: item.existingId },
-        data: {
-          productId: item.snapshot.productId,
-          quantity: item.snapshot.quantity,
-          unitPrice: item.snapshot.unitPrice,
-          notes: item.snapshot.notes,
-          allocationStatus: "NOT_STARTED",
-          changeOrderStatus: item.snapshot.changeOrderStatus,
-        },
-      })
-    }
-
-    for (const item of plan.serviceItemsToUpdate) {
-      await args.tx.flooringWorkOrderServiceItem.update({
-        where: { id: item.existingId },
-        data: {
-          serviceId: item.snapshot.serviceId,
-          name: item.snapshot.name,
-          unitId: item.snapshot.unitId,
-          quantity: item.snapshot.quantity,
-          unitPrice: item.snapshot.unitPrice,
-          notes: item.snapshot.notes,
-        },
-      })
-    }
-
-    for (const item of plan.salesRepsToUpdate) {
-      await args.tx.flooringWorkOrderSalesRep.update({
-        where: { id: item.existingId },
-        data: {
-          sourceTemplateSalesRepId: item.snapshot.sourceTemplateSalesRepId,
-          contactId: item.snapshot.contactId,
-          percent: item.snapshot.percent,
-        },
-      })
-    }
-
-    if (plan.materialItemIdsToDelete.length > 0) {
-      await args.tx.flooringWorkOrderItem.deleteMany({
-        where: {
-          id: { in: plan.materialItemIdsToDelete },
-        },
-      })
-    }
-
-    if (plan.serviceItemIdsToDelete.length > 0) {
-      await args.tx.flooringWorkOrderServiceItem.deleteMany({
-        where: {
-          id: { in: plan.serviceItemIdsToDelete },
-        },
-      })
-    }
-
-    if (plan.salesRepIdsToDelete.length > 0) {
-      await args.tx.flooringWorkOrderSalesRep.deleteMany({
-        where: {
-          id: { in: plan.salesRepIdsToDelete },
-        },
-      })
-    }
-  }
-
-  if (plan.materialItemsToCreate.length > 0) {
-    await args.tx.flooringWorkOrderItem.createMany({
-      data: plan.materialItemsToCreate.map((item) => ({
-        workOrderId: args.workOrderId,
-        sourceTemplateItemId: item.sourceTemplateItemId,
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        notes: item.notes,
-        allocationStatus: "NOT_STARTED",
-        changeOrderStatus: item.changeOrderStatus,
-      })),
-    })
-  }
-
-  if (plan.serviceItemsToCreate.length > 0) {
-    await args.tx.flooringWorkOrderServiceItem.createMany({
-      data: plan.serviceItemsToCreate.map((item) => ({
-        workOrderId: args.workOrderId,
-        sourceTemplateServiceItemId: item.sourceTemplateServiceItemId,
-        serviceId: item.serviceId,
-        name: item.name,
-        unitId: item.unitId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        notes: item.notes,
-      })),
-    })
-  }
-
-  if (plan.salesRepsToCreate.length > 0) {
-    await args.tx.flooringWorkOrderSalesRep.createMany({
-      data: plan.salesRepsToCreate.map((item) => ({
-        workOrderId: args.workOrderId,
-        sourceTemplateSalesRepId: item.sourceTemplateSalesRepId,
-        contactId: item.contactId,
-        percent: item.percent,
-      })),
-    })
-  }
-
-  return {
-    headerUpdates: plan.headerUpdates,
-    rowsToCreate: plan.rowsToCreate,
-    rowsToDelete: plan.rowsToDelete,
-    counts: plan.counts,
-    templateId: args.snapshot.templateId,
-    templateSnapshotHash: args.snapshot.hash,
   }
 }

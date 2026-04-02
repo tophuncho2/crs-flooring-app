@@ -1,1 +1,1 @@
-export * from "@/modules/templates/list/use-templates-client-controller"
+export * from "./controllers/use-templates-list-controller"

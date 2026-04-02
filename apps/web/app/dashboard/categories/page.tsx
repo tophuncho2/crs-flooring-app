@@ -2,7 +2,7 @@ import { canEditCategories } from "@/server/auth/access-control"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
 import CategoriesClient from "@/modules/categories/components/list/categories-client"
-import { getCategoriesPageData } from "@builders/db"
+import { getCategoriesPageData } from "@/modules/categories/data/queries"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { parseServerTableQueryState } from "@/server/pagination"
 

@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireToolAccess } from "@/server/auth/session"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import ImportsClient from "@/modules/imports/components/imports-client"
-import { getImportsPageData, listImportsPageFilterOptions } from "@/modules/imports/queries"
+import { getImportsPageData, listImportsPageFilterOptions } from "@/modules/imports/data/queries"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { parseServerTableFilterState } from "@/modules/shared/engines/list-view/controllers/table-filter-state"
 import type { ImportPageFilterState } from "@/modules/imports/domain/filters"

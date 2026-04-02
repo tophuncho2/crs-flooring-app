@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt"
-import { prisma } from "@builders/db"
+import { Prisma, prisma } from "@builders/db"
 import { hasGovernanceAccess } from "@/server/auth/access-control"
 import { getSessionUser } from "@/server/auth/session"
 import { logEvent } from "@/server/platform/logger"
@@ -82,15 +82,23 @@ export async function POST(request: Request) {
         : true
       : false
 
-    const createdUser = await prisma.user.create({
-      data: {
-        email,
-        password: hashed,
-        role,
-        isVerified,
-      },
-      select: { id: true, role: true, isVerified: true },
-    })
+    let createdUser: { id: string; role: string; isVerified: boolean }
+    try {
+      createdUser = await prisma.user.create({
+        data: {
+          email,
+          password: hashed,
+          role,
+          isVerified,
+        },
+        select: { id: true, role: true, isVerified: true },
+      })
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return jsonWithRequestId({ error: "Account already exists" }, requestId, { status: 409 })
+      }
+      throw error
+    }
 
     logEvent({
       message: "Account created",

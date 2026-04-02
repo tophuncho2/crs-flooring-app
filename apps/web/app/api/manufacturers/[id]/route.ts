@@ -3,7 +3,7 @@ import {
   replaceManufacturerPrimarySection,
   validateUpdateManufacturerPrimarySectionInput,
 } from "@/modules/manufacturers/application/manage-manufacturer"
-import { getManufacturerById } from "@/modules/manufacturers/queries"
+import { getManufacturerById } from "@/modules/manufacturers/data/queries"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"

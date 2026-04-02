@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { getCategoryCreatePageData } from "@builders/db"
+import { getCategoryCreatePageData } from "@/modules/categories/data/queries"
 import { CategoryCreateClient } from "@/modules/categories/record/create/category-create-client"
 
 export default async function CategoryCreatePage({

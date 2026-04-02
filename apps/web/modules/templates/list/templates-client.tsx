@@ -24,7 +24,7 @@ import {
 } from "@/modules/shared/engines/list-view"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import type { PadProductOption, PropertyOption, ServerPaginationState, ServerTableState, TemplateRow, WarehouseOption } from "../types"
-import { useTemplatesClientController } from "./use-templates-client-controller"
+import { useTemplatesClientController } from "../controllers/use-templates-list-controller"
 
 export default function TemplatesClient({
   initialTemplates,

@@ -1,15 +1,11 @@
 import { authorizeWorkOrdersRoute } from "@/modules/shared/access/templates-work-orders"
 import { withWorkOrderCapabilities } from "@/modules/work-orders/transport/detail"
-import {
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import { createWorkOrderSalesRep } from "@/modules/work-orders/mutations"
 import { getWorkOrderById, listWorkOrderSalesReps } from "@/modules/work-orders/queries"
 import { validateWorkOrderSalesRepInput } from "@/modules/work-orders/validators"
-import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -18,6 +14,9 @@ type RouteContext = {
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await authorizeWorkOrdersRoute(request, { capability: "workOrders.read" })
   if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/work-orders/[id]/sales-reps")
+  if (rateLimited) return rateLimited
 
   try {
     const { id } = await params
@@ -54,16 +53,18 @@ export async function POST(request: Request, { params }: RouteContext) {
     if (receipt.replay) {
       return receipt.replay
     }
-    const item = await createWorkOrderSalesRep(id, input)
+    const item = await withMutationTelemetry(
+      access,
+      {
+        message: "Work order sales rep created",
+        action: "workOrders.salesReps.create",
+        route: "/api/work-orders/[id]/sales-reps",
+        entityType: "flooringWorkOrderSalesRep",
+        entityId: id,
+      },
+      () => createWorkOrderSalesRep(id, input),
+    )
     const snapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
-    logRouteMutationSuccess(access, {
-      message: "Work order sales rep created",
-      action: "workOrders.salesReps.create",
-      route: "/api/work-orders/[id]/sales-reps",
-      entityType: "flooringWorkOrderSalesRep",
-      entityId: item.id,
-      details: { workOrderId: id, contactId: item.contactId },
-    })
     const responseBody = { item, workOrder: snapshot }
     await finalizeMutationReceipt({
       scope: "workOrders.salesReps.create",
@@ -74,17 +75,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody, { status: 201 })
   } catch (error) {
-    logRouteMutationFailure(
-      access,
-      {
-        message: "Work order sales rep creation failed",
-        action: "workOrders.salesReps.create.error",
-        route: "/api/work-orders/[id]/sales-reps",
-        entityType: "flooringWorkOrderSalesRep",
-        details: { workOrderId: id },
-      },
-      error,
-    )
     return routeError(access, error)
   }
 }

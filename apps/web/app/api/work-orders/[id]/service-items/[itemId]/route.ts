@@ -1,15 +1,10 @@
-import { authorizeWorkOrdersRoute } from "@/modules/shared/access/templates-work-orders"
 import { createAppError } from "@/server/http/api-helpers"
 import { withWorkOrderCapabilities } from "@/modules/work-orders/transport/detail"
-import {
-  logRouteMutationFailure,
-  logRouteMutationSuccess,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import { deleteWorkOrderServiceItem, updateWorkOrderServiceItem } from "@/modules/work-orders/mutations"
 import { getWorkOrderById } from "@/modules/work-orders/queries"
 import { validateUpdateWorkOrderServiceItemInput } from "@/modules/work-orders/validators"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
@@ -62,16 +57,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (receipt.replay) {
       return receipt.replay
     }
-    const item = await updateWorkOrderServiceItem(itemId, input)
+    const item = await withMutationTelemetry(
+      access,
+      {
+        message: "Work order service item updated",
+        action: "workOrders.serviceItems.update",
+        route: "/api/work-orders/[id]/service-items/[itemId]",
+        entityType: "flooringWorkOrderServiceItem",
+        entityId: itemId,
+      },
+      () => updateWorkOrderServiceItem(itemId, input),
+    )
     const nextSnapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
-    logRouteMutationSuccess(access, {
-      message: "Work order service item updated",
-      action: "workOrders.serviceItems.update",
-      route: "/api/work-orders/[id]/service-items/[itemId]",
-      entityType: "flooringWorkOrderServiceItem",
-      entityId: item.id,
-      details: { serviceId: item.serviceId ?? null, unitId: item.unitId },
-    })
     const responseBody = { item, workOrder: nextSnapshot }
     await finalizeMutationReceipt({
       scope: "workOrders.serviceItems.update",
@@ -82,17 +79,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
-    logRouteMutationFailure(
-      access,
-      {
-        message: "Work order service item update failed",
-        action: "workOrders.serviceItems.update.error",
-        route: "/api/work-orders/[id]/service-items/[itemId]",
-        entityType: "flooringWorkOrderServiceItem",
-        entityId: itemId,
-      },
-      error,
-    )
     return routeError(access, error)
   }
 }
@@ -137,15 +123,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     if (receipt.replay) {
       return receipt.replay
     }
-    await deleteWorkOrderServiceItem(itemId)
+    await withMutationTelemetry(
+      access,
+      {
+        message: "Work order service item deleted",
+        action: "workOrders.serviceItems.delete",
+        route: "/api/work-orders/[id]/service-items/[itemId]",
+        entityType: "flooringWorkOrderServiceItem",
+        entityId: itemId,
+      },
+      () => deleteWorkOrderServiceItem(itemId),
+    )
     const nextSnapshot = withWorkOrderCapabilities(await getWorkOrderById(id), access.user.role)
-    logRouteMutationSuccess(access, {
-      message: "Work order service item deleted",
-      action: "workOrders.serviceItems.delete",
-      route: "/api/work-orders/[id]/service-items/[itemId]",
-      entityType: "flooringWorkOrderServiceItem",
-      entityId: itemId,
-    })
     const responseBody = { ok: true as const, workOrder: nextSnapshot }
     await finalizeMutationReceipt({
       scope: "workOrders.serviceItems.delete",
@@ -156,17 +145,6 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
-    logRouteMutationFailure(
-      access,
-      {
-        message: "Work order service item deletion failed",
-        action: "workOrders.serviceItems.delete.error",
-        route: "/api/work-orders/[id]/service-items/[itemId]",
-        entityType: "flooringWorkOrderServiceItem",
-        entityId: itemId,
-      },
-      error,
-    )
     return routeError(access, error)
   }
 }

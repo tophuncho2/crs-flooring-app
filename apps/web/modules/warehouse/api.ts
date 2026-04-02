@@ -344,6 +344,22 @@ export async function deleteLocationRow(db: DbClient = prisma, id: string) {
   }
 }
 
+export async function getSectionRowById(id: string, db: DbClient = prisma) {
+  const section = await db.flooringSection.findUniqueOrThrow({
+    where: { id },
+    select: { id: true, name: true, warehouseId: true, updatedAt: true },
+  })
+  return { ...section, updatedAt: section.updatedAt.toISOString() }
+}
+
+export async function getLocationRowById(id: string, db: DbClient = prisma) {
+  const location = await db.flooringLocation.findUniqueOrThrow({
+    where: { id },
+    select: { id: true, locationCode: true, warehouseId: true, sectionId: true, updatedAt: true },
+  })
+  return { ...location, updatedAt: location.updatedAt.toISOString() }
+}
+
 export function parseWarehouseFilter(warehouseId: string | null) {
   return parseOptionalString(warehouseId)
 }

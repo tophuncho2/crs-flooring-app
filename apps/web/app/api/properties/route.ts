@@ -1,12 +1,23 @@
-import { authorizePropertiesRoute } from "@/modules/shared/access/domain-tools"
+import { PROPERTIES_TOOL_SLUG, authorizePropertiesRoute } from "@/modules/shared/access/domain-tools"
 import { createProperty } from "@/modules/properties/mutations"
 import { listProperties } from "@/modules/properties/queries"
 import { validateCreatePropertyInput } from "@/modules/properties/validators"
-import { enforceRouteRateLimit, routeError, routeJson } from "@/server/http/route-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import {
+  applyRoutePolicy,
+  enforceMutationReceipt,
+  enforceQueryRateLimit,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
   const access = await authorizePropertiesRoute(request)
   if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/properties")
+  if (rateLimited) return rateLimited
 
   try {
     return routeJson(access, {
@@ -23,21 +34,49 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await authorizePropertiesRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "properties.write",
-    limit: 20,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/properties",
+  const access = await applyRoutePolicy(request, {
+    toolSlug: PROPERTIES_TOOL_SLUG,
+    rateLimit: {
+      scope: "properties.write",
+      limit: 20,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/properties",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const property = await createProperty(validateCreatePropertyInput(body))
-    return routeJson(access, { property }, { status: 201 })
+    const { input, mutation } = parseMutationEnvelope(body, validateCreatePropertyInput)
+    const receipt = await enforceMutationReceipt({
+      scope: "properties.create",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
+    const property = await withMutationTelemetry(
+      access,
+      {
+        message: "Property created",
+        action: "properties.create",
+        route: "/api/properties",
+        entityType: "flooringProperty",
+      },
+      () => createProperty(input),
+    )
+
+    const responseBody = { property }
+    await finalizeMutationReceipt({
+      scope: "properties.create",
+      access,
+      mutation,
+      responseStatus: 201,
+      responseBody,
+    })
+    return routeJson(access, responseBody, { status: 201 })
   } catch (error) {
     return routeError(access, error)
   }

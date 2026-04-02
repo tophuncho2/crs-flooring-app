@@ -8,7 +8,7 @@ Sentry.init({
   environment: process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV,
   release: process.env.RAILWAY_GIT_COMMIT_SHA,
   sendDefaultPii: false,
-  tracesSampleRate: 0,
+  tracesSampleRate: 0.1,
 })
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart

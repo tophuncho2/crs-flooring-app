@@ -1,6 +1,7 @@
 "use client"
 
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
+import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import {
   RecordCreateClientScaffold,
   RecordSingleSectionPanel,
@@ -50,7 +51,7 @@ function CategoryCreatePanel({
       const payload = await requestJson<{ category: CategoryRow }>("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
+        body: JSON.stringify(withMutationMeta(localValue)),
       })
 
       return {

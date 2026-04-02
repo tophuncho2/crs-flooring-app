@@ -3,7 +3,13 @@ import { withMutationTelemetry } from "@/modules/shared/engines/common/applicati
 import { validateUpdateUnitOfMeasurePrimarySectionInput } from "@/modules/unit-of-measures/application/manage-unit-of-measure"
 import { listUnitOfMeasures } from "@/server/builder/unit-of-measures"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy } from "@/server/http/route-policy"
+import {
+  applyRoutePolicy,
+  enforceMutationReceipt,
+  enforceQueryRateLimit,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -11,6 +17,9 @@ export async function GET(request: Request) {
     toolSlug: "products",
   })
   if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/builder/unit-of-measures")
+  if (rateLimited) return rateLimited
 
   try {
     return routeJson(access, { unitOfMeasures: await listUnitOfMeasures() })
@@ -33,7 +42,18 @@ export async function POST(request: Request) {
   if (access instanceof Response) return access
 
   try {
-    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
+    const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateUnitOfMeasurePrimarySectionInput)
+
+    const receipt = await enforceMutationReceipt({
+      scope: "builder.unitOfMeasures.create",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
     const unitOfMeasure = await withMutationTelemetry(
       access,
       {
@@ -42,10 +62,18 @@ export async function POST(request: Request) {
         route: "/api/builder/unit-of-measures",
         entityType: "flooringUnitOfMeasure",
       },
-      () => createUnitOfMeasureUseCase(validateUpdateUnitOfMeasurePrimarySectionInput(body)),
+      () => createUnitOfMeasureUseCase(input),
     )
 
-    return routeJson(access, { unitOfMeasure }, { status: 201 })
+    const responseBody = { unitOfMeasure }
+    await finalizeMutationReceipt({
+      scope: "builder.unitOfMeasures.create",
+      access,
+      mutation,
+      responseStatus: 201,
+      responseBody,
+    })
+    return routeJson(access, responseBody, { status: 201 })
   } catch (error) {
     return routeError(access, error)
   }

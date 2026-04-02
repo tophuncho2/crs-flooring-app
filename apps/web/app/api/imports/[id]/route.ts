@@ -1,14 +1,9 @@
-import {
-  getImportEntryById,
-} from "@/modules/imports/api"
+import { getImportEntryById } from "@/modules/imports/api"
 import { deleteImportEntryUseCase, updateImportEntryUseCase } from "@/modules/imports/application/import-entry"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
-import {
-  enforceRouteRateLimit,
-  routeError,
-  routeJson,
-} from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { applyRoutePolicy, assertExpectedUpdatedAt, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -17,6 +12,9 @@ type RouteContext = {
 export async function GET(request: Request, context: RouteContext) {
   const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/imports/[id]")
+  if (rateLimited) return rateLimited
 
   try {
     const { id } = await context.params
@@ -27,21 +25,29 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const access = await authorizeWarehouseRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "imports.write",
-    limit: 50,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/imports/[id]",
+  const access = await applyRoutePolicy(request, {
+    toolSlug: "warehouse",
+    rateLimit: {
+      scope: "imports.write",
+      limit: 50,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/imports/[id]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const normalized = await withMutationTelemetry(
+    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+
+    const existing = await getImportEntryById(id)
+    assertExpectedUpdatedAt(body, existing)
+
+    const receipt = await enforceMutationReceipt({ scope: "imports.update", request, access, mutation, body })
+    if (receipt.replay) return receipt.replay
+
+    const result = await withMutationTelemetry(
       access,
       {
         message: "Import updated",
@@ -50,28 +56,40 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => updateImportEntryUseCase(id, body),
+      () => updateImportEntryUseCase(id, input),
     )
-    return routeJson(access, { import: normalized })
+
+    const responseBody = { import: result }
+    await finalizeMutationReceipt({ scope: "imports.update", access, mutation, responseStatus: 200, responseBody })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const access = await authorizeWarehouseRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimitResponse = await enforceRouteRateLimit(request, access, {
-    scope: "imports.delete",
-    limit: 30,
-    windowMs: 10 * 60 * 1000,
-    route: "/api/imports/[id]",
+  const access = await applyRoutePolicy(request, {
+    toolSlug: "warehouse",
+    rateLimit: {
+      scope: "imports.delete",
+      limit: 30,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/imports/[id]",
+    },
   })
-  if (rateLimitResponse) return rateLimitResponse
+  if (access instanceof Response) return access
 
   try {
     const { id } = await context.params
+    const body = (await request.json()) as Record<string, unknown>
+    const { mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+
+    const existing = await getImportEntryById(id)
+    assertExpectedUpdatedAt(body, existing)
+
+    const receipt = await enforceMutationReceipt({ scope: "imports.delete", request, access, mutation, body })
+    if (receipt.replay) return receipt.replay
+
     await withMutationTelemetry(
       access,
       {
@@ -83,7 +101,10 @@ export async function DELETE(request: Request, context: RouteContext) {
       },
       () => deleteImportEntryUseCase(id),
     )
-    return routeJson(access, { ok: true })
+
+    const responseBody = { ok: true }
+    await finalizeMutationReceipt({ scope: "imports.delete", access, mutation, responseStatus: 200, responseBody })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }

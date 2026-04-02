@@ -4,7 +4,7 @@ import { canEditCategories } from "@/server/auth/access-control"
 import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { CategoryDetailClient } from "@/modules/categories/record/detail/category-detail-client"
-import { getCategoryDetailPageData } from "@builders/db"
+import { getCategoryDetailPageData } from "@/modules/categories/data/queries"
 
 export default async function CategoryDetailPage({
   params,

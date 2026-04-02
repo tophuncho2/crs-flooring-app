@@ -2,7 +2,7 @@ import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import FlooringProductsClient from "@/modules/products/components/products-client"
-import { getProductsPageData } from "@/modules/products/queries"
+import { getProductsPageData } from "@/modules/products/data/queries"
 
 export default async function FlooringProductsPage({
   searchParams,
