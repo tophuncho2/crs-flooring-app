@@ -1,4 +1,4 @@
-import { Prisma } from "@builders/db"
+import type { Prisma } from "@builders/db"
 import { normalizeCategoryUnitValues } from "@/server/categories/unit-measures"
 import { buildFlooringProductDisplayName, buildStoredFlooringProductName } from "@builders/domain"
 

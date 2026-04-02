@@ -1,4 +1,4 @@
-import { Prisma } from "@builders/db"
+import type { Prisma } from "@builders/db"
 import { createAppError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { isBucketFileUrl } from "@/server/storage/s3"
 

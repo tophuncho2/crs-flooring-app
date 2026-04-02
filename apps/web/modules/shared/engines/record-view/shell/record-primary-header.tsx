@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { RecordSectionHeader } from "../sections/record-section-header"
+import { RecordSectionHeader } from "../sections/structure/record-section-header"
 import { RecordBackButton } from "./record-action-buttons"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
