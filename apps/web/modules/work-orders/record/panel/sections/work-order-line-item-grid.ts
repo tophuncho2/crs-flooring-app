@@ -4,6 +4,9 @@ import {
   buildMaterialItemColumns,
   buildSalesRepColumns,
   buildServiceItemColumns,
+  buildAllocationLayout,
+  STATUS_CONTROL,
+  REMOVE_CONTROL,
 } from "@/modules/shared/engines/record-view/line-items/record-grid"
 
 export const WORK_ORDER_MATERIAL_COLUMNS = buildMaterialItemColumns({
@@ -16,6 +19,11 @@ export const WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS = buildMaterialAllocationCol
   supportsStatusColumn: true,
   supportsRemoveRow: true,
 })
+
+export const WORK_ORDER_MATERIAL_ALLOCATION_LAYOUT = buildAllocationLayout([
+  STATUS_CONTROL,
+  REMOVE_CONTROL,
+])
 
 export const WORK_ORDER_SERVICE_COLUMNS = buildServiceItemColumns({
   supportsStatusColumn: true,

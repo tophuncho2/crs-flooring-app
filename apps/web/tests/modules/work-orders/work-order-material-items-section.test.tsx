@@ -98,7 +98,7 @@ function Harness() {
       onDeleteItem={vi.fn()}
       onRequestAutoAllocation={vi.fn()}
       isAutoAllocating={false}
-      renderAllocationSection={(item) => <div>Allocation rows for {item.id}</div>}
+      renderAllocations={(item) => <div>Allocation rows for {item.id}</div>}
     />
   )
 }

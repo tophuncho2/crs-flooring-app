@@ -25,7 +25,7 @@ import {
   buildDeleteConfirmationMessage,
   confirmRecordDelete,
 } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import { MaterialAllocationsEditor } from "./sections/material-allocations-editor"
+import { MaterialAllocationsContent } from "./sections/material-allocations-editor"
 import { WorkOrderMaterialItemsSection } from "./sections/work-order-material-items-section"
 import { WorkOrderCalculationsSection } from "./sections/work-order-calculations-section"
 import { WorkOrderPrimaryFieldsSection } from "./sections/work-order-primary-fields-section"
@@ -529,8 +529,8 @@ export function WorkOrderRecordPanel({
           onToggleExpandedItem={materialSection.toggleExpandedItem}
           onItemFieldChange={materialSection.changeItemField}
           onDeleteItem={materialSection.deleteItem}
-          renderAllocationSection={(item) => (
-            <MaterialAllocationsEditor
+          renderAllocations={(item) => (
+            <MaterialAllocationsContent
               allocations={item.allocations}
               allocationOptions={materialSection.allocationOptionsByItemId[item.id] ?? []}
               loadingOptions={materialSection.loadingAllocationOptionsByItemId[item.id] ?? false}

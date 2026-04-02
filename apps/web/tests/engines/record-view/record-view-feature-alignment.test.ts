@@ -121,7 +121,6 @@ describe("record view feature alignment", () => {
       "apps/web/modules/work-orders/record/panel/sections/work-order-material-items-section.tsx",
       "apps/web/modules/work-orders/record/panel/sections/work-order-service-items-section.tsx",
       "apps/web/modules/work-orders/record/panel/sections/work-order-sales-reps-section.tsx",
-      "apps/web/modules/work-orders/record/panel/sections/material-allocations-editor.tsx",
       "apps/web/modules/templates/record/panel/sections/template-material-items-section.tsx",
       "apps/web/modules/templates/record/panel/sections/template-service-items-section.tsx",
       "apps/web/modules/templates/record/panel/sections/template-sales-reps-section.tsx",

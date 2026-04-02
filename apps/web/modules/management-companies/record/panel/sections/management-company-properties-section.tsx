@@ -1,15 +1,17 @@
 "use client"
 
+import { Fragment } from "react"
 import {
   RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
-  RecordRowLayout,
+  RecordScopedRow,
   RecordSectionGrid,
   RecordSectionGridRow,
   TextCell,
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
+  type RecordGridLayout,
 } from "@/modules/shared/engines/record-view"
 import type { ManagementCompanyPropertyRow, ManagementCompanyTemplateRow } from "../../../domain/types"
 
@@ -27,6 +29,8 @@ const TEMPLATE_COLUMNS: RecordRowColumnSpec[] = [
   { key: "items", minWidth: 120, grow: 1, align: "center", label: "Rows" },
   { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
+
+const TEMPLATE_LAYOUT: RecordGridLayout = { dataColumns: TEMPLATE_COLUMNS }
 
 function buildPropertiesMetrics(properties: ManagementCompanyPropertyRow[]) {
   const templateCount = properties.reduce((total, property) => total + property.templateCount, 0)
@@ -82,50 +86,10 @@ export function ManagementCompanyPropertiesSection({
           const isExpanded = expandedPropertyIds.includes(property.id)
 
           return (
-            <RecordSectionGridRow
-              key={property.id}
-              columns={PROPERTY_COLUMNS}
-              scopedContent={
-                isExpanded ? (
-                  <RecordSectionGrid
-                    columns={TEMPLATE_COLUMNS}
-                    surface="scoped"
-                    isEmpty={property.templates.length === 0}
-                    emptyState="No templates linked to this property."
-                  >
-                    {property.templates.map((template, templateIndex) => (
-                      <RecordSectionGridRow
-                        key={template.id}
-                        columns={TEMPLATE_COLUMNS}
-                        rowTone="allocation"
-                        onOpen={() => onOpenTemplate(template.id)}
-                        openAriaLabel={`Open template ${template.templateTag}`}
-                      >
-                        <RecordItemCell columnKey="template" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
-                          <TextCell className="font-medium">{template.templateTag}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemCell columnKey="warehouse" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
-                          <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemCell columnKey="items" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
-                          <TextCell align="center">{template.itemsCount}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemSectionControls
-                          capabilities={{ supportsOpenRow: true }}
-                          cellChrome="grid"
-                          showCellLabels={templateIndex === 0}
-                          open={{
-                            onOpen: () => onOpenTemplate(template.id),
-                            loading: loadingTemplateId === template.id,
-                          }}
-                        />
-                      </RecordSectionGridRow>
-                    ))}
-                  </RecordSectionGrid>
-                ) : null
-              }
-            >
-              <RecordRowLayout columns={PROPERTY_COLUMNS}>
+            <Fragment key={property.id}>
+              <RecordSectionGridRow
+                columns={PROPERTY_COLUMNS}
+              >
                 <RecordItemCell columnKey="property" chrome="grid" showLabel={index === 0}>
                   <TextCell className="font-medium">{property.name}</TextCell>
                 </RecordItemCell>
@@ -149,8 +113,42 @@ export function ManagementCompanyPropertiesSection({
                     loading: loadingPropertyId === property.id,
                   }}
                 />
-              </RecordRowLayout>
-            </RecordSectionGridRow>
+              </RecordSectionGridRow>
+              {isExpanded ? (
+                property.templates.length === 0 ? (
+                  <div className="bg-orange-500/[0.06] px-4 py-8 text-center text-[var(--foreground)]/65">
+                    No templates linked to this property.
+                  </div>
+                ) : (
+                  property.templates.map((template, templateIndex) => (
+                    <RecordScopedRow
+                      key={template.id}
+                      layout={TEMPLATE_LAYOUT}
+                      rowTone="allocation"
+                    >
+                      <RecordItemCell columnKey="template" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
+                        <TextCell className="font-medium">{template.templateTag}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemCell columnKey="warehouse" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
+                        <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemCell columnKey="items" chrome="grid" tone="allocation" density="compact" showLabel={templateIndex === 0}>
+                        <TextCell align="center">{template.itemsCount}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemSectionControls
+                        capabilities={{ supportsOpenRow: true }}
+                        cellChrome="grid"
+                        showCellLabels={templateIndex === 0}
+                        open={{
+                          onOpen: () => onOpenTemplate(template.id),
+                          loading: loadingTemplateId === template.id,
+                        }}
+                      />
+                    </RecordScopedRow>
+                  ))
+                )
+              ) : null}
+            </Fragment>
           )
         })}
       </RecordSectionGrid>

@@ -34,6 +34,19 @@ export type RecordRowColumnSpec = {
 
 export type RecordGridColumnSpec = RecordRowColumnSpec
 
+export type RecordGridControlSpec = {
+  key: string
+  width: number
+  label?: string
+  kind: "toggle" | "open" | "status" | "remove"
+  align?: "start" | "center" | "end"
+}
+
+export type RecordGridLayout = {
+  dataColumns: RecordGridColumnSpec[]
+  controlColumns?: RecordGridControlSpec[]
+}
+
 type ResolvedRecordRowColumnSpec = Required<
   Pick<RecordRowColumnSpec, "key" | "label" | "kind" | "minWidth" | "preferredWidth" | "grow" | "align" | "editable" | "tone">
 >
@@ -110,28 +123,86 @@ function buildRecordRowTemplateColumns(columns: RecordRowColumnSpec[]) {
     .join(" ")
 }
 
+function buildTwoZoneTemplateColumns(layout: RecordGridLayout) {
+  const dataPart = buildRecordRowTemplateColumns(layout.dataColumns)
+
+  if (!layout.controlColumns || layout.controlColumns.length === 0) {
+    return dataPart
+  }
+
+  const controlPart = layout.controlColumns
+    .map((control) => `${control.width / 16}rem`)
+    .join(" ")
+
+  return `${dataPart} ${controlPart}`
+}
+
+function resolveLayoutColumnMap(layout: RecordGridLayout): Map<string, ResolvedRecordRowColumnSpec> {
+  const map = new Map<string, ResolvedRecordRowColumnSpec>()
+
+  for (const column of layout.dataColumns) {
+    const resolved = resolveRecordRowColumnSpec(column)
+    map.set(resolved.key, resolved)
+  }
+
+  if (layout.controlColumns) {
+    for (const control of layout.controlColumns) {
+      map.set(control.key, {
+        key: control.key,
+        label: control.label ?? humanizeColumnKey(control.key),
+        kind: control.kind as RecordGridCellKind,
+        minWidth: control.width,
+        preferredWidth: control.width,
+        grow: 0,
+        align: control.align ?? "center",
+        editable: false,
+        tone: "default",
+      })
+    }
+  }
+
+  return map
+}
+
 export function RecordRowLayout({
   columns,
+  layout,
   children,
   className,
 }: {
-  columns: RecordRowColumnSpec[]
+  columns?: RecordRowColumnSpec[]
+  layout?: RecordGridLayout
   children: ReactNode
   className?: string
 }) {
-  const columnMap = useMemo(
-    () => new Map(columns.map((column) => {
-      const resolvedColumn = resolveRecordRowColumnSpec(column)
-      return [resolvedColumn.key, resolvedColumn]
-    })),
-    [columns],
-  )
+  const columnMap = useMemo(() => {
+    if (layout) {
+      return resolveLayoutColumnMap(layout)
+    }
+    if (columns) {
+      return new Map(columns.map((column) => {
+        const resolvedColumn = resolveRecordRowColumnSpec(column)
+        return [resolvedColumn.key, resolvedColumn] as const
+      }))
+    }
+    return new Map<string, ResolvedRecordRowColumnSpec>()
+  }, [columns, layout])
+
+  const templateColumns = useMemo(() => {
+    if (layout) {
+      return buildTwoZoneTemplateColumns(layout)
+    }
+    if (columns) {
+      return buildRecordRowTemplateColumns(columns)
+    }
+    return ""
+  }, [columns, layout])
 
   return (
     <RecordRowContext.Provider value={columnMap}>
       <div
         className={joinClasses("grid w-max min-w-full max-w-none items-stretch gap-0", className)}
-        style={{ gridTemplateColumns: buildRecordRowTemplateColumns(columns) }}
+        style={{ gridTemplateColumns: templateColumns }}
       >
         {children}
       </div>

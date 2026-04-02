@@ -3,8 +3,7 @@
 import {
   RecordAllocationRowBuilder,
   RecordRowStatusBadge,
-  RecordSectionGrid,
-  RecordSectionGridRow,
+  RecordScopedRow,
   resolveRecordRowStatus,
 } from "@/modules/shared/engines/record-view"
 import { formatCurrencyValue } from "@builders/domain"
@@ -14,8 +13,12 @@ import {
   type FieldErrorMap,
   type RowFieldErrors,
 } from "@/modules/shared/engines/record-view/feedback/record-field-errors"
-import { WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS } from "./material-grid-layout"
+import { WORK_ORDER_MATERIAL_ALLOCATION_LAYOUT } from "./work-order-line-item-grid"
 import type { InventoryAllocationOption, WorkOrderItemAllocationRow } from "@/modules/work-orders/types"
+import {
+  joinRecordSectionClasses,
+  RECORD_SECTION_BORDER_CLASS_NAME,
+} from "@/modules/shared/engines/record-view/sections/record-section-tokens"
 
 export type AllocationDraft = {
   inventoryId: string
@@ -54,7 +57,7 @@ function readAllocationUnit(options: InventoryAllocationOption[], allocation: Wo
     || "-"
 }
 
-export function MaterialAllocationsEditor({
+export function MaterialAllocationsContent({
   allocations,
   allocationOptions,
   loadingOptions,
@@ -72,13 +75,70 @@ export function MaterialAllocationsEditor({
   onDeleteAllocation: (allocationId: string) => void
 }) {
   return (
-    <RecordSectionGrid
-      columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS}
-      group="allocation"
-      surface="scoped"
-      isEmpty={allocations.length === 0}
-      emptyState="No allocations yet."
-      footer={(
+    <>
+      {allocations.length === 0 ? (
+        <div className="bg-orange-500/[0.06] px-4 py-8 text-center text-[var(--foreground)]/65">
+          No allocations yet.
+        </div>
+      ) : (
+        allocations.map((allocation, index) => {
+          const rowErrors = itemErrors[allocation.id]
+          const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
+          const quantityValue = Number(allocation.quantity || 0)
+          const hasErrors = hasFieldErrors(rowErrors)
+          const status = resolveRecordRowStatus({
+            hasErrors,
+            isUnsaved: allocation.id.startsWith("temp:"),
+          })
+
+          return (
+            <RecordScopedRow
+              key={allocation.id}
+              layout={WORK_ORDER_MATERIAL_ALLOCATION_LAYOUT}
+              rowTone={hasErrors ? "error" : "allocation"}
+            >
+              <RecordAllocationRowBuilder
+                inventoryValue={allocation.inventoryId}
+                inventoryOptions={allocationOptions.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
+                quantityValue={allocation.quantity}
+                unitLabel={readAllocationUnit(allocationOptions, allocation)}
+                unitCostValue={formatCurrencyValue(rowPricePerUnit)}
+                totalValue={formatCurrencyValue(quantityValue * rowPricePerUnit)}
+                notesValue={allocation.notes}
+                inventoryError={rowErrors?.inventoryId}
+                quantityError={rowErrors?.quantity}
+                showCellLabels={index === 0}
+                onInventoryChange={(value) => onAllocationFieldChange(allocation.id, "inventoryId", value)}
+                onQuantityChange={(value) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(value))}
+                onNotesChange={(value) => onAllocationFieldChange(allocation.id, "notes", value)}
+                controls={{
+                  capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
+                  status: {
+                    content: (
+                      <RecordRowStatusBadge tone={status.tone}>
+                        {status.label}
+                      </RecordRowStatusBadge>
+                    ),
+                  },
+                  remove: {
+                    onRemove: () => onDeleteAllocation(allocation.id),
+                  },
+                }}
+              />
+            </RecordScopedRow>
+          )
+        })
+      )}
+      <div
+        className={joinRecordSectionClasses(
+          "flex justify-end bg-orange-500/[0.06] px-3 py-3",
+          "border-t",
+          RECORD_SECTION_BORDER_CLASS_NAME,
+        )}
+      >
         <button
           type="button"
           onClick={onAddAllocation}
@@ -87,59 +147,7 @@ export function MaterialAllocationsEditor({
         >
           {loadingOptions ? "Loading inventory..." : "Add Allocation"}
         </button>
-      )}
-    >
-      {allocations.map((allocation, index) => {
-        const rowErrors = itemErrors[allocation.id]
-        const rowPricePerUnit = readPricePerUnit(allocationOptions, allocation.inventoryId) || Number(allocation.unitCost)
-        const quantityValue = Number(allocation.quantity || 0)
-        const hasErrors = hasFieldErrors(rowErrors)
-        const status = resolveRecordRowStatus({
-          hasErrors,
-          isUnsaved: allocation.id.startsWith("temp:"),
-        })
-
-        return (
-          <RecordSectionGridRow
-            key={allocation.id}
-            columns={WORK_ORDER_MATERIAL_ALLOCATION_COLUMNS}
-            group="allocation"
-            rowTone={hasErrors ? "error" : "allocation"}
-          >
-            <RecordAllocationRowBuilder
-              inventoryValue={allocation.inventoryId}
-              inventoryOptions={allocationOptions.map((option) => ({
-                value: option.id,
-                label: option.label,
-              }))}
-              quantityValue={allocation.quantity}
-              unitLabel={readAllocationUnit(allocationOptions, allocation)}
-              unitCostValue={formatCurrencyValue(rowPricePerUnit)}
-              totalValue={formatCurrencyValue(quantityValue * rowPricePerUnit)}
-              notesValue={allocation.notes}
-              inventoryError={rowErrors?.inventoryId}
-              quantityError={rowErrors?.quantity}
-              showCellLabels={index === 0}
-              onInventoryChange={(value) => onAllocationFieldChange(allocation.id, "inventoryId", value)}
-              onQuantityChange={(value) => onAllocationFieldChange(allocation.id, "quantity", normalizeEditableDecimalInput(value))}
-              onNotesChange={(value) => onAllocationFieldChange(allocation.id, "notes", value)}
-              controls={{
-                capabilities: { supportsStatusColumn: true, supportsRemoveRow: true },
-                status: {
-                  content: (
-                    <RecordRowStatusBadge tone={status.tone}>
-                      {status.label}
-                    </RecordRowStatusBadge>
-                  ),
-                },
-                remove: {
-                  onRemove: () => onDeleteAllocation(allocation.id),
-                },
-              }}
-            />
-          </RecordSectionGridRow>
-        )
-      })}
-    </RecordSectionGrid>
+      </div>
+    </>
   )
 }

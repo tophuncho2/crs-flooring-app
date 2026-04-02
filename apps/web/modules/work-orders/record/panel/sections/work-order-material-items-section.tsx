@@ -25,6 +25,7 @@ import type {
 import { WORK_ORDER_MATERIAL_COLUMNS } from "./work-order-line-item-grid"
 import { buildMaterialSectionMetrics } from "./work-order-section-metrics"
 import type { WorkOrderMaterialItem } from "@/modules/work-orders/types"
+import { Fragment } from "react"
 
 function readProductLabel(options: MaterialItemOption[], productId: string, fallback: string) {
   return options.find((product) => product.id === productId)?.label || fallback || "Untitled Material"
@@ -47,7 +48,7 @@ export function WorkOrderMaterialItemsSection({
   onToggleExpandedItem,
   onItemFieldChange,
   onDeleteItem,
-  renderAllocationSection,
+  renderAllocations,
 }: {
   title: string
   items: WorkOrderMaterialItem[]
@@ -61,7 +62,7 @@ export function WorkOrderMaterialItemsSection({
   onToggleExpandedItem: (itemId: string) => void
   onItemFieldChange: (itemId: string, field: keyof EditableMaterialItem, value: string) => void
   onDeleteItem: (itemId: string) => void
-  renderAllocationSection: (item: WorkOrderMaterialItem) => ReactNode
+  renderAllocations: (item: WorkOrderMaterialItem) => ReactNode
 }) {
   const metrics = buildMaterialSectionMetrics(items)
 
@@ -106,53 +107,54 @@ export function WorkOrderMaterialItemsSection({
           })
 
           return (
-            <RecordSectionGridRow
-              key={item.id}
-              columns={WORK_ORDER_MATERIAL_COLUMNS}
-              scopedContent={isExpanded ? renderAllocationSection(item) : null}
-            >
-              <RecordMaterialRowBuilder
-                productValue={item.productId}
-                productOptions={productOptions.map((product) => ({
-                  value: product.id,
-                  label: product.label,
-                }))}
-                quantityValue={item.quantity}
-                unitLabel={productUnit}
-                unitPriceValue={item.unitPrice}
-                unitPriceUnit={productUnit || "unit"}
-                totalValue={formatLineTotal(item)}
-                notesValue={item.notes}
-                productError={rowErrors?.productId}
-                quantityError={rowErrors?.quantity}
-                unitPriceError={rowErrors?.unitPrice}
-                showCellLabels={index === 0}
-                onProductChange={(value) => onItemFieldChange(item.id, "productId", value)}
-                onQuantityChange={(value) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(value))}
-                onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}
-                onNotesChange={(value) => onItemFieldChange(item.id, "notes", value)}
-                controls={{
-                  capabilities: { supportsScopedRows: true, supportsStatusColumn: true, supportsRemoveRow: true },
-                  toggle: {
-                    columnKey: "allocations",
-                    label: "Show / Hide",
-                    expanded: isExpanded,
-                    onToggle: () => onToggleExpandedItem(item.id),
-                    ariaLabel: isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`,
-                  },
-                  status: {
-                    content: (
-                      <RecordRowStatusBadge tone={status.tone}>
-                        {status.label}
-                      </RecordRowStatusBadge>
-                    ),
-                  },
-                  remove: {
-                    onRemove: () => onDeleteItem(item.id),
-                  },
-                }}
-              />
-            </RecordSectionGridRow>
+            <Fragment key={item.id}>
+              <RecordSectionGridRow
+                columns={WORK_ORDER_MATERIAL_COLUMNS}
+              >
+                <RecordMaterialRowBuilder
+                  productValue={item.productId}
+                  productOptions={productOptions.map((product) => ({
+                    value: product.id,
+                    label: product.label,
+                  }))}
+                  quantityValue={item.quantity}
+                  unitLabel={productUnit}
+                  unitPriceValue={item.unitPrice}
+                  unitPriceUnit={productUnit || "unit"}
+                  totalValue={formatLineTotal(item)}
+                  notesValue={item.notes}
+                  productError={rowErrors?.productId}
+                  quantityError={rowErrors?.quantity}
+                  unitPriceError={rowErrors?.unitPrice}
+                  showCellLabels={index === 0}
+                  onProductChange={(value) => onItemFieldChange(item.id, "productId", value)}
+                  onQuantityChange={(value) => onItemFieldChange(item.id, "quantity", normalizeEditableDecimalInput(value))}
+                  onUnitPriceChange={(value) => onItemFieldChange(item.id, "unitPrice", normalizeEditableDecimalInput(value))}
+                  onNotesChange={(value) => onItemFieldChange(item.id, "notes", value)}
+                  controls={{
+                    capabilities: { supportsScopedRows: true, supportsStatusColumn: true, supportsRemoveRow: true },
+                    toggle: {
+                      columnKey: "allocations",
+                      label: "Show / Hide",
+                      expanded: isExpanded,
+                      onToggle: () => onToggleExpandedItem(item.id),
+                      ariaLabel: isExpanded ? `Hide allocations for ${productLabel}` : `Show allocations for ${productLabel}`,
+                    },
+                    status: {
+                      content: (
+                        <RecordRowStatusBadge tone={status.tone}>
+                          {status.label}
+                        </RecordRowStatusBadge>
+                      ),
+                    },
+                    remove: {
+                      onRemove: () => onDeleteItem(item.id),
+                    },
+                  }}
+                />
+              </RecordSectionGridRow>
+              {isExpanded ? renderAllocations(item) : null}
+            </Fragment>
           )
         })}
       </RecordSectionGrid>

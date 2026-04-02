@@ -1,20 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import {
   RecordFooterNeutralButton,
   RecordGridCellInput,
   RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
-  RecordRowLayout,
+  RecordScopedRow,
   RecordSectionGrid,
   RecordSectionGridRow,
   RecordStaticFieldValue,
   type RecordSectionSubHeaderProps,
+  type RecordGridLayout,
 } from "@/modules/shared/engines/record-view"
+import {
+  joinRecordSectionClasses,
+  RECORD_SECTION_BORDER_CLASS_NAME,
+} from "@/modules/shared/engines/record-view/sections/record-section-tokens"
 import type { WarehouseLocationDraft, WarehouseSectionDraft } from "../../../types"
 import { WAREHOUSE_LOCATION_COLUMNS, WAREHOUSE_SECTION_COLUMNS } from "./warehouse-item-grid"
+
+const WAREHOUSE_LOCATION_LAYOUT: RecordGridLayout = { dataColumns: WAREHOUSE_LOCATION_COLUMNS }
 
 export function WarehouseSectionsSection({
   rows,
@@ -69,54 +76,10 @@ export function WarehouseSectionsSection({
           const sectionLocations = locations.filter((location) => location.sectionId === section.id)
 
           return (
-            <RecordSectionGridRow
-              key={section.id}
-              columns={WAREHOUSE_SECTION_COLUMNS}
-              scopedContent={
-                isExpanded ? (
-                  <RecordSectionGrid
-                    columns={WAREHOUSE_LOCATION_COLUMNS}
-                    surface="scoped"
-                    isEmpty={sectionLocations.length === 0}
-                    emptyState="No locations in this section yet."
-                    footer={
-                      <RecordFooterNeutralButton onClick={() => onAddLocation(section.id)} disabled={subHeader.isSaving}>
-                        Add Location
-                      </RecordFooterNeutralButton>
-                    }
-                  >
-                    {sectionLocations.map((location, locationIndex) => (
-                      <RecordSectionGridRow
-                        key={location.id}
-                        columns={WAREHOUSE_LOCATION_COLUMNS}
-                        rowTone="allocation"
-                      >
-                        <RecordRowLayout columns={WAREHOUSE_LOCATION_COLUMNS}>
-                          <RecordItemCell columnKey="locationCode" chrome="grid" tone="allocation" density="compact" showLabel={locationIndex === 0}>
-                            <RecordGridCellInput
-                              value={location.locationCode}
-                              onChange={(event) => onLocationCodeChange(location.id, event.target.value)}
-                              placeholder="Location code"
-                              controlSize="compact"
-                            />
-                          </RecordItemCell>
-                          <RecordItemSectionControls
-                            capabilities={{ supportsRemoveRow: true }}
-                            cellChrome="grid"
-                            showCellLabels={locationIndex === 0}
-                            remove={{
-                              onRemove: () => onRemoveLocation(location.id),
-                              disabled: subHeader.isSaving,
-                            }}
-                          />
-                        </RecordRowLayout>
-                      </RecordSectionGridRow>
-                    ))}
-                  </RecordSectionGrid>
-                ) : null
-              }
-            >
-              <RecordRowLayout columns={WAREHOUSE_SECTION_COLUMNS}>
+            <Fragment key={section.id}>
+              <RecordSectionGridRow
+                columns={WAREHOUSE_SECTION_COLUMNS}
+              >
                 <RecordItemCell columnKey="name" chrome="grid" showLabel={index === 0}>
                   <RecordGridCellInput
                     value={section.name}
@@ -147,8 +110,54 @@ export function WarehouseSectionsSection({
                     disabled: subHeader.isSaving,
                   }}
                 />
-              </RecordRowLayout>
-            </RecordSectionGridRow>
+              </RecordSectionGridRow>
+              {isExpanded ? (
+                <>
+                  {sectionLocations.length === 0 ? (
+                    <div className="bg-orange-500/[0.06] px-4 py-8 text-center text-[var(--foreground)]/65">
+                      No locations in this section yet.
+                    </div>
+                  ) : (
+                    sectionLocations.map((location, locationIndex) => (
+                      <RecordScopedRow
+                        key={location.id}
+                        layout={WAREHOUSE_LOCATION_LAYOUT}
+                        rowTone="allocation"
+                      >
+                        <RecordItemCell columnKey="locationCode" chrome="grid" tone="allocation" density="compact" showLabel={locationIndex === 0}>
+                          <RecordGridCellInput
+                            value={location.locationCode}
+                            onChange={(event) => onLocationCodeChange(location.id, event.target.value)}
+                            placeholder="Location code"
+                            controlSize="compact"
+                          />
+                        </RecordItemCell>
+                        <RecordItemSectionControls
+                          capabilities={{ supportsRemoveRow: true }}
+                          cellChrome="grid"
+                          showCellLabels={locationIndex === 0}
+                          remove={{
+                            onRemove: () => onRemoveLocation(location.id),
+                            disabled: subHeader.isSaving,
+                          }}
+                        />
+                      </RecordScopedRow>
+                    ))
+                  )}
+                  <div
+                    className={joinRecordSectionClasses(
+                      "flex justify-end bg-orange-500/[0.06] px-3 py-3",
+                      "border-t",
+                      RECORD_SECTION_BORDER_CLASS_NAME,
+                    )}
+                  >
+                    <RecordFooterNeutralButton onClick={() => onAddLocation(section.id)} disabled={subHeader.isSaving}>
+                      Add Location
+                    </RecordFooterNeutralButton>
+                  </div>
+                </>
+              ) : null}
+            </Fragment>
           )
         })}
       </RecordSectionGrid>

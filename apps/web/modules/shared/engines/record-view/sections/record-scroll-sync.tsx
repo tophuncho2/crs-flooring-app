@@ -12,14 +12,12 @@ import {
   type UIEvent,
 } from "react"
 
-type RecordScrollSyncGroup = "parent" | "allocation"
-
 type RecordScrollRegistry = Set<HTMLElement>
 
 type RecordScrollSyncContextValue = {
-  register: (group: RecordScrollSyncGroup, element: HTMLElement) => void
-  unregister: (group: RecordScrollSyncGroup, element: HTMLElement) => void
-  sync: (group: RecordScrollSyncGroup, source: HTMLElement) => void
+  register: (element: HTMLElement) => void
+  unregister: (element: HTMLElement) => void
+  sync: (source: HTMLElement) => void
 }
 
 const RecordScrollSyncContext = createContext<RecordScrollSyncContextValue | null>(null)
@@ -32,7 +30,7 @@ export function RecordScrollSyncProvider({ children }: { children: ReactNode }) 
   const registryRef = useRef<RecordScrollRegistry>(createRegistry())
   const isSyncingRef = useRef(false)
 
-  const register = useCallback((_group: RecordScrollSyncGroup, element: HTMLElement) => {
+  const register = useCallback((element: HTMLElement) => {
     const firstRegistered = registryRef.current.values().next().value as HTMLElement | undefined
 
     registryRef.current.add(element)
@@ -42,11 +40,11 @@ export function RecordScrollSyncProvider({ children }: { children: ReactNode }) 
     }
   }, [])
 
-  const unregister = useCallback((_group: RecordScrollSyncGroup, element: HTMLElement) => {
+  const unregister = useCallback((element: HTMLElement) => {
     registryRef.current.delete(element)
   }, [])
 
-  const sync = useCallback((_group: RecordScrollSyncGroup, source: HTMLElement) => {
+  const sync = useCallback((source: HTMLElement) => {
     if (isSyncingRef.current) {
       return
     }
@@ -82,24 +80,23 @@ export function RecordScrollSyncProvider({ children }: { children: ReactNode }) 
 
 function useRegisteredScrollElement(
   context: RecordScrollSyncContextValue | null,
-  group: RecordScrollSyncGroup,
 ): MutableRefObject<HTMLElement | null> {
   const elementRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     return () => {
       if (context && elementRef.current) {
-        context.unregister(group, elementRef.current)
+        context.unregister(elementRef.current)
       }
     }
-  }, [context, group])
+  }, [context])
 
   return elementRef
 }
 
-export function useRecordScrollSync(group: RecordScrollSyncGroup) {
+export function useRecordScrollSync() {
   const context = useContext(RecordScrollSyncContext)
-  const elementRef = useRegisteredScrollElement(context, group)
+  const elementRef = useRegisteredScrollElement(context)
 
   const setScrollElement = useCallback((element: HTMLElement | null) => {
     if (!context) {
@@ -108,19 +105,19 @@ export function useRecordScrollSync(group: RecordScrollSyncGroup) {
     }
 
     if (elementRef.current) {
-      context.unregister(group, elementRef.current)
+      context.unregister(elementRef.current)
     }
 
     elementRef.current = element
 
     if (element) {
-      context.register(group, element)
+      context.register(element)
     }
-  }, [context, elementRef, group])
+  }, [context, elementRef])
 
   const onScroll = useCallback((event: UIEvent<HTMLElement>) => {
-    context?.sync(group, event.currentTarget)
-  }, [context, group])
+    context?.sync(event.currentTarget)
+  }, [context])
 
   return {
     scrollRef: setScrollElement,

@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment } from "react"
 import { formatStableDateTime } from "@builders/domain"
 import { calculateProductInventorySummary } from "../../../domain/inventory-summary"
 import { formatInventoryImportNumber, formatInventoryQuantity } from "@/modules/inventory/domain/formatters"
@@ -7,12 +8,13 @@ import {
   RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
+  RecordScopedRow,
   RecordSectionGrid,
   RecordSectionGridRow,
-  RecordRowLayout,
   TextCell,
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
+  type RecordGridLayout,
 } from "@/modules/shared/engines/record-view"
 import type { ProductInventoryRow } from "../../../domain/types"
 
@@ -36,6 +38,8 @@ const CUT_LOG_COLUMNS: RecordRowColumnSpec[] = [
   { key: "after", minWidth: 144, align: "center", label: "After" },
   { key: "notes", minWidth: 320, grow: 2, label: "Notes" },
 ]
+
+const CUT_LOG_LAYOUT: RecordGridLayout = { dataColumns: CUT_LOG_COLUMNS }
 
 function readLocationLabel(row: ProductInventoryRow) {
   const parts = [row.warehouseName, row.sectionName, row.locationCode].filter(Boolean)
@@ -87,45 +91,10 @@ export function ProductInventoryRowsSection({
           const isExpanded = expandedInventoryIds.includes(row.id)
 
           return (
-            <RecordSectionGridRow
-              key={row.id}
-              columns={INVENTORY_ROW_COLUMNS}
-              scopedContent={
-                isExpanded ? (
-                  <RecordSectionGrid
-                    columns={CUT_LOG_COLUMNS}
-                    surface="scoped"
-                    isEmpty={row.cutLogs.length === 0}
-                    emptyState="No cut logs recorded for this inventory row."
-                  >
-                    {row.cutLogs.map((cutLog, cutLogIndex) => (
-                      <RecordSectionGridRow
-                        key={cutLog.id}
-                        columns={CUT_LOG_COLUMNS}
-                        rowTone="allocation"
-                      >
-                        <RecordItemCell columnKey="createdAt" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
-                          <TextCell>{formatStableDateTime(cutLog.createdAt)}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemCell columnKey="cut" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
-                          <TextCell align="center">{cutLog.cut}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemCell columnKey="before" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
-                          <TextCell align="center">{cutLog.before}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemCell columnKey="after" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
-                          <TextCell align="center">{cutLog.after}</TextCell>
-                        </RecordItemCell>
-                        <RecordItemCell columnKey="notes" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
-                          <TextCell noWrap={false}>{cutLog.notes || "-"}</TextCell>
-                        </RecordItemCell>
-                      </RecordSectionGridRow>
-                    ))}
-                  </RecordSectionGrid>
-                ) : null
-              }
-            >
-              <RecordRowLayout columns={INVENTORY_ROW_COLUMNS}>
+            <Fragment key={row.id}>
+              <RecordSectionGridRow
+                columns={INVENTORY_ROW_COLUMNS}
+              >
                 <RecordItemCell columnKey="itemNumber" chrome="grid" showLabel={index === 0}>
                   <TextCell className="font-medium">{row.itemNumber}</TextCell>
                 </RecordItemCell>
@@ -164,8 +133,39 @@ export function ProductInventoryRowsSection({
                     loading: loadingInventoryId === row.id,
                   }}
                 />
-              </RecordRowLayout>
-            </RecordSectionGridRow>
+              </RecordSectionGridRow>
+              {isExpanded ? (
+                row.cutLogs.length === 0 ? (
+                  <div className="bg-orange-500/[0.06] px-4 py-8 text-center text-[var(--foreground)]/65">
+                    No cut logs recorded for this inventory row.
+                  </div>
+                ) : (
+                  row.cutLogs.map((cutLog, cutLogIndex) => (
+                    <RecordScopedRow
+                      key={cutLog.id}
+                      layout={CUT_LOG_LAYOUT}
+                      rowTone="allocation"
+                    >
+                      <RecordItemCell columnKey="createdAt" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                        <TextCell>{formatStableDateTime(cutLog.createdAt)}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemCell columnKey="cut" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                        <TextCell align="center">{cutLog.cut}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemCell columnKey="before" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                        <TextCell align="center">{cutLog.before}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemCell columnKey="after" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                        <TextCell align="center">{cutLog.after}</TextCell>
+                      </RecordItemCell>
+                      <RecordItemCell columnKey="notes" chrome="grid" tone="allocation" density="compact" showLabel={cutLogIndex === 0}>
+                        <TextCell noWrap={false}>{cutLog.notes || "-"}</TextCell>
+                      </RecordItemCell>
+                    </RecordScopedRow>
+                  ))
+                )
+              ) : null}
+            </Fragment>
           )
         })}
       </RecordSectionGrid>

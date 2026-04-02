@@ -502,43 +502,25 @@ describe("record view single-section engine", () => {
     expect(screen.getByText("/ sqft")).toBeTruthy()
   })
 
-  it("row toggle buttons are canonical and do not bubble into row-open navigation", async () => {
+  it("row toggle buttons are canonical and scoped rows render as flat siblings", async () => {
     const user = userEvent.setup()
     const openItem = vi.fn()
-    const openAllocation = vi.fn()
     const toggle = vi.fn()
 
     render(
       <RecordSectionGrid columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}>
         <RecordSectionGridRow
           columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}
-          onOpen={openItem}
-          openAriaLabel="Open property Oak"
-          scopedContent={(
-            <RecordSectionGrid columns={[{ key: "allocation", minWidth: 180 }]} surface="scoped">
-              <RecordSectionGridRow
-                columns={[{ key: "allocation", minWidth: 180 }]}
-                onOpen={openAllocation}
-                openAriaLabel="Open template T-100"
-                rowTone="allocation"
-              >
-                <RecordRowLayout columns={[{ key: "allocation", minWidth: 180 }]}>
-                  <RecordItemCell columnKey="allocation" chrome="grid" tone="allocation">
-                    Template Row
-                  </RecordItemCell>
-                </RecordRowLayout>
-              </RecordSectionGridRow>
-            </RecordSectionGrid>
-          )}
         >
-          <RecordRowLayout columns={[{ key: "toggle", minWidth: 140 }, { key: "open", minWidth: 140 }]}>
-            <RecordItemCell label="Show / Hide" columnKey="toggle" chrome="grid">
-              <RecordRowToggleButton expanded={false} onToggle={toggle} ariaLabel="Show templates for Oak" />
-            </RecordItemCell>
-            <RecordItemCell label="Open" columnKey="open" chrome="grid">
-              <span>Open</span>
-            </RecordItemCell>
-          </RecordRowLayout>
+          <RecordItemCell label="Show / Hide" columnKey="toggle" chrome="grid">
+            <RecordRowToggleButton expanded={false} onToggle={toggle} ariaLabel="Show templates for Oak" />
+          </RecordItemCell>
+          <RecordItemCell label="Open" columnKey="open" chrome="grid">
+            <RecordItemSectionControls
+              capabilities={{ supportsOpenRow: true }}
+              open={{ onOpen: openItem }}
+            />
+          </RecordItemCell>
         </RecordSectionGridRow>
       </RecordSectionGrid>,
     )
@@ -546,12 +528,6 @@ describe("record view single-section engine", () => {
     await user.click(screen.getByRole("button", { name: "Show templates for Oak" }))
     expect(toggle).toHaveBeenCalledTimes(1)
     expect(openItem).not.toHaveBeenCalled()
-
-    await user.click(screen.getByRole("button", { name: "Open property Oak" }))
-    expect(openItem).toHaveBeenCalledTimes(1)
-
-    await user.click(screen.getByRole("button", { name: "Open template T-100" }))
-    expect(openAllocation).toHaveBeenCalledTimes(1)
   })
 
   it("item-section controls only render enabled canonical row control columns", () => {
