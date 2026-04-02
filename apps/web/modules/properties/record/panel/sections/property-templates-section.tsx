@@ -4,7 +4,6 @@ import {
   RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
-  RecordRowLayout,
   RecordSectionGrid,
   RecordSectionGridRow,
   TextCell,
@@ -57,26 +56,24 @@ export function PropertyTemplatesSection({
             key={template.id}
             columns={TEMPLATE_COLUMNS}
           >
-            <RecordRowLayout columns={TEMPLATE_COLUMNS}>
-              <RecordItemCell columnKey="template" chrome="grid" showLabel={index === 0}>
-                <TextCell className="font-medium">{template.templateTag}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell columnKey="warehouse" chrome="grid" showLabel={index === 0}>
-                <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
-              </RecordItemCell>
-              <RecordItemCell columnKey="items" chrome="grid" showLabel={index === 0}>
-                <TextCell align="center">{template.itemsCount}</TextCell>
-              </RecordItemCell>
-              <RecordItemSectionControls
-                capabilities={{ supportsOpenRow: true }}
-                cellChrome="grid"
-                showCellLabels={index === 0}
-                open={{
-                  onOpen: () => onOpenTemplate(template.id),
-                  loading: loadingTemplateId === template.id,
-                }}
-              />
-            </RecordRowLayout>
+            <RecordItemCell columnKey="template" chrome="grid" showLabel={index === 0}>
+              <TextCell className="font-medium">{template.templateTag}</TextCell>
+            </RecordItemCell>
+            <RecordItemCell columnKey="warehouse" chrome="grid" showLabel={index === 0}>
+              <TextCell>{template.warehouseName || "No warehouse"}</TextCell>
+            </RecordItemCell>
+            <RecordItemCell columnKey="items" chrome="grid" showLabel={index === 0}>
+              <TextCell align="center">{template.itemsCount}</TextCell>
+            </RecordItemCell>
+            <RecordItemSectionControls
+              capabilities={{ supportsOpenRow: true }}
+              cellChrome="grid"
+              showCellLabels={index === 0}
+              open={{
+                onOpen: () => onOpenTemplate(template.id),
+                loading: loadingTemplateId === template.id,
+              }}
+            />
           </RecordSectionGridRow>
         ))}
       </RecordSectionGrid>
