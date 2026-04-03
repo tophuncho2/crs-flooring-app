@@ -1,35 +1,53 @@
-No deleting a Manufacturer IF
+No deletes allowed IF
 
-- It is linked to a product.
+        - It is linked to a product.
 
-Form Rules
+Create Rules
 
-- Company name is  required
-- Company Name is unique
+        - Company name is  required
+        - Company Name is unique
+        - Idempotent
+        - Transactional
 
-List View UI / Controls (Engine Governed)
-- Sorting
-- Grouping
-- Search Bar
-- Columns Manager
-- Form
-- Record entry
-- Error handling Notices
-- Reconciliation
-- Total count
+List View UI / Controls
 
-Record View sections (Engine Governed)
-- Dirty Draft Tracking
-- Discard, Delete, Save buttond
-- 1/4 3/4 cards for the first section
-- Error handling and notices
+    Page State (Replace with correct vocab)
+        - Table title top left
+        - Sorting
+        - Grouping
+        - Search Bar
+        - Columns Manager
+        - + Formy
+        - Delete, saves and error handling notices
+        - Reconciliation
+        - Total row count
+        - Row click Record entry
 
-Section 1
-- Company Name
-- Agent Name
-- Website
-- Phone
-- Email
-- Created
-- Updated
-- Products Total
+    Table Columns
+        - Company Name
+        - Agent Name
+        - Website
+        - Phone
+        - Email
+
+Record View Sections 
+
+    Section 1
+
+    Sectiom Header
+        - Back Button
+
+    Sub Header
+        - Discard, Delete, Save buttons
+        - 1/4 & 3/4 cards to hold fields
+        - Error handling and notices
+        - Dirty draft satus / tracking
+
+    Field Data
+        - Company Name
+        - Agent Name
+        - Website
+        - Phone
+        - Email
+        - Created
+        - Updated
