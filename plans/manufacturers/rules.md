@@ -11,7 +11,7 @@ Create Rules
 
 List View UI / Controls
 
-    Page State (Replace with correct vocab)
+    Page State 
         - Table title top left
         - Sorting
         - Grouping
