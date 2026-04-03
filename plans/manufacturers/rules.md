@@ -74,3 +74,42 @@ Record View Sections
         - Products count (read-only, displayed in side pane)
         - Main pane (3/4): Company Name, Agent Name, Website, Phone, Email
         - Side pane (1/4): Products count, Created, Updated
+
+Additional Documentation
+
+    Access Control
+        - Manufacturers share tool access with Products (tool slug: "products")
+        - All pages require tool access (requireManufacturersAccess)
+        - All API routes enforce authorization via route policy
+
+    Rate Limiting
+        - Create: 20 requests per 10 minutes
+        - Update: 20 requests per 10 minutes
+        - Delete: 10 requests per 10 minutes
+        - Primary section save: 40 requests per 10 minutes
+        - List (GET): rate limited via query rate limiter
+
+    Error / Page States
+        - List page: shows DashboardErrorState if data load fails
+        - Detail page: returns 404 (Next.js notFound) if record missing
+        - Detail page: shows DashboardErrorState for other load failures
+        - Detail error code: MANUFACTURER_DETAIL_LOAD_FAILED
+
+    Race Condition Handling
+        - If uniqueness pre-check passes but a concurrent create causes a Prisma P2002, it is caught and mapped to the same 409 "Company name must be unique" response
+
+    Table Preferences
+        - Persisted per user (table key: "manufacturers-main")
+        - Stores sort direction, grouping enabled, group keys
+        - Loaded server-side and hydrated into client
+
+    Navigation
+        - Create and detail pages support returnTo search param for back button
+        - Defaults to /dashboard/manufacturers
+
+    Input Aliases
+        - agentName accepts body.name as a fallback (name is an alias for agentName on create/update)
+
+    Mutation Telemetry
+        - All mutations (create, update, delete) are wrapped in telemetry
+        - Tracks: action scope, route, entityType (flooringManufacturer), entityId
