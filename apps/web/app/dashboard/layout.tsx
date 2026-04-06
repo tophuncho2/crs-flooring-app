@@ -5,7 +5,7 @@ import HeaderControls from "@/modules/app-shell/components/header-controls"
 import { getPrismaConnectivityIssue } from "@builders/db"
 import { hasSystemAccess } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
-import { getUserToolContext } from "@/server/platform/tool-subscriptions"
+import { getUserToolContext } from "@/server/platform/tool-access"
 import { FLOORING_NAV_SLUGS } from "@/modules/app-shell/navigation/definitions"
 import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
 
@@ -46,10 +46,7 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  const toolContext = await getUserToolContext({
-    userId: user.id,
-    role: user.role,
-  })
+  const toolContext = getUserToolContext(user.role)
   const initialVisibleFlooringSlugs = FLOORING_NAV_SLUGS.filter(
     (slug) => ALWAYS_VISIBLE_FLOORING_SLUGS.has(slug) || !user.hiddenFlooringNavSlugs.includes(slug),
   )

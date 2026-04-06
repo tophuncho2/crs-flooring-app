@@ -61,3 +61,37 @@ export function hasToolAccess(role: Role, slug: ToolSlug): boolean {
 export function getToolCatalog(): ToolCatalogItem[] {
   return [...TOOL_CATALOG]
 }
+
+export type UserToolRow = ToolCatalogItem & {
+  id: string
+  isUnlocked: boolean
+}
+
+export type UserToolContext = {
+  role: Role
+  tools: UserToolRow[]
+  canUseTools: boolean
+  hasUnlimitedAccess: boolean
+}
+
+export function getUserToolContext(role: Role): UserToolContext {
+  const tools: UserToolRow[] = TOOL_CATALOG.map((tool) => ({
+    id: tool.slug,
+    slug: tool.slug,
+    name: tool.name,
+    description: tool.description,
+    path: tool.path,
+    isUnlocked: hasToolAccess(role, tool.slug),
+  }))
+
+  return {
+    role,
+    tools,
+    canUseTools: hasCapability(role, "system.access"),
+    hasUnlimitedAccess: hasCapability(role, "tool.admin"),
+  }
+}
+
+export function isToolUnlocked(role: Role, slug: ToolSlug): boolean {
+  return hasToolAccess(role, slug)
+}

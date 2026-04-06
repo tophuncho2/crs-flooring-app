@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type { UserToolRow } from "@/server/platform/tool-subscriptions"
+import type { UserToolRow } from "@/server/platform/tool-access"
 import { orderFlooringNavItems, type FlooringNavItem } from "@/modules/app-shell/navigation/definitions"
 
 export function useFlooringNavigationState({

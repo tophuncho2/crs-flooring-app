@@ -1,4 +1,4 @@
-import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import type { ToolSlug } from "@/server/platform/tool-access"
 import { TEMPLATES_TOOL_SLUG, WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 
 export type FlooringNavItem = {

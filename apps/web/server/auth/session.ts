@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { canBypassVerification, hasSystemAccess } from "@/server/auth/access-control"
 import { getAuthOptions } from "@/server/auth/auth-options"
-import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-subscriptions"
+import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-access"
 
 export type SessionUser = {
   id: string
@@ -49,7 +49,7 @@ export async function requireSessionUser(): Promise<SessionUser> {
 export async function requireToolAccess(slug: ToolSlug): Promise<SessionUser> {
   const user = await requireSessionUser()
 
-  if (!(await isToolUnlocked({ userId: user.id, role: user.role, slug }))) {
+  if (!isToolUnlocked(user.role, slug)) {
     redirect("/dashboard/inventory")
   }
 

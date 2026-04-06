@@ -5,7 +5,7 @@ import type { AuthorizedRouteContext } from "@/server/auth/route-auth"
 import { enforceRouteRateLimit, requireRouteAccess } from "@/server/http/route-helpers"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
 import { jsonWithRequestId } from "@/server/platform/request-context"
-import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import type { ToolSlug } from "@/server/platform/tool-access"
 
 export type MutationMeta = {
   idempotencyKey: string

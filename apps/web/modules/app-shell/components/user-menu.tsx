@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
-import type { ToolSlug } from "@/server/platform/tool-subscriptions"
+import type { ToolSlug } from "@/server/platform/tool-access"
 import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 
 type UserMenuProps = {

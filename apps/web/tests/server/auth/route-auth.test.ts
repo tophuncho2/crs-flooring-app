@@ -9,7 +9,8 @@ vi.mock("@/server/auth/session", () => ({
   getSessionUser: getSessionUserMock,
 }))
 
-vi.mock("@/server/platform/tool-subscriptions", () => ({
+vi.mock("@/server/platform/tool-access", async (importOriginal) => ({
+  ...(await importOriginal()),
   isToolUnlocked: isToolUnlockedMock,
 }))
 

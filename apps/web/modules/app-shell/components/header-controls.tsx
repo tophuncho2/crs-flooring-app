@@ -1,6 +1,6 @@
 "use client"
 
-import type { UserToolRow } from "@/server/platform/tool-subscriptions"
+import type { UserToolRow } from "@/server/platform/tool-access"
 import FlooringHeaderNav from "./header-nav"
 import FlooringToolsMenu from "./tools-menu"
 import UserMenu from "./user-menu"

@@ -7,7 +7,7 @@ import {
   hasSystemAccess,
   type Capability,
 } from "@/server/auth/access-control"
-import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-subscriptions"
+import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-access"
 import { getSessionUser, type SessionUser } from "@/server/auth/session"
 import { getClientIp, getRequestId, jsonWithRequestId } from "@/server/platform/request-context"
 
@@ -50,7 +50,7 @@ export async function authorizeRouteAccess(
     return jsonWithRequestId({ error: "Forbidden" }, requestId, { status: 403 })
   }
 
-  if (toolSlug && !(await isToolUnlocked({ userId: user.id, role: user.role, slug: toolSlug }))) {
+  if (toolSlug && !isToolUnlocked(user.role, toolSlug)) {
     return jsonWithRequestId({ error: "Forbidden" }, requestId, { status: 403 })
   }
 
