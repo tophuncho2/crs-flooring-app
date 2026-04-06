@@ -1,5 +1,5 @@
 import { requireToolAccess } from "@/server/auth/session"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { getManagementCompaniesPageData } from "@/modules/management-companies/data/queries"

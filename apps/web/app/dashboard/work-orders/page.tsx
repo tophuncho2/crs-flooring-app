@@ -3,7 +3,7 @@ import { requireWorkOrdersAccess } from "@/modules/shared/access/templates-work-
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getWorkOrdersPageData, listWorkOrdersPageFilterOptions } from "@/modules/work-orders/queries"
 import WorkOrdersClient from "@/modules/work-orders/list/work-orders-client"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableFilterState } from "@/modules/shared/engines/list-view/controllers/table-filter-state"
 import { createWorkOrdersPageFilterDefinitions } from "@/modules/work-orders/table-filters"
 import type { WorkOrderServerFilterState } from "@/modules/work-orders/types"

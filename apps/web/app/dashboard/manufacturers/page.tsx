@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireManufacturersAccess } from "@/modules/shared/access/lookup-domains"
 import ManufacturersClient from "@/modules/manufacturers/components/list/manufacturers-client"
 import { getManufacturersPageData } from "@/modules/manufacturers/data/queries"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
 
 export default async function ManufacturersPage({

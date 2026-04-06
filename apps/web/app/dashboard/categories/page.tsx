@@ -3,7 +3,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
 import CategoriesClient from "@/modules/categories/components/list/categories-client"
 import { getCategoriesPageData } from "@/modules/categories/data/queries"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
 
 export default async function FlooringCategoriesPage({

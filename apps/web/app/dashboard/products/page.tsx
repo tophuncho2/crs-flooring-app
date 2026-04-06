@@ -1,5 +1,5 @@
 import { requireToolAccess } from "@/server/auth/session"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import FlooringProductsClient from "@/modules/products/components/products-client"
 import { getProductsPageData } from "@/modules/products/data/queries"

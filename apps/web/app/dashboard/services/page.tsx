@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireServicesAccess } from "@/modules/shared/access/lookup-domains"
 import ServicesClient from "@/modules/services/components/list/services-client"
 import { getServicesPageData } from "@/modules/services/data/queries"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
 
 export default async function ServicesPage({

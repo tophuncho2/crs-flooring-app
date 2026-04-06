@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getInventoryPageData, listInventoryPageFilterOptions } from "@/modules/inventory/queries"
 import InventoryClient from "@/modules/inventory/components/list/inventory-client"

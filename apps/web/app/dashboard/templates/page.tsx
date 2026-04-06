@@ -3,7 +3,7 @@ import { requireTemplatesAccess } from "@/modules/shared/access/templates-work-o
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import { getTemplatesPageData } from "@/modules/templates/queries"
 import TemplatesClient from "@/modules/templates/list/templates-client"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 
 export default async function TemplatesPage({
   searchParams,

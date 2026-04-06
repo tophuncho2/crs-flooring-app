@@ -1,30 +1,25 @@
-import { Prisma, prisma, type DataAccessContext } from "@builders/db"
-import { createAppError } from "@/server/http/api-helpers"
-import { logEvent } from "@/server/platform/logger"
-import { normalizeTableFilterValues } from "@/modules/shared/engines/list-view/controllers/table-filter-state"
+import {
+  Prisma,
+  getTablePreferenceRecord,
+  getLegacyTablePreferenceRecord,
+  upsertTablePreferenceRecord,
+  upsertLegacyTablePreferenceRecord,
+  type DataAccessContext,
+  type FullTablePreferenceRecord,
+  type LegacyTablePreferenceRecord,
+  prisma,
+} from "@builders/db"
 import {
   DEFAULT_TABLE_PREFERENCE_PAYLOAD,
+  normalizeTableFilterValues,
   type TableFilterPreferenceMap,
   type TablePreferencePayload,
-} from "@/modules/shared/engines/list-view/controllers/table-preferences"
+} from "@builders/domain"
+import { TablePreferenceExecutionError } from "./errors.js"
 
 export type TablePreferenceInput = Partial<TablePreferencePayload>
 export type ResolvedTablePreference = TablePreferencePayload & {
   hasSavedPreference: boolean
-}
-
-type FullTablePreferenceRecord = {
-  hiddenColumnKeys: string[]
-  columnOrderKeys: string[]
-  isAscendingSort: boolean
-  isGroupingEnabled: boolean
-  groupByKeys: string[]
-  filtersJson: Prisma.JsonValue | null
-}
-
-type LegacyTablePreferenceRecord = {
-  hiddenColumnKeys: string[]
-  columnOrderKeys: string[]
 }
 
 const USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS = [
@@ -34,9 +29,13 @@ const USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS = [
   "UserTablePreference.filtersJson",
 ] as const
 
-function parseStringArray(value: unknown, errorMessage = "Invalid request body") {
+function parseStringArray(value: unknown) {
   if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
-    throw createAppError(errorMessage)
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   return Array.from(new Set(value))
@@ -48,7 +47,11 @@ function normalizeAllowedFilterValues(value: unknown) {
   }
 
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   return Object.fromEntries(
@@ -135,19 +138,46 @@ function isMissingUserTablePreferenceViewStateColumnError(error: unknown) {
   )
 }
 
+function logLegacyTablePreferenceFallback(action: "read" | "write", tableKey: string, error: unknown) {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level: "warn",
+    service: "web",
+    environment: process.env.NODE_ENV ?? "development",
+    message: "Falling back to legacy table preference storage because view-state columns are missing",
+    action: `account.tablePreferences.${action}.legacyFallback`,
+    details: {
+      entityType: "userTablePreference",
+      entityId: tableKey,
+      tableKey,
+      missingColumns: USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS,
+    },
+    error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error,
+  }
+  console.warn(JSON.stringify(payload))
+}
+
 function normalizeColumnVisibility(
   value: unknown,
   allowedColumnKeys: string[],
 ) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const allowedColumnSet = new Set(allowedColumnKeys)
   const entries = Object.entries(value)
   for (const [key, visible] of entries) {
     if (!allowedColumnSet.has(key) || typeof visible !== "boolean") {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
   }
 
@@ -162,7 +192,11 @@ function normalizeColumnOrder(
   const allowedColumnSet = new Set(allowedColumnKeys)
 
   if (requestedKeys.some((key) => !allowedColumnSet.has(key))) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const normalizedOrder = [...requestedKeys]
@@ -180,7 +214,11 @@ function normalizeSort(
   allowedSortKeys: string[],
 ) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const rawValue = value as Record<string, unknown>
@@ -188,7 +226,11 @@ function normalizeSort(
   const direction = rawValue.direction
 
   if (!allowedSortKeys.includes(key) || (direction !== "asc" && direction !== "desc")) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   return {
@@ -202,7 +244,11 @@ function normalizeGrouping(
   allowedGroupKeys: string[],
 ) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const rawValue = value as Record<string, unknown>
@@ -210,12 +256,20 @@ function normalizeGrouping(
   const keys = rawValue.keys
 
   if (typeof enabled !== "boolean") {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const normalizedKeys = parseStringArray(keys).slice(0, 3)
   if (normalizedKeys.some((key) => !allowedGroupKeys.includes(key))) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   return {
@@ -229,14 +283,22 @@ function normalizeFilters(
   allowedFilterValues: Record<string, string[]>,
 ) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const entries = Object.entries(value)
   const normalizedEntries = entries.map(([key, rawValues]) => {
     const allowedValues = allowedFilterValues[key]
     if (!allowedValues) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     const values = Array.isArray(rawValues)
@@ -244,10 +306,18 @@ function normalizeFilters(
       : typeof rawValues === "string"
         ? [rawValues]
         : (() => {
-            throw createAppError("Invalid request body")
+            throw new TablePreferenceExecutionError({
+              code: "INVALID_INPUT",
+              message: "Invalid request body",
+              status: 400,
+            })
           })()
     if (values.some((entry) => !allowedValues.includes(entry))) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     return [key, normalizeTableFilterValues(values)] as const
@@ -258,13 +328,21 @@ function normalizeFilters(
 
 export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInput {
   if (!body || typeof body !== "object") {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const rawBody = body as Record<string, unknown>
   const rawState = rawBody.state
   if (!rawState || typeof rawState !== "object" || Array.isArray(rawState)) {
-    throw createAppError("Invalid request body")
+    throw new TablePreferenceExecutionError({
+      code: "INVALID_INPUT",
+      message: "Invalid request body",
+      status: 400,
+    })
   }
 
   const state = rawState as Record<string, unknown>
@@ -278,7 +356,11 @@ export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInp
 
   if (state.columnVisibility !== undefined) {
     if (!allowedColumnKeys) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     nextPreference.columnVisibility = normalizeColumnVisibility(state.columnVisibility, allowedColumnKeys)
@@ -286,7 +368,11 @@ export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInp
 
   if (state.columnOrder !== undefined) {
     if (!allowedColumnKeys) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     nextPreference.columnOrder = normalizeColumnOrder(state.columnOrder, allowedColumnKeys)
@@ -294,7 +380,11 @@ export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInp
 
   if (state.sort !== undefined) {
     if (!allowedSortKeys || allowedSortKeys.length === 0) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     nextPreference.sort = normalizeSort(state.sort, allowedSortKeys)
@@ -302,7 +392,11 @@ export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInp
 
   if (state.grouping !== undefined) {
     if (!allowedGroupKeys) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     nextPreference.grouping = normalizeGrouping(state.grouping, allowedGroupKeys)
@@ -310,70 +404,17 @@ export function normalizeTablePreferenceInput(body: unknown): TablePreferenceInp
 
   if (state.filters !== undefined) {
     if (!allowedFilterValues) {
-      throw createAppError("Invalid request body")
+      throw new TablePreferenceExecutionError({
+        code: "INVALID_INPUT",
+        message: "Invalid request body",
+        status: 400,
+      })
     }
 
     nextPreference.filters = normalizeFilters(state.filters, allowedFilterValues)
   }
 
   return nextPreference
-}
-
-async function findFullTablePreference(
-  userId: string,
-  tableKey: string,
-  db: DataAccessContext,
-) {
-  return db.userTablePreference.findUnique({
-    where: {
-      userId_tableKey: {
-        userId,
-        tableKey,
-      },
-    },
-    select: {
-      hiddenColumnKeys: true,
-      columnOrderKeys: true,
-      isAscendingSort: true,
-      isGroupingEnabled: true,
-      groupByKeys: true,
-      filtersJson: true,
-    },
-  })
-}
-
-async function findLegacyTablePreference(
-  userId: string,
-  tableKey: string,
-  db: DataAccessContext,
-) {
-  return db.userTablePreference.findUnique({
-    where: {
-      userId_tableKey: {
-        userId,
-        tableKey,
-      },
-    },
-    select: {
-      hiddenColumnKeys: true,
-      columnOrderKeys: true,
-    },
-  })
-}
-
-function logLegacyTablePreferenceFallback(action: "read" | "write", tableKey: string, error: unknown) {
-  logEvent({
-    level: "warn",
-    message: "Falling back to legacy table preference storage because view-state columns are missing",
-    action: `account.tablePreferences.${action}.legacyFallback`,
-    entityType: "userTablePreference",
-    entityId: tableKey,
-    details: {
-      tableKey,
-      missingColumns: USER_TABLE_PREFERENCE_VIEW_STATE_COLUMNS,
-    },
-    error,
-  })
 }
 
 function mergeTablePreferencePayload(
@@ -417,7 +458,7 @@ export async function getResolvedUserTablePreference(
   db: DataAccessContext = prisma,
 ): Promise<ResolvedTablePreference> {
   try {
-    const preference = await findFullTablePreference(userId, tableKey, db)
+    const preference = await getTablePreferenceRecord(userId, tableKey, db)
     return normalizeTablePreferenceRecord(preference)
   } catch (error) {
     if (!isMissingUserTablePreferenceViewStateColumnError(error)) {
@@ -425,7 +466,7 @@ export async function getResolvedUserTablePreference(
     }
 
     logLegacyTablePreferenceFallback("read", tableKey, error)
-    const legacyPreference = await findLegacyTablePreference(userId, tableKey, db)
+    const legacyPreference = await getLegacyTablePreferenceRecord(userId, tableKey, db)
     return normalizeLegacyTablePreferenceRecord(legacyPreference)
   }
 }
@@ -441,40 +482,14 @@ export async function saveUserTablePreference(
   const hiddenColumnKeys = toStoredHiddenColumnKeys(nextPreference)
 
   try {
-    const preference = await db.userTablePreference.upsert({
-      where: {
-        userId_tableKey: {
-          userId,
-          tableKey,
-        },
-      },
-      update: {
-        hiddenColumnKeys,
-        columnOrderKeys: nextPreference.columnOrder,
-        isAscendingSort: nextPreference.sort.direction === "asc",
-        isGroupingEnabled: nextPreference.grouping.enabled,
-        groupByKeys: nextPreference.grouping.keys,
-        filtersJson: nextPreference.filters,
-      },
-      create: {
-        userId,
-        tableKey,
-        hiddenColumnKeys,
-        columnOrderKeys: nextPreference.columnOrder,
-        isAscendingSort: nextPreference.sort.direction === "asc",
-        isGroupingEnabled: nextPreference.grouping.enabled,
-        groupByKeys: nextPreference.grouping.keys,
-        filtersJson: nextPreference.filters,
-      },
-      select: {
-        hiddenColumnKeys: true,
-        columnOrderKeys: true,
-        isAscendingSort: true,
-        isGroupingEnabled: true,
-        groupByKeys: true,
-        filtersJson: true,
-      },
-    })
+    const preference = await upsertTablePreferenceRecord(userId, tableKey, {
+      hiddenColumnKeys,
+      columnOrderKeys: nextPreference.columnOrder,
+      isAscendingSort: nextPreference.sort.direction === "asc",
+      isGroupingEnabled: nextPreference.grouping.enabled,
+      groupByKeys: nextPreference.grouping.keys,
+      filtersJson: nextPreference.filters,
+    }, db)
 
     const normalizedPreference = normalizeTablePreferenceRecord(preference)
     return {
@@ -487,28 +502,10 @@ export async function saveUserTablePreference(
     }
 
     logLegacyTablePreferenceFallback("write", tableKey, error)
-    const legacyPreference = await db.userTablePreference.upsert({
-      where: {
-        userId_tableKey: {
-          userId,
-          tableKey,
-        },
-      },
-      update: {
-        hiddenColumnKeys,
-        columnOrderKeys: nextPreference.columnOrder,
-      },
-      create: {
-        userId,
-        tableKey,
-        hiddenColumnKeys,
-        columnOrderKeys: nextPreference.columnOrder,
-      },
-      select: {
-        hiddenColumnKeys: true,
-        columnOrderKeys: true,
-      },
-    })
+    const legacyPreference = await upsertLegacyTablePreferenceRecord(userId, tableKey, {
+      hiddenColumnKeys,
+      columnOrderKeys: nextPreference.columnOrder,
+    }, db)
 
     const normalizedPreference = normalizeLegacyTablePreferenceRecord(legacyPreference)
     return {

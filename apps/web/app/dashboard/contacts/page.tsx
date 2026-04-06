@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireContactsAccess } from "@/modules/shared/access/lookup-domains"
 import ContactsClient from "@/modules/contacts/components/list/contacts-client"
 import { getContactsPageData } from "@/modules/contacts/data/queries"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
 
 export default async function ContactsPage({

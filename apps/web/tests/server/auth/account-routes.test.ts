@@ -3,19 +3,33 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   applyRoutePolicyMock,
+  enforceMutationReceiptMock,
+  finalizeMutationReceiptMock,
   userUpdateMock,
-  userTablePreferenceFindUniqueMock,
-  userTablePreferenceUpsertMock,
+  getTablePreferenceRecordMock,
+  getLegacyTablePreferenceRecordMock,
+  upsertTablePreferenceRecordMock,
+  upsertLegacyTablePreferenceRecordMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
+  enforceMutationReceiptMock: vi.fn(),
+  finalizeMutationReceiptMock: vi.fn(),
   userUpdateMock: vi.fn(),
-  userTablePreferenceFindUniqueMock: vi.fn(),
-  userTablePreferenceUpsertMock: vi.fn(),
+  getTablePreferenceRecordMock: vi.fn(),
+  getLegacyTablePreferenceRecordMock: vi.fn(),
+  upsertTablePreferenceRecordMock: vi.fn(),
+  upsertLegacyTablePreferenceRecordMock: vi.fn(),
 }))
 
-vi.mock("@/server/http/route-policy", () => ({
-  applyRoutePolicy: applyRoutePolicyMock,
-}))
+vi.mock("@/server/http/route-policy", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/server/http/route-policy")>()
+  return {
+    ...actual,
+    applyRoutePolicy: applyRoutePolicyMock,
+    enforceMutationReceipt: enforceMutationReceiptMock,
+    finalizeMutationReceipt: finalizeMutationReceiptMock,
+  }
+})
 
 vi.mock("@/server/platform/logger", () => ({
   logEvent: vi.fn(),
@@ -29,20 +43,16 @@ vi.mock("@builders/db", async () => {
       user: {
         update: userUpdateMock,
       },
-      userTablePreference: {
-        findUnique: userTablePreferenceFindUniqueMock,
-        upsert: userTablePreferenceUpsertMock,
-      },
     },
     db: {
       user: {
         update: userUpdateMock,
       },
-      userTablePreference: {
-        findUnique: userTablePreferenceFindUniqueMock,
-        upsert: userTablePreferenceUpsertMock,
-      },
     },
+    getTablePreferenceRecord: getTablePreferenceRecordMock,
+    getLegacyTablePreferenceRecord: getLegacyTablePreferenceRecordMock,
+    upsertTablePreferenceRecord: upsertTablePreferenceRecordMock,
+    upsertLegacyTablePreferenceRecord: upsertLegacyTablePreferenceRecordMock,
   }
 })
 
@@ -64,10 +74,12 @@ describe("account routes", () => {
         isVerified: true,
       },
     })
+    enforceMutationReceiptMock.mockResolvedValue({ replay: null })
+    finalizeMutationReceiptMock.mockResolvedValue(undefined)
   })
 
   it("GET /api/account/table-preferences/[tableKey] returns the saved preference", async () => {
-    userTablePreferenceFindUniqueMock.mockResolvedValue({
+    getTablePreferenceRecordMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "cost"],
       isAscendingSort: false,
@@ -101,7 +113,7 @@ describe("account routes", () => {
   })
 
   it("PATCH /api/account/table-preferences/[tableKey] rejects invalid column keys", async () => {
-    userTablePreferenceFindUniqueMock.mockResolvedValue({
+    getTablePreferenceRecordMock.mockResolvedValue({
       hiddenColumnKeys: [],
       columnOrderKeys: [],
       isAscendingSort: true,
@@ -109,7 +121,7 @@ describe("account routes", () => {
       groupByKeys: [],
       filtersJson: null,
     })
-    userTablePreferenceUpsertMock.mockResolvedValue({
+    upsertTablePreferenceRecordMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "qty", "cost"],
       isAscendingSort: true,
@@ -123,6 +135,7 @@ describe("account routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mutation: { idempotencyKey: "idem-1" },
           state: {
             columnVisibility: {
               cost: false,
@@ -139,11 +152,11 @@ describe("account routes", () => {
 
     expect(response.status).toBe(400)
     expect(payload.error).toBe("Invalid request body")
-    expect(userTablePreferenceUpsertMock).not.toHaveBeenCalled()
+    expect(upsertTablePreferenceRecordMock).not.toHaveBeenCalled()
   })
 
   it("PATCH /api/account/table-preferences/[tableKey] merges valid sort, grouping, and filters into the existing preference", async () => {
-    userTablePreferenceFindUniqueMock.mockResolvedValue({
+    getTablePreferenceRecordMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "cost"],
       isAscendingSort: true,
@@ -151,7 +164,7 @@ describe("account routes", () => {
       groupByKeys: [],
       filtersJson: null,
     })
-    userTablePreferenceUpsertMock.mockResolvedValue({
+    upsertTablePreferenceRecordMock.mockResolvedValue({
       hiddenColumnKeys: ["cost"],
       columnOrderKeys: ["name", "cost"],
       isAscendingSort: false,
@@ -165,6 +178,7 @@ describe("account routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mutation: { idempotencyKey: "idem-2" },
           state: {
             columnVisibility: {
               name: true,
@@ -198,17 +212,18 @@ describe("account routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(userTablePreferenceUpsertMock).toHaveBeenCalledWith(
+    expect(upsertTablePreferenceRecordMock).toHaveBeenCalledWith(
+      "user-1",
+      "inventory-main",
       expect.objectContaining({
-        update: expect.objectContaining({
-          hiddenColumnKeys: ["cost"],
-          columnOrderKeys: ["name", "cost"],
-          isAscendingSort: false,
-          isGroupingEnabled: true,
-          groupByKeys: ["warehouse"],
-          filtersJson: { status: ["pending"], warehouseId: ["wh-1"] },
-        }),
+        hiddenColumnKeys: ["cost"],
+        columnOrderKeys: ["name", "cost"],
+        isAscendingSort: false,
+        isGroupingEnabled: true,
+        groupByKeys: ["warehouse"],
+        filtersJson: { status: ["pending"], warehouseId: ["wh-1"] },
       }),
+      expect.anything(),
     )
     expect(payload).toEqual({
       sort: {
@@ -232,20 +247,19 @@ describe("account routes", () => {
   })
 
   it("GET /api/account/table-preferences/[tableKey] falls back to legacy columns when view-state columns are not in the database yet", async () => {
-    userTablePreferenceFindUniqueMock
-      .mockRejectedValueOnce(
-        new Prisma.PrismaClientKnownRequestError(
-          "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
-          {
-            code: "P2022",
-            clientVersion: "6.12.0",
-          },
-        ),
-      )
-      .mockResolvedValueOnce({
-        hiddenColumnKeys: ["cost"],
-        columnOrderKeys: ["name", "cost"],
-      })
+    getTablePreferenceRecordMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError(
+        "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
+        {
+          code: "P2022",
+          clientVersion: "6.12.0",
+        },
+      ),
+    )
+    getLegacyTablePreferenceRecordMock.mockResolvedValueOnce({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["name", "cost"],
+    })
 
     const response = await GET_TABLE_PREFERENCE(new Request("http://localhost/api/account/table-preferences/products-main"), {
       params: Promise.resolve({ tableKey: "products-main" }),
@@ -269,44 +283,44 @@ describe("account routes", () => {
         keys: [],
       },
     })
-    expect(userTablePreferenceFindUniqueMock).toHaveBeenCalledTimes(2)
+    expect(getTablePreferenceRecordMock).toHaveBeenCalledTimes(1)
+    expect(getLegacyTablePreferenceRecordMock).toHaveBeenCalledTimes(1)
   })
 
   it("PATCH /api/account/table-preferences/[tableKey] falls back to legacy writes when view-state columns are not in the database yet", async () => {
-    userTablePreferenceFindUniqueMock
-      .mockRejectedValueOnce(
-        new Prisma.PrismaClientKnownRequestError(
-          "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
-          {
-            code: "P2022",
-            clientVersion: "6.12.0",
-          },
-        ),
-      )
-      .mockResolvedValueOnce({
-        hiddenColumnKeys: [],
-        columnOrderKeys: [],
-      })
-    userTablePreferenceUpsertMock
-      .mockRejectedValueOnce(
-        new Prisma.PrismaClientKnownRequestError(
-          "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
-          {
-            code: "P2022",
-            clientVersion: "6.12.0",
-          },
-        ),
-      )
-      .mockResolvedValueOnce({
-        hiddenColumnKeys: ["cost"],
-        columnOrderKeys: ["qty", "name", "cost"],
-      })
+    getTablePreferenceRecordMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError(
+        "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
+        {
+          code: "P2022",
+          clientVersion: "6.12.0",
+        },
+      ),
+    )
+    getLegacyTablePreferenceRecordMock.mockResolvedValueOnce({
+      hiddenColumnKeys: [],
+      columnOrderKeys: [],
+    })
+    upsertTablePreferenceRecordMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError(
+        "The column `UserTablePreference.isAscendingSort` does not exist in the current database.",
+        {
+          code: "P2022",
+          clientVersion: "6.12.0",
+        },
+      ),
+    )
+    upsertLegacyTablePreferenceRecordMock.mockResolvedValueOnce({
+      hiddenColumnKeys: ["cost"],
+      columnOrderKeys: ["qty", "name", "cost"],
+    })
 
     const response = await PATCH_TABLE_PREFERENCE(
       new Request("http://localhost/api/account/table-preferences/products-main", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mutation: { idempotencyKey: "idem-3" },
           state: {
             columnVisibility: {
               qty: true,
@@ -332,19 +346,14 @@ describe("account routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(userTablePreferenceUpsertMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        update: {
-          hiddenColumnKeys: ["cost"],
-          columnOrderKeys: ["qty", "name", "cost"],
-        },
-        create: {
-          userId: "user-1",
-          tableKey: "products-main",
-          hiddenColumnKeys: ["cost"],
-          columnOrderKeys: ["qty", "name", "cost"],
-        },
-      }),
+    expect(upsertLegacyTablePreferenceRecordMock).toHaveBeenCalledWith(
+      "user-1",
+      "products-main",
+      {
+        hiddenColumnKeys: ["cost"],
+        columnOrderKeys: ["qty", "name", "cost"],
+      },
+      expect.anything(),
     )
     expect(payload).toEqual({
       sort: {
@@ -376,6 +385,7 @@ describe("account routes", () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mutation: { idempotencyKey: "idem-4" },
           visibleSlugs: ["products", "products", "bad"],
           orderedSlugs: ["flooring-templates", "bad", "products"],
         }),

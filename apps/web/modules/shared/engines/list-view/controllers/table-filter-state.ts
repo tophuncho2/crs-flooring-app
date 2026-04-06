@@ -1,3 +1,4 @@
+import { normalizeTableFilterValues } from "@builders/domain"
 import type { TableFilterPreferenceMap } from "./table-preferences"
 
 export type TableFilterOption = {
@@ -51,9 +52,7 @@ export function buildAllowedFilterValues(definitions: TableFilterDefinition[]) {
   )
 }
 
-export function normalizeTableFilterValues(values: string[]) {
-  return Array.from(new Set(values.filter((value) => value.trim().length > 0)))
-}
+export { normalizeTableFilterValues } from "@builders/domain"
 
 export function buildFilterSearchParams(
   currentSearchParams: URLSearchParams,

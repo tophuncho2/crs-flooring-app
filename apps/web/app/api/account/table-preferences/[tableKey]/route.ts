@@ -2,7 +2,7 @@ import {
   getUserTablePreference,
   normalizeTablePreferenceInput,
   saveUserTablePreference,
-} from "@/server/account/table-preferences"
+} from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {

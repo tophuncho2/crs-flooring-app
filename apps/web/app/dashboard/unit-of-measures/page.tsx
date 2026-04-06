@@ -3,7 +3,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireUnitOfMeasuresAccess } from "@/modules/shared/access/lookup-domains"
 import UnitOfMeasuresClient from "@/modules/unit-of-measures/components/list/unit-of-measures-client"
 import { getUnitOfMeasuresPageData } from "@/modules/unit-of-measures/data/queries"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
 
 export default async function UnitOfMeasuresPage({

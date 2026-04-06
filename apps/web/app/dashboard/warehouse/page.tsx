@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { getResolvedUserTablePreference } from "@/server/account/table-preferences"
+import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
 import WarehouseClient from "@/modules/warehouse/components/warehouse-client"
 import { getWarehousePageData } from "@/modules/warehouse/queries"
