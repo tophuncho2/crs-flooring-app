@@ -18,7 +18,7 @@ describe("package scripts", () => {
     expect(webPackageJson.scripts.build).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next build --webpack")
     expect(webPackageJson.scripts.start).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next start")
     expect(webPackageJson.scripts.typecheck).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next typegen && tsc -p tsconfig.json --noEmit")
-    expect(rootPackageJson.scripts["build:web"]).toBe("npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/application && npm run build --workspace @builders/lib && npm run build --workspace @builders/ui && npm run build --workspace @builders/web")
+    expect(rootPackageJson.scripts["build:web"]).toBe("npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/application && npm run build --workspace @builders/lib && npm run build --workspace @builders/web")
     expect(rootPackageJson.scripts["start:web"]).toBe("npm run start --workspace @builders/web")
     expect(rootPackageJson.scripts["build:relay"]).toBe("npm run build --workspace @builders/db && npm run build --workspace @builders/domain && npm run build --workspace @builders/application && npm run build --workspace @builders/lib && npm run build --workspace @builders/relay")
     expect(rootPackageJson.scripts["start:relay"]).toBe("npm run start --workspace @builders/relay")

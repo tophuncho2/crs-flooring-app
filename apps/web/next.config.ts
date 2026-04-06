@@ -34,7 +34,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@builders/db", "@builders/domain", "@builders/lib", "@builders/ui"],
+  transpilePackages: ["@builders/db", "@builders/domain", "@builders/lib"],
   async headers() {
     return [
       {

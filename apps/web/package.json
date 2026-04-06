@@ -20,7 +20,6 @@
     "@builders/domain": "file:../../packages/domain",
     "@builders/application": "file:../../packages/application",
     "@builders/lib": "file:../../packages/lib",
-    "@builders/ui": "file:../../packages/ui",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
