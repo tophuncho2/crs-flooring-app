@@ -1,0 +1,42 @@
+# Builders Web App
+
+## Architecture Reference Docs
+
+Before making changes, read `docs/INDEX.md` to identify relevant architecture docs. Then read the specific docs listed below based on what you're touching.
+
+### Trigger Conditions
+
+**Layer work:**
+- Touching `packages/domain/` → read `docs/layers/DOMAIN.md`
+- Touching `packages/application/` → read `docs/layers/APPLICATION.md`
+- Touching `packages/db/` → read `docs/layers/DATA.md`
+
+**Engine work:**
+- Touching any module's `controller/` directory → read `docs/layers/CONTROLLER.md`
+- Touching `modules/shared/engines/list-view/` → read `docs/engines/LIST_VIEW_ENGINE.md`
+- Touching `modules/shared/engines/record-view/` → read `docs/engines/RECORD_VIEW_ENGINE.md`
+- Touching `modules/app-shell/` → read `docs/engines/NAVIGATION_SHELL.md`
+
+**Route and execution work:**
+- Touching any file in `app/api/` → read `docs/execution/ROUTE_POLICY.md` + `docs/execution/EXECUTION_ENGINE.md`
+- Touching error handling → read `docs/execution/ERROR_HANDLING.md`
+- Touching mutation receipts or idempotency → read `docs/execution/IDEMPOTENCY.md`
+
+**Cross-cutting concerns:**
+- Touching `server/auth/` → read `docs/cross-cutting/AUTH.md` + `docs/cross-cutting/AUTHORIZATION.md`
+- Touching rate limiting → read `docs/cross-cutting/RATE_LIMITING.md`
+- Touching logging or Sentry → read `docs/cross-cutting/OBSERVABILITY.md`
+- Touching transactions or outbox → read `docs/cross-cutting/TRANSACTIONS.md`
+
+**Service work:**
+- Touching `apps/worker/` → read `docs/services/WORKER.md`
+- Touching `apps/relay/` → read `docs/services/RELAY.md`
+
+**Module work:**
+- Creating a new module → read `docs/patterns/MODULE_ANATOMY.md`
+- Working on outbox events → read `docs/patterns/OUTBOX_PATTERN.md`
+
+**Domain work:**
+- Working on users, auth, roles, admin → read `docs/domains/BUILDER_AUTH.md`
+- Working on work orders or allocation → read `docs/domains/WORK_ORDERS.md`
+- Working on inventory or warehouses → read `docs/domains/INVENTORY.md`
