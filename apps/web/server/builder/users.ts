@@ -130,20 +130,3 @@ export async function deleteManagedUser(actor: SessionUser, id: string, db: Data
     role: existingUser.role,
   }
 }
-
-export async function listManagedUserActivity(db: DataAccessContext = prisma) {
-  const activity = await db.userLoginActivity.findMany({
-    orderBy: { loggedInAt: "desc" },
-    take: 200,
-    select: {
-      id: true,
-      userEmail: true,
-      loggedInAt: true,
-    },
-  })
-
-  return activity.map((row) => ({
-    ...row,
-    loggedInAt: row.loggedInAt.toISOString(),
-  }))
-}
