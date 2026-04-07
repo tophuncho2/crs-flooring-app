@@ -59,3 +59,39 @@
 | [domains/BUILDER_AUTH.md](domains/BUILDER_AUTH.md) | Users, roles, auth, admin |
 | [domains/WORK_ORDERS.md](domains/WORK_ORDERS.md) | Work orders and allocation (stub) |
 | [domains/INVENTORY.md](domains/INVENTORY.md) | Inventory and warehouse (stub) |
+
+
+## Review order** (dependencies flow top-down — each doc should only reference docs above it or at the same level)
+
+1. `layers/DOMAIN.md` — foundation, no dependencies
+2. `layers/DATA.md` — depends on domain types
+3. `layers/APPLICATION.md` — depends on domain + data
+4. `layers/TRANSPORT.md` — depends on application output
+5. `layers/CONTROLLER.md` — depends on transport + engines
+6. `layers/UI.md` — depends on controllers
+7. `execution/EXECUTION_ENGINE.md` — the 9-step backbone
+8. `execution/ROUTE_POLICY.md` — HTTP implementation of execution engine
+9. `execution/ERROR_HANDLING.md` — referenced by route policy
+10. `execution/IDEMPOTENCY.md` — referenced by route policy
+11. `cross-cutting/AUTH.md`
+12. `cross-cutting/AUTHORIZATION.md`
+13. `cross-cutting/TRANSACTIONS.md`
+14. `cross-cutting/RATE_LIMITING.md`
+15. `cross-cutting/OBSERVABILITY.md`
+16. `cross-cutting/VALIDATION.md`
+17. `cross-cutting/TESTING.md`
+18. `cross-cutting/DEPLOYMENT.md` ← new
+19. `patterns/MODULE_ANATOMY.md`
+20. `patterns/OUTBOX_PATTERN.md`
+21. `patterns/API_DESIGN.md`
+22. `patterns/ACCEPTED_EXCEPTIONS.md`
+23. `engines/LIST_VIEW_ENGINE.md`
+24. `engines/RECORD_VIEW_ENGINE.md`
+25. `engines/NAVIGATION_SHELL.md`
+26. `services/RELAY.md`
+27. `services/WORKER.md`
+28. `domains/BUILDER_AUTH.md`
+29. `domains/INVENTORY.md`
+30. `domains/WORK_ORDERS.md`
+
+Review them in this order. Each doc should be accurate against the codebase before moving to the next. Want a Claude Code prompt to start the sweep?
