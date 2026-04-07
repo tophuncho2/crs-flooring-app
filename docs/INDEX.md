@@ -36,6 +36,8 @@
 | [cross-cutting/OBSERVABILITY.md](cross-cutting/OBSERVABILITY.md) | Logging, tracing, Sentry, Railway |
 | [cross-cutting/RATE_LIMITING.md](cross-cutting/RATE_LIMITING.md) | Rate limit enforcement |
 | [cross-cutting/TRANSACTIONS.md](cross-cutting/TRANSACTIONS.md) | Transaction boundaries and outbox |
+| [cross-cutting/TESTING.md](cross-cutting/TESTING.md) | Test strategy, mock isolation, vitest conventions |
+| [cross-cutting/VALIDATION.md](cross-cutting/VALIDATION.md) | Shared validation infrastructure, input parsing |
 
 ## Services
 | Doc | Scope |
@@ -49,6 +51,7 @@
 | [patterns/MODULE_ANATOMY.md](patterns/MODULE_ANATOMY.md) | Feature module folder structure |
 | [patterns/OUTBOX_PATTERN.md](patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
 | [patterns/ACCEPTED_EXCEPTIONS.md](patterns/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
+| [patterns/API_DESIGN.md](patterns/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
 
 ## Domain References
 | Doc | Scope |
