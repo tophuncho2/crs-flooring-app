@@ -1,10 +1,32 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { deleteManagedUser, normalizeManagedUserUpdateInput, updateManagedUser } from "@/server/builder/users"
+import { deleteManagedUser, getManagedUserById, normalizeManagedUserUpdateInput, updateManagedUser } from "@/server/builder/users"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import { parseUuidParam } from "@/server/http/api-helpers"
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, { capability: "users.manage" })
+  if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/admin/users/[id]")
+  if (rateLimited) return rateLimited
+
+  const { id } = await params
+  parseUuidParam(id, "id")
+
+  try {
+    const user = await getManagedUserById(access.user, id)
+    if (!user) {
+      return routeJson(access, { error: "User not found" }, { status: 404 })
+    }
+    return routeJson(access, { user })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -14,7 +36,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       scope: "users.update",
       limit: 30,
       windowMs: 10 * 60 * 1000,
-      route: "/api/builder/users/[id]",
+      route: "/api/admin/users/[id]",
     },
   })
   if (access instanceof Response) return access
@@ -39,7 +61,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       {
         message: "User governance updated",
         action: "users.update",
-        route: "/api/builder/users/[id]",
+        route: "/api/admin/users/[id]",
         entityType: "user",
         entityId: id,
       },
@@ -67,7 +89,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       scope: "users.delete",
       limit: 20,
       windowMs: 10 * 60 * 1000,
-      route: "/api/builder/users/[id]",
+      route: "/api/admin/users/[id]",
     },
   })
   if (access instanceof Response) return access
@@ -92,7 +114,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       {
         message: "User deleted",
         action: "users.delete",
-        route: "/api/builder/users/[id]",
+        route: "/api/admin/users/[id]",
         entityType: "user",
         entityId: id,
       },

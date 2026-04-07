@@ -10,12 +10,12 @@ describe("access-control capability matrix", () => {
   it("keeps owner as the top governance role", () => {
     expect(hasCapability("OWNER", "tool.admin")).toBe(true)
     expect(hasCapability("OWNER", "users.manage")).toBe(true)
-    expect(hasCapability("OWNER", "builderPanel.access")).toBe(true)
+    expect(hasCapability("OWNER", "adminPanel.access")).toBe(true)
   })
 
   it("allows admins to govern but not act as the top platform role", () => {
     expect(hasCapability("ADMIN", "users.manage")).toBe(true)
-    expect(hasCapability("ADMIN", "builderPanel.access")).toBe(true)
+    expect(hasCapability("ADMIN", "adminPanel.access")).toBe(true)
     expect(hasCapability("ADMIN", "tool.admin")).toBe(false)
   })
 

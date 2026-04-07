@@ -8,7 +8,7 @@ import { isActiveFlooringItem, isFlooringRoute } from "@/modules/app-shell/navig
 
 type FlooringHeaderNavProps = {
   canUseTools: boolean
-  hasBuilderPanelAccess: boolean
+  hasAdminPanelAccess: boolean
   orderedItems: FlooringNavItem[]
   visibleSlugSet: Set<string>
   canOpenItem: (item: FlooringNavItem) => boolean
@@ -16,14 +16,14 @@ type FlooringHeaderNavProps = {
 
 export default function FlooringHeaderNav({
   canUseTools,
-  hasBuilderPanelAccess,
+  hasAdminPanelAccess,
   orderedItems,
   visibleSlugSet,
   canOpenItem,
 }: FlooringHeaderNavProps) {
   const pathname = usePathname()
 
-  if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasBuilderPanelAccess)) {
+  if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasAdminPanelAccess)) {
     return null
   }
 

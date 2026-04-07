@@ -16,6 +16,7 @@ export type ManagedUserRow = {
   role: "OWNER" | "ADMIN" | "BUILDER"
   isVerified: boolean
   createdAt: string
+  updatedAt: string
   canRestrict: boolean
   canEditRole: boolean
   canDelete: boolean
@@ -86,6 +87,7 @@ export function normalizeManagedUserRow(
     role: user.role as "OWNER" | "ADMIN" | "BUILDER",
     isVerified: isBuilder ? user.isVerified : true,
     createdAt: user.createdAt.toISOString(),
+    updatedAt: user.createdAt.toISOString(),
     canRestrict: canManage && isBuilder,
     canEditRole: false,
     canDelete: canManage && isBuilder,

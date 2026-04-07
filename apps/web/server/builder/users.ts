@@ -17,19 +17,32 @@ export async function listManagedUsers(actor: SessionUser, db: DataAccessContext
       },
     },
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      isVerified: true,
-      createdAt: true,
-    },
+    select: managedUserSelect,
   })
 
   return {
     viewerCanManageUsers: canManageUsers(actor.email, actor.role),
     users: users.map((user) => normalizeManagedUserRow(user, actor)),
   }
+}
+
+const managedUserSelect = {
+  id: true,
+  email: true,
+  role: true,
+  isVerified: true,
+  createdAt: true,
+} as const
+
+export async function getManagedUserById(actor: SessionUser, id: string, db: DataAccessContext = prisma) {
+  const user = await db.user.findUnique({
+    where: { id },
+    select: managedUserSelect,
+  })
+
+  if (!user) return null
+
+  return normalizeManagedUserRow(user, actor)
 }
 
 export function normalizeManagedUserUpdateInput(body: unknown) {

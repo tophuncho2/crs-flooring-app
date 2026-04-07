@@ -99,7 +99,7 @@ Returns SessionUser { id, email, role, isVerified }
 ### 2.3 Route Authorization (API Routes)
 
 ```
-API route handler (e.g. GET /api/builder/users)
+API route handler (e.g. GET /api/admin/users)
   │  const access = await applyRoutePolicy(request, { capability: "users.manage", rateLimit: {...} })
   ▼
 route-policy.ts:applyRoutePolicy()
@@ -124,10 +124,10 @@ Returns AuthorizedRouteContext { user, requestId, clientIp } | Response
 ### 2.4 User CRUD (Current — server/builder)
 
 ```
-BuilderUsersPanel (modules/builder/components/users-panel.tsx)
-  │  fetch("/api/builder/users")
+AdminUsersClient (modules/admin/components/list/admin-users-client.tsx)
+  │  fetch("/api/admin/users")
   ▼
-GET /api/builder/users/route.ts
+GET /api/admin/users/route.ts
   │  applyRoutePolicy({ capability: "users.manage" })
   │  enforceQueryRateLimit()
   │  listManagedUsers(actor)
@@ -233,11 +233,18 @@ User must wait for OWNER/ADMIN to set isVerified = true
 |------|-------------|
 | `components/login-form.tsx` | Login + "Create Account" form. Client component with `signIn()` (NextAuth) and `POST /api/auth/register`. |
 
-### 3.6 `modules/builder/` — 1 File
+### 3.6 `modules/admin/` — Engine-Driven Admin Module
 
-| File | What It Does |
-|------|-------------|
-| `components/users-panel.tsx` | Admin Control Panel. Lists users (OWNER/ADMIN/BUILDER), shows activity log, allows verify/delete of BUILDER users. No engine integration. |
+Canonical module following MODULE_ANATOMY.md. Uses list-view + record-view engine primitives.
+
+| Directory | What It Does |
+|-----------|-------------|
+| `domain/types.ts` | `ManagedUserRow`, `ManagedUserForm` types, validators |
+| `data/queries.ts` | SSR page data loaders (delegates to `server/builder/users.ts`) |
+| `controllers/` | List controller composing engine hooks |
+| `components/list/` | List page client + table rendering |
+| `record/detail/` | Detail page scaffold |
+| `record/panel/` | Record panel, section controller, fields section |
 
 ### 3.7 `modules/shared/access/` — Auth-Related
 
@@ -410,7 +417,7 @@ model User {
 | **FLO-39** | Add execution engine coverage tests for web app API routes | **Yes** | 74 routes to cover. Test infrastructure exists in `apps/web/tests/modules/`. |
 | **FLO-43** | Replace self-registration with admin-provisioned onboarding | **Yes** | Delete `POST /api/auth/register`, remove "Create Account" from `login-form.tsx`, add admin provisioning endpoint + UI in Users module. Requires `password` field to become nullable in schema. |
 | **FLO-44** | Redesign login to email-first two-step flow | **Yes — clarify schema needs** | Needs `passwordSetAt` (DateTime?) on User model to detect first-login state. Login form becomes: email → detect password state → show password input or password-set form. Does NOT require magic links or email verification tokens — it's a UX flow change, not an auth mechanism change. |
-| **FLO-45** | Build canonical Users module | **Yes** | Blocked by FLO-30 (user logic must be in packages first). Build list-view + record-view using execution engine. Replace `BuilderUsersPanel` with engine-driven UI. |
+| **FLO-45** | Build canonical Users module | **Yes** | Blocked by FLO-30 (user logic must be in packages first). Build list-view + record-view using execution engine. ~~Replace `BuilderUsersPanel` with engine-driven UI~~ (Done — now `modules/admin/`). |
 
 ### New Issues Needed
 
@@ -486,7 +493,7 @@ Build canonical Users module with execution engine.
 1. Create user list-view controller + component
 2. Create user record-view section controller + component
 3. Wire to `packages/application/` use cases from Phase 1
-4. Replace `BuilderUsersPanel` with engine-driven UI
+4. ~~Replace `BuilderUsersPanel` with engine-driven UI~~ (Done — now `modules/admin/`)
 5. Add user provisioning UI (from FLO-43)
 
 **Phase 5: Testing (FLO-39)**

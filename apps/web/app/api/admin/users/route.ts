@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, { capability: "users.manage" })
   if (access instanceof Response) return access
 
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/builder/users")
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/admin/users")
   if (rateLimited) return rateLimited
 
   try {

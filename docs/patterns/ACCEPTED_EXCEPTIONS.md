@@ -15,7 +15,7 @@
 
 **Why:** These endpoints are low-contention — only OWNER/ADMIN users access them, and concurrent edits are rare. The idempotency receipt layer still prevents duplicate mutations.
 
-**Affected routes:** `/api/builder/users/[id]` (PATCH, DELETE)
+**Affected routes:** `/api/admin/users/[id]` (PATCH, DELETE)
 
 **Resolution:** No change planned. The risk/complexity tradeoff does not justify adding concurrency control to admin endpoints.
 

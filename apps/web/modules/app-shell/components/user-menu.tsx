@@ -21,7 +21,7 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
 
   const firstLetter = email.charAt(0).toUpperCase()
   const isGovernanceUser = role === "ADMIN" || role === "OWNER"
-  const hasBuilderPanelAccess = isGovernanceUser
+  const hasAdminPanelAccess = isGovernanceUser
   const canUseTools = canUseToolsProp ?? (role === "BUILDER" || isGovernanceUser)
   const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
   const canOpenTool = useCallback((slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug), [canUseTools, unlockedToolSet])
@@ -93,10 +93,10 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               </button>
             )}
 
-            {hasBuilderPanelAccess && (
+            {hasAdminPanelAccess && (
               <button
                 onClick={() => {
-                  router.push("/dashboard/builder")
+                  router.push("/dashboard/admin/users")
                   setOpen(false)
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"

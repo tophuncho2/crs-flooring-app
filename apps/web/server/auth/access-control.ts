@@ -3,7 +3,7 @@ import type { Role } from "@builders/db"
 export const CAPABILITIES = [
   "system.access",
   "governance.access",
-  "builderPanel.access",
+  "adminPanel.access",
   "users.manage",
   "categories.edit",
   "unitOfMeasures.edit",
@@ -21,7 +21,7 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
   OWNER: new Set<Capability>([
     "system.access",
     "governance.access",
-    "builderPanel.access",
+    "adminPanel.access",
     "users.manage",
     "categories.edit",
     "unitOfMeasures.edit",
@@ -35,7 +35,7 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
   ADMIN: new Set<Capability>([
     "system.access",
     "governance.access",
-    "builderPanel.access",
+    "adminPanel.access",
     "users.manage",
     "categories.edit",
     "unitOfMeasures.edit",
@@ -81,8 +81,8 @@ export function hasCapability(role: Role, capability: Capability): boolean {
   return ROLE_CAPABILITIES[role].has(capability)
 }
 
-export function canAccessBuilderPanel(_email: string, role: Role): boolean {
-  return hasCapability(role, "builderPanel.access")
+export function canAccessAdminPanel(_email: string, role: Role): boolean {
+  return hasCapability(role, "adminPanel.access")
 }
 
 export function canBypassVerification(_email: string, role: Role): boolean {

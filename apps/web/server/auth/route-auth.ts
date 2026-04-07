@@ -1,5 +1,5 @@
 import {
-  canAccessBuilderPanel,
+  canAccessAdminPanel,
   canBypassVerification,
   canManageUsers,
   hasCapability,
@@ -130,13 +130,13 @@ export async function ensureGovernanceUser() {
   return null
 }
 
-export async function ensureBuilderPanelAccess() {
+export async function ensureAdminPanelAccess() {
   const user = await getSessionUser()
   if (!user) {
     return jsonWithRequestId({ error: "Unauthorized" }, getRequestId(), { status: 401 })
   }
 
-  if (!canAccessBuilderPanel(user.email, user.role) || !canManageUsers(user.email, user.role)) {
+  if (!canAccessAdminPanel(user.email, user.role) || !canManageUsers(user.email, user.role)) {
     return jsonWithRequestId({ error: "Forbidden" }, getRequestId(), { status: 403 })
   }
 

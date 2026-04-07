@@ -45,10 +45,10 @@ vi.mock("@builders/db", async () => {
   }
 })
 
-const { GET: GET_USERS } = await import("@/app/api/builder/users/route")
-const { DELETE: DELETE_USER, PATCH: PATCH_USER } = await import("@/app/api/builder/users/[id]/route")
+const { GET: GET_USERS } = await import("@/app/api/admin/users/route")
+const { DELETE: DELETE_USER, PATCH: PATCH_USER } = await import("@/app/api/admin/users/[id]/route")
 
-describe("builder user routes", () => {
+describe("admin user routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     applyRoutePolicyMock.mockResolvedValue({
@@ -89,7 +89,7 @@ describe("builder user routes", () => {
       },
     ])
 
-    const response = await GET_USERS(new Request("http://localhost/api/builder/users"))
+    const response = await GET_USERS(new Request("http://localhost/api/admin/users"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
@@ -126,7 +126,7 @@ describe("builder user routes", () => {
     )
   })
 
-  it("PATCH blocks governing admin accounts from the builder panel", async () => {
+  it("PATCH blocks governing admin accounts from the admin panel", async () => {
     userFindUniqueMock.mockResolvedValue({
       id: "admin-1",
       email: "admin@test.com",
@@ -136,7 +136,7 @@ describe("builder user routes", () => {
     })
 
     const response = await PATCH_USER(
-      new Request("http://localhost/api/builder/users/admin-1", {
+      new Request("http://localhost/api/admin/users/admin-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isVerified: false }),
@@ -167,7 +167,7 @@ describe("builder user routes", () => {
     })
 
     const response = await PATCH_USER(
-      new Request("http://localhost/api/builder/users/builder-1", {
+      new Request("http://localhost/api/admin/users/builder-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isVerified: true }),
@@ -203,7 +203,7 @@ describe("builder user routes", () => {
     })
 
     const response = await PATCH_USER(
-      new Request("http://localhost/api/builder/users/builder-1", {
+      new Request("http://localhost/api/admin/users/builder-1", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: "ADMIN" }),
@@ -217,7 +217,7 @@ describe("builder user routes", () => {
     expect(userUpdateMock).not.toHaveBeenCalled()
   })
 
-  it("DELETE blocks deleting admin accounts from the builder panel", async () => {
+  it("DELETE blocks deleting admin accounts from the admin panel", async () => {
     userFindUniqueMock.mockResolvedValue({
       id: "admin-1",
       email: "admin@test.com",
@@ -227,7 +227,7 @@ describe("builder user routes", () => {
     })
 
     const response = await DELETE_USER(
-      new Request("http://localhost/api/builder/users/admin-1", {
+      new Request("http://localhost/api/admin/users/admin-1", {
         method: "DELETE",
       }),
       { params: Promise.resolve({ id: "admin-1" }) },
@@ -242,7 +242,7 @@ describe("builder user routes", () => {
   it("returns shared auth responses unchanged", async () => {
     applyRoutePolicyMock.mockResolvedValueOnce(Response.json({ error: "Unauthorized" }, { status: 401 }))
 
-    const response = await GET_USERS(new Request("http://localhost/api/builder/users"))
+    const response = await GET_USERS(new Request("http://localhost/api/admin/users"))
     const payload = await response.json()
 
     expect(response.status).toBe(401)

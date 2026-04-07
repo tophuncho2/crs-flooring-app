@@ -64,6 +64,7 @@ Current modules following this anatomy:
 
 | Module | List | Record | Create | Sections |
 |--------|:----:|:------:|:------:|----------|
+| Admin (Users) | Y | Y | - | Primary |
 | Categories | Y | Y | Modal | Primary |
 | Contacts | Y | Y | - | Primary |
 | Imports | Y | Y | Y | Primary |
