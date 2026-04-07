@@ -2,7 +2,6 @@
 
 > **Scope:** Business rules, invariants, and pure logic. No I/O, no framework, no infrastructure.
 > **Package:** `packages/domain/src/`
-> **Status:** Active
 
 ## Rules
 
@@ -21,9 +20,9 @@ Domain functions follow one of three patterns:
 - **Computation:** Accepts data, returns derived data. No side effects.
 - **Schema:** Zod schema that validates and parses external input into a domain type.
 
-## Patterns
+## Structure
 
-Current domain content organized by concern:
+Current domain content organized by concern - keep this as modules move in:
 
 ```
 packages/domain/src/
