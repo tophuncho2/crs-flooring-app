@@ -2,7 +2,6 @@
 
 > **Scope:** Test strategy, framework conventions, mock isolation, and what gets tested where.
 > **Location:** `apps/web/tests/`, `apps/relay/tests/`, `apps/worker/tests/`
-> **Status:** Active
 > **Grade: C+** — Consistent patterns where tests exist, but coverage is selective and shared infrastructure is thin.
 
 ## Rules
