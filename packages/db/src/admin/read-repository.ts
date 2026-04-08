@@ -1,5 +1,6 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
+import type { ManagedUserRecord } from "./shared.js"
 import { managedUserSelect, normalizeManagedUserRow } from "./shared.js"
 export type { ManagedUserRecord } from "./shared.js"
 

@@ -3,12 +3,12 @@ import type {
   GovernanceActor,
   GovernanceTarget,
   GovernancePermissions,
-} from "./types"
+} from "./types.js"
 import {
   canUpdateUserStatus,
   canChangeUserRole,
   canDeleteUser,
-} from "./governance-rules"
+} from "./governance-rules.js"
 
 export function resolveGovernedVerification(
   role: GovernableRole,

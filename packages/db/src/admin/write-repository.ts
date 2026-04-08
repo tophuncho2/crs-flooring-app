@@ -1,5 +1,5 @@
 import { db } from "../client.js"
-import type { Prisma, PrismaClient } from "@prisma/client"
+import type { Prisma, PrismaClient, Role } from "@prisma/client"
 import type { ManagedUserRecord } from "./shared.js"
 import { managedUserSelect, normalizeManagedUserRow } from "./shared.js"
 
@@ -21,7 +21,10 @@ export async function updateManagedUser(
 ): Promise<ManagedUserRecord> {
   const row = await client.user.update({
     where: { id },
-    data,
+    data: {
+      ...( data.isVerified !== undefined ? { isVerified: data.isVerified } : {}),
+      ...( data.role !== undefined ? { role: data.role as Role } : {}),
+    },
     select: managedUserSelect,
   })
 

@@ -1,11 +1,48 @@
+import {
+  deleteManagedUserUseCase,
+  getManagedUserUseCase,
+  isGovernanceExecutionError,
+  updateManagedUserUseCase,
+} from "@builders/application"
+import type { UpdateManagedUserInput } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { deleteManagedUser, getManagedUserById, normalizeManagedUserUpdateInput, updateManagedUser } from "@/server/builder/users"
+import { createAppError, parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
-import { parseUuidParam } from "@/server/http/api-helpers"
+import {
+  applyRoutePolicy,
+  enforceMutationReceipt,
+  enforceQueryRateLimit,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+function validateUpdateManagedUserInput(body: unknown): UpdateManagedUserInput {
+  if (!body || typeof body !== "object") {
+    throw createAppError("Invalid request body", { status: 400 })
+  }
+
+  const record = body as Record<string, unknown>
+  const input: UpdateManagedUserInput = {}
+
+  if ("isVerified" in record) {
+    if (typeof record.isVerified !== "boolean") {
+      throw createAppError("isVerified must be true or false", { field: "isVerified" })
+    }
+    input.isVerified = record.isVerified
+  }
+
+  if ("role" in record) {
+    if (typeof record.role !== "string" || record.role.trim() === "") {
+      throw createAppError("role must be a non-empty string", { field: "role" })
+    }
+    input.role = record.role.trim()
+  }
+
+  return input
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
@@ -19,12 +56,12 @@ export async function GET(request: Request, { params }: RouteContext) {
   parseUuidParam(id, "id")
 
   try {
-    const user = await getManagedUserById(access.user, id)
-    if (!user) {
-      return routeJson(access, { error: "User not found" }, { status: 404 })
-    }
+    const user = await getManagedUserUseCase(id, access.user)
     return routeJson(access, { user })
   } catch (error) {
+    if (isGovernanceExecutionError(error)) {
+      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
+    }
     return routeError(access, error)
   }
 }
@@ -42,10 +79,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   const { id } = await params
+  parseUuidParam(id, "id")
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, normalizeManagedUserUpdateInput)
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateManagedUserInput)
 
     const receipt = await enforceMutationReceipt({
       scope: "users.update",
@@ -65,7 +103,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "user",
         entityId: id,
       },
-      () => updateManagedUser(access.user, id, input),
+      () => updateManagedUserUseCase(id, input, access.user),
     )
 
     const responseBody = { user }
@@ -78,6 +116,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
+    if (isGovernanceExecutionError(error)) {
+      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
+    }
     return routeError(access, error)
   }
 }
@@ -95,6 +136,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   const { id } = await params
+  parseUuidParam(id, "id")
 
   try {
     const body = (await request.json()) as Record<string, unknown>
@@ -118,10 +160,10 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         entityType: "user",
         entityId: id,
       },
-      () => deleteManagedUser(access.user, id),
+      () => deleteManagedUserUseCase(id, access.user),
     )
 
-    const responseBody = { success: true as const }
+    const responseBody = { ok: true as const }
     await finalizeMutationReceipt({
       scope: "users.delete",
       access,
@@ -131,6 +173,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
+    if (isGovernanceExecutionError(error)) {
+      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
+    }
     return routeError(access, error)
   }
 }

@@ -1,3 +1,3 @@
-export * from "./types"
-export * from "./governance-rules"
-export * from "./mappers"
+export * from "./types.js"
+export * from "./governance-rules.js"
+export * from "./mappers.js"

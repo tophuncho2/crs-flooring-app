@@ -1,4 +1,4 @@
-import { listManagedUsers } from "@/server/builder/users"
+import { isGovernanceExecutionError, listManagedUsersUseCase } from "@builders/application"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
 
@@ -10,8 +10,12 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, await listManagedUsers(access.user))
+    const result = await listManagedUsersUseCase(access.user)
+    return routeJson(access, { users: result.users })
   } catch (error) {
+    if (isGovernanceExecutionError(error)) {
+      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
+    }
     return routeError(access, error)
   }
 }

@@ -2,7 +2,7 @@ import type {
   GovernableRole,
   GovernanceActor,
   GovernanceTarget,
-} from "./types"
+} from "./types.js"
 
 // ---------------------------------------------------------------------------
 // Role hierarchy (private)
