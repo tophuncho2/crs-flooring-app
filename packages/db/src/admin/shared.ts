@@ -6,7 +6,6 @@ export type ManagedUserRecord = {
   role: string
   isVerified: boolean
   createdAt: string
-  updatedAt: string
 }
 
 // --- Select shape ---
@@ -17,7 +16,6 @@ export const managedUserSelect = {
   role: true,
   isVerified: true,
   createdAt: true,
-  updatedAt: true,
 } as const
 
 // --- Normalizer ---
@@ -28,7 +26,6 @@ export function normalizeManagedUserRow(user: {
   role: string
   isVerified: boolean
   createdAt: Date
-  updatedAt: Date
 }): ManagedUserRecord {
   return {
     id: user.id,
@@ -36,6 +33,5 @@ export function normalizeManagedUserRow(user: {
     role: user.role,
     isVerified: user.isVerified,
     createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
   }
 }
