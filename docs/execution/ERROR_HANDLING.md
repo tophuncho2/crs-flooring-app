@@ -2,7 +2,7 @@
 
 > **Scope:** Error classification, Prisma error normalization, structured error responses.
 > **Location:** `apps/web/server/http/api-helpers.ts`, `apps/web/server/http/route-helpers.ts`
-> **Status:** Active
+
 
 ## Rules
 
