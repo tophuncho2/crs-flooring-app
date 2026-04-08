@@ -2,7 +2,6 @@
 
 > **Scope:** BullMQ job processor. Receives jobs from the relay and delegates to application use cases.
 > **Location:** `apps/worker/`
-> **Status:** Active
 
 ## Rules
 
@@ -63,7 +62,7 @@ Job payloads are defined in `packages/domain/`:
 
 The worker validates incoming jobs against these schemas before processing.
 
-## Patterns
+## Structure
 
 ```
 apps/worker/src/
