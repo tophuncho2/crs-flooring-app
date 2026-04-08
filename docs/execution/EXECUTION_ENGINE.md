@@ -1,7 +1,6 @@
 # Execution Engine
 
 > **Scope:** The 9-step sequence every execution path follows across HTTP routes, workers, and relay.
-> **Status:** Active
 
 ## Rules
 
