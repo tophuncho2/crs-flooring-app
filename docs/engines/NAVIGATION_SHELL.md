@@ -2,7 +2,6 @@
 
 > **Scope:** App shell that wraps every dashboard page. Header, navigation, user menu, layout slots.
 > **Location:** `apps/web/modules/app-shell/`
-> **Status:** Active
 
 ## Rules
 
@@ -55,7 +54,7 @@
 - Warehouse link.
 - Logout action.
 
-## Patterns
+## Structure
 
 ```
 modules/app-shell/
