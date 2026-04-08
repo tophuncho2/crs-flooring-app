@@ -2,7 +2,6 @@
 
 > **Scope:** Identity resolution — how users prove who they are. Session management, token contents, login flow.
 > **Location:** `apps/web/server/auth/auth-options.ts`, `apps/web/server/auth/session.ts`
-> **Status:** Active
 
 ## Rules
 
