@@ -11,7 +11,7 @@ import {
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { formatStableDateTime } from "@builders/domain"
-import type { ManagedUserRow } from "../../controller/types"
+import type { ManagedUserWithPermissions } from "../../controller/types"
 
 function StatusBadge({ isVerified }: { isVerified: boolean }) {
   return (
@@ -34,13 +34,13 @@ export function AdminUsersTable({
   isGroupingEnabled,
   onOpen,
 }: {
-  rows: ManagedUserRow[]
+  rows: ManagedUserWithPermissions[]
   visibleColumns: Array<{ key: string; label: string }>
-  groupedRows: GroupedRowTree<ManagedUserRow>[]
+  groupedRows: GroupedRowTree<ManagedUserWithPermissions>[]
   isGroupingEnabled: boolean
-  onOpen: (row: ManagedUserRow) => void
+  onOpen: (row: ManagedUserWithPermissions) => void
 }) {
-  function renderRow(row: ManagedUserRow) {
+  function renderRow(row: ManagedUserWithPermissions) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       email: (columnIndex) => <DashboardListRowCell key="email" columnIndex={columnIndex} className="font-medium">{row.email}</DashboardListRowCell>,
       role: (columnIndex) => <DashboardListRowCell key="role" columnIndex={columnIndex}>{row.role}</DashboardListRowCell>,

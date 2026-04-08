@@ -3,16 +3,16 @@
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import { useSingleSectionRecordController, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { toManagedUserForm, type ManagedUserForm, type ManagedUserRow } from "./types"
+import { toManagedUserForm, type ManagedUserForm, type ManagedUserWithPermissions } from "./types"
 
 export function useAdminUserPrimaryController({
   page,
   user,
 }: {
   page: RecordDetailClientScaffoldContext
-  user: ManagedUserRow
+  user: ManagedUserWithPermissions
 }) {
-  return useSingleSectionRecordController<ManagedUserRow, ManagedUserForm>({
+  return useSingleSectionRecordController<ManagedUserWithPermissions, ManagedUserForm>({
     page,
     scope: "admin-users",
     id: user.id,
@@ -21,7 +21,7 @@ export function useAdminUserPrimaryController({
     payloadKey: "user",
     createLocalValue: toManagedUserForm,
     saveSection: async ({ localValue, record, revisionKey }) => {
-      const payload = await requestJson<{ user: ManagedUserRow }>(
+      const payload = await requestJson<{ user: ManagedUserWithPermissions }>(
         `/api/admin/users/${record.id}`,
         {
           method: "PATCH",

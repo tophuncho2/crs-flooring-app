@@ -9,15 +9,15 @@ import { useListViewEngine } from "@/modules/shared/engines/list-view/controller
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ManagedUserRow } from "../../controller/types"
+import type { ManagedUserWithPermissions } from "../../controller/types"
 import { useAdminUsersListController } from "../../controller/use-admin-users-list-controller"
 import { AdminUsersTable } from "./admin-users-table"
 
 const USER_FIELDS = [
-  { key: "email", label: "Email", getValue: (row: ManagedUserRow) => row.email, groupable: false },
-  { key: "role", label: "Role", getValue: (row: ManagedUserRow) => row.role, groupable: true },
-  { key: "status", label: "Status", getValue: (row: ManagedUserRow) => row.isVerified ? "Verified" : "Pending", groupable: true },
-  { key: "createdAt", label: "Created", getValue: (row: ManagedUserRow) => row.createdAt, groupable: false },
+  { key: "email", label: "Email", getValue: (row: ManagedUserWithPermissions) => row.email, groupable: false },
+  { key: "role", label: "Role", getValue: (row: ManagedUserWithPermissions) => row.role, groupable: true },
+  { key: "status", label: "Status", getValue: (row: ManagedUserWithPermissions) => row.isVerified ? "Verified" : "Pending", groupable: true },
+  { key: "createdAt", label: "Created", getValue: (row: ManagedUserWithPermissions) => row.createdAt, groupable: false },
 ]
 
 export default function AdminUsersClient({
@@ -25,7 +25,7 @@ export default function AdminUsersClient({
   initialTablePreferences,
   tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
-  initialUsers: ManagedUserRow[]
+  initialUsers: ManagedUserWithPermissions[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: {
     searchQuery: string
@@ -65,7 +65,7 @@ export default function AdminUsersClient({
             key,
             label: USER_FIELDS.find((f) => f.key === key)?.label ?? key,
           }))}
-          groupedRows={engine.groupedRowTree as GroupedRowTree<ManagedUserRow>[]}
+          groupedRows={engine.groupedRowTree as GroupedRowTree<ManagedUserWithPermissions>[]}
           isGroupingEnabled={engine.isGroupingEnabled}
           onOpen={(row) => navigation.openRecord(row.id)}
         />

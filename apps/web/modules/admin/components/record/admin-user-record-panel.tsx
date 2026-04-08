@@ -7,7 +7,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { useAdminUserPrimaryController } from "../../controller/use-admin-user-primary-controller"
 import { AdminUserPrimaryFieldsSection } from "./admin-user-primary-fields-section"
-import type { ManagedUserRow } from "../../controller/types"
+import type { ManagedUserWithPermissions } from "../../controller/types"
 
 export function AdminUserRecordPanel({
   page,
@@ -15,7 +15,7 @@ export function AdminUserRecordPanel({
   canManage,
 }: {
   page: RecordDetailClientScaffoldContext
-  user: ManagedUserRow
+  user: ManagedUserWithPermissions
   canManage: boolean
 }) {
   const controller = useAdminUserPrimaryController({ page, user })

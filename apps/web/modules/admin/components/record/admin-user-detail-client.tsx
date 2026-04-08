@@ -2,14 +2,14 @@
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { AdminUserRecordPanel } from "./admin-user-record-panel"
-import type { ManagedUserRow } from "../../controller/types"
+import type { ManagedUserWithPermissions } from "../../controller/types"
 
 export function AdminUserDetailClient({
   user,
   canManage,
   backHref,
 }: {
-  user: ManagedUserRow
+  user: ManagedUserWithPermissions
   canManage: boolean
   backHref: string
 }) {

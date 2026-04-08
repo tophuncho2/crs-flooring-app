@@ -10,7 +10,7 @@ import {
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
 import { formatStableDateTime } from "@builders/domain"
-import type { ManagedUserForm, ManagedUserRow } from "../../controller/types"
+import type { ManagedUserForm, ManagedUserWithPermissions } from "../../controller/types"
 
 const VERIFICATION_OPTIONS = [
   { value: "true", label: "Verified" },
@@ -23,7 +23,7 @@ export function AdminUserPrimaryFieldsSection({
   disabled = false,
   onChange,
 }: {
-  user: ManagedUserRow
+  user: ManagedUserWithPermissions
   draft: ManagedUserForm
   disabled?: boolean
   onChange: (value: ManagedUserForm) => void
@@ -46,7 +46,7 @@ export function AdminUserPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
 
-          {user.canRestrict && (
+          {user.canUpdateStatus && (
             <RecordPrimaryFieldCell size="sm">
               <RecordFormField label="Verification Status">
                 <select
@@ -65,7 +65,7 @@ export function AdminUserPrimaryFieldsSection({
             </RecordPrimaryFieldCell>
           )}
 
-          {!user.canRestrict && (
+          {!user.canUpdateStatus && (
             <RecordPrimaryFieldCell size="sm">
               <RecordFormField label="Status">
                 <RecordStaticFieldValue>{user.isVerified ? "Verified" : "Pending Approval"}</RecordStaticFieldValue>

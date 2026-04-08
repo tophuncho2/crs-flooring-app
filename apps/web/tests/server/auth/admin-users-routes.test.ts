@@ -98,20 +98,20 @@ describe("admin user routes", () => {
       expect.objectContaining({
         id: "owner-1",
         role: "OWNER",
-        canRestrict: false,
+        canUpdateStatus: false,
         canDelete: false,
       }),
       expect.objectContaining({
         id: "admin-1",
         role: "ADMIN",
-        canRestrict: false,
+        canUpdateStatus: false,
         canDelete: false,
       }),
       expect.objectContaining({
         id: "builder-1",
         role: "BUILDER",
-        canRestrict: true,
-        canEditRole: false,
+        canUpdateStatus: true,
+        canChangeRole: false,
         canDelete: true,
       }),
     ])
@@ -182,7 +182,7 @@ describe("admin user routes", () => {
         id: "builder-1",
         role: "BUILDER",
         isVerified: true,
-        canEditRole: false,
+        canChangeRole: false,
       }),
     )
     expect(userUpdateMock).toHaveBeenCalledWith(
