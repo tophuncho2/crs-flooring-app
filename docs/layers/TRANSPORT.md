@@ -2,7 +2,7 @@
 
 > **Scope:** Payload assembly forward (controller -> application). Response shaping back (application -> controller).
 > **Package:** `apps/web/modules/` (per-module, often implicit)
-> **Status:** Active
+
 
 ## Rules
 
@@ -27,19 +27,23 @@ function normalizeListResponse(apiResponse: ApiListResponse): ControllerItem[]
 function normalizeRecordResponse(apiResponse: ApiRecordResponse): SectionData
 ```
 
-## Patterns
+## Structure
 
-Current state by module:
-
-- **Categories:** Has explicit transport — `modules/categories/` includes request/response mapping functions.
-- **Most other modules:** Transport is implicit. Domain Zod schemas validate input, and API responses are consumed directly or normalized inline in controllers. This is the accepted pattern.
-
-Shared transport utilities live in:
 ```
+Explicit transport files live per-module when needed:
+modules/{name}/
+└── transport/
+├── {view}-types.ts    ← Response shapes for specific views
+└── {action}-types.ts  ← Request shapes for mutations
+
+Shared transport utilities:
 modules/shared/engines/common/transport/
 ├── http.ts          ← Fetch wrapper with error handling
 └── mutations.ts     ← Mutation metadata assembly (idempotency keys, timestamps)
 ```
+
+Most modules keep transport implicit — domain Zod schemas validate input, and API responses are normalized inline in controllers. This is the accepted pattern.
+
 
 ## Anti-Patterns
 
