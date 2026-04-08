@@ -5,9 +5,9 @@ import {
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { useAdminUserPrimarySection } from "./controllers/use-admin-user-primary-section"
-import { AdminUserPrimaryFieldsSection } from "./sections/admin-user-primary-fields-section"
-import type { ManagedUserRow } from "../../domain/types"
+import { useAdminUserPrimaryController } from "../../controller/use-admin-user-primary-controller"
+import { AdminUserPrimaryFieldsSection } from "./admin-user-primary-fields-section"
+import type { ManagedUserRow } from "../../controller/types"
 
 export function AdminUserRecordPanel({
   page,
@@ -18,7 +18,7 @@ export function AdminUserRecordPanel({
   user: ManagedUserRow
   canManage: boolean
 }) {
-  const controller = useAdminUserPrimarySection({ page, user })
+  const controller = useAdminUserPrimaryController({ page, user })
 
   return (
     <RecordSingleSectionPanel

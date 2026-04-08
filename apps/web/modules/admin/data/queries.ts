@@ -1,7 +1,7 @@
 import { withPrismaConnectivityHandling, isPrismaNotFoundError, type PrismaDetailPageResult } from "@builders/db"
 import type { SessionUser } from "@/server/auth/session"
 import { listManagedUsers, getManagedUserById } from "@/server/builder/users"
-import type { ManagedUserRow } from "../domain/types"
+import type { ManagedUserRow } from "../controller/types"
 
 export async function getAdminUsersPageData(actor: SessionUser) {
   return withPrismaConnectivityHandling(() => listManagedUsers(actor))

@@ -3,9 +3,9 @@
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import { useSingleSectionRecordController, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { toManagedUserForm, type ManagedUserForm, type ManagedUserRow } from "../../../domain/types"
+import { toManagedUserForm, type ManagedUserForm, type ManagedUserRow } from "./types"
 
-export function useAdminUserPrimarySection({
+export function useAdminUserPrimaryController({
   page,
   user,
 }: {

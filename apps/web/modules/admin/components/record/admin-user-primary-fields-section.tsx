@@ -10,7 +10,7 @@ import {
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
 import { formatStableDateTime } from "@builders/domain"
-import type { ManagedUserForm, ManagedUserRow } from "../../../domain/types"
+import type { ManagedUserForm, ManagedUserRow } from "../../controller/types"
 
 const VERIFICATION_OPTIONS = [
   { value: "true", label: "Verified" },

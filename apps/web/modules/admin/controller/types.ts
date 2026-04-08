@@ -13,7 +13,3 @@ export const EMPTY_MANAGED_USER_FORM: ManagedUserForm = {
 export function toManagedUserForm(row: ManagedUserRow): ManagedUserForm {
   return { isVerified: row.isVerified }
 }
-
-export function validateManagedUserForm(_input: ManagedUserForm): string {
-  return ""
-}

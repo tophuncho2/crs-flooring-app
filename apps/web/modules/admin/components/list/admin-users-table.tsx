@@ -11,7 +11,7 @@ import {
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { formatStableDateTime } from "@builders/domain"
-import type { ManagedUserRow } from "../../domain/types"
+import type { ManagedUserRow } from "../../controller/types"
 
 function StatusBadge({ isVerified }: { isVerified: boolean }) {
   return (

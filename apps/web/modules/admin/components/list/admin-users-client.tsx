@@ -9,8 +9,8 @@ import { useListViewEngine } from "@/modules/shared/engines/list-view/controller
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ManagedUserRow } from "../../domain/types"
-import { useAdminUsersListController } from "../../controllers/use-admin-users-list-controller"
+import type { ManagedUserRow } from "../../controller/types"
+import { useAdminUsersListController } from "../../controller/use-admin-users-list-controller"
 import { AdminUsersTable } from "./admin-users-table"
 
 const USER_FIELDS = [

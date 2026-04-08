@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
-import type { ManagedUserRow } from "../domain/types"
+import type { ManagedUserRow } from "./types"
 
 export function useAdminUsersListController(initialRows: ManagedUserRow[]) {
   const [rows, setRows] = useState(initialRows)

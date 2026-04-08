@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { AdminUserRecordPanel } from "../panel/admin-user-record-panel"
-import type { ManagedUserRow } from "../../domain/types"
+import { AdminUserRecordPanel } from "./admin-user-record-panel"
+import type { ManagedUserRow } from "../../controller/types"
 
 export function AdminUserDetailClient({
   user,

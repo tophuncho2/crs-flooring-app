@@ -3,7 +3,7 @@ import { requireSessionUser } from "@/server/auth/session"
 import { redirect, notFound } from "next/navigation"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { getAdminUserDetailPageData } from "@/modules/admin/data/queries"
-import { AdminUserDetailClient } from "@/modules/admin/record/detail/admin-user-detail-client"
+import { AdminUserDetailClient } from "@/modules/admin/components/record/admin-user-detail-client"
 
 export default async function AdminUserDetailPage({
   params,
