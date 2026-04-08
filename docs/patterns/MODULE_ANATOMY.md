@@ -1,7 +1,7 @@
 # Module Anatomy
 
 > **Scope:** What a feature module looks like — folder structure, required components, route conventions.
-> **Status:** Active
+
 
 ## Rules
 
@@ -57,24 +57,6 @@ app/api/flooring/{name}/
     └── {sub-resource}/
         └── route.ts            ← Sub-resource operations
 ```
-
-## Patterns
-
-Current modules following this anatomy:
-
-| Module | List | Record | Create | Sections |
-|--------|:----:|:------:|:------:|----------|
-| Admin (Users) | Y | Y | - | Primary |
-| Categories | Y | Y | Modal | Primary |
-| Contacts | Y | Y | - | Primary |
-| Imports | Y | Y | Y | Primary |
-| Manufacturers | Y | Y | Y | Primary |
-| Products | Y | Y | Y | Primary |
-| Services | Y | Y | - | Primary |
-| Templates | Y | Y | Y | Primary, Items, Sales Reps, Service Items |
-| Unit of Measures | Y | Y | Y | Primary |
-| Work Orders | Y | Y | - | Primary, Items, Sales Reps, Service Items, Allocations |
-| Warehouse | Y | Y | - | Primary |
 
 ## Anti-Patterns
 
