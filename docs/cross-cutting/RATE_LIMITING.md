@@ -2,7 +2,6 @@
 
 > **Scope:** Request rate enforcement — Redis-backed with in-memory fallback.
 > **Location:** `apps/web/server/platform/rate-limit.ts`
-> **Status:** Active
 
 ## Rules
 
