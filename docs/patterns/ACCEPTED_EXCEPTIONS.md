@@ -1,7 +1,6 @@
 # Accepted Exceptions
 
 > **Scope:** Documented deviations from the standard execution engine sequence.
-> **Status:** Active
 
 ## Rules
 
