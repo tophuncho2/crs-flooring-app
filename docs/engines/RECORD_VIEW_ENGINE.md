@@ -2,7 +2,7 @@
 
 > **Scope:** Section-based record editing. Each section has its own controller, dirty state, and save lifecycle.
 > **Location:** `apps/web/modules/shared/engines/record-view/`
-> **Status:** Active
+
 
 ## Rules
 
@@ -61,7 +61,7 @@ Server update arrives
 
 The record page checks all sections for dirty state. If any section is dirty, browser navigation triggers a confirmation dialog.
 
-## Patterns
+## Structure
 
 ```
 modules/shared/engines/record-view/
