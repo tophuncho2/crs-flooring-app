@@ -2,7 +2,7 @@
 
 > **Scope:** Use case orchestration. Coordinates domain objects, calls data layer, dispatches outbox events.
 > **Package:** `packages/application/src/`
-> **Status:** Active
+
 
 ## Rules
 
@@ -34,7 +34,7 @@ export async function doSomething(
 
 The optional `client` parameter allows the caller to wrap multiple use cases in a single transaction.
 
-## Patterns
+## Structure
 
 ```
 packages/application/src/
