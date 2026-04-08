@@ -2,7 +2,7 @@
 
 > **Scope:** Interface between UI and backend. Controllers define the contract that UI components consume.
 > **Package:** `apps/web/modules/` (per-module `controller/` directories)
-> **Status:** Active
+
 
 ## Rules
 
@@ -50,7 +50,7 @@ Each record section controller exposes:
 
 Actions: `setField()`, `validate()`, `save()`, `reset()`, `reload()`.
 
-## Patterns
+## Structure
 
 ```
 modules/{name}/
