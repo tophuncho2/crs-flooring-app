@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
-import type { ManagedUserRecord } from "./read-repository.js"
+import type { ManagedUserRecord } from "./shared.js"
+import { managedUserSelect, normalizeManagedUserRow } from "./shared.js"
 
 type AdminDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -9,37 +10,6 @@ type AdminDbClient = PrismaClient | Prisma.TransactionClient
 export type ManagedUserUpdateInput = {
   isVerified?: boolean
   role?: string
-}
-
-// --- Select shape ---
-
-const managedUserSelect = {
-  id: true,
-  email: true,
-  role: true,
-  isVerified: true,
-  createdAt: true,
-  updatedAt: true,
-} as const
-
-// --- Normalizer ---
-
-function normalizeManagedUserRow(user: {
-  id: string
-  email: string
-  role: string
-  isVerified: boolean
-  createdAt: Date
-  updatedAt: Date
-}): ManagedUserRecord {
-  return {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    isVerified: user.isVerified,
-    createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
-  }
 }
 
 // --- Write functions ---
