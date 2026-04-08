@@ -2,7 +2,6 @@
 
 > **Scope:** Structured logging, tracing, Sentry integration, request ID propagation.
 > **Location:** `packages/lib/`, `apps/web/server/platform/logger.ts`, `apps/web/server/platform/request-context.ts`
-> **Status:** Active
 
 ## Rules
 
