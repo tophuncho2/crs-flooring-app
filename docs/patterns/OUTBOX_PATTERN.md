@@ -1,7 +1,6 @@
 # Outbox Pattern
 
 > **Scope:** Guaranteed event delivery from state mutation to asynchronous job processing.
-> **Status:** Active
 
 ## Rules
 
