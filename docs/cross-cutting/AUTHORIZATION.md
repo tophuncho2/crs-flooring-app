@@ -2,7 +2,7 @@
 
 > **Scope:** Roles, capabilities, and tool access. What authenticated users are allowed to do.
 > **Location:** `apps/web/server/auth/access-control.ts`, `apps/web/server/platform/tool-access.ts`
-> **Status:** Active
+
 
 ## Rules
 
