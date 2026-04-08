@@ -1,7 +1,6 @@
 # Idempotency
 
 > **Scope:** Four layers of deduplication that prevent duplicate mutations across the system.
-> **Status:** Active
 
 ## Rules
 
@@ -57,7 +56,7 @@ The final safety net. Prisma unique constraints prevent duplicate records even i
 - Composite uniqueness on domain records where applicable.
 - Caught by `normalizePrismaError()` and returned as 409 responses.
 
-## Patterns
+## Structure
 
 Client-side mutation assembly (shared engine):
 ```
