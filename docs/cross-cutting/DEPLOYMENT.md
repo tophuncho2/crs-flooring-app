@@ -2,7 +2,7 @@
 
 > **Scope:** Railway service topology, environment configuration, service start commands.
 > **Location:** Root `package.json`, `.env*` files, `packages/config/`
-> **Status:** Active
+
 
 ## Rules
 
