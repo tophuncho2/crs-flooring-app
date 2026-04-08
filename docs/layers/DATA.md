@@ -2,7 +2,7 @@
 
 > **Scope:** Persistence only. Prisma queries, raw SQL, repository functions.
 > **Package:** `packages/db/src/`
-> **Status:** Active
+
 
 ## Rules
 
@@ -32,7 +32,7 @@ export async function createSomething(
 
 The optional client parameter enables callers to compose multiple repository calls within a single transaction.
 
-## Patterns
+## Structure
 
 ```
 packages/db/src/
