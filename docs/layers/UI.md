@@ -2,7 +2,7 @@
 
 > **Scope:** Strictly presentational. Components render props and controller state. No data fetching, no business logic.
 > **Package:** `apps/web/modules/` (per-module `components/` and `views/` directories)
-> **Status:** Active
+
 
 ## Rules
 
@@ -36,7 +36,7 @@ function ModuleListClient({ initialData }) {
 }
 ```
 
-## Patterns
+## Structure
 
 ```
 modules/{name}/
