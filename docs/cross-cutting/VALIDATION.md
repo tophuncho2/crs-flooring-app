@@ -2,7 +2,6 @@
 
 > **Scope:** Shared validation infrastructure, input parsing conventions, and schema reuse.
 > **Location:** `apps/web/server/http/api-helpers.ts`, `apps/web/modules/{mod}/validators.ts`
-> **Status:** Active
 > **Grade: B-** — Consistent hand-rolled validators with strong naming conventions, but no client/server schema reuse.
 
 ## Rules
