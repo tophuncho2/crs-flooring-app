@@ -2,7 +2,6 @@
 
 > **Scope:** HTTP route protection — the `applyRoutePolicy()` contract and mutation lifecycle.
 > **Location:** `apps/web/server/http/route-policy.ts`
-> **Status:** Active
 
 ## Rules
 
