@@ -2,7 +2,6 @@
 
 > **Scope:** Database transaction boundaries, outbox colocaton, rollback guarantees.
 > **Location:** `packages/db/src/client.ts`
-> **Status:** Active
 
 ## Rules
 
