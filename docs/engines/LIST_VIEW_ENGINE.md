@@ -2,7 +2,6 @@
 
 > **Scope:** Shared engine that powers every list page. No module builds its own table.
 > **Location:** `apps/web/modules/shared/engines/list-view/`
-> **Status:** Active
 
 ## Rules
 
@@ -47,7 +46,7 @@ const tableState = useConfiguredTableState({
 - Read-only rows. Row click navigates to record view via URL push.
 - Empty state, loading state, and error state handled by the engine.
 
-## Patterns
+## Structure
 
 ```
 modules/shared/engines/list-view/
