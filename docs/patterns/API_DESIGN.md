@@ -2,7 +2,6 @@
 
 > **Scope:** Route conventions, response shapes, endpoint naming, and query/mutation separation.
 > **Location:** `apps/web/app/api/`, `apps/web/server/http/`
-> **Status:** Active
 > **Grade: A-** — Highly consistent across 73 route files. Strong middleware chain, idempotency, and error normalization.
 
 ## Rules
