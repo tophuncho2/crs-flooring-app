@@ -22,7 +22,7 @@ Domain functions follow one of three patterns:
 
 ## Structure
 
-Current domain content organized by concern - keep this as modules move in:
+snapshot of domain content organized by concern - keep this as modules move in:
 
 ```
 packages/domain/src/
