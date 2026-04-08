@@ -2,7 +2,6 @@
 
 > **Scope:** Outbox relay — polls outbox table, claims events, dispatches to BullMQ.
 > **Location:** `apps/relay/`
-> **Status:** Active
 
 ## Rules
 
@@ -57,7 +56,7 @@ Generates a deterministic BullMQ job ID from the outbox event:
    e. On failure: UPDATE state = PENDING (will retry) or EXHAUSTED (dead letter)
 ```
 
-## Patterns
+## Structure
 
 ```
 apps/relay/src/
