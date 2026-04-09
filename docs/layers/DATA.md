@@ -34,8 +34,7 @@ The optional client parameter enables callers to compose multiple repository cal
 
 ## Structure
 
-```
-See `packages/db/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).```
+See `packages/db/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
 
 Read/write repository split: read repositories handle queries and filtering, write repositories handle inserts, updates, and deletes.
 
