@@ -1,5 +1,7 @@
 "use client"
 
+import { Plus } from "lucide-react"
+import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
@@ -24,6 +26,7 @@ export default function AdminUsersClient({
   initialUsers,
   initialTablePreferences,
   tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
+  canManage = false,
 }: {
   initialUsers: ManagedUserWithPermissions[]
   initialTablePreferences?: TablePreferencePayload | null
@@ -33,6 +36,7 @@ export default function AdminUsersClient({
     isGroupingEnabled: boolean
     groupByKeys: string[]
   }
+  canManage?: boolean
 }) {
   const controller = useAdminUsersListController(initialUsers)
   const navigation = useRecordEntryNavigation("/dashboard/admin/users")
@@ -55,6 +59,14 @@ export default function AdminUsersClient({
         <DashboardListPageControls
           engine={engine}
           searchPlaceholder="Search users..."
+          primaryAction={
+            canManage ? (
+              <button type="button" onClick={() => navigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
+                <Plus size={16} />
+                User
+              </button>
+            ) : undefined
+          }
         />
       }
       notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}

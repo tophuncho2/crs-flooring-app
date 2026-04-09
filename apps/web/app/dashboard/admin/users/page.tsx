@@ -45,6 +45,7 @@ export default async function AdminUsersPage({
       initialUsers={pageData.data.users}
       initialTablePreferences={initialTablePreferences}
       tableState={tableState}
+      canManage={canManageUsers(user.email, user.role)}
     />
   )
 }
