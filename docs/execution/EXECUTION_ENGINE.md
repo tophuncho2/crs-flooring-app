@@ -58,7 +58,6 @@ Three execution paths deviate from the standard sequence:
 
 1. **Admin-only endpoints** skip optimistic concurrency (step 5 simplified).
 2. **Account preference routes** are idempotent upserts (step 5 implicit).
-3. **Auth register flow** uses direct Prisma calls during bootstrap — **being removed per FLO-43**.
 
 See [../patterns/ACCEPTED_EXCEPTIONS.md](../patterns/ACCEPTED_EXCEPTIONS.md) for full documentation.
 
