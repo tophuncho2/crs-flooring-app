@@ -36,7 +36,7 @@ The optional `client` parameter allows the caller to wrap multiple use cases in 
 
 ## Structure
 
-See `packages/domain/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
+See `packages/application/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
 
 Each feature module follows the same structure: `errors.ts` + `types.ts` + `mappers.ts` + individual use case files.
 

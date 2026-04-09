@@ -54,7 +54,7 @@ See [../services/RELAY.md](../services/RELAY.md) for details.
 
 ## Accepted Exceptions
 
-Three execution paths deviate from the standard sequence:
+Two execution paths deviate from the standard sequence:
 
 1. **Admin-only endpoints** skip optimistic concurrency (step 5 simplified).
 2. **Account preference routes** are idempotent upserts (step 5 implicit).
