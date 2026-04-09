@@ -8,7 +8,6 @@ type AdminDbClient = PrismaClient | Prisma.TransactionClient
 // --- Input types ---
 
 export type ManagedUserUpdateInput = {
-  isVerified?: boolean
   role?: string
 }
 
@@ -44,7 +43,6 @@ export async function updateManagedUser(
   const row = await client.user.update({
     where: { id },
     data: {
-      ...( data.isVerified !== undefined ? { isVerified: data.isVerified } : {}),
       ...( data.role !== undefined ? { role: data.role as Role } : {}),
     },
     select: managedUserSelect,

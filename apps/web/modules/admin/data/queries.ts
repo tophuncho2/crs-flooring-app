@@ -1,5 +1,5 @@
 import { withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
-import { listManagedUsersUseCase, getManagedUserUseCase, type ManagedUserWithPermissions } from "@builders/application"
+import { listManagedUsersUseCase, getManagedUserUseCase, GovernanceExecutionError, type ManagedUserWithPermissions } from "@builders/application"
 import type { GovernableRole } from "@builders/domain"
 import type { SessionUser } from "@/server/auth/session"
 
@@ -20,7 +20,7 @@ export async function getAdminUserDetailPageData(
 
     return { ok: true, data: { user } }
   } catch (error) {
-    if (error && typeof error === "object" && "status" in error && error.status === 404) {
+    if (error instanceof GovernanceExecutionError && error.status === 404) {
       return { ok: false, notFound: true }
     }
     throw error

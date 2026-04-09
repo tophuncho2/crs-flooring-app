@@ -103,21 +103,6 @@ export function getInvalidCreationRoleMessage(role: string): string {
 // Message builders
 // ---------------------------------------------------------------------------
 
-export function getUpdateBlockedMessage(
-  actor: GovernanceActor,
-  target: GovernanceTarget,
-): string {
-  if (isSelfAction(actor, target)) {
-    return "You cannot update your own status"
-  }
-
-  if (!isStrictlyAbove(actor.role, target.role)) {
-    return "You can only update the status of users with a lower role than yours"
-  }
-
-  return ""
-}
-
 export function getDeleteBlockedMessage(
   actor: GovernanceActor,
   target: GovernanceTarget,

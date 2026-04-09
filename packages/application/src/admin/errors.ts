@@ -19,7 +19,3 @@ export class GovernanceExecutionError extends Error {
     this.payload = input.payload
   }
 }
-
-export function isGovernanceExecutionError(error: unknown): error is GovernanceExecutionError {
-  return error instanceof GovernanceExecutionError
-}

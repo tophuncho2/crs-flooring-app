@@ -1,5 +1,4 @@
 import type {
-  GovernableRole,
   GovernanceActor,
   GovernanceTarget,
   GovernancePermissions,
@@ -9,18 +8,6 @@ import {
   canChangeUserRole,
   canDeleteUser,
 } from "./governance-rules.js"
-
-export function resolveGovernedVerification(
-  role: GovernableRole,
-  inputValue: boolean | undefined | null,
-  fallbackValue: boolean,
-): boolean {
-  if (role === "OWNER" || role === "ADMIN") {
-    return true
-  }
-
-  return inputValue ?? fallbackValue
-}
 
 export function computeGovernancePermissions(
   actor: GovernanceActor,
