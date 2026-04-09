@@ -2,7 +2,6 @@ import type { ManagedUserRecord } from "@builders/db"
 import type { GovernancePermissions } from "@builders/domain"
 
 export type UpdateManagedUserInput = {
-  isVerified?: boolean
   role?: string
 }
 

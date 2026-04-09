@@ -28,13 +28,6 @@ function validateUpdateManagedUserInput(body: unknown): UpdateManagedUserInput {
   const record = body as Record<string, unknown>
   const input: UpdateManagedUserInput = {}
 
-  if ("isVerified" in record) {
-    if (typeof record.isVerified !== "boolean") {
-      throw createAppError("isVerified must be true or false", { field: "isVerified" })
-    }
-    input.isVerified = record.isVerified
-  }
-
   if ("role" in record) {
     if (typeof record.role !== "string" || record.role.trim() === "") {
       throw createAppError("role must be a non-empty string", { field: "role" })

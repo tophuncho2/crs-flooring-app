@@ -2,12 +2,9 @@ import { findManagedUserById, updateManagedUser, withDatabaseTransaction } from 
 import type { GovernableRole, GovernanceActor, GovernanceTarget } from "@builders/domain"
 import {
   canChangeUserRole,
-  canUpdateUserStatus,
   getRoleChangeBlockedMessage,
-  getUpdateBlockedMessage,
   getInvalidRoleTransitionMessage,
   isValidRoleTransition,
-  resolveGovernedVerification,
 } from "@builders/domain"
 import { GovernanceExecutionError } from "./errors.js"
 import { toManagedUserWithPermissions } from "./mappers.js"
@@ -32,7 +29,7 @@ export async function updateManagedUserUseCase(
     const governanceActor: GovernanceActor = { id: actor.id, role: actor.role }
     const governanceTarget: GovernanceTarget = { id: record.id, role: record.role as GovernableRole }
 
-    const normalizedData: { isVerified?: boolean; role?: string } = {}
+    const normalizedData: { role?: string } = {}
 
     // --- Role change gate ---
     if (input.role !== undefined) {
@@ -53,23 +50,6 @@ export async function updateManagedUserUseCase(
       }
 
       normalizedData.role = input.role
-    }
-
-    // --- Status update gate ---
-    if (input.isVerified !== undefined) {
-      if (!canUpdateUserStatus(governanceActor, governanceTarget)) {
-        throw new GovernanceExecutionError({
-          code: "GOVERNANCE_UPDATE_BLOCKED",
-          message: getUpdateBlockedMessage(governanceActor, governanceTarget),
-          status: 403,
-        })
-      }
-
-      normalizedData.isVerified = resolveGovernedVerification(
-        record.role as GovernableRole,
-        input.isVerified,
-        record.isVerified,
-      )
     }
 
     const updated = await updateManagedUser(id, normalizedData, tx)
