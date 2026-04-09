@@ -3,6 +3,7 @@ import {
   isGovernanceExecutionError,
   listManagedUsersUseCase,
 } from "@builders/application"
+import type { GovernableRole } from "@builders/domain"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { parseRequiredString } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const result = await listManagedUsersUseCase(access.user)
+    const result = await listManagedUsersUseCase({ id: access.user.id, role: access.user.role as GovernableRole })
     return routeJson(access, { users: result.users })
   } catch (error) {
     if (isGovernanceExecutionError(error)) {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
         route: "/api/admin/users",
         entityType: "user",
       },
-      () => createManagedUserUseCase(input, access.user),
+      () => createManagedUserUseCase(input, { id: access.user.id, role: access.user.role as GovernableRole }),
     )
 
     const responseBody = { user }
