@@ -33,7 +33,7 @@ export function getAuthOptions(): NextAuthOptions {
               requestId,
               clientIp,
             })
-            throw new Error("USER_NOT_FOUND")
+            throw new Error("INVALID_CREDENTIALS")
           }
 
           const rateLimit = await consumeRateLimit({
@@ -64,7 +64,7 @@ export function getAuthOptions(): NextAuthOptions {
               userEmail: normalizedEmail,
               clientIp,
             })
-            throw new Error("USER_NOT_FOUND")
+            throw new Error("INVALID_CREDENTIALS")
           }
 
           if (!user.password) {
