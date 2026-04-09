@@ -24,17 +24,16 @@ export function getAuthOptions(): NextAuthOptions {
           const requestId = getRequestId(request)
           const clientIp = getClientIp(request)
 
-          if (!credentials?.email || !credentials?.password) {
+          if (!credentials?.email) {
             logEvent({
               level: "warn",
-              message: "Login attempt rejected because credentials were missing",
+              message: "Login attempt rejected because email was missing",
               action: "auth.login.rejected",
               route: "/api/auth/[...nextauth]",
               requestId,
-              userEmail: normalizedEmail || undefined,
               clientIp,
             })
-            return null
+            throw new Error("USER_NOT_FOUND")
           }
 
           const rateLimit = await consumeRateLimit({
@@ -48,7 +47,7 @@ export function getAuthOptions(): NextAuthOptions {
           })
 
           if (!rateLimit.allowed) {
-            return null
+            throw new Error("RATE_LIMITED")
           }
 
           const user = await prisma.user.findUnique({
@@ -65,7 +64,7 @@ export function getAuthOptions(): NextAuthOptions {
               userEmail: normalizedEmail,
               clientIp,
             })
-            return null
+            throw new Error("USER_NOT_FOUND")
           }
 
           if (!user.password) {
@@ -94,7 +93,7 @@ export function getAuthOptions(): NextAuthOptions {
               userEmail: user.email,
               clientIp,
             })
-            return null
+            throw new Error("INVALID_CREDENTIALS")
           }
 
           if (!hasSystemAccess(user.role)) {
@@ -108,7 +107,7 @@ export function getAuthOptions(): NextAuthOptions {
               userEmail: user.email,
               clientIp,
             })
-            return null
+            throw new Error("INVALID_CREDENTIALS")
           }
 
           if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
@@ -122,7 +121,7 @@ export function getAuthOptions(): NextAuthOptions {
               userEmail: user.email,
               clientIp,
             })
-            return null
+            throw new Error("ACCOUNT_RESTRICTED")
           }
 
           await prisma.userLoginActivity.create({

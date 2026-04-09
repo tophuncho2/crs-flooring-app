@@ -35,11 +35,19 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
         return
       }
 
-      if (result?.error === "PASSWORD_SETUP_REQUIRED") {
+      const errorCode = result?.error ?? ""
+
+      if (errorCode === "PASSWORD_SETUP_REQUIRED") {
         setStep("set-password")
         setNotice("Welcome! Please set your password to get started.")
-      } else {
+      } else if (errorCode === "INVALID_CREDENTIALS") {
         setStep("password")
+      } else if (errorCode === "ACCOUNT_RESTRICTED") {
+        setError("Your account is restricted. Contact an admin to verify access.")
+      } else if (errorCode === "RATE_LIMITED") {
+        setError("Too many attempts. Please try again later.")
+      } else {
+        setError("Unable to sign in. Contact your administrator.")
       }
     } finally {
       setIsSubmitting(false)
@@ -65,8 +73,12 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
         setStep("set-password")
         setPassword("")
         setNotice("Welcome! Please set your password to get started.")
+      } else if (result?.error === "ACCOUNT_RESTRICTED") {
+        setError("Your account is restricted. Contact an admin to verify access.")
+      } else if (result?.error === "RATE_LIMITED") {
+        setError("Too many attempts. Please try again later.")
       } else {
-        setError("Invalid credentials or account not approved")
+        setError("Invalid email or password")
       }
     } finally {
       setIsSubmitting(false)

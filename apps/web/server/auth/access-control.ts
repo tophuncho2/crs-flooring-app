@@ -89,14 +89,6 @@ export function canBypassVerification(_email: string, role: Role): boolean {
   return hasGovernanceAccess(role)
 }
 
-export function canRestrictUser(_email: string, role: Role): boolean {
-  return hasGovernanceAccess(role)
-}
-
-export function canEditRole(): boolean {
-  return false
-}
-
 export function canManageUsers(_email: string, role: Role): boolean {
   return hasCapability(role, "users.manage")
 }
