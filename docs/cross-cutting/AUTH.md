@@ -1,4 +1,3 @@
-```markdown
 # Authentication
 
 > **Scope:** Identity resolution — how users prove who they are. Session management, token contents, login flow.
@@ -136,4 +135,3 @@ requireSessionUser(): Promise<SessionUser>
 
 - [AUTHORIZATION.md](AUTHORIZATION.md) — what authenticated users are allowed to do
 - [../execution/ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — API route auth enforcement
-```
