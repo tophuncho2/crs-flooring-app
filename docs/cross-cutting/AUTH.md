@@ -1,52 +1,5 @@
-## Structure
-
-See `packages/domain/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
-Same pattern for data and application. One line, never stale.
-Other project files to update:
-FileFixexecution_execution_engineLine 57-61: change "Three execution paths" to "Two execution paths", remove Exception 3 line, or mark it resolvedcross-cutting_authLogin flow section needs rewrite: email-first, PASSWORD_SETUP_REQUIRED, set-password endpoint, null password handling
-Those two are the only ones that are actively wrong. The rest are current or just missing admin context that gets filled when you write BUILDER_AUTH.md.APPLICATION.md56 linesmdDATA.md56 linesmdDOMAIN.md41 linesmdEXECUTION_ENGINE.md71 linesmdi attached the updated files. and then for auth can you restructure whats needed# Authentication
-
-> **Scope:** Identity resolution — how users prove who they are. Session management, token contents, login flow.
-> **Location:** `apps/web/server/auth/auth-options.ts`, `apps/web/server/auth/session.ts`
-
-## Rules
-
-1. Authentication uses NextAuth with a single CredentialsProvider (email + password).
-2. Sessions are JWT-based. Token contains `id`, `email`, `role`, and `isVerified`.
-3. `requireSessionUser()` is the structural enforcement point — called in Server Component layouts to gate all `/dashboard/*` routes.
-4. Session resolution never hits the database after login — all data is in the JWT.
-5. CONTRACTOR and CUSTOMER roles are rejected at login (`hasSystemAccess()` check).
-
-## Contract
-
-### Login Flow
-
-```
-LoginForm (signIn("credentials", { email, password }))
-  → NextAuth CredentialsProvider:
-    1. Normalize email (trim, lowercase)
-    2. Rate-limit: 10 attempts / 10 min per IP
-    3. prisma.user.findUnique({ where: { email } })
-    4. bcrypt.compare(password, user.password)
-    5. hasSystemAccess(user.role) — reject CONTRACTOR/CUSTOMER
-    6. Verification: OWNER/ADMIN bypass, BUILDER must be isVerified
-    7. prisma.userLoginActivity.create()
-    8. Return { id, email, role, isVerified }
-  → JWT callback stores id, role, isVerified in token
-  → Session callback populates session.user
-  → Client redirects to /dashboard/inventory### Session Resolutiontype SessionUser = {
-  id: string
-  email: string
-  role: Role
-  isVerified: boolean
-}
-
-requireSessionUser(): Promise<SessionUser>
-  // 1. getServerSession(getAuthOptions())
-  // 2. No user → redirect("/login")
-  // 3. !hasSystemAccess → redirect("/login")
-  // 4. !isVerified && !canBypassVerification → redirect("/login?restricted=1")### getSessionUser() vs requireSessionUser()getSessionUser() — returns SessionUser | null. Used in API routes where auth failure returns a Response.requireSessionUser() — returns SessionUser. Used in Server Components where auth failure redirects.## PatternsDashboard layout (app/dashboard/layout.tsx) calls requireSessionUser() — structural gate for all dashboard pages.API routes use applyRoutePolicy() which internally calls getSessionUser().Login activity tracked via UserLoginActivity model on every successful login.## Anti-Patterns**Do not** check authentication in individual page components — rely on the layout gate.**Do not** store sensitive data beyond id/email/role/isVerified in the JWT.**Do not** call the database during session resolution — JWT is self-contained.**Do not** use getSessionUser() in Server Components — use requireSessionUser() which redirects.## Related Docs[AUTHORIZATION.md](AUTHORIZATION.md) — what authenticated users are allowed to do[../execution/ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — API route auth enforcement```Show more11:33 AMHere's the updated AUTH.md:
-markdown# Authentication
+```markdown
+# Authentication
 
 > **Scope:** Identity resolution — how users prove who they are. Session management, token contents, login flow.
 > **Location:** `apps/web/server/auth/auth-options.ts`, `apps/web/server/auth/session.ts`
@@ -64,40 +17,45 @@ markdown# Authentication
 ## Contract
 
 ### Login Flow (Email-First, Three-Step)
+
+```
 Step 1 — Email check:
-LoginForm submits signIn("credentials", { email, password: "" })
-→ NextAuth CredentialsProvider authorize():
-1. Normalize email (trim, lowercase)
-2. Rate-limit: 10 attempts / 10 min per IP
-3. prisma.user.findUnique({ where: { email } })
-4. User not found → throw "USER_NOT_FOUND"
-5. User found, password is null → throw "PASSWORD_SETUP_REQUIRED"
-6. User found, password set, bcrypt.compare("", hash) fails → throw "INVALID_CREDENTIALS"
-→ Client reads error code:
-- USER_NOT_FOUND → show error, stay on email step
-- PASSWORD_SETUP_REQUIRED → show set-password form (Step 2a)
-- INVALID_CREDENTIALS → show password field (Step 2b)
+  LoginForm submits signIn("credentials", { email, password: "" })
+  → NextAuth CredentialsProvider authorize():
+    1. Normalize email (trim, lowercase)
+    2. Rate-limit: 10 attempts / 10 min per IP
+    3. prisma.user.findUnique({ where: { email } })
+    4. User not found → throw "USER_NOT_FOUND"
+    5. User found, password is null → throw "PASSWORD_SETUP_REQUIRED"
+    6. User found, password set, bcrypt.compare("", hash) fails → throw "INVALID_CREDENTIALS"
+  → Client reads error code:
+    - USER_NOT_FOUND → show error, stay on email step
+    - PASSWORD_SETUP_REQUIRED → show set-password form (Step 2a)
+    - INVALID_CREDENTIALS → show password field (Step 2b)
+
 Step 2a — First-time password setup (new user):
-LoginForm submits POST /api/auth/set-password { email, password }
-→ setUserPasswordUseCase:
-1. Find user by email
-2. Verify password is null (one-shot — rejects if already set)
-3. Hash password with bcrypt
-4. Set password + isVerified: true (atomic)
-→ Rate limit: 5 attempts / 5 min per IP
-→ On success: auto-signs in with new password
+  LoginForm submits POST /api/auth/set-password { email, password }
+  → setUserPasswordUseCase:
+    1. Find user by email
+    2. Verify password is null (one-shot — rejects if already set)
+    3. Hash password with bcrypt
+    4. Set password + isVerified: true (atomic)
+  → Rate limit: 5 attempts / 5 min per IP
+  → On success: auto-signs in with new password
+
 Step 2b — Normal login (returning user):
-LoginForm submits signIn("credentials", { email, password })
-→ authorize():
-1-3. Same as Step 1
-4. bcrypt.compare(password, user.password)
-5. hasSystemAccess(user.role) — reject CONTRACTOR/CUSTOMER
-6. canBypassVerification check — OWNER/ADMIN bypass, BUILDER must be isVerified
-7. prisma.userLoginActivity.create()
-8. Return { id, email, role, isVerified }
-→ JWT callback stores id, role, isVerified in token
-→ Session callback populates session.user
-→ Client redirects to /dashboard/inventory
+  LoginForm submits signIn("credentials", { email, password })
+  → authorize():
+    1-3. Same as Step 1
+    4. bcrypt.compare(password, user.password)
+    5. hasSystemAccess(user.role) — reject CONTRACTOR/CUSTOMER
+    6. canBypassVerification check — OWNER/ADMIN bypass, BUILDER must be isVerified
+    7. prisma.userLoginActivity.create()
+    8. Return { id, email, role, isVerified }
+  → JWT callback stores id, role, isVerified in token
+  → Session callback populates session.user
+  → Client redirects to /dashboard/inventory
+```
 
 ### Error Codes from authorize()
 
@@ -110,22 +68,24 @@ LoginForm submits signIn("credentials", { email, password })
 | `RATE_LIMITED` | Too many attempts | Show rate limit message |
 
 ### Set-Password Endpoint
+
+```
 POST /api/auth/set-password (unauthenticated)
-
-Rate limit: 5 attempts / 5 min per IP
-Input: { email, password } (min 8 characters)
-Only works for users with password IS NULL
-Sets password + isVerified: true atomically
-Returns { ok: true }
-
+  - Rate limit: 5 attempts / 5 min per IP
+  - Input: { email, password } (min 8 characters)
+  - Only works for users with password IS NULL
+  - Sets password + isVerified: true atomically
+  - Returns { ok: true }
+```
 
 ### User Lifecycle
 
-OWNER/ADMIN creates user via admin panel → { email, role, password: null, isVerified: false }
-User visits login → enters email → PASSWORD_SETUP_REQUIRED
-User sets password → { password: hashed, isVerified: true }
-Subsequent logins → normal email + password flow
-
+```
+1. OWNER/ADMIN creates user via admin panel → { email, role, password: null, isVerified: false }
+2. User visits login → enters email → PASSWORD_SETUP_REQUIRED
+3. User sets password → { password: hashed, isVerified: true }
+4. Subsequent logins → normal email + password flow
+```
 
 ### OWNER Provisioning
 
@@ -176,3 +136,4 @@ requireSessionUser(): Promise<SessionUser>
 
 - [AUTHORIZATION.md](AUTHORIZATION.md) — what authenticated users are allowed to do
 - [../execution/ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — API route auth enforcement
+```
