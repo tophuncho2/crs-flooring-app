@@ -28,9 +28,6 @@
 
 **Resolution:** No change planned. Idempotent upserts do not need receipt-based deduplication.
 
-## Exception 3: Auth Register Flow (Resolved)
-
-**Resolved.** Self-registration removed per FLO-52. The register route (`POST /api/auth/register`) and Create Account UI have been deleted. Users are now created exclusively by OWNER/ADMIN via the admin panel.
 
 ## Related Docs
 
