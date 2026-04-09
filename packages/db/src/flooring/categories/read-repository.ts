@@ -1,9 +1,3 @@
-import {
-  createPrismaPageLoadIssue,
-  isPrismaNotFoundError,
-  withPrismaConnectivityHandling,
-  type PrismaDetailPageResult,
-} from "../../errors.js"
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
 
@@ -101,14 +95,6 @@ export function normalizeCategoryRow(category: {
   }
 }
 
-function normalizeUnitOfMeasureOption(unit: { id: string; name: string; createdAt: Date }): UnitOfMeasureOption {
-  return {
-    id: unit.id,
-    name: unit.name,
-    createdAt: unit.createdAt.toISOString(),
-  }
-}
-
 // --- Read functions ---
 
 export async function listCategories(client: CategoryDbClient = db): Promise<CategoryRecord[]> {
@@ -170,62 +156,4 @@ export async function categoryNameExists(
   })
 
   return Boolean(existing)
-}
-
-// --- Page data loaders ---
-
-async function loadUnitOfMeasureOptions(client: CategoryDbClient = db): Promise<UnitOfMeasureOption[]> {
-  const units = await client.flooringUnitOfMeasure.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, createdAt: true },
-  })
-
-  return units.map(normalizeUnitOfMeasureOption)
-}
-
-export async function getCategoriesPageData(client: CategoryDbClient = db) {
-  return withPrismaConnectivityHandling(async () => ({
-    initialCategories: await listCategories(client),
-    unitOfMeasureOptions: await loadUnitOfMeasureOptions(client),
-  }))
-}
-
-export async function getCategoryCreatePageData(client: CategoryDbClient = db) {
-  return withPrismaConnectivityHandling(async () => ({
-    unitOfMeasureOptions: await loadUnitOfMeasureOptions(client),
-  }))
-}
-
-export async function getCategoryDetailPageData(
-  id: string,
-  client: CategoryDbClient = db,
-): Promise<PrismaDetailPageResult<{
-  category: CategoryRecord
-  unitOfMeasureOptions: UnitOfMeasureOption[]
-}>> {
-  try {
-    const [category, unitOfMeasureOptions] = await Promise.all([
-      getCategoryById(id, client),
-      loadUnitOfMeasureOptions(client),
-    ])
-
-    return {
-      ok: true,
-      data: { category, unitOfMeasureOptions },
-    }
-  } catch (error) {
-    if (isPrismaNotFoundError(error)) {
-      return { ok: false, notFound: true }
-    }
-
-    return {
-      ok: false,
-      error: createPrismaPageLoadIssue(error, {
-        code: "CATEGORY_DETAIL_LOAD_FAILED",
-        title: "Category Unavailable",
-        message: "The app could not load this category.",
-        detail: "The category record could not be loaded.",
-      }),
-    }
-  }
 }
