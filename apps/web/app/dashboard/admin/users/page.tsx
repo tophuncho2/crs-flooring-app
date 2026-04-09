@@ -24,7 +24,7 @@ export default async function AdminUsersPage({
     searchParams: resolvedSearchParams,
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
     defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["role"],
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : [],
     allowedGroupKeys: ["role", "status"],
   })
   const pageData = await getAdminUsersPageData(user)
