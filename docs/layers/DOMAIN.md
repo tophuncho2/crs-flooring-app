@@ -22,33 +22,7 @@ Domain functions follow one of three patterns:
 
 ## Structure
 
-snapshot of domain content organized by concern - keep this as modules move in:
-
-```
-packages/domain/src/
-├── flooring/
-│   ├── categories/          ← delete-rules, name-rules
-│   ├── contacts/            ← delete-rules, name-rules
-│   ├── services/            ← delete-rules, name-rules
-│   ├── unit-of-measures/    ← delete-rules, name-rules
-│   └── work-orders/
-│       └── allocations/     ← compatibility, status, delta, invariants,
-│                              auto-allocation-plan, reservation-semantics
-├── shared/
-│   ├── address-helpers.ts
-│   ├── date-format.ts
-│   ├── line-totals.ts
-│   ├── product-display-name.ts
-│   ├── inventory-allocation-totals.ts
-│   ├── record-summary.ts
-│   ├── record-sales-reps.ts
-│   └── table-preferences.ts
-└── queues/
-    ├── send-work-order.ts
-    ├── sync-inventory.ts
-    ├── auto-allocate-work-order.ts
-    └── workflow-processing.ts
-```
+See `packages/domain/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
 
 Queue definitions (job schemas, queue names) live in domain because they define the **shape** of inter-service contracts, not the infrastructure that processes them.
 

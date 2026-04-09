@@ -35,27 +35,7 @@ The optional client parameter enables callers to compose multiple repository cal
 ## Structure
 
 ```
-packages/db/src/
-├── client.ts                 ← Prisma client singleton + withDatabaseTransaction()
-├── env.ts                    ← Database environment config
-├── errors.ts                 ← Prisma error helpers + getPrismaConnectivityIssue()
-├── types.ts                  ← Shared persistence types
-├── mutation-receipts.ts      ← reserveAppMutationReceipt(), finalizeAppMutationReceipt()
-├── flooring/
-│   ├── categories/
-│   │   ├── read-repository.ts
-│   │   └── write-repository.ts
-│   ├── unit-of-measures/
-│   │   ├── read-repository.ts
-│   │   └── write-repository.ts
-│   └── work-orders/
-│       └── allocations/
-│           ├── allocation-repository.ts
-│           └── run-repository.ts
-├── queue/
-│   └── outbox-repository.ts  ← Outbox state machine
-└── account/
-    └── table-preference-repository.ts
+See `packages/data/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
 ```
 
 Read/write repository split: read repositories handle queries and filtering, write repositories handle inserts, updates, and deletes.

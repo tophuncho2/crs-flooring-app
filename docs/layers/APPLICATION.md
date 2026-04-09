@@ -36,33 +36,7 @@ The optional `client` parameter allows the caller to wrap multiple use cases in 
 
 ## Structure
 
-```
-packages/application/src/
-├── flooring/
-│   ├── categories/
-│   │   ├── create-category.ts
-│   │   ├── update-category.ts
-│   │   ├── delete-category.ts
-│   │   ├── errors.ts
-│   │   ├── types.ts
-│   │   └── mappers.ts
-│   ├── unit-of-measures/
-│   │   ├── create-unit-of-measure.ts
-│   │   ├── update-unit-of-measure.ts
-│   │   ├── delete-unit-of-measure.ts
-│   │   ├── errors.ts
-│   │   ├── types.ts
-│   │   └── mappers.ts
-│   └── work-orders/
-│       └── allocations/
-│           ├── reconcile-allocation.ts
-│           ├── remove-allocation.ts
-│           ├── apply-manual-allocation.ts
-│           ├── request-auto-allocation.ts
-│           └── process-auto-allocation-run.ts
-└── account/
-    └── table-preferences.ts
-```
+See `packages/domain/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
 
 Each feature module follows the same structure: `errors.ts` + `types.ts` + `mappers.ts` + individual use case files.
 
