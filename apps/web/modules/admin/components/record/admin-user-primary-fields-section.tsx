@@ -12,9 +12,9 @@ import {
 import { formatStableDateTime } from "@builders/domain"
 import type { ManagedUserForm, ManagedUserWithPermissions } from "../../controller/types"
 
-const VERIFICATION_OPTIONS = [
-  { value: "true", label: "Verified" },
-  { value: "false", label: "Pending Approval" },
+const ROLE_OPTIONS = [
+  { value: "BUILDER", label: "Builder" },
+  { value: "ADMIN", label: "Admin" },
 ]
 
 export function AdminUserPrimaryFieldsSection({
@@ -42,36 +42,30 @@ export function AdminUserPrimaryFieldsSection({
 
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Role">
-              <RecordStaticFieldValue>{user.role}</RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-
-          {user.canUpdateStatus && (
-            <RecordPrimaryFieldCell size="sm">
-              <RecordFormField label="Verification Status">
+              {user.canChangeRole ? (
                 <select
-                  value={String(draft.isVerified)}
-                  onChange={(event) => onChange({ isVerified: event.target.value === "true" })}
+                  value={draft.role}
+                  onChange={(event) => onChange({ ...draft, role: event.target.value })}
                   disabled={disabled}
                   className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 >
-                  {VERIFICATION_OPTIONS.map((option) => (
+                  {ROLE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-          )}
+              ) : (
+                <RecordStaticFieldValue>{user.role}</RecordStaticFieldValue>
+              )}
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
 
-          {!user.canUpdateStatus && (
-            <RecordPrimaryFieldCell size="sm">
-              <RecordFormField label="Status">
-                <RecordStaticFieldValue>{user.isVerified ? "Verified" : "Pending Approval"}</RecordStaticFieldValue>
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-          )}
+          <RecordPrimaryFieldCell size="sm">
+            <RecordFormField label="Status">
+              <RecordStaticFieldValue>{user.isVerified ? "Verified" : "Pending"}</RecordStaticFieldValue>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>
 
