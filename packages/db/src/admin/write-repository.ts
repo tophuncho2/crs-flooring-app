@@ -53,6 +53,22 @@ export async function updateManagedUser(
   return normalizeManagedUserRow(row)
 }
 
+export async function setUserPassword(
+  id: string,
+  hashedPassword: string,
+  client: AdminDbClient = db,
+): Promise<{ id: string }> {
+  await client.user.update({
+    where: { id },
+    data: {
+      password: hashedPassword,
+      isVerified: true,
+    },
+  })
+
+  return { id }
+}
+
 export async function deleteManagedUser(
   id: string,
   client: AdminDbClient = db,

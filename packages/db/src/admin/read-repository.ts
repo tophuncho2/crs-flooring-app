@@ -6,6 +6,34 @@ export type { ManagedUserRecord } from "./shared.js"
 
 type AdminDbClient = PrismaClient | Prisma.TransactionClient
 
+// --- Auth lookup ---
+
+export type UserAuthRecord = {
+  id: string
+  email: string
+  role: string
+  password: string | null
+  isVerified: boolean
+}
+
+export async function findUserByEmail(
+  email: string,
+  client: AdminDbClient = db,
+): Promise<UserAuthRecord | null> {
+  const user = await client.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      password: true,
+      isVerified: true,
+    },
+  })
+
+  return user
+}
+
 // --- Read functions ---
 
 export async function findManagedUsers(

@@ -68,6 +68,20 @@ export function getAuthOptions(): NextAuthOptions {
             return null
           }
 
+          if (!user.password) {
+            logEvent({
+              level: "warn",
+              message: "Login attempt failed because the user has not set a password",
+              action: "auth.login.passwordSetupRequired",
+              route: "/api/auth/[...nextauth]",
+              requestId,
+              userId: user.id,
+              userEmail: user.email,
+              clientIp,
+            })
+            throw new Error("PASSWORD_SETUP_REQUIRED")
+          }
+
           const valid = await bcrypt.compare(credentials.password, user.password)
           if (!valid) {
             logEvent({
