@@ -1,4 +1,4 @@
-import { isGovernanceExecutionError, setUserPasswordUseCase } from "@builders/application"
+import { setUserPasswordUseCase } from "@builders/application"
 import { parseRequiredString, normalizePrismaError } from "@/server/http/api-helpers"
 import { logEvent } from "@/server/platform/logger"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
@@ -48,14 +48,6 @@ export async function POST(request: Request) {
 
     return jsonWithRequestId({ ok: true }, requestId, { status: 200 })
   } catch (error) {
-    if (isGovernanceExecutionError(error)) {
-      return jsonWithRequestId(
-        { error: error.message },
-        requestId,
-        { status: error.status },
-      )
-    }
-
     logEvent({
       level: "error",
       message: "Set password failed",

@@ -1,6 +1,5 @@
 import {
   createManagedUserUseCase,
-  isGovernanceExecutionError,
   listManagedUsersUseCase,
 } from "@builders/application"
 import type { GovernableRole } from "@builders/domain"
@@ -39,9 +38,6 @@ export async function GET(request: Request) {
     const result = await listManagedUsersUseCase({ id: access.user.id, role: access.user.role as GovernableRole })
     return routeJson(access, { users: result.users })
   } catch (error) {
-    if (isGovernanceExecutionError(error)) {
-      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
-    }
     return routeError(access, error)
   }
 }
@@ -92,9 +88,6 @@ export async function POST(request: Request) {
     })
     return routeJson(access, responseBody, { status: 201 })
   } catch (error) {
-    if (isGovernanceExecutionError(error)) {
-      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
-    }
     return routeError(access, error)
   }
 }

@@ -135,6 +135,22 @@ export function normalizePrismaError(error: unknown): {
   field?: string
   payload?: Record<string, unknown>
 } {
+  if (
+    error instanceof Error &&
+    "status" in error &&
+    typeof (error as { status: unknown }).status === "number" &&
+    (error as { status: number }).status >= 400 &&
+    (error as { status: number }).status <= 499
+  ) {
+    const execError = error as Error & { status: number; field?: string; payload?: Record<string, unknown> }
+    return {
+      status: execError.status,
+      message: execError.message,
+      field: typeof execError.field === "string" ? execError.field : undefined,
+      payload: execError.payload,
+    }
+  }
+
   if (isAppError(error)) {
     const appError = error as AppError
     return {

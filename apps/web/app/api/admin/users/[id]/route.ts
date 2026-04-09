@@ -1,7 +1,6 @@
 import {
   deleteManagedUserUseCase,
   getManagedUserUseCase,
-  isGovernanceExecutionError,
   updateManagedUserUseCase,
 } from "@builders/application"
 import type { UpdateManagedUserInput } from "@builders/application"
@@ -52,9 +51,6 @@ export async function GET(request: Request, { params }: RouteContext) {
     const user = await getManagedUserUseCase(id, access.user)
     return routeJson(access, { user })
   } catch (error) {
-    if (isGovernanceExecutionError(error)) {
-      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
-    }
     return routeError(access, error)
   }
 }
@@ -109,9 +105,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
-    if (isGovernanceExecutionError(error)) {
-      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
-    }
     return routeError(access, error)
   }
 }
@@ -166,9 +159,6 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     })
     return routeJson(access, responseBody)
   } catch (error) {
-    if (isGovernanceExecutionError(error)) {
-      return routeJson(access, { error: error.message, field: error.field }, { status: error.status })
-    }
     return routeError(access, error)
   }
 }
