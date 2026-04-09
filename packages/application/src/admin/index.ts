@@ -1,6 +1,7 @@
 export * from "./errors.js"
 export * from "./types.js"
 export * from "./mappers.js"
+export * from "./create-managed-user.js"
 export * from "./list-managed-users.js"
 export * from "./get-managed-user.js"
 export * from "./update-managed-user.js"

@@ -12,7 +12,29 @@ export type ManagedUserUpdateInput = {
   role?: string
 }
 
+export type ManagedUserCreateInput = {
+  email: string
+  role: string
+}
+
 // --- Write functions ---
+
+export async function createManagedUser(
+  data: ManagedUserCreateInput,
+  client: AdminDbClient = db,
+): Promise<ManagedUserRecord> {
+  const row = await client.user.create({
+    data: {
+      email: data.email,
+      password: null,
+      role: data.role as Role,
+      isVerified: false,
+    },
+    select: managedUserSelect,
+  })
+
+  return normalizeManagedUserRow(row)
+}
 
 export async function updateManagedUser(
   id: string,

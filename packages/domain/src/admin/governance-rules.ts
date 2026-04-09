@@ -22,6 +22,20 @@ function isStrictlyAbove(
 }
 
 // ---------------------------------------------------------------------------
+// Creation predicates
+// ---------------------------------------------------------------------------
+
+const CREATABLE_ROLES = new Set<string>(["ADMIN", "BUILDER"])
+
+export function canCreateUser(actorRole: GovernableRole): boolean {
+  return actorRole === "OWNER" || actorRole === "ADMIN"
+}
+
+export function isValidCreationRole(role: string): boolean {
+  return CREATABLE_ROLES.has(role)
+}
+
+// ---------------------------------------------------------------------------
 // Predicates
 // ---------------------------------------------------------------------------
 
@@ -71,6 +85,18 @@ export function isValidRoleTransition(
     (fromRole === "BUILDER" && toRole === "ADMIN") ||
     (fromRole === "ADMIN" && toRole === "BUILDER")
   )
+}
+
+// ---------------------------------------------------------------------------
+// Creation message builders
+// ---------------------------------------------------------------------------
+
+export function getCreateBlockedMessage(): string {
+  return "Only administrators can create users"
+}
+
+export function getInvalidCreationRoleMessage(role: string): string {
+  return `Users can only be created with ADMIN or BUILDER role, got "${role}"`
 }
 
 // ---------------------------------------------------------------------------
