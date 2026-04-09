@@ -28,15 +28,9 @@
 
 **Resolution:** No change planned. Idempotent upserts do not need receipt-based deduplication.
 
-## Exception 3: Auth Register Flow Uses Direct Prisma Calls
+## Exception 3: Auth Register Flow (Resolved)
 
-**What:** `POST /api/auth/register` calls Prisma directly in the route handler instead of going through `packages/application/` and `packages/db/` layers.
-
-**Why:** This was the original bootstrap implementation before the layer architecture was established.
-
-**Affected routes:** `/api/auth/register`
-
-**Resolution:** **Being removed per FLO-43.** Self-registration will be replaced by admin-provisioned onboarding. The entire register route and "Create Account" UI will be deleted.
+**Resolved.** Self-registration removed per FLO-52. The register route (`POST /api/auth/register`) and Create Account UI have been deleted. Users are now created exclusively by OWNER/ADMIN via the admin panel.
 
 ## Related Docs
 
