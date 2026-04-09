@@ -19,7 +19,3 @@ export class CategoryExecutionError extends Error {
     this.payload = input.payload
   }
 }
-
-export function isCategoryExecutionError(error: unknown): error is CategoryExecutionError {
-  return error instanceof CategoryExecutionError
-}
