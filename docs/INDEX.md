@@ -57,7 +57,7 @@
 ## Domain References
 | Doc | Scope |
 |-----|-------|
-| [domains/BUILDER_AUTH.md](domains/BUILDER_AUTH.md) | Users, roles, auth, admin |
+| [domains/USER_GOVERNANCE.md](domains/USER_GOVERNANCE.md) | Users, roles, auth, admin |
 | [domains/WORK_ORDERS.md](domains/WORK_ORDERS.md) | Work orders and allocation (stub) |
 | [domains/INVENTORY.md](domains/INVENTORY.md) | Inventory and warehouse (stub) |
 
