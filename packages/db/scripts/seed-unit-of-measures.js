@@ -4,8 +4,8 @@
  */
 const SEEDED_UNIT_OF_MEASURES = [
   { slug: "linear-feet", name: "Linear Feet", abbreviation: "lf" },
-  { slug: "square-feet", name: "Square Feet", abbreviation: "sf" },
-  { slug: "square-yard", name: "Square Yard", abbreviation: "sy" },
+  { slug: "square-feet", name: "Square Feet", abbreviation: "sqft" },
+  { slug: "square-yard", name: "Square Yard", abbreviation: "sqyd" },
   { slug: "buckets", name: "Buckets", abbreviation: "bkt" },
   { slug: "boxes", name: "Boxes", abbreviation: "bx" },
   { slug: "units", name: "Units", abbreviation: "ea" },
