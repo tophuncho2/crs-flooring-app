@@ -53,6 +53,7 @@
 | [patterns/OUTBOX_PATTERN.md](patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
 | [patterns/ACCEPTED_EXCEPTIONS.md](patterns/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
 | [patterns/API_DESIGN.md](patterns/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
+| [patterns/REFERENCE_DATA.md](patterns/REFERENCE_DATA.md) | Seeded read-only reference tables (UoMs, Categories) |
 
 ## Domain References
 | Doc | Scope |

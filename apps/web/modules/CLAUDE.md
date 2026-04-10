@@ -30,6 +30,20 @@
 7. No module-specific code lives outside its module folder (except route files in `app/dashboard/`).
 8. No domain logic lives here — business rules belong in `packages/domain/`, use cases in `packages/application/`, persistence in `packages/db/`.
 
+## Reference Data Exception
+
+Modules that represent seeded, read-only reference data (see `docs/patterns/REFERENCE_DATA.md`) are exempt from the standard structure above. Reference data modules:
+
+- **Must have:** `controllers/`, `components/list/`, `data/`, module-root `types.ts`, `CLAUDE.md`
+- **Must not have:** `record/`, `transport/`, `views/`, `domain/`, or any subdirectory for mutation surface
+- **Must not have:** entries under `packages/application/src/flooring/{name}/` or `packages/domain/src/flooring/{name}/`
+- **Must not have:** `write-repository.ts` under `packages/db/src/flooring/{name}/`
+- **Must declare themselves** as reference data modules in their module-root `CLAUDE.md` with a link to `docs/patterns/REFERENCE_DATA.md`
+
+This exception is documented in `docs/patterns/ACCEPTED_EXCEPTIONS.md` as Exception 3.
+
+When auditing, treat a module with a "Reference Data Module" declaration in its `CLAUDE.md` as conforming to the reference data structure rather than the standard structure.
+
 ## Audit Task
 
 When asked to audit or organize, compare every subdirectory against the structure above and flag deviations.
