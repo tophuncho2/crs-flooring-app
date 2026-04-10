@@ -8,14 +8,18 @@ type UnitOfMeasureDbClient = PrismaClient | Prisma.TransactionClient
 
 type UnitOfMeasureDbRow = {
   id: string
+  slug: string
   name: string
+  abbreviation: string
   createdAt: Date
   updatedAt: Date
 }
 
 export type UnitOfMeasureRecord = {
   id: string
+  slug: string
   name: string
+  abbreviation: string
   createdAt: string
   updatedAt: string
 }
@@ -23,7 +27,9 @@ export type UnitOfMeasureRecord = {
 export function normalizeUnitOfMeasureRow(unit: UnitOfMeasureDbRow): UnitOfMeasureRecord {
   return {
     id: unit.id,
+    slug: unit.slug,
     name: unit.name,
+    abbreviation: unit.abbreviation,
     createdAt: unit.createdAt.toISOString(),
     updatedAt: unit.updatedAt.toISOString(),
   }

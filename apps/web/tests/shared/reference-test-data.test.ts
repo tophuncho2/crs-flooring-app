@@ -72,7 +72,7 @@ describe("seedReferenceTestData", () => {
           update: vi.fn(async ({ where }) => ({ id: where.id, name: "updated-property" })),
         },
         flooringUnitOfMeasure: {
-          upsert: vi.fn(async ({ where }) => ({ id: `unit:${where.name}`, name: where.name })),
+          upsert: vi.fn(async ({ where, create }) => ({ id: `unit:${where.name ?? create?.slug ?? "unknown"}`, name: where.name ?? create?.name ?? "unknown", slug: create?.slug ?? "unknown", abbreviation: create?.abbreviation ?? "unknown" })),
         },
         flooringCategory: {
           findUnique: vi.fn(async () => null),

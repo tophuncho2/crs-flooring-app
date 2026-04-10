@@ -3,16 +3,16 @@
  * Keep in sync with packages/db/src/seed/unit-of-measures.ts (the TypeScript source of truth).
  */
 const SEEDED_UNIT_OF_MEASURES = [
-  { name: "Linear Feet" },
-  { name: "Square Feet" },
-  { name: "Square Yard" },
-  { name: "Buckets" },
-  { name: "Boxes" },
-  { name: "Units" },
-  { name: "Bags" },
-  { name: "Pieces" },
-  { name: "Sheets" },
-  { name: "Rolls" },
+  { slug: "linear-feet", name: "Linear Feet", abbreviation: "lf" },
+  { slug: "square-feet", name: "Square Feet", abbreviation: "sf" },
+  { slug: "square-yard", name: "Square Yard", abbreviation: "sy" },
+  { slug: "buckets", name: "Buckets", abbreviation: "bkt" },
+  { slug: "boxes", name: "Boxes", abbreviation: "bx" },
+  { slug: "units", name: "Units", abbreviation: "ea" },
+  { slug: "bags", name: "Bags", abbreviation: "bag" },
+  { slug: "pieces", name: "Pieces", abbreviation: "pc" },
+  { slug: "sheets", name: "Sheets", abbreviation: "sht" },
+  { slug: "rolls", name: "Rolls", abbreviation: "rl" },
 ]
 
 async function seedUnitOfMeasures({ prisma, logger = console }) {
@@ -21,15 +21,19 @@ async function seedUnitOfMeasures({ prisma, logger = console }) {
 
   for (const unit of SEEDED_UNIT_OF_MEASURES) {
     const existing = await prisma.flooringUnitOfMeasure.findUnique({
-      where: { name: unit.name },
+      where: { slug: unit.slug },
       select: { id: true },
     })
 
     if (existing) {
+      await prisma.flooringUnitOfMeasure.update({
+        where: { slug: unit.slug },
+        data: { name: unit.name, abbreviation: unit.abbreviation },
+      })
       existed += 1
     } else {
       await prisma.flooringUnitOfMeasure.create({
-        data: { name: unit.name },
+        data: { slug: unit.slug, name: unit.name, abbreviation: unit.abbreviation },
       })
       created += 1
     }
