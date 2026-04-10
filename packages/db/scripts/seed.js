@@ -1,8 +1,9 @@
 async function main() {
-  const [{ PrismaClient }, bcrypt, { seedSystemUsers }] = await Promise.all([
+  const [{ PrismaClient }, bcrypt, { seedSystemUsers }, { seedUnitOfMeasures }] = await Promise.all([
     import("@prisma/client"),
     import("bcrypt"),
     import("./system-user-seed.js"),
+    import("./seed-unit-of-measures.js"),
   ])
 
   const prisma = new PrismaClient()
@@ -12,6 +13,10 @@ async function main() {
       prisma,
       bcrypt: bcrypt.default,
     })
+
+    console.log("Seeding unit of measures...")
+    await seedUnitOfMeasures({ prisma })
+    console.log("Done.")
   } finally {
     await prisma.$disconnect()
   }

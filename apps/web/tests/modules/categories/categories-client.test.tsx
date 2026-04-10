@@ -76,7 +76,7 @@ describe("CategoriesClient", () => {
         initialCategories={[categoryRow()]}
         unitOfMeasureOptions={[
           { id: "u-send", name: "SY", createdAt: "2026-03-19T00:00:00.000Z" },
-          { id: "u-stock", name: "Roll", createdAt: "2026-03-19T00:00:00.000Z" },
+          { id: "u-stock", name: "Rolls", createdAt: "2026-03-19T00:00:00.000Z" },
           { id: "u-item", name: "SF", createdAt: "2026-03-19T00:00:00.000Z" },
         ]}
       />,
@@ -104,7 +104,7 @@ describe("CategoriesClient", () => {
         canManage
         unitOfMeasureOptions={[
           { id: "u-send", name: "SY", createdAt: "2026-03-19T00:00:00.000Z" },
-          { id: "u-stock", name: "Roll", createdAt: "2026-03-19T00:00:00.000Z" },
+          { id: "u-stock", name: "Rolls", createdAt: "2026-03-19T00:00:00.000Z" },
           { id: "u-item", name: "SF", createdAt: "2026-03-19T00:00:00.000Z" },
         ]}
         backHref="/dashboard/categories"

@@ -266,8 +266,8 @@ describe("categories routes", () => {
       .mockResolvedValueOnce(
         categoryRecord({
           name: "Updated Carpet",
-          stockUnit: { id: "u-stock", name: "Roll" },
-          coverageAvailableUnit: { id: "u-cover", name: "Box" },
+          stockUnit: { id: "u-stock", name: "Rolls" },
+          coverageAvailableUnit: { id: "u-cover", name: "Boxes" },
           serviceUnit: { id: "u-service", name: "Hour" },
         }),
       )

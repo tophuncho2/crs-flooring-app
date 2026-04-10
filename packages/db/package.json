@@ -32,7 +32,8 @@
     "db:seed:reference-test-data": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/reference-test-data.js",
     "db:backfill:product-names": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-product-names.js",
     "db:promote-admin": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/admin-recovery.js",
-    "db:upsert-owner": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/owner-recovery.js"
+    "db:upsert-owner": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/owner-recovery.js",
+    "db:seed:uoms": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-unit-of-measures.js"
   },
   "prisma": {
     "seed": "node -r dotenv/config scripts/seed.js"
