@@ -9,6 +9,7 @@ export const SEEDED_UNIT_OF_MEASURES = [
   { slug: "pieces", name: "Pieces", abbreviation: "pc" },
   { slug: "sheets", name: "Sheets", abbreviation: "sht" },
   { slug: "rolls", name: "Rolls", abbreviation: "rl" },
+  { slug: "gallons", name: "Gallons", abbreviation: "gal" },
 ] as const
 
 export type SeededUnitOfMeasure = (typeof SEEDED_UNIT_OF_MEASURES)[number]

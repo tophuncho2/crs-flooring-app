@@ -16,6 +16,7 @@ const SEEDED_UNIT_OF_MEASURES = [
   { slug: "pieces", name: "Pieces", abbreviation: "pc" },
   { slug: "sheets", name: "Sheets", abbreviation: "sht" },
   { slug: "rolls", name: "Rolls", abbreviation: "rl" },
+  { slug: "gallons", name: "Gallons", abbreviation: "gal" },
 ]
 
 function verifySyncWithTypeScriptSource() {
