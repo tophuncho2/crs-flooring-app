@@ -6,7 +6,6 @@ export const CAPABILITIES = [
   "adminPanel.access",
   "users.manage",
   "categories.edit",
-  "unitOfMeasures.edit",
   "tool.admin",
   "workOrders.read",
   "workOrders.write",
@@ -24,7 +23,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "adminPanel.access",
     "users.manage",
     "categories.edit",
-    "unitOfMeasures.edit",
     "tool.admin",
     "workOrders.read",
     "workOrders.write",
@@ -38,7 +36,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "adminPanel.access",
     "users.manage",
     "categories.edit",
-    "unitOfMeasures.edit",
     "workOrders.read",
     "workOrders.write",
     "workOrders.delete",
@@ -95,8 +92,4 @@ export function canManageUsers(_email: string, role: Role): boolean {
 
 export function canEditCategories(role: Role): boolean {
   return hasCapability(role, "categories.edit")
-}
-
-export function canEditUnitOfMeasures(role: Role): boolean {
-  return hasCapability(role, "unitOfMeasures.edit")
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
   canEditCategories,
-  canEditUnitOfMeasures,
   canManageUsers,
   hasCapability,
 } from "@/server/auth/access-control"
@@ -24,6 +23,5 @@ describe("access-control capability matrix", () => {
     expect(hasCapability("BUILDER", "users.manage")).toBe(false)
     expect(canManageUsers("builder@test.com", "BUILDER")).toBe(false)
     expect(canEditCategories("BUILDER")).toBe(false)
-    expect(canEditUnitOfMeasures("BUILDER")).toBe(false)
   })
 })

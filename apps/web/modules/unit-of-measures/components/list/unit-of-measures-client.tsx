@@ -8,7 +8,7 @@ import { DashboardListPageControls } from "@/modules/shared/engines/list-view/co
 import { useListViewEngine } from "@/modules/shared/engines/list-view/controllers/use-list-view-engine"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { UnitOfMeasureRow } from "../../domain/types"
+import type { UnitOfMeasureRow } from "../../types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
 import { UnitOfMeasuresTable } from "./unit-of-measures-table"
 

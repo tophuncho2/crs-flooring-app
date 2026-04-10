@@ -21,7 +21,6 @@ describe("record view feature alignment", () => {
       "apps/web/app/dashboard/properties/[id]/page.tsx",
       "apps/web/app/dashboard/services/[id]/page.tsx",
       "apps/web/app/dashboard/templates/[id]/page.tsx",
-      "apps/web/app/dashboard/unit-of-measures/[id]/page.tsx",
       "apps/web/app/dashboard/warehouse/[id]/page.tsx",
       "apps/web/app/dashboard/work-orders/[id]/page.tsx",
       "apps/web/app/dashboard/categories/new/page.tsx",
@@ -33,7 +32,6 @@ describe("record view feature alignment", () => {
       "apps/web/app/dashboard/properties/new/page.tsx",
       "apps/web/app/dashboard/services/new/page.tsx",
       "apps/web/app/dashboard/templates/new/page.tsx",
-      "apps/web/app/dashboard/unit-of-measures/new/page.tsx",
       "apps/web/app/dashboard/warehouse/new/page.tsx",
       "apps/web/app/dashboard/work-orders/new/page.tsx",
     ]
@@ -100,12 +98,10 @@ describe("record view feature alignment", () => {
       "apps/web/modules/contacts/record/panel/contact-record-panel.tsx",
       "apps/web/modules/manufacturers/record/panel/manufacturer-record-panel.tsx",
       "apps/web/modules/services/record/panel/service-record-panel.tsx",
-      "apps/web/modules/unit-of-measures/record/panel/unit-of-measure-record-panel.tsx",
       "apps/web/modules/categories/record/create/category-create-client.tsx",
       "apps/web/modules/contacts/record/create/contact-create-client.tsx",
       "apps/web/modules/manufacturers/record/create/manufacturer-create-client.tsx",
       "apps/web/modules/services/record/create/service-create-client.tsx",
-      "apps/web/modules/unit-of-measures/record/create/unit-of-measure-create-client.tsx",
     ]
 
     for (const file of panelFiles) {
