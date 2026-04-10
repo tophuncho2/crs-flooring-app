@@ -13,7 +13,7 @@ import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-m
 import { UnitOfMeasuresTable } from "./unit-of-measures-table"
 
 const UOM_FIELDS = [
-  { key: "name", label: "Unit Of Measure", getValue: (row: UnitOfMeasureRow) => row.name, groupable: true },
+  { key: "name", label: "Unit Of Measure", getValue: (row: UnitOfMeasureRow) => row.name, groupable: false },
   { key: "createdAt", label: "Created", getValue: (row: UnitOfMeasureRow) => row.createdAt, groupable: false },
 ]
 
