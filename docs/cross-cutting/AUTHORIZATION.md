@@ -31,7 +31,6 @@
 | `builderPanel.access` | Y | Y | - |
 | `users.manage` | Y | Y | - |
 | `categories.edit` | Y | Y | - |
-| `unitOfMeasures.edit` | Y | Y | - |
 | `tool.admin` | Y | - | - |
 | `workOrders.read` | Y | Y | Y |
 | `workOrders.write` | Y | Y | Y |
