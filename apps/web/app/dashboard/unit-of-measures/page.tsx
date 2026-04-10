@@ -13,13 +13,9 @@ export default async function UnitOfMeasuresPage({
   const user = await requireUnitOfMeasuresAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const initialTablePreferences = await getResolvedUserTablePreference(user.id, "unit-of-measures-main")
-  // UoMs is reference data — grouping is intentionally disabled at every layer.
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-    defaultGrouped: false,
-    defaultGroupKeys: [],
-    allowedGroupKeys: [],
   })
   const pageData = await getUnitOfMeasuresPageData()
 

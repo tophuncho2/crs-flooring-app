@@ -7,7 +7,6 @@ import { TablePaginationControls } from "@/modules/shared/engines/list-view/tabl
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
 import { useListViewEngine } from "@/modules/shared/engines/list-view/controllers/use-list-view-engine"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
-import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { UnitOfMeasureRow } from "../../types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
 import { UnitOfMeasuresTable } from "./unit-of-measures-table"
@@ -20,15 +19,13 @@ const UOM_FIELDS = [
 export default function UnitOfMeasuresClient({
   initialUnitOfMeasures,
   initialTablePreferences,
-  tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
+  tableState = { searchQuery: "", isAscendingSort: true },
 }: {
   initialUnitOfMeasures: UnitOfMeasureRow[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: {
     searchQuery: string
     isAscendingSort: boolean
-    isGroupingEnabled: boolean
-    groupByKeys: string[]
   }
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
@@ -40,7 +37,6 @@ export default function UnitOfMeasuresClient({
     sortFieldKey: "name",
     initialSearchQuery: tableState.searchQuery,
     defaultAscending: tableState.isAscendingSort,
-    defaultGroupKeys: tableState.groupByKeys,
     initialPreferences: initialTablePreferences,
   })
 
@@ -62,8 +58,6 @@ export default function UnitOfMeasuresClient({
               key,
               label: UOM_FIELDS.find((f) => f.key === key)?.label ?? key,
             }))}
-            groupedRows={engine.groupedRowTree as GroupedRowTree<UnitOfMeasureRow>[]}
-            isGroupingEnabled={engine.isGroupingEnabled}
           />
         }
         pagination={
