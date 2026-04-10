@@ -1,4 +1,3 @@
-import { canEditUnitOfMeasures } from "@/server/auth/access-control"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireUnitOfMeasuresAccess } from "@/modules/shared/access/lookup-domains"
 import UnitOfMeasuresClient from "@/modules/unit-of-measures/components/list/unit-of-measures-client"
@@ -36,7 +35,6 @@ export default async function UnitOfMeasuresPage({
 
   return (
     <UnitOfMeasuresClient
-      canManage={canEditUnitOfMeasures(user.role)}
       initialUnitOfMeasures={pageData.data}
       initialTablePreferences={initialTablePreferences}
       tableState={tableState}

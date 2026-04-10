@@ -1,4 +1,4 @@
-import { listUnitOfMeasures } from "@/server/builder/unit-of-measures"
+import { listUnitOfMeasures } from "@builders/db"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,

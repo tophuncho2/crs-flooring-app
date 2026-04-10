@@ -1,7 +1,5 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
@@ -10,7 +8,6 @@ import { DashboardListPageControls } from "@/modules/shared/engines/list-view/co
 import { useListViewEngine } from "@/modules/shared/engines/list-view/controllers/use-list-view-engine"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import type { UnitOfMeasureRow } from "../../domain/types"
 import { useUnitOfMeasuresListController } from "../../controllers/use-unit-of-measures-list-controller"
 import { UnitOfMeasuresTable } from "./unit-of-measures-table"
@@ -21,12 +18,10 @@ const UOM_FIELDS = [
 ]
 
 export default function UnitOfMeasuresClient({
-  canManage,
   initialUnitOfMeasures,
   initialTablePreferences,
   tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
-  canManage: boolean
   initialUnitOfMeasures: UnitOfMeasureRow[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: {
@@ -37,7 +32,6 @@ export default function UnitOfMeasuresClient({
   }
 }) {
   const controller = useUnitOfMeasuresListController(initialUnitOfMeasures)
-  const navigation = useRecordEntryNavigation("/dashboard/unit-of-measures")
   const engine = useListViewEngine({
     rows: controller.rows,
     tableKey: "unit-of-measures-main",
@@ -58,18 +52,6 @@ export default function UnitOfMeasuresClient({
           <DashboardListPageControls
             engine={engine}
             searchPlaceholder="Search units of measure..."
-            formSlot={
-              canManage ? (
-                <button
-                  type="button"
-                  onClick={() => navigation.openCreate()}
-                  className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
-                >
-                  <Plus size={16} />
-                  Unit Of Measure
-                </button>
-              ) : undefined
-            }
           />
         }
         notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
@@ -82,7 +64,6 @@ export default function UnitOfMeasuresClient({
             }))}
             groupedRows={engine.groupedRowTree as GroupedRowTree<UnitOfMeasureRow>[]}
             isGroupingEnabled={engine.isGroupingEnabled}
-            onOpen={(row) => navigation.openRecord(row.id)}
           />
         }
         pagination={

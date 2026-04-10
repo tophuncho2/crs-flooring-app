@@ -5,7 +5,6 @@ import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
 import {
-  ClickableTableRow,
   TableEmptyRow,
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
@@ -18,13 +17,11 @@ export function UnitOfMeasuresTable({
   visibleColumns,
   groupedRows,
   isGroupingEnabled,
-  onOpen,
 }: {
   rows: UnitOfMeasureRow[]
   visibleColumns: Array<{ key: string; label: string }>
   groupedRows: GroupedRowTree<UnitOfMeasureRow>[]
   isGroupingEnabled: boolean
-  onOpen: (row: UnitOfMeasureRow) => void
 }) {
   function renderRow(row: UnitOfMeasureRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
@@ -33,9 +30,9 @@ export function UnitOfMeasuresTable({
     }
 
     return (
-      <ClickableTableRow key={row.id} ariaLabel={`Open unit of measure ${row.name}`} onClick={() => onOpen(row)}>
+      <tr key={row.id} className="border-t border-[var(--panel-border)]">
         {renderDashboardRowCells(visibleColumns, cells)}
-      </ClickableTableRow>
+      </tr>
     )
   }
 
