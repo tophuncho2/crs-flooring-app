@@ -59,8 +59,6 @@
 | Doc | Scope |
 |-----|-------|
 | [domains/USER_GOVERNANCE.md](domains/USER_GOVERNANCE.md) | Users, roles, auth, admin |
-| [domains/WORK_ORDERS.md](domains/WORK_ORDERS.md) | Work orders and allocation (stub) |
-| [domains/INVENTORY.md](domains/INVENTORY.md) | Inventory and warehouse (stub) |
 
 
 Review them in this order. Each doc should be accurate against the codebase before moving to the next. Want a Claude Code prompt to start the sweep?
