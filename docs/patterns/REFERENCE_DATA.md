@@ -14,8 +14,6 @@ Current reference data modules: Unit of Measures. Planned: Categories.
 
 ## Why It Exists
 
-Some lookup tables are not user content. They are part of the product's contract — changing them is a deployment event, not a user action. Unit of Measures is the clearest example: adding "Square Feet" to the system is a schema-level decision, not something a dashboard user should be able to do at 3am. Treating these tables as editable creates three failure modes:
-
 1. **Integrity drift** — a user deletes "Square Feet" while Categories still reference it, breaking everything downstream.
 2. **Name inconsistency** — "Square Feet" and "Sq Ft" and "sqft" proliferate because there's no single source of truth.
 3. **Audit noise** — mutation routes, tests, capability checks, and UI affordances exist for a table nobody should be mutating.
