@@ -33,6 +33,7 @@ export default function ContactsClient({
   const navigation = useRecordEntryNavigation("/dashboard/contacts")
   const {
     searchQuery,
+    isAscendingSort,
     isGroupingEnabled,
     filteredRows,
     sortedRows,
@@ -46,6 +47,7 @@ export default function ContactsClient({
     goToNextPage,
     visibleColumns,
     onSearchQueryChange,
+    onToggleSort,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "contacts-main",
@@ -74,6 +76,8 @@ export default function ContactsClient({
             searchQuery={searchQuery}
             onSearchQueryChange={onSearchQueryChange}
             searchPlaceholder="Search contact"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={onToggleSort}
             primaryAction={
               <button type="button" onClick={() => navigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />

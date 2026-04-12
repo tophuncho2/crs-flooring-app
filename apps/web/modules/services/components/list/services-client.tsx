@@ -35,6 +35,7 @@ export default function ServicesClient({
   const navigation = useRecordEntryNavigation("/dashboard/services")
   const {
     searchQuery,
+    isAscendingSort,
     isGroupingEnabled,
     filteredRows,
     sortedRows,
@@ -48,6 +49,7 @@ export default function ServicesClient({
     goToNextPage,
     visibleColumns,
     onSearchQueryChange,
+    onToggleSort,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "services-main",
@@ -77,6 +79,8 @@ export default function ServicesClient({
             searchQuery={searchQuery}
             onSearchQueryChange={onSearchQueryChange}
             searchPlaceholder="Search service"
+            isAscendingSort={isAscendingSort}
+            onToggleSort={onToggleSort}
             primaryAction={
               <button type="button" onClick={() => navigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />
