@@ -1,9 +1,9 @@
 import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
-import { deleteContactEntry, updateContactEntry } from "@/modules/contacts/application/manage-contact"
+import { updateContactUseCase, deleteContactUseCase } from "@builders/application"
 import { getContactById } from "@/modules/contacts/data/queries"
-import { validateContactType } from "@/modules/contacts/domain/types"
+import { validateContactType } from "@builders/domain"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -73,7 +73,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringContact",
         entityId: id,
       },
-      () => updateContactEntry(id, input),
+      () => updateContactUseCase(id, input),
     )
 
     const snapshot = await getContactById(id)
@@ -136,7 +136,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         entityType: "flooringContact",
         entityId: id,
       },
-      () => deleteContactEntry(id),
+      () => deleteContactUseCase(id),
     )
 
     const responseBody = { ok: true as const }

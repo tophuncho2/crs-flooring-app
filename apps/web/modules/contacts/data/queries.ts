@@ -1,4 +1,9 @@
-import { prisma } from "@builders/db"
+import {
+  listContacts as dbListContacts,
+  listSalesRepContactOptions as dbListSalesRepContactOptions,
+  getContactById as dbGetContactById,
+  type ContactRecord,
+} from "@builders/db"
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
@@ -6,70 +11,30 @@ import {
   type PrismaDetailPageResult,
   type PrismaPageDataResult,
 } from "@builders/db"
-import { normalizeContactDetail, normalizeContactRow } from "../domain/services"
-import type { ContactDetail, ContactRow } from "../domain/types"
 
-async function loadContacts() {
-  const contacts = await prisma.flooringContact.findMany({
-    include: {
-      _count: {
-        select: {
-          templateSalesReps: true,
-          workOrderSalesReps: true,
-        },
-      },
-    },
-    orderBy: [{ name: "asc" }, { createdAt: "desc" }],
-  })
+export type { ContactRecord }
 
-  return contacts.map(normalizeContactRow)
-}
-
-export async function listContacts(): Promise<ContactRow[]> {
-  return loadContacts()
+export async function listContacts() {
+  return dbListContacts()
 }
 
 export async function listSalesRepContactOptions() {
-  const contacts = await prisma.flooringContact.findMany({
-    where: { type: "SALES_REP" },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-    },
-  })
-
-  return contacts.map((contact) => ({
-    id: contact.id,
-    name: contact.name,
-  }))
+  return dbListSalesRepContactOptions()
 }
 
-export async function getContactById(id: string): Promise<ContactDetail> {
-  const contact = await prisma.flooringContact.findUniqueOrThrow({
-    where: { id },
-    include: {
-      _count: {
-        select: {
-          templateSalesReps: true,
-          workOrderSalesReps: true,
-        },
-      },
-    },
-  })
-
-  return normalizeContactDetail(contact)
+export async function getContactById(id: string) {
+  return dbGetContactById(id)
 }
 
-export async function getContactsPageData(): Promise<PrismaPageDataResult<{ contacts: ContactRow[] }>> {
+export async function getContactsPageData(): Promise<PrismaPageDataResult<{ contacts: ContactRecord[] }>> {
   return withPrismaConnectivityHandling(async () => ({
-    contacts: await loadContacts(),
+    contacts: await dbListContacts(),
   }))
 }
 
-export async function getContactDetailPageData(id: string): Promise<PrismaDetailPageResult<{ contact: ContactDetail }>> {
+export async function getContactDetailPageData(id: string): Promise<PrismaDetailPageResult<{ contact: ContactRecord }>> {
   try {
-    const contact = await getContactById(id)
+    const contact = await dbGetContactById(id)
 
     return {
       ok: true,

@@ -9,8 +9,7 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
-import { formatStableDateTime } from "@builders/domain"
-import { CONTACT_TYPE_LABELS, CONTACT_TYPE_OPTIONS, type ContactDetail, type ContactForm } from "../../../domain/types"
+import { formatStableDateTime, CONTACT_TYPE_LABELS, CONTACT_TYPE_OPTIONS, type ContactDetail, type ContactForm } from "@builders/domain"
 
 export function ContactPrimaryFieldsSection({
   contact,

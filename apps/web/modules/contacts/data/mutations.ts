@@ -1,7 +1,7 @@
 "use client"
 
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import type { ContactDetail, ContactForm } from "../domain/types"
+import type { ContactDetail, ContactForm } from "@builders/domain"
 
 export async function createContactRequest(input: ContactForm) {
   return requestJson<{ contact: ContactDetail }>("/api/contacts", {

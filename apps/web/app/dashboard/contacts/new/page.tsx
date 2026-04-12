@@ -1,6 +1,6 @@
 import { requireContactsAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { ContactCreateClient } from "@/modules/contacts/record/create/contact-create-client"
+import { ContactCreateClient } from "@/modules/contacts/components/record/contact-create-client"
 
 export default async function ContactCreatePage({
   searchParams,

@@ -5,9 +5,9 @@ import {
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { useContactPrimarySection } from "./controllers/use-contact-primary-section"
-import { ContactPrimaryFieldsSection } from "./sections/contact-primary-fields-section"
-import type { ContactForm, ContactDetail } from "../../domain/types"
+import { useContactPrimarySection } from "../../controller/use-contact-primary-section"
+import { ContactPrimaryFieldsSection } from "./contact-primary-fields-section"
+import type { ContactForm, ContactDetail } from "@builders/domain"
 
 export function ContactRecordPanel({
   page,

@@ -1,5 +1,4 @@
-import { prisma } from "@builders/db"
-import { listSalesRepContactOptions } from "@/modules/contacts/data/queries"
+import { prisma, listSalesRepContactOptions } from "@builders/db"
 import { listServiceOptions } from "@/modules/services/data/queries"
 import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@builders/domain"
 

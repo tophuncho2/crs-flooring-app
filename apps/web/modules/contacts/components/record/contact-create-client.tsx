@@ -8,8 +8,8 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
-import { EMPTY_CONTACT_FORM, type ContactDetail, type ContactForm } from "../../domain/types"
-import { ContactPrimaryFieldsSection } from "../panel/sections/contact-primary-fields-section"
+import { EMPTY_CONTACT_FORM, type ContactDetail, type ContactForm } from "@builders/domain"
+import { ContactPrimaryFieldsSection } from "./contact-primary-fields-section"
 
 const EMPTY_CONTACT: ContactDetail = {
   id: "new",

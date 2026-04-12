@@ -36,11 +36,21 @@ describe("record view feature alignment", () => {
       "apps/web/app/dashboard/work-orders/new/page.tsx",
     ]
 
+    // Modules that have completed layer extraction use components/record/ instead of record/
+    const extractedModuleRoutes = new Set([
+      "apps/web/app/dashboard/contacts/[id]/page.tsx",
+      "apps/web/app/dashboard/contacts/new/page.tsx",
+    ])
+
     for (const file of routeFiles) {
       const source = await readWorkspaceFile(file)
-      expect(source).toContain("/record/")
-      expect(source).not.toContain("/components/detail/")
-      expect(source).not.toContain("/components/record/")
+      if (extractedModuleRoutes.has(file)) {
+        expect(source).toContain("/components/record/")
+      } else {
+        expect(source).toContain("/record/")
+        expect(source).not.toContain("/components/detail/")
+        expect(source).not.toContain("/components/record/")
+      }
     }
   })
 
@@ -95,11 +105,11 @@ describe("record view feature alignment", () => {
   it("keeps scoped single-section record and create panels on the engine-owned single-section runtime", async () => {
     const panelFiles = [
       "apps/web/modules/categories/record/panel/category-record-panel.tsx",
-      "apps/web/modules/contacts/record/panel/contact-record-panel.tsx",
+      "apps/web/modules/contacts/components/record/contact-record-panel.tsx",
       "apps/web/modules/manufacturers/record/panel/manufacturer-record-panel.tsx",
       "apps/web/modules/services/record/panel/service-record-panel.tsx",
       "apps/web/modules/categories/record/create/category-create-client.tsx",
-      "apps/web/modules/contacts/record/create/contact-create-client.tsx",
+      "apps/web/modules/contacts/components/record/contact-create-client.tsx",
       "apps/web/modules/manufacturers/record/create/manufacturer-create-client.tsx",
       "apps/web/modules/services/record/create/service-create-client.tsx",
     ]

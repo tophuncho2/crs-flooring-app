@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { ContactRecordPanel } from "../panel/contact-record-panel"
-import type { ContactDetail } from "../../domain/types"
+import { ContactRecordPanel } from "./contact-record-panel"
+import type { ContactDetail } from "@builders/domain"
 
 export function ContactDetailClient({
   contact,

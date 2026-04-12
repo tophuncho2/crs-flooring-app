@@ -12,8 +12,8 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ContactRow } from "../../domain/types"
-import { useContactsListController } from "../../controllers/use-contacts-list-controller"
+import type { ContactRow } from "@builders/domain"
+import { useContactsListController } from "../../controller/use-contacts-list-controller"
 import { ContactsTable } from "./contacts-table"
 
 export default function ContactsClient({

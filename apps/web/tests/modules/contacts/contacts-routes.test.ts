@@ -14,9 +14,9 @@ const {
   logRouteMutationFailureMock,
   listContactsMock,
   getContactByIdMock,
-  createContactEntryMock,
-  updateContactEntryMock,
-  deleteContactEntryMock,
+  createContactUseCaseMock,
+  updateContactUseCaseMock,
+  deleteContactUseCaseMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
   enforceMutationReceiptMock: vi.fn(),
@@ -29,9 +29,9 @@ const {
   logRouteMutationFailureMock: vi.fn(),
   listContactsMock: vi.fn(),
   getContactByIdMock: vi.fn(),
-  createContactEntryMock: vi.fn(),
-  updateContactEntryMock: vi.fn(),
-  deleteContactEntryMock: vi.fn(),
+  createContactUseCaseMock: vi.fn(),
+  updateContactUseCaseMock: vi.fn(),
+  deleteContactUseCaseMock: vi.fn(),
 }))
 
 vi.mock("@/modules/shared/access/lookup-domains", () => ({
@@ -60,7 +60,7 @@ vi.mock("@/server/http/route-helpers", () => ({
   logRouteMutationFailure: logRouteMutationFailureMock,
   routeJson: (_access: unknown, body: unknown, init?: ResponseInit) => Response.json(body, init),
   routeError: (_access: unknown, error: unknown) => {
-    const maybeError = error as { message?: unknown; status?: unknown; field?: unknown; kind?: unknown }
+    const maybeError = error as { message?: unknown; status?: unknown; field?: unknown; code?: unknown; name?: unknown }
     const payload: Record<string, unknown> = {
       error: typeof maybeError.message === "string" ? maybeError.message : "Unexpected server error",
     }
@@ -73,7 +73,7 @@ vi.mock("@/server/http/route-helpers", () => ({
       status:
         typeof maybeError.status === "number"
           ? maybeError.status
-          : maybeError.kind === "app" || typeof maybeError.field === "string"
+          : typeof maybeError.field === "string"
             ? 400
             : 500,
     })
@@ -85,11 +85,15 @@ vi.mock("@/modules/contacts/data/queries", () => ({
   getContactById: getContactByIdMock,
 }))
 
-vi.mock("@/modules/contacts/application/manage-contact", () => ({
-  createContactEntry: createContactEntryMock,
-  updateContactEntry: updateContactEntryMock,
-  deleteContactEntry: deleteContactEntryMock,
-}))
+vi.mock("@builders/application", async () => {
+  const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")
+  return {
+    ...actual,
+    createContactUseCase: createContactUseCaseMock,
+    updateContactUseCase: updateContactUseCaseMock,
+    deleteContactUseCase: deleteContactUseCaseMock,
+  }
+})
 
 const ACCESS_CONTEXT = {
   requestId: "req-1",
@@ -165,11 +169,11 @@ describe("contacts routes", () => {
     expect(invalidTypeResponse.status).toBe(400)
     expect(invalidTypePayload.error).toBe("type must be Sales Rep, Contractor, or Other")
     expect(invalidTypePayload.field).toBe("type")
-    expect(createContactEntryMock).not.toHaveBeenCalled()
+    expect(createContactUseCaseMock).not.toHaveBeenCalled()
   })
 
   it("POST creates a contact with valid form data and returns the full record", async () => {
-    createContactEntryMock.mockResolvedValue({
+    createContactUseCaseMock.mockResolvedValue({
       id: "contact-1",
       name: "Jane Rep",
       type: "SALES_REP",
@@ -193,7 +197,7 @@ describe("contacts routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(201)
-    expect(createContactEntryMock).toHaveBeenCalledWith({
+    expect(createContactUseCaseMock).toHaveBeenCalledWith({
       name: "Jane Rep",
       type: "SALES_REP",
     })
@@ -219,7 +223,7 @@ describe("contacts routes", () => {
       updatedAt: "2026-03-23T00:00:00.000Z",
     }
 
-    createContactEntryMock.mockResolvedValue(contactSnapshot)
+    createContactUseCaseMock.mockResolvedValue(contactSnapshot)
     getContactByIdMock.mockResolvedValue(contactSnapshot)
 
     const createResponse = await POST(
@@ -234,7 +238,7 @@ describe("contacts routes", () => {
       }),
     )
     expect(createResponse.status).toBe(201)
-    expect(createContactEntryMock).toHaveBeenCalledWith({
+    expect(createContactUseCaseMock).toHaveBeenCalledWith({
       name: "Jane Rep",
       type: "SALES_REP",
     })
@@ -289,7 +293,7 @@ describe("contacts routes", () => {
     )
     expect(deleteResponse.status).toBe(200)
     expect(await deleteResponse.json()).toEqual({ ok: true })
-    expect(deleteContactEntryMock).toHaveBeenCalledWith("contact-1")
+    expect(deleteContactUseCaseMock).toHaveBeenCalledWith("contact-1")
   })
 
   it("DELETE returns a clear linked-contact error", async () => {
@@ -302,11 +306,13 @@ describe("contacts routes", () => {
       createdAt: "2026-03-23T00:00:00.000Z",
       updatedAt: "2026-03-23T00:00:00.000Z",
     })
-    deleteContactEntryMock.mockRejectedValue({
-      kind: "app",
-      status: 409,
-      message: "This contact is linked to work orders and cannot be deleted",
-    })
+    deleteContactUseCaseMock.mockRejectedValue(
+      Object.assign(new Error("This contact is linked to work orders and cannot be deleted"), {
+        name: "ContactExecutionError",
+        code: "CONTACT_IN_USE",
+        status: 409,
+      }),
+    )
 
     const response = await DELETE(
       new Request("http://localhost/api/contacts/contact-1", {

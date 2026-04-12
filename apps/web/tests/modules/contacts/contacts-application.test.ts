@@ -1,24 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { deleteContactEntry } from "@/modules/contacts/application/manage-contact"
+import { deleteContactUseCase } from "@builders/application"
 
 const {
   getContactDeleteStateMock,
   deleteContactRecordByIdMock,
+  withDatabaseTransactionMock,
 } = vi.hoisted(() => ({
   getContactDeleteStateMock: vi.fn(),
   deleteContactRecordByIdMock: vi.fn(),
+  withDatabaseTransactionMock: vi.fn(),
 }))
 
-vi.mock("@/modules/contacts/data/server-records", () => ({
-  createContactRecord: vi.fn(),
-  updateContactRecord: vi.fn(),
-  getContactDeleteState: getContactDeleteStateMock,
-  deleteContactRecordById: deleteContactRecordByIdMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    getContactDeleteState: getContactDeleteStateMock,
+    deleteContactRecordById: deleteContactRecordByIdMock,
+    withDatabaseTransaction: withDatabaseTransactionMock,
+  }
+})
 
 describe("contacts application", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    withDatabaseTransactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback({}))
   })
 
   it("blocks deleting contacts linked to work orders before persistence runs", async () => {
@@ -30,8 +36,9 @@ describe("contacts application", () => {
       },
     })
 
-    await expect(deleteContactEntry("contact-1")).rejects.toMatchObject({
-      kind: "app",
+    await expect(deleteContactUseCase("contact-1")).rejects.toMatchObject({
+      name: "ContactExecutionError",
+      code: "CONTACT_IN_USE",
       status: 409,
       message: "This contact is linked to work orders and cannot be deleted",
     })

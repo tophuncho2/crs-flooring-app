@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { validateContactForm, type ContactForm } from "@/modules/contacts/domain/types"
+import { validateContactForm, type ContactForm } from "@builders/domain"
 
 describe("validateContactForm", () => {
   it("rejects an empty name", () => {

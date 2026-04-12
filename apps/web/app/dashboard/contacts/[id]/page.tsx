@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { notFound } from "next/navigation"
 import { requireContactsAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { ContactDetailClient } from "@/modules/contacts/record/detail/contact-detail-client"
+import { ContactDetailClient } from "@/modules/contacts/components/record/contact-detail-client"
 import { getContactDetailPageData } from "@/modules/contacts/data/queries"
 
 export default async function ContactDetailPage({

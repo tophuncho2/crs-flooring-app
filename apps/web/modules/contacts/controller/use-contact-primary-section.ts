@@ -11,7 +11,7 @@ import {
   validateContactForm,
   type ContactDetail,
   type ContactForm,
-} from "../../../domain/types"
+} from "@builders/domain"
 
 export function useContactPrimarySection({
   page,

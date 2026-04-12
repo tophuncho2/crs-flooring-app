@@ -1,9 +1,9 @@
 import { CONTACTS_TOOL_SLUG, authorizeContactsRoute } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { createContactEntry } from "@/modules/contacts/application/manage-contact"
+import { createContactUseCase } from "@builders/application"
 import { listContacts } from "@/modules/contacts/data/queries"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
-import { validateContactType } from "@/modules/contacts/domain/types"
+import { validateContactType } from "@builders/domain"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         route: "/api/contacts",
         entityType: "flooringContact",
       },
-      () => createContactEntry(input),
+      () => createContactUseCase(input),
     )
 
     const responseBody = { contact }
