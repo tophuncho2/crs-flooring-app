@@ -6,11 +6,10 @@ import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dash
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TableColumnSettings } from "@/modules/shared/engines/list-view/table/table-column-settings"
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
+import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import type { ServiceRow, UnitOption } from "../../domain/types"
 import { useServicesListController } from "../../controllers/use-services-list-controller"
@@ -49,15 +48,9 @@ export default function ServicesClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns,
     visibleColumns,
-    hiddenColumnKeys,
-    toggleColumnVisibility,
-    moveColumn,
-    setColumnOrder,
     onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "services-main",
@@ -89,18 +82,6 @@ export default function ServicesClient({
             searchPlaceholder="Search service"
             isAscendingSort={isAscendingSort}
             onToggleSort={onToggleSort}
-            columnSettingsSlot={
-              <TableColumnSettings
-                columns={allColumns}
-                hiddenColumnKeys={hiddenColumnKeys}
-                onToggleColumn={toggleColumnVisibility}
-                onMoveColumn={moveColumn}
-                onSetColumnOrder={setColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            }
             primaryAction={
               <button type="button" onClick={() => navigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
                 <Plus size={16} />

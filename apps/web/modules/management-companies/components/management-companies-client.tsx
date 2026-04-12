@@ -10,7 +10,6 @@ import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/sc
 import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import { TableColumnSettings } from "@/modules/shared/engines/list-view/table/table-column-settings"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -19,7 +18,7 @@ import {
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
+import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 
 type ManagementCompanyRow = {
@@ -80,15 +79,9 @@ export default function ManagementCompaniesClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns: orderedCompanyColumns,
     visibleColumns: visibleCompanyColumns,
-    hiddenColumnKeys: hiddenCompanyColumnKeys,
-    toggleColumnVisibility: toggleCompanyColumnVisibility,
-    moveColumn: moveCompanyColumn,
-    setColumnOrder: setCompanyColumnOrder,
     onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: companies,
     tableKey: "management-companies-main",
@@ -149,18 +142,6 @@ export default function ManagementCompaniesClient({
           searchPlaceholder="Search company or property"
           isAscendingSort={isAscendingSort}
           onToggleSort={onToggleSort}
-          columnSettingsSlot={
-            <TableColumnSettings
-              columns={orderedCompanyColumns}
-              hiddenColumnKeys={hiddenCompanyColumnKeys}
-              onToggleColumn={toggleCompanyColumnVisibility}
-              onMoveColumn={moveCompanyColumn}
-              onSetColumnOrder={setCompanyColumnOrder}
-              groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-              maxGroupFields={MAX_GROUP_FIELDS}
-              onToggleGroupedColumn={onToggleGroupedColumn}
-            />
-          }
           primaryAction={
             <button type="button" onClick={() => companyNavigation.openCreate()} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
               <Plus size={16} />
