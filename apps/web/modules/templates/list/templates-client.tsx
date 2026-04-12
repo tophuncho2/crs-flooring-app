@@ -5,7 +5,6 @@ import { Plus } from "lucide-react"
 import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
-import { TableColumnSettings } from "@/modules/shared/engines/list-view/table/table-column-settings"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -13,7 +12,7 @@ import {
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
+import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
   DashboardListPageControls,
@@ -49,7 +48,6 @@ export default function TemplatesClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows: filteredTemplates,
     sortedRows: sortedTemplates,
     groupedRowTree: groupedTemplates,
@@ -60,15 +58,9 @@ export default function TemplatesClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns: orderedTemplateColumns,
     visibleColumns: visibleTemplateColumns,
-    hiddenColumnKeys: hiddenTemplateColumnKeys,
-    toggleColumnVisibility: toggleTemplateColumnVisibility,
-    moveColumn: moveTemplateColumn,
-    setColumnOrder: setTemplateColumnOrder,
     onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: controller.rows,
     tableKey: "templates-main",
@@ -128,18 +120,6 @@ export default function TemplatesClient({
             searchPlaceholder="Search property"
             isAscendingSort={isAscendingSort}
             onToggleSort={onToggleSort}
-            columnSettingsSlot={
-              <TableColumnSettings
-                columns={orderedTemplateColumns}
-                hiddenColumnKeys={hiddenTemplateColumnKeys}
-                onToggleColumn={toggleTemplateColumnVisibility}
-                onMoveColumn={moveTemplateColumn}
-                onSetColumnOrder={setTemplateColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            }
             primaryAction={
               <button
                 type="button"
