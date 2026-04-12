@@ -6,11 +6,10 @@ import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dash
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TableColumnSettings } from "@/modules/shared/engines/list-view/table/table-column-settings"
 import { TableFilterControls } from "@/modules/shared/engines/list-view/table/table-filter-controls"
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
+import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
   formatImportStatus,
@@ -70,7 +69,6 @@ export default function ImportsClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows: filteredImports,
     sortedRows: sortedImports,
     groupedRowTree,
@@ -81,15 +79,9 @@ export default function ImportsClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns: orderedImportColumns,
     visibleColumns: visibleImportColumns,
-    hiddenColumnKeys: hiddenImportColumnKeys,
-    toggleColumnVisibility: toggleImportColumnVisibility,
-    moveColumn: moveImportColumn,
-    setColumnOrder: setImportColumnOrder,
     onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
     filterGroups,
   } = useConfiguredTableState({
     rows: imports,
@@ -132,18 +124,6 @@ export default function ImportsClient({
             ascendingSortLabel="1-9"
             descendingSortLabel="9-1"
             filtersSlot={<TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />}
-            columnSettingsSlot={
-              <TableColumnSettings
-                columns={orderedImportColumns}
-                hiddenColumnKeys={hiddenImportColumnKeys}
-                onToggleColumn={toggleImportColumnVisibility}
-                onMoveColumn={moveImportColumn}
-                onSetColumnOrder={setImportColumnOrder}
-                groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-                maxGroupFields={MAX_GROUP_FIELDS}
-                onToggleGroupedColumn={onToggleGroupedColumn}
-              />
-            }
             primaryAction={
               <button
                 type="button"

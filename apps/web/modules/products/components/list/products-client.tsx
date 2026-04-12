@@ -6,10 +6,9 @@ import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dash
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TableColumnSettings } from "@/modules/shared/engines/list-view/table/table-column-settings"
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
+import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
   type ProductRow,
@@ -58,7 +57,6 @@ export default function FlooringProductsClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows: filteredProducts,
     sortedRows: sortedProducts,
     groupedRowTree,
@@ -69,15 +67,9 @@ export default function FlooringProductsClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns: orderedProductColumns,
     visibleColumns: visibleProductColumns,
-    hiddenColumnKeys: hiddenProductColumnKeys,
-    toggleColumnVisibility: toggleProductColumnVisibility,
-    moveColumn: moveProductColumn,
-    setColumnOrder: setProductColumnOrder,
     onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
   } = useConfiguredTableState({
     rows: products,
     tableKey: "products-main",
@@ -124,18 +116,6 @@ export default function FlooringProductsClient({
           searchPlaceholder="Search product name"
           isAscendingSort={isAscendingSort}
           onToggleSort={onToggleSort}
-          columnSettingsSlot={
-            <TableColumnSettings
-              columns={orderedProductColumns}
-              hiddenColumnKeys={hiddenProductColumnKeys}
-              onToggleColumn={toggleProductColumnVisibility}
-              onMoveColumn={moveProductColumn}
-              onSetColumnOrder={setProductColumnOrder}
-              groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-              maxGroupFields={MAX_GROUP_FIELDS}
-              onToggleGroupedColumn={onToggleGroupedColumn}
-            />
-          }
           primaryAction={
             <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
               <Plus size={16} />
