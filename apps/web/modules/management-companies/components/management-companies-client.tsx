@@ -68,7 +68,6 @@ export default function ManagementCompaniesClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows: filteredCompanies,
     sortedRows: sortedCompanies,
     groupedRowTree: groupedCompanies,

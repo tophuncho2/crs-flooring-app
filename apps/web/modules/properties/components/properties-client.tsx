@@ -74,7 +74,6 @@ export default function PropertiesClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows: filteredProperties,
     sortedRows: sortedProperties,
     groupedRowTree: groupedProperties,

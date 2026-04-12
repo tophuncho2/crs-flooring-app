@@ -35,7 +35,6 @@ export default function ManufacturersClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows,
     sortedRows,
     groupedRowTree,

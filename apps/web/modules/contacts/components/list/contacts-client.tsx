@@ -35,7 +35,6 @@ export default function ContactsClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows,
     sortedRows,
     groupedRowTree,
