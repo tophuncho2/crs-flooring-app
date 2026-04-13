@@ -4,13 +4,14 @@ import { GET, POST } from "@/app/api/services/route"
 import { DELETE, PATCH } from "@/app/api/services/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { requireRouteAccessMock, enforceRouteRateLimitMock, listServicesMock, createServiceEntryMock, updateServiceEntryMock, deleteServiceEntryMock } = vi.hoisted(() => ({
-  requireRouteAccessMock: vi.fn(),
-  enforceRouteRateLimitMock: vi.fn(),
+const { applyRoutePolicyMock, enforceQueryRateLimitMock, listServicesMock, createServiceUseCaseMock, updateServiceUseCaseMock, deleteServiceUseCaseMock, getServiceByIdMock } = vi.hoisted(() => ({
+  applyRoutePolicyMock: vi.fn(),
+  enforceQueryRateLimitMock: vi.fn(),
   listServicesMock: vi.fn(),
-  createServiceEntryMock: vi.fn(),
-  updateServiceEntryMock: vi.fn(),
-  deleteServiceEntryMock: vi.fn(),
+  createServiceUseCaseMock: vi.fn(),
+  updateServiceUseCaseMock: vi.fn(),
+  deleteServiceUseCaseMock: vi.fn(),
+  getServiceByIdMock: vi.fn(),
 }))
 
 const routeAccess = {
@@ -25,22 +26,46 @@ const routeAccess = {
   clientIp: "127.0.0.1",
 } as const
 
+vi.mock("@/server/http/route-policy", () => ({
+  applyRoutePolicy: applyRoutePolicyMock,
+  enforceQueryRateLimit: enforceQueryRateLimitMock,
+  parseMutationEnvelope: vi.fn((body, parser) => ({
+    input: parser(body),
+    mutation: { idempotencyKey: "test-key", expectedUpdatedAt: body.mutation?.expectedUpdatedAt },
+  })),
+  enforceMutationReceipt: vi.fn().mockResolvedValue({ replay: null }),
+  finalizeMutationReceipt: vi.fn().mockResolvedValue(undefined),
+  assertExpectedUpdatedAt: vi.fn(),
+}))
+
 vi.mock("@/server/http/route-helpers", () => ({
-  requireRouteAccess: requireRouteAccessMock,
-  enforceRouteRateLimit: enforceRouteRateLimitMock,
   routeJson: vi.fn((_context, body, init) => new Response(JSON.stringify(body), { status: init?.status ?? 200 })),
   routeError: vi.fn((_context, error) => mockRouteErrorResponse(error)),
 }))
 
-vi.mock("@/modules/services/queries", () => ({
-  listServices: listServicesMock,
+vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
+  withMutationTelemetry: vi.fn((_access, _meta, fn) => fn()),
 }))
 
-vi.mock("@/modules/services/application/manage-service", () => ({
-  createServiceEntry: createServiceEntryMock,
-  updateServiceEntry: updateServiceEntryMock,
-  deleteServiceEntry: deleteServiceEntryMock,
+vi.mock("@/modules/shared/access/lookup-domains", () => ({
+  SERVICES_TOOL_SLUG: "services",
+  authorizeServicesRoute: applyRoutePolicyMock,
 }))
+
+vi.mock("@/modules/services/data/queries", () => ({
+  listServices: listServicesMock,
+  getServiceById: getServiceByIdMock,
+}))
+
+vi.mock("@builders/application", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>()
+  return {
+    ...actual,
+    createServiceUseCase: createServiceUseCaseMock,
+    updateServiceUseCase: updateServiceUseCaseMock,
+    deleteServiceUseCase: deleteServiceUseCaseMock,
+  }
+})
 
 function decimal(value: string) {
   return new Prisma.Decimal(value)
@@ -74,8 +99,8 @@ function serviceRecord(
 describe("services routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    requireRouteAccessMock.mockResolvedValue(routeAccess)
-    enforceRouteRateLimitMock.mockResolvedValue(null)
+    applyRoutePolicyMock.mockResolvedValue(routeAccess)
+    enforceQueryRateLimitMock.mockResolvedValue(null)
   })
 
   it("GET returns normalized rows", async () => {
@@ -110,7 +135,7 @@ describe("services routes", () => {
         updatedAt: "2026-03-19T00:00:00.000Z",
       },
     ])
-    expect(requireRouteAccessMock).toHaveBeenCalled()
+    expect(applyRoutePolicyMock).toHaveBeenCalled()
   })
 
   it("POST requires name, unitId, and baseCost", async () => {
@@ -141,11 +166,11 @@ describe("services routes", () => {
     )
     expect((await missingCost.json()).error).toBe("baseCost is required")
 
-    expect(createServiceEntryMock).not.toHaveBeenCalled()
+    expect(createServiceUseCaseMock).not.toHaveBeenCalled()
   })
 
   it("POST returns normalized payload", async () => {
-    createServiceEntryMock.mockResolvedValue({
+    createServiceUseCaseMock.mockResolvedValue({
       id: "svc-1",
       name: "Install",
       unitId: "unit-1",
@@ -167,7 +192,7 @@ describe("services routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(201)
-    expect(createServiceEntryMock).toHaveBeenCalledWith({
+    expect(createServiceUseCaseMock).toHaveBeenCalledWith({
       name: "Install",
       unitId: "unit-1",
       baseCost: "9.50",
@@ -217,11 +242,11 @@ describe("services routes", () => {
     )
     expect((await missingCost.json()).error).toBe("baseCost is required")
 
-    expect(updateServiceEntryMock).not.toHaveBeenCalled()
+    expect(updateServiceUseCaseMock).not.toHaveBeenCalled()
   })
 
   it("PATCH returns normalized payload", async () => {
-    updateServiceEntryMock.mockResolvedValue({
+    const snapshotRow = {
       id: "svc-1",
       name: "Repair",
       unitId: "unit-1",
@@ -231,7 +256,8 @@ describe("services routes", () => {
       usageCount: 3,
       createdAt: "2026-03-19T00:00:00.000Z",
       updatedAt: "2026-03-19T00:00:00.000Z",
-    })
+    }
+    getServiceByIdMock.mockResolvedValue(snapshotRow)
 
     const response = await PATCH(
       new Request("http://localhost/api/services/svc-1", {
@@ -244,7 +270,7 @@ describe("services routes", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(updateServiceEntryMock).toHaveBeenCalledWith("svc-1", {
+    expect(updateServiceUseCaseMock).toHaveBeenCalledWith("svc-1", {
       name: "Repair",
       unitId: "unit-1",
       baseCost: "12.00",
@@ -255,25 +281,45 @@ describe("services routes", () => {
   })
 
   it("DELETE succeeds on happy path", async () => {
-    const response = await DELETE(new Request("http://localhost/api/services/svc-1"), {
-      params: Promise.resolve({ id: "svc-1" }),
+    getServiceByIdMock.mockResolvedValue({
+      id: "svc-1",
+      updatedAt: "2026-03-19T00:00:00.000Z",
     })
+    deleteServiceUseCaseMock.mockResolvedValue({ ok: true })
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/svc-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }),
+      { params: Promise.resolve({ id: "svc-1" }) },
+    )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteServiceEntryMock).toHaveBeenCalledWith("svc-1")
+    expect(deleteServiceUseCaseMock).toHaveBeenCalledWith("svc-1")
   })
 
   it("DELETE normalizes linked-record conflicts", async () => {
-    deleteServiceEntryMock.mockRejectedValue({
+    getServiceByIdMock.mockResolvedValue({
+      id: "svc-1",
+      updatedAt: "2026-03-19T00:00:00.000Z",
+    })
+    deleteServiceUseCaseMock.mockRejectedValue({
       kind: "app",
       status: 409,
       message: "This service is linked to work orders and cannot be deleted",
     })
 
-    const response = await DELETE(new Request("http://localhost/api/services/svc-1"), {
-      params: Promise.resolve({ id: "svc-1" }),
+    const response = await DELETE(
+      new Request("http://localhost/api/services/svc-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }),
+      { params: Promise.resolve({ id: "svc-1" }),
     })
     const payload = await response.json()
 

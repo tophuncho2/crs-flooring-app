@@ -10,7 +10,7 @@ import {
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
-import type { ServiceRow } from "../../domain/types"
+import type { ServiceRow } from "@builders/domain"
 
 export function ServicesTable({
   rows,

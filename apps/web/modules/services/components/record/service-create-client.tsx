@@ -1,6 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   RecordCreateClientScaffold,
   RecordSingleSectionPanel,
@@ -8,8 +7,9 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
-import { EMPTY_SERVICE_FORM, type ServiceForm, type ServiceRow, type UnitOption } from "../../domain/types"
-import { ServicePrimaryFieldsSection } from "../panel/sections/service-primary-fields-section"
+import { createServiceRequest } from "@/modules/services/data/mutations"
+import { EMPTY_SERVICE_FORM, type ServiceForm, type ServiceRow, type UnitOption } from "@builders/domain"
+import { ServicePrimaryFieldsSection } from "./service-primary-fields-section"
 
 const EMPTY_SERVICE: ServiceRow = {
   id: "new",
@@ -36,11 +36,7 @@ function ServiceCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_SERVICE_FORM }),
     createRecord: async (localValue) => {
-      const payload = await requestJson<{ service: ServiceRow }>("/api/services", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
-      })
+      const payload = await createServiceRequest(localValue)
 
       return {
         redirectTo: buildRecordDetailHref("/dashboard/services", payload.service.id, backHref),

@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { notFound } from "next/navigation"
 import { requireServicesAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { ServiceDetailClient } from "@/modules/services/record/detail/service-detail-client"
+import { ServiceDetailClient } from "@/modules/services/components/record/service-detail-client"
 import { getServiceDetailPageData } from "@/modules/services/data/queries"
 
 export default async function ServiceDetailPage({

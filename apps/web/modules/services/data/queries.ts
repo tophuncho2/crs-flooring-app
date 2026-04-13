@@ -1,46 +1,31 @@
-import { prisma } from "@builders/db"
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
+  listServices as dbListServices,
+  listServiceOptions as dbListServiceOptions,
+  getServiceById as dbGetServiceById,
+  listUnitOfMeasures,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
   type PrismaPageDataResult,
 } from "@builders/db"
-import { normalizeServiceOption, normalizeServiceRow } from "../domain/services"
-import type { ServiceRow, UnitOption } from "../domain/types"
-
-async function loadServices() {
-  const services = await prisma.flooringService.findMany({
-    include: {
-      unit: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      _count: {
-        select: {
-          templateItems: true,
-          workOrderItems: true,
-        },
-      },
-    },
-    orderBy: { name: "asc" },
-  })
-
-  return services.map(normalizeServiceRow)
-}
+import type { ServiceRow, UnitOption } from "@builders/domain"
 
 async function loadUnitOptions(): Promise<UnitOption[]> {
-  const units = await prisma.flooringUnitOfMeasure.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-    },
-  })
+  const units = await listUnitOfMeasures()
+  return units.map((u) => ({ id: u.id, name: u.name }))
+}
 
-  return units
+export async function listServices() {
+  return dbListServices()
+}
+
+export async function listServiceOptions() {
+  return dbListServiceOptions()
+}
+
+export async function getServiceById(id: string) {
+  return dbGetServiceById(id)
 }
 
 export async function getServiceCreatePageData(): Promise<PrismaPageDataResult<{
@@ -51,60 +36,14 @@ export async function getServiceCreatePageData(): Promise<PrismaPageDataResult<{
   }))
 }
 
-export async function listServices() {
-  return loadServices()
-}
-
-export async function listServiceOptions() {
-  const services = await prisma.flooringService.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      baseCost: true,
-      notes: true,
-      unit: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  })
-
-  return services.map(normalizeServiceOption)
-}
-
 export async function getServicesPageData(): Promise<PrismaPageDataResult<{
   services: ServiceRow[]
   unitOptions: UnitOption[]
 }>> {
   return withPrismaConnectivityHandling(async () => ({
-    services: await loadServices(),
+    services: await dbListServices(),
     unitOptions: await loadUnitOptions(),
   }))
-}
-
-export async function getServiceById(id: string): Promise<ServiceRow> {
-  const service = await prisma.flooringService.findUniqueOrThrow({
-    where: { id },
-    include: {
-      unit: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      _count: {
-        select: {
-          templateItems: true,
-          workOrderItems: true,
-        },
-      },
-    },
-  })
-
-  return normalizeServiceRow(service)
 }
 
 export async function getServiceDetailPageData(id: string): Promise<PrismaDetailPageResult<{
@@ -113,7 +52,7 @@ export async function getServiceDetailPageData(id: string): Promise<PrismaDetail
 }>> {
   try {
     const [service, unitOptions] = await Promise.all([
-      getServiceById(id),
+      dbGetServiceById(id),
       loadUnitOptions(),
     ])
 

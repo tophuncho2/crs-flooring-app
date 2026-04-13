@@ -9,8 +9,8 @@ import {
   resetSimpleTableClientMocks,
 } from "../../helpers/simple-table-client-mocks"
 import { navigationMocks } from "../../helpers/next-navigation-mock"
-import ServicesClient from "@/modules/services/components/services-client"
-import { ServiceDetailClient } from "@/modules/services/record/detail/service-detail-client"
+import ServicesClient from "@/modules/services/components/list/services-client"
+import { ServiceDetailClient } from "@/modules/services/components/record/service-detail-client"
 
 function serviceRow(overrides: Partial<{
   id: string

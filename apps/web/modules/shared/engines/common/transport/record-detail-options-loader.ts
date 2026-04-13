@@ -1,5 +1,4 @@
-import { prisma, listSalesRepContactOptions } from "@builders/db"
-import { listServiceOptions } from "@/modules/services/data/queries"
+import { prisma, listSalesRepContactOptions, listServiceOptions } from "@builders/db"
 import { buildFlooringProductDisplayName, buildPadProductDisplayName } from "@builders/domain"
 
 type PadProductOptionSource = {

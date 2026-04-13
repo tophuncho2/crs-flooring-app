@@ -1,17 +1,17 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   createRecordSectionError,
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
+import { updateServiceRequest, deleteServiceRequest } from "@/modules/services/data/mutations"
 import {
   toServiceForm,
   validateServiceForm,
   type ServiceForm,
   type ServiceRow,
-} from "../../../domain/types"
+} from "@builders/domain"
 
 export function useServicePrimarySection({
   page,
@@ -28,7 +28,7 @@ export function useServicePrimarySection({
     detailUrl: `/api/services/${service.id}`,
     payloadKey: "service",
     createLocalValue: toServiceForm,
-    saveSection: async ({ localValue, record }) => {
+    saveSection: async ({ localValue, record, revisionKey }) => {
       const validationError = validateServiceForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -38,11 +38,7 @@ export function useServicePrimarySection({
         })
       }
 
-      const payload = await requestJson<{ service: ServiceRow }>(`/api/services/${record.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
-      })
+      const payload = await updateServiceRequest(record.id, localValue, revisionKey)
 
       return {
         serverValue: payload.service,
@@ -50,9 +46,7 @@ export function useServicePrimarySection({
       }
     },
     deleteRecord: async (record) => {
-      await requestJson<{ ok: true }>(`/api/services/${record.id}`, {
-        method: "DELETE",
-      })
+      await deleteServiceRequest(record.id, record.updatedAt)
     },
     deleteErrorMessage: "Failed to delete service",
   })

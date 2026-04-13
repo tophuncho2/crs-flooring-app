@@ -1,6 +1,6 @@
 import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { deleteServiceEntry, updateServiceEntry } from "@/modules/services/application/manage-service"
+import { updateServiceUseCase, deleteServiceUseCase } from "@builders/application"
 import { getServiceById } from "@/modules/services/data/queries"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -64,7 +64,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringService",
         entityId: id,
       },
-      () => updateServiceEntry(id, input),
+      () => updateServiceUseCase(id, input),
     )
 
     const snapshot = await getServiceById(id)
@@ -127,7 +127,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         entityType: "flooringService",
         entityId: id,
       },
-      () => deleteServiceEntry(id),
+      () => deleteServiceUseCase(id),
     )
 
     const responseBody = { ok: true as const }

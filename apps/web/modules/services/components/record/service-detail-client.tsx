@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { ServiceRecordPanel } from "../panel/service-record-panel"
-import type { ServiceRow, UnitOption } from "../../domain/types"
+import { ServiceRecordPanel } from "./service-record-panel"
+import type { ServiceRow, UnitOption } from "@builders/domain"
 
 export function ServiceDetailClient({
   service,

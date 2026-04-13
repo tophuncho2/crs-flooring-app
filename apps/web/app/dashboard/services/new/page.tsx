@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireServicesAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { getServiceCreatePageData } from "@/modules/services/data/queries"
-import { ServiceCreateClient } from "@/modules/services/record/create/service-create-client"
+import { ServiceCreateClient } from "@/modules/services/components/record/service-create-client"
 
 export default async function ServiceCreatePage({
   searchParams,

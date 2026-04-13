@@ -10,7 +10,7 @@ import {
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
 import { formatStableDateTime } from "@builders/domain"
-import type { ServiceForm, ServiceRow, UnitOption } from "../../../domain/types"
+import type { ServiceForm, ServiceRow, UnitOption } from "@builders/domain"
 
 export function ServicePrimaryFieldsSection({
   service,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { deleteServiceEntry } from "@/modules/services/application/manage-service"
+import { deleteServiceUseCase } from "@builders/application"
 
 const {
   getServiceDeleteStateMock,
@@ -9,16 +9,14 @@ const {
   deleteServiceRecordByIdMock: vi.fn(),
 }))
 
-vi.mock("@/modules/services/data/server-records", () => ({
-  createServiceRecord: vi.fn(),
-  updateServiceRecord: vi.fn(),
-  getServiceDeleteState: getServiceDeleteStateMock,
-  deleteServiceRecordById: deleteServiceRecordByIdMock,
-}))
-
-vi.mock("@/modules/services/data/queries", () => ({
-  getServiceById: vi.fn(),
-}))
+vi.mock("@builders/db", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>()
+  return {
+    ...actual,
+    getServiceDeleteState: getServiceDeleteStateMock,
+    deleteServiceRecordById: deleteServiceRecordByIdMock,
+  }
+})
 
 describe("services application", () => {
   beforeEach(() => {
@@ -34,8 +32,8 @@ describe("services application", () => {
       },
     })
 
-    await expect(deleteServiceEntry("svc-1")).rejects.toMatchObject({
-      kind: "app",
+    await expect(deleteServiceUseCase("svc-1")).rejects.toMatchObject({
+      code: "SERVICE_IN_USE",
       status: 409,
       message: "This service is linked to work orders and cannot be deleted",
     })

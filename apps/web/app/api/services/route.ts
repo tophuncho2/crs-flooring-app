@@ -1,6 +1,6 @@
 import { SERVICES_TOOL_SLUG, authorizeServicesRoute } from "@/modules/shared/access/lookup-domains"
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { createServiceEntry } from "@/modules/services/application/manage-service"
+import { createServiceUseCase } from "@builders/application"
 import { listServices } from "@/modules/services/data/queries"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         route: "/api/services",
         entityType: "flooringService",
       },
-      () => createServiceEntry(input),
+      () => createServiceUseCase(input),
     )
 
     const responseBody = { service }

@@ -11,8 +11,8 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ServiceRow, UnitOption } from "../../domain/types"
-import { useServicesListController } from "../../controllers/use-services-list-controller"
+import type { ServiceRow, UnitOption } from "@builders/domain"
+import { useServicesListController } from "@/modules/services/controller/use-services-list-controller"
 import { ServicesTable } from "./services-table"
 
 export default function ServicesClient({

@@ -5,9 +5,9 @@ import {
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { useServicePrimarySection } from "./controllers/use-service-primary-section"
-import { ServicePrimaryFieldsSection } from "./sections/service-primary-fields-section"
-import type { ServiceForm, ServiceRow, UnitOption } from "../../domain/types"
+import { useServicePrimarySection } from "@/modules/services/controller/use-service-primary-section"
+import { ServicePrimaryFieldsSection } from "./service-primary-fields-section"
+import type { ServiceForm, ServiceRow, UnitOption } from "@builders/domain"
 
 export function ServiceRecordPanel({
   page,
