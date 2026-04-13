@@ -1,6 +1,6 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { getManufacturerById } from "@builders/db"
 import { updateManufacturerUseCase } from "@builders/application"
+import { getManufacturerById } from "@builders/db"
 import { validateManufacturerInput } from "../../../_validators"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return receipt.replay
     }
 
-    await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
         message: "Manufacturer primary section replaced",
@@ -68,7 +68,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     )
 
     const responseBody = {
-      manufacturer: await getManufacturerById(id),
+      manufacturer: result,
     }
     await finalizeMutationReceipt({
       scope: "manufacturers.primary.section.replace",

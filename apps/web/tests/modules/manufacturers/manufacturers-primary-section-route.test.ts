@@ -105,9 +105,10 @@ describe("manufacturers primary section route", () => {
   })
 
   it("accepts the mutation envelope and returns the authoritative snapshot", async () => {
-    getManufacturerByIdMock
-      .mockResolvedValueOnce(manufacturerRow())
-      .mockResolvedValueOnce(manufacturerRow({ companyName: "Updated Mill", updatedAt: "2026-03-20T00:00:00.000Z" }))
+    getManufacturerByIdMock.mockResolvedValueOnce(manufacturerRow())
+    updateManufacturerUseCaseMock.mockResolvedValueOnce(
+      manufacturerRow({ companyName: "Updated Mill", updatedAt: "2026-03-20T00:00:00.000Z" }),
+    )
 
     const response = await PATCH(
       new Request("http://localhost/api/manufacturers/11111111-1111-4111-8111-111111111111/primary/section", {

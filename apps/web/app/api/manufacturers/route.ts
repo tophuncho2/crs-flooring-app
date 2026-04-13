@@ -26,6 +26,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
+    capability: "system.access",
     toolSlug: MANUFACTURERS_TOOL_SLUG,
     rateLimit: {
       scope: "manufacturers.write",

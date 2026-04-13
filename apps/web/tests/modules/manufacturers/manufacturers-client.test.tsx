@@ -143,13 +143,4 @@ describe("ManufacturersClient", () => {
     expect(await screen.findByText("Company name must be unique")).toBeTruthy()
   })
 
-  it.skip("delete flow confirms and removes the row on success", async () => {
-    // Skipped: delete button is in the record detail panel, not the list view.
-    // These tests need to render ManufacturerDetailClient instead.
-  })
-
-  it.skip("delete flow surfaces linked-delete errors without removing the row", async () => {
-    // Skipped: delete button is in the record detail panel, not the list view.
-    // These tests need to render ManufacturerDetailClient instead.
-  })
 })
