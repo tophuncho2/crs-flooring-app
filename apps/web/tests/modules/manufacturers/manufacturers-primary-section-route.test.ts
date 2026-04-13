@@ -18,25 +18,33 @@ const {
   withMutationTelemetryMock: vi.fn(),
 }))
 
-vi.mock("@/modules/manufacturers/queries", () => ({
-  getManufacturerById: getManufacturerByIdMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    getManufacturerById: getManufacturerByIdMock,
+  }
+})
 
-vi.mock("@/modules/manufacturers/application/manage-manufacturer", () => ({
-  replaceManufacturerPrimarySection: replaceManufacturerPrimarySectionMock,
-  validateUpdateManufacturerPrimarySectionInput: vi.fn((body: Record<string, unknown>) => {
-    if (typeof body.companyName !== "string" || body.companyName.trim() === "") {
-      throw {
-        kind: "app",
-        message: "companyName is required",
-        field: "companyName",
-        status: 400,
+vi.mock("@builders/application", async () => {
+  const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")
+  return {
+    ...actual,
+    replaceManufacturerPrimarySection: replaceManufacturerPrimarySectionMock,
+    validateUpdateManufacturerPrimarySectionInput: vi.fn((body: Record<string, unknown>) => {
+      if (typeof body.companyName !== "string" || body.companyName.trim() === "") {
+        throw {
+          kind: "app",
+          message: "companyName is required",
+          field: "companyName",
+          status: 400,
+        }
       }
-    }
 
-    return body
-  }),
-}))
+      return body
+    }),
+  }
+})
 
 vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
   withMutationTelemetry: withMutationTelemetryMock,

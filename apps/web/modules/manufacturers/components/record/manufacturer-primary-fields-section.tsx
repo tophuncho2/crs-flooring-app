@@ -10,7 +10,7 @@ import {
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
 import { formatStableDateTime } from "@builders/domain"
-import type { ManufacturerForm, ManufacturerRow } from "../../../domain/types"
+import type { ManufacturerForm, ManufacturerRow } from "@builders/domain"
 
 export function ManufacturerPrimaryFieldsSection({
   manufacturer,

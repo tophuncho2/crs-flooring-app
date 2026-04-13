@@ -10,7 +10,7 @@ import {
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { ManufacturerRow } from "../../domain/types"
+import type { ManufacturerRow } from "@builders/domain"
 
 export function ManufacturersTable({
   rows,

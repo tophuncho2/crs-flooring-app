@@ -1,7 +1,7 @@
 "use client"
 
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import type { ManufacturerForm, ManufacturerRow } from "../domain/types"
+import type { ManufacturerForm, ManufacturerRow } from "@builders/domain"
 
 export async function createManufacturerRequest(input: ManufacturerForm) {
   return requestJson<{ manufacturer: ManufacturerRow }>("/api/manufacturers", {

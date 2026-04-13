@@ -1,12 +1,14 @@
-import { createManufacturerRecord, validateUpdateManufacturerPrimarySectionInput } from "@/modules/manufacturers/application/manage-manufacturer"
-import { listManufacturers } from "@/modules/manufacturers/data/queries"
-import { authorizeManufacturersRoute } from "@/modules/shared/access/lookup-domains"
+import { createManufacturerRecord, validateUpdateManufacturerPrimarySectionInput } from "@builders/application"
+import { listManufacturers } from "@builders/db"
+import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 
 export async function GET(request: Request) {
-  const access = await authorizeManufacturersRoute(request)
+  const access = await applyRoutePolicy(request, {
+    toolSlug: MANUFACTURERS_TOOL_SLUG,
+  })
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/manufacturers")
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: "manufacturers",
+    toolSlug: MANUFACTURERS_TOOL_SLUG,
     rateLimit: {
       scope: "manufacturers.write",
       limit: 20,

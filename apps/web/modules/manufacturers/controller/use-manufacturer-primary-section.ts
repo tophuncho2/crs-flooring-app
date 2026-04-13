@@ -3,7 +3,7 @@
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import { useSingleSectionRecordController, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { toManufacturerForm, type ManufacturerForm, type ManufacturerRow } from "../../../domain/types"
+import { toManufacturerForm, type ManufacturerForm, type ManufacturerRow } from "@builders/domain"
 
 export function useManufacturerPrimarySection({
   page,

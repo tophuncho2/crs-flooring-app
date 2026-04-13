@@ -40,6 +40,8 @@ describe("record view feature alignment", () => {
     const extractedModuleRoutes = new Set([
       "apps/web/app/dashboard/contacts/[id]/page.tsx",
       "apps/web/app/dashboard/contacts/new/page.tsx",
+      "apps/web/app/dashboard/manufacturers/[id]/page.tsx",
+      "apps/web/app/dashboard/manufacturers/new/page.tsx",
     ])
 
     for (const file of routeFiles) {
@@ -106,11 +108,11 @@ describe("record view feature alignment", () => {
     const panelFiles = [
       "apps/web/modules/categories/record/panel/category-record-panel.tsx",
       "apps/web/modules/contacts/components/record/contact-record-panel.tsx",
-      "apps/web/modules/manufacturers/record/panel/manufacturer-record-panel.tsx",
+      "apps/web/modules/manufacturers/components/record/manufacturer-record-panel.tsx",
       "apps/web/modules/services/record/panel/service-record-panel.tsx",
       "apps/web/modules/categories/record/create/category-create-client.tsx",
       "apps/web/modules/contacts/components/record/contact-create-client.tsx",
-      "apps/web/modules/manufacturers/record/create/manufacturer-create-client.tsx",
+      "apps/web/modules/manufacturers/components/record/manufacturer-create-client.tsx",
       "apps/web/modules/services/record/create/service-create-client.tsx",
     ]
 

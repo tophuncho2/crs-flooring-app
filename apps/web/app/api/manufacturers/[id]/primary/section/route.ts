@@ -1,9 +1,9 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { getManufacturerById } from "@/modules/manufacturers/data/queries"
+import { getManufacturerById } from "@builders/db"
 import {
   replaceManufacturerPrimarySection,
   validateUpdateManufacturerPrimarySectionInput,
-} from "@/modules/manufacturers/application/manage-manufacturer"
+} from "@builders/application"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"

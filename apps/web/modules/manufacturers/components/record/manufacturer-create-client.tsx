@@ -8,8 +8,8 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
-import { EMPTY_MANUFACTURER_FORM, type ManufacturerForm, type ManufacturerRow } from "../../domain/types"
-import { ManufacturerPrimaryFieldsSection } from "../panel/sections/manufacturer-primary-fields-section"
+import { EMPTY_MANUFACTURER_FORM, type ManufacturerForm, type ManufacturerRow } from "@builders/domain"
+import { ManufacturerPrimaryFieldsSection } from "./manufacturer-primary-fields-section"
 
 const EMPTY_MANUFACTURER_ROW: ManufacturerRow = {
   id: "new",

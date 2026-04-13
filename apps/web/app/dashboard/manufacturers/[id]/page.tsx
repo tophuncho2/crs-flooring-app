@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { notFound } from "next/navigation"
 import { requireManufacturersAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { ManufacturerDetailClient } from "@/modules/manufacturers/record/detail/manufacturer-detail-client"
+import { ManufacturerDetailClient } from "@/modules/manufacturers/components/record/manufacturer-detail-client"
 import { getManufacturerDetailPageData } from "@/modules/manufacturers/data/queries"
 
 export default async function ManufacturerDetailPage({

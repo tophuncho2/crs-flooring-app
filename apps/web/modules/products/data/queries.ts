@@ -2,7 +2,7 @@ import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, type 
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { flooringCategoryUnitInclude } from "@/server/categories/unit-measures"
 import { normalizeCategoryUnitValues } from "@/server/categories/unit-measures"
-import { listManufacturers } from "@/modules/manufacturers/data/queries"
+import { listManufacturers } from "@builders/db"
 import { listInventoryRows } from "@/modules/inventory/data/api"
 import { normalizeCatalogProduct, normalizeProductOption } from "../domain/services"
 

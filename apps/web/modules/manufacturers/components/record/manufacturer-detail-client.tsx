@@ -1,8 +1,8 @@
 "use client"
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { ManufacturerRecordPanel } from "../panel/manufacturer-record-panel"
-import type { ManufacturerRow } from "../../domain/types"
+import { ManufacturerRecordPanel } from "./manufacturer-record-panel"
+import type { ManufacturerRow } from "@builders/domain"
 
 export function ManufacturerDetailClient({
   manufacturer,

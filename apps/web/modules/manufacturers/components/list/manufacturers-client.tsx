@@ -11,8 +11,8 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ManufacturerRow } from "../../domain/types"
-import { useManufacturersListController } from "../../controllers/use-manufacturers-list-controller"
+import type { ManufacturerRow } from "@builders/domain"
+import { useManufacturersListController } from "../../controller/use-manufacturers-list-controller"
 import { ManufacturersTable } from "./manufacturers-table"
 
 export default function ManufacturersClient({

@@ -5,9 +5,9 @@ import {
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { useManufacturerPrimarySection } from "./controllers/use-manufacturer-primary-section"
-import { ManufacturerPrimaryFieldsSection } from "./sections/manufacturer-primary-fields-section"
-import type { ManufacturerForm, ManufacturerRow } from "../../domain/types"
+import { useManufacturerPrimarySection } from "../../controller/use-manufacturer-primary-section"
+import { ManufacturerPrimaryFieldsSection } from "./manufacturer-primary-fields-section"
+import type { ManufacturerForm, ManufacturerRow } from "@builders/domain"
 
 export function ManufacturerRecordPanel({
   page,

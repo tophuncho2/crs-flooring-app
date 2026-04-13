@@ -1,34 +1,12 @@
-import { createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
-import { normalizeManufacturer } from "../domain/services"
-import type { ManufacturerRow } from "../domain/types"
+import { createPrismaPageLoadIssue, getManufacturerById, isPrismaNotFoundError, listManufacturers, withPrismaConnectivityHandling, type ManufacturerRecord, type PrismaDetailPageResult } from "@builders/db"
 
-async function loadManufacturers() {
-  const manufacturers = await prisma.flooringManufacturer.findMany({
-    include: { _count: { select: { products: true } } },
-    orderBy: [{ companyName: "asc" }, { agentName: "asc" }],
-  })
-
-  return manufacturers.map(normalizeManufacturer)
-}
-
-export async function listManufacturers() {
-  return loadManufacturers()
-}
+export { listManufacturers, getManufacturerById }
 
 export async function getManufacturersPageData() {
-  return withPrismaConnectivityHandling(() => loadManufacturers())
+  return withPrismaConnectivityHandling(() => listManufacturers())
 }
 
-export async function getManufacturerById(id: string): Promise<ManufacturerRow> {
-  const manufacturer = await prisma.flooringManufacturer.findUniqueOrThrow({
-    where: { id },
-    include: { _count: { select: { products: true } } },
-  })
-
-  return normalizeManufacturer(manufacturer)
-}
-
-export async function getManufacturerDetailPageData(id: string): Promise<PrismaDetailPageResult<ManufacturerRow>> {
+export async function getManufacturerDetailPageData(id: string): Promise<PrismaDetailPageResult<ManufacturerRecord>> {
   try {
     const manufacturer = await getManufacturerById(id)
     return { ok: true, data: manufacturer }
