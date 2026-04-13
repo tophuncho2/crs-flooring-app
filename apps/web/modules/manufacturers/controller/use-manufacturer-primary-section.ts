@@ -1,8 +1,7 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import { useSingleSectionRecordController, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
+import { updateManufacturerRequest, deleteManufacturerRequest } from "@/modules/manufacturers/data/mutations"
 import { toManufacturerForm, type ManufacturerForm, type ManufacturerRow } from "@builders/domain"
 
 export function useManufacturerPrimarySection({
@@ -21,14 +20,7 @@ export function useManufacturerPrimarySection({
     payloadKey: "manufacturer",
     createLocalValue: toManufacturerForm,
     saveSection: async ({ localValue, record, revisionKey }) => {
-      const payload = await requestJson<{ manufacturer: ManufacturerRow }>(
-        `/api/manufacturers/${record.id}/primary/section`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(withMutationMeta(localValue, revisionKey)),
-        },
-      )
+      const payload = await updateManufacturerRequest(record.id, localValue, revisionKey)
 
       return {
         serverValue: payload.manufacturer,
@@ -36,11 +28,7 @@ export function useManufacturerPrimarySection({
       }
     },
     deleteRecord: async (record) => {
-      await requestJson<{ ok: true }>(`/api/manufacturers/${record.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(withMutationMeta({}, record.updatedAt)),
-      })
+      await deleteManufacturerRequest(record.id, record.updatedAt)
     },
     deleteErrorMessage: "Failed to delete manufacturer",
   })
