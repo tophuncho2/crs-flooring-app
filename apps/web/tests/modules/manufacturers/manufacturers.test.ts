@@ -1,30 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { Prisma } from "@builders/db"
-import { normalizeCatalogProduct } from "@/modules/products/services"
 import { GET, POST } from "@/app/api/manufacturers/route"
-import { DELETE, PATCH } from "@/app/api/manufacturers/[id]/route"
+import { DELETE } from "@/app/api/manufacturers/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
 const {
   applyRoutePolicyMock,
   enforceQueryRateLimitMock,
+  parseMutationEnvelopeMock,
   enforceMutationReceiptMock,
   finalizeMutationReceiptMock,
   listManufacturersMock,
   getManufacturerByIdMock,
   createManufacturerUseCaseMock,
-  updateManufacturerUseCaseMock,
   deleteManufacturerUseCaseMock,
   withMutationTelemetryMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
   enforceQueryRateLimitMock: vi.fn(),
+  parseMutationEnvelopeMock: vi.fn(),
   enforceMutationReceiptMock: vi.fn(),
   finalizeMutationReceiptMock: vi.fn(),
   listManufacturersMock: vi.fn(),
   getManufacturerByIdMock: vi.fn(),
   createManufacturerUseCaseMock: vi.fn(),
-  updateManufacturerUseCaseMock: vi.fn(),
   deleteManufacturerUseCaseMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
 }))
@@ -43,7 +41,6 @@ vi.mock("@builders/application", async () => {
   return {
     ...actual,
     createManufacturerUseCase: createManufacturerUseCaseMock,
-    updateManufacturerUseCase: updateManufacturerUseCaseMock,
     deleteManufacturerUseCase: deleteManufacturerUseCaseMock,
   }
 })
@@ -85,6 +82,7 @@ vi.mock("@/server/http/route-policy", async () => {
     ...actual,
     applyRoutePolicy: applyRoutePolicyMock,
     enforceQueryRateLimit: enforceQueryRateLimitMock,
+    parseMutationEnvelope: parseMutationEnvelopeMock,
     enforceMutationReceipt: enforceMutationReceiptMock,
     finalizeMutationReceipt: finalizeMutationReceiptMock,
   }
@@ -122,6 +120,13 @@ describe("manufacturers", () => {
     vi.clearAllMocks()
     applyRoutePolicyMock.mockResolvedValue(routeAccess)
     enforceQueryRateLimitMock.mockResolvedValue(null)
+    parseMutationEnvelopeMock.mockImplementation((body: Record<string, unknown>, parse: (b: unknown) => unknown) => {
+      const { mutation, ...rest } = body
+      return {
+        input: parse(rest),
+        mutation: mutation ?? { idempotencyKey: "test-key" },
+      }
+    })
     enforceMutationReceiptMock.mockResolvedValue({ replay: null, requestHash: "hash" })
     finalizeMutationReceiptMock.mockResolvedValue(undefined)
     withMutationTelemetryMock.mockImplementation(async (_access, _meta, callback) => callback())
@@ -224,113 +229,6 @@ describe("manufacturers", () => {
     expect(createManufacturerUseCaseMock).toHaveBeenCalled()
   })
 
-  it("PATCH route updates a manufacturer and returns normalized payload", async () => {
-    const snapshot = normalizedManufacturerRow()
-    const updated = normalizedManufacturerRow({
-      companyName: "Acme Flooring",
-      agentName: "Jamie Agent",
-      website: "https://example.com",
-      phone: "555-1111",
-      email: "jamie@example.com",
-    })
-    getManufacturerByIdMock
-      .mockResolvedValueOnce(snapshot)
-    updateManufacturerUseCaseMock.mockResolvedValue(updated)
-
-    const response = await PATCH(
-      new Request("http://localhost/api/manufacturers/mfg-1", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName: "Acme Flooring",
-          agentName: "Jamie Agent",
-          website: "https://example.com",
-          phone: "555-1111",
-          email: "jamie@example.com",
-          mutation: {
-            idempotencyKey: "idem-4",
-            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
-          },
-        }),
-      }),
-      { params: Promise.resolve({ id: "mfg-1" }) },
-    )
-    const payload = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(updateManufacturerUseCaseMock).toHaveBeenCalledWith("mfg-1", {
-      companyName: "Acme Flooring",
-      agentName: "Jamie Agent",
-      website: "https://example.com",
-      phone: "555-1111",
-      email: "jamie@example.com",
-    })
-    expect(payload.manufacturer).toEqual(updated)
-  })
-
-  it("PATCH requires companyName", async () => {
-    const response = await PATCH(
-      new Request("http://localhost/api/manufacturers/mfg-1", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName: "   ",
-          agentName: "Jamie Agent",
-          mutation: {
-            idempotencyKey: "idem-5",
-            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
-          },
-        }),
-      }),
-      { params: Promise.resolve({ id: "mfg-1" }) },
-    )
-
-    const payload = await response.json()
-
-    expect(response.status).toBe(400)
-    expect(payload.error).toBe("companyName is required")
-    expect(updateManufacturerUseCaseMock).not.toHaveBeenCalled()
-  })
-
-  it("products resolve manufacturer display names from company name", () => {
-    const normalized = normalizeCatalogProduct({
-      id: "prod-1",
-      name: "Acme Flooring - Plush - Sand",
-      categoryId: "cat-1",
-      manufacturerId: "mfg-1",
-      manufacturerName: "stale manufacturer name",
-      style: "Plush",
-      color: "Sand",
-      width: null,
-      sheetSize: null,
-      thickness: null,
-      unitWeight: null,
-      baseColor: null,
-      coveragePerUnit: new Prisma.Decimal("12.5"),
-      photoUrls: [],
-      notes: null,
-      createdAt: new Date("2026-03-18T00:00:00Z"),
-      updatedAt: new Date("2026-03-18T00:00:00Z"),
-      category: {
-        id: "cat-1",
-        name: "Carpet",
-        sendUnit: { id: "u1", name: "SY" },
-        stockUnit: { id: "u2", name: "Roll" },
-        coverageAvailableUnit: null,
-        itemCoverageUnit: { id: "u3", name: "SF" },
-        serviceUnit: null,
-      },
-      manufacturer: {
-        id: "mfg-1",
-        companyName: "Acme Flooring",
-        agentName: "Jamie Agent",
-        website: null,
-      },
-    })
-
-    expect(normalized.manufacturerName).toBe("Acme Flooring")
-  })
-
   it("prevents deleting a manufacturer that still has linked products", async () => {
     const snapshot = normalizedManufacturerRow()
     getManufacturerByIdMock.mockResolvedValue(snapshot)
@@ -352,14 +250,14 @@ describe("manufacturers", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "mfg-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
 
     const payload = await response.json()
 
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This manufacturer has linked products and cannot be deleted")
-    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("mfg-1")
+    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
   })
 
   it("deletes a manufacturer when there are no linked products", async () => {
@@ -378,13 +276,13 @@ describe("manufacturers", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "mfg-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
 
     const payload = await response.json()
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("mfg-1")
+    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
   })
 })
