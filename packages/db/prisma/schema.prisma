@@ -220,15 +220,16 @@ model FlooringUnitOfMeasure {
 }
 
 model FlooringManufacturer {
-  id          String            @id @default(uuid())
-  companyName String            @unique
-  agentName   String?
-  website     String?
-  phone       String?
-  email       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  products    FlooringProduct[]
+  id                    String            @id @default(uuid())
+  companyName           String
+  companyNameNormalized String            @unique
+  agentName             String?
+  website               String?
+  phone                 String?
+  email                 String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  products              FlooringProduct[]
 
   @@map("flooring_manufacturer")
 }

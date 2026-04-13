@@ -81,10 +81,7 @@ export async function manufacturerCompanyNameExists(
 ): Promise<boolean> {
   const existing = await client.flooringManufacturer.findFirst({
     where: {
-      companyName: {
-        equals: normalizedCompanyName,
-        mode: "insensitive",
-      },
+      companyNameNormalized: normalizedCompanyName,
       ...(currentId ? { NOT: { id: currentId } } : {}),
     },
     select: { id: true },

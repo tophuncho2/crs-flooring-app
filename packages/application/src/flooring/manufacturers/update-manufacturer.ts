@@ -52,7 +52,10 @@ export async function replaceManufacturerPrimarySection(
   }
 
   try {
-    await updateManufacturerPrimaryRecord(id, input)
+    await updateManufacturerPrimaryRecord(id, {
+      ...input,
+      companyNameNormalized: normalizedName,
+    })
     return getManufacturerById(id)
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

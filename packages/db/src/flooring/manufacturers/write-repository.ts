@@ -6,6 +6,7 @@ type ManufacturerDbClient = PrismaClient | Prisma.TransactionClient
 
 export type ManufacturerFormInput = {
   companyName: string
+  companyNameNormalized: string
   agentName: string
   website: string
   phone: string
@@ -23,6 +24,7 @@ export async function createManufacturerPrimaryRecord(
   const manufacturer = await client.flooringManufacturer.create({
     data: {
       companyName: input.companyName.trim(),
+      companyNameNormalized: input.companyNameNormalized,
       agentName: input.agentName.trim() || null,
       website: input.website.trim() || null,
       phone: input.phone.trim() || null,
@@ -43,6 +45,7 @@ export async function updateManufacturerPrimaryRecord(
     where: { id },
     data: {
       companyName: input.companyName.trim(),
+      companyNameNormalized: input.companyNameNormalized,
       agentName: input.agentName.trim() || null,
       website: input.website.trim() || null,
       phone: input.phone.trim() || null,

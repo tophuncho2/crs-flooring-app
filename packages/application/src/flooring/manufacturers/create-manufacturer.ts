@@ -16,7 +16,10 @@ export async function createManufacturerRecord(input: ManufacturerInput): Promis
   }
 
   try {
-    return await createManufacturerPrimaryRecord(input)
+    return await createManufacturerPrimaryRecord({
+      ...input,
+      companyNameNormalized: normalizedName,
+    })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       throw new ManufacturerExecutionError({
