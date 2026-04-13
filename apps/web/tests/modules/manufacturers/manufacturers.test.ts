@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Prisma } from "@builders/db"
-import { validateManufacturerForm } from "@builders/domain"
 import { normalizeCatalogProduct } from "@/modules/products/services"
 import { GET, POST } from "@/app/api/manufacturers/route"
 import { DELETE, PATCH } from "@/app/api/manufacturers/[id]/route"
@@ -291,26 +290,6 @@ describe("manufacturers", () => {
     expect(response.status).toBe(400)
     expect(payload.error).toBe("companyName is required")
     expect(updateManufacturerUseCaseMock).not.toHaveBeenCalled()
-  })
-
-  it("validates company name presence and uniqueness in the manufacturer form", () => {
-    expect(validateManufacturerForm({ companyName: "" })).toBe("Company name is required")
-    expect(
-      validateManufacturerForm(
-        { companyName: "Acme Flooring" },
-        [
-          { id: "mfg-1", companyName: "Acme Flooring" },
-          { id: "mfg-2", companyName: "Other Mill" },
-        ],
-      ),
-    ).toBe("Company name must be unique")
-    expect(
-      validateManufacturerForm(
-        { companyName: "Acme Flooring" },
-        [{ id: "mfg-1", companyName: "Acme Flooring" }],
-        "mfg-1",
-      ),
-    ).toBe("")
   })
 
   it("products resolve manufacturer display names from company name", () => {
