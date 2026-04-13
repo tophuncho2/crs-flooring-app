@@ -40,8 +40,8 @@ export async function updateManufacturerPrimaryRecord(
   id: string,
   input: ManufacturerFormInput,
   client: ManufacturerDbClient = db,
-): Promise<void> {
-  await client.flooringManufacturer.update({
+): Promise<ManufacturerRecord> {
+  const manufacturer = await client.flooringManufacturer.update({
     where: { id },
     data: {
       companyName: input.companyName.trim(),
@@ -51,7 +51,10 @@ export async function updateManufacturerPrimaryRecord(
       phone: input.phone.trim() || null,
       email: input.email.trim() || null,
     },
+    include: manufacturerInclude,
   })
+
+  return normalizeManufacturer(manufacturer)
 }
 
 export async function deleteManufacturerRecordById(

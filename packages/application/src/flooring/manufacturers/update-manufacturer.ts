@@ -1,4 +1,4 @@
-import { Prisma, getManufacturerById, manufacturerCompanyNameExists, updateManufacturerPrimaryRecord, withDatabaseTransaction } from "@builders/db"
+import { Prisma, manufacturerCompanyNameExists, updateManufacturerPrimaryRecord, withDatabaseTransaction } from "@builders/db"
 import { isManufacturerCompanyNameConflict, normalizeManufacturerCompanyNameForUniqueness } from "@builders/domain"
 import { ManufacturerExecutionError } from "./errors.js"
 import type { ManufacturerInput, ManufacturerResult } from "./types.js"
@@ -23,11 +23,10 @@ export async function updateManufacturerUseCase(
     }
 
     try {
-      await updateManufacturerPrimaryRecord(id, {
+      return await updateManufacturerPrimaryRecord(id, {
         ...input,
         companyNameNormalized: normalizedName,
       }, c)
-      return getManufacturerById(id, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         throw new ManufacturerExecutionError({
