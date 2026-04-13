@@ -1,27 +1,34 @@
-import { getManufacturerDeleteState, deleteManufacturerRecordById } from "@builders/db"
+import { Prisma, getManufacturerDeleteState, deleteManufacturerRecordById, withDatabaseTransaction } from "@builders/db"
 import { isManufacturerDeleteBlocked } from "@builders/domain"
 import { ManufacturerExecutionError } from "./errors.js"
 
-export async function deleteManufacturerRecord(id: string): Promise<{ ok: true }> {
-  const manufacturer = await getManufacturerDeleteState(id)
+export async function deleteManufacturerRecord(
+  id: string,
+  client?: Prisma.TransactionClient,
+): Promise<{ ok: true }> {
+  return withDatabaseTransaction(async (tx) => {
+    const c = client ?? tx
 
-  if (!manufacturer) {
-    throw new ManufacturerExecutionError({
-      code: "MANUFACTURER_NOT_FOUND",
-      message: "Manufacturer not found",
-      status: 404,
-    })
-  }
+    const manufacturer = await getManufacturerDeleteState(id, c)
 
-  if (isManufacturerDeleteBlocked(manufacturer._count.products)) {
-    throw new ManufacturerExecutionError({
-      code: "MANUFACTURER_IN_USE",
-      message: "This manufacturer has linked products and cannot be deleted",
-      status: 409,
-    })
-  }
+    if (!manufacturer) {
+      throw new ManufacturerExecutionError({
+        code: "MANUFACTURER_NOT_FOUND",
+        message: "Manufacturer not found",
+        status: 404,
+      })
+    }
 
-  await deleteManufacturerRecordById(id)
+    if (isManufacturerDeleteBlocked(manufacturer._count.products)) {
+      throw new ManufacturerExecutionError({
+        code: "MANUFACTURER_IN_USE",
+        message: "This manufacturer has linked products and cannot be deleted",
+        status: 409,
+      })
+    }
 
-  return { ok: true }
+    await deleteManufacturerRecordById(id, c)
+
+    return { ok: true }
+  })
 }

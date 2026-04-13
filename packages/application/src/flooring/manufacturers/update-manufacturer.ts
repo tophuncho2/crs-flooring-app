@@ -1,4 +1,4 @@
-import { Prisma, getManufacturerById, manufacturerCompanyNameExists, updateManufacturerPrimaryRecord } from "@builders/db"
+import { Prisma, getManufacturerById, manufacturerCompanyNameExists, updateManufacturerPrimaryRecord, withDatabaseTransaction } from "@builders/db"
 import { isManufacturerCompanyNameConflict, normalizeManufacturerCompanyNameForUniqueness, validateManufacturerForm } from "@builders/domain"
 import { ManufacturerExecutionError } from "./errors.js"
 import type { ManufacturerInput, ManufacturerResult } from "./types.js"
@@ -39,26 +39,14 @@ export function validateUpdateManufacturerPrimarySectionInput(body: Record<strin
 export async function replaceManufacturerPrimarySection(
   id: string,
   input: ManufacturerInput,
+  client?: Prisma.TransactionClient,
 ): Promise<ManufacturerResult> {
   const normalizedName = normalizeManufacturerCompanyNameForUniqueness(input.companyName)
 
-  if (isManufacturerCompanyNameConflict(await manufacturerCompanyNameExists(normalizedName, id))) {
-    throw new ManufacturerExecutionError({
-      code: "MANUFACTURER_NAME_CONFLICT",
-      message: "Company name must be unique",
-      status: 409,
-      field: "companyName",
-    })
-  }
+  return withDatabaseTransaction(async (tx) => {
+    const c = client ?? tx
 
-  try {
-    await updateManufacturerPrimaryRecord(id, {
-      ...input,
-      companyNameNormalized: normalizedName,
-    })
-    return getManufacturerById(id)
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (isManufacturerCompanyNameConflict(await manufacturerCompanyNameExists(normalizedName, id, c))) {
       throw new ManufacturerExecutionError({
         code: "MANUFACTURER_NAME_CONFLICT",
         message: "Company name must be unique",
@@ -67,6 +55,23 @@ export async function replaceManufacturerPrimarySection(
       })
     }
 
-    throw error
-  }
+    try {
+      await updateManufacturerPrimaryRecord(id, {
+        ...input,
+        companyNameNormalized: normalizedName,
+      }, c)
+      return getManufacturerById(id, c)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ManufacturerExecutionError({
+          code: "MANUFACTURER_NAME_CONFLICT",
+          message: "Company name must be unique",
+          status: 409,
+          field: "companyName",
+        })
+      }
+
+      throw error
+    }
+  })
 }
