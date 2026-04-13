@@ -2,6 +2,7 @@ import { deleteManufacturerRecord } from "@builders/application"
 import { getManufacturerById } from "@builders/db"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -29,7 +30,8 @@ export async function DELETE(request: Request, context: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id } = await context.params
+    const { id: rawId } = await context.params
+    const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
     const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
       requireExpectedUpdatedAt: true,
