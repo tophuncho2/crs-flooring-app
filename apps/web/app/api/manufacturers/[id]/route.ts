@@ -1,8 +1,4 @@
-import {
-  deleteManufacturerRecord,
-  replaceManufacturerPrimarySection,
-  validateUpdateManufacturerPrimarySectionInput,
-} from "@builders/application"
+import { deleteManufacturerRecord } from "@builders/application"
 import { getManufacturerById } from "@builders/db"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -17,70 +13,6 @@ import {
 
 type RouteContext = {
   params: Promise<{ id: string }>
-}
-
-export async function PATCH(request: Request, context: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: MANUFACTURERS_TOOL_SLUG,
-    rateLimit: {
-      scope: "manufacturers.update",
-      limit: 20,
-      windowMs: 10 * 60 * 1000,
-      route: "/api/manufacturers/[id]",
-    },
-  })
-  if (access instanceof Response) return access
-
-  try {
-    const { id } = await context.params
-    const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateManufacturerPrimarySectionInput, {
-      requireExpectedUpdatedAt: true,
-    })
-    const currentSnapshot = await getManufacturerById(id)
-    assertExpectedUpdatedAt({
-      actualUpdatedAt: currentSnapshot.updatedAt,
-      expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { manufacturer: currentSnapshot },
-      message: "Manufacturer changed before save completed. Refresh and try again.",
-    })
-    const receipt = await enforceMutationReceipt({
-      scope: "manufacturers.update",
-      request,
-      access,
-      mutation,
-      body,
-    })
-    if (receipt.replay) {
-      return receipt.replay
-    }
-    const manufacturer = await withMutationTelemetry(
-      access,
-      {
-        message: "Manufacturer updated",
-        action: "manufacturers.update",
-        route: "/api/manufacturers/[id]",
-        entityType: "flooringManufacturer",
-        entityId: id,
-      },
-      () => replaceManufacturerPrimarySection(id, input),
-    )
-
-    const responseBody = {
-      manufacturer,
-    }
-    await finalizeMutationReceipt({
-      scope: "manufacturers.update",
-      access,
-      mutation,
-      responseStatus: 200,
-      responseBody,
-    })
-    return routeJson(access, responseBody)
-  } catch (error) {
-    return routeError(access, error)
-  }
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
