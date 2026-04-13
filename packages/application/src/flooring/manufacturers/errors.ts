@@ -1,11 +1,17 @@
+export type ManufacturerErrorCode =
+  | "MANUFACTURER_NAME_CONFLICT"
+  | "MANUFACTURER_NOT_FOUND"
+  | "MANUFACTURER_IN_USE"
+  | "MANUFACTURER_VALIDATION_FAILED"
+
 export class ManufacturerExecutionError extends Error {
-  readonly code: string
+  readonly code: ManufacturerErrorCode
   readonly status: number
   readonly field?: string
   readonly payload?: Record<string, unknown>
 
   constructor(input: {
-    code: string
+    code: ManufacturerErrorCode
     message: string
     status: number
     field?: string
