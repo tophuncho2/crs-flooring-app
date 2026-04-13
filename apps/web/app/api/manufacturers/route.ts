@@ -1,9 +1,10 @@
-import { createManufacturerRecord, validateUpdateManufacturerPrimarySectionInput } from "@builders/application"
+import { createManufacturerUseCase } from "@builders/application"
 import { listManufacturers } from "@builders/db"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateManufacturerInput } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateManufacturerPrimarySectionInput)
+    const { input, mutation } = parseMutationEnvelope(body, validateManufacturerInput)
 
     const receipt = await enforceMutationReceipt({ scope: "manufacturers.create", request, access, mutation, body })
     if (receipt.replay) return receipt.replay
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
         route: "/api/manufacturers",
         entityType: "flooringManufacturer",
       },
-      () => createManufacturerRecord(input),
+      () => createManufacturerUseCase(input),
     )
 
     const responseBody = { manufacturer: result }

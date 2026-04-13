@@ -1,9 +1,7 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { getManufacturerById } from "@builders/db"
-import {
-  replaceManufacturerPrimarySection,
-  validateUpdateManufacturerPrimarySectionInput,
-} from "@builders/application"
+import { updateManufacturerUseCase } from "@builders/application"
+import { validateManufacturerInput } from "../../../_validators"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -36,7 +34,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateUpdateManufacturerPrimarySectionInput, {
+    const { input, mutation } = parseMutationEnvelope(body, validateManufacturerInput, {
       requireExpectedUpdatedAt: true,
     })
     const currentSnapshot = await getManufacturerById(id)
@@ -66,7 +64,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringManufacturer",
         entityId: id,
       },
-      () => replaceManufacturerPrimarySection(id, input),
+      () => updateManufacturerUseCase(id, input),
     )
 
     const responseBody = {

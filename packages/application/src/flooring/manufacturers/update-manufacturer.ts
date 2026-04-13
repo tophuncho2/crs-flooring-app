@@ -1,42 +1,9 @@
 import { Prisma, getManufacturerById, manufacturerCompanyNameExists, updateManufacturerPrimaryRecord, withDatabaseTransaction } from "@builders/db"
-import { isManufacturerCompanyNameConflict, normalizeManufacturerCompanyNameForUniqueness, validateManufacturerForm } from "@builders/domain"
+import { isManufacturerCompanyNameConflict, normalizeManufacturerCompanyNameForUniqueness } from "@builders/domain"
 import { ManufacturerExecutionError } from "./errors.js"
 import type { ManufacturerInput, ManufacturerResult } from "./types.js"
 
-export function validateUpdateManufacturerPrimarySectionInput(body: Record<string, unknown>): ManufacturerInput {
-  const companyName = typeof body.companyName === "string" ? body.companyName.trim() : ""
-
-  if (!companyName) {
-    throw new ManufacturerExecutionError({
-      code: "MANUFACTURER_VALIDATION_FAILED",
-      message: "companyName is required",
-      status: 400,
-      field: "companyName",
-    })
-  }
-
-  const input: ManufacturerInput = {
-    companyName,
-    agentName: typeof body.agentName === "string" ? body.agentName : typeof body.name === "string" ? body.name : "",
-    website: typeof body.website === "string" ? body.website : "",
-    phone: typeof body.phone === "string" ? body.phone : "",
-    email: typeof body.email === "string" ? body.email : "",
-  }
-
-  const validationError = validateManufacturerForm(input)
-  if (validationError) {
-    throw new ManufacturerExecutionError({
-      code: "MANUFACTURER_VALIDATION_FAILED",
-      message: validationError,
-      status: 400,
-      field: "companyName",
-    })
-  }
-
-  return input
-}
-
-export async function replaceManufacturerPrimarySection(
+export async function updateManufacturerUseCase(
   id: string,
   input: ManufacturerInput,
   client?: Prisma.TransactionClient,

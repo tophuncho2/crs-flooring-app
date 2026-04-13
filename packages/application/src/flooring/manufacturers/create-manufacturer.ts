@@ -3,7 +3,7 @@ import { isManufacturerCompanyNameConflict, normalizeManufacturerCompanyNameForU
 import { ManufacturerExecutionError } from "./errors.js"
 import type { ManufacturerInput, ManufacturerResult } from "./types.js"
 
-export async function createManufacturerRecord(
+export async function createManufacturerUseCase(
   input: ManufacturerInput,
   client?: Prisma.TransactionClient,
 ): Promise<ManufacturerResult> {

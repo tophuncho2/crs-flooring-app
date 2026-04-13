@@ -1,4 +1,4 @@
-import { deleteManufacturerRecord } from "@builders/application"
+import { deleteManufacturerUseCase } from "@builders/application"
 import { getManufacturerById } from "@builders/db"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -62,7 +62,7 @@ export async function DELETE(request: Request, context: RouteContext) {
         entityType: "flooringManufacturer",
         entityId: id,
       },
-      () => deleteManufacturerRecord(id),
+      () => deleteManufacturerUseCase(id),
     )
     const responseBody = { ok: true as const }
     await finalizeMutationReceipt({

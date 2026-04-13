@@ -2,7 +2,7 @@ import { Prisma, getManufacturerDeleteState, deleteManufacturerRecordById, withD
 import { isManufacturerDeleteBlocked } from "@builders/domain"
 import { ManufacturerExecutionError } from "./errors.js"
 
-export async function deleteManufacturerRecord(
+export async function deleteManufacturerUseCase(
   id: string,
   client?: Prisma.TransactionClient,
 ): Promise<{ ok: true }> {

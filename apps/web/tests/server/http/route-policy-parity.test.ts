@@ -61,10 +61,9 @@ vi.mock("@builders/application", async () => {
   const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")
   return {
     ...actual,
-    createManufacturerRecord: vi.fn(),
-    replaceManufacturerPrimarySection: vi.fn(),
-    deleteManufacturerRecord: deleteManufacturerMock,
-    validateUpdateManufacturerPrimarySectionInput: vi.fn((value) => value),
+    createManufacturerUseCase: vi.fn(),
+    updateManufacturerUseCase: vi.fn(),
+    deleteManufacturerUseCase: deleteManufacturerMock,
   }
 })
 

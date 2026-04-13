@@ -13,9 +13,9 @@ const {
   finalizeMutationReceiptMock,
   listManufacturersMock,
   getManufacturerByIdMock,
-  createManufacturerRecordMock,
-  replaceManufacturerPrimarySectionMock,
-  deleteManufacturerRecordMock,
+  createManufacturerUseCaseMock,
+  updateManufacturerUseCaseMock,
+  deleteManufacturerUseCaseMock,
   withMutationTelemetryMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
@@ -24,9 +24,9 @@ const {
   finalizeMutationReceiptMock: vi.fn(),
   listManufacturersMock: vi.fn(),
   getManufacturerByIdMock: vi.fn(),
-  createManufacturerRecordMock: vi.fn(),
-  replaceManufacturerPrimarySectionMock: vi.fn(),
-  deleteManufacturerRecordMock: vi.fn(),
+  createManufacturerUseCaseMock: vi.fn(),
+  updateManufacturerUseCaseMock: vi.fn(),
+  deleteManufacturerUseCaseMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
 }))
 
@@ -43,18 +43,21 @@ vi.mock("@builders/application", async () => {
   const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")
   return {
     ...actual,
-    createManufacturerRecord: createManufacturerRecordMock,
-    replaceManufacturerPrimarySection: replaceManufacturerPrimarySectionMock,
-    deleteManufacturerRecord: deleteManufacturerRecordMock,
-    validateUpdateManufacturerPrimarySectionInput: vi.fn((body: Record<string, unknown>) => {
-      const companyName = typeof body.companyName === "string" ? body.companyName.trim() : ""
-      if (!companyName) {
-        throw { kind: "app", message: "companyName is required", field: "companyName", status: 400 }
-      }
-      return body
-    }),
+    createManufacturerUseCase: createManufacturerUseCaseMock,
+    updateManufacturerUseCase: updateManufacturerUseCaseMock,
+    deleteManufacturerUseCase: deleteManufacturerUseCaseMock,
   }
 })
+
+vi.mock("@/app/api/manufacturers/_validators", () => ({
+  validateManufacturerInput: vi.fn((body: Record<string, unknown>) => {
+    const companyName = typeof body.companyName === "string" ? body.companyName.trim() : ""
+    if (!companyName) {
+      throw { kind: "app", message: "companyName is required", field: "companyName", status: 400 }
+    }
+    return body
+  }),
+}))
 
 vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
   withMutationTelemetry: withMutationTelemetryMock,
@@ -127,7 +130,7 @@ describe("manufacturers", () => {
 
   it("manufacturer POST route accepts missing agentName and returns normalized payload", async () => {
     const created = normalizedManufacturerRow()
-    createManufacturerRecordMock.mockResolvedValue(created)
+    createManufacturerUseCaseMock.mockResolvedValue(created)
 
     const response = await POST(
       new Request("http://localhost/api/manufacturers", {
@@ -146,7 +149,7 @@ describe("manufacturers", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(201)
-    expect(createManufacturerRecordMock).toHaveBeenCalledWith({
+    expect(createManufacturerUseCaseMock).toHaveBeenCalledWith({
       companyName: "Acme Flooring",
       website: "",
       phone: "",
@@ -189,11 +192,11 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(400)
     expect(payload.error).toBe("companyName is required")
-    expect(createManufacturerRecordMock).not.toHaveBeenCalled()
+    expect(createManufacturerUseCaseMock).not.toHaveBeenCalled()
   })
 
   it("enforces case-insensitive company-name uniqueness before create", async () => {
-    createManufacturerRecordMock.mockRejectedValue(
+    createManufacturerUseCaseMock.mockRejectedValue(
       Object.assign(new Error("Company name must be unique"), {
         code: "MANUFACTURER_NAME_CONFLICT",
         status: 409,
@@ -219,7 +222,7 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(409)
     expect(payload.error).toBe("Company name must be unique")
-    expect(createManufacturerRecordMock).toHaveBeenCalled()
+    expect(createManufacturerUseCaseMock).toHaveBeenCalled()
   })
 
   it("PATCH route updates a manufacturer and returns normalized payload", async () => {
@@ -233,7 +236,7 @@ describe("manufacturers", () => {
     })
     getManufacturerByIdMock
       .mockResolvedValueOnce(snapshot)
-    replaceManufacturerPrimarySectionMock.mockResolvedValue(updated)
+    updateManufacturerUseCaseMock.mockResolvedValue(updated)
 
     const response = await PATCH(
       new Request("http://localhost/api/manufacturers/mfg-1", {
@@ -256,7 +259,7 @@ describe("manufacturers", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(replaceManufacturerPrimarySectionMock).toHaveBeenCalledWith("mfg-1", {
+    expect(updateManufacturerUseCaseMock).toHaveBeenCalledWith("mfg-1", {
       companyName: "Acme Flooring",
       agentName: "Jamie Agent",
       website: "https://example.com",
@@ -287,7 +290,7 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(400)
     expect(payload.error).toBe("companyName is required")
-    expect(replaceManufacturerPrimarySectionMock).not.toHaveBeenCalled()
+    expect(updateManufacturerUseCaseMock).not.toHaveBeenCalled()
   })
 
   it("validates company name presence and uniqueness in the manufacturer form", () => {
@@ -352,7 +355,7 @@ describe("manufacturers", () => {
   it("prevents deleting a manufacturer that still has linked products", async () => {
     const snapshot = normalizedManufacturerRow()
     getManufacturerByIdMock.mockResolvedValue(snapshot)
-    deleteManufacturerRecordMock.mockRejectedValue(
+    deleteManufacturerUseCaseMock.mockRejectedValue(
       Object.assign(new Error("This manufacturer has linked products and cannot be deleted"), {
         code: "MANUFACTURER_IN_USE",
         status: 409,
@@ -377,13 +380,13 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(409)
     expect(payload.error).toBe("This manufacturer has linked products and cannot be deleted")
-    expect(deleteManufacturerRecordMock).toHaveBeenCalledWith("mfg-1")
+    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("mfg-1")
   })
 
   it("deletes a manufacturer when there are no linked products", async () => {
     const snapshot = normalizedManufacturerRow()
     getManufacturerByIdMock.mockResolvedValue(snapshot)
-    deleteManufacturerRecordMock.mockResolvedValue({ ok: true })
+    deleteManufacturerUseCaseMock.mockResolvedValue({ ok: true })
 
     const response = await DELETE(
       new Request("http://localhost/api/manufacturers/mfg-1", {
@@ -403,6 +406,6 @@ describe("manufacturers", () => {
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteManufacturerRecordMock).toHaveBeenCalledWith("mfg-1")
+    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("mfg-1")
   })
 })

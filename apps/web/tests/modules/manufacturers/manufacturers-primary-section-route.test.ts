@@ -7,14 +7,14 @@ const {
   enforceMutationReceiptMock,
   finalizeMutationReceiptMock,
   getManufacturerByIdMock,
-  replaceManufacturerPrimarySectionMock,
+  updateManufacturerUseCaseMock,
   withMutationTelemetryMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
   enforceMutationReceiptMock: vi.fn(),
   finalizeMutationReceiptMock: vi.fn(),
   getManufacturerByIdMock: vi.fn(),
-  replaceManufacturerPrimarySectionMock: vi.fn(),
+  updateManufacturerUseCaseMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
 }))
 
@@ -30,21 +30,24 @@ vi.mock("@builders/application", async () => {
   const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")
   return {
     ...actual,
-    replaceManufacturerPrimarySection: replaceManufacturerPrimarySectionMock,
-    validateUpdateManufacturerPrimarySectionInput: vi.fn((body: Record<string, unknown>) => {
-      if (typeof body.companyName !== "string" || body.companyName.trim() === "") {
-        throw {
-          kind: "app",
-          message: "companyName is required",
-          field: "companyName",
-          status: 400,
-        }
-      }
-
-      return body
-    }),
+    updateManufacturerUseCase: updateManufacturerUseCaseMock,
   }
 })
+
+vi.mock("@/app/api/manufacturers/_validators", () => ({
+  validateManufacturerInput: vi.fn((body: Record<string, unknown>) => {
+    if (typeof body.companyName !== "string" || body.companyName.trim() === "") {
+      throw {
+        kind: "app",
+        message: "companyName is required",
+        field: "companyName",
+        status: 400,
+      }
+    }
+
+    return body
+  }),
+}))
 
 vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
   withMutationTelemetry: withMutationTelemetryMock,
@@ -127,7 +130,7 @@ describe("manufacturers primary section route", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(replaceManufacturerPrimarySectionMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", {
+    expect(updateManufacturerUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", {
       companyName: "Updated Mill",
       agentName: "",
       website: "",
