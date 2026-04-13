@@ -1,11 +1,11 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   createRecordSectionError,
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
+import { updateContactRequest, deleteContactRequest } from "@/modules/contacts/data/mutations"
 import {
   toContactForm,
   validateContactForm,
@@ -28,7 +28,7 @@ export function useContactPrimarySection({
     detailUrl: `/api/contacts/${contact.id}`,
     payloadKey: "contact",
     createLocalValue: toContactForm,
-    saveSection: async ({ localValue, record }) => {
+    saveSection: async ({ localValue, record, revisionKey }) => {
       const validationError = validateContactForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -38,11 +38,7 @@ export function useContactPrimarySection({
         })
       }
 
-      const payload = await requestJson<{ contact: ContactDetail }>(`/api/contacts/${record.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
-      })
+      const payload = await updateContactRequest(record.id, localValue, revisionKey)
 
       return {
         serverValue: payload.contact,
@@ -50,9 +46,7 @@ export function useContactPrimarySection({
       }
     },
     deleteRecord: async (record) => {
-      await requestJson<{ ok: true }>(`/api/contacts/${record.id}`, {
-        method: "DELETE",
-      })
+      await deleteContactRequest(record.id, record.updatedAt)
     },
     deleteErrorMessage: "Failed to delete contact",
   })

@@ -1,6 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   RecordCreateClientScaffold,
   RecordSingleSectionPanel,
@@ -8,6 +7,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { createContactRequest } from "@/modules/contacts/data/mutations"
 import { EMPTY_CONTACT_FORM, type ContactDetail, type ContactForm } from "@builders/domain"
 import { ContactPrimaryFieldsSection } from "./contact-primary-fields-section"
 
@@ -32,11 +32,7 @@ function ContactCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_CONTACT_FORM }),
     createRecord: async (localValue) => {
-      const payload = await requestJson<{ contact: ContactDetail }>("/api/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
-      })
+      const payload = await createContactRequest(localValue)
 
       return {
         redirectTo: buildRecordDetailHref("/dashboard/contacts", payload.contact.id, backHref),
