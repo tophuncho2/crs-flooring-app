@@ -114,7 +114,7 @@ describe("contacts routes", () => {
   it("GET returns normalized contacts", async () => {
     listContactsMock.mockResolvedValue([
       {
-        id: "contact-1",
+        id: "11111111-1111-4111-8111-111111111111",
         name: "Jane Rep",
         type: "SALES_REP",
         typeLabel: "Sales Rep",
@@ -130,7 +130,7 @@ describe("contacts routes", () => {
     expect(response.status).toBe(200)
     expect(payload.contacts).toHaveLength(1)
     expect(payload.contacts[0]).toEqual(expect.objectContaining({
-      id: "contact-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Jane Rep",
       type: "SALES_REP",
     }))
@@ -170,7 +170,7 @@ describe("contacts routes", () => {
 
   it("POST creates a contact with valid form data and returns the full record", async () => {
     createContactUseCaseMock.mockResolvedValue({
-      id: "contact-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Jane Rep",
       type: "SALES_REP",
       typeLabel: "Sales Rep",
@@ -198,7 +198,7 @@ describe("contacts routes", () => {
       type: "SALES_REP",
     })
     expect(payload.contact).toEqual({
-      id: "contact-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Jane Rep",
       type: "SALES_REP",
       typeLabel: "Sales Rep",
@@ -210,7 +210,7 @@ describe("contacts routes", () => {
 
   it("POST, PATCH, and DELETE mutate contacts through the shared route flow", async () => {
     const contactSnapshot = {
-      id: "contact-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Jane Rep",
       type: "SALES_REP",
       typeLabel: "Sales Rep",
@@ -251,7 +251,7 @@ describe("contacts routes", () => {
       .mockResolvedValueOnce(updatedSnapshot)
 
     const patchResponse = await PATCH(
-      new Request("http://localhost/api/contacts/contact-1", {
+      new Request("http://localhost/api/contacts/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -263,19 +263,19 @@ describe("contacts routes", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "contact-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     const patchPayload = await patchResponse.json()
     expect(patchResponse.status).toBe(200)
     expect(patchPayload.contact).toEqual(expect.objectContaining({
-      id: "contact-1",
+      id: "11111111-1111-4111-8111-111111111111",
       type: "CONTRACTOR",
     }))
 
     getContactByIdMock.mockResolvedValueOnce(updatedSnapshot)
 
     const deleteResponse = await DELETE(
-      new Request("http://localhost/api/contacts/contact-1", {
+      new Request("http://localhost/api/contacts/11111111-1111-4111-8111-111111111111", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -285,16 +285,16 @@ describe("contacts routes", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "contact-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     expect(deleteResponse.status).toBe(200)
     expect(await deleteResponse.json()).toEqual({ ok: true })
-    expect(deleteContactUseCaseMock).toHaveBeenCalledWith("contact-1")
+    expect(deleteContactUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
   })
 
   it("DELETE returns a clear linked-contact error", async () => {
     getContactByIdMock.mockResolvedValue({
-      id: "contact-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Jane Rep",
       type: "SALES_REP",
       typeLabel: "Sales Rep",
@@ -311,7 +311,7 @@ describe("contacts routes", () => {
     )
 
     const response = await DELETE(
-      new Request("http://localhost/api/contacts/contact-1", {
+      new Request("http://localhost/api/contacts/11111111-1111-4111-8111-111111111111", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -321,7 +321,7 @@ describe("contacts routes", () => {
           },
         }),
       }),
-      { params: Promise.resolve({ id: "contact-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     const payload = await response.json()
 

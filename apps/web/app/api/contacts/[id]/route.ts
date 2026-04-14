@@ -1,6 +1,6 @@
 import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
+import { createAppError, parseRequiredString, parseUuidParam } from "@/server/http/api-helpers"
 import { updateContactUseCase, deleteContactUseCase } from "@builders/application"
 import { getContactById } from "@/modules/contacts/data/queries"
 import { validateContactType } from "@builders/domain"
@@ -106,7 +106,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id } = await params
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
     const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
       requireExpectedUpdatedAt: true,
