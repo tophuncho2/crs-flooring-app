@@ -14,7 +14,6 @@ const {
   listContactsMock,
   getContactByIdMock,
   createContactUseCaseMock,
-  updateContactUseCaseMock,
   deleteContactUseCaseMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
@@ -28,7 +27,6 @@ const {
   listContactsMock: vi.fn(),
   getContactByIdMock: vi.fn(),
   createContactUseCaseMock: vi.fn(),
-  updateContactUseCaseMock: vi.fn(),
   deleteContactUseCaseMock: vi.fn(),
 }))
 
@@ -87,7 +85,6 @@ vi.mock("@builders/application", async () => {
   return {
     ...actual,
     createContactUseCase: createContactUseCaseMock,
-    updateContactUseCase: updateContactUseCaseMock,
     deleteContactUseCase: deleteContactUseCaseMock,
   }
 })
