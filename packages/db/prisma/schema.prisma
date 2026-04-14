@@ -231,6 +231,7 @@ model FlooringManufacturer {
   updatedAt             DateTime          @updatedAt
   products              FlooringProduct[]
 
+  @@index([companyName])
   @@map("flooring_manufacturer")
 }
 

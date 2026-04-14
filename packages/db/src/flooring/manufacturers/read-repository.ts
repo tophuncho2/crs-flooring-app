@@ -56,7 +56,7 @@ export async function listManufacturers(
 ): Promise<ManufacturerRecord[]> {
   const manufacturers = await client.flooringManufacturer.findMany({
     include: manufacturerInclude,
-    orderBy: [{ companyName: "asc" }, { agentName: "asc" }],
+    orderBy: { companyName: "asc" },
   })
 
   return manufacturers.map(normalizeManufacturer)
