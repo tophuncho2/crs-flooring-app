@@ -179,4 +179,3 @@ Part A — Manufacturers Reference Pattern (condensed)
   | contact-form-validation.test.ts | Form validation tests. |
   | contact-service-delete-rules.test.ts | Domain delete-rules tests. |                                                                                                                                                                     
                                                                                                                                                                                                                                             
-  Note: the explorer agent's findings ar
