@@ -1,10 +1,15 @@
-import { getContactDeleteState, deleteContactRecordById, withDatabaseTransaction } from "@builders/db"
+import { Prisma, getContactDeleteState, deleteContactRecordById, withDatabaseTransaction } from "@builders/db"
 import { isContactDeleteBlocked, getContactDeleteBlockedMessage } from "@builders/domain"
 import { ContactExecutionError } from "./errors.js"
 
-export async function deleteContactUseCase(id: string): Promise<{ ok: true }> {
+export async function deleteContactUseCase(
+  id: string,
+  client?: Prisma.TransactionClient,
+): Promise<{ ok: true }> {
   return withDatabaseTransaction(async (tx) => {
-    const contact = await getContactDeleteState(id, tx)
+    const c = client ?? tx
+
+    const contact = await getContactDeleteState(id, c)
 
     if (!contact) {
       throw new ContactExecutionError({
@@ -27,7 +32,7 @@ export async function deleteContactUseCase(id: string): Promise<{ ok: true }> {
       })
     }
 
-    await deleteContactRecordById(id, tx)
+    await deleteContactRecordById(id, c)
 
     return { ok: true }
   })
