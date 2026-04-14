@@ -1,11 +1,16 @@
+export type ContactErrorCode =
+  | "CONTACT_VALIDATION_FAILED"
+  | "CONTACT_NOT_FOUND"
+  | "CONTACT_IN_USE"
+
 export class ContactExecutionError extends Error {
-  readonly code: string
+  readonly code: ContactErrorCode
   readonly status: number
   readonly field?: string
   readonly payload?: Record<string, unknown>
 
   constructor(input: {
-    code: string
+    code: ContactErrorCode
     message: string
     status: number
     field?: string

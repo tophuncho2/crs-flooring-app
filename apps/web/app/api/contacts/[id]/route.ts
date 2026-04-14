@@ -1,9 +1,8 @@
 import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { createAppError, parseRequiredString, parseUuidParam } from "@/server/http/api-helpers"
+import { parseUuidParam } from "@/server/http/api-helpers"
 import { updateContactUseCase, deleteContactUseCase } from "@builders/application"
 import { getContactById } from "@/modules/contacts/data/queries"
-import { validateContactType } from "@builders/domain"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -12,19 +11,10 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
+import { validateContactInput } from "../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
-}
-
-function parseContactType(value: unknown) {
-  const type = parseRequiredString(value, "type")
-
-  if (!validateContactType(type)) {
-    throw createAppError("type must be Sales Rep, Contractor, or Other", { field: "type" })
-  }
-
-  return type
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -43,10 +33,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => ({
-      name: parseRequiredString(inputBody.name, "name"),
-      type: parseContactType(inputBody.type),
-    }), { requireExpectedUpdatedAt: true })
+    const { input, mutation } = parseMutationEnvelope(body, validateContactInput, { requireExpectedUpdatedAt: true })
 
     const currentSnapshot = await getContactById(id)
     assertExpectedUpdatedAt({

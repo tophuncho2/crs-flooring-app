@@ -1,9 +1,9 @@
 import { updateContactRecord } from "@builders/db"
-import type { ContactResult, UpdateContactInput } from "./types.js"
+import type { ContactInput, ContactResult } from "./types.js"
 
 export async function updateContactUseCase(
   id: string,
-  input: UpdateContactInput,
+  input: ContactInput,
 ): Promise<ContactResult> {
   return updateContactRecord(id, input)
 }

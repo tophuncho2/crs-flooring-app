@@ -1,6 +1,6 @@
 import { createContactRecord } from "@builders/db"
-import type { ContactResult, CreateContactInput } from "./types.js"
+import type { ContactInput, ContactResult } from "./types.js"
 
-export async function createContactUseCase(input: CreateContactInput): Promise<ContactResult> {
+export async function createContactUseCase(input: ContactInput): Promise<ContactResult> {
   return createContactRecord(input)
 }

@@ -2,8 +2,6 @@ import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { createContactUseCase } from "@builders/application"
 import { listContacts } from "@/modules/contacts/data/queries"
-import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
-import { validateContactType } from "@builders/domain"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -12,16 +10,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-
-function parseContactType(value: unknown) {
-  const type = parseRequiredString(value, "type")
-
-  if (!validateContactType(type)) {
-    throw createAppError("type must be Sales Rep, Contractor, or Other", { field: "type" })
-  }
-
-  return type
-}
+import { validateContactInput } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -54,10 +43,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => ({
-      name: parseRequiredString(inputBody.name, "name"),
-      type: parseContactType(inputBody.type),
-    }))
+    const { input, mutation } = parseMutationEnvelope(body, validateContactInput)
     const receipt = await enforceMutationReceipt({
       scope: "contacts.create",
       request,
