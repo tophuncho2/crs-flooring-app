@@ -38,7 +38,7 @@ export default async function ContactDetailPage({
 
   return (
     <ContactDetailClient
-      contact={result.data.contact}
+      contact={result.data}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/contacts")}
     />
   )

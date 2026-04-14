@@ -18,9 +18,13 @@ const {
   withMutationTelemetryMock: vi.fn(),
 }))
 
-vi.mock("@/modules/contacts/data/queries", () => ({
-  getContactById: getContactByIdMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    getContactById: getContactByIdMock,
+  }
+})
 
 vi.mock("@builders/application", async () => {
   const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")

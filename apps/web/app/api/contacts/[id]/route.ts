@@ -2,7 +2,7 @@ import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { deleteContactUseCase } from "@builders/application"
-import { getContactById } from "@/modules/contacts/data/queries"
+import { getContactById } from "@builders/db"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,

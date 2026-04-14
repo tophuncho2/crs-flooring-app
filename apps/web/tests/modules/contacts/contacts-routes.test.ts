@@ -75,10 +75,14 @@ vi.mock("@/server/http/route-helpers", () => ({
   },
 }))
 
-vi.mock("@/modules/contacts/data/queries", () => ({
-  listContacts: listContactsMock,
-  getContactById: getContactByIdMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    listContacts: listContactsMock,
+    getContactById: getContactByIdMock,
+  }
+})
 
 vi.mock("@builders/application", async () => {
   const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")

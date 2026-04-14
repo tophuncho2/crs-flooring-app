@@ -1,7 +1,7 @@
 import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { createContactUseCase } from "@builders/application"
-import { listContacts } from "@/modules/contacts/data/queries"
+import { listContacts } from "@builders/db"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,

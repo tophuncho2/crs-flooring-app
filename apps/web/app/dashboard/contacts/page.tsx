@@ -33,5 +33,5 @@ export default async function ContactsPage({
     )
   }
 
-  return <ContactsClient initialContacts={result.data.contacts} initialTablePreferences={initialTablePreferences} tableState={tableState} />
+  return <ContactsClient initialContacts={result.data} initialTablePreferences={initialTablePreferences} tableState={tableState} />
 }
