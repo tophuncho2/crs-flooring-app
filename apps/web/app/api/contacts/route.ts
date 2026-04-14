@@ -1,4 +1,4 @@
-import { CONTACTS_TOOL_SLUG, authorizeContactsRoute } from "@/modules/shared/access/lookup-domains"
+import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { createContactUseCase } from "@builders/application"
 import { listContacts } from "@/modules/contacts/data/queries"
@@ -24,7 +24,9 @@ function parseContactType(value: unknown) {
 }
 
 export async function GET(request: Request) {
-  const access = await authorizeContactsRoute(request)
+  const access = await applyRoutePolicy(request, {
+    toolSlug: CONTACTS_TOOL_SLUG,
+  })
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/contacts")
@@ -39,6 +41,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
+    capability: "system.access",
     toolSlug: CONTACTS_TOOL_SLUG,
     rateLimit: {
       scope: "contacts.write",

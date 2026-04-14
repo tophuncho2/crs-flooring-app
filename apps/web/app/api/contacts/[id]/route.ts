@@ -29,6 +29,7 @@ function parseContactType(value: unknown) {
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
+    capability: "system.access",
     toolSlug: CONTACTS_TOOL_SLUG,
     rateLimit: {
       scope: "contacts.write",
@@ -93,6 +94,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
 export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
+    capability: "system.access",
     toolSlug: CONTACTS_TOOL_SLUG,
     rateLimit: {
       scope: "contacts.delete",

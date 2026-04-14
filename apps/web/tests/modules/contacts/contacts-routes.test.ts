@@ -7,7 +7,6 @@ const {
   enforceMutationReceiptMock,
   finalizeMutationReceiptMock,
   withMutationTelemetryMock,
-  authorizeContactsRouteMock,
   enforceRouteRateLimitMock,
   enforceQueryRateLimitMock,
   logRouteMutationSuccessMock,
@@ -22,7 +21,6 @@ const {
   enforceMutationReceiptMock: vi.fn(),
   finalizeMutationReceiptMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
-  authorizeContactsRouteMock: vi.fn(),
   enforceRouteRateLimitMock: vi.fn(),
   enforceQueryRateLimitMock: vi.fn(),
   logRouteMutationSuccessMock: vi.fn(),
@@ -35,8 +33,7 @@ const {
 }))
 
 vi.mock("@/modules/shared/access/lookup-domains", () => ({
-  CONTACTS_TOOL_SLUG: "contacts",
-  authorizeContactsRoute: authorizeContactsRouteMock,
+  CONTACTS_TOOL_SLUG: "warehouse",
 }))
 
 vi.mock("@/server/http/route-policy", async () => {
@@ -104,7 +101,6 @@ const ACCESS_CONTEXT = {
 describe("contacts routes", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    authorizeContactsRouteMock.mockResolvedValue(ACCESS_CONTEXT)
     enforceRouteRateLimitMock.mockResolvedValue(null)
     enforceQueryRateLimitMock.mockReturnValue(null)
     applyRoutePolicyMock.mockResolvedValue(ACCESS_CONTEXT)
