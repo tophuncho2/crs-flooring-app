@@ -26,6 +26,9 @@
 /apps/worker/dist/
 /packages/*/dist/
 
+# planning notes
+/zplans/
+
 # misc
 .DS_Store
 *.pem
