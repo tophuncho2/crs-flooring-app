@@ -1,9 +1,10 @@
-import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
-import { routeError, routeJson } from "@/server/http/route-helpers"
-import { parseUuidParam } from "@/server/http/api-helpers"
-import { deleteContactUseCase } from "@builders/application"
-import { getContactById } from "@/modules/contacts/data/queries"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { updateContactUseCase } from "@builders/application"
+import { getContactById } from "@/modules/contacts/data/queries"
+import { validateContactInput } from "../../../_validators"
+import { CONTACTS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
+import { parseUuidParam } from "@/server/http/api-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
@@ -16,15 +17,15 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function DELETE(request: Request, { params }: RouteContext) {
+export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: CONTACTS_TOOL_SLUG,
     rateLimit: {
-      scope: "contacts.delete",
+      scope: "contacts.primary.section.replace",
       limit: 40,
       windowMs: 10 * 60 * 1000,
-      route: "/api/contacts/[id]",
+      route: "/api/contacts/[id]/primary/section",
     },
   })
   if (access instanceof Response) return access
@@ -33,42 +34,44 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+    const { input, mutation } = parseMutationEnvelope(body, validateContactInput, {
       requireExpectedUpdatedAt: true,
     })
-
     const currentSnapshot = await getContactById(id)
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
       snapshot: { contact: currentSnapshot },
-      message: "Contact changed before delete completed. Refresh and try again.",
+      message: "Contact changed before section save completed. Refresh and try again.",
     })
-
     const receipt = await enforceMutationReceipt({
-      scope: "contacts.delete",
+      scope: "contacts.primary.section.replace",
       request,
       access,
       mutation,
       body,
     })
-    if (receipt.replay) return receipt.replay
+    if (receipt.replay) {
+      return receipt.replay
+    }
 
-    await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Contact deleted",
-        action: "contacts.delete",
-        route: "/api/contacts/[id]",
+        message: "Contact primary section replaced",
+        action: "contacts.primary.section.replace",
+        route: "/api/contacts/[id]/primary/section",
         entityType: "flooringContact",
         entityId: id,
       },
-      () => deleteContactUseCase(id),
+      () => updateContactUseCase(id, input),
     )
 
-    const responseBody = { ok: true as const }
+    const responseBody = {
+      contact: result,
+    }
     await finalizeMutationReceipt({
-      scope: "contacts.delete",
+      scope: "contacts.primary.section.replace",
       access,
       mutation,
       responseStatus: 200,

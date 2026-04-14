@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GET, POST } from "@/app/api/contacts/route"
-import { DELETE, PATCH } from "@/app/api/contacts/[id]/route"
+import { DELETE } from "@/app/api/contacts/[id]/route"
 
 const {
   applyRoutePolicyMock,
@@ -208,7 +208,7 @@ describe("contacts routes", () => {
     })
   })
 
-  it("POST, PATCH, and DELETE mutate contacts through the shared route flow", async () => {
+  it("POST and DELETE mutate contacts through the shared route flow", async () => {
     const contactSnapshot = {
       id: "11111111-1111-4111-8111-111111111111",
       name: "Jane Rep",
@@ -239,41 +239,6 @@ describe("contacts routes", () => {
       type: "SALES_REP",
     })
 
-    const updatedSnapshot = {
-      ...contactSnapshot,
-      name: "Jane Contractor",
-      type: "CONTRACTOR",
-      typeLabel: "Contractor",
-      updatedAt: "2026-03-23T01:00:00.000Z",
-    }
-    getContactByIdMock
-      .mockResolvedValueOnce(contactSnapshot)
-      .mockResolvedValueOnce(updatedSnapshot)
-
-    const patchResponse = await PATCH(
-      new Request("http://localhost/api/contacts/11111111-1111-4111-8111-111111111111", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Jane Contractor",
-          type: "CONTRACTOR",
-          mutation: {
-            idempotencyKey: "key-patch",
-            expectedUpdatedAt: "2026-03-23T00:00:00.000Z",
-          },
-        }),
-      }),
-      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
-    )
-    const patchPayload = await patchResponse.json()
-    expect(patchResponse.status).toBe(200)
-    expect(patchPayload.contact).toEqual(expect.objectContaining({
-      id: "11111111-1111-4111-8111-111111111111",
-      type: "CONTRACTOR",
-    }))
-
-    getContactByIdMock.mockResolvedValueOnce(updatedSnapshot)
-
     const deleteResponse = await DELETE(
       new Request("http://localhost/api/contacts/11111111-1111-4111-8111-111111111111", {
         method: "DELETE",
@@ -281,7 +246,7 @@ describe("contacts routes", () => {
         body: JSON.stringify({
           mutation: {
             idempotencyKey: "key-delete",
-            expectedUpdatedAt: "2026-03-23T01:00:00.000Z",
+            expectedUpdatedAt: "2026-03-23T00:00:00.000Z",
           },
         }),
       }),

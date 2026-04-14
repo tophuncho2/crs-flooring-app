@@ -13,7 +13,7 @@ export async function createContactRequest(input: ContactForm) {
 }
 
 export async function updateContactRequest(id: string, input: ContactForm, revisionKey: string) {
-  return requestJson<{ contact: ContactDetail }>(`/api/contacts/${id}`, {
+  return requestJson<{ contact: ContactDetail }>(`/api/contacts/${id}/primary/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input, revisionKey)),
