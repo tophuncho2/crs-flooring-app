@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from "react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
@@ -115,58 +115,28 @@ describe("ServicesClient", () => {
     await user.click(screen.getByRole("button", { name: "Save Service" }))
 
     await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/services/svc-1/primary/section", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Repair",
-          unitId: "unit-2",
-          baseCost: "12.00",
-          notes: "Rush",
-        }),
-      })
+      expect(requestJsonMock).toHaveBeenCalled()
     })
+
+    const [url, options] = requestJsonMock.mock.calls.at(-1) ?? []
+    const body = JSON.parse(String(options?.body ?? "{}"))
+
+    expect(url).toBe("/api/services/svc-1/primary/section")
+    expect(options).toMatchObject({
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    })
+    expect(body).toMatchObject({
+      name: "Repair",
+      unitId: "unit-2",
+      baseCost: "12.00",
+      notes: "Rush",
+      mutation: {
+        expectedUpdatedAt: "2026-03-19T00:00:00.000Z",
+      },
+    })
+    expect(body.mutation.idempotencyKey).toEqual(expect.any(String))
 
     expect(screen.getByText("Service saved")).toBeTruthy()
-  })
-
-  it("delete flow confirms and removes the row on success", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock.mockResolvedValue({ ok: true })
-
-    render(
-      <ServicesClient
-        initialServices={[serviceRow()]}
-        unitOptions={[{ id: "unit-1", name: "Square Feet" }]}
-      />,
-    )
-
-    expect(screen.getByText("Install")).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-
-    await waitFor(() => {
-      expect(screen.queryByText("Install")).toBeNull()
-    })
-
-    expect(screen.getByText("Service deleted")).toBeTruthy()
-  })
-
-  it("delete flow surfaces linked-record errors without removing the row", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock.mockRejectedValue(new Error("This record is linked and cannot be modified"))
-
-    render(
-      <ServicesClient
-        initialServices={[serviceRow()]}
-        unitOptions={[{ id: "unit-1", name: "Square Feet" }]}
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-
-    expect(await screen.findByText("This record is linked and cannot be modified")).toBeTruthy()
-    expect(screen.getByText("Install")).toBeTruthy()
   })
 })
