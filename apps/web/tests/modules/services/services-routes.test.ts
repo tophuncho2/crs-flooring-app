@@ -85,7 +85,7 @@ function serviceRecord(
   return {
     id: "11111111-1111-4111-8111-111111111111",
     name: "Install",
-    unit: { id: "unit-1", name: "Square Feet" },
+    unit: { id: "22222222-2222-4222-8222-222222222222", name: "Square Feet" },
     baseCost: decimal("9.50"),
     notes: null,
     createdAt: new Date("2026-03-19T00:00:00Z"),
@@ -107,7 +107,7 @@ describe("services routes", () => {
       {
         id: "11111111-1111-4111-8111-111111111111",
         name: "Install",
-        unitId: "unit-1",
+        unitId: "22222222-2222-4222-8222-222222222222",
         unitName: "Square Feet",
         baseCost: "9.50",
         notes: "",
@@ -125,7 +125,7 @@ describe("services routes", () => {
       {
         id: "11111111-1111-4111-8111-111111111111",
         name: "Install",
-        unitId: "unit-1",
+        unitId: "22222222-2222-4222-8222-222222222222",
         unitName: "Square Feet",
         baseCost: "9.50",
         notes: "",
@@ -142,7 +142,7 @@ describe("services routes", () => {
       new Request("http://localhost/api/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unitId: "unit-1", baseCost: "9.50" }),
+        body: JSON.stringify({ unitId: "22222222-2222-4222-8222-222222222222", baseCost: "9.50" }),
       }),
     )
     expect((await missingName.json()).error).toBe("name is required")
@@ -160,7 +160,7 @@ describe("services routes", () => {
       new Request("http://localhost/api/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Install", unitId: "unit-1" }),
+        body: JSON.stringify({ name: "Install", unitId: "22222222-2222-4222-8222-222222222222" }),
       }),
     )
     expect((await missingCost.json()).error).toBe("baseCost is required")
@@ -172,7 +172,7 @@ describe("services routes", () => {
     createServiceUseCaseMock.mockResolvedValue({
       id: "11111111-1111-4111-8111-111111111111",
       name: "Install",
-      unitId: "unit-1",
+      unitId: "22222222-2222-4222-8222-222222222222",
       unitName: "Square Feet",
       baseCost: "9.5",
       notes: "",
@@ -185,7 +185,7 @@ describe("services routes", () => {
       new Request("http://localhost/api/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Install", unitId: "unit-1", baseCost: "9.50", notes: "" }),
+        body: JSON.stringify({ name: "Install", unitId: "22222222-2222-4222-8222-222222222222", baseCost: "9.50", notes: "" }),
       }),
     )
     const payload = await response.json()
@@ -193,14 +193,14 @@ describe("services routes", () => {
     expect(response.status).toBe(201)
     expect(createServiceUseCaseMock).toHaveBeenCalledWith({
       name: "Install",
-      unitId: "unit-1",
+      unitId: "22222222-2222-4222-8222-222222222222",
       baseCost: "9.50",
       notes: null,
     })
     expect(payload.service).toEqual({
       id: "11111111-1111-4111-8111-111111111111",
       name: "Install",
-      unitId: "unit-1",
+      unitId: "22222222-2222-4222-8222-222222222222",
       unitName: "Square Feet",
       baseCost: "9.5",
       notes: "",
@@ -215,7 +215,7 @@ describe("services routes", () => {
       new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unitId: "unit-1", baseCost: "9.50" }),
+        body: JSON.stringify({ unitId: "22222222-2222-4222-8222-222222222222", baseCost: "9.50" }),
       }),
       { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
@@ -235,7 +235,7 @@ describe("services routes", () => {
       new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Install", unitId: "unit-1" }),
+        body: JSON.stringify({ name: "Install", unitId: "22222222-2222-4222-8222-222222222222" }),
       }),
       { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
@@ -248,7 +248,7 @@ describe("services routes", () => {
     const snapshotRow = {
       id: "11111111-1111-4111-8111-111111111111",
       name: "Repair",
-      unitId: "unit-1",
+      unitId: "22222222-2222-4222-8222-222222222222",
       unitName: "Square Feet",
       baseCost: "12",
       notes: "Rush",
@@ -262,7 +262,7 @@ describe("services routes", () => {
       new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Repair", unitId: "unit-1", baseCost: "12.00", notes: "Rush" }),
+        body: JSON.stringify({ name: "Repair", unitId: "22222222-2222-4222-8222-222222222222", baseCost: "12.00", notes: "Rush" }),
       }),
       { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
@@ -271,7 +271,7 @@ describe("services routes", () => {
     expect(response.status).toBe(200)
     expect(updateServiceUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", {
       name: "Repair",
-      unitId: "unit-1",
+      unitId: "22222222-2222-4222-8222-222222222222",
       baseCost: "12.00",
       notes: "Rush",
     })

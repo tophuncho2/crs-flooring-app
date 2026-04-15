@@ -1,6 +1,6 @@
 import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { createServiceUseCase } from "@builders/application"
+import { validateServiceInput } from "./_validators"
 import { listServices } from "@/modules/services/data/queries"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -43,12 +43,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => ({
-      name: parseRequiredString(inputBody.name, "name"),
-      unitId: parseRequiredString(inputBody.unitId, "unitId"),
-      baseCost: parseRequiredString(inputBody.baseCost, "baseCost"),
-      notes: parseOptionalString(inputBody.notes),
-    }))
+    const { input, mutation } = parseMutationEnvelope(body, validateServiceInput)
     const receipt = await enforceMutationReceipt({
       scope: "services.create",
       request,

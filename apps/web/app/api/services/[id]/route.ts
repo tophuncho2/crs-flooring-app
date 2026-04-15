@@ -1,6 +1,7 @@
 import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
-import { parseOptionalString, parseRequiredString, parseUuidParam } from "@/server/http/api-helpers"
+import { parseUuidParam } from "@/server/http/api-helpers"
 import { updateServiceUseCase, deleteServiceUseCase } from "@builders/application"
+import { validateServiceInput } from "../_validators"
 import { getServiceById } from "@/modules/services/data/queries"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -33,12 +34,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => ({
-      name: parseRequiredString(inputBody.name, "name"),
-      unitId: parseRequiredString(inputBody.unitId, "unitId"),
-      baseCost: parseRequiredString(inputBody.baseCost, "baseCost"),
-      notes: parseOptionalString(inputBody.notes),
-    }), { requireExpectedUpdatedAt: true })
+    const { input, mutation } = parseMutationEnvelope(body, validateServiceInput, { requireExpectedUpdatedAt: true })
 
     const currentSnapshot = await getServiceById(id)
     assertExpectedUpdatedAt({
