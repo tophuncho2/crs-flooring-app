@@ -11,18 +11,16 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ServiceRow, UnitOption } from "@builders/domain"
+import type { ServiceRow } from "@builders/domain"
 import { useServicesListController } from "@/modules/services/controller/use-services-list-controller"
 import { ServicesTable } from "./services-table"
 
 export default function ServicesClient({
   initialServices,
-  unitOptions: _unitOptions,
   initialTablePreferences,
   tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
   initialServices: ServiceRow[]
-  unitOptions: UnitOption[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: {
     searchQuery: string

@@ -1,7 +1,7 @@
 import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { deleteServiceUseCase } from "@builders/application"
-import { getServiceById } from "@/modules/services/data/queries"
+import { getServiceById } from "@builders/db"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {

@@ -1,8 +1,7 @@
-import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireServicesAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { getServiceCreatePageData } from "@/modules/services/data/queries"
 import { ServiceCreateClient } from "@/modules/services/components/record/service-create-client"
+import { loadUnitOptions } from "@/modules/services/data/load-unit-options"
 
 export default async function ServiceCreatePage({
   searchParams,
@@ -11,22 +10,11 @@ export default async function ServiceCreatePage({
 }) {
   await requireServicesAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const result = await getServiceCreatePageData()
-
-  if (!result.ok) {
-    return (
-      <DashboardErrorState
-        title={result.error.title}
-        message={result.error.message}
-        detail={result.error.detail}
-        errorCode={result.error.code}
-      />
-    )
-  }
+  const unitOptions = await loadUnitOptions()
 
   return (
     <ServiceCreateClient
-      unitOptions={result.data.unitOptions}
+      unitOptions={unitOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/services")}
     />
   )

@@ -49,10 +49,14 @@ vi.mock("@/modules/shared/access/lookup-domains", () => ({
   SERVICES_TOOL_SLUG: "warehouse",
 }))
 
-vi.mock("@/modules/services/data/queries", () => ({
-  listServices: listServicesMock,
-  getServiceById: getServiceByIdMock,
-}))
+vi.mock("@builders/db", async () => {
+  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+  return {
+    ...actual,
+    listServices: listServicesMock,
+    getServiceById: getServiceByIdMock,
+  }
+})
 
 vi.mock("@builders/application", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>()

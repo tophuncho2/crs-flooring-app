@@ -1,7 +1,7 @@
 import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { createServiceUseCase } from "@builders/application"
 import { validateServiceInput } from "./_validators"
-import { listServices } from "@/modules/services/data/queries"
+import { listServices } from "@builders/db"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {

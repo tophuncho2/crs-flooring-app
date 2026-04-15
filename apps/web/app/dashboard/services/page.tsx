@@ -35,8 +35,7 @@ export default async function ServicesPage({
 
   return (
     <ServicesClient
-      initialServices={result.data.services}
-      unitOptions={result.data.unitOptions}
+      initialServices={result.data}
       initialTablePreferences={initialTablePreferences}
       tableState={tableState}
     />

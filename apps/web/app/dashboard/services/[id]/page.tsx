@@ -4,6 +4,7 @@ import { requireServicesAccess } from "@/modules/shared/access/lookup-domains"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { ServiceDetailClient } from "@/modules/services/components/record/service-detail-client"
 import { getServiceDetailPageData } from "@/modules/services/data/queries"
+import { loadUnitOptions } from "@/modules/services/data/load-unit-options"
 
 export default async function ServiceDetailPage({
   params,
@@ -15,7 +16,10 @@ export default async function ServiceDetailPage({
   await requireServicesAccess()
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const result = await getServiceDetailPageData(id)
+  const [result, unitOptions] = await Promise.all([
+    getServiceDetailPageData(id),
+    loadUnitOptions(),
+  ])
 
   if (!result.ok) {
     if ("notFound" in result && result.notFound) {
@@ -38,8 +42,8 @@ export default async function ServiceDetailPage({
 
   return (
     <ServiceDetailClient
-      service={result.data.service}
-      unitOptions={result.data.unitOptions}
+      service={result.data}
+      unitOptions={unitOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/services")}
     />
   )
