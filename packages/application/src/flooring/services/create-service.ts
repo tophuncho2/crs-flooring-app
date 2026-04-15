@@ -1,7 +1,13 @@
-import { createServiceRecord, getServiceById } from "@builders/db"
+import { Prisma, createServiceRecord, getServiceById, withDatabaseTransaction } from "@builders/db"
 import type { ServiceInput, ServiceResult } from "./types.js"
 
-export async function createServiceUseCase(input: ServiceInput): Promise<ServiceResult> {
-  const created = await createServiceRecord(input)
-  return getServiceById(created.id)
+export async function createServiceUseCase(
+  input: ServiceInput,
+  client?: Prisma.TransactionClient,
+): Promise<ServiceResult> {
+  return withDatabaseTransaction(async (tx) => {
+    const c = client ?? tx
+    const created = await createServiceRecord(input, c)
+    return getServiceById(created.id, c)
+  })
 }
