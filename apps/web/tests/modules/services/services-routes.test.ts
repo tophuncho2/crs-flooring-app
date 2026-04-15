@@ -83,7 +83,7 @@ function serviceRecord(
   }> = {},
 ) {
   return {
-    id: "svc-1",
+    id: "11111111-1111-4111-8111-111111111111",
     name: "Install",
     unit: { id: "unit-1", name: "Square Feet" },
     baseCost: decimal("9.50"),
@@ -105,7 +105,7 @@ describe("services routes", () => {
   it("GET returns normalized rows", async () => {
     listServicesMock.mockResolvedValue([
       {
-        id: "svc-1",
+        id: "11111111-1111-4111-8111-111111111111",
         name: "Install",
         unitId: "unit-1",
         unitName: "Square Feet",
@@ -123,7 +123,7 @@ describe("services routes", () => {
     expect(response.status).toBe(200)
     expect(payload.services).toEqual([
       {
-        id: "svc-1",
+        id: "11111111-1111-4111-8111-111111111111",
         name: "Install",
         unitId: "unit-1",
         unitName: "Square Feet",
@@ -170,7 +170,7 @@ describe("services routes", () => {
 
   it("POST returns normalized payload", async () => {
     createServiceUseCaseMock.mockResolvedValue({
-      id: "svc-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Install",
       unitId: "unit-1",
       unitName: "Square Feet",
@@ -198,7 +198,7 @@ describe("services routes", () => {
       notes: null,
     })
     expect(payload.service).toEqual({
-      id: "svc-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Install",
       unitId: "unit-1",
       unitName: "Square Feet",
@@ -212,32 +212,32 @@ describe("services routes", () => {
 
   it("PATCH requires name, unitId, and baseCost", async () => {
     const missingName = await PATCH(
-      new Request("http://localhost/api/services/svc-1", {
+      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ unitId: "unit-1", baseCost: "9.50" }),
       }),
-      { params: Promise.resolve({ id: "svc-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     expect((await missingName.json()).error).toBe("name is required")
 
     const missingUnit = await PATCH(
-      new Request("http://localhost/api/services/svc-1", {
+      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Install", baseCost: "9.50" }),
       }),
-      { params: Promise.resolve({ id: "svc-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     expect((await missingUnit.json()).error).toBe("unitId is required")
 
     const missingCost = await PATCH(
-      new Request("http://localhost/api/services/svc-1", {
+      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Install", unitId: "unit-1" }),
       }),
-      { params: Promise.resolve({ id: "svc-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     expect((await missingCost.json()).error).toBe("baseCost is required")
 
@@ -246,7 +246,7 @@ describe("services routes", () => {
 
   it("PATCH returns normalized payload", async () => {
     const snapshotRow = {
-      id: "svc-1",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Repair",
       unitId: "unit-1",
       unitName: "Square Feet",
@@ -259,17 +259,17 @@ describe("services routes", () => {
     getServiceByIdMock.mockResolvedValue(snapshotRow)
 
     const response = await PATCH(
-      new Request("http://localhost/api/services/svc-1", {
+      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Repair", unitId: "unit-1", baseCost: "12.00", notes: "Rush" }),
       }),
-      { params: Promise.resolve({ id: "svc-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(updateServiceUseCaseMock).toHaveBeenCalledWith("svc-1", {
+    expect(updateServiceUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", {
       name: "Repair",
       unitId: "unit-1",
       baseCost: "12.00",
@@ -281,29 +281,29 @@ describe("services routes", () => {
 
   it("DELETE succeeds on happy path", async () => {
     getServiceByIdMock.mockResolvedValue({
-      id: "svc-1",
+      id: "11111111-1111-4111-8111-111111111111",
       updatedAt: "2026-03-19T00:00:00.000Z",
     })
     deleteServiceUseCaseMock.mockResolvedValue({ ok: true })
 
     const response = await DELETE(
-      new Request("http://localhost/api/services/svc-1", {
+      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       }),
-      { params: Promise.resolve({ id: "svc-1" }) },
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
     )
     const payload = await response.json()
 
     expect(response.status).toBe(200)
     expect(payload).toEqual({ ok: true })
-    expect(deleteServiceUseCaseMock).toHaveBeenCalledWith("svc-1")
+    expect(deleteServiceUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
   })
 
   it("DELETE normalizes linked-record conflicts", async () => {
     getServiceByIdMock.mockResolvedValue({
-      id: "svc-1",
+      id: "11111111-1111-4111-8111-111111111111",
       updatedAt: "2026-03-19T00:00:00.000Z",
     })
     deleteServiceUseCaseMock.mockRejectedValue({
@@ -313,12 +313,12 @@ describe("services routes", () => {
     })
 
     const response = await DELETE(
-      new Request("http://localhost/api/services/svc-1", {
+      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       }),
-      { params: Promise.resolve({ id: "svc-1" }),
+      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }),
     })
     const payload = await response.json()
 

@@ -1,5 +1,5 @@
 import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
-import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
+import { parseOptionalString, parseRequiredString, parseUuidParam } from "@/server/http/api-helpers"
 import { updateServiceUseCase, deleteServiceUseCase } from "@builders/application"
 import { getServiceById } from "@/modules/services/data/queries"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -30,7 +30,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id } = await params
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(body, (inputBody) => ({
       name: parseRequiredString(inputBody.name, "name"),
@@ -97,7 +98,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   if (access instanceof Response) return access
 
   try {
-    const { id } = await params
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
     const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
       requireExpectedUpdatedAt: true,
