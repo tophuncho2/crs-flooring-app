@@ -66,14 +66,6 @@ export async function authorizeManufacturersRoute(request: Request, options: Rou
   })
 }
 
-export async function authorizeServicesRoute(request: Request, options: RouteAccessOptions = {}) {
-  return requireRouteAccess(request, {
-    capability: options.capability ?? "system.access",
-    toolSlug: SERVICES_TOOL_SLUG,
-    allowUnverified: options.allowUnverified,
-  })
-}
-
 export async function authorizeUnitOfMeasuresRoute(request: Request, options: RouteAccessOptions = {}) {
   return requireRouteAccess(request, {
     capability: options.capability ?? "system.access",

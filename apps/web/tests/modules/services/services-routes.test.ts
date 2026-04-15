@@ -48,8 +48,7 @@ vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => 
 }))
 
 vi.mock("@/modules/shared/access/lookup-domains", () => ({
-  SERVICES_TOOL_SLUG: "services",
-  authorizeServicesRoute: applyRoutePolicyMock,
+  SERVICES_TOOL_SLUG: "warehouse",
 }))
 
 vi.mock("@/modules/services/data/queries", () => ({

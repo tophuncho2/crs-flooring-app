@@ -1,4 +1,4 @@
-import { SERVICES_TOOL_SLUG, authorizeServicesRoute } from "@/modules/shared/access/lookup-domains"
+import { SERVICES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 import { createServiceUseCase } from "@builders/application"
 import { listServices } from "@/modules/services/data/queries"
@@ -13,7 +13,9 @@ import {
 } from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
-  const access = await authorizeServicesRoute(request)
+  const access = await applyRoutePolicy(request, {
+    toolSlug: SERVICES_TOOL_SLUG,
+  })
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/services")
@@ -28,6 +30,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
+    capability: "system.access",
     toolSlug: SERVICES_TOOL_SLUG,
     rateLimit: {
       scope: "services.write",
