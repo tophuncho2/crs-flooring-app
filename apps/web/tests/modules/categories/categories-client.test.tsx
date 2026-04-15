@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import React from "react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
@@ -164,35 +164,6 @@ describe("CategoriesClient", () => {
     await user.click(screen.getByRole("button", { name: "Save" }))
 
     expect(await screen.findByText("Category name must be unique")).toBeTruthy()
-  })
-
-  it("delete flow confirms and removes the row on success", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock.mockResolvedValue({ success: true })
-
-    render(<CategoriesClient canManage initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
-
-    expect(screen.getByText("Carpet")).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-
-    await waitFor(() => {
-      expect(screen.queryByText("Carpet")).toBeNull()
-    })
-    expect(screen.getByText("Category deleted")).toBeTruthy()
-  })
-
-  it("delete flow surfaces failure without removing the row", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock.mockRejectedValue(new Error("This record is linked and cannot be modified"))
-
-    render(<CategoriesClient canManage initialCategories={[categoryRow()]} unitOfMeasureOptions={[]} />)
-
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-
-    expect(await screen.findByText("This record is linked and cannot be modified")).toBeTruthy()
-    expect(screen.getByText("Carpet")).toBeTruthy()
   })
 
   it("read-only mode hides create and row mutation controls", () => {

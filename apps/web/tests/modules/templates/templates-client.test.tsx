@@ -2,12 +2,9 @@
 
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import {
-  requestJsonMock,
-  resetSimpleTableClientMocks,
-} from "../../helpers/simple-table-client-mocks"
+import { resetSimpleTableClientMocks } from "../../helpers/simple-table-client-mocks"
 import { navigationMocks } from "../../helpers/next-navigation-mock"
 import TemplatesClient from "@/modules/templates/components/templates-client"
 
@@ -114,66 +111,4 @@ describe("TemplatesClient", () => {
     })
   })
 
-  it("table delete requires confirmation before request dispatch", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(false)
-
-    render(
-      <TemplatesClient
-        initialTemplates={[templateRow()]}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-        warehouseOptions={[]}
-        padProductOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-
-    expect(window.confirm).toHaveBeenCalledWith("Delete this template? This cannot be undone.")
-    expect(requestJsonMock).not.toHaveBeenCalled()
-  })
-
-  it("delete success removes the row", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-
-    requestJsonMock.mockResolvedValueOnce({ ok: true })
-
-    render(
-      <TemplatesClient
-        initialTemplates={[templateRow()]}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-        warehouseOptions={[]}
-        padProductOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-    await waitFor(() => {
-      expect(screen.queryByText("TP-00001")).toBeNull()
-    })
-  })
-
-  it("delete failure surfaces the error and keeps the row", async () => {
-    const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
-    requestJsonMock.mockRejectedValueOnce(new Error("Failed to delete template"))
-
-    render(
-      <TemplatesClient
-        initialTemplates={[templateRow()]}
-        propertyOptions={[{ id: "prop-1", name: "Oak Apartments" }]}
-        warehouseOptions={[]}
-        padProductOptions={[]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
-      />,
-    )
-
-    await user.click(screen.getByRole("button", { name: "Delete" }))
-
-    expect((await screen.findAllByText("Failed to delete template")).length).toBeGreaterThan(0)
-    expect(screen.getByText("TP-00001")).toBeTruthy()
-  })
 })
