@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { Prisma } from "@builders/db"
 import { GET, POST } from "@/app/api/services/route"
-import { DELETE, PATCH } from "@/app/api/services/[id]/route"
+import { DELETE } from "@/app/api/services/[id]/route"
 import { mockRouteErrorResponse } from "@/tests/helpers/route-error"
 
-const { applyRoutePolicyMock, enforceQueryRateLimitMock, listServicesMock, createServiceUseCaseMock, updateServiceUseCaseMock, deleteServiceUseCaseMock, getServiceByIdMock } = vi.hoisted(() => ({
+const { applyRoutePolicyMock, enforceQueryRateLimitMock, listServicesMock, createServiceUseCaseMock, deleteServiceUseCaseMock, getServiceByIdMock } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
   enforceQueryRateLimitMock: vi.fn(),
   listServicesMock: vi.fn(),
   createServiceUseCaseMock: vi.fn(),
-  updateServiceUseCaseMock: vi.fn(),
   deleteServiceUseCaseMock: vi.fn(),
   getServiceByIdMock: vi.fn(),
 }))
@@ -61,39 +59,9 @@ vi.mock("@builders/application", async (importOriginal) => {
   return {
     ...actual,
     createServiceUseCase: createServiceUseCaseMock,
-    updateServiceUseCase: updateServiceUseCaseMock,
     deleteServiceUseCase: deleteServiceUseCaseMock,
   }
 })
-
-function decimal(value: string) {
-  return new Prisma.Decimal(value)
-}
-
-function serviceRecord(
-  overrides: Partial<{
-    id: string
-    name: string
-    unit: { id: string; name: string }
-    baseCost: Prisma.Decimal
-    notes: string | null
-    createdAt: Date
-    updatedAt: Date
-    _count: { templateItems: number; workOrderItems: number }
-  }> = {},
-) {
-  return {
-    id: "11111111-1111-4111-8111-111111111111",
-    name: "Install",
-    unit: { id: "22222222-2222-4222-8222-222222222222", name: "Square Feet" },
-    baseCost: decimal("9.50"),
-    notes: null,
-    createdAt: new Date("2026-03-19T00:00:00Z"),
-    updatedAt: new Date("2026-03-19T00:00:00Z"),
-    _count: { templateItems: 1, workOrderItems: 2 },
-    ...overrides,
-  }
-}
 
 describe("services routes", () => {
   beforeEach(() => {
@@ -208,75 +176,6 @@ describe("services routes", () => {
       createdAt: "2026-03-19T00:00:00.000Z",
       updatedAt: "2026-03-19T00:00:00.000Z",
     })
-  })
-
-  it("PATCH requires name, unitId, and baseCost", async () => {
-    const missingName = await PATCH(
-      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unitId: "22222222-2222-4222-8222-222222222222", baseCost: "9.50" }),
-      }),
-      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
-    )
-    expect((await missingName.json()).error).toBe("name is required")
-
-    const missingUnit = await PATCH(
-      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Install", baseCost: "9.50" }),
-      }),
-      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
-    )
-    expect((await missingUnit.json()).error).toBe("unitId is required")
-
-    const missingCost = await PATCH(
-      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Install", unitId: "22222222-2222-4222-8222-222222222222" }),
-      }),
-      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
-    )
-    expect((await missingCost.json()).error).toBe("baseCost is required")
-
-    expect(updateServiceUseCaseMock).not.toHaveBeenCalled()
-  })
-
-  it("PATCH returns normalized payload", async () => {
-    const snapshotRow = {
-      id: "11111111-1111-4111-8111-111111111111",
-      name: "Repair",
-      unitId: "22222222-2222-4222-8222-222222222222",
-      unitName: "Square Feet",
-      baseCost: "12",
-      notes: "Rush",
-      usageCount: 3,
-      createdAt: "2026-03-19T00:00:00.000Z",
-      updatedAt: "2026-03-19T00:00:00.000Z",
-    }
-    getServiceByIdMock.mockResolvedValue(snapshotRow)
-
-    const response = await PATCH(
-      new Request("http://localhost/api/services/11111111-1111-4111-8111-111111111111", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Repair", unitId: "22222222-2222-4222-8222-222222222222", baseCost: "12.00", notes: "Rush" }),
-      }),
-      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
-    )
-    const payload = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(updateServiceUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", {
-      name: "Repair",
-      unitId: "22222222-2222-4222-8222-222222222222",
-      baseCost: "12.00",
-      notes: "Rush",
-    })
-    expect(payload.service.name).toBe("Repair")
-    expect(payload.service.baseCost).toBe("12")
   })
 
   it("DELETE succeeds on happy path", async () => {

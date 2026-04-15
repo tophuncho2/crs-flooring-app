@@ -115,7 +115,7 @@ describe("ServicesClient", () => {
     await user.click(screen.getByRole("button", { name: "Save Service" }))
 
     await waitFor(() => {
-      expect(requestJsonMock).toHaveBeenCalledWith("/api/services/svc-1", {
+      expect(requestJsonMock).toHaveBeenCalledWith("/api/services/svc-1/primary/section", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

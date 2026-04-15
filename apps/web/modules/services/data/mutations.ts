@@ -13,7 +13,7 @@ export async function createServiceRequest(input: ServiceForm) {
 }
 
 export async function updateServiceRequest(id: string, input: ServiceForm, revisionKey: string) {
-  return requestJson<{ service: ServiceRow }>(`/api/services/${id}`, {
+  return requestJson<{ service: ServiceRow }>(`/api/services/${id}/primary/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input, revisionKey)),
