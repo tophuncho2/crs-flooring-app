@@ -1,8 +1,6 @@
 import { ServiceExecutionError } from "@builders/application"
 import type { ServiceInput } from "@builders/application"
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+import { isValidUuid } from "@/server/http/api-helpers"
 
 export function validateServiceInput(body: Record<string, unknown>): ServiceInput {
   const name = typeof body.name === "string" ? body.name.trim() : ""
@@ -24,7 +22,7 @@ export function validateServiceInput(body: Record<string, unknown>): ServiceInpu
       field: "unitId",
     })
   }
-  if (!UUID_PATTERN.test(unitId)) {
+  if (!isValidUuid(unitId)) {
     throw new ServiceExecutionError({
       code: "SERVICE_VALIDATION_FAILED",
       message: "unitId must be a valid UUID",
