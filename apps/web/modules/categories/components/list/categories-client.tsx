@@ -1,7 +1,6 @@
 "use client"
 
 import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
@@ -54,7 +53,6 @@ export default function CategoriesClient({
             searchPlaceholder="Search categories..."
           />
         }
-        notices={<FormStatusNotices message={controller.notices.message} error={controller.notices.error} />}
         table={
           <CategoriesTable
             rows={engine.processedRows}
