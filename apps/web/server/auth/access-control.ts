@@ -5,7 +5,6 @@ export const CAPABILITIES = [
   "governance.access",
   "adminPanel.access",
   "users.manage",
-  "categories.edit",
   "tool.admin",
   "workOrders.read",
   "workOrders.write",
@@ -22,7 +21,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "governance.access",
     "adminPanel.access",
     "users.manage",
-    "categories.edit",
     "tool.admin",
     "workOrders.read",
     "workOrders.write",
@@ -35,7 +33,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     "governance.access",
     "adminPanel.access",
     "users.manage",
-    "categories.edit",
     "workOrders.read",
     "workOrders.write",
     "workOrders.delete",
@@ -88,8 +85,4 @@ export function canBypassVerification(_email: string, role: Role): boolean {
 
 export function canManageUsers(_email: string, role: Role): boolean {
   return hasCapability(role, "users.manage")
-}
-
-export function canEditCategories(role: Role): boolean {
-  return hasCapability(role, "categories.edit")
 }

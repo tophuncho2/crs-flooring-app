@@ -22,7 +22,7 @@
 | **CONTRACTOR** | No | No | None |
 | **CUSTOMER** | No | No | None |
 
-## 12 Capabilities
+## 11 Capabilities
 
 | Capability | OWNER | ADMIN | BUILDER |
 |-----------|:-----:|:-----:|:-------:|
@@ -30,7 +30,6 @@
 | `governance.access` | Y | Y | - |
 | `builderPanel.access` | Y | Y | - |
 | `users.manage` | Y | Y | - |
-| `categories.edit` | Y | Y | - |
 | `tool.admin` | Y | - | - |
 | `workOrders.read` | Y | Y | Y |
 | `workOrders.write` | Y | Y | Y |
