@@ -36,7 +36,8 @@
     "db:backfill:product-names": "npm run db:backfill:product-names --workspace @builders/db",
     "db:promote-admin": "npm run db:promote-admin --workspace @builders/db",
     "db:upsert-owner": "npm run db:upsert-owner --workspace @builders/db",
-    "db:seed:uoms": "npm run db:seed:uoms --workspace @builders/db"
+    "db:seed:uoms": "npm run db:seed:uoms --workspace @builders/db",
+    "db:seed:categories": "npm run db:seed:categories --workspace @builders/db"
   },
   "overrides": {
     "flatted": "^3.4.2"
