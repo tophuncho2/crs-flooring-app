@@ -58,12 +58,3 @@ export function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
     serviceUnit: category.serviceUnit?.name ?? "",
   }
 }
-
-export function normalizeUnitOfMeasureOption(unit: { id: string; name: string; createdAt: Date; updatedAt: Date }) {
-  return {
-    id: unit.id,
-    name: unit.name,
-    createdAt: unit.createdAt.toISOString(),
-    updatedAt: unit.updatedAt.toISOString(),
-  }
-}
