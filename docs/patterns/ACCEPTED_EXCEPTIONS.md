@@ -36,7 +36,7 @@
 
 **Why:** Reference data has no mutation surface. There are no use cases to orchestrate, no domain rules to enforce, no record views to render, no forms to transport. The only operation is a read, which flows directly from the Server Component to `data/queries.ts` to the `packages/db/` read repository. Requiring empty subdirectories for structural uniformity would add noise without enforcement value. The pattern is defined in [REFERENCE_DATA.md](REFERENCE_DATA.md).
 
-**Affected modules:** Unit of Measures (`modules/unit-of-measures/`). Planned: Categories.
+**Affected modules:** Unit of Measures (`modules/unit-of-measures/`), Categories (`modules/categories/`).
 
 **Structural enforcement:** Reference data modules are identified in their module-root `CLAUDE.md` with an explicit "Reference Data Module" designation and a link to `REFERENCE_DATA.md`. The `apps/web/modules/CLAUDE.md` carve-out clause permits the deviation only for modules following this pattern. Foreign key consumers of reference data tables use `onDelete: Restrict` at the database layer, providing structural protection independent of application code.
 

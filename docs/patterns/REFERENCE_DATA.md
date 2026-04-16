@@ -10,7 +10,7 @@ Reference data is a curated, finite list of values that other modules reference 
 2. **Immutable via the application** — no mutation routes, no edit UI, no delete flow. The only way to change reference data is to update the seed source and re-run the seed script against the environment.
 3. **Structurally locked at the database layer** — foreign key consumers use `onDelete: Restrict`. The database itself prevents deletion of referenced rows, even if a mutation path somehow leaked through.
 
-Current reference data modules: Unit of Measures. Planned: Categories.
+Current reference data modules: Unit of Measures, Categories.
 
 ## Why It Exists
 
