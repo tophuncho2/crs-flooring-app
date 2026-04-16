@@ -488,13 +488,15 @@ model FlooringLocation {
   warehouse    FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   sectionId    String
   section      FlooringSection     @relation(fields: [sectionId], references: [id], onDelete: Restrict)
-  locationCode String
+  rafter       Int
+  level        Int
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   inventories  FlooringInventory[]
 
-  @@unique([warehouseId, locationCode])
+  @@unique([sectionId, rafter, level])
   @@index([sectionId])
+  @@index([warehouseId])
   @@map("flooring_location")
 }
 
