@@ -42,14 +42,6 @@ export async function requireUnitOfMeasuresAccess() {
   return requireToolAccess(UNIT_OF_MEASURES_TOOL_SLUG)
 }
 
-export async function authorizeCategoriesRoute(request: Request, options: RouteAccessOptions = {}) {
-  return requireRouteAccess(request, {
-    capability: options.capability ?? "system.access",
-    toolSlug: CATEGORIES_TOOL_SLUG,
-    allowUnverified: options.allowUnverified,
-  })
-}
-
 export async function authorizeContactsRoute(request: Request, options: RouteAccessOptions = {}) {
   return requireRouteAccess(request, {
     capability: options.capability ?? "system.access",

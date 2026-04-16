@@ -5,7 +5,7 @@ import { useRecordNotices } from "@/modules/shared/engines/record-view/client/ho
 import type { CategoryRow } from "../types"
 
 export function useCategoriesListController(initialRows: CategoryRow[]) {
-  const [rows, setRows] = useState(initialRows)
+  const [rows] = useState(initialRows)
   const notices = useRecordNotices()
 
   return {
