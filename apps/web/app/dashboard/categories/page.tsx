@@ -1,4 +1,3 @@
-import { canEditCategories } from "@/server/auth/access-control"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
 import CategoriesClient from "@/modules/categories/components/list/categories-client"
@@ -17,9 +16,6 @@ export default async function FlooringCategoriesPage({
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["sendUnit"],
-    allowedGroupKeys: ["sendUnit", "stockUnit", "coverageAvailableUnit", "itemCoverageUnit", "serviceUnit"],
   })
   const pageData = await getCategoriesPageData()
 
@@ -36,9 +32,7 @@ export default async function FlooringCategoriesPage({
 
   return (
     <CategoriesClient
-      canManage={canEditCategories(user.role)}
-      initialCategories={pageData.data.initialCategories}
-      unitOfMeasureOptions={pageData.data.unitOfMeasureOptions}
+      initialCategories={pageData.data}
       initialTablePreferences={initialTablePreferences}
       tableState={tableState}
     />

@@ -4,26 +4,15 @@ import type { ReactNode } from "react"
 import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import {
-  ClickableTableRow,
-  TableEmptyRow,
-} from "@/modules/shared/engines/list-view/table/table-shell"
-import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
-import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { CategoryRow } from "../../domain/types"
+import { TableEmptyRow } from "@/modules/shared/engines/list-view/table/table-shell"
+import type { CategoryRow } from "../../types"
 
 export function CategoriesTable({
   rows,
   visibleColumns,
-  groupedRows,
-  isGroupingEnabled,
-  onOpen,
 }: {
   rows: CategoryRow[]
   visibleColumns: Array<{ key: string; label: string }>
-  groupedRows: GroupedRowTree<CategoryRow>[]
-  isGroupingEnabled: boolean
-  onOpen: (row: CategoryRow) => void
 }) {
   function renderRow(row: CategoryRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
@@ -36,21 +25,15 @@ export function CategoriesTable({
     }
 
     return (
-      <ClickableTableRow key={row.id} ariaLabel={`Open category ${row.name}`} onClick={() => onOpen(row)}>
+      <tr key={row.id} className="border-t border-[var(--panel-border)]">
         {renderDashboardRowCells(visibleColumns, cells)}
-      </ClickableTableRow>
+      </tr>
     )
   }
 
   return (
     <DashboardListPageTable minWidthClass="min-w-[1280px]" columns={visibleColumns}>
-      {isGroupingEnabled
-        ? renderGroupedTableRows({
-            groups: groupedRows,
-            colSpan: visibleColumns.length,
-            renderRow,
-          })
-        : rows.map((row) => renderRow(row))}
+      {rows.map((row) => renderRow(row))}
       {rows.length === 0 ? <TableEmptyRow message="No categories found." colSpan={visibleColumns.length} /> : null}
     </DashboardListPageTable>
   )

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
-import type { CategoryRow } from "../domain/types"
+import type { CategoryRow } from "../types"
 
 export function useCategoriesListController(initialRows: CategoryRow[]) {
   const [rows, setRows] = useState(initialRows)
