@@ -1,6 +1,5 @@
 export * from "./account/index.js"
 export * from "./admin/index.js"
-export * from "./flooring/categories/index.js"
 export * from "./flooring/contacts/index.js"
 export * from "./flooring/manufacturers/index.js"
 export * from "./flooring/services/index.js"
