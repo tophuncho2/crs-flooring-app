@@ -194,11 +194,12 @@ export async function deleteLocationById(
  *  0. Lock parent warehouse row (prevents concurrent sectional saves)
  *  1. deleteMany locations in locations.deleted
  *  2. deleteMany sections in sections.deleted
- *  3. createMany sections with client-assigned IDs
- *  4. Update modified sections (per-row loop — distinct names)
- *  5. createMany locations with client-assigned IDs
- *  6. Update modified locations (per-row loop — distinct values)
- *  7. Reload post-state (parallel)
+ *  3. Build tempIdMap from input (pure — no DB round-trips)
+ *  4. createMany sections with client-assigned IDs
+ *  5. Update modified sections (per-row loop — distinct names)
+ *  6. createMany locations with client-assigned IDs, resolving sectionRef via tempIdMap
+ *  7. Update modified locations (per-row loop — distinct values)
+ *  8. Reload post-state (parallel)
  *
  * Returns the new canonical sections + locations arrays and the tempIdMap
  * (built from input, for the caller's convenience when mapping response
