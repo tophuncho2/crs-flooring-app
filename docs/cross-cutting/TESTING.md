@@ -55,7 +55,6 @@ vi.mock("@builders/db", async () => {
 | `next-navigation-mock.ts` | `tests/helpers/` | Mocks Next.js router (push, replace, refresh) |
 | `route-error.ts` | `tests/helpers/` | Mock error response builder |
 | `simple-table-client-mocks.tsx` | `tests/helpers/` | UI component mocks |
-| `reference-test-data.js` | `packages/db/scripts/` | Deterministic, prefix-able seed data |
 
 ### Running Tests
 
