@@ -454,6 +454,7 @@ model FlooringTemplateSalesRep {
 
 model FlooringWarehouse {
   id         String                @id @default(uuid())
+  slug       String                @unique
   name       String                @unique
   address    String?
   phone      String?
@@ -471,12 +472,14 @@ model FlooringWarehouse {
 model FlooringSection {
   id          String             @id @default(uuid())
   warehouseId String
-  warehouse   FlooringWarehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouse   FlooringWarehouse  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  slug        String
   name        String
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   locations   FlooringLocation[]
 
+  @@unique([warehouseId, slug])
   @@unique([warehouseId, name])
   @@map("flooring_section")
 }
@@ -484,7 +487,7 @@ model FlooringSection {
 model FlooringLocation {
   id           String              @id @default(uuid())
   warehouseId  String
-  warehouse    FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouse    FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   sectionId    String
   section      FlooringSection     @relation(fields: [sectionId], references: [id], onDelete: Restrict)
   locationCode String
