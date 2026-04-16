@@ -13,12 +13,7 @@ const categoryUnitInclude = {
   serviceUnit: { select: { id: true, name: true } },
 } as const
 
-export const categoryInclude = {
-  ...categoryUnitInclude,
-  _count: {
-    select: { products: true },
-  },
-} as const
+export const categoryInclude = categoryUnitInclude
 
 type UnitRef = { id: string; name: string } | null
 
@@ -49,6 +44,7 @@ function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
 
 export type CategoryRecord = {
   id: string
+  slug: string
   name: string
   sendUnitId: string
   stockUnitId: string
@@ -60,38 +56,25 @@ export type CategoryRecord = {
   coverageAvailableUnit: string
   itemCoverageUnit: string
   serviceUnit: string
-  productCount: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type UnitOfMeasureOption = {
-  id: string
-  name: string
-  createdAt: string
 }
 
 // --- Normalizers ---
 
 export function normalizeCategoryRow(category: {
   id: string
+  slug: string
   name: string
   sendUnit: UnitRef
   stockUnit: UnitRef
   coverageAvailableUnit: UnitRef
   itemCoverageUnit: UnitRef
   serviceUnit: UnitRef
-  createdAt: Date
-  updatedAt: Date
-  _count?: { products: number }
 }): CategoryRecord {
   return {
     id: category.id,
+    slug: category.slug,
     name: category.name,
     ...normalizeCategoryUnitValues(category),
-    productCount: category._count?.products ?? 0,
-    createdAt: category.createdAt.toISOString(),
-    updatedAt: category.updatedAt.toISOString(),
   }
 }
 
@@ -104,56 +87,4 @@ export async function listCategories(client: CategoryDbClient = db): Promise<Cat
   })
 
   return categories.map(normalizeCategoryRow)
-}
-
-export async function getCategoryById(id: string, client: CategoryDbClient = db): Promise<CategoryRecord> {
-  const category = await client.flooringCategory.findUniqueOrThrow({
-    where: { id },
-    include: categoryInclude,
-  })
-
-  return normalizeCategoryRow(category)
-}
-
-export type CategoryDeleteStateResult = {
-  productLinks: number
-}
-
-export async function getCategoryDeleteState(
-  id: string,
-  client: CategoryDbClient = db,
-): Promise<CategoryDeleteStateResult | null> {
-  const row = await client.flooringCategory.findUnique({
-    where: { id },
-    select: {
-      _count: {
-        select: { products: true },
-      },
-    },
-  })
-
-  if (!row) return null
-
-  return {
-    productLinks: row._count.products,
-  }
-}
-
-export async function categoryNameExists(
-  normalizedName: string,
-  currentId?: string,
-  client: CategoryDbClient = db,
-): Promise<boolean> {
-  const existing = await client.flooringCategory.findFirst({
-    where: {
-      name: {
-        equals: normalizedName,
-        mode: "insensitive",
-      },
-      ...(currentId ? { NOT: { id: currentId } } : {}),
-    },
-    select: { id: true },
-  })
-
-  return Boolean(existing)
 }
