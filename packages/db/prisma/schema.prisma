@@ -454,7 +454,7 @@ model FlooringTemplateSalesRep {
 
 model FlooringWarehouse {
   id         String                @id @default(uuid())
-  slug       String                @unique
+  number     Int                   @unique
   name       String                @unique
   address    String?
   phone      String?
@@ -473,14 +473,12 @@ model FlooringSection {
   id          String             @id @default(uuid())
   warehouseId String
   warehouse   FlooringWarehouse  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  slug        String
-  name        String
+  number      Int
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   locations   FlooringLocation[]
 
-  @@unique([warehouseId, slug])
-  @@unique([warehouseId, name])
+  @@unique([warehouseId, number])
   @@map("flooring_section")
 }
 
