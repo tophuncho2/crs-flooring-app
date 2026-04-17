@@ -9,4 +9,4 @@ Use case orchestration. Coordinates domain + data layer.
 3. Every use case accepts optional `client` parameter for transaction propagation.
 4. Outbox writes are always in the same transaction as the state mutation.
 5. Business rules are delegated to domain — use cases do not contain their own.
-6. Refer to `docs/layers/APPLICATION.md` for full contract.
+6. Refer to `docs/layers/application/APPLICATION.md` for full contract.

@@ -6,12 +6,12 @@
 ## Layers
 | Doc | Scope |
 |-----|-------|
-| [layers/DOMAIN.md](layers/DOMAIN.md) | Business rules and invariants. `packages/domain/` |
-| [layers/APPLICATION.md](layers/APPLICATION.md) | Use case orchestration. `packages/application/` |
-| [layers/DATA.md](layers/DATA.md) | Persistence and repositories. `packages/db/` |
-| [layers/CONTROLLER.md](layers/CONTROLLER.md) | Controller contracts for list and record views |
-| [layers/TRANSPORT.md](layers/TRANSPORT.md) | Payload assembly and response shaping |
-| [layers/UI.md](layers/UI.md) | Presentational components. No logic, no fetching |
+| [layers/domain/DOMAIN.md](layers/domain/DOMAIN.md) | Business rules and invariants. `packages/domain/` |
+| [layers/application/APPLICATION.md](layers/application/APPLICATION.md) | Use case orchestration. `packages/application/` |
+| [layers/data/DATA.md](layers/data/DATA.md) | Persistence and repositories. `packages/db/` |
+| [layers/controller/CONTROLLER.md](layers/controller/CONTROLLER.md) | Controller contracts for list and record views |
+| [layers/api/API.md](layers/api/API.md) | Payload assembly and response shaping |
+| [layers/ui/UI.md](layers/ui/UI.md) | Presentational components. No logic, no fetching |
 
 ## Engines
 | Doc | Scope |

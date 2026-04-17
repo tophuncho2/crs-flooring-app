@@ -9,4 +9,4 @@ Persistence only. Prisma queries and repositories.
 3. Repository functions accept optional transaction client for composition.
 4. Read/write repository split per module.
 5. Outbox repository implements the state machine: PENDING → PROCESSING → DISPATCHED | EXHAUSTED.
-6. Refer to `docs/layers/DATA.md` for full contract.
+6. Refer to `docs/layers/data/DATA.md` for full contract.

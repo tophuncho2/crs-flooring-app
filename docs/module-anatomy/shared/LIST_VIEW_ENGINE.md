@@ -78,6 +78,6 @@ modules/{name}/
 
 ## Related Docs
 
-- [../../layers/CONTROLLER.md](../../layers/CONTROLLER.md) — controller contract that list controllers implement
+- [../../layers/controller/CONTROLLER.md](../../layers/controller/CONTROLLER.md) — controller contract that list controllers implement
 - [RECORD_VIEW_ENGINE.md](RECORD_VIEW_ENGINE.md) — companion engine for record pages
 - [NAVIGATION_SHELL.md](NAVIGATION_SHELL.md) — app shell that wraps list pages

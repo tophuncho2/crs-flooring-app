@@ -91,4 +91,4 @@ The worker imports from:
 
 - [RELAY.md](RELAY.md) — dispatches jobs to the worker
 - [../patterns/OUTBOX_PATTERN.md](../patterns/OUTBOX_PATTERN.md) — end-to-end event delivery
-- [../layers/APPLICATION.md](../layers/APPLICATION.md) — use cases that workers delegate to
+- [../layers/application/APPLICATION.md](../layers/application/APPLICATION.md) — use cases that workers delegate to

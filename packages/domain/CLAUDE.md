@@ -8,4 +8,4 @@ Pure business rules. No I/O.
 2. No Prisma types, no database calls, no HTTP, no filesystem.
 3. Only allowed external dependency: `zod`.
 4. All functions are pure — accept plain data, return plain data or throw typed domain errors.
-5. Refer to `docs/layers/DOMAIN.md` for full contract.
+5. Refer to `docs/layers/domain/DOMAIN.md` for full contract.

@@ -36,5 +36,5 @@ Queue definitions (job schemas, queue names) live in domain because they define 
 
 ## Related Docs
 
-- [APPLICATION.md](APPLICATION.md) — consumes domain functions for use case orchestration
-- [DATA.md](DATA.md) — persistence layer that domain never touches directly
+- [../application/APPLICATION.md](../application/APPLICATION.md) — consumes domain functions for use case orchestration
+- [../data/DATA.md](../data/DATA.md) — persistence layer that domain never touches directly
