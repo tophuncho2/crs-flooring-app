@@ -1,5 +1,7 @@
 # Domain Docs + layers/PATTERN.md Audit
 
+> **Status:** Doc edits applied (C1, C2, C3, M1–M5, L1–L2). Outstanding items are warehouse sweep tasks tracked in `docs/module-anatomy/multi-section/warehouse/sweep-plan/VIOLATIONS.md`. This audit remains active until the warehouse sweep completes and Section 1 gap rows flip.
+
 Read-only scan. Every claim cites a file path + line.
 
 **Reference-module scope (swept or mid-sweep):**
@@ -313,55 +315,16 @@ Warehouse is the only multi-section module. All items below are **sweep tasks**,
 
 ## Section 9 — Doc-vs-doc contradictions
 
-| # | Where | Contradiction |
-|---|---|---|
-| 1 | `docs/layers/PATTERN.md:21` (Data block) vs Domain block | Data block still claims `@builders/domain` imports — "type shapes only — no rule functions." Grep shows zero `@builders/domain` imports under `packages/db/src`. Domain block (correctly) omits `packages/db/` from exports. These two blocks contradict each other within the same file. |
-| 2 | `docs/layers/PATTERN.md:32` (Application block) vs `docs/layers/domain/EXPORTS.md` | Application block says domain imports are "all predicates, message builders, diff validators." Domain `EXPORTS.md` lists eight shapes (predicates, message builders, normalizers, diff validators, identity helpers, queue schemas, types, utilities). Application block is understated. Verified in Section 5 that application imports normalizers (`create-manufacturer:1`), `assignDiffIds`, and types. |
-| 3 | `docs/layers/domain/PATTERN.md` "Domain does not throw" vs `queue/workflow-processing.ts:3` | Not strictly a contradiction, but the doc's absolute phrasing omits the existence of exported Error types for consumer use. Worth a one-sentence clarification. |
-| 4 | `docs/layers/domain/module-specific/PREDICATES.md` "Where" vs reality | Doc says predicates live in `*-rules.ts`. Predicates also live in `types.ts` (`validateContactType`, `validateServiceForm`). Minor. |
-| 5 | `docs/layers/domain/module-specific/NORMALIZERS.md` "Where" vs reality | Doc says normalizers live in `*-rules.ts`. `normalizeAddressState` at `shared/address-helpers.ts:1` is in `shared/`. Minor. |
+All five contradictions resolved by the applied edits (C1, C2 → `layers/PATTERN.md`; M1, M3, M4 → `docs/layers/domain/*`).
 
 ---
 
 ## Section 10 — Recommended doc edits
 
-### Critical (doc contradicts verified reality)
-
-| # | Target | Edit | Reason |
-|---|---|---|---|
-| C1 | `docs/layers/PATTERN.md:21` | Remove `@builders/domain` line from Data imports list. | Grep confirms zero imports. Contradicts current Domain block. |
-| C2 | `docs/layers/PATTERN.md:32` | Expand Application imports line to match domain `EXPORTS.md` — add normalizers, identity helpers (`assignDiffIds`), queue schemas, types, utilities. | Current list understates actual imports; verified in Section 5. |
-| C3 | `docs/layers/domain/PATTERN.md` and `docs/layers/domain/EXPORTS.md` | Adjust warehouse form-export claim — either flag as "exported, not yet consumed by the web warehouse module (mid-sweep)" OR remove `EMPTY_WAREHOUSE_FORM`/`toWarehouseForm` from the consumer list until the web module is migrated. | Section 1 found these are exported but zero consumers exist. |
-
-### Moderate (accurate but incomplete)
-
-| # | Target | Edit | Reason |
-|---|---|---|---|
-| M1 | `docs/layers/domain/PATTERN.md` | Add one sentence: "Domain may export `Error` types (e.g. `WorkflowProcessingError`) for workers and application to construct and throw — domain itself never throws." | Reconciles `queue/workflow-processing.ts:3` with the no-throw rule. |
-| M2 | `docs/layers/domain/EXPORTS.md` — Consumers block | Strengthen the `apps/worker/` line. Current wording is fine but add concrete examples (`isWorkflowProcessingError`, `parseAutoAllocateWorkOrderJob`, `AutoAllocateWorkOrderJobV1`). | Section 5 evidence. |
-| M3 | `docs/layers/domain/module-specific/PREDICATES.md` — "Where" | Expand to "per-concern `*-rules.ts` files; form-level predicates (`validate*Form`, `validate*Type`) may live in the module's `types.ts`." | Section 6 finding. |
-| M4 | `docs/layers/domain/module-specific/NORMALIZERS.md` — "Where" | Expand to "per-concern `*-rules.ts`; cross-cutting normalizers in `shared/` (e.g. `address-helpers.ts`)." | Section 6 finding. |
-| M5 | `docs/layers/domain/module-specific/TYPES.md` | Remove or soften the "Zod parsers for external input" line. No reference-module `types.ts` currently uses Zod; only queue schemas do. Either add example or strike. | Section 6 finding. |
-
-### Low (wording / clarity)
-
-| # | Target | Edit |
-|---|---|---|
-| L1 | `docs/layers/domain/shared/UTILITIES.md` | Add a note that `date-format.ts`'s `new Date(string)` usage is deterministic (parsing a passed string), so it does not violate the "no `Date.now()`" rule. Preempts a false positive during future audits. |
-| L2 | `docs/layers/domain/module-specific/DIFF_RULES.md` | Add a sentence that warehouse is currently the only module with `diff-rules.ts`; other multi-section modules will follow the same shape. |
+All recommended doc edits have been applied. Remaining follow-ups are code-level — see Section 11.
 
 ---
 
 ## Section 11 — Warehouse sweep follow-ups (NOT doc edits)
 
-Items that must land in code before `layers/PATTERN.md` and `docs/layers/domain/EXPORTS.md` can claim warehouse consumer parity with services/contacts/manufacturers.
-
-1. **Replace local `EMPTY_WAREHOUSE_DETAIL` with `EMPTY_WAREHOUSE_FORM`** at `apps/web/modules/warehouse/record/create/warehouse-create-client.tsx:16`. Import from `@builders/domain`.
-2. **Replace local `toWarehouseDraft` with `toWarehouseForm`** (or clarify why a separate draft shape is needed and document it).
-3. **Move `apps/web/modules/warehouse/domain/` contents into `packages/domain/src/flooring/warehouses/`.** Web modules must not host a `domain/` folder.
-4. **Remove `apps/web/modules/warehouse/types.ts`** and re-export / import from `@builders/domain` instead.
-5. **Relocate the two root-level controllers** (`use-warehouse-client-controller.ts`, `use-warehouse-record-controller.ts`) into a `controllers/` subdirectory to match other modules.
-6. **Expand `DiffValidationIssue` union as new multi-section rules are added.** Not a current gap — just a watch-item for sweep.
-7. **Verify no throws land in warehouse domain during the sweep.** Currently clean; keep it clean.
-
-When these land, flip the Section 1 "INACCURATE (mid-sweep gap)" rows to ACCURATE and remove the `EMPTY_WAREHOUSE_FORM`/`toWarehouseForm` caveat from `layers/PATTERN.md`.
+Tracked in `docs/module-anatomy/multi-section/warehouse/sweep-plan/VIOLATIONS.md`. Do not duplicate here.
