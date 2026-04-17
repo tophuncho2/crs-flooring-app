@@ -1,0 +1,1 @@
+# Single-Section Pattern

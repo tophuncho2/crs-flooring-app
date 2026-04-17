@@ -1,4 +1,4 @@
-# Reference Data Pattern
+# Single-Seeded Pattern
 
 > **Scope:** Seeded, read-only lookup tables with no mutation surface. The pattern for modules like Unit of Measures.
 
@@ -104,7 +104,7 @@ Deferred. Reference data is an ideal caching target because it changes only at d
 
 ## Exception From Module Anatomy
 
-Reference data modules deviate from the required structure defined in `apps/web/modules/CLAUDE.md` and `docs/patterns/MODULE_ANATOMY.md`. This deviation is documented as an accepted exception in `docs/patterns/ACCEPTED_EXCEPTIONS.md`.
+Reference data modules deviate from the required structure defined in `apps/web/modules/CLAUDE.md` and `docs/module-anatomy/MODULE_ANATOMY.md`. This deviation is documented as an accepted exception in `docs/patterns/ACCEPTED_EXCEPTIONS.md`.
 
 ## Related Docs
 

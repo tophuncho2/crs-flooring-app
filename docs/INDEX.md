@@ -49,16 +49,22 @@
 ## Patterns
 | Doc | Scope |
 |-----|-------|
-| [patterns/MODULE_ANATOMY.md](patterns/MODULE_ANATOMY.md) | Feature module folder structure |
+| [module-anatomy/MODULE_ANATOMY.md](module-anatomy/MODULE_ANATOMY.md) | Feature module folder structure |
 | [patterns/OUTBOX_PATTERN.md](patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
 | [patterns/ACCEPTED_EXCEPTIONS.md](patterns/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
 | [patterns/API_DESIGN.md](patterns/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
 | [patterns/REFERENCE_DATA.md](patterns/REFERENCE_DATA.md) | Seeded read-only reference tables (UoMs, Categories) |
 
+## Module Anatomy
+| Doc | Scope |
+|-----|-------|
+| [module-anatomy/single-seeded/modules/CATEGORIES.md](module-anatomy/single-seeded/modules/CATEGORIES.md) | Categories reference data module |
+| [module-anatomy/single-seeded/modules/UNIT_OF_MEASURES.md](module-anatomy/single-seeded/modules/UNIT_OF_MEASURES.md) | Unit of Measures reference data module |
+
 ## Domain References
 | Doc | Scope |
 |-----|-------|
-| [domains/USER_GOVERNANCE.md](domains/USER_GOVERNANCE.md) | Users, roles, auth, admin |
+| [module-anatomy/single-section/modules/USER_GOVERNANCE.md](module-anatomy/single-section/modules/USER_GOVERNANCE.md) | Users, roles, auth, admin |
 
 
 Review them in this order. Each doc should be accurate against the codebase before moving to the next. Want a Claude Code prompt to start the sweep?

@@ -38,7 +38,7 @@ Before making changes, read `docs/INDEX.md` to identify relevant architecture do
 - Touching `apps/relay/` → read `docs/services/RELAY.md`
 
 **Module work:**
-- Creating a new module → read `docs/patterns/MODULE_ANATOMY.md`
+- Creating a new module → read `docs/module-anatomy/MODULE_ANATOMY.md`
 - Working on outbox events → read `docs/patterns/OUTBOX_PATTERN.md`
 
 **Domain work:**
