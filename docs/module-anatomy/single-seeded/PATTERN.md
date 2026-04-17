@@ -12,11 +12,6 @@
 5. Module folder is self-contained. All module-specific code lives within `apps/web/modules/{name}/`.
 
 
-## API Routes — `apps/web/app/api/{name}/`
-
-
-No mutation routes. No `[id]/route.ts`. No `_validators.ts`. Some single-seeded modules may skip the API route entirely and rely on server-side queries from `page.tsx` only — this is acceptable when nothing client-side needs to refetch.
-
 ## Anti-Patterns
 
 1. **Do not** add mutation routes (`POST`, `PATCH`, `DELETE`) — single-seeded data is immutable at runtime.
@@ -43,9 +38,3 @@ Each subfolder under `single-seeded/` documents one slice of the pattern, ground
 - [`modules/TYPES.md`](modules/TYPES.md) — where `types.ts` lives for single-seeded and who imports it.
 - [`modules/`](modules/) — per-module folders with `GRADING.md`, `PLANS.md`, and legacy module references.
 - [`../QUERIES.md`](../QUERIES.md) — cross-type role of `data/queries.ts` (used by the dashboard page).
-
-## Related Docs
-
-- [../MODULE_ANATOMY.md](../MODULE_ANATOMY.md)
-- [../shared/LIST_VIEW_ENGINE.md](../shared/LIST_VIEW_ENGINE.md)
-- [../../layers/controller/CONTROLLER.md](../../layers/controller/CONTROLLER.md)
