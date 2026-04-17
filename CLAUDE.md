@@ -2,7 +2,8 @@
 
 ## Architecture Reference Docs
 
-Before making changes, read `docs/INDEX.md` to identify relevant architecture docs. Then read the specific docs listed below based on what you're touching.
+**docs/ is correctly being re-organized, do not make any edits out side of the docs/ folder. Anything outside of docs/ is from context and auditing**
+**The current lines below may be stale**
 
 ### Trigger Conditions
 
