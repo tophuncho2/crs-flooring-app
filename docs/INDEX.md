@@ -55,8 +55,8 @@
 ## Module Anatomy
 | Doc | Scope |
 |-----|-------|
-| [module-anatomy/single-seeded/categories/CATEGORIES.md](module-anatomy/single-seeded/categories/CATEGORIES.md) | Categories reference data module |
-| [module-anatomy/single-seeded/unit-of-measures/UNIT_OF_MEASURES.md](module-anatomy/single-seeded/unit-of-measures/UNIT_OF_MEASURES.md) | Unit of Measures reference data module |
+| [module-anatomy/single-seeded/modules/categories/CATEGORIES.md](module-anatomy/single-seeded/modules/categories/CATEGORIES.md) | Categories reference data module |
+| [module-anatomy/single-seeded/modules/unit-of-measures/UNIT_OF_MEASURES.md](module-anatomy/single-seeded/modules/unit-of-measures/UNIT_OF_MEASURES.md) | Unit of Measures reference data module |
 
 ## Domain References
 | Doc | Scope |
