@@ -6,31 +6,33 @@
 ## Rules
 
 1. Domain functions must be pure — no database calls, no HTTP, no filesystem, no framework imports.
-2. The only external dependency allowed is `zod` for schema validation.
-3. Domain objects enforce their own invariants via assertion functions that throw typed errors.
-4. Domain errors use domain-specific error classes with typed codes (not HTTP status codes).
-5. All business rule checks (e.g. delete eligibility, name normalization) live here, not in the application or data layer.
-6. Domain functions accept plain data and return plain data — no Prisma types, no Request/Response objects.
+2. The only external runtime dependency allowed is `zod` (queue message schemas).
+3. Domain does not throw. Rules return data — `boolean` from predicates, `string` from message builders, `DiffValidationIssue[]` from diff validators. The application layer decides how to react (throw, return 4xx, keep going).
+4. Domain functions accept plain data and return plain data — no Prisma types, no `Request`/`Response` objects, no HTTP status codes.
+5. All business rule checks (delete eligibility, name normalization, diff validation) live here, not in the application or data layer.
 
-## Contract
+## Patterns
 
-Domain functions follow one of three patterns:
+Domain exports fall into a small set of shapes:
 
-- **Assertion:** Validates an invariant. Throws a typed domain error on violation. Returns void.
-- **Computation:** Accepts data, returns derived data. No side effects.
-- **Schema:** Zod schema that validates and parses external input into a domain type.
+- **Predicate** — `(input) => boolean`. Named `can…`, `is…`, `has…`. No side effects, no throws.
+- **Message builder** — `(input) => string`. Named `build…Message` / `get…Message`. Paired with a predicate so the UI reads a consistent reason.
+- **Normalizer** — `(raw) => canonical`. Named `normalize…`. Collapses equivalent inputs before comparison or persistence.
+- **Diff validator** — `(diff, existing) => DiffValidationIssue[]`. Multi-section diffs return an issue array; the application layer maps issues to responses.
+- **Identity helper** — `(entries, generateId) => entries & { id }`. Stamps ids onto added entries with an injected `generateId`.
+- **Queue schema** — Zod schema + queue/job name constants + retry policy. Defines the inter-service contract.
+- **Types** — TypeScript types and Zod parsers for external input.
+- **Utilities** — pure formatters, calculators, and record helpers under `shared/`.
 
 ## Structure
 
-See `packages/domain/src/` for current contents. Each concern gets its own directory (e.g., `flooring/categories/`, `admin/`).
-
-Queue definitions (job schemas, queue names) live in domain because they define the **shape** of inter-service contracts, not the infrastructure that processes them.
+See `packages/domain/src/` for current contents. Each concern gets its own directory (`flooring/warehouses/`, `admin/`, …). Queue definitions live in `packages/domain/src/queue/` because they describe the **shape** of inter-service contracts, not the infrastructure that processes them.
 
 ## Anti-Patterns
 
 1. **Do not** import `@builders/db`, Prisma, or any database type in domain code.
-2. **Do not** throw generic `Error` — use typed domain error classes with codes.
-3. **Do not** put orchestration logic here — if it coordinates multiple steps or calls the data layer, it belongs in `packages/application/`.
+2. **Do not** throw — return the failure as data (predicate returning `false`, message builder producing the reason, validator returning an issue).
+3. **Do not** put orchestration logic here — anything that coordinates steps or calls the data layer belongs in `packages/application/`.
 4. **Do not** import Next.js, React, or any UI framework.
 5. **Do not** put HTTP status codes or response shaping in domain code.
 

@@ -9,9 +9,9 @@
   - `zod` (queue message schemas only)
   - Relative paths within `packages/domain/src/`
 - **Exports to:**
-  - `packages/application/` — predicates, message builders, normalizers, diff validators, `assignDiffIds`, queue schemas
-  - `packages/db/` — type shapes only (Row, Form types for normalizer return values)
-  - `apps/worker/` — queue message schemas for job validation
+  - `packages/application/` — predicates (`canDeleteService`, `isWarehouseDeleteBlocked`, etc.), message builders (`buildWarehouseDeleteBlockedMessage`, `getDeleteBlockedMessage`, …), normalizers (`normalizeWarehouseName`), `validateDiff` + `DiffValidationIssue[]` (warehouses sectional diff), `assignDiffIds`, queue schemas, shared utilities (`shared/` formatters and calculators)
+  - `apps/web/modules/` (controllers and UI) — `EMPTY_*_FORM` constants and `to*Form` converters (`EMPTY_SERVICE_FORM` / `toServiceForm`, `EMPTY_CONTACT_FORM` / `toContactForm`, `EMPTY_MANUFACTURER_FORM` / `toManufacturerForm`, `EMPTY_WAREHOUSE_FORM` / `EMPTY_LOCATION_FORM` / `toWarehouseForm` / `toLocationForm`), plus shared utilities for display (`formatCurrencyValue`, `sumLineTotals`, `calculateRecordSalesRepExpense`, `normalizeTableFilterValues`)
+  - `apps/worker/` — queue message schemas for job payload validation, plus any predicates/rules the use cases it delegates to depend on
 
 ## 2. Data
 **Package:** `packages/db/`
