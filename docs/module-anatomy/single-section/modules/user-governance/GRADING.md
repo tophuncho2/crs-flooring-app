@@ -6,7 +6,13 @@
 
 **Grade:** TBD
 
-- (no open violations)
+- Amin consumes domain at a fraction of the volume of manufacturers/contacts/services:
+
+- [ ] No `UserForm` / `EMPTY_USER_FORM` / `toUserForm` triad in domain.
+- [ ] No `validateUserForm` import. Services and contacts consume `validate{Name}Form` from `domain/{name}/types.ts` inside their primary-section controller; admin does not.
+- [ ] Mutation flow bypasses the form/converter pattern; inlined in controller (see `modules/user-governance/GRADING.md`).
+- [ ] Only `GovernableRole` + `formatStableDateTime` are imported.
+
 
 ## Data
 

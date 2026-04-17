@@ -6,7 +6,7 @@
 
 **Grade:** TBD
 
-- (no open violations)
+- [ ] No `validateManufacturerForm` export in `packages/domain/src/flooring/manufacturers/types.ts`. Services and contacts ship `validate{Name}Form` in their `types.ts` and consume it from `use-{name}-primary-section.ts`. Add for parity.
 
 ## Data
 

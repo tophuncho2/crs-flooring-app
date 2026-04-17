@@ -34,7 +34,6 @@ Consumers: `{name}-create-client.tsx` imports the empty constant; `use-{name}-pr
 | `validateContactForm` | `contacts/types.ts:37` | `use-contact-primary-section.ts:14` |
 | `validateContactType` | `contacts/types.ts:33` | (used inside `validateContactForm`) |
 
-Manufacturers has no `validate*Form` export. Admin has no validator import.
 
 ## Module-level constants
 
@@ -46,12 +45,3 @@ Manufacturers has no `validate*Form` export. Admin has no validator import.
 
 `formatStableDateTime` (`packages/domain/src/shared/date-format.ts:33`) is imported by every swept module's `*-primary-fields-section.tsx` and every list table. Admin imports it in both places too.
 
-## Admin divergence
-
-Admin consumes domain at a fraction of the volume of manufacturers/contacts/services:
-
-- No `UserForm` / `EMPTY_USER_FORM` / `toUserForm` triad in domain.
-- Mutation flow bypasses the form/converter pattern; inlined in controller (see `modules/user-governance/GRADING.md`).
-- Only `GovernableRole` + `formatStableDateTime` are imported.
-
-Treat admin as a known outlier — not the pattern, but not fixed in this sweep.
