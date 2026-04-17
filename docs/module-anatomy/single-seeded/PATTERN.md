@@ -11,35 +11,9 @@
 4. Server Components in `page.tsx` call server-side queries under `data/queries.ts`. UI components never call APIs directly.
 5. Module folder is self-contained. All module-specific code lives within `apps/web/modules/{name}/`.
 
-## Module Structure — `apps/web/modules/{name}/`
-
-```
-modules/{name}/
-├── CLAUDE.md                                ← Module-level rules
-├── components/
-│   └── list/
-│       ├── {name}-client.tsx                ← Client wrapper; composes the list controller
-│       └── {name}-table.tsx                 ← Column config for the shared table
-├── controllers/                             ← plural folder name for single-seeded
-│   └── use-{name}-list-controller.ts        ← Only a list controller; no record/primary controller
-├── data/
-│   └── queries.ts                           ← Server-side reads; no mutation helpers
-└── types.ts                                 ← Row/filter types used by the list
-```
-
-## Dashboard Routes — `apps/web/app/dashboard/{name}/`
-
-```
-dashboard/{name}/
-└── page.tsx                                 ← List page only. No [id]/page.tsx, no new/page.tsx.
-```
 
 ## API Routes — `apps/web/app/api/{name}/`
 
-```
-api/{name}/
-└── route.ts                                 ← GET only. No POST, PATCH, DELETE.
-```
 
 No mutation routes. No `[id]/route.ts`. No `_validators.ts`. Some single-seeded modules may skip the API route entirely and rely on server-side queries from `page.tsx` only — this is acceptable when nothing client-side needs to refetch.
 
@@ -52,9 +26,23 @@ No mutation routes. No `[id]/route.ts`. No `_validators.ts`. Some single-seeded 
 5. **Do not** write to the table from application code — all rows come from the seed script.
 6. **Do not** promote a single-seeded module to single-section in place. Migrate the table under a new pattern and retire the old module.
 
-## Known gaps
+## Known Gaps / Grading
 
-Tracked in [KNOWN_GAPS.md](KNOWN_GAPS.md).
+Module-type-wide gaps are tracked in [KNOWN_GAPS.md](KNOWN_GAPS.md). Individual module violations live in each module's own grading file under [`modules/{name}/GRADING.md`](modules/).
+
+## Subfolder References
+
+Each subfolder under `single-seeded/` documents one slice of the pattern, grounded in the swept references (`categories`, `unit-of-measures`):
+
+- [`app/API.md`](app/API.md) — the `apps/web/app/api/{name}/route.ts` shape for single-seeded.
+- [`app/DASHBOARD.md`](app/DASHBOARD.md) — the `apps/web/app/dashboard/{name}/page.tsx` shape for single-seeded.
+- [`controllers/CONTROLLER.md`](controllers/CONTROLLER.md) — the `apps/web/modules/{name}/controllers/` list-controller contract.
+- [`components/list/COMPONENTS.md`](components/list/COMPONENTS.md) — the `apps/web/modules/{name}/components/list/` client + table conventions.
+- [`data/SEED.md`](data/SEED.md) — the seed pipeline under `packages/db/src/seed/` and `packages/db/scripts/`.
+- [`data/READS.md`](data/READS.md) — the read repository under `packages/db/src/flooring/{name}/`.
+- [`modules/TYPES.md`](modules/TYPES.md) — where `types.ts` lives for single-seeded and who imports it.
+- [`modules/`](modules/) — per-module folders with `GRADING.md`, `PLANS.md`, and legacy module references.
+- [`../QUERIES.md`](../QUERIES.md) — cross-type role of `data/queries.ts` (used by the dashboard page).
 
 ## Related Docs
 
