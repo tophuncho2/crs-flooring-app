@@ -54,13 +54,13 @@
 ## Module Anatomy
 | Doc | Scope |
 |-----|-------|
-| [module-anatomy/single-seeded/modules/CATEGORIES.md](module-anatomy/single-seeded/modules/CATEGORIES.md) | Categories reference data module |
-| [module-anatomy/single-seeded/modules/UNIT_OF_MEASURES.md](module-anatomy/single-seeded/modules/UNIT_OF_MEASURES.md) | Unit of Measures reference data module |
+| [module-anatomy/single-seeded/categories/CATEGORIES.md](module-anatomy/single-seeded/categories/CATEGORIES.md) | Categories reference data module |
+| [module-anatomy/single-seeded/unit-of-measures/UNIT_OF_MEASURES.md](module-anatomy/single-seeded/unit-of-measures/UNIT_OF_MEASURES.md) | Unit of Measures reference data module |
 
 ## Domain References
 | Doc | Scope |
 |-----|-------|
-| [module-anatomy/single-section/modules/USER_GOVERNANCE.md](module-anatomy/single-section/modules/USER_GOVERNANCE.md) | Users, roles, auth, admin |
+| [module-anatomy/single-section/user-governance/USER_GOVERNANCE.md](module-anatomy/single-section/user-governance/USER_GOVERNANCE.md) | Users, roles, auth, admin |
 
 
 Review them in this order. Each doc should be accurate against the codebase before moving to the next. Want a Claude Code prompt to start the sweep?

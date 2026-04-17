@@ -1,6 +1,6 @@
 # Domain Docs + layers/PATTERN.md Audit
 
-> **Status:** Doc edits applied (C1, C2, C3, M1–M5, L1–L2). Outstanding items are warehouse sweep tasks tracked in `docs/module-anatomy/multi-section/warehouse/sweep-plan/VIOLATIONS.md`. This audit remains active until the warehouse sweep completes and Section 1 gap rows flip.
+> **Status:** Doc edits applied (C1, C2, C3, M1–M5, L1–L2). Outstanding items are warehouse sweep tasks tracked in `docs/module-anatomy/multi-section/warehouse/GRADING.md`. This audit remains active until the warehouse sweep completes and Section 1 gap rows flip.
 
 Read-only scan. Every claim cites a file path + line.
 
@@ -327,4 +327,4 @@ All recommended doc edits have been applied. Remaining follow-ups are code-level
 
 ## Section 11 — Warehouse sweep follow-ups (NOT doc edits)
 
-Tracked in `docs/module-anatomy/multi-section/warehouse/sweep-plan/VIOLATIONS.md`. Do not duplicate here.
+Tracked in `docs/module-anatomy/multi-section/warehouse/GRADING.md`. Do not duplicate here.

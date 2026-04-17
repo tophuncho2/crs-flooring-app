@@ -12,4 +12,4 @@ User governance UI for OWNER/ADMIN users.
 6. The `+ User` button uses the canonical `primaryAction` slot and `useRecordEntryNavigation.openCreate()`.
 7. Role editing is gated by `canChangeRole` permission flag from the governance predicates.
 8. Verification status is read-only — managed automatically by the set-password flow.
-9. Refer to `docs/module-anatomy/single-section/modules/USER_GOVERNANCE.md` for the governance truth table and user lifecycle.
+9. Refer to `docs/module-anatomy/single-section/user-governance/USER_GOVERNANCE.md` for the governance truth table and user lifecycle.
