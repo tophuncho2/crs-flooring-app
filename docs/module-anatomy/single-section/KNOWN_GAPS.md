@@ -1,9 +1,18 @@
 # Single-Section — KNOWN GAPS
 
-> Deviations observed in the reference implementations (`manufacturers`, `contacts`, `services`, `admin`). Paired with `PATTERN.md`.
+> Gaps that apply to the single-section pattern as a whole. Module-specific violations live in each module's `GRADING.md`.
 
-- Primary-section controller naming is inconsistent:
-  - `manufacturers`, `contacts`, `services` → `use-{name}-primary-section.ts`
-  - `admin` → `use-{name}-primary-controller.ts`
-  Pick one pattern and align. `primary-section` is the majority.
-- `admin` lacks `_validators.ts` and the `[id]/primary/section/route.ts` split. This is documented in `docs/patterns/ACCEPTED_EXCEPTIONS.md` (Exception 1) but should be cross-referenced here if it becomes load-bearing.
+## Sweep status
+
+**Swept:**
+- `manufacturers`
+- `contacts`
+- `services`
+- `user-governance` (admin — swept with documented cleanups in `user-governance/GRADING.md`)
+
+**Not swept:**
+- (none — every single-section module currently in the app has been swept)
+
+## Pattern-level gaps
+
+No open pattern-level gaps. All current deviations are module-specific and tracked in the relevant module's `GRADING.md`.

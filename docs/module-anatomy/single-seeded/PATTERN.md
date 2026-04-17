@@ -15,7 +15,7 @@
 
 ```
 modules/{name}/
-├── CLAUDE.md                                ← Module-level rules (optional but present in references)
+├── CLAUDE.md                                ← Module-level rules
 ├── components/
 │   └── list/
 │       ├── {name}-client.tsx                ← Client wrapper; composes the list controller

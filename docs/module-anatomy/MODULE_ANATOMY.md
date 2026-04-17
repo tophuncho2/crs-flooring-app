@@ -7,7 +7,7 @@
 
 1. Every feature module uses the shared engines (list view, record view) — no module builds its own table or form infrastructure.
 2. Every module has a controller layer — UI components do not call APIs directly.
-3. Route structure follows the convention: `/dashboard/{name}` (list), `/dashboard/{name}/[id]` (record), `/dashboard/{name}/new` (create).
+3. Route structure follows the convention: `/dashboard/{name}` (list), `/dashboard/{name}/[id]` (record), `/dashboard/{name}/new` (create). -   - categories and unit-of-measures have only page.tsx — no [id] or new.
 4. Server-side data functions live in `data/` — these are called from Server Components in `page.tsx` files.
 5. Module folders are self-contained — all module-specific code lives within the module directory.
 

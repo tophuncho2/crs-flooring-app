@@ -2,6 +2,23 @@
 
 > Gaps that apply to the multi-section pattern as a whole. Module-specific violations live in each module's `GRADING.md`.
 
+## Sweep status
+
+**Swept:**
+- (none)
+
+**Mid-sweep:**
+- `warehouse`
+
+**Not swept:**
+- `imports`
+- `inventory`
+- `products`
+- `properties`
+- `property-management`
+- `templates`
+- `work-orders`
+
 ## Pattern maturity
 
 - Only one multi-section module is in flight: `warehouse` (mid-sweep). The pattern cannot be fully canonized from a sample size of one. Revisit once `templates` or `work-orders` is swept.
