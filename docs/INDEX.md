@@ -19,11 +19,11 @@
 | [layers/server/AUTHORIZATION.md](layers/server/AUTHORIZATION.md) | Roles, capabilities, tool access |
 | [layers/server/RATE_LIMITING.md](layers/server/RATE_LIMITING.md) | Rate limit enforcement |
 | [layers/server/VALIDATION.md](layers/server/VALIDATION.md) | Shared validation infrastructure, input parsing |
-| [layers/controller/CONTROLLER.md](layers/controller/CONTROLLER.md) | Controller contracts for list and record views |
+| [layers/controllers/CONTROLLERS.md](layers/controllers/CONTROLLERS.md) | Controller contracts for list and record views |
 | [layers/app/api/API_DESIGN.md](layers/app/api/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
 | [layers/app/dashboard/DASHBOARD.md](layers/app/dashboard/DASHBOARD.md) | Dashboard Server Components and page contracts |
-| [layers/controller/TRANSPORT.md](layers/controller/TRANSPORT.md) | Client-side payload assembly and response shaping |
-| [layers/ui/UI.md](layers/ui/UI.md) | Presentational components. No logic, no fetching |
+| [layers/controllers/TRANSPORT.md](layers/controllers/TRANSPORT.md) | Client-side payload assembly and response shaping |
+| [layers/components/COMPONENTS.md](layers/components/COMPONENTS.md) | Presentational components. No logic, no fetching |
 
 ## Engines
 | Doc | Scope |

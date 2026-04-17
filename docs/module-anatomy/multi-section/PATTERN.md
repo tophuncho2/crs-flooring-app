@@ -34,5 +34,5 @@ Tracked in [KNOWN_GAPS.md](KNOWN_GAPS.md).
 - [../MODULE_ANATOMY.md](../MODULE_ANATOMY.md)
 - [../shared/LIST_VIEW_ENGINE.md](../shared/LIST_VIEW_ENGINE.md)
 - [../shared/RECORD_VIEW_ENGINE.md](../shared/RECORD_VIEW_ENGINE.md)
-- [../../layers/controller/CONTROLLER.md](../../layers/controller/CONTROLLER.md)
+- [../../layers/controllers/CONTROLLERS.md](../../layers/controllers/CONTROLLERS.md)
 - [../../layers/domain/module-specific/DIFF_RULES.md](../../layers/domain/module-specific/DIFF_RULES.md)

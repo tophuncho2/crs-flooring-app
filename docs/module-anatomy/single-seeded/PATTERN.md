@@ -31,7 +31,7 @@ Each subfolder under `single-seeded/` documents one slice of the pattern, ground
 
 - [`app/API.md`](app/API.md) — the `apps/web/app/api/{name}/route.ts` shape for single-seeded.
 - [`app/DASHBOARD.md`](app/DASHBOARD.md) — the `apps/web/app/dashboard/{name}/page.tsx` shape for single-seeded.
-- [`controllers/CONTROLLER.md`](controllers/CONTROLLER.md) — the `apps/web/modules/{name}/controllers/` list-controller contract.
+- [`controllers/CONTROLLERS.md`](controllers/CONTROLLERS.md) — the `apps/web/modules/{name}/controllers/` list-controller contract.
 - [`components/list/COMPONENTS.md`](components/list/COMPONENTS.md) — the `apps/web/modules/{name}/components/list/` client + table conventions.
 - [`data/SEED.md`](data/SEED.md) — the seed pipeline under `packages/db/src/seed/` and `packages/db/scripts/`.
 - [`data/READS.md`](data/READS.md) — the read repository under `packages/db/src/flooring/{name}/`.

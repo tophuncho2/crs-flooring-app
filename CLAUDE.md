@@ -12,7 +12,7 @@ Before making changes, read `docs/INDEX.md` to identify relevant architecture do
 - Touching `packages/db/` → read `docs/layers/data/DATA.md`
 
 **Engine work:**
-- Touching any module's `controller/` directory → read `docs/layers/controller/CONTROLLER.md`
+- Touching any module's `controller/` directory → read `docs/layers/controllers/CONTROLLERS.md`
 - Touching `modules/shared/engines/list-view/` → read `docs/module-anatomy/shared/LIST_VIEW_ENGINE.md`
 - Touching `modules/shared/engines/record-view/` → read `docs/module-anatomy/shared/RECORD_VIEW_ENGINE.md`
 - Touching `modules/app-shell/` → read `docs/module-anatomy/shared/NAVIGATION_SHELL.md`

@@ -33,4 +33,4 @@ Each type's `PATTERN.md` defines the exact `modules/{name}/`, `app/dashboard/{na
 
 - [shared/LIST_VIEW_ENGINE.md](shared/LIST_VIEW_ENGINE.md) — list engine that modules configure
 - [shared/RECORD_VIEW_ENGINE.md](shared/RECORD_VIEW_ENGINE.md) — record engine that modules configure
-- [../layers/controller/CONTROLLER.md](../layers/controller/CONTROLLER.md) — controller contracts
+- [../layers/controllers/CONTROLLERS.md](../layers/controllers/CONTROLLERS.md) — controller contracts
