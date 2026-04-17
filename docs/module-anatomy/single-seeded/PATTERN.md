@@ -11,7 +11,6 @@
 4. Server Components in `page.tsx` call server-side queries under `data/queries.ts`. UI components never call APIs directly.
 5. Module folder is self-contained. All module-specific code lives within `apps/web/modules/{name}/`.
 
-
 ## Anti-Patterns
 
 1. **Do not** add mutation routes (`POST`, `PATCH`, `DELETE`) — single-seeded data is immutable at runtime.
