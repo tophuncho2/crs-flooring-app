@@ -18,18 +18,18 @@ Before making changes, read `docs/INDEX.md` to identify relevant architecture do
 - Touching `modules/app-shell/` → read `docs/module-anatomy/shared/NAVIGATION_SHELL.md`
 
 **Route and execution work:**
-- Touching any file in `app/api/` → read `docs/execution/ROUTE_POLICY.md` + `docs/execution/EXECUTION_ENGINE.md`
-- Touching error handling → read `docs/execution/ERROR_HANDLING.md`
-- Touching mutation receipts or idempotency → read `docs/execution/IDEMPOTENCY.md`
+- Touching any file in `app/api/` → read `docs/layers/server/ROUTE_POLICY.md` + `docs/layers/server/EXECUTION_ENGINE.md`
+- Touching error handling → read `docs/layers/application/ERROR_HANDLING.md`
+- Touching mutation receipts or idempotency → read `docs/layers/server/IDEMPOTENCY.md`
 - Touching API response shapes or endpoint conventions → read `docs/patterns/API_DESIGN.md`
 - Touching accepted exceptions → read `docs/patterns/ACCEPTED_EXCEPTIONS.md`
 
 **Cross-cutting concerns:**
-- Touching `server/auth/` → read `docs/cross-cutting/AUTH.md` + `docs/cross-cutting/AUTHORIZATION.md`
-- Touching rate limiting → read `docs/cross-cutting/RATE_LIMITING.md`
+- Touching `server/auth/` → read `docs/layers/server/AUTH.md` + `docs/layers/server/AUTHORIZATION.md`
+- Touching rate limiting → read `docs/layers/server/RATE_LIMITING.md`
 - Touching logging or Sentry → read `docs/cross-cutting/OBSERVABILITY.md`
-- Touching transactions or outbox → read `docs/cross-cutting/TRANSACTIONS.md`
-- Touching validators → read `docs/cross-cutting/VALIDATION.md`
+- Touching transactions or outbox → read `docs/layers/application/TRANSACTIONS.md`
+- Touching validators → read `docs/layers/server/VALIDATION.md`
 - Touching tests → read `docs/cross-cutting/TESTING.md`
 - Touching environment config or Railway → read `docs/cross-cutting/DEPLOYMENT.md`
 

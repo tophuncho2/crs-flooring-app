@@ -92,4 +92,4 @@ packages/db/
 
 - [ROUTE_POLICY.md](ROUTE_POLICY.md) — where receipts are enforced
 - [EXECUTION_ENGINE.md](EXECUTION_ENGINE.md) — idempotency is step 5
-- [../patterns/OUTBOX_PATTERN.md](../patterns/OUTBOX_PATTERN.md) — BullMQ job ID deduplication
+- [../../patterns/OUTBOX_PATTERN.md](../../patterns/OUTBOX_PATTERN.md) — BullMQ job ID deduplication

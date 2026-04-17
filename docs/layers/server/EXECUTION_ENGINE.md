@@ -5,7 +5,7 @@
 ## Rules
 
 1. Every execution path follows the same 9-step sequence, in order.
-2. No step may be skipped unless documented in [ACCEPTED_EXCEPTIONS](../patterns/ACCEPTED_EXCEPTIONS.md).
+2. No step may be skipped unless documented in [ACCEPTED_EXCEPTIONS](../../patterns/ACCEPTED_EXCEPTIONS.md).
 3. Failures at any step halt execution and return a structured error response.
 
 ## The 9-Step Sequence
@@ -44,13 +44,13 @@ BullMQ worker in `apps/worker/` processes jobs dispatched via the outbox/relay p
 8. **Error handling** — `isWorkflowProcessingError` + retryable classification
 9. **Observability** — structured logging with jobId, correlationId, attempt
 
-See [../services/WORKER.md](../services/WORKER.md) for details.
+See [../../services/WORKER.md](../../services/WORKER.md) for details.
 
 ### Relay (Infrastructure)
 
 `apps/relay/` is infrastructure, not a request handler. It polls the outbox and dispatches to BullMQ. It does not execute the 9-step sequence — it is the bridge between steps 6 (transaction) and the worker.
 
-See [../services/RELAY.md](../services/RELAY.md) for details.
+See [../../services/RELAY.md](../../services/RELAY.md) for details.
 
 ## Accepted Exceptions
 
@@ -59,12 +59,12 @@ Two execution paths deviate from the standard sequence:
 1. **Admin-only endpoints** skip optimistic concurrency (step 5 simplified).
 2. **Account preference routes** are idempotent upserts (step 5 implicit).
 
-See [../patterns/ACCEPTED_EXCEPTIONS.md](../patterns/ACCEPTED_EXCEPTIONS.md) for full documentation.
+See [../../patterns/ACCEPTED_EXCEPTIONS.md](../../patterns/ACCEPTED_EXCEPTIONS.md) for full documentation.
 
 ## Related Docs
 
 - [ROUTE_POLICY.md](ROUTE_POLICY.md) — HTTP entry point details
-- [ERROR_HANDLING.md](ERROR_HANDLING.md) — error classification and response shapes
+- [../application/ERROR_HANDLING.md](../application/ERROR_HANDLING.md) — error classification and response shapes
 - [IDEMPOTENCY.md](IDEMPOTENCY.md) — mutation receipt system
-- [../services/WORKER.md](../services/WORKER.md) — job processing entry point
-- [../services/RELAY.md](../services/RELAY.md) — outbox relay infrastructure
+- [../../services/WORKER.md](../../services/WORKER.md) — job processing entry point
+- [../../services/RELAY.md](../../services/RELAY.md) — outbox relay infrastructure

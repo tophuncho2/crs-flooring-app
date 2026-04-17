@@ -58,5 +58,5 @@ When Redis is unavailable:
 
 ## Related Docs
 
-- [../execution/EXECUTION_ENGINE.md](../execution/EXECUTION_ENGINE.md) — rate limiting is step 3
-- [../execution/ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — where rate limits are enforced
+- [EXECUTION_ENGINE.md](EXECUTION_ENGINE.md) — rate limiting is step 3
+- [ROUTE_POLICY.md](ROUTE_POLICY.md) — where rate limits are enforced

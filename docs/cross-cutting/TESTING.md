@@ -89,6 +89,6 @@ npm run test:e2e            # Playwright smoke test
 
 ## Related Docs
 
-- [ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — route handler structure that route tests verify
+- [ROUTE_POLICY.md](../layers/server/ROUTE_POLICY.md) — route handler structure that route tests verify
 - [MODULE_ANATOMY.md](../module-anatomy/MODULE_ANATOMY.md) — module folder structure mirrored by test layout
-- [ERROR_HANDLING.md](../execution/ERROR_HANDLING.md) — error shapes asserted in route tests
+- [ERROR_HANDLING.md](../layers/application/ERROR_HANDLING.md) — error shapes asserted in route tests

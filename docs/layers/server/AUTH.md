@@ -134,4 +134,4 @@ requireSessionUser(): Promise<SessionUser>
 ## Related Docs
 
 - [AUTHORIZATION.md](AUTHORIZATION.md) — what authenticated users are allowed to do
-- [../execution/ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — API route auth enforcement
+- [ROUTE_POLICY.md](ROUTE_POLICY.md) — API route auth enforcement

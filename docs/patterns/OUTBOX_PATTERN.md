@@ -84,7 +84,7 @@ Events that repeatedly fail dispatch (cycling between PENDING and PROCESSING) ar
 
 ## Related Docs
 
-- [../cross-cutting/TRANSACTIONS.md](../cross-cutting/TRANSACTIONS.md) — transaction boundaries
+- [../layers/application/TRANSACTIONS.md](../layers/application/TRANSACTIONS.md) — transaction boundaries
 - [../services/RELAY.md](../services/RELAY.md) — relay service details
 - [../services/WORKER.md](../services/WORKER.md) — worker service details
-- [../execution/IDEMPOTENCY.md](../execution/IDEMPOTENCY.md) — BullMQ job ID deduplication
+- [../layers/server/IDEMPOTENCY.md](../layers/server/IDEMPOTENCY.md) — BullMQ job ID deduplication

@@ -8,7 +8,17 @@
 |-----|-------|
 | [layers/domain/DOMAIN.md](layers/domain/DOMAIN.md) | Business rules and invariants. `packages/domain/` |
 | [layers/application/APPLICATION.md](layers/application/APPLICATION.md) | Use case orchestration. `packages/application/` |
+| [layers/application/ERROR_HANDLING.md](layers/application/ERROR_HANDLING.md) | Error classification and response shapes |
+| [layers/application/TRANSACTIONS.md](layers/application/TRANSACTIONS.md) | Transaction boundaries and outbox |
 | [layers/data/DATA.md](layers/data/DATA.md) | Persistence and repositories. `packages/db/` |
+| [layers/server/SERVER.md](layers/server/SERVER.md) | Server-layer overview |
+| [layers/server/EXECUTION_ENGINE.md](layers/server/EXECUTION_ENGINE.md) | The 9-step execution sequence |
+| [layers/server/ROUTE_POLICY.md](layers/server/ROUTE_POLICY.md) | HTTP route policy wiring |
+| [layers/server/IDEMPOTENCY.md](layers/server/IDEMPOTENCY.md) | Mutation receipts and deduplication |
+| [layers/server/AUTH.md](layers/server/AUTH.md) | Authentication and session management |
+| [layers/server/AUTHORIZATION.md](layers/server/AUTHORIZATION.md) | Roles, capabilities, tool access |
+| [layers/server/RATE_LIMITING.md](layers/server/RATE_LIMITING.md) | Rate limit enforcement |
+| [layers/server/VALIDATION.md](layers/server/VALIDATION.md) | Shared validation infrastructure, input parsing |
 | [layers/controller/CONTROLLER.md](layers/controller/CONTROLLER.md) | Controller contracts for list and record views |
 | [layers/api/API.md](layers/api/API.md) | Payload assembly and response shaping |
 | [layers/ui/UI.md](layers/ui/UI.md) | Presentational components. No logic, no fetching |
@@ -20,24 +30,11 @@
 | [module-anatomy/shared/RECORD_VIEW_ENGINE.md](module-anatomy/shared/RECORD_VIEW_ENGINE.md) | Record view sections, dirty state, reconciliation |
 | [module-anatomy/shared/NAVIGATION_SHELL.md](module-anatomy/shared/NAVIGATION_SHELL.md) | App shell, header, URL-driven navigation |
 
-## Execution
-| Doc | Scope |
-|-----|-------|
-| [execution/EXECUTION_ENGINE.md](execution/EXECUTION_ENGINE.md) | The 9-step execution sequence |
-| [execution/ROUTE_POLICY.md](execution/ROUTE_POLICY.md) | HTTP route policy wiring |
-| [execution/ERROR_HANDLING.md](execution/ERROR_HANDLING.md) | Error classification and response shapes |
-| [execution/IDEMPOTENCY.md](execution/IDEMPOTENCY.md) | Mutation receipts and deduplication |
-
 ## Cross-Cutting Concerns
 | Doc | Scope |
 |-----|-------|
-| [cross-cutting/AUTH.md](cross-cutting/AUTH.md) | Authentication and session management |
-| [cross-cutting/AUTHORIZATION.md](cross-cutting/AUTHORIZATION.md) | Roles, capabilities, tool access |
 | [cross-cutting/OBSERVABILITY.md](cross-cutting/OBSERVABILITY.md) | Logging, tracing, Sentry, Railway |
-| [cross-cutting/RATE_LIMITING.md](cross-cutting/RATE_LIMITING.md) | Rate limit enforcement |
-| [cross-cutting/TRANSACTIONS.md](cross-cutting/TRANSACTIONS.md) | Transaction boundaries and outbox |
 | [cross-cutting/TESTING.md](cross-cutting/TESTING.md) | Test strategy, mock isolation, vitest conventions |
-| [cross-cutting/VALIDATION.md](cross-cutting/VALIDATION.md) | Shared validation infrastructure, input parsing |
 | [cross-cutting/DEPLOYMENT.md](cross-cutting/DEPLOYMENT.md) | Deployment configuration and process |
 
 ## Services

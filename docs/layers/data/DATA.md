@@ -49,5 +49,5 @@ Read/write repository split: read repositories handle queries and filtering, wri
 ## Related Docs
 
 - [../application/APPLICATION.md](../application/APPLICATION.md) — consumes data layer for persistence
-- [../../execution/IDEMPOTENCY.md](../../execution/IDEMPOTENCY.md) — mutation receipt system
+- [../server/IDEMPOTENCY.md](../server/IDEMPOTENCY.md) — mutation receipt system
 - [../../patterns/OUTBOX_PATTERN.md](../../patterns/OUTBOX_PATTERN.md) — outbox repository usage

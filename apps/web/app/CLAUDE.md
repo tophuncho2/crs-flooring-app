@@ -10,4 +10,4 @@ Next.js App Router pages and API routes.
 4. Every mutation route (POST/PATCH/DELETE) uses the full mutation lifecycle: `parseMutationEnvelope` → `enforceMutationReceipt` → execute → `finalizeMutationReceipt`.
 5. Query routes use `enforceQueryRateLimit()`.
 6. No business logic in route handlers — delegate to `packages/application/` use cases.
-7. Refer to `docs/execution/ROUTE_POLICY.md` and `docs/patterns/API_DESIGN.md` for full contracts.
+7. Refer to `docs/layers/server/ROUTE_POLICY.md` and `docs/patterns/API_DESIGN.md` for full contracts.
