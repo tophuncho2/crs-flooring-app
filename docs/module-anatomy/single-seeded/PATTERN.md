@@ -110,5 +110,5 @@ Reference data modules deviate from the required structure defined in `apps/web/
 
 - [ACCEPTED_EXCEPTIONS.md](ACCEPTED_EXCEPTIONS.md) — the exception entry for reference data
 - [MODULE_ANATOMY.md](MODULE_ANATOMY.md) — the standard module structure this deviates from
-- [../engines/LIST_VIEW_ENGINE.md](../engines/LIST_VIEW_ENGINE.md) — the list engine reference data uses
+- [../shared/LIST_VIEW_ENGINE.md](../shared/LIST_VIEW_ENGINE.md) — the list engine reference data uses
 - [../cross-cutting/TRANSACTIONS.md](../cross-cutting/TRANSACTIONS.md) — FK Restrict enforcement is database-level

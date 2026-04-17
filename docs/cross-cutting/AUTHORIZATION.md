@@ -75,4 +75,4 @@ CONTRACTOR and CUSTOMER have zero capabilities.
 
 - [AUTH.md](AUTH.md) — how users authenticate before authorization
 - [../execution/ROUTE_POLICY.md](../execution/ROUTE_POLICY.md) — where authorization is enforced
-- [../engines/NAVIGATION_SHELL.md](../engines/NAVIGATION_SHELL.md) — UI navigation gating
+- [../module-anatomy/shared/NAVIGATION_SHELL.md](../module-anatomy/shared/NAVIGATION_SHELL.md) — UI navigation gating

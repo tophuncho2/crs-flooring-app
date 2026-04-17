@@ -13,9 +13,9 @@ Before making changes, read `docs/INDEX.md` to identify relevant architecture do
 
 **Engine work:**
 - Touching any module's `controller/` directory → read `docs/layers/CONTROLLER.md`
-- Touching `modules/shared/engines/list-view/` → read `docs/engines/LIST_VIEW_ENGINE.md`
-- Touching `modules/shared/engines/record-view/` → read `docs/engines/RECORD_VIEW_ENGINE.md`
-- Touching `modules/app-shell/` → read `docs/engines/NAVIGATION_SHELL.md`
+- Touching `modules/shared/engines/list-view/` → read `docs/module-anatomy/shared/LIST_VIEW_ENGINE.md`
+- Touching `modules/shared/engines/record-view/` → read `docs/module-anatomy/shared/RECORD_VIEW_ENGINE.md`
+- Touching `modules/app-shell/` → read `docs/module-anatomy/shared/NAVIGATION_SHELL.md`
 
 **Route and execution work:**
 - Touching any file in `app/api/` → read `docs/execution/ROUTE_POLICY.md` + `docs/execution/EXECUTION_ENGINE.md`

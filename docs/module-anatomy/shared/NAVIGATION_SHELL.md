@@ -87,4 +87,4 @@ Dashboard layout entry point: `apps/web/app/dashboard/layout.tsx`
 
 - [LIST_VIEW_ENGINE.md](LIST_VIEW_ENGINE.md) — fills the content slot for list pages
 - [RECORD_VIEW_ENGINE.md](RECORD_VIEW_ENGINE.md) — fills the content slot for record pages
-- [../cross-cutting/AUTHORIZATION.md](../cross-cutting/AUTHORIZATION.md) — role-based nav gating
+- [../../cross-cutting/AUTHORIZATION.md](../../cross-cutting/AUTHORIZATION.md) — role-based nav gating

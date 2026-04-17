@@ -68,6 +68,6 @@ app/api/flooring/{name}/
 
 ## Related Docs
 
-- [../engines/LIST_VIEW_ENGINE.md](../engines/LIST_VIEW_ENGINE.md) — list engine that modules configure
-- [../engines/RECORD_VIEW_ENGINE.md](../engines/RECORD_VIEW_ENGINE.md) — record engine that modules configure
+- [shared/LIST_VIEW_ENGINE.md](shared/LIST_VIEW_ENGINE.md) — list engine that modules configure
+- [shared/RECORD_VIEW_ENGINE.md](shared/RECORD_VIEW_ENGINE.md) — record engine that modules configure
 - [../layers/CONTROLLER.md](../layers/CONTROLLER.md) — controller contracts

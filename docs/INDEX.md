@@ -16,9 +16,9 @@
 ## Engines
 | Doc | Scope |
 |-----|-------|
-| [engines/LIST_VIEW_ENGINE.md](engines/LIST_VIEW_ENGINE.md) | List view engine contract and controls |
-| [engines/RECORD_VIEW_ENGINE.md](engines/RECORD_VIEW_ENGINE.md) | Record view sections, dirty state, reconciliation |
-| [engines/NAVIGATION_SHELL.md](engines/NAVIGATION_SHELL.md) | App shell, header, URL-driven navigation |
+| [module-anatomy/shared/LIST_VIEW_ENGINE.md](module-anatomy/shared/LIST_VIEW_ENGINE.md) | List view engine contract and controls |
+| [module-anatomy/shared/RECORD_VIEW_ENGINE.md](module-anatomy/shared/RECORD_VIEW_ENGINE.md) | Record view sections, dirty state, reconciliation |
+| [module-anatomy/shared/NAVIGATION_SHELL.md](module-anatomy/shared/NAVIGATION_SHELL.md) | App shell, header, URL-driven navigation |
 
 ## Execution
 | Doc | Scope |
