@@ -53,5 +53,6 @@ Most modules keep transport implicit — domain Zod schemas validate input, and 
 
 ## Related Docs
 
-- [../controller/CONTROLLER.md](../controller/CONTROLLER.md) — consumes transport for API communication
+- [CONTROLLER.md](CONTROLLER.md) — consumes transport for API communication
 - [../server/ROUTE_POLICY.md](../server/ROUTE_POLICY.md) — server-side request handling
+- [../app/api/API_DESIGN.md](../app/api/API_DESIGN.md) — server-side HTTP route conventions transport targets
