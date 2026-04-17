@@ -17,7 +17,7 @@ One `GET` function per module. Four moving parts:
 
 1. **Route policy** — `applyRoutePolicy(request, { capability: "system.access", toolSlug: {NAME}_TOOL_SLUG })`. `system.access` is the baseline capability; tool slug is imported from `@/modules/shared/access/lookup-domains`. Short-circuit if it returns a `Response`.
 2. **Query rate limit** — `enforceQueryRateLimit(request, access, "/api/{name}")`. Short-circuit on throttle.
-3. **Read + respond** — inside `try`, call the db list reader (e.g. `listCategories`) and return `routeJson(access, { {pluralName}: rows })`.
+3. **Read + respond** — inside `try`, call the db list reader directly from `@builders/db` (e.g. `listCategories`) and return `routeJson(access, { {pluralName}: rows })`. The route does **not** call `modules/{name}/data/queries.ts` — that helper is for the dashboard page only. The route does **not** call a use case — single-seeded reads have no rules to run.
 4. **Error normalization** — `catch (error) { return routeError(access, error) }`.
 
 ## Imports (canonical set)
