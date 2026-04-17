@@ -19,7 +19,7 @@ import {
 // --- Input types ---
 
 export type CreateWarehouseInput = {
-  slug: string
+  number: number
   name: string
   address: string | null
   phone: string | null
@@ -33,23 +33,20 @@ export type UpdateWarehouseInput = {
 
 export type CreateSectionInput = {
   warehouseId: string
-  slug: string
-  name: string
-}
-
-export type UpdateSectionInput = {
-  name?: string
+  number: number
 }
 
 export type CreateLocationInput = {
   warehouseId: string
   sectionId: string
-  locationCode: string
+  rafter: number
+  level: number
 }
 
 export type UpdateLocationInput = {
   sectionId?: string
-  locationCode?: string
+  rafter?: number
+  level?: number
 }
 
 // --- Warehouse writes (single-entity) ---
@@ -60,7 +57,7 @@ export async function createWarehouse(
 ): Promise<WarehouseRecord> {
   const row = await client.flooringWarehouse.create({
     data: {
-      slug: input.slug,
+      number: input.number,
       name: input.name,
       address: input.address,
       phone: input.phone,
@@ -104,25 +101,8 @@ export async function createSection(
   const row = await client.flooringSection.create({
     data: {
       warehouseId: input.warehouseId,
-      slug: input.slug,
-      name: input.name,
+      number: input.number,
     },
-    select: sectionRowSelect,
-  })
-  return normalizeSectionRow(row)
-}
-
-export async function updateSection(
-  id: string,
-  input: UpdateSectionInput,
-  client: WarehousesDbClient = db,
-): Promise<SectionRecord> {
-  const data: Prisma.FlooringSectionUpdateInput = {}
-  if (input.name !== undefined) data.name = input.name
-
-  const row = await client.flooringSection.update({
-    where: { id },
-    data,
     select: sectionRowSelect,
   })
   return normalizeSectionRow(row)
@@ -145,7 +125,8 @@ export async function createLocation(
     data: {
       warehouseId: input.warehouseId,
       sectionId: input.sectionId,
-      locationCode: input.locationCode,
+      rafter: input.rafter,
+      level: input.level,
     },
     select: locationRowSelect,
   })
@@ -161,7 +142,8 @@ export async function updateLocation(
   if (input.sectionId !== undefined) {
     data.section = { connect: { id: input.sectionId } }
   }
-  if (input.locationCode !== undefined) data.locationCode = input.locationCode
+  if (input.rafter !== undefined) data.rafter = input.rafter
+  if (input.level !== undefined) data.level = input.level
 
   const row = await client.flooringLocation.update({
     where: { id },
@@ -186,30 +168,29 @@ export async function deleteLocationById(
  * Caller contract:
  *  - Caller opens the transaction via withDatabaseTransaction
  *  - Caller generates UUIDs for every added section and location and passes
- *    them as `id`. The domain diff payload (with tempIds only) is translated
- *    to this shape by the application layer.
- *  - Caller has validated the diff via domain predicates before calling
+ *    them as `id`. Caller also pre-assigns section `number` via
+ *    computeNextNumber over getExistingSectionNumbers results. The domain
+ *    diff payload (with tempIds only) is translated to this shape by the
+ *    application layer.
+ *  - Caller has validated the diff via domain predicates before calling.
+ *
+ * Sections are immutable after creation (no editable fields). Only added
+ * and deleted sets are accepted for sections.
  *
  * Execution order:
  *  0. Lock parent warehouse row (prevents concurrent sectional saves)
  *  1. deleteMany locations in locations.deleted
  *  2. deleteMany sections in sections.deleted
  *  3. Build tempIdMap from input (pure — no DB round-trips)
- *  4. createMany sections with client-assigned IDs
- *  5. Update modified sections (per-row loop — distinct names)
- *  6. createMany locations with client-assigned IDs, resolving sectionRef via tempIdMap
- *  7. Update modified locations (per-row loop — distinct values)
- *  8. Reload post-state (parallel)
- *
- * Returns the new canonical sections + locations arrays and the tempIdMap
- * (built from input, for the caller's convenience when mapping response
- * IDs back to optimistic UI rows).
+ *  4. createMany sections with client-assigned IDs and numbers
+ *  5. createMany locations with client-assigned IDs, resolving sectionRef via tempIdMap
+ *  6. Update modified locations (per-row loop — distinct values)
+ *  7. Reload post-state (parallel)
  */
 export type ApplyDiffInput = {
   warehouseId: string
   sections: {
-    added: Array<{ id: string; tempId: string; slug: string; name: string }>
-    modified: Array<{ id: string; name: string }>
+    added: Array<{ id: string; tempId: string; number: number }>
     deleted: Array<{ id: string }>
   }
   locations: {
@@ -217,9 +198,10 @@ export type ApplyDiffInput = {
       id: string
       tempId: string
       sectionRef: { kind: "id"; id: string } | { kind: "tempId"; tempId: string }
-      locationCode: string
+      rafter: number
+      level: number
     }>
-    modified: Array<{ id: string; sectionId?: string; locationCode?: string }>
+    modified: Array<{ id: string; sectionId?: string; rafter?: number; level?: number }>
     deleted: Array<{ id: string }>
   }
 }
@@ -257,27 +239,18 @@ export async function applySectionsWithLocationsDiff(
     tempIdMap[draft.tempId] = draft.id
   }
 
-  // Step 4: Batch create sections with pre-assigned IDs
+  // Step 4: Batch create sections with pre-assigned IDs and numbers
   if (input.sections.added.length > 0) {
     await tx.flooringSection.createMany({
       data: input.sections.added.map((draft) => ({
         id: draft.id,
         warehouseId: input.warehouseId,
-        slug: draft.slug,
-        name: draft.name,
+        number: draft.number,
       })),
     })
   }
 
-  // Step 5: Update modified sections (per-row — distinct names)
-  for (const modification of input.sections.modified) {
-    await tx.flooringSection.update({
-      where: { id: modification.id },
-      data: { name: modification.name },
-    })
-  }
-
-  // Step 6: Batch create locations, resolving sectionRef via tempIdMap
+  // Step 5: Batch create locations, resolving sectionRef via tempIdMap
   if (input.locations.added.length > 0) {
     const locationData = input.locations.added.map((draft) => {
       const sectionId =
@@ -295,21 +268,21 @@ export async function applySectionsWithLocationsDiff(
         id: draft.id,
         warehouseId: input.warehouseId,
         sectionId,
-        locationCode: draft.locationCode,
+        rafter: draft.rafter,
+        level: draft.level,
       }
     })
     await tx.flooringLocation.createMany({ data: locationData })
   }
 
-  // Step 7: Update modified locations (per-row — distinct values)
+  // Step 6: Update modified locations (per-row — distinct values)
   for (const modification of input.locations.modified) {
     const data: Prisma.FlooringLocationUpdateInput = {}
     if (modification.sectionId !== undefined) {
       data.section = { connect: { id: modification.sectionId } }
     }
-    if (modification.locationCode !== undefined) {
-      data.locationCode = modification.locationCode
-    }
+    if (modification.rafter !== undefined) data.rafter = modification.rafter
+    if (modification.level !== undefined) data.level = modification.level
     if (Object.keys(data).length === 0) continue
     await tx.flooringLocation.update({
       where: { id: modification.id },
@@ -317,17 +290,17 @@ export async function applySectionsWithLocationsDiff(
     })
   }
 
-  // Step 8: Reload post-state in parallel
+  // Step 7: Reload post-state in parallel
   const [sectionRows, locationRows] = await Promise.all([
     tx.flooringSection.findMany({
       where: { warehouseId: input.warehouseId },
       select: sectionRowSelect,
-      orderBy: { name: "asc" },
+      orderBy: { number: "asc" },
     }),
     tx.flooringLocation.findMany({
       where: { warehouseId: input.warehouseId },
       select: locationRowSelect,
-      orderBy: { locationCode: "asc" },
+      orderBy: [{ rafter: "asc" }, { level: "asc" }],
     }),
   ])
 

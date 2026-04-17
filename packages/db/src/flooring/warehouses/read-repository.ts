@@ -15,7 +15,7 @@ import {
 
 export type WarehouseRecord = {
   id: string
-  slug: string
+  number: number
   name: string
   address: string | null
   phone: string | null
@@ -29,8 +29,7 @@ export type WarehouseRecord = {
 export type SectionRecord = {
   id: string
   warehouseId: string
-  slug: string
-  name: string
+  number: number
   locationsCount: number
   createdAt: string
   updatedAt: string
@@ -40,7 +39,8 @@ export type LocationRecord = {
   id: string
   warehouseId: string
   sectionId: string
-  locationCode: string
+  rafter: number
+  level: number
   inventoriesCount: number
   createdAt: string
   updatedAt: string
@@ -56,7 +56,7 @@ export type WarehouseDetailRecord = WarehouseRecord & {
 export function normalizeWarehouseRow(row: WarehouseRowPayload): WarehouseRecord {
   return {
     id: row.id,
-    slug: row.slug,
+    number: row.number,
     name: row.name,
     address: row.address,
     phone: row.phone,
@@ -72,8 +72,7 @@ export function normalizeSectionRow(row: SectionRowPayload): SectionRecord {
   return {
     id: row.id,
     warehouseId: row.warehouseId,
-    slug: row.slug,
-    name: row.name,
+    number: row.number,
     locationsCount: row._count.locations,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -85,7 +84,8 @@ export function normalizeLocationRow(row: LocationRowPayload): LocationRecord {
     id: row.id,
     warehouseId: row.warehouseId,
     sectionId: row.sectionId,
-    locationCode: row.locationCode,
+    rafter: row.rafter,
+    level: row.level,
     inventoriesCount: row._count.inventories,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -95,7 +95,7 @@ export function normalizeLocationRow(row: LocationRowPayload): LocationRecord {
 export function normalizeWarehouseDetail(row: WarehouseDetailPayload): WarehouseDetailRecord {
   return {
     id: row.id,
-    slug: row.slug,
+    number: row.number,
     name: row.name,
     address: row.address,
     phone: row.phone,
@@ -114,7 +114,7 @@ export function normalizeWarehouseDetail(row: WarehouseDetailPayload): Warehouse
 export async function listWarehouses(client: WarehousesDbClient = db): Promise<WarehouseRecord[]> {
   const rows = await client.flooringWarehouse.findMany({
     select: warehouseRowSelect,
-    orderBy: { name: "asc" },
+    orderBy: { number: "asc" },
   })
   return rows.map(normalizeWarehouseRow)
 }
@@ -141,21 +141,6 @@ export async function getWarehouseDetailById(
   return row ? normalizeWarehouseDetail(row) : null
 }
 
-export async function warehouseSlugExists(
-  slug: string,
-  options: { excludeId?: string; client?: WarehousesDbClient } = {},
-): Promise<boolean> {
-  const client = options.client ?? db
-  const existing = await client.flooringWarehouse.findFirst({
-    where: {
-      slug,
-      ...(options.excludeId ? { NOT: { id: options.excludeId } } : {}),
-    },
-    select: { id: true },
-  })
-  return Boolean(existing)
-}
-
 export async function warehouseNameExists(
   name: string,
   options: { excludeId?: string; client?: WarehousesDbClient } = {},
@@ -169,6 +154,15 @@ export async function warehouseNameExists(
     select: { id: true },
   })
   return Boolean(existing)
+}
+
+export async function getExistingWarehouseNumbers(
+  client: WarehousesDbClient = db,
+): Promise<number[]> {
+  const rows = await client.flooringWarehouse.findMany({
+    select: { number: true },
+  })
+  return rows.map((r) => r.number)
 }
 
 export async function getWarehouseDeleteState(
@@ -204,7 +198,7 @@ export async function listSectionsByWarehouse(
   const rows = await client.flooringSection.findMany({
     where: { warehouseId },
     select: sectionRowSelect,
-    orderBy: { name: "asc" },
+    orderBy: { number: "asc" },
   })
   return rows.map(normalizeSectionRow)
 }
@@ -220,38 +214,15 @@ export async function getSectionById(
   return row ? normalizeSectionRow(row) : null
 }
 
-export async function sectionSlugExists(
+export async function getExistingSectionNumbers(
   warehouseId: string,
-  slug: string,
-  options: { excludeId?: string; client?: WarehousesDbClient } = {},
-): Promise<boolean> {
-  const client = options.client ?? db
-  const existing = await client.flooringSection.findFirst({
-    where: {
-      warehouseId,
-      slug,
-      ...(options.excludeId ? { NOT: { id: options.excludeId } } : {}),
-    },
-    select: { id: true },
+  client: WarehousesDbClient = db,
+): Promise<number[]> {
+  const rows = await client.flooringSection.findMany({
+    where: { warehouseId },
+    select: { number: true },
   })
-  return Boolean(existing)
-}
-
-export async function sectionNameExists(
-  warehouseId: string,
-  name: string,
-  options: { excludeId?: string; client?: WarehousesDbClient } = {},
-): Promise<boolean> {
-  const client = options.client ?? db
-  const existing = await client.flooringSection.findFirst({
-    where: {
-      warehouseId,
-      name: { equals: name, mode: "insensitive" },
-      ...(options.excludeId ? { NOT: { id: options.excludeId } } : {}),
-    },
-    select: { id: true },
-  })
-  return Boolean(existing)
+  return rows.map((r) => r.number)
 }
 
 export async function getSectionDeleteState(
@@ -281,7 +252,7 @@ export async function listLocationsByWarehouse(
   const rows = await client.flooringLocation.findMany({
     where: { warehouseId },
     select: locationRowSelect,
-    orderBy: { locationCode: "asc" },
+    orderBy: [{ rafter: "asc" }, { level: "asc" }],
   })
   return rows.map(normalizeLocationRow)
 }
@@ -297,16 +268,18 @@ export async function getLocationById(
   return row ? normalizeLocationRow(row) : null
 }
 
-export async function locationCodeExists(
+export async function locationCoordExists(
   warehouseId: string,
-  locationCode: string,
+  rafter: number,
+  level: number,
   options: { excludeId?: string; client?: WarehousesDbClient } = {},
 ): Promise<boolean> {
   const client = options.client ?? db
   const existing = await client.flooringLocation.findFirst({
     where: {
       warehouseId,
-      locationCode,
+      rafter,
+      level,
       ...(options.excludeId ? { NOT: { id: options.excludeId } } : {}),
     },
     select: { id: true },

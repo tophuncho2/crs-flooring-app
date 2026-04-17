@@ -4,7 +4,7 @@ export type WarehousesDbClient = PrismaClient | Prisma.TransactionClient
 
 export const warehouseRowSelect = {
   id: true,
-  slug: true,
+  number: true,
   name: true,
   address: true,
   phone: true,
@@ -22,8 +22,7 @@ export const warehouseRowSelect = {
 export const sectionRowSelect = {
   id: true,
   warehouseId: true,
-  slug: true,
-  name: true,
+  number: true,
   createdAt: true,
   updatedAt: true,
   _count: {
@@ -37,7 +36,8 @@ export const locationRowSelect = {
   id: true,
   warehouseId: true,
   sectionId: true,
-  locationCode: true,
+  rafter: true,
+  level: true,
   createdAt: true,
   updatedAt: true,
   _count: {
@@ -47,9 +47,14 @@ export const locationRowSelect = {
   },
 } as const
 
+const locationDetailOrderBy: Prisma.FlooringLocationOrderByWithRelationInput[] = [
+  { rafter: "asc" },
+  { level: "asc" },
+]
+
 export const warehouseDetailSelect = {
   id: true,
-  slug: true,
+  number: true,
   name: true,
   address: true,
   phone: true,
@@ -64,11 +69,11 @@ export const warehouseDetailSelect = {
   },
   sections: {
     select: sectionRowSelect,
-    orderBy: { name: "asc" },
+    orderBy: { number: "asc" },
   },
   locations: {
     select: locationRowSelect,
-    orderBy: { locationCode: "asc" },
+    orderBy: locationDetailOrderBy,
   },
 } as const
 
