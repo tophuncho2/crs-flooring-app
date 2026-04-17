@@ -6,7 +6,7 @@
 ## Layers
 | Doc | Scope |
 |-----|-------|
-| [layers/domain/DOMAIN.md](layers/domain/DOMAIN.md) | Business rules and invariants. `packages/domain/` |
+| [layers/domain/PATTERN.md](layers/domain/PATTERN.md) | Business rules and invariants. `packages/domain/` |
 | [layers/application/APPLICATION.md](layers/application/APPLICATION.md) | Use case orchestration. `packages/application/` |
 | [layers/application/ERROR_HANDLING.md](layers/application/ERROR_HANDLING.md) | Error classification and response shapes |
 | [layers/application/TRANSACTIONS.md](layers/application/TRANSACTIONS.md) | Transaction boundaries and outbox |

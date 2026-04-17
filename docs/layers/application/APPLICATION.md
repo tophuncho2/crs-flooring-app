@@ -50,6 +50,6 @@ Each feature module follows the same structure: `errors.ts` + `types.ts` + `mapp
 
 ## Related Docs
 
-- [../domain/DOMAIN.md](../domain/DOMAIN.md) — business rules consumed by use cases
+- [../domain/PATTERN.md](../domain/PATTERN.md) — business rules consumed by use cases
 - [../data/DATA.md](../data/DATA.md) — persistence consumed by use cases
 - [../../patterns/OUTBOX_PATTERN.md](../../patterns/OUTBOX_PATTERN.md) — outbox dispatch pattern

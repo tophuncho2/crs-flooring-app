@@ -7,7 +7,7 @@ Before making changes, read `docs/INDEX.md` to identify relevant architecture do
 ### Trigger Conditions
 
 **Layer work:**
-- Touching `packages/domain/` → read `docs/layers/domain/DOMAIN.md`
+- Touching `packages/domain/` → read `docs/layers/domain/PATTERN.md`
 - Touching `packages/application/` → read `docs/layers/application/APPLICATION.md`
 - Touching `packages/db/` → read `docs/layers/data/DATA.md`
 
