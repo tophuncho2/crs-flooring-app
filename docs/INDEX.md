@@ -61,7 +61,7 @@
 ## Domain References
 | Doc | Scope |
 |-----|-------|
-| [module-anatomy/single-section/user-governance/USER_GOVERNANCE.md](module-anatomy/single-section/user-governance/USER_GOVERNANCE.md) | Users, roles, auth, admin |
+| [module-anatomy/single-section/modules/user-governance/USER_GOVERNANCE.md](module-anatomy/single-section/modules/user-governance/USER_GOVERNANCE.md) | Users, roles, auth, admin |
 
 
 Review them in this order. Each doc should be accurate against the codebase before moving to the next. Want a Claude Code prompt to start the sweep?

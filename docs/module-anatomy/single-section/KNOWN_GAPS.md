@@ -8,7 +8,7 @@
 - `manufacturers`
 - `contacts`
 - `services`
-- `user-governance` (admin — swept with documented cleanups in `user-governance/GRADING.md`)
+- `user-governance` (admin — swept with documented cleanups in `modules/user-governance/GRADING.md`)
 
 **Not swept:**
 - (none — every single-section module currently in the app has been swept)
