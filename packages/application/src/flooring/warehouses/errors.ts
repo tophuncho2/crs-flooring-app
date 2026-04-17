@@ -11,6 +11,7 @@ export type WarehouseErrorCode =
   | "LOCATION_IN_USE"
   | "LOCATION_COORD_CONFLICT"
   | "LOCATION_VALIDATION_FAILED"
+  | "DIFF_VALIDATION_FAILED"
 
 export class WarehouseExecutionError extends Error {
   readonly code: WarehouseErrorCode
