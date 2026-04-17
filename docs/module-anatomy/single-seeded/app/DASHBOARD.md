@@ -19,7 +19,7 @@ No `[id]/page.tsx`. No `new/page.tsx`. Reference data has no record or create vi
 2. **Search params** — `const resolvedSearchParams = searchParams ? await searchParams : undefined`. The Next.js `searchParams` prop is a Promise.
 3. **Table preferences** — `await getResolvedUserTablePreference(user.id, "{table-key}")` from `@builders/application`. Persists sort / filter / grouping across sessions.
 4. **Table state** — `parseServerTableQueryState({ searchParams, defaultAscending: … })` from `@/server/pagination`. Default ascending flips to preference direction when a saved pref exists.
-5. **Page data** — `await get{Name}PageData()` from the module's `data/queries.ts`. Returns a `PrismaPageDataResult<Row[]>` (ok / error discriminated union).
+5. **Page data** — `await get{Name}PageData()` from the module's `data/queries.ts`. Returns a `PrismaPageDataResult<Row[]>` (ok / error discriminated union). The page uses `data/queries.ts` — not a direct `@builders/db` call — because the query wraps the reader in `withPrismaConnectivityHandling`, converting connection failures into a renderable error shape instead of a thrown exception. See [`../../QUERIES.md`](../../QUERIES.md).
 6. **Render** — on `pageData.ok === false`, return `<DashboardErrorState … />`. Otherwise pass `initial{Name}s`, `initialTablePreferences`, and `tableState` into the module's list client.
 
 ## Imports (canonical set)
