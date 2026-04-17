@@ -4,7 +4,7 @@
 
 ## Where
 
-Per-concern `*-rules.ts` files under `packages/domain/src/`.
+Per-concern `*-rules.ts` files under `packages/domain/src/`. Form-level predicates (`validate*Form`, `validate*Type`) may live in the module's `types.ts` alongside the shapes they validate.
 
 ## Exports
 

@@ -23,5 +23,5 @@
 
 - **`packages/application/`** — predicates, message builders, normalizers, diff validators, identity helpers, queue schemas, types, utilities.
 - **`apps/web/modules/`** (controllers and UI) — utilities (formatters, calculators, record helpers), `EMPTY_*_FORM` constants, `to*Form` converters.
-- **`apps/worker/`** — queue schemas for job payload validation, plus any domain rules the use cases it delegates to depend on.
+- **`apps/worker/`** — queue message schemas for job payload validation (e.g. `AutoAllocateWorkOrderJobV1`, `parseAutoAllocateWorkOrderJob`), plus predicates / error helpers the worker's delegated use cases depend on (e.g. `isWorkflowProcessingError`).
 - **`packages/db/`** — does **not** import from domain. Data defines its own row/record types and maps at the boundary.

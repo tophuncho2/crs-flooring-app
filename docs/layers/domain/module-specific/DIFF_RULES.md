@@ -20,3 +20,7 @@ Validators accept the proposed diff plus the relevant existing state, return iss
 ## Example
 
 `validateDiff` in `packages/domain/src/flooring/warehouses/diff-rules.ts`; consumed by `save-sections-with-locations` in the application layer.
+
+## Coverage
+
+Warehouse is currently the only module with `diff-rules.ts`. Future multi-section modules (Templates, Work Orders) will follow the same shape — per-entity draft/update/delete types, a `DiffValidationIssue` union, per-rule finders, and a `validateDiff` orchestrator.

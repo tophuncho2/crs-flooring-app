@@ -7,7 +7,7 @@
 
 1. Domain functions must be pure — no database calls, no HTTP, no filesystem, no framework imports.
 2. The only external runtime dependency allowed is `zod` (queue message schemas).
-3. Domain does not throw. Rules return data — `boolean` from predicates, `string` from message builders, `DiffValidationIssue[]` from diff validators. The application layer decides how to react (throw, return 4xx, keep going).
+3. Domain does not throw. Rules return data — `boolean` from predicates, `string` from message builders, `DiffValidationIssue[]` from diff validators. The application layer decides how to react (throw, return 4xx, keep going). Domain may export `Error` types (e.g. `WorkflowProcessingError` from `packages/domain/src/queue/workflow-processing.ts`) for workers and application to construct and throw; domain itself never throws.
 4. Domain functions accept plain data and return plain data — no Prisma types, no `Request`/`Response` objects, no HTTP status codes.
 5. All business rule checks (delete eligibility, name normalization, diff validation) live here, not in the application or data layer.
 

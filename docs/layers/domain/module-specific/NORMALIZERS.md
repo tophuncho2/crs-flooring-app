@@ -4,7 +4,7 @@
 
 ## Where
 
-Alongside the related rules in `*-rules.ts`, named `normalize…`.
+Per-concern `*-rules.ts` files, named `normalize…`. Cross-cutting normalizers live in `packages/domain/src/shared/` (e.g. `address-helpers.ts`).
 
 ## Exports
 
