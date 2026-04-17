@@ -21,6 +21,7 @@
 | [layers/server/VALIDATION.md](layers/server/VALIDATION.md) | Shared validation infrastructure, input parsing |
 | [layers/controller/CONTROLLER.md](layers/controller/CONTROLLER.md) | Controller contracts for list and record views |
 | [layers/api/API.md](layers/api/API.md) | Payload assembly and response shaping |
+| [layers/api/API_DESIGN.md](layers/api/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
 | [layers/ui/UI.md](layers/ui/UI.md) | Presentational components. No logic, no fetching |
 
 ## Engines
@@ -49,8 +50,6 @@
 | [module-anatomy/MODULE_ANATOMY.md](module-anatomy/MODULE_ANATOMY.md) | Feature module folder structure |
 | [patterns/OUTBOX_PATTERN.md](patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
 | [patterns/ACCEPTED_EXCEPTIONS.md](patterns/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
-| [patterns/API_DESIGN.md](patterns/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
-| [patterns/REFERENCE_DATA.md](patterns/REFERENCE_DATA.md) | Seeded read-only reference tables (UoMs, Categories) |
 
 ## Module Anatomy
 | Doc | Scope |

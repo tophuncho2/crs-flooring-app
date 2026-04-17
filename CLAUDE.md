@@ -21,7 +21,7 @@ Before making changes, read `docs/INDEX.md` to identify relevant architecture do
 - Touching any file in `app/api/` → read `docs/layers/server/ROUTE_POLICY.md` + `docs/layers/server/EXECUTION_ENGINE.md`
 - Touching error handling → read `docs/layers/application/ERROR_HANDLING.md`
 - Touching mutation receipts or idempotency → read `docs/layers/server/IDEMPOTENCY.md`
-- Touching API response shapes or endpoint conventions → read `docs/patterns/API_DESIGN.md`
+- Touching API response shapes or endpoint conventions → read `docs/layers/api/API_DESIGN.md`
 - Touching accepted exceptions → read `docs/patterns/ACCEPTED_EXCEPTIONS.md`
 
 **Cross-cutting concerns:**
