@@ -13,50 +13,13 @@
 
 ## Contract
 
-### Required Module Structure
+Module structure, dashboard routes, and API routes are specified per module type. Pick the type that matches the feature and follow its `PATTERN.md`:
 
-```
-modules/{name}/
-├── controller/
-│   ├── use-{name}-list-controller.ts       ← List controller (composes useConfiguredTableState)
-│   ├── use-{name}-primary-controller.ts    ← Primary section controller
-│   └── use-{name}-{section}-controller.ts  ← Additional section controllers (optional)
-├── data/
-│   ├── server-records.ts                   ← Server-side queries for SSR (page.tsx)
-│   └── server-mutations.ts                 ← Server-side mutation helpers (optional)
-├── components/
-│   ├── list/
-│   │   ├── {name}-client.tsx               ← Client wrapper with controller hook
-│   │   ├── {name}-table.tsx                ← Column definitions + table config
-│   │   └── {name}-filters.tsx              ← Filter panel definitions (optional)
-│   └── record/
-│       ├── {name}-detail-client.tsx         ← Client wrapper for record view
-│       ├── {name}-primary.tsx               ← Primary section form
-│       └── {name}-{section}.tsx             ← Additional section forms (optional)
-└── views/                                   ← Page-level compositions (optional)
-```
+- [single-seeded/PATTERN.md](single-seeded/PATTERN.md) — read-only reference data (e.g. `categories`, `unit-of-measures`)
+- [single-section/PATTERN.md](single-section/PATTERN.md) — full CRUD with one editable primary section (e.g. `manufacturers`, `contacts`, `services`, `admin`)
+- [multi-section/PATTERN.md](multi-section/PATTERN.md) — full CRUD with multiple child entities saved atomically via a diff payload (e.g. `warehouse`)
 
-### Route Structure
-
-```
-app/dashboard/{name}/
-├── page.tsx                    ← List page (Server Component → Client wrapper)
-├── [id]/
-│   └── page.tsx                ← Record page (Server Component → Client wrapper)
-└── new/
-    └── page.tsx                ← Create page (optional, some modules use modals)
-```
-
-### API Route Structure
-
-```
-app/api/flooring/{name}/
-├── route.ts                    ← GET (list) + POST (create)
-└── [id]/
-    ├── route.ts                ← GET (read) + PATCH (update) + DELETE (delete)
-    └── {sub-resource}/
-        └── route.ts            ← Sub-resource operations
-```
+Each type's `PATTERN.md` defines the exact `modules/{name}/`, `app/dashboard/{name}/`, and `app/api/{name}/` shapes required for that type, plus the anti-patterns specific to it. The rules in this file apply to every type.
 
 ## Anti-Patterns
 
