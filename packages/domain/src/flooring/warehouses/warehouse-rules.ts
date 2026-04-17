@@ -12,10 +12,6 @@ export function isWarehouseNameConflict(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase()
 }
 
-export function isWarehouseSlugConflict(a: string, b: string): boolean {
-  return a.trim() === b.trim()
-}
-
 export function isWarehouseDeleteBlocked(counts: WarehouseDependentCounts): boolean {
   return counts.sectionsCount > 0 || counts.locationsCount > 0 || counts.workOrdersCount > 0
 }

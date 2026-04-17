@@ -1,14 +1,5 @@
-import { normalizeLocationCode } from "./location-rules.js"
-
 export type SectionDraft = {
   tempId: string
-  name: string
-}
-
-export type SectionUpdate = {
-  id: string
-  name: string
-  expectedUpdatedAt: string
 }
 
 export type SectionDelete = {
@@ -23,13 +14,15 @@ export type LocationSectionRef =
 export type LocationDraft = {
   tempId: string
   sectionRef: LocationSectionRef
-  locationCode: string
+  rafter: number
+  level: number
 }
 
 export type LocationUpdate = {
   id: string
-  locationCode?: string
   sectionId?: string
+  rafter?: number
+  level?: number
   expectedUpdatedAt: string
 }
 
@@ -41,7 +34,6 @@ export type LocationDelete = {
 export type SectionsWithLocationsDiff = {
   sections: {
     added: SectionDraft[]
-    modified: SectionUpdate[]
     deleted: SectionDelete[]
   }
   locations: {
@@ -56,50 +48,23 @@ export type SectionRef =
   | { kind: "tempId"; tempId: string }
 
 export type DiffValidationIssue =
-  | { code: "DUPLICATE_SECTION_SLUG_IN_ADDED"; slug: string; tempIds: string[] }
-  | { code: "DUPLICATE_SECTION_SLUG"; slug: string; offendingRefs: SectionRef[] }
-  | { code: "DUPLICATE_LOCATION_CODE_IN_ADDED"; locationCode: string; tempIds: string[] }
-  | { code: "DUPLICATE_LOCATION_CODE"; locationCode: string; offendingRefs: SectionRef[] }
+  | { code: "DUPLICATE_LOCATION_COORD_IN_ADDED"; rafter: number; level: number; tempIds: string[] }
+  | { code: "DUPLICATE_LOCATION_COORD"; rafter: number; level: number; offendingRefs: SectionRef[] }
   | { code: "UNRESOLVED_TEMPID"; locationTempId: string; referencedSectionTempId: string }
   | { code: "DELETED_SECTION_HAS_REMAINING_LOCATIONS"; sectionId: string; strandedLocationIds: string[] }
 
-type ProjectedSection =
-  | { origin: "existing"; id: string; slug: string }
-  | { origin: "modified"; id: string; slug: string }
-  | { origin: "added"; tempId: string; slug: string }
-
 type ProjectedLocation =
-  | { origin: "existing"; id: string; locationCode: string }
-  | { origin: "modified"; id: string; locationCode: string }
-  | { origin: "added"; tempId: string; locationCode: string }
+  | { origin: "existing"; id: string; rafter: number; level: number }
+  | { origin: "modified"; id: string; rafter: number; level: number }
+  | { origin: "added"; tempId: string; rafter: number; level: number }
 
-function projectPostDiffSections(
-  diff: SectionsWithLocationsDiff,
-  existingSections: { id: string; slug: string }[],
-  slugOf: (name: string) => string,
-): ProjectedSection[] {
-  const deletedIds = new Set(diff.sections.deleted.map((s) => s.id))
-  const modifiedById = new Map(diff.sections.modified.map((m) => [m.id, m]))
-
-  const result: ProjectedSection[] = []
-  for (const section of existingSections) {
-    if (deletedIds.has(section.id)) continue
-    const mod = modifiedById.get(section.id)
-    if (mod) {
-      result.push({ origin: "modified", id: section.id, slug: slugOf(mod.name) })
-    } else {
-      result.push({ origin: "existing", id: section.id, slug: section.slug })
-    }
-  }
-  for (const draft of diff.sections.added) {
-    result.push({ origin: "added", tempId: draft.tempId, slug: slugOf(draft.name) })
-  }
-  return result
+function coordKey(rafter: number, level: number): string {
+  return `${rafter}:${level}`
 }
 
 function projectPostDiffLocations(
   diff: SectionsWithLocationsDiff,
-  existingLocations: { id: string; locationCode: string; sectionId: string | null }[],
+  existingLocations: { id: string; rafter: number; level: number }[],
 ): ProjectedLocation[] {
   const deletedIds = new Set(diff.locations.deleted.map((l) => l.id))
   const modifiedById = new Map(diff.locations.modified.map((m) => [m.id, m]))
@@ -108,99 +73,63 @@ function projectPostDiffLocations(
   for (const location of existingLocations) {
     if (deletedIds.has(location.id)) continue
     const mod = modifiedById.get(location.id)
-    if (mod && mod.locationCode !== undefined) {
-      result.push({ origin: "modified", id: location.id, locationCode: normalizeLocationCode(mod.locationCode) })
-    } else {
-      result.push({ origin: "existing", id: location.id, locationCode: normalizeLocationCode(location.locationCode) })
-    }
+    const hasCoordChange = mod !== undefined && (mod.rafter !== undefined || mod.level !== undefined)
+    const rafter = mod?.rafter ?? location.rafter
+    const level = mod?.level ?? location.level
+    result.push({
+      origin: hasCoordChange ? "modified" : "existing",
+      id: location.id,
+      rafter,
+      level,
+    })
   }
   for (const draft of diff.locations.added) {
-    result.push({ origin: "added", tempId: draft.tempId, locationCode: normalizeLocationCode(draft.locationCode) })
+    result.push({ origin: "added", tempId: draft.tempId, rafter: draft.rafter, level: draft.level })
   }
   return result
 }
 
-function toRef(projected: ProjectedSection | ProjectedLocation): SectionRef {
+function toRef(projected: ProjectedLocation): SectionRef {
   return projected.origin === "added"
     ? { kind: "tempId", tempId: projected.tempId }
     : { kind: "id", id: projected.id }
 }
 
-export function findDuplicateSectionSlugsInDiff(
+export function findDuplicateLocationCoordsInDiff(
   diff: SectionsWithLocationsDiff,
-  existingSections: { id: string; slug: string }[],
-  slugOf: (name: string) => string,
+  existingLocations: { id: string; warehouseId: string; rafter: number; level: number }[],
 ): DiffValidationIssue[] {
   const issues: DiffValidationIssue[] = []
 
-  const addedTempIdsBySlug = new Map<string, string[]>()
-  for (const draft of diff.sections.added) {
-    const slug = slugOf(draft.name)
-    const group = addedTempIdsBySlug.get(slug) ?? []
-    group.push(draft.tempId)
-    addedTempIdsBySlug.set(slug, group)
-  }
-  for (const [slug, tempIds] of addedTempIdsBySlug.entries()) {
-    if (tempIds.length > 1) {
-      issues.push({ code: "DUPLICATE_SECTION_SLUG_IN_ADDED", slug, tempIds })
-    }
-  }
-
-  const projected = projectPostDiffSections(diff, existingSections, slugOf)
-  const bySlug = new Map<string, ProjectedSection[]>()
-  for (const entry of projected) {
-    const group = bySlug.get(entry.slug) ?? []
-    group.push(entry)
-    bySlug.set(entry.slug, group)
-  }
-  for (const [slug, entries] of bySlug.entries()) {
-    if (entries.length > 1) {
-      const addedCount = entries.filter((e) => e.origin === "added").length
-      if (entries.length === addedCount && addedCount > 1) continue
-      issues.push({
-        code: "DUPLICATE_SECTION_SLUG",
-        slug,
-        offendingRefs: entries.map(toRef),
-      })
-    }
-  }
-
-  return issues
-}
-
-export function findDuplicateLocationCodesInDiff(
-  diff: SectionsWithLocationsDiff,
-  existingLocations: { id: string; locationCode: string; sectionId: string | null }[],
-): DiffValidationIssue[] {
-  const issues: DiffValidationIssue[] = []
-
-  const addedTempIdsByCode = new Map<string, string[]>()
+  const addedTempIdsByCoord = new Map<string, { rafter: number; level: number; tempIds: string[] }>()
   for (const draft of diff.locations.added) {
-    const code = normalizeLocationCode(draft.locationCode)
-    const group = addedTempIdsByCode.get(code) ?? []
-    group.push(draft.tempId)
-    addedTempIdsByCode.set(code, group)
+    const key = coordKey(draft.rafter, draft.level)
+    const group = addedTempIdsByCoord.get(key) ?? { rafter: draft.rafter, level: draft.level, tempIds: [] }
+    group.tempIds.push(draft.tempId)
+    addedTempIdsByCoord.set(key, group)
   }
-  for (const [locationCode, tempIds] of addedTempIdsByCode.entries()) {
+  for (const { rafter, level, tempIds } of addedTempIdsByCoord.values()) {
     if (tempIds.length > 1) {
-      issues.push({ code: "DUPLICATE_LOCATION_CODE_IN_ADDED", locationCode, tempIds })
+      issues.push({ code: "DUPLICATE_LOCATION_COORD_IN_ADDED", rafter, level, tempIds })
     }
   }
 
   const projected = projectPostDiffLocations(diff, existingLocations)
-  const byCode = new Map<string, ProjectedLocation[]>()
+  const byCoord = new Map<string, ProjectedLocation[]>()
   for (const entry of projected) {
-    const group = byCode.get(entry.locationCode) ?? []
+    const key = coordKey(entry.rafter, entry.level)
+    const group = byCoord.get(key) ?? []
     group.push(entry)
-    byCode.set(entry.locationCode, group)
+    byCoord.set(key, group)
   }
-  for (const [locationCode, entries] of byCode.entries()) {
+  for (const entries of byCoord.values()) {
     if (entries.length > 1) {
       const addedCount = entries.filter((e) => e.origin === "added").length
       if (entries.length === addedCount && addedCount > 1) continue
       issues.push({
-        code: "DUPLICATE_LOCATION_CODE",
-        locationCode,
+        code: "DUPLICATE_LOCATION_COORD",
+        rafter: entries[0].rafter,
+        level: entries[0].level,
         offendingRefs: entries.map(toRef),
       })
     }
@@ -228,7 +157,7 @@ export function findUnresolvedTempIds(diff: SectionsWithLocationsDiff): DiffVali
 
 export function findStrandedLocations(
   diff: SectionsWithLocationsDiff,
-  existingLocations: { id: string; sectionId: string | null }[],
+  existingLocations: { id: string; sectionId: string }[],
 ): DiffValidationIssue[] {
   const issues: DiffValidationIssue[] = []
   const deletedSectionIds = new Set(diff.sections.deleted.map((s) => s.id))
@@ -261,14 +190,11 @@ export function findStrandedLocations(
 export function validateDiff(
   diff: SectionsWithLocationsDiff,
   existing: {
-    sections: { id: string; slug: string }[]
-    locations: { id: string; locationCode: string; sectionId: string | null }[]
+    locations: { id: string; warehouseId: string; sectionId: string; rafter: number; level: number }[]
   },
-  slugOf: (name: string) => string,
 ): DiffValidationIssue[] {
   return [
-    ...findDuplicateSectionSlugsInDiff(diff, existing.sections, slugOf),
-    ...findDuplicateLocationCodesInDiff(diff, existing.locations),
+    ...findDuplicateLocationCoordsInDiff(diff, existing.locations),
     ...findUnresolvedTempIds(diff),
     ...findStrandedLocations(diff, existing.locations),
   ]

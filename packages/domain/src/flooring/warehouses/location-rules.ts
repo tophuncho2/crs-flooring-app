@@ -2,14 +2,6 @@ export type LocationDependentCounts = {
   inventoriesCount: number
 }
 
-export function normalizeLocationCode(code: string): string {
-  return code.trim().toUpperCase()
-}
-
-export function isLocationCodeConflict(a: string, b: string): boolean {
-  return normalizeLocationCode(a) === normalizeLocationCode(b)
-}
-
 export function isLocationDeleteBlocked(counts: LocationDependentCounts): boolean {
   return counts.inventoriesCount > 0
 }

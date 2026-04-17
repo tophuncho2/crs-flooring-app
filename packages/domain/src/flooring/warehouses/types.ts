@@ -1,6 +1,6 @@
 export type WarehouseRow = {
   id: string
-  slug: string
+  number: number
   name: string
   address: string | null
   phone: string | null
@@ -14,8 +14,7 @@ export type WarehouseRow = {
 export type SectionRow = {
   id: string
   warehouseId: string
-  slug: string
-  name: string
+  number: number
   locationsCount: number
   createdAt: string
   updatedAt: string
@@ -25,7 +24,9 @@ export type LocationRow = {
   id: string
   warehouseId: string
   sectionId: string
-  locationCode: string
+  rafter: number
+  level: number
+  label: string
   inventoriesCount: number
   createdAt: string
   updatedAt: string
@@ -42,13 +43,10 @@ export type WarehouseForm = {
   phone: string
 }
 
-export type SectionForm = {
-  name: string
-}
-
 export type LocationForm = {
   sectionId: string
-  locationCode: string
+  rafter: number
+  level: number
 }
 
 export const EMPTY_WAREHOUSE_FORM: WarehouseForm = {
@@ -57,13 +55,10 @@ export const EMPTY_WAREHOUSE_FORM: WarehouseForm = {
   phone: "",
 }
 
-export const EMPTY_SECTION_FORM: SectionForm = {
-  name: "",
-}
-
 export const EMPTY_LOCATION_FORM: LocationForm = {
   sectionId: "",
-  locationCode: "",
+  rafter: 0,
+  level: 0,
 }
 
 export function toWarehouseForm(row: WarehouseRow): WarehouseForm {
@@ -74,15 +69,10 @@ export function toWarehouseForm(row: WarehouseRow): WarehouseForm {
   }
 }
 
-export function toSectionForm(row: SectionRow): SectionForm {
-  return {
-    name: row.name,
-  }
-}
-
 export function toLocationForm(row: LocationRow): LocationForm {
   return {
     sectionId: row.sectionId,
-    locationCode: row.locationCode,
+    rafter: row.rafter,
+    level: row.level,
   }
 }
