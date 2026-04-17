@@ -494,7 +494,7 @@ model FlooringLocation {
   updatedAt    DateTime            @updatedAt
   inventories  FlooringInventory[]
 
-  @@unique([sectionId, rafter, level])
+  @@unique([warehouseId, rafter, level])
   @@index([sectionId])
   @@index([warehouseId])
   @@map("flooring_location")
