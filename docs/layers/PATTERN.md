@@ -18,7 +18,6 @@
 
 - **Imports:**
   - `@prisma/client`
-  - `@builders/domain` (type shapes only — no rule functions)
   - `packages/lib/` (logging, Redis helpers)
   - Relative paths within `packages/db/src/`
 - **Exports to:**
@@ -29,7 +28,7 @@
 **Package:** `packages/application/`
 
 - **Imports:**
-  - `@builders/domain` — all predicates, message builders, diff validators
+  - `@builders/domain` — predicates, message builders, normalizers, diff validators (`validateDiff`, `DiffValidationIssue[]`), identity helpers (`assignDiffIds`), queue schemas, types (including `EMPTY_*_FORM` constants and `to*Form` converters), and shared utilities (formatters, calculators)
   - `@builders/db` — repositories, transaction helpers, outbox writers
   - `crypto` — UUID generation (injected into `assignDiffIds`)
   - Relative paths within `packages/application/src/`
