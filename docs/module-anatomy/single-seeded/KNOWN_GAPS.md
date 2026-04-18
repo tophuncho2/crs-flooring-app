@@ -80,3 +80,11 @@ Follows the controller shape decision above.
 ## Module `CLAUDE.md` link rot
 
 - Add more context to claude.mds in web/modules
+
+## module/anatomy/shared/loader-options
+
+- UOM and CATEGORIES will need dropdowns through the system
+- Cananicol set up for each drop down will be in the shared engines data folder
+- Docs/ for the shared dropdown loaders will be in module/anatomy/shared/loader-options
+- Dashboard renders load time should not be the sum of both the page and loaders render time, render time should = whichever load last.
+- 2 loaders set up effiiciently and reported in docs/
