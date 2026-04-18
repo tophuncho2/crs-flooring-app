@@ -40,5 +40,5 @@ function normalizeRecordResponse(apiResponse: ApiRecordResponse): SectionData
 ## Related Docs
 
 - [CONTROLLERS.md](CONTROLLERS.md) — consumes transport for API communication
-- [../server/ROUTE_POLICY.md](../server/ROUTE_POLICY.md) — server-side request handling
+- [../../server/ROUTE_POLICY.md](../../server/ROUTE_POLICY.md) — server-side request handling
 - [../app/api/API_DESIGN.md](../app/api/API_DESIGN.md) — server-side HTTP route conventions transport targets

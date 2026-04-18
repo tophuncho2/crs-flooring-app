@@ -19,15 +19,15 @@
 - Touching `modules/app-shell/` → read `docs/module-anatomy/shared/NAVIGATION_SHELL.md`
 
 **Route and execution work:**
-- Touching any file in `app/api/` → read `docs/layers/server/ROUTE_POLICY.md` + `docs/layers/server/EXECUTION_ENGINE.md`
+- Touching any file in `app/api/` → read `docs/server/ROUTE_POLICY.md` + `docs/server/EXECUTION_ENGINE.md`
 - Touching error handling → read `docs/layers/application/ERROR_HANDLING.md`
-- Touching mutation receipts or idempotency → read `docs/layers/server/IDEMPOTENCY.md`
+- Touching mutation receipts or idempotency → read `docs/server/IDEMPOTENCY.md`
 - Touching API response shapes or endpoint conventions → read `docs/layers/app/api/API_DESIGN.md`
 - Touching accepted exceptions → read `docs/module-anatomy/ACCEPTED_EXCEPTIONS.md`
 
 **Cross-cutting concerns:**
-- Touching `server/auth/` → read `docs/layers/server/AUTH.md` + `docs/layers/server/AUTHORIZATION.md`
-- Touching rate limiting → read `docs/layers/server/RATE_LIMITING.md`
+- Touching `server/auth/` → read `docs/server/AUTH.md` + `docs/server/AUTHORIZATION.md`
+- Touching rate limiting → read `docs/server/RATE_LIMITING.md`
 - Touching logging or Sentry → read `docs/cross-cutting/OBSERVABILITY.md`
 - Touching transactions or outbox → read `docs/layers/application/TRANSACTIONS.md`
 - Touching validators → read `docs/layers/app/api/VALIDATION.md`

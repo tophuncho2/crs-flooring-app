@@ -80,6 +80,6 @@ Standard response helpers used by all 72 API routes. Currently in `route-helpers
 
 ## Related Docs
 
-- [../server/ROUTE_POLICY.md](../server/ROUTE_POLICY.md) — where errors are caught in the route lifecycle
-- [../server/EXECUTION_ENGINE.md](../server/EXECUTION_ENGINE.md) — error handling is step 8 of the sequence
+- [../../server/ROUTE_POLICY.md](../../server/ROUTE_POLICY.md) — where errors are caught in the route lifecycle
+- [../../server/EXECUTION_ENGINE.md](../../server/EXECUTION_ENGINE.md) — error handling is step 8 of the sequence
 - [../../cross-cutting/OBSERVABILITY.md](../../cross-cutting/OBSERVABILITY.md) — error logging and Sentry

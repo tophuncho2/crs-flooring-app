@@ -11,13 +11,13 @@
 | [layers/application/ERROR_HANDLING.md](layers/application/ERROR_HANDLING.md) | Error classification and response shapes |
 | [layers/application/TRANSACTIONS.md](layers/application/TRANSACTIONS.md) | Transaction boundaries and outbox |
 | [layers/data/DATA.md](layers/data/DATA.md) | Persistence and repositories. `packages/db/` |
-| [layers/server/SERVER.md](layers/server/SERVER.md) | Server-layer overview |
-| [layers/server/EXECUTION_ENGINE.md](layers/server/EXECUTION_ENGINE.md) | The 9-step execution sequence |
-| [layers/server/ROUTE_POLICY.md](layers/server/ROUTE_POLICY.md) | HTTP route policy wiring |
-| [layers/server/IDEMPOTENCY.md](layers/server/IDEMPOTENCY.md) | Mutation receipts and deduplication |
-| [layers/server/AUTH.md](layers/server/AUTH.md) | Authentication and session management |
-| [layers/server/AUTHORIZATION.md](layers/server/AUTHORIZATION.md) | Roles, capabilities, tool access |
-| [layers/server/RATE_LIMITING.md](layers/server/RATE_LIMITING.md) | Rate limit enforcement |
+| [server/SERVER.md](server/SERVER.md) | Server-layer overview |
+| [server/EXECUTION_ENGINE.md](server/EXECUTION_ENGINE.md) | The 9-step execution sequence |
+| [server/ROUTE_POLICY.md](server/ROUTE_POLICY.md) | HTTP route policy wiring |
+| [server/IDEMPOTENCY.md](server/IDEMPOTENCY.md) | Mutation receipts and deduplication |
+| [server/AUTH.md](server/AUTH.md) | Authentication and session management |
+| [server/AUTHORIZATION.md](server/AUTHORIZATION.md) | Roles, capabilities, tool access |
+| [server/RATE_LIMITING.md](server/RATE_LIMITING.md) | Rate limit enforcement |
 | [layers/app/api/VALIDATION.md](layers/app/api/VALIDATION.md) | Shared validation infrastructure, input parsing |
 | [layers/controllers/CONTROLLERS.md](layers/controllers/CONTROLLERS.md) | Controller contracts for list and record views |
 | [layers/app/api/API_DESIGN.md](layers/app/api/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |

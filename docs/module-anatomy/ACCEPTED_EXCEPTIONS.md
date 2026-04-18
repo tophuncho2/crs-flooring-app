@@ -45,6 +45,6 @@
 
 ## Related Docs
 
-- [../layers/server/EXECUTION_ENGINE.md](../layers/server/EXECUTION_ENGINE.md) — the standard sequence these deviate from
-- [../layers/server/IDEMPOTENCY.md](../layers/server/IDEMPOTENCY.md) — mutation receipt system
-- [../layers/server/ROUTE_POLICY.md](../layers/server/ROUTE_POLICY.md) — standard route protection
+- [../server/EXECUTION_ENGINE.md](../server/EXECUTION_ENGINE.md) — the standard sequence these deviate from
+- [../server/IDEMPOTENCY.md](../server/IDEMPOTENCY.md) — mutation receipt system
+- [../server/ROUTE_POLICY.md](../server/ROUTE_POLICY.md) — standard route protection
