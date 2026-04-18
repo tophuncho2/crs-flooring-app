@@ -88,3 +88,4 @@ Follows the controller shape decision above.
 - Docs/ for the shared dropdown loaders will be in module/anatomy/shared/loader-options
 - Dashboard renders load time should not be the sum of both the page and loaders render time, render time should = whichever load last.
 - 2 loaders set up effiiciently and reported in docs/
+- Ask questions before starting this
