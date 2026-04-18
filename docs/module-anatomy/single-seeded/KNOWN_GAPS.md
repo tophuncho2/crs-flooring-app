@@ -79,9 +79,4 @@ Follows the controller shape decision above.
 
 ## Module `CLAUDE.md` link rot
 
-Both module-root `CLAUDE.md` files under `apps/web/modules/{categories,unit-of-measures}/` still point to `docs/patterns/REFERENCE_DATA.md`, which no longer exists. The other two links (module reference and engine) resolve.
-
-- `apps/web/modules/categories/CLAUDE.md:5`
-- `apps/web/modules/unit-of-measures/CLAUDE.md:5`
-
-Stale reference — either restore `REFERENCE_DATA.md`, point at `PATTERN.md`, or drop the line. Code-side fix; track as a `PLANS.md` item rather than a doc edit.
+- Add more context to claude.mds in web/modules
