@@ -19,7 +19,7 @@
 - Touching `modules/app-shell/` → read `docs/module-anatomy/shared/NAVIGATION_SHELL.md`
 
 **Route and execution work:**
-- Touching any file in `app/api/` → read `docs/server/ROUTE_POLICY.md` + `docs/server/EXECUTION_ENGINE.md`
+- Touching any file in `app/api/` → read `docs/server/ROUTE_POLICY.md` + `docs/execution-patterns/EXECUTION_ENGINE.md`
 - Touching error handling → read `docs/layers/application/ERROR_HANDLING.md`
 - Touching mutation receipts or idempotency → read `docs/server/IDEMPOTENCY.md`
 - Touching API response shapes or endpoint conventions → read `docs/layers/app/api/API_DESIGN.md`
@@ -40,7 +40,7 @@
 
 **Module work:**
 - Creating a new module → read `docs/module-anatomy/MODULE_ANATOMY.md`
-- Working on outbox events → read `docs/patterns/OUTBOX_PATTERN.md`
+- Working on outbox events → read `docs/execution-patterns/OUTBOX_PATTERN.md`
 
 **Domain work:**
 - Working on users, auth, roles, admin → read `docs/domains/BUILDER_AUTH.md`

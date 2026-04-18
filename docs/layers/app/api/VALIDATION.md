@@ -93,6 +93,6 @@ This extracts the idempotency key and `expectedUpdatedAt` from the envelope, the
 
 ## Related Docs
 
-- [ROUTE_POLICY.md](ROUTE_POLICY.md) — `parseMutationEnvelope()` wiring
-- [ERROR_HANDLING.md](../application/ERROR_HANDLING.md) — `AppError` shape and classification
-- [EXECUTION_ENGINE.md](EXECUTION_ENGINE.md) — where validation sits in the 9-step sequence
+- [ROUTE_POLICY.md](../../../server/ROUTE_POLICY.md) — `parseMutationEnvelope()` wiring
+- [ERROR_HANDLING.md](../../application/ERROR_HANDLING.md) — `AppError` shape and classification
+- [EXECUTION_ENGINE.md](../../../execution-patterns/EXECUTION_ENGINE.md) — where validation sits in the 9-step sequence

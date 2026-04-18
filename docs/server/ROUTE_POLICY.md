@@ -102,6 +102,6 @@ Rate limits query (GET) routes. Default: 100 requests per 60 seconds per scope +
 
 ## Related Docs
 
-- [EXECUTION_ENGINE.md](EXECUTION_ENGINE.md) — the 9-step sequence this implements
+- [../execution-patterns/EXECUTION_ENGINE.md](../execution-patterns/EXECUTION_ENGINE.md) — the 9-step sequence this implements
 - [IDEMPOTENCY.md](IDEMPOTENCY.md) — mutation receipt details
 - [../application/ERROR_HANDLING.md](../application/ERROR_HANDLING.md) — how errors are classified and returned

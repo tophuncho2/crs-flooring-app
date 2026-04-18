@@ -32,13 +32,13 @@
 
 ## Reference Data Exception
 
-Modules that represent seeded, read-only reference data (see `docs/patterns/REFERENCE_DATA.md`) are exempt from the standard structure above. Reference data modules:
+Modules that represent seeded, read-only reference data (see `docs/execution-patterns/REFERENCE_DATA.md`) are exempt from the standard structure above. Reference data modules:
 
 - **Must have:** `controllers/`, `components/list/`, `data/`, module-root `types.ts`, `CLAUDE.md`
 - **Must not have:** `record/`, `transport/`, `views/`, `domain/`, or any subdirectory for mutation surface
 - **Must not have:** entries under `packages/application/src/flooring/{name}/` or `packages/domain/src/flooring/{name}/`
 - **Must not have:** `write-repository.ts` under `packages/db/src/flooring/{name}/`
-- **Must declare themselves** as reference data modules in their module-root `CLAUDE.md` with a link to `docs/patterns/REFERENCE_DATA.md`
+- **Must declare themselves** as reference data modules in their module-root `CLAUDE.md` with a link to `docs/execution-patterns/REFERENCE_DATA.md`
 
 This exception is documented in `docs/module-anatomy/ACCEPTED_EXCEPTIONS.md` as Exception 3.
 

@@ -12,7 +12,7 @@
 | [layers/application/TRANSACTIONS.md](layers/application/TRANSACTIONS.md) | Transaction boundaries and outbox |
 | [layers/data/DATA.md](layers/data/DATA.md) | Persistence and repositories. `packages/db/` |
 | [server/SERVER.md](server/SERVER.md) | Server-layer overview |
-| [server/EXECUTION_ENGINE.md](server/EXECUTION_ENGINE.md) | The 9-step execution sequence |
+| [execution-patterns/EXECUTION_ENGINE.md](execution-patterns/EXECUTION_ENGINE.md) | The 9-step execution sequence |
 | [server/ROUTE_POLICY.md](server/ROUTE_POLICY.md) | HTTP route policy wiring |
 | [server/IDEMPOTENCY.md](server/IDEMPOTENCY.md) | Mutation receipts and deduplication |
 | [server/AUTH.md](server/AUTH.md) | Authentication and session management |
@@ -49,7 +49,7 @@
 | Doc | Scope |
 |-----|-------|
 | [module-anatomy/MODULE_ANATOMY.md](module-anatomy/MODULE_ANATOMY.md) | Feature module folder structure |
-| [patterns/OUTBOX_PATTERN.md](patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
+| [execution-patterns/OUTBOX_PATTERN.md](execution-patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
 | [module-anatomy/ACCEPTED_EXCEPTIONS.md](module-anatomy/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
 
 ## Module Anatomy

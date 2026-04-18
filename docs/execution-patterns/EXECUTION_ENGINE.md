@@ -5,7 +5,7 @@
 ## Rules
 
 1. Every execution path follows the same 9-step sequence, in order.
-2. No step may be skipped unless documented in [ACCEPTED_EXCEPTIONS](../../module-anatomy/ACCEPTED_EXCEPTIONS.md).
+2. No step may be skipped unless documented in [ACCEPTED_EXCEPTIONS](../module-anatomy/ACCEPTED_EXCEPTIONS.md).
 3. Failures at any step halt execution and return a structured error response.
 
 ## The 9-Step Sequence
@@ -28,7 +28,7 @@
 
 `applyRoutePolicy()` in `server/http/route-policy.ts` is the canonical HTTP entry point. It handles steps 1-3 and provides the context for steps 4-9.
 
-See [ROUTE_POLICY.md](ROUTE_POLICY.md) for the full contract.
+See [ROUTE_POLICY.md](../server/ROUTE_POLICY.md) for the full contract.
 
 ### Worker (Job Processing)
 
@@ -44,13 +44,13 @@ BullMQ worker in `apps/worker/` processes jobs dispatched via the outbox/relay p
 8. **Error handling** — `isWorkflowProcessingError` + retryable classification
 9. **Observability** — structured logging with jobId, correlationId, attempt
 
-See [../../services/WORKER.md](../../services/WORKER.md) for details.
+See [../services/WORKER.md](../services/WORKER.md) for details.
 
 ### Relay (Infrastructure)
 
 `apps/relay/` is infrastructure, not a request handler. It polls the outbox and dispatches to BullMQ. It does not execute the 9-step sequence — it is the bridge between steps 6 (transaction) and the worker.
 
-See [../../services/RELAY.md](../../services/RELAY.md) for details.
+See [../services/RELAY.md](../services/RELAY.md) for details.
 
 ## Accepted Exceptions
 
@@ -59,12 +59,12 @@ Two execution paths deviate from the standard sequence:
 1. **Admin-only endpoints** skip optimistic concurrency (step 5 simplified).
 2. **Account preference routes** are idempotent upserts (step 5 implicit).
 
-See [../../module-anatomy/ACCEPTED_EXCEPTIONS.md](../../module-anatomy/ACCEPTED_EXCEPTIONS.md) for full documentation.
+See [../module-anatomy/ACCEPTED_EXCEPTIONS.md](../module-anatomy/ACCEPTED_EXCEPTIONS.md) for full documentation.
 
 ## Related Docs
 
-- [ROUTE_POLICY.md](ROUTE_POLICY.md) — HTTP entry point details
-- [../application/ERROR_HANDLING.md](../application/ERROR_HANDLING.md) — error classification and response shapes
-- [IDEMPOTENCY.md](IDEMPOTENCY.md) — mutation receipt system
-- [../../services/WORKER.md](../../services/WORKER.md) — job processing entry point
-- [../../services/RELAY.md](../../services/RELAY.md) — outbox relay infrastructure
+- [ROUTE_POLICY.md](../server/ROUTE_POLICY.md) — HTTP entry point details
+- [../layers/application/ERROR_HANDLING.md](../layers/application/ERROR_HANDLING.md) — error classification and response shapes
+- [../server/IDEMPOTENCY.md](../server/IDEMPOTENCY.md) — mutation receipt system
+- [../services/WORKER.md](../services/WORKER.md) — job processing entry point
+- [../services/RELAY.md](../services/RELAY.md) — outbox relay infrastructure

@@ -62,5 +62,5 @@ Wraps mutation route handlers to emit structured events:
 
 ## Related Docs
 
-- [../server/EXECUTION_ENGINE.md](../server/EXECUTION_ENGINE.md) — observability is step 9
+- [../execution-patterns/EXECUTION_ENGINE.md](../execution-patterns/EXECUTION_ENGINE.md) — observability is step 9
 - [../server/ROUTE_POLICY.md](../server/ROUTE_POLICY.md) — mutation telemetry integration
