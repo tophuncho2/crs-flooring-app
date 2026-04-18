@@ -47,7 +47,7 @@ apps/web/modules/unit-of-measures/
 └── data/queries.ts                                    (re-exports from @builders/db)
 ```
 
-**Routes:** `app/dashboard/unit-of-measures/page.tsx` (SSR list) · `app/api/builder/unit-of-measures/route.ts` (GET only)
+**Routes:** `app/dashboard/unit-of-measures/page.tsx` (SSR list) · `app/api/unit-of-measures/route.ts` (GET only)
 
 **Data layer:** `packages/db/src/flooring/unit-of-measures/read-repository.ts` — `listUnitOfMeasures`, `getUnitOfMeasuresPageData`, `UnitOfMeasureRecord`
 
@@ -61,7 +61,7 @@ apps/web/modules/unit-of-measures/
 ## Consumers of `listUnitOfMeasures`
 
 - `apps/web/modules/categories/data/queries.ts` — category edit dropdowns
-- `apps/web/app/api/builder/unit-of-measures/route.ts` — GET handler
+- `apps/web/app/api/unit-of-measures/route.ts` — GET handler
 - `apps/web/modules/unit-of-measures/data/queries.ts` — module re-export
 
 Other modules (Services, Templates, WorkOrders) query `flooringUnitOfMeasure` directly via Prisma; those call sites should migrate to `listUnitOfMeasures` during their hardening sweeps.

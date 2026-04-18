@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   })
   if (access instanceof Response) return access
 
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/builder/unit-of-measures")
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/unit-of-measures")
   if (rateLimited) return rateLimited
 
   try {

@@ -11,13 +11,6 @@
 **Not swept:**
 - (none — every single-seeded module currently in the app has been swept)
 
-## API route location
-
-- `categories` ships `apps/web/app/api/categories/route.ts` (GET). Flat path under `api/`.
-- `unit-of-measures` ships `apps/web/app/api/builder/unit-of-measures/route.ts` (GET). Nested under a `builder/` segment — an outlier; no other reference module uses this prefix.
-
-Pick one convention (flat `api/{name}` is the majority) and migrate.
-
 ## Dashboard reaches into the application layer
 
 Single-seeded dashboards are otherwise read-only against `@builders/db`, but every page currently imports one application-layer function:
@@ -46,7 +39,7 @@ This inverts the boundary: the db layer owns the page-data wrapper for UoM, and 
 `app/API.md` canonical import set includes `{NAME}_TOOL_SLUG` from `@/modules/shared/access/lookup-domains`.
 
 - `apps/web/app/api/categories/route.ts:2` imports `CATEGORIES_TOOL_SLUG`. Matches.
-- `apps/web/app/api/builder/unit-of-measures/route.ts` imports no tool slug constant. Line 11 hard-codes `toolSlug: "products"` as a string literal. Besides the stringly-typed constant, the slug is `"products"` — UoM is evidently nested under the products tool rather than having its own.
+- `apps/web/app/api/unit-of-measures/route.ts` imports no tool slug constant. Line 11 hard-codes `toolSlug: "products"` as a string literal. Besides the stringly-typed constant, the slug is `"products"` — UoM is evidently nested under the products tool rather than having its own.
 
 Two gaps: (a) named constant missing; (b) cross-tool namespacing — is UoM deliberately under `products`, or should it have its own slug?
 

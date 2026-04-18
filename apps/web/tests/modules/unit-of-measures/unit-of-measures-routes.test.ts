@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { GET } from "@/app/api/builder/unit-of-measures/route"
+import { GET } from "@/app/api/unit-of-measures/route"
 
 const { listUnitOfMeasuresMock, applyRoutePolicyMock } = vi.hoisted(() => ({
   listUnitOfMeasuresMock: vi.fn(),
@@ -47,7 +47,7 @@ describe("unit-of-measures routes", () => {
       { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
     ])
 
-    const response = await GET(new Request("http://localhost/api/builder/unit-of-measures"))
+    const response = await GET(new Request("http://localhost/api/unit-of-measures"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
@@ -61,7 +61,7 @@ describe("unit-of-measures routes", () => {
   it("returns shared auth responses unchanged", async () => {
     applyRoutePolicyMock.mockResolvedValueOnce(Response.json({ error: "Forbidden" }, { status: 403 }))
 
-    const response = await GET(new Request("http://localhost/api/builder/unit-of-measures"))
+    const response = await GET(new Request("http://localhost/api/unit-of-measures"))
     const payload = await response.json()
 
     expect(response.status).toBe(403)
