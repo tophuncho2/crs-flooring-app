@@ -30,7 +30,7 @@
 - Touching rate limiting → read `docs/layers/server/RATE_LIMITING.md`
 - Touching logging or Sentry → read `docs/cross-cutting/OBSERVABILITY.md`
 - Touching transactions or outbox → read `docs/layers/application/TRANSACTIONS.md`
-- Touching validators → read `docs/layers/server/VALIDATION.md`
+- Touching validators → read `docs/layers/app/api/VALIDATION.md`
 - Touching tests → read `docs/cross-cutting/TESTING.md`
 - Touching environment config or Railway → read `docs/cross-cutting/DEPLOYMENT.md`
 

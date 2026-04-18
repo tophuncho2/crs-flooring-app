@@ -18,7 +18,7 @@
 | [layers/server/AUTH.md](layers/server/AUTH.md) | Authentication and session management |
 | [layers/server/AUTHORIZATION.md](layers/server/AUTHORIZATION.md) | Roles, capabilities, tool access |
 | [layers/server/RATE_LIMITING.md](layers/server/RATE_LIMITING.md) | Rate limit enforcement |
-| [layers/server/VALIDATION.md](layers/server/VALIDATION.md) | Shared validation infrastructure, input parsing |
+| [layers/app/api/VALIDATION.md](layers/app/api/VALIDATION.md) | Shared validation infrastructure, input parsing |
 | [layers/controllers/CONTROLLERS.md](layers/controllers/CONTROLLERS.md) | Controller contracts for list and record views |
 | [layers/app/api/API_DESIGN.md](layers/app/api/API_DESIGN.md) | API route conventions, response shapes, endpoint naming |
 | [layers/app/dashboard/DASHBOARD.md](layers/app/dashboard/DASHBOARD.md) | Dashboard Server Components and page contracts |
