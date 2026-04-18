@@ -28,11 +28,11 @@
 **Cross-cutting concerns:**
 - Touching `server/auth/` → read `docs/server/AUTH.md` + `docs/server/AUTHORIZATION.md`
 - Touching rate limiting → read `docs/server/RATE_LIMITING.md`
-- Touching logging or Sentry → read `docs/cross-cutting/OBSERVABILITY.md`
+- Touching logging or Sentry → read `docs/Coverage/OBSERVABILITY.md`
 - Touching transactions or outbox → read `docs/layers/application/TRANSACTIONS.md`
 - Touching validators → read `docs/layers/app/api/VALIDATION.md`
-- Touching tests → read `docs/cross-cutting/TESTING.md`
-- Touching environment config or Railway → read `docs/cross-cutting/DEPLOYMENT.md`
+- Touching tests → read `docs/Coverage/TESTING.md`
+- Touching environment config or Railway → read `docs/Coverage/DEPLOYMENT.md`
 
 **Service work:**
 - Touching `apps/worker/` → read `docs/services/WORKER.md`

@@ -35,9 +35,9 @@
 ## Cross-Cutting Concerns
 | Doc | Scope |
 |-----|-------|
-| [cross-cutting/OBSERVABILITY.md](cross-cutting/OBSERVABILITY.md) | Logging, tracing, Sentry, Railway |
-| [cross-cutting/TESTING.md](cross-cutting/TESTING.md) | Test strategy, mock isolation, vitest conventions |
-| [cross-cutting/DEPLOYMENT.md](cross-cutting/DEPLOYMENT.md) | Deployment configuration and process |
+| [Coverage/OBSERVABILITY.md](Coverage/OBSERVABILITY.md) | Logging, tracing, Sentry, Railway |
+| [Coverage/TESTING.md](Coverage/TESTING.md) | Test strategy, mock isolation, vitest conventions |
+| [Coverage/DEPLOYMENT.md](Coverage/DEPLOYMENT.md) | Deployment configuration and process |
 
 ## Services
 | Doc | Scope |
