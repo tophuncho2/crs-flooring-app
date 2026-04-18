@@ -2,7 +2,7 @@
 
 ## Architecture Reference Docs
 
-**docs/ is correctly being re-organized, do not make any edits out side of the docs/ folder. Anything outside of docs/ is from context and auditing**
+**docs/ is correctly being re-organized**
 **The current lines below may be stale**
 
 ### Trigger Conditions
