@@ -86,4 +86,4 @@ Use cases with `GovernanceExecutionError` (code, status, field, payload):
 
 - [../../../layers/server/AUTH.md](../../../layers/server/AUTH.md) — authentication flow and session management
 - [../../../layers/server/AUTHORIZATION.md](../../../layers/server/AUTHORIZATION.md) — roles, capabilities, tool access
-- [../patterns/ACCEPTED_EXCEPTIONS.md](../patterns/ACCEPTED_EXCEPTIONS.md) — admin endpoints skip optimistic concurrency
+- [../../../ACCEPTED_EXCEPTIONS.md](../../../ACCEPTED_EXCEPTIONS.md) — admin endpoints skip optimistic concurrency

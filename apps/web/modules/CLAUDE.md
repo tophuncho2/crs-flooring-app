@@ -40,7 +40,7 @@ Modules that represent seeded, read-only reference data (see `docs/patterns/REFE
 - **Must not have:** `write-repository.ts` under `packages/db/src/flooring/{name}/`
 - **Must declare themselves** as reference data modules in their module-root `CLAUDE.md` with a link to `docs/patterns/REFERENCE_DATA.md`
 
-This exception is documented in `docs/patterns/ACCEPTED_EXCEPTIONS.md` as Exception 3.
+This exception is documented in `docs/module-anatomy/ACCEPTED_EXCEPTIONS.md` as Exception 3.
 
 When auditing, treat a module with a "Reference Data Module" declaration in its `CLAUDE.md` as conforming to the reference data structure rather than the standard structure.
 

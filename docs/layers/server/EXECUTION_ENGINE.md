@@ -5,7 +5,7 @@
 ## Rules
 
 1. Every execution path follows the same 9-step sequence, in order.
-2. No step may be skipped unless documented in [ACCEPTED_EXCEPTIONS](../../patterns/ACCEPTED_EXCEPTIONS.md).
+2. No step may be skipped unless documented in [ACCEPTED_EXCEPTIONS](../../module-anatomy/ACCEPTED_EXCEPTIONS.md).
 3. Failures at any step halt execution and return a structured error response.
 
 ## The 9-Step Sequence
@@ -59,7 +59,7 @@ Two execution paths deviate from the standard sequence:
 1. **Admin-only endpoints** skip optimistic concurrency (step 5 simplified).
 2. **Account preference routes** are idempotent upserts (step 5 implicit).
 
-See [../../patterns/ACCEPTED_EXCEPTIONS.md](../../patterns/ACCEPTED_EXCEPTIONS.md) for full documentation.
+See [../../module-anatomy/ACCEPTED_EXCEPTIONS.md](../../module-anatomy/ACCEPTED_EXCEPTIONS.md) for full documentation.
 
 ## Related Docs
 

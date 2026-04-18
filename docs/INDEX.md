@@ -50,7 +50,7 @@
 |-----|-------|
 | [module-anatomy/MODULE_ANATOMY.md](module-anatomy/MODULE_ANATOMY.md) | Feature module folder structure |
 | [patterns/OUTBOX_PATTERN.md](patterns/OUTBOX_PATTERN.md) | Outbox/relay event delivery |
-| [patterns/ACCEPTED_EXCEPTIONS.md](patterns/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
+| [module-anatomy/ACCEPTED_EXCEPTIONS.md](module-anatomy/ACCEPTED_EXCEPTIONS.md) | Documented deviations |
 
 ## Module Anatomy
 | Doc | Scope |

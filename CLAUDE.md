@@ -23,7 +23,7 @@
 - Touching error handling → read `docs/layers/application/ERROR_HANDLING.md`
 - Touching mutation receipts or idempotency → read `docs/layers/server/IDEMPOTENCY.md`
 - Touching API response shapes or endpoint conventions → read `docs/layers/app/api/API_DESIGN.md`
-- Touching accepted exceptions → read `docs/patterns/ACCEPTED_EXCEPTIONS.md`
+- Touching accepted exceptions → read `docs/module-anatomy/ACCEPTED_EXCEPTIONS.md`
 
 **Cross-cutting concerns:**
 - Touching `server/auth/` → read `docs/layers/server/AUTH.md` + `docs/layers/server/AUTHORIZATION.md`

@@ -78,5 +78,5 @@ Other modules (Products, Inventory) query `flooringCategory` directly via Prisma
 ## Related
 
 - [../patterns/REFERENCE_DATA.md](../patterns/REFERENCE_DATA.md) — pattern definition
-- [../patterns/ACCEPTED_EXCEPTIONS.md](../patterns/ACCEPTED_EXCEPTIONS.md) — Exception 3
+- [../../../ACCEPTED_EXCEPTIONS.md](../../../ACCEPTED_EXCEPTIONS.md) — Exception 3
 - [../../shared/LIST_VIEW_ENGINE.md](../../shared/LIST_VIEW_ENGINE.md)
