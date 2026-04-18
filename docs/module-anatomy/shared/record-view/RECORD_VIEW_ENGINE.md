@@ -94,6 +94,6 @@ modules/{name}/
 
 ## Related Docs
 
-- [../../layers/controllers/CONTROLLERS.md](../../layers/controllers/CONTROLLERS.md) — section controller contract
-- [LIST_VIEW_ENGINE.md](LIST_VIEW_ENGINE.md) — companion engine for list pages
-- [NAVIGATION_SHELL.md](NAVIGATION_SHELL.md) — app shell that wraps record pages
+- [controllers/CONTROLLERS.md](controllers/CONTROLLERS.md) — section controller contract
+- [../list-view/LIST_VIEW_ENGINE.md](../list-view/LIST_VIEW_ENGINE.md) — companion engine for list pages
+- [../NAVIGATION_SHELL.md](../NAVIGATION_SHELL.md) — app shell that wraps record pages

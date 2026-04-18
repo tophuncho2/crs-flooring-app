@@ -39,4 +39,4 @@ The page's job is session/tool gating + server-side read + handing data to the C
 
 - [../api/API_DESIGN.md](../api/API_DESIGN.md) — sibling route layer for HTTP handlers
 - [../../../server/ROUTE_POLICY.md](../../../server/ROUTE_POLICY.md) — server-side auth/tool gating
-- [../../controllers/CONTROLLERS.md](../../controllers/CONTROLLERS.md) — controllers that Client Components consume
+- [../../../module-anatomy/shared/list-view/controllers/CONTROLLERS.md](../../../module-anatomy/shared/list-view/controllers/CONTROLLERS.md) — controllers that Client Components consume

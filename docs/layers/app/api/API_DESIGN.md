@@ -145,4 +145,4 @@ Applied via `applyRoutePolicy()` and mutation helpers:
 - [IDEMPOTENCY.md](../../../server/IDEMPOTENCY.md) — mutation receipt lifecycle
 - [RATE_LIMITING.md](../../../server/RATE_LIMITING.md) — rate limit scopes and windows
 - [VALIDATION.md](./VALIDATION.md) — input validation conventions
-- [../../controllers/TRANSPORT.md](../../controllers/TRANSPORT.md) — client-side transport that targets these routes
+- [../../../module-anatomy/shared/list-view/controllers/TRANSPORT.md](../../../module-anatomy/shared/list-view/controllers/TRANSPORT.md) — client-side transport that targets these routes

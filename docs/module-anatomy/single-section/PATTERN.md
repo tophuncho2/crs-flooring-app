@@ -81,6 +81,6 @@ Tracked in [KNOWN_GAPS.md](KNOWN_GAPS.md).
 ## Related Docs
 
 - [../MODULE_ANATOMY.md](../MODULE_ANATOMY.md)
-- [../shared/LIST_VIEW_ENGINE.md](../shared/LIST_VIEW_ENGINE.md)
-- [../shared/RECORD_VIEW_ENGINE.md](../shared/RECORD_VIEW_ENGINE.md)
-- [../../layers/controllers/CONTROLLERS.md](../../layers/controllers/CONTROLLERS.md)
+- [../shared/list-view/LIST_VIEW_ENGINE.md](../shared/list-view/LIST_VIEW_ENGINE.md)
+- [../shared/record-view/RECORD_VIEW_ENGINE.md](../shared/record-view/RECORD_VIEW_ENGINE.md)
+- [../shared/list-view/controllers/CONTROLLERS.md](../shared/list-view/controllers/CONTROLLERS.md)

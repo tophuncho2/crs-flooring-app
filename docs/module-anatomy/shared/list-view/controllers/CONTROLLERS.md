@@ -74,6 +74,6 @@ Controllers are React hooks that compose shared engine hooks (`useConfiguredTabl
 
 - [../components/COMPONENTS.md](../components/COMPONENTS.md) — presentational layer that consumes controllers
 - [TRANSPORT.md](TRANSPORT.md) — client-side payload assembly and response shaping
-- [../app/api/API_DESIGN.md](../app/api/API_DESIGN.md) — server-side HTTP route conventions
-- [../../module-anatomy/shared/LIST_VIEW_ENGINE.md](../../module-anatomy/shared/LIST_VIEW_ENGINE.md) — shared list engine
-- [../../module-anatomy/shared/RECORD_VIEW_ENGINE.md](../../module-anatomy/shared/RECORD_VIEW_ENGINE.md) — shared record engine
+- [../../../../layers/app/api/API_DESIGN.md](../../../../layers/app/api/API_DESIGN.md) — server-side HTTP route conventions
+- [../LIST_VIEW_ENGINE.md](../LIST_VIEW_ENGINE.md) — shared list engine
+- [../../record-view/RECORD_VIEW_ENGINE.md](../../record-view/RECORD_VIEW_ENGINE.md) — shared record engine

@@ -73,5 +73,5 @@ modules/shared/engines/
 ## Related Docs
 
 - [../controllers/CONTROLLERS.md](../controllers/CONTROLLERS.md) — controllers that components consume
-- [../../module-anatomy/shared/LIST_VIEW_ENGINE.md](../../module-anatomy/shared/LIST_VIEW_ENGINE.md) — shared list view components
-- [../../module-anatomy/shared/RECORD_VIEW_ENGINE.md](../../module-anatomy/shared/RECORD_VIEW_ENGINE.md) — shared record view components
+- [../LIST_VIEW_ENGINE.md](../LIST_VIEW_ENGINE.md) — shared list view components
+- [../../record-view/RECORD_VIEW_ENGINE.md](../../record-view/RECORD_VIEW_ENGINE.md) — shared record view components
