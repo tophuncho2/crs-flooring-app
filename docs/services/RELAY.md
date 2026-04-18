@@ -82,4 +82,4 @@ The relay imports from:
 
 - [WORKER.md](WORKER.md) — processes the jobs dispatched by the relay
 - [../execution-patterns/OUTBOX_PATTERN.md](../execution-patterns/OUTBOX_PATTERN.md) — end-to-end outbox flow
-- [../layers/application/TRANSACTIONS.md](../layers/application/TRANSACTIONS.md) — outbox write in same transaction
+- [../layers/data/TRANSACTIONS.md](../layers/data/TRANSACTIONS.md) — outbox write in same transaction

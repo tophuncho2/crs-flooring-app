@@ -69,6 +69,6 @@ This guarantees that outbox events are only created when the state mutation succ
 
 ## Related Docs
 
-- [../data/DATA.md](../data/DATA.md) — persistence layer that uses transactions
-- [APPLICATION.md](APPLICATION.md) — use cases that open transactions
+- [DATA.md](DATA.md) — persistence layer that uses transactions
+- [../application/APPLICATION.md](../application/APPLICATION.md) — use cases that open transactions
 - [../../execution-patterns/OUTBOX_PATTERN.md](../../execution-patterns/OUTBOX_PATTERN.md) — outbox event delivery
