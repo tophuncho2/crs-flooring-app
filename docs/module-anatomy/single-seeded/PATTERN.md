@@ -23,7 +23,6 @@
 ## Known Gaps / Grading
 
 1. Module-type-wide gaps are tracked in [KNOWN_GAPS.md](KNOWN_GAPS.md). 
-2. Individual module violations live in each module's own grading file under [`modules/{name}/GRADING.md`](modules/).
 
 ## Subfolder References
 
