@@ -7,7 +7,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import type { WarehouseDetail } from "@/modules/warehouse/types"
+import type { WarehouseDetailRecord } from "@builders/db"
 import { useWarehousePrimarySection } from "@/modules/warehouse/controllers/use-warehouse-primary-section"
 import { useWarehouseSectionsSection } from "@/modules/warehouse/controllers/use-warehouse-sections-section"
 import { WarehousePrimaryFieldsSection } from "./warehouse-primary-fields-section"
@@ -18,7 +18,7 @@ export function WarehouseRecordPanel({
   warehouse,
 }: {
   page: RecordDetailClientScaffoldContext
-  warehouse: WarehouseDetail
+  warehouse: WarehouseDetailRecord
 }) {
   const notices = useRecordNotices()
   const controller = useWarehousePrimarySection({
@@ -79,15 +79,15 @@ export function WarehouseRecordPanel({
           controller: sectionsSection,
           render: () => (
             <WarehouseSectionsSection
-              rows={sectionsSection.rows}
+              sections={sectionsSection.sections}
               locations={sectionsSection.locations}
               noticeMessage={sectionsSection.noticeMessage}
               noticeError={sectionsSection.noticeError}
-              onNameChange={sectionsSection.setSectionName}
-              onRemoveRow={sectionsSection.removeSection}
+              onRemoveSection={sectionsSection.removeSection}
               onAddLocation={sectionsSection.addLocation}
-              onLocationCodeChange={sectionsSection.setLocationCode}
               onRemoveLocation={sectionsSection.removeLocation}
+              onRafterChange={sectionsSection.setLocationRafter}
+              onLevelChange={sectionsSection.setLocationLevel}
               subHeader={{
                 isDirty: sectionsSection.isDirty,
                 isSaving: sectionsSection.isSaving,

@@ -5,8 +5,8 @@ import {
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import type { WarehouseForm } from "@builders/domain"
-import { toWarehouseForm, type WarehouseDetail } from "@/modules/warehouse/types"
+import { toWarehouseForm, type WarehouseForm } from "@builders/domain"
+import type { WarehouseDetailRecord } from "@builders/db"
 import { deleteWarehouseRequest, updateWarehouseRequest } from "@/modules/warehouse/data/mutations"
 
 export function useWarehousePrimarySection({
@@ -14,9 +14,9 @@ export function useWarehousePrimarySection({
   warehouse,
 }: {
   page: RecordDetailClientScaffoldContext
-  warehouse: WarehouseDetail
+  warehouse: WarehouseDetailRecord
 }) {
-  return useSingleSectionRecordController<WarehouseDetail, WarehouseForm>({
+  return useSingleSectionRecordController<WarehouseDetailRecord, WarehouseForm>({
     page,
     scope: "warehouse",
     id: warehouse.id,

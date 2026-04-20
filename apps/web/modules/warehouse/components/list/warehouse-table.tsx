@@ -10,7 +10,7 @@ import {
   TableEmptyRow,
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { WarehouseRow } from "@/modules/warehouse/types"
+import type { WarehouseRecord } from "@builders/db"
 
 export function WarehouseTable({
   rows,
@@ -19,13 +19,13 @@ export function WarehouseTable({
   isGroupingEnabled,
   onOpen,
 }: {
-  rows: WarehouseRow[]
+  rows: WarehouseRecord[]
   visibleColumns: Array<{ key: string; label: string }>
-  groupedRows: GroupedRowTree<WarehouseRow>[]
+  groupedRows: GroupedRowTree<WarehouseRecord>[]
   isGroupingEnabled: boolean
-  onOpen: (row: WarehouseRow) => void
+  onOpen: (row: WarehouseRecord) => void
 }) {
-  function renderRow(row: WarehouseRow) {
+  function renderRow(row: WarehouseRecord) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       name: (columnIndex) => (
         <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium text-blue-500">

@@ -1,69 +1,36 @@
-import { createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
+import {
+  createPrismaPageLoadIssue,
+  getWarehouseDetailById,
+  isPrismaNotFoundError,
+  listWarehouses,
+  withPrismaConnectivityHandling,
+  type PrismaDetailPageResult,
+  type PrismaPageDataResult,
+  type WarehouseDetailRecord,
+  type WarehouseRecord,
+} from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { getWarehouseDetailRow } from "./api"
-import type { WarehouseDetail, WarehouseRow } from "../types"
 
-async function loadWarehouseRows() {
-  const warehouses = await prisma.flooringWarehouse.findMany({
-    include: {
-      _count: {
-        select: {
-          sections: true,
-          locations: true,
-          workOrders: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  })
-
-  return warehouses.map(
-    (warehouse): WarehouseRow => ({
-      id: warehouse.id,
-      name: warehouse.name,
-      address: warehouse.address,
-      phone: warehouse.phone,
-      sectionsCount: warehouse._count.sections,
-      locationsCount: warehouse._count.locations,
-      workOrdersCount: warehouse._count.workOrders,
-      createdAt: warehouse.createdAt.toISOString(),
-      updatedAt: warehouse.updatedAt.toISOString(),
-    }),
-  )
-}
-
-export async function getWarehousePageData() {
+export async function getWarehousePageData(): Promise<PrismaPageDataResult<WarehouseRecord[]>> {
   return withPrismaConnectivityHandling(() =>
-    withLoaderTiming(
-      {
-        loader: "flooring.warehouse.list",
-      },
-      () => loadWarehouseRows(),
-    ),
+    withLoaderTiming({ loader: "flooring.warehouse.list" }, () => listWarehouses()),
   )
 }
 
-export async function getWarehouseById(id: string): Promise<WarehouseDetail> {
-  return getWarehouseDetailRow(id)
-}
-
-export async function getWarehouseDetailPageData(id: string): Promise<PrismaDetailPageResult<Awaited<ReturnType<typeof getWarehouseById>>>> {
+export async function getWarehouseDetailPageData(
+  id: string,
+): Promise<PrismaDetailPageResult<WarehouseDetailRecord>> {
   try {
-    return {
-      ok: true,
-      data: await withLoaderTiming(
-        {
-          loader: "flooring.warehouse.detail",
-          details: { warehouseId: id },
-        },
-        () => getWarehouseById(id),
-      ),
-    }
+    const warehouse = await withLoaderTiming(
+      { loader: "flooring.warehouse.detail", details: { warehouseId: id } },
+      () => getWarehouseDetailById(id),
+    )
+    if (!warehouse) return { ok: false, notFound: true }
+    return { ok: true, data: warehouse }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
       return { ok: false, notFound: true }
     }
-
     return {
       ok: false,
       error: createPrismaPageLoadIssue(error, {

@@ -3,7 +3,6 @@ import {
   createSection,
   getExistingSectionNumbers,
   getWarehouseById,
-  lockFlooringWarehouseRow,
   withDatabaseTransaction,
 } from "@builders/db"
 import { computeNextNumber } from "@builders/domain"
@@ -12,11 +11,6 @@ import type { SectionResult } from "./types.js"
 
 /**
  * Sections have no editable fields; create takes only warehouseId.
- *
- * Lock ordering: lockFlooringWarehouseRow must run on the transaction
- * client (`c` is always a TransactionClient — caller-supplied or the outer
- * `tx`). Lock prevents concurrent section creates from assigning the same
- * number under the @@unique([warehouseId, number]) constraint.
  */
 export async function createSectionUseCase(
   warehouseId: string,
@@ -32,8 +26,6 @@ export async function createSectionUseCase(
         status: 404,
       })
     }
-
-    await lockFlooringWarehouseRow(c, warehouseId)
 
     const existing = await getExistingSectionNumbers(warehouseId, c)
     const number = computeNextNumber(existing)

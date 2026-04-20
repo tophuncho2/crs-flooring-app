@@ -1,67 +1,150 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
   isLocalOnlyRecordRow,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
-import {
-  createWarehouseDetail,
-  toWarehouseLocationDrafts,
-  toWarehouseSectionDrafts,
-  type WarehouseDetail,
-  type WarehouseLocationDraft,
-  type WarehouseSectionDraft,
-} from "@/modules/warehouse/types"
+import type {
+  LocationRecord,
+  SectionRecord,
+  WarehouseDetailRecord,
+} from "@builders/db"
+import type {
+  LocationUpdate,
+  SectionsWithLocationsDiff,
+} from "@builders/domain"
+import { updateSectionsWithLocationsRequest } from "@/modules/warehouse/data/mutations"
+
+export type SectionLocal = {
+  id: string
+  number: number | null
+  updatedAt: string | null
+}
+
+export type LocationLocal = {
+  id: string
+  sectionId: string
+  rafter: number
+  level: number
+  updatedAt: string | null
+}
 
 type WarehouseSectionsLocalState = {
-  sections: WarehouseSectionDraft[]
-  locations: WarehouseLocationDraft[]
+  sections: SectionLocal[]
+  locations: LocationLocal[]
 }
 
-function createSectionsRevisionKey(record: WarehouseDetail) {
-  return JSON.stringify({
-    sections: record.sections.map((section) => ({
-      id: section.id,
-      name: section.name,
-      locationsCount: section.locationsCount,
-    })),
-    locations: record.locations.map((location) => ({
-      id: location.id,
-      locationCode: location.locationCode,
-      sectionId: location.sectionId,
-      sectionName: location.sectionName,
-    })),
-  })
+function toSectionLocal(section: SectionRecord): SectionLocal {
+  return { id: section.id, number: section.number, updatedAt: section.updatedAt }
 }
 
-function createLocalState(record: WarehouseDetail): WarehouseSectionsLocalState {
+function toLocationLocal(location: LocationRecord): LocationLocal {
   return {
-    sections: toWarehouseSectionDrafts(record),
-    locations: toWarehouseLocationDrafts(record),
+    id: location.id,
+    sectionId: location.sectionId,
+    rafter: location.rafter,
+    level: location.level,
+    updatedAt: location.updatedAt,
   }
 }
 
-function recomputeSections(
-  sections: WarehouseSectionDraft[],
-  locations: WarehouseLocationDraft[],
-) {
-  return sections.map((section) => ({
-    ...section,
-    locationsCount: locations.filter((location) => location.sectionId === section.id).length,
-  }))
+function createLocalState(record: WarehouseDetailRecord): WarehouseSectionsLocalState {
+  return {
+    sections: record.sections.map(toSectionLocal),
+    locations: record.locations.map(toLocationLocal),
+  }
+}
+
+function createSectionsRevisionKey(record: WarehouseDetailRecord) {
+  return JSON.stringify({
+    sections: record.sections.map((s) => `${s.id}:${s.updatedAt}:${s.number}`),
+    locations: record.locations.map((l) => `${l.id}:${l.updatedAt}:${l.sectionId}:${l.rafter}:${l.level}`),
+  })
+}
+
+function buildDiff(
+  local: WarehouseSectionsLocalState,
+  server: { sections: SectionRecord[]; locations: LocationRecord[] },
+): SectionsWithLocationsDiff {
+  const serverSectionsById = new Map(server.sections.map((s) => [s.id, s]))
+  const serverLocationsById = new Map(server.locations.map((l) => [l.id, l]))
+
+  const localSectionIds = new Set(local.sections.map((s) => s.id))
+  const localLocationIds = new Set(local.locations.map((l) => l.id))
+
+  const sectionsAdded = local.sections
+    .filter((s) => isLocalOnlyRecordRow(s.id))
+    .map((s) => ({ tempId: s.id }))
+
+  const sectionsDeleted = server.sections
+    .filter((s) => !localSectionIds.has(s.id))
+    .map((s) => ({ id: s.id, expectedUpdatedAt: s.updatedAt }))
+
+  const locationsAdded = local.locations
+    .filter((l) => isLocalOnlyRecordRow(l.id))
+    .map((l) => ({
+      tempId: l.id,
+      sectionRef: isLocalOnlyRecordRow(l.sectionId)
+        ? ({ kind: "tempId" as const, tempId: l.sectionId })
+        : ({ kind: "id" as const, id: l.sectionId }),
+      rafter: l.rafter,
+      level: l.level,
+    }))
+
+  const locationsModified: LocationUpdate[] = []
+  for (const l of local.locations) {
+    if (isLocalOnlyRecordRow(l.id)) continue
+    const server = serverLocationsById.get(l.id)
+    if (!server || !l.updatedAt) continue
+    const update: LocationUpdate = { id: l.id, expectedUpdatedAt: l.updatedAt }
+    let changed = false
+    if (l.sectionId !== server.sectionId) {
+      if (isLocalOnlyRecordRow(l.sectionId)) {
+        throw createRecordSectionError({
+          kind: "validation",
+          message: "Cannot reassign an existing location into a brand-new section. Save sections first, then move locations.",
+          retryable: true,
+        })
+      }
+      update.sectionId = l.sectionId
+      changed = true
+    }
+    if (l.rafter !== server.rafter) {
+      update.rafter = l.rafter
+      changed = true
+    }
+    if (l.level !== server.level) {
+      update.level = l.level
+      changed = true
+    }
+    if (changed) locationsModified.push(update)
+  }
+
+  const locationsDeleted = server.locations
+    .filter((l) => !localLocationIds.has(l.id))
+    .map((l) => ({ id: l.id, expectedUpdatedAt: l.updatedAt }))
+
+  // Surface sections referenced by server that also have sections referenced locally
+  // ensures we don't miss anything — but server already filters missing ones.
+  // Suppress unused warning:
+  void serverSectionsById
+
+  return {
+    sections: { added: sectionsAdded, deleted: sectionsDeleted },
+    locations: { added: locationsAdded, modified: locationsModified, deleted: locationsDeleted },
+  }
 }
 
 export function useWarehouseSectionsSection({
   record,
   publishRecord,
 }: {
-  record: WarehouseDetail
-  publishRecord: (record: WarehouseDetail) => void
+  record: WarehouseDetailRecord
+  publishRecord: (record: WarehouseDetailRecord) => void
 }) {
-  const section = useRecordScopedSectionController<WarehouseDetail, WarehouseSectionsLocalState>({
+  const section = useRecordScopedSectionController<WarehouseDetailRecord, WarehouseSectionsLocalState>({
     recordId: record.id,
     sectionKey: "sections",
     serverValue: record,
@@ -73,239 +156,44 @@ export function useWarehouseSectionsSection({
       childRows: "inline",
     },
     onSave: async (localValue, currentRecord) => {
-      const normalizedSections = localValue.sections.map((row) => ({
-        ...row,
-        name: row.name.trim(),
-      }))
-      const normalizedLocations = localValue.locations.map((row) => ({
-        ...row,
-        locationCode: row.locationCode.trim(),
-      }))
-
-      if (normalizedSections.some((row) => !row.name)) {
-        throw createRecordSectionError({
-          kind: "validation",
-          message: "Every section row requires a name.",
-          retryable: true,
-        })
+      const normalized: WarehouseSectionsLocalState = {
+        sections: localValue.sections,
+        locations: localValue.locations.map((l) => ({
+          ...l,
+          rafter: Number.isFinite(l.rafter) ? Math.trunc(l.rafter) : 0,
+          level: Number.isFinite(l.level) ? Math.trunc(l.level) : 0,
+        })),
       }
 
-      const duplicateSection = normalizedSections.find(
-        (row, index) =>
-          normalizedSections.findIndex(
-            (candidate) => candidate.name.toLowerCase() === row.name.toLowerCase(),
-          ) !== index,
-      )
-      if (duplicateSection) {
-        throw createRecordSectionError({
-          kind: "validation",
-          message: `Section names must be unique. Duplicate: ${duplicateSection.name}`,
-          retryable: true,
-        })
-      }
-
-      if (normalizedLocations.some((row) => !row.locationCode || !row.sectionId)) {
-        throw createRecordSectionError({
-          kind: "validation",
-          message: "Every location row requires a location code and section.",
-          retryable: true,
-        })
-      }
-
-      const duplicateLocation = normalizedLocations.find(
-        (row, index) =>
-          normalizedLocations.findIndex(
-            (candidate) =>
-              candidate.locationCode.toLowerCase() === row.locationCode.toLowerCase() &&
-              candidate.sectionId === row.sectionId,
-          ) !== index,
-      )
-      if (duplicateLocation) {
-        throw createRecordSectionError({
-          kind: "validation",
-          message: `Location codes must be unique per section. Duplicate: ${duplicateLocation.locationCode}`,
-          retryable: true,
-        })
-      }
-
-      const serverSections = currentRecord.sections
-      const serverLocations = currentRecord.locations
-      const resolvedSections = new Map<string, WarehouseSectionDraft>()
-
-      for (const row of normalizedSections) {
-        if (isLocalOnlyRecordRow(row.id)) {
-          const payload = await requestJson<{ section: { id: string; name: string; locationsCount: number } }>("/api/sections", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              warehouseId: currentRecord.id,
-              name: row.name,
-            }),
+      for (const loc of normalized.locations) {
+        if (!loc.sectionId) {
+          throw createRecordSectionError({
+            kind: "validation",
+            message: "Every location must be assigned to a section.",
+            retryable: true,
           })
-          resolvedSections.set(row.id, payload.section)
-          continue
         }
-
-        const currentServerRow = serverSections.find((serverRow) => serverRow.id === row.id)
-        if (!currentServerRow) {
-          continue
-        }
-
-        if (currentServerRow.name === row.name) {
-          resolvedSections.set(row.id, {
-            id: currentServerRow.id,
-            name: currentServerRow.name,
-            locationsCount: currentServerRow.locationsCount,
-          })
-          continue
-        }
-
-        const payload = await requestJson<{ section: { id: string; name: string; locationsCount: number } }>(`/api/sections/${row.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            warehouseId: currentRecord.id,
-            name: row.name,
-          }),
-        })
-        resolvedSections.set(row.id, payload.section)
       }
 
-      const resolveSectionId = (sectionId: string) => resolvedSections.get(sectionId)?.id ?? sectionId
-      const resolveSectionName = (sectionId: string) => {
-        const resolved = resolvedSections.get(sectionId)
-        if (resolved) {
-          return resolved.name
-        }
-
-        return serverSections.find((sectionRow) => sectionRow.id === sectionId)?.name ?? null
-      }
-
-      const normalizedResolvedLocations = normalizedLocations.map((row) => ({
-        ...row,
-        sectionId: resolveSectionId(row.sectionId),
-        sectionName: resolveSectionName(row.sectionId),
-      }))
-
-      const keptLocationIds = new Set(
-        normalizedResolvedLocations
-          .filter((row) => !isLocalOnlyRecordRow(row.id))
-          .map((row) => row.id),
-      )
-
-      for (const serverRow of serverLocations) {
-        if (keptLocationIds.has(serverRow.id)) {
-          continue
-        }
-
-        await requestJson<{ ok: true }>(`/api/locations/${serverRow.id}`, {
-          method: "DELETE",
-        })
-      }
-
-      const resolvedLocations = new Map<string, WarehouseLocationDraft>()
-
-      for (const row of normalizedResolvedLocations) {
-        if (isLocalOnlyRecordRow(row.id)) {
-          const payload = await requestJson<{ location: { id: string; locationCode: string; sectionId: string; sectionName: string | null } }>("/api/locations", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              warehouseId: currentRecord.id,
-              locationCode: row.locationCode,
-              sectionId: row.sectionId,
-            }),
-          })
-          resolvedLocations.set(row.id, payload.location)
-          continue
-        }
-
-        const currentServerRow = serverLocations.find((serverRow) => serverRow.id === row.id)
-        if (!currentServerRow) {
-          continue
-        }
-
-        if (
-          currentServerRow.locationCode === row.locationCode &&
-          currentServerRow.sectionId === row.sectionId
-        ) {
-          resolvedLocations.set(row.id, {
-            id: currentServerRow.id,
-            locationCode: currentServerRow.locationCode,
-            sectionId: currentServerRow.sectionId,
-            sectionName: row.sectionName,
-          })
-          continue
-        }
-
-        const payload = await requestJson<{ location: { id: string; locationCode: string; sectionId: string; sectionName: string | null } }>(`/api/locations/${row.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            locationCode: row.locationCode,
-            sectionId: row.sectionId,
-          }),
-        })
-        resolvedLocations.set(row.id, payload.location)
-      }
-
-      const keptSectionIds = new Set(
-        normalizedSections
-          .filter((row) => !isLocalOnlyRecordRow(row.id))
-          .map((row) => row.id),
-      )
-
-      for (const serverRow of serverSections) {
-        if (keptSectionIds.has(serverRow.id)) {
-          continue
-        }
-
-        await requestJson<{ ok: true }>(`/api/sections/${serverRow.id}`, {
-          method: "DELETE",
-        })
-      }
-
-      const nextSections = recomputeSections(
-        normalizedSections.map((row) => {
-          const resolved = resolvedSections.get(row.id)
-          return resolved
-            ? {
-                id: resolved.id,
-                name: resolved.name,
-                locationsCount: resolved.locationsCount,
-              }
-            : row
-        }),
-        normalizedResolvedLocations.map((row) => resolvedLocations.get(row.id) ?? row),
-      )
-
-      const nextLocations = normalizedResolvedLocations.map((row) => {
-        const resolved = resolvedLocations.get(row.id)
-        if (resolved) {
-          return resolved
-        }
-
-        return {
-          ...row,
-          sectionName: nextSections.find((sectionRow) => sectionRow.id === row.sectionId)?.name ?? row.sectionName,
-        }
+      const diff = buildDiff(normalized, {
+        sections: currentRecord.sections,
+        locations: currentRecord.locations,
       })
 
-      const nextRecord = createWarehouseDetail(
-        {
-          ...currentRecord,
-          sectionsCount: nextSections.length,
-          locationsCount: nextLocations.length,
-        },
-        nextSections,
-        nextLocations,
+      const { warehouse, tempIdMap } = await updateSectionsWithLocationsRequest(
+        currentRecord.id,
+        diff,
+        currentRecord.updatedAt,
       )
 
-      publishRecord(nextRecord)
+      // Consume tempIdMap only for visibility; local state is rebuilt from the canonical warehouse detail below.
+      void tempIdMap
+
+      publishRecord(warehouse)
 
       return {
-        serverValue: nextRecord,
-        serverRevisionKey: createSectionsRevisionKey(nextRecord),
+        serverValue: warehouse,
+        serverRevisionKey: createSectionsRevisionKey(warehouse),
         noticeMessage: "Sections saved",
       }
     },
@@ -315,11 +203,7 @@ export function useWarehouseSectionsSection({
     section.setLocalValue((previous) => ({
       ...previous,
       sections: [
-        {
-          id: createLocalRecordRowId("warehouse-section"),
-          name: "",
-          locationsCount: 0,
-        },
+        { id: createLocalRecordRowId("warehouse-section"), number: null, updatedAt: null },
         ...previous.sections,
       ],
     }))
@@ -334,23 +218,6 @@ export function useWarehouseSectionsSection({
     section.setError(null)
   }
 
-  function setSectionName(sectionId: string, value: string) {
-    section.setLocalValue((previous) => ({
-      ...previous,
-      sections: previous.sections.map((row) =>
-        row.id === sectionId
-          ? {
-              ...row,
-              name: value,
-            }
-          : row,
-      ),
-    }))
-    if (section.error) {
-      section.setError(null)
-    }
-  }
-
   function addLocation(sectionId: string) {
     section.setLocalValue((previous) => ({
       ...previous,
@@ -358,9 +225,10 @@ export function useWarehouseSectionsSection({
         ...previous.locations,
         {
           id: createLocalRecordRowId("warehouse-location"),
-          locationCode: "",
           sectionId,
-          sectionName: previous.sections.find((row) => row.id === sectionId)?.name ?? null,
+          rafter: 0,
+          level: 0,
+          updatedAt: null,
         },
       ],
     }))
@@ -375,34 +243,46 @@ export function useWarehouseSectionsSection({
     section.setError(null)
   }
 
-  function setLocationCode(locationId: string, value: string) {
+  function setLocationRafter(locationId: string, value: number) {
     section.setLocalValue((previous) => ({
       ...previous,
       locations: previous.locations.map((row) =>
-        row.id === locationId
-          ? {
-              ...row,
-              locationCode: value,
-            }
-          : row,
+        row.id === locationId ? { ...row, rafter: value } : row,
       ),
     }))
-    if (section.error) {
-      section.setError(null)
-    }
+    if (section.error) section.setError(null)
   }
 
-  const rows = recomputeSections(section.localValue.sections, section.localValue.locations)
+  function setLocationLevel(locationId: string, value: number) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      locations: previous.locations.map((row) =>
+        row.id === locationId ? { ...row, level: value } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  function setLocationSection(locationId: string, sectionId: string) {
+    section.setLocalValue((previous) => ({
+      ...previous,
+      locations: previous.locations.map((row) =>
+        row.id === locationId ? { ...row, sectionId } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
 
   return {
     ...section,
-    rows,
+    sections: section.localValue.sections,
     locations: section.localValue.locations,
     addSection,
     removeSection,
-    setSectionName,
     addLocation,
     removeLocation,
-    setLocationCode,
+    setLocationRafter,
+    setLocationLevel,
+    setLocationSection,
   }
 }

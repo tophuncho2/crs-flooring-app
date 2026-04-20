@@ -2,11 +2,11 @@
 
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
-import type { WarehouseForm } from "@builders/domain"
-import type { WarehouseRow } from "@/modules/warehouse/types"
+import type { SectionsWithLocationsDiff, WarehouseForm } from "@builders/domain"
+import type { WarehouseDetailRecord, WarehouseRecord } from "@builders/db"
 
 export async function createWarehouseRequest(input: WarehouseForm) {
-  return requestJson<{ warehouse: WarehouseRow }>("/api/warehouses", {
+  return requestJson<{ warehouse: WarehouseRecord }>("/api/warehouses", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input)),
@@ -14,7 +14,7 @@ export async function createWarehouseRequest(input: WarehouseForm) {
 }
 
 export async function updateWarehouseRequest(id: string, input: WarehouseForm, revisionKey: string) {
-  return requestJson<{ warehouse: WarehouseRow }>(`/api/warehouses/${id}/primary/section`, {
+  return requestJson<{ warehouse: WarehouseRecord }>(`/api/warehouses/${id}/primary/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input, revisionKey)),
@@ -27,4 +27,19 @@ export async function deleteWarehouseRequest(id: string, updatedAt: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
+}
+
+export async function updateSectionsWithLocationsRequest(
+  id: string,
+  diff: SectionsWithLocationsDiff,
+  revisionKey: string,
+) {
+  return requestJson<{ warehouse: WarehouseDetailRecord; tempIdMap: Record<string, string> }>(
+    `/api/warehouses/${id}/sections-locations/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
+    },
+  )
 }

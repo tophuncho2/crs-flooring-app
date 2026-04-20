@@ -11,7 +11,7 @@ import {
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
 import type { WarehouseForm } from "@builders/domain"
-import type { WarehouseDetail } from "@/modules/warehouse/types"
+import type { WarehouseDetailRecord } from "@builders/db"
 
 function formatDate(value: string) {
   if (!value) {
@@ -32,7 +32,7 @@ export function WarehousePrimaryFieldsSection({
   disabled,
   onFieldChange,
 }: {
-  warehouse: WarehouseDetail
+  warehouse: WarehouseDetailRecord
   draft: WarehouseForm
   disabled: boolean
   onFieldChange: (field: keyof WarehouseForm, value: string) => void

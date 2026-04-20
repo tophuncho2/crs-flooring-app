@@ -9,26 +9,25 @@ import {
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import type { WarehouseForm } from "@builders/domain"
-import { createWarehouseDetail, toWarehouseForm, type WarehouseDetail } from "@/modules/warehouse/types"
+import { toWarehouseForm, type WarehouseForm } from "@builders/domain"
+import type { WarehouseDetailRecord } from "@builders/db"
 import { createWarehouseRequest } from "@/modules/warehouse/data/mutations"
 import { WarehousePrimaryFieldsSection } from "./warehouse-primary-fields-section"
 
-const EMPTY_WAREHOUSE_DETAIL: WarehouseDetail = createWarehouseDetail(
-  {
-    id: "new",
-    name: "",
-    address: "",
-    phone: "",
-    sectionsCount: 0,
-    locationsCount: 0,
-    workOrdersCount: 0,
-    createdAt: "",
-    updatedAt: "",
-  },
-  [],
-  [],
-)
+const EMPTY_WAREHOUSE_DETAIL: WarehouseDetailRecord = {
+  id: "new",
+  number: 0,
+  name: "",
+  address: "",
+  phone: "",
+  sectionsCount: 0,
+  locationsCount: 0,
+  workOrdersCount: 0,
+  createdAt: "",
+  updatedAt: "",
+  sections: [],
+  locations: [],
+}
 
 function WarehouseCreatePanel({
   page,

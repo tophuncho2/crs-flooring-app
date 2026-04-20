@@ -4,14 +4,14 @@ import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import type { WarehouseDetail } from "@/modules/warehouse/types"
+import type { WarehouseDetailRecord } from "@builders/db"
 import { WarehouseRecordPanel } from "./warehouse-record-panel"
 
 export function WarehouseDetailClient({
   warehouse,
   backHref,
 }: {
-  warehouse: WarehouseDetail
+  warehouse: WarehouseDetailRecord
   backHref: string
 }) {
   return (

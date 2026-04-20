@@ -11,40 +11,46 @@ import {
   RecordSectionGrid,
   RecordSectionGridRow,
   RecordStaticFieldValue,
-  type RecordSectionSubHeaderProps,
   type RecordGridLayout,
+  type RecordSectionSubHeaderProps,
 } from "@/modules/shared/engines/record-view"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BORDER_CLASS_NAME,
 } from "@/modules/shared/engines/record-view/sections/structure/record-section-tokens"
-import type { WarehouseLocationDraft, WarehouseSectionDraft } from "@/modules/warehouse/types"
+import { formatLocationLabel } from "@builders/domain"
+import { isLocalOnlyRecordRow } from "@/modules/shared/engines/record-view"
+import type { LocationLocal, SectionLocal } from "@/modules/warehouse/controllers/use-warehouse-sections-section"
 import { WAREHOUSE_LOCATION_COLUMNS, WAREHOUSE_SECTION_COLUMNS } from "./warehouse-item-grid"
 
 const WAREHOUSE_LOCATION_LAYOUT: RecordGridLayout = { dataColumns: WAREHOUSE_LOCATION_COLUMNS }
 
+function sectionDisplayLabel(section: SectionLocal): string {
+  return section.number != null ? `Section ${section.number}` : "New section (unsaved)"
+}
+
 export function WarehouseSectionsSection({
-  rows,
+  sections,
   locations,
   subHeader,
   noticeMessage,
   noticeError,
-  onNameChange,
-  onRemoveRow,
+  onRemoveSection,
   onAddLocation,
-  onLocationCodeChange,
   onRemoveLocation,
+  onRafterChange,
+  onLevelChange,
 }: {
-  rows: WarehouseSectionDraft[]
-  locations: WarehouseLocationDraft[]
+  sections: SectionLocal[]
+  locations: LocationLocal[]
   subHeader: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
   noticeMessage?: string
   noticeError?: string
-  onNameChange: (rowId: string, value: string) => void
-  onRemoveRow: (rowId: string) => void
+  onRemoveSection: (sectionId: string) => void
   onAddLocation: (sectionId: string) => void
-  onLocationCodeChange: (locationId: string, value: string) => void
   onRemoveLocation: (locationId: string) => void
+  onRafterChange: (locationId: string, value: number) => void
+  onLevelChange: (locationId: string, value: number) => void
 }) {
   const [expandedSectionIds, setExpandedSectionIds] = useState<string[]>([])
 
@@ -63,32 +69,27 @@ export function WarehouseSectionsSection({
         supportsEmptyState: true,
         supportsScopedRows: true,
       }}
-      isEmpty={rows.length === 0}
+      isEmpty={sections.length === 0}
       emptyState="No sections yet."
     >
       <RecordSectionGrid
         columns={WAREHOUSE_SECTION_COLUMNS}
-        isEmpty={rows.length === 0}
+        isEmpty={sections.length === 0}
         emptyState="No sections yet."
       >
-        {rows.map((section, index) => {
+        {sections.map((section, index) => {
           const isExpanded = expandedSectionIds.includes(section.id)
           const sectionLocations = locations.filter((location) => location.sectionId === section.id)
+          const isLocalSection = isLocalOnlyRecordRow(section.id)
 
           return (
             <Fragment key={section.id}>
-              <RecordSectionGridRow
-                columns={WAREHOUSE_SECTION_COLUMNS}
-              >
-                <RecordItemCell columnKey="name" chrome="grid" showLabel={index === 0}>
-                  <RecordGridCellInput
-                    value={section.name}
-                    onChange={(event) => onNameChange(section.id, event.target.value)}
-                    placeholder="Section name"
-                  />
+              <RecordSectionGridRow columns={WAREHOUSE_SECTION_COLUMNS}>
+                <RecordItemCell columnKey="number" chrome="grid" showLabel={index === 0}>
+                  <RecordStaticFieldValue>{sectionDisplayLabel(section)}</RecordStaticFieldValue>
                 </RecordItemCell>
                 <RecordItemCell columnKey="locationsCount" chrome="grid" showLabel={index === 0}>
-                  <RecordStaticFieldValue>{section.locationsCount}</RecordStaticFieldValue>
+                  <RecordStaticFieldValue>{sectionLocations.length}</RecordStaticFieldValue>
                 </RecordItemCell>
                 <RecordItemSectionControls
                   capabilities={{ supportsScopedRows: true, supportsRemoveRow: true }}
@@ -103,11 +104,14 @@ export function WarehouseSectionsSection({
                           : [...previous, section.id],
                       )
                     },
-                    ariaLabel: isExpanded ? `Hide locations for ${section.name || "section"}` : `Show locations for ${section.name || "section"}`,
+                    ariaLabel: isExpanded
+                      ? `Hide locations for ${sectionDisplayLabel(section)}`
+                      : `Show locations for ${sectionDisplayLabel(section)}`,
                   }}
                   remove={{
-                    onRemove: () => onRemoveRow(section.id),
+                    onRemove: () => onRemoveSection(section.id),
                     disabled: subHeader.isSaving,
+                    ...(isLocalSection ? {} : {}),
                   }}
                 />
               </RecordSectionGridRow>
@@ -124,13 +128,50 @@ export function WarehouseSectionsSection({
                         layout={WAREHOUSE_LOCATION_LAYOUT}
                         rowTone="allocation"
                       >
-                        <RecordItemCell columnKey="locationCode" chrome="grid" tone="allocation" density="compact" showLabel={locationIndex === 0}>
+                        <RecordItemCell
+                          columnKey="rafter"
+                          chrome="grid"
+                          tone="allocation"
+                          density="compact"
+                          showLabel={locationIndex === 0}
+                        >
                           <RecordGridCellInput
-                            value={location.locationCode}
-                            onChange={(event) => onLocationCodeChange(location.id, event.target.value)}
-                            placeholder="Location code"
+                            type="number"
+                            value={String(location.rafter)}
+                            onChange={(event) =>
+                              onRafterChange(location.id, parsePositiveInt(event.target.value))
+                            }
+                            placeholder="Rafter"
                             controlSize="compact"
                           />
+                        </RecordItemCell>
+                        <RecordItemCell
+                          columnKey="level"
+                          chrome="grid"
+                          tone="allocation"
+                          density="compact"
+                          showLabel={locationIndex === 0}
+                        >
+                          <RecordGridCellInput
+                            type="number"
+                            value={String(location.level)}
+                            onChange={(event) =>
+                              onLevelChange(location.id, parsePositiveInt(event.target.value))
+                            }
+                            placeholder="Level"
+                            controlSize="compact"
+                          />
+                        </RecordItemCell>
+                        <RecordItemCell
+                          columnKey="label"
+                          chrome="grid"
+                          tone="allocation"
+                          density="compact"
+                          showLabel={locationIndex === 0}
+                        >
+                          <RecordStaticFieldValue>
+                            {formatLocationLabel(location.rafter, location.level)}
+                          </RecordStaticFieldValue>
                         </RecordItemCell>
                         <RecordItemSectionControls
                           capabilities={{ supportsRemoveRow: true }}
@@ -151,7 +192,10 @@ export function WarehouseSectionsSection({
                       RECORD_SECTION_BORDER_CLASS_NAME,
                     )}
                   >
-                    <RecordFooterNeutralButton onClick={() => onAddLocation(section.id)} disabled={subHeader.isSaving}>
+                    <RecordFooterNeutralButton
+                      onClick={() => onAddLocation(section.id)}
+                      disabled={subHeader.isSaving}
+                    >
                       Add Location
                     </RecordFooterNeutralButton>
                   </div>
@@ -163,4 +207,10 @@ export function WarehouseSectionsSection({
       </RecordSectionGrid>
     </RecordItemSection>
   )
+}
+
+function parsePositiveInt(value: string): number {
+  const parsed = Number.parseInt(value, 10)
+  if (Number.isNaN(parsed) || parsed < 0) return 0
+  return parsed
 }

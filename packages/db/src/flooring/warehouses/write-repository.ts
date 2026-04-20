@@ -1,6 +1,5 @@
 import type { Prisma } from "@prisma/client"
 import { db } from "../../client.js"
-import { lockFlooringWarehouseRow } from "../../shared/row-locks.js"
 import {
   locationRowSelect,
   sectionRowSelect,
@@ -216,9 +215,6 @@ export async function applySectionsWithLocationsDiff(
   tx: Prisma.TransactionClient,
   input: ApplyDiffInput,
 ): Promise<ApplyDiffResult> {
-  // Step 0: Lock parent warehouse row
-  await lockFlooringWarehouseRow(tx, input.warehouseId)
-
   // Step 1: Batch delete locations
   if (input.locations.deleted.length > 0) {
     await tx.flooringLocation.deleteMany({

@@ -4,8 +4,7 @@ import {
   getExistingSectionNumbers,
   getWarehouseById,
   listLocationsByWarehouse,
-  lockFlooringWarehouseRow,
-  withSectionalSave,
+  withDatabaseTransaction,
   type SectionRecord,
 } from "@builders/db"
 import {
@@ -27,9 +26,7 @@ export async function saveSectionsWithLocationsUseCase(
   warehouseId: string,
   diff: SectionsWithLocationsDiff,
 ): Promise<SaveSectionsWithLocationsResult> {
-  return withSectionalSave(
-    (tx) => lockFlooringWarehouseRow(tx, warehouseId),
-    async (tx) => {
+  return withDatabaseTransaction(async (tx) => {
       const warehouse = await getWarehouseById(warehouseId, tx)
       if (!warehouse) {
         throw new WarehouseExecutionError({
@@ -105,6 +102,5 @@ export async function saveSectionsWithLocationsUseCase(
         locations: result.locations.map(toLocationResult),
         tempIdMap: result.tempIdMap,
       }
-    },
-  )
+  })
 }

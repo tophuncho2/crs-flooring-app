@@ -10,18 +10,18 @@ import { useListViewEngine } from "@/modules/shared/engines/list-view/controller
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
-import type { WarehouseRow } from "@/modules/warehouse/types"
+import type { WarehouseRecord } from "@builders/db"
 import { WarehouseTable } from "./warehouse-table"
 
-export type { WarehouseRow } from "@/modules/warehouse/types"
+export type { WarehouseRecord } from "@builders/db"
 
 const WAREHOUSE_FIELDS = [
-  { key: "name", label: "Warehouse", getValue: (row: WarehouseRow) => row.name, groupable: false },
-  { key: "address", label: "Address", getValue: (row: WarehouseRow) => row.address ?? "", groupable: true },
-  { key: "phone", label: "Store Phone", getValue: (row: WarehouseRow) => row.phone ?? "", groupable: true },
-  { key: "sections", label: "Sections", getValue: (row: WarehouseRow) => String(row.sectionsCount), groupable: true },
-  { key: "locations", label: "Locations", getValue: (row: WarehouseRow) => String(row.locationsCount), groupable: true },
-  { key: "workOrders", label: "Work Orders", getValue: (row: WarehouseRow) => String(row.workOrdersCount), groupable: true },
+  { key: "name", label: "Warehouse", getValue: (row: WarehouseRecord) => row.name, groupable: false },
+  { key: "address", label: "Address", getValue: (row: WarehouseRecord) => row.address ?? "", groupable: true },
+  { key: "phone", label: "Store Phone", getValue: (row: WarehouseRecord) => row.phone ?? "", groupable: true },
+  { key: "sections", label: "Sections", getValue: (row: WarehouseRecord) => String(row.sectionsCount), groupable: true },
+  { key: "locations", label: "Locations", getValue: (row: WarehouseRecord) => String(row.locationsCount), groupable: true },
+  { key: "workOrders", label: "Work Orders", getValue: (row: WarehouseRecord) => String(row.workOrdersCount), groupable: true },
 ]
 
 export default function WarehouseClient({
@@ -29,7 +29,7 @@ export default function WarehouseClient({
   initialTablePreferences,
   tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
 }: {
-  initialRows: WarehouseRow[]
+  initialRows: WarehouseRecord[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState?: {
     searchQuery: string
@@ -78,7 +78,7 @@ export default function WarehouseClient({
               key,
               label: WAREHOUSE_FIELDS.find((f) => f.key === key)?.label ?? key,
             }))}
-            groupedRows={engine.groupedRowTree as GroupedRowTree<WarehouseRow>[]}
+            groupedRows={engine.groupedRowTree as GroupedRowTree<WarehouseRecord>[]}
             isGroupingEnabled={engine.isGroupingEnabled}
             onOpen={(row) => warehouseNavigation.openRecord(row.id)}
           />

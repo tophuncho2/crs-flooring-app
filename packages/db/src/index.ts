@@ -1,8 +1,6 @@
 export { Prisma, Role, FlooringVacancyStatus, FlooringWorkOrderStatus } from "@prisma/client"
 export type { PrismaClient } from "@prisma/client"
 export { db, prisma, withDatabaseTransaction } from "./client.js"
-export * from "./shared/row-locks.js"
-export * from "./shared/sectional-save.js"
 export * from "./env.js"
 export * from "./errors.js"
 export * from "./flooring/categories/read-repository.js"
