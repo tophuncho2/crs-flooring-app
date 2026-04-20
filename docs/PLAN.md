@@ -122,4 +122,6 @@ Once §1 is documented, repeat per module: move domain → `packages/domain`, us
 
 - [ ] **Properties** module — full refactor following warehouse pattern.
 - [ ] **Management Companies** module — full refactor following warehouse pattern.
-- [ ] **Templates** module — full refactor following warehouse pattern (warehouse linkage fix handled in §2).
+- [ ] **Templates** module — full refactor follow
+
+- Warehouse, sections, and locations each need a shared dropdown loader stored in modules/shared/engine somewhere, need a cananicol home for all module dropdowns.
