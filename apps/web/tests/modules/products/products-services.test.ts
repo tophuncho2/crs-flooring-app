@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { Prisma } from "@builders/db"
-import { normalizeCatalogProduct } from "@/modules/products/domain/services"
+import { Prisma, normalizeProductRow } from "@builders/db"
 
-describe("normalizeCatalogProduct", () => {
-  it("products resolve manufacturer display names from company name", () => {
-    const normalized = normalizeCatalogProduct({
+describe("normalizeProductRow", () => {
+  it("products resolve manufacturer display names from the live company name", () => {
+    const normalized = normalizeProductRow({
       id: "prod-1",
-      name: "Acme Flooring - Plush - Sand",
+      name: "Carpet - Plush - Sand",
       categoryId: "cat-1",
       manufacturerId: "mfg-1",
       manufacturerName: "stale manufacturer name",
@@ -22,6 +21,7 @@ describe("normalizeCatalogProduct", () => {
       updatedAt: new Date("2026-03-18T00:00:00Z"),
       category: {
         id: "cat-1",
+        slug: "carpet",
         name: "Carpet",
         sendUnit: { id: "u1", name: "SY" },
         stockUnit: { id: "u2", name: "Roll" },
@@ -32,11 +32,42 @@ describe("normalizeCatalogProduct", () => {
       manufacturer: {
         id: "mfg-1",
         companyName: "Acme Flooring",
-        agentName: "Jamie Agent",
-        website: null,
       },
     })
 
     expect(normalized.manufacturerName).toBe("Acme Flooring")
+  })
+
+  it("falls back to stored manufacturerName when companyName is missing (never agentName)", () => {
+    const normalized = normalizeProductRow({
+      id: "prod-2",
+      name: "Carpet - Plush - Sand",
+      categoryId: "cat-1",
+      manufacturerId: null,
+      manufacturerName: "Legacy Co",
+      style: "Plush",
+      color: "Sand",
+      width: null,
+      sheetSize: null,
+      thickness: null,
+      unitWeight: null,
+      coveragePerUnit: null,
+      notes: null,
+      createdAt: new Date("2026-03-18T00:00:00Z"),
+      updatedAt: new Date("2026-03-18T00:00:00Z"),
+      category: {
+        id: "cat-1",
+        slug: "carpet",
+        name: "Carpet",
+        sendUnit: null,
+        stockUnit: null,
+        coverageAvailableUnit: null,
+        itemCoverageUnit: null,
+        serviceUnit: null,
+      },
+      manufacturer: null,
+    })
+
+    expect(normalized.manufacturerName).toBe("Legacy Co")
   })
 })

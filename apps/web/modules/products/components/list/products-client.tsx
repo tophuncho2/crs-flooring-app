@@ -11,7 +11,7 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
-  type ProductRow,
+  type ProductRecord,
   useProductsListController,
 } from "@/modules/products/controllers/use-products-list-controller"
 import { ProductsTable } from "./products-table"
@@ -38,7 +38,7 @@ export default function FlooringProductsClient({
   pagination,
   initialTablePreferences,
 }: {
-  initialProducts: ProductRow[]
+  initialProducts: ProductRecord[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
@@ -126,7 +126,7 @@ export default function FlooringProductsClient({
       table={
         <ProductsTable
           rows={sortedProducts}
-          groupedRows={groupedRowTree as GroupedRowTree<ProductRow>[]}
+          groupedRows={groupedRowTree as GroupedRowTree<ProductRecord>[]}
           isGroupingEnabled={isGroupingEnabled}
           visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
           visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}

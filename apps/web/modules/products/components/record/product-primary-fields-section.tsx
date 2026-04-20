@@ -10,12 +10,8 @@ import {
   RecordPrimaryPane,
   RecordPrimarySection,
 } from "@/modules/shared/engines/record-view"
-import type {
-  CategoryOption,
-  ManufacturerOption,
-  ProductForm,
-  ProductRow,
-} from "../../../domain/types"
+import type { ProductForm } from "@builders/domain"
+import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
 
 export function ProductPrimaryFieldsSection({
   draft,
@@ -24,10 +20,10 @@ export function ProductPrimaryFieldsSection({
   disabled,
   onFieldChange,
 }: {
-  product: ProductRow
+  product: ProductRecord
   draft: ProductForm
-  categoryOptions: CategoryOption[]
-  manufacturerOptions: ManufacturerOption[]
+  categoryOptions: CategoryRecord[]
+  manufacturerOptions: ManufacturerRecord[]
   disabled: boolean
   onFieldChange: (field: keyof ProductForm, value: string) => void
 }) {
@@ -68,7 +64,7 @@ export function ProductPrimaryFieldsSection({
                 <option value="">Select a manufacturer</option>
                 {manufacturerOptions.map((manufacturer) => (
                   <option key={manufacturer.id} value={manufacturer.id}>
-                    {manufacturer.name}
+                    {manufacturer.companyName}
                   </option>
                 ))}
               </select>

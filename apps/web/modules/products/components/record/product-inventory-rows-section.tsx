@@ -1,6 +1,6 @@
 "use client"
 
-import { calculateProductInventorySummary } from "../../../domain/inventory-summary"
+import { calculateInventoryCostSummary } from "@builders/domain"
 import { formatInventoryImportNumber, formatInventoryQuantity } from "@/modules/inventory/domain/formatters"
 import {
   RecordItemCell,
@@ -12,7 +12,7 @@ import {
   type RecordRowColumnSpec,
   type RecordSectionSubHeaderProps,
 } from "@/modules/shared/engines/record-view"
-import type { ProductInventoryRow } from "../../../domain/types"
+import type { InventoryRow } from "@/modules/inventory/domain/types"
 
 const INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "itemNumber", minWidth: 140, grow: 1, label: "Item #" },
@@ -26,7 +26,7 @@ const INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
 
-function readLocationLabel(row: ProductInventoryRow) {
+function readLocationLabel(row: InventoryRow) {
   const parts = [row.warehouseName, row.sectionName, row.locationCode].filter(Boolean)
   return parts.length > 0 ? parts.join(" / ") : "No location"
 }
@@ -38,11 +38,11 @@ export function ProductInventoryRowsSection({
   onOpenInventory,
 }: {
   subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
-  inventoryRows: ProductInventoryRow[]
+  inventoryRows: InventoryRow[]
   loadingInventoryId: string | null
   onOpenInventory: (inventoryId: string) => void
 }) {
-  const summary = calculateProductInventorySummary(inventoryRows)
+  const summary = calculateInventoryCostSummary(inventoryRows)
 
   return (
     <RecordItemSection

@@ -63,3 +63,23 @@ export function resolveProductManufacturerName(input: {
 export function isProductNameConflict(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase()
 }
+
+/**
+ * Client-side pre-submit validation of the primary section form.
+ * Returns an empty string when valid, or a user-readable error message.
+ *
+ * Kept in the domain layer so the same rule can be reused by non-UI callers
+ * (admin scripts, imports) without reaching into web-only code.
+ */
+export function validateProductPrimaryForm(input: {
+  categoryId: string
+  coveragePerUnit: string
+}): string {
+  if (!input.categoryId.trim()) {
+    return "Category is required"
+  }
+  if (input.coveragePerUnit.trim() && !/^\d+(\.\d{0,4})?$/.test(input.coveragePerUnit.trim())) {
+    return "Coverage per unit must be numeric with up to 4 decimals"
+  }
+  return ""
+}

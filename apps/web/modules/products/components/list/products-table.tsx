@@ -11,7 +11,7 @@ import {
   TablePaginationControls,
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { ProductRow } from "@/modules/products/controllers/use-products-list-controller"
+import type { ProductRecord } from "@/modules/products/controllers/use-products-list-controller"
 
 export function ProductsTable({
   rows,
@@ -30,8 +30,8 @@ export function ProductsTable({
   onNextPage,
   onOpenProduct,
 }: {
-  rows: ProductRow[]
-  groupedRows: GroupedRowTree<ProductRow>[]
+  rows: ProductRecord[]
+  groupedRows: GroupedRowTree<ProductRecord>[]
   isGroupingEnabled: boolean
   visibleColumnKeys: string[]
   visibleColumns: Array<{ key: string; label: string }>
@@ -53,7 +53,7 @@ export function ProductsTable({
   onNextPage: () => void
   onOpenProduct: (productId: string) => void
 }) {
-  function renderRow(product: ProductRow) {
+  function renderRow(product: ProductRecord) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       product: (columnIndex) => <DashboardListRowCell key="product" columnIndex={columnIndex} className="font-medium">{product.name || "Pending name"}</DashboardListRowCell>,
       category: (columnIndex) => <DashboardListRowCell key="category" columnIndex={columnIndex}>{product.category.name}</DashboardListRowCell>,

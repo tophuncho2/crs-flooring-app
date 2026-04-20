@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { ProductDetailClient } from "@/modules/products/record/detail/product-detail-client"
+import { ProductDetailClient } from "@/modules/products/components/record/product-detail-client"
 import { getProductDetailPageData } from "@/modules/products/data/queries"
 
 export default async function ProductDetailPage({

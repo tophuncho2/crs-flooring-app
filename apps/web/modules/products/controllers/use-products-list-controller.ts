@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ProductRow } from "../domain/types"
+import type { ProductRecord } from "@builders/db"
 
-export type { ProductRow } from "../domain/types"
+export type { ProductRecord } from "@builders/db"
 
 export function useProductsListController({
   initialProducts,
 }: {
-  initialProducts: ProductRow[]
+  initialProducts: ProductRecord[]
 }) {
   const productNavigation = useRecordEntryNavigation("/dashboard/products")
   const [products, setProducts] = useState(initialProducts)

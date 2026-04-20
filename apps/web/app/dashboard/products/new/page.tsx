@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { getProductCreatePageData } from "@/modules/products/data/queries"
-import { ProductCreateClient } from "@/modules/products/record/create/product-create-client"
+import { ProductCreateClient } from "@/modules/products/components/record/product-create-client"
 
 export default async function ProductCreatePage({
   searchParams,

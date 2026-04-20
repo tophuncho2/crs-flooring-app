@@ -8,15 +8,11 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import { ProductInventoryRowsSection } from "./sections/product-inventory-rows-section"
-import { ProductPrimaryFieldsSection } from "./sections/product-primary-fields-section"
-import { useProductPrimarySection } from "./controllers/use-product-primary-section"
-import type {
-  CategoryOption,
-  ManufacturerOption,
-  ProductInventoryRow,
-  ProductRow,
-} from "../../domain/types"
+import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
+import type { InventoryRow } from "@/modules/inventory/domain/types"
+import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
+import { ProductInventoryRowsSection } from "./product-inventory-rows-section"
+import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
 
 export function ProductRecordPanel({
   page,
@@ -26,10 +22,10 @@ export function ProductRecordPanel({
   inventoryRows,
 }: {
   page: RecordDetailClientScaffoldContext
-  product: ProductRow
-  categoryOptions: CategoryOption[]
-  manufacturerOptions: ManufacturerOption[]
-  inventoryRows: ProductInventoryRow[]
+  product: ProductRecord
+  categoryOptions: CategoryRecord[]
+  manufacturerOptions: ManufacturerRecord[]
+  inventoryRows: InventoryRow[]
 }) {
   const controller = useProductPrimarySection({
     page,
@@ -38,12 +34,15 @@ export function ProductRecordPanel({
   const inventoryNavigation = useRecordEntryNavigation("/dashboard/inventory")
   const [loadingInventoryId, setLoadingInventoryId] = useState<string | null>(null)
 
-  const handleOpenInventory = useCallback((inventoryId: string) => {
-    page.confirmNavigation(() => {
-      setLoadingInventoryId(inventoryId)
-      inventoryNavigation.openRecord(inventoryId)
-    })
-  }, [inventoryNavigation, page])
+  const handleOpenInventory = useCallback(
+    (inventoryId: string) => {
+      page.confirmNavigation(() => {
+        setLoadingInventoryId(inventoryId)
+        inventoryNavigation.openRecord(inventoryId)
+      })
+    },
+    [inventoryNavigation, page],
+  )
 
   return (
     <RecordMultiSectionPanel
@@ -111,7 +110,9 @@ export function ProductRecordPanel({
       footer={{
         deleteLabel: "Delete Product",
         deleteConfirmMessage: buildDeleteConfirmationMessage("product"),
-        onDelete: () => void controller.deleteRecord(),
+        onDelete: () => {
+          void controller.deleteRecord?.()
+        },
       }}
     />
   )

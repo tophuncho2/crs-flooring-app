@@ -1,6 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
 import {
   createRecordSectionError,
@@ -10,17 +9,12 @@ import {
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
 } from "@/modules/shared/engines/record-view"
-import {
-  EMPTY_PRODUCT_FORM,
-  type CategoryOption,
-  type ManufacturerOption,
-  type ProductForm,
-  type ProductRow,
-  validateProductPrimaryForm,
-} from "../../domain/types"
-import { ProductPrimaryFieldsSection } from "../panel/sections/product-primary-fields-section"
+import { EMPTY_PRODUCT_FORM, validateProductPrimaryForm, type ProductForm } from "@builders/domain"
+import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
+import { createProductRequest } from "@/modules/products/data/mutations"
+import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
 
-const EMPTY_PRODUCT: ProductRow = {
+const EMPTY_PRODUCT: ProductRecord = {
   id: "new",
   name: "",
   categoryId: "",
@@ -39,11 +33,18 @@ const EMPTY_PRODUCT: ProductRow = {
   updatedAt: "",
   category: {
     id: "",
+    slug: "",
     name: "",
+    sendUnitId: "",
+    stockUnitId: "",
+    coverageAvailableUnitId: "",
+    itemCoverageUnitId: "",
+    serviceUnitId: "",
     sendUnit: "",
     stockUnit: "",
     coverageAvailableUnit: "",
     itemCoverageUnit: "",
+    serviceUnit: "",
   },
 }
 
@@ -55,8 +56,8 @@ function ProductCreatePanel({
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  categoryOptions: CategoryOption[]
-  manufacturerOptions: ManufacturerOption[]
+  categoryOptions: CategoryRecord[]
+  manufacturerOptions: ManufacturerRecord[]
 }) {
   const controller = useSingleSectionCreateController<ProductForm>({
     page,
@@ -71,17 +72,10 @@ function ProductCreatePanel({
         })
       }
 
-      const payload = await requestJson<{ product: ProductRow }>("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...localValue,
-          coveragePerUnit: localValue.coveragePerUnit.trim(),
-        }),
-      })
+      const { product } = await createProductRequest(localValue)
 
       return {
-        redirectTo: buildRecordDetailHref("/dashboard/products", payload.product.id, backHref),
+        redirectTo: buildRecordDetailHref("/dashboard/products", product.id, backHref),
       }
     },
   })
@@ -120,8 +114,8 @@ export function ProductCreateClient({
   manufacturerOptions,
 }: {
   backHref: string
-  categoryOptions: CategoryOption[]
-  manufacturerOptions: ManufacturerOption[]
+  categoryOptions: CategoryRecord[]
+  manufacturerOptions: ManufacturerRecord[]
 }) {
   return (
     <RecordCreateClientScaffold

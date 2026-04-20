@@ -7,7 +7,7 @@ import userEvent from "@testing-library/user-event"
 import { navigationMocks } from "../../helpers/next-navigation-mock"
 import { requestJsonMock, resetSimpleTableClientMocks } from "../../helpers/simple-table-client-mocks"
 import { ManufacturerCreateClient } from "@/modules/manufacturers/components/record/manufacturer-create-client"
-import { ProductCreateClient } from "@/modules/products/record/create/product-create-client"
+import { ProductCreateClient } from "@/modules/products/components/record/product-create-client"
 import { PropertyCreateClient } from "@/modules/properties/record/create/property-create-client"
 import { TemplateCreateClient } from "@/modules/templates/record/create/template-create-client"
 

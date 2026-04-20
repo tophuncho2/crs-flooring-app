@@ -1,7 +1,8 @@
+import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@builders/application"
-import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import FlooringProductsClient from "@/modules/products/components/products-client"
+import { parseServerTableQueryState } from "@/server/pagination"
+import FlooringProductsClient from "@/modules/products/components/list/products-client"
 import { getProductsPageData } from "@/modules/products/data/queries"
 
 export default async function FlooringProductsPage({
@@ -11,7 +12,6 @@ export default async function FlooringProductsPage({
 }) {
   const user = await requireToolAccess("products")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const page = parsePageParam(resolvedSearchParams?.page)
   const initialTablePreferences = await getResolvedUserTablePreference(user.id, "products-main")
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
@@ -20,18 +20,24 @@ export default async function FlooringProductsPage({
     allowedGroupKeys: ["category", "manufacturer", "style", "color"],
     defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["category"],
   })
-  const pageData = await getProductsPageData(page, tableState)
+  const result = await getProductsPageData()
+
+  if (!result.ok) {
+    return (
+      <DashboardErrorState
+        title={result.error.title}
+        message={result.error.message}
+        detail={result.error.detail}
+        errorCode={result.error.code}
+      />
+    )
+  }
 
   return (
     <FlooringProductsClient
-      key={`products-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
-      {...pageData}
+      initialProducts={result.data}
       initialTablePreferences={initialTablePreferences}
-      pagination={{
-        ...pageData.pagination,
-        previousPageHref: buildPageHrefWithSearchParams("/dashboard/products", pageData.pagination.page - 1, resolvedSearchParams),
-        nextPageHref: buildPageHrefWithSearchParams("/dashboard/products", pageData.pagination.page + 1, resolvedSearchParams),
-      }}
+      tableState={tableState}
     />
   )
 }
