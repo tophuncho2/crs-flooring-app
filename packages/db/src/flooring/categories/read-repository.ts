@@ -88,3 +88,14 @@ export async function listCategories(client: CategoryDbClient = db): Promise<Cat
 
   return categories.map(normalizeCategoryRow)
 }
+
+export async function getCategoryById(
+  id: string,
+  client: CategoryDbClient = db,
+): Promise<CategoryRecord | null> {
+  const category = await client.flooringCategory.findUnique({
+    where: { id },
+    include: categoryInclude,
+  })
+  return category ? normalizeCategoryRow(category) : null
+}

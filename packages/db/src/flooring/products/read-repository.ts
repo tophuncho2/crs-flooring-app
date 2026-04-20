@@ -67,11 +67,11 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     name: product.name,
     categoryId: product.categoryId,
     manufacturerId: product.manufacturerId ?? "",
-    manufacturerName:
-      product.manufacturer?.companyName ??
-      product.manufacturer?.agentName ??
-      product.manufacturerName ??
-      "",
+    // Display rule: use manufacturer.companyName (live relation), falling back to
+    // the stored manufacturerName column for products whose manufacturer link was
+    // disconnected. agentName is intentionally NOT a fallback — products surface
+    // the company name, not the agent's personal name.
+    manufacturerName: product.manufacturer?.companyName ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     width: product.width ?? "",

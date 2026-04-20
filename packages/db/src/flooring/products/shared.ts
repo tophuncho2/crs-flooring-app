@@ -33,9 +33,7 @@ export const productRowSelect = {
   manufacturer: {
     select: {
       id: true,
-      agentName: true,
       companyName: true,
-      website: true,
     },
   },
 } as const
