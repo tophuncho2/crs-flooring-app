@@ -1,34 +1,32 @@
-import { createProductUseCase } from "@/modules/products/application/manage-product"
-import { listCatalogProducts, listProductOptions } from "@/modules/products/data/queries"
+import { createProductUseCase } from "@builders/application"
+import { listProducts, listProductOptions } from "@builders/db"
+import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { applyRoutePolicy, enforceMutationReceipt, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import {
+  applyRoutePolicy,
+  enforceMutationReceipt,
+  enforceQueryRateLimit,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateProductInput } from "./_validators"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const catalogMode = searchParams.get("catalog") === "1"
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
-    toolSlug: catalogMode ? "products" : "warehouse",
-    rateLimit: {
-      scope: "query",
-      limit: 100,
-      windowMs: 60 * 1000,
-      route: "/api/products",
-    },
+    toolSlug: catalogMode ? PRODUCTS_TOOL_SLUG : "warehouse",
   })
   if (access instanceof Response) return access
 
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/products")
+  if (rateLimited) return rateLimited
+
   try {
     return routeJson(access, {
-      products: catalogMode
-        ? await listCatalogProducts(undefined, {
-            searchQuery: "",
-            isAscendingSort: true,
-            isGroupingEnabled: false,
-            groupByKeys: [],
-          })
-        : await listProductOptions(),
+      products: catalogMode ? await listProducts() : await listProductOptions(),
     })
   } catch (error) {
     return routeError(access, error)
@@ -38,7 +36,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
-    toolSlug: "products",
+    toolSlug: PRODUCTS_TOOL_SLUG,
     rateLimit: {
       scope: "products.create",
       limit: 60,
@@ -50,12 +48,18 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+    const { input, mutation } = parseMutationEnvelope(body, validateProductInput)
 
-    const receipt = await enforceMutationReceipt({ scope: "products.create", request, access, mutation, body })
+    const receipt = await enforceMutationReceipt({
+      scope: "products.create",
+      request,
+      access,
+      mutation,
+      body,
+    })
     if (receipt.replay) return receipt.replay
 
-    const result = await withMutationTelemetry(
+    const product = await withMutationTelemetry(
       access,
       {
         message: "Product created",
@@ -66,8 +70,14 @@ export async function POST(request: Request) {
       () => createProductUseCase(input),
     )
 
-    const responseBody = { product: result }
-    await finalizeMutationReceipt({ scope: "products.create", access, mutation, responseStatus: 201, responseBody })
+    const responseBody = { product }
+    await finalizeMutationReceipt({
+      scope: "products.create",
+      access,
+      mutation,
+      responseStatus: 201,
+      responseBody,
+    })
     return routeJson(access, responseBody, { status: 201 })
   } catch (error) {
     return routeError(access, error)

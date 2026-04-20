@@ -1,7 +1,8 @@
-import { deleteProductUseCase, ProductExecutionError } from "@builders/application"
-import { getProductById } from "@builders/db"
-import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { ProductExecutionError, updateProductUseCase } from "@builders/application"
+import { getProductById } from "@builders/db"
+import { validateProductInput } from "../../../_validators"
+import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -12,17 +13,19 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 
-type RouteContext = { params: Promise<{ id: string }> }
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
 
-export async function DELETE(request: Request, { params }: RouteContext) {
+export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: PRODUCTS_TOOL_SLUG,
     rateLimit: {
-      scope: "products.delete",
+      scope: "products.primary.section.replace",
       limit: 40,
       windowMs: 10 * 60 * 1000,
-      route: "/api/products/[id]",
+      route: "/api/products/[id]/primary/section",
     },
   })
   if (access instanceof Response) return access
@@ -31,10 +34,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+    const { input, mutation } = parseMutationEnvelope(body, validateProductInput, {
       requireExpectedUpdatedAt: true,
     })
-
     const currentSnapshot = await getProductById(id)
     if (!currentSnapshot) {
       throw new ProductExecutionError({
@@ -47,33 +49,36 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
       snapshot: { product: currentSnapshot },
-      message: "Product changed before delete completed. Refresh and try again.",
+      message: "Product changed before section save completed. Refresh and try again.",
     })
-
     const receipt = await enforceMutationReceipt({
-      scope: "products.delete",
+      scope: "products.primary.section.replace",
       request,
       access,
       mutation,
       body,
     })
-    if (receipt.replay) return receipt.replay
+    if (receipt.replay) {
+      return receipt.replay
+    }
 
-    await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Product deleted",
-        action: "products.delete",
-        route: "/api/products/[id]",
+        message: "Product primary section replaced",
+        action: "products.primary.section.replace",
+        route: "/api/products/[id]/primary/section",
         entityType: "flooringProduct",
         entityId: id,
       },
-      () => deleteProductUseCase(id),
+      () => updateProductUseCase(id, input),
     )
 
-    const responseBody = { ok: true as const }
+    const responseBody = {
+      product: result,
+    }
     await finalizeMutationReceipt({
-      scope: "products.delete",
+      scope: "products.primary.section.replace",
       access,
       mutation,
       responseStatus: 200,
