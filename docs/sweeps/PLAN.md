@@ -206,7 +206,7 @@ Apply via `npm run db:deploy --workspace @builders/db`. Rebuild `@builders/db`.
 
 ### B.1 — `imports/`
 - `types.ts` — `ImportRow`, `ImportForm`, `EMPTY_IMPORT_FORM`, `toImportForm`, `IMPORT_STATUS_VALUES`, `IMPORT_TRANSPORT_TYPE_VALUES` + label helpers. Migrate `calculateImportSummary` from `modules/imports/domain/summary.ts`.
-- `import-rules.ts` — `isImportStatus`, `isImportTransportType`, `isImportDeleteBlocked(counts)` (block if FINAL or any child inventory `isImported=true` or any cut logs ref child inventory), `buildImportDeleteBlockedMessage`. FIFO rule: `fifoReceivedAt = importEntry.createdAt` for all child inventory, even rows added later.
+- `import-rules.ts` — `isImportStatus`, `isImportTransportType`, `isImportDeleteBlocked({ status, hasInventory })` (block if `status === "FINAL"` OR `hasInventory === true` — the rule is **presence of any inventory row, regardless of `isImported` or cut-log state**. Inventory rows are never cascade-deleted by an import delete — schema FK `onDelete: Restrict` on `FlooringInventory.importEntryId` enforces that physically — so any attached row blocks the delete by design. Cut-log references are subsumed: if `hasInventory === false`, there can't be cut logs against nonexistent inventory.), `buildImportDeleteBlockedMessage`. FIFO rule: `fifoReceivedAt = importEntry.createdAt` for all child inventory, even rows added later.
 - `errors.ts` — `ImportExecutionError` + error-code union.
 - `index.ts` — barrel.
 - Wire into `packages/domain/src/index.ts`.
