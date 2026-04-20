@@ -42,6 +42,11 @@ export function WarehousePrimaryFieldsSection({
       <RecordPrimaryPane variant="side" placement="left">
         <RecordPrimaryFieldsGrid variant="side">
           <RecordPrimaryFieldCell>
+            <RecordFormField label="Warehouse #">
+              <RecordStaticFieldValue>{warehouse.number}</RecordStaticFieldValue>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
             <RecordFormField label="Sections">
               <RecordStaticFieldValue>{warehouse.sectionsCount}</RecordStaticFieldValue>
             </RecordFormField>
