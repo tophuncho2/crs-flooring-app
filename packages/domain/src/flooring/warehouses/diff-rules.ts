@@ -53,6 +53,33 @@ export type DiffValidationIssue =
   | { code: "UNRESOLVED_TEMPID"; locationTempId: string; referencedSectionTempId: string }
   | { code: "DELETED_SECTION_HAS_REMAINING_LOCATIONS"; sectionId: string; strandedLocationIds: string[] }
 
+/**
+ * Produce a user-readable explanation for a single diff validation issue.
+ * Pure function; safe to call from use cases that need to build a human
+ * message before throwing a transport-layer error.
+ */
+export function describeDiffIssue(issue: DiffValidationIssue): string {
+  switch (issue.code) {
+    case "DUPLICATE_LOCATION_COORD_IN_ADDED":
+      return `${issue.tempIds.length} new locations share R${issue.rafter}-L${issue.level}. Each rafter/level must be unique within a warehouse.`
+    case "DUPLICATE_LOCATION_COORD":
+      return `R${issue.rafter}-L${issue.level} is already in use by another location. Each rafter/level must be unique within a warehouse.`
+    case "UNRESOLVED_TEMPID":
+      return "A new location references an unsaved section. Save sections first, then add locations to them."
+    case "DELETED_SECTION_HAS_REMAINING_LOCATIONS":
+      return `Cannot delete a section while ${issue.strandedLocationIds.length} location(s) still belong to it. Remove or reassign the locations first.`
+  }
+}
+
+/**
+ * Build a single human-readable message from a non-empty list of diff issues.
+ * Joins individual descriptions with a space so they render cleanly in a
+ * single-line UI error slot.
+ */
+export function describeDiffIssues(issues: DiffValidationIssue[]): string {
+  return issues.map(describeDiffIssue).join(" ")
+}
+
 type ProjectedLocation =
   | { origin: "existing"; id: string; rafter: number; level: number }
   | { origin: "modified"; id: string; rafter: number; level: number }

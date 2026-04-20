@@ -10,6 +10,7 @@ import {
 import {
   assignDiffIds,
   computeNextNumber,
+  describeDiffIssues,
   validateDiff,
   type SectionsWithLocationsDiff,
 } from "@builders/domain"
@@ -50,7 +51,7 @@ export async function saveSectionsWithLocationsUseCase(
       if (issues.length > 0) {
         throw new WarehouseExecutionError({
           code: "DIFF_VALIDATION_FAILED",
-          message: "Diff validation failed",
+          message: describeDiffIssues(issues),
           status: 409,
           payload: { issues },
         })
