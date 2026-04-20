@@ -1,4 +1,4 @@
-import { createWarehouseRow, listWarehouseRows } from "@/modules/warehouse/api"
+import { createWarehouseRow, listWarehouseRows } from "@/modules/warehouse/data/api"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {

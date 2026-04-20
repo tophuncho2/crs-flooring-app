@@ -2,8 +2,8 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableQueryState } from "@/server/pagination"
-import WarehouseClient from "@/modules/warehouse/components/warehouse-client"
-import { getWarehousePageData } from "@/modules/warehouse/queries"
+import WarehouseClient from "@/modules/warehouse/components/list/warehouse-client"
+import { getWarehousePageData } from "@/modules/warehouse/data/queries"
 
 export default async function FlooringWarehousePage({
   searchParams,

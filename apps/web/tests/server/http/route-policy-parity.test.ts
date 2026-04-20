@@ -34,7 +34,7 @@ vi.mock("@/modules/shared/access/domain-tools", () => ({
   authorizeWarehouseRoute: authorizeWarehouseRouteMock,
 }))
 
-vi.mock("@/modules/warehouse/api", () => ({
+vi.mock("@/modules/warehouse/data/api", () => ({
   listWarehouseRows: vi.fn(),
   createWarehouseRow: createWarehouseRowMock,
   updateWarehouseRow: vi.fn(),

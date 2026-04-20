@@ -6,8 +6,8 @@ import {
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { toWarehouseForm, type WarehouseForm } from "@builders/domain"
-import type { WarehouseDetail } from "@/modules/warehouse/types"
+import type { WarehouseForm } from "@builders/domain"
+import { toWarehouseForm, type WarehouseDetail } from "@/modules/warehouse/types"
 
 export function useWarehousePrimarySection({
   page,

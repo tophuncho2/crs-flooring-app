@@ -1,4 +1,4 @@
-import { createSectionRow, listSectionRows, parseWarehouseFilter } from "@/modules/warehouse/api"
+import { createSectionRow, listSectionRows, parseWarehouseFilter } from "@/modules/warehouse/data/api"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,

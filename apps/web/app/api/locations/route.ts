@@ -1,4 +1,4 @@
-import { createLocationRow, listLocationRows, parseWarehouseFilter } from "@/modules/warehouse/api"
+import { createLocationRow, listLocationRows, parseWarehouseFilter } from "@/modules/warehouse/data/api"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,

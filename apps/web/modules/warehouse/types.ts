@@ -1,18 +1,17 @@
-export type WarehouseDraft = {
-  name: string
-  address: string
-  phone: string
-}
+// Residual stale types pending route + grid sweeps. Do not extend.
+// These types describe the current wire shape returned by `data/api.ts` and
+// consumed by the sections/locations grid controller. They diverge from the
+// canonical `packages/domain/src/flooring/warehouses/types.ts` shape
+// (`section.number`, `location.rafter/level`). They are deleted when:
+//   - `data/api.ts` is replaced by `@builders/db` read repos (route sweep), and
+//   - the sections grid controller is rewritten against `SectionsWithLocationsDiff` (grid sweep).
+
+import type { WarehouseForm } from "@builders/domain"
 
 export type SectionRow = {
   id: string
   name: string
   locationsCount: number
-}
-
-export type LocationDraft = {
-  locationCode: string
-  sectionId: string
 }
 
 export type LocationRow = {
@@ -52,7 +51,7 @@ export type WarehouseLocationDraft = {
   sectionName: string | null
 }
 
-export function toWarehouseDraft(warehouse: Pick<WarehouseRow, "name" | "address" | "phone">): WarehouseDraft {
+export function toWarehouseForm(warehouse: Pick<WarehouseRow, "name" | "address" | "phone">): WarehouseForm {
   return {
     name: warehouse.name,
     address: warehouse.address ?? "",

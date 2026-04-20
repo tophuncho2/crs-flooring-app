@@ -10,8 +10,8 @@ import {
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { toWarehouseForm, type WarehouseForm } from "@builders/domain"
-import { createWarehouseDetail, type WarehouseDetail } from "@/modules/warehouse/types"
+import type { WarehouseForm } from "@builders/domain"
+import { createWarehouseDetail, toWarehouseForm, type WarehouseDetail } from "@/modules/warehouse/types"
 import { WarehousePrimaryFieldsSection } from "./warehouse-primary-fields-section"
 
 const EMPTY_WAREHOUSE_DETAIL: WarehouseDetail = createWarehouseDetail(

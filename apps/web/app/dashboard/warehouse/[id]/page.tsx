@@ -2,8 +2,8 @@ import { notFound } from "next/navigation"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { getWarehouseDetailPageData } from "@/modules/warehouse/queries"
-import { WarehouseDetailClient } from "@/modules/warehouse/record/detail/warehouse-detail-client"
+import { getWarehouseDetailPageData } from "@/modules/warehouse/data/queries"
+import { WarehouseDetailClient } from "@/modules/warehouse/components/record/warehouse-detail-client"
 
 export default async function WarehouseDetailPage({
   params,

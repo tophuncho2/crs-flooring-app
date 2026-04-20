@@ -1,6 +1,6 @@
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { WarehouseCreateClient } from "@/modules/warehouse/record/create/warehouse-create-client"
+import { WarehouseCreateClient } from "@/modules/warehouse/components/record/warehouse-create-client"
 
 export default async function WarehouseCreatePage({
   searchParams,

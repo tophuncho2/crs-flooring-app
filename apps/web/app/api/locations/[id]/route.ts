@@ -1,4 +1,4 @@
-import { deleteLocationRow, getLocationRowById, updateLocationRow } from "@/modules/warehouse/api"
+import { deleteLocationRow, getLocationRowById, updateLocationRow } from "@/modules/warehouse/data/api"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
