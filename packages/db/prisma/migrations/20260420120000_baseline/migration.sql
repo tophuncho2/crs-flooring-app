@@ -1,3 +1,9 @@
+-- Sequences used by dbgenerated() defaults (template_number, work_order_number).
+-- Prisma does not auto-emit CREATE SEQUENCE for dbgenerated nextval() defaults,
+-- so they are declared here before any table that references them.
+CREATE SEQUENCE IF NOT EXISTS "flooring_template_number_seq";
+CREATE SEQUENCE IF NOT EXISTS "flooring_work_order_number_seq";
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('CONTRACTOR', 'CUSTOMER', 'OWNER', 'ADMIN', 'BUILDER');
 
@@ -121,8 +127,8 @@ CREATE TABLE "property_hub" (
 -- CreateTable
 CREATE TABLE "flooring_category" (
     "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "categoryCode" INTEGER,
     "sendUnitId" TEXT,
     "stockUnitId" TEXT,
     "coverageAvailableUnitId" TEXT,
@@ -174,9 +180,7 @@ CREATE TABLE "flooring_product" (
     "sheetSize" TEXT,
     "thickness" TEXT,
     "unitWeight" TEXT,
-    "baseColor" TEXT,
     "coveragePerUnit" DECIMAL(12,4),
-    "photoUrls" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "cost" DECIMAL(10,2),
     "isPublic" BOOLEAN NOT NULL DEFAULT false,
     "notes" TEXT,
@@ -323,6 +327,7 @@ CREATE TABLE "flooring_template_sales_rep" (
 -- CreateTable
 CREATE TABLE "flooring_warehouse" (
     "id" TEXT NOT NULL,
+    "number" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "address" TEXT,
     "phone" TEXT,
@@ -336,7 +341,7 @@ CREATE TABLE "flooring_warehouse" (
 CREATE TABLE "flooring_section" (
     "id" TEXT NOT NULL,
     "warehouseId" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "number" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -348,7 +353,8 @@ CREATE TABLE "flooring_location" (
     "id" TEXT NOT NULL,
     "warehouseId" TEXT NOT NULL,
     "sectionId" TEXT NOT NULL,
-    "locationCode" TEXT NOT NULL,
+    "rafter" INTEGER NOT NULL,
+    "level" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -537,6 +543,9 @@ CREATE INDEX "property_hub_managementCompanyId_idx" ON "property_hub"("managemen
 CREATE INDEX "property_hub_name_idx" ON "property_hub"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "flooring_category_slug_key" ON "flooring_category"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "flooring_category_name_key" ON "flooring_category"("name");
 
 -- CreateIndex
@@ -672,16 +681,22 @@ CREATE INDEX "flooring_template_sales_rep_templateId_createdAt_idx" ON "flooring
 CREATE UNIQUE INDEX "flooring_template_sales_rep_templateId_contactId_key" ON "flooring_template_sales_rep"("templateId", "contactId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "flooring_warehouse_number_key" ON "flooring_warehouse"("number");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "flooring_warehouse_name_key" ON "flooring_warehouse"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "flooring_section_warehouseId_name_key" ON "flooring_section"("warehouseId", "name");
+CREATE UNIQUE INDEX "flooring_section_warehouseId_number_key" ON "flooring_section"("warehouseId", "number");
 
 -- CreateIndex
 CREATE INDEX "flooring_location_sectionId_idx" ON "flooring_location"("sectionId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "flooring_location_warehouseId_locationCode_key" ON "flooring_location"("warehouseId", "locationCode");
+CREATE INDEX "flooring_location_warehouseId_idx" ON "flooring_location"("warehouseId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "flooring_location_warehouseId_rafter_level_key" ON "flooring_location"("warehouseId", "rafter", "level");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "flooring_work_order_work_order_number_key" ON "flooring_work_order"("work_order_number");
@@ -894,10 +909,10 @@ ALTER TABLE "flooring_template_sales_rep" ADD CONSTRAINT "flooring_template_sale
 ALTER TABLE "flooring_template_sales_rep" ADD CONSTRAINT "flooring_template_sales_rep_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "flooring_contact"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flooring_section" ADD CONSTRAINT "flooring_section_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "flooring_warehouse"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "flooring_section" ADD CONSTRAINT "flooring_section_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "flooring_warehouse"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "flooring_location" ADD CONSTRAINT "flooring_location_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "flooring_warehouse"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "flooring_location" ADD CONSTRAINT "flooring_location_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "flooring_warehouse"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "flooring_location" ADD CONSTRAINT "flooring_location_sectionId_fkey" FOREIGN KEY ("sectionId") REFERENCES "flooring_section"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
