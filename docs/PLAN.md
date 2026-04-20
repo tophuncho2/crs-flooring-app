@@ -281,9 +281,33 @@ Before writing use cases, scaffold the repositories they call. Each module's db 
 - `packages/db/src/flooring/inventory/` — `createInventory`, `updateInventory`, `deleteInventoryById`, `listInventory`, `getInventoryById`, `getInventoryDetailById`, `getInventoryDeleteState`, `listInventoryOptions`, `applyInventoryCutLogsDiff(tx, input) → { logs, tempIdMap }`.
 - `packages/db/src/flooring/cut-logs/` — `createCutLog`, `updateCutLog`, `deleteCutLogById`, `listCutLogsByInventory`, `listCutLogsByWorkOrderItem`, `getCutLogById`. No own atomic-diff primitive — always applied through the parent's primitive.
 - `packages/db/src/flooring/work-orders/` — `createWorkOrder`, `updateWorkOrder`, `deleteWorkOrderById`, `listWorkOrders`, `getWorkOrderById`, `getWorkOrderDetailById`, `getWorkOrderDeleteState`, `listWorkOrderOptions`, plus diff primitives: `applyWorkOrderMaterialItemsDiff(tx, input) → { items, cutLogs, tempIdMap }` (applies item diff AND the cut-log children in one transaction), `applyWorkOrderServiceItemsDiff`, `applyWorkOrderSalesRepsDiff`.
-- **Delete** `packages/db/src/flooring/work-orders/allocation-repository.ts` and `allocations/` subfolder.
+- ~~**Delete** `packages/db/src/flooring/work-orders/allocation-repository.ts` and `allocations/` subfolder.~~ **Done as a Phase-A prerequisite** — `@builders/db` couldn't build against the post-migration Prisma client while those files still referenced dropped models. The barrel re-export in `packages/db/src/index.ts` was also removed.
 
 Root `packages/db/src/index.ts` — add each module's export, remove allocation exports.
+
+### Read-path pattern: aggregates in SQL for list views, relation-loading for detail views
+
+Because inventory's `stockAvailable`, `awaitingCut`, and `coverageAvailable` are computed from cut-log totals, the read repo needs to feed normalizers the right shape without N+1 or unbounded relation-loading. Standardize on:
+
+- **List queries** (`listInventory`, `listImports` with inventory counts, `listWorkOrders` with item fulfillment rollups, any "how many rows on this page" endpoint): compute cut-log totals as **scalar aggregates in Postgres**, not by eager-loading the `cutLogs` relation. Pattern:
+
+  ```sql
+  SELECT i.*,
+         COALESCE(SUM(cl."cut"), 0)                                         AS cut_logs_cut_total,
+         COALESCE(SUM(cl."cut") FILTER (WHERE cl."status" = 'PENDING'), 0)  AS cut_logs_pending_total
+  FROM flooring_inventory i
+  LEFT JOIN flooring_cut_log cl ON cl."inventoryId" = i.id
+  WHERE …
+  GROUP BY i.id;
+  ```
+
+  Implemented via `prisma.$queryRaw` (or `$queryRawUnsafe` where composability requires). Normalizers accept the scalars (`cutLogsCutTotal`, `cutLogsPendingTotal`) rather than the raw `cutLogs` array, and run `computeStockAvailable` / `computeAwaitingCut` / `computeCoverageAvailable` on the scalars directly. One query per list view, O(rows) work in Postgres, no per-row round trips.
+
+- **Detail queries** (`getInventoryDetailById`, `getWorkOrderDetailById` with material-items → cut-logs nested): relation-load the full `cutLogs` array — the detail view needs the individual rows for display anyway (cut-log grid), and one inventory / one work-order worth of cut logs is a bounded, small set.
+
+Same pattern extends to work-order material-item `fulfillmentStatus` aggregation — list of work orders computes `(sumOfCuts, itemQuantity)` per item as aggregates; detail view loads the nested cut-logs relation.
+
+This is the **only** correctness-neutral perf mitigation this model needs at current scale. Moving to stored-counter caching only becomes worthwhile if `EXPLAIN ANALYZE` of the aggregate query ever shows it as a hot-path bottleneck — at which point it's an additive optimization (cache column maintained by cut-log writes), not a rewrite.
 
 ### Then: use cases
 
@@ -307,28 +331,54 @@ Each use case: validate inputs via domain, resolve FKs via db read helpers, appl
 - `update-inventory.ts` — single-row update (inventory record view primary section).
 - `delete-inventory.ts` — `isInventoryDeleteBlocked` (block if cut logs reference it, unless the use case allows cascade — default: block).
 - `save-cut-logs.ts` — `saveInventoryCutLogsUseCase(inventoryId, diff, client?)`:
-  1. Lock parent inventory row.
-  2. Load current cut logs.
-  3. Validate via domain `validateCutLogsDiff` (arithmetic invariant before-cut=after, status enum).
-  4. `applyInventoryCutLogsDiff`.
-  5. Return `{ inventory: InventoryDetailRecord, tempIdMap }`.
+
+  **Lock scope: the inventory row + the specific cut-log rows the diff touches. Nothing else.** No work-order lock, no material-item lock — those graph neighbors aren't being written. The inventory-row lock alone closes concurrent-write races on this inventory's cut-log set (any other add/modify/delete against the same inventory must acquire the same lock and queue).
+
+  1. `SELECT id FROM flooring_inventory WHERE id = $1 FOR UPDATE` — single parent, no ordering concern.
+  2. If the diff contains modified or deleted cut-log rows, `SELECT id FROM flooring_cut_log WHERE id = ANY($1) ORDER BY id FOR UPDATE` on those specific cut-log rows. Added cut logs don't exist yet, so they're not locked (their insertion is protected by the inventory-row lock — a concurrent transaction can't sneak a colliding insert past it).
+  3. Inside the locked transaction, load **fresh** cut-log totals for this inventory (scalar aggregate: `SUM("cut")` + `SUM("cut") FILTER (WHERE status='PENDING')`). Never trust a pre-lock snapshot.
+  4. Validate via domain `validateCutLogsDiff` (arithmetic invariant `before − cut === after`, status enum). Then run the domain's `computeStockAvailable` assertion against the post-diff totals (`stockCount − newSumOfCuts ≥ 0`); throw `CUT_LOG_EXCEEDS_STARTING_BALANCE` if the diff would drive stock negative.
+  5. `applyInventoryCutLogsDiff`.
+  6. Return `{ inventory: InventoryDetailRecord, tempIdMap }`.
 
 #### C.3 — `cut-logs/`
 - No use cases in this sweep. Domain rules + db helpers are imported by parent use cases. If a standalone cut-log CRUD becomes needed later, the module layer is ready to absorb them.
 
 #### C.4 — `work-orders/`
-- `create-work-order.ts` — record-level create (primary only; items/services/reps added via their section routes).
-- `update-work-order.ts` — primary section update.
-- `delete-work-order.ts` — `isWorkOrderDeleteBlocked`; cascade decision per schema `onDelete`.
+
+**Narrow-lock convention for every work-order atomic-diff save:** lock only the rows the diff actually touches. The `flooring_work_order` row is never `FOR UPDATE`-locked by a section save — primary-section, material-items, service-items, and sales-reps saves on the same work order run concurrently unless they happen to touch the same underlying rows. Envelope-level `assertExpectedUpdatedAt` against the work-order `updatedAt` stays (plain read, not a lock) to catch gross structural failures like "work order was deleted mid-edit".
+
+- `create-work-order.ts` — record-level create (primary only; items/services/reps added via their section routes). No locks beyond the receipt.
+- `update-work-order.ts` — primary section update. Locks the `flooring_work_order` row only (`SELECT id FROM flooring_work_order WHERE id = $1 FOR UPDATE`) — this is the *single row* being written, not the aggregate. Item / service / rep sections are not touched and not locked.
+- `delete-work-order.ts` — `isWorkOrderDeleteBlocked`; cascade decision per schema `onDelete`. Lock the `flooring_work_order` row for the delete; nested cascades run in the same transaction.
 - `save-material-items.ts` — `saveWorkOrderMaterialItemsUseCase(workOrderId, diff)`:
-  1. Lock parent work-order row.
-  2. Validate items diff + each item's nested cut-logs diff. Cut-log diff validation includes `canAddCutLog(inventory)` — throws `CUT_LOG_INVENTORY_NOT_IMPORTED` if any added cut log targets an unimported inventory row.
-  3. For added items: assign uuid, resolve product. No allocation/fulfillment field written — computed at read time.
-  4. For added cut logs under each item: assign uuid, **link all three scoping fields from the work-order context**: `workOrderId` (parent work order), `workOrderItemId` (the specific material item), `inventoryId` (which inventory row the cut draws from). Default `status: "PENDING"`.
-  5. `applyWorkOrderMaterialItemsDiff`.
-  6. Return `{ workOrder: WorkOrderDetailRecord, tempIdMap }` where tempIdMap covers both items and cut logs. The response re-read runs normalizers, so each material item carries its computed `fulfillmentStatus` ("SHORTAGE" | "SUFFICIENT") and the work-order record carries its aggregate `fulfillmentStatus`.
-- `save-service-items.ts` — atomic diff for service items.
-- `save-sales-reps.ts` — atomic diff for sales reps.
+
+  **Lock scope: only the rows this save actually touches. The work-order row is NOT locked.** The model is narrow-lock: lock inventory rows touched by nested cut-log diffs, cut-log rows touched directly, and material-item rows touched directly. Work-order primary fields (status, notes, template sync) remain concurrently editable from the primary section; service items and sales reps sections also remain concurrently editable. This maximizes throughput on a work-order record view where multiple users or tabs operate on different sections, while still serializing correctly on anything that actually overlaps.
+
+  **Deadlock prevention:** when holding multiple locks in one transaction, acquire them in a fixed category order — inventory rows → cut logs → material items — and within each category sort by `id`. Every code path follows this order, so two concurrent saves with overlapping lock sets queue cleanly rather than deadlock.
+
+  **Concurrency invariant the locks preserve:** two material-items saves (same WO or different WO) touching the same inventory row serialize on the inventory lock — neither can read `stockAvailable` until the other commits. Two saves on the same WO touching *different* items and *different* inventory rows run fully in parallel. WO-primary edits (status change, notes) do not interact with material-items saves at all.
+
+  1. Collect the three lock sets from the diff:
+     - `inventoryIds`: every `inventoryId` referenced by any nested cut-log add / modify / delete across all items in the diff, de-duplicated.
+     - `cutLogIds`: every `id` on modified or deleted cut-log entries across the nested diffs.
+     - `materialItemIds`: every `id` on modified or deleted item entries, plus every item whose nested cut-log children are touched (modified, added, or deleted — the item's integrity depends on its children).
+  2. Acquire locks in fixed category order, sorted by id within each:
+     - `SELECT id FROM flooring_inventory WHERE id = ANY($1) ORDER BY id FOR UPDATE`
+     - `SELECT id FROM flooring_cut_log WHERE id = ANY($1) ORDER BY id FOR UPDATE` (skip if empty)
+     - `SELECT id FROM flooring_work_order_item WHERE id = ANY($1) ORDER BY id FOR UPDATE` (skip if empty)
+
+     Added cut logs and added items don't exist yet — their insertion is protected by the inventory-row and cut-log locks on their targets, and by the idempotency receipt on the envelope.
+  3. Inside the locked transaction, load **fresh** cut-log totals per touched inventory row (scalar aggregates per the read-path pattern above — `SUM("cut")` grouped by `inventoryId`). Run the domain's `computeStockAvailable` assertion (`stockAvailable ≥ 0` after applying the diff) against these fresh totals — never a pre-lock snapshot. Throw `CUT_LOG_EXCEEDS_STARTING_BALANCE` with the offending `inventoryId` if any row would go negative.
+  4. Validate items diff + each item's nested cut-logs diff. Cut-log diff validation includes `canAddCutLog(inventory)` — throws `CUT_LOG_INVENTORY_NOT_IMPORTED` if any added cut log targets an unimported inventory row.
+  5. For added items: assign uuid, resolve product. No allocation/fulfillment field written — computed at read time.
+  6. For added cut logs under each item: assign uuid, **link all three scoping fields from the work-order context**: `workOrderId` (parent work order), `workOrderItemId` (the specific material item), `inventoryId` (which inventory row the cut draws from). Default `status: "PENDING"`.
+  7. `applyWorkOrderMaterialItemsDiff`.
+  8. Return `{ workOrder: WorkOrderDetailRecord, tempIdMap }` where tempIdMap covers both items and cut logs. The response re-read runs normalizers, so each material item carries its computed `fulfillmentStatus` ("SHORTAGE" | "SUFFICIENT") and the work-order record carries its aggregate `fulfillmentStatus`.
+
+  **Transport-level `expectedUpdatedAt`:** the envelope's work-order-level `assertExpectedUpdatedAt` remains — it's a plain read (not a lock) and its job is to detect "work order was deleted / hard-reset mid-edit", not to serialize concurrent writers. Per-row `expectedUpdatedAt` on each modified/deleted material item and each modified/deleted cut log in the diff catches within-section concurrent edits without needing a work-order lock.
+- `save-service-items.ts` — atomic diff for service items. **Lock scope:** only the touched `flooring_work_order_service_item` rows (modified + deleted; added don't exist yet). `SELECT id FROM flooring_work_order_service_item WHERE id = ANY($1) ORDER BY id FOR UPDATE`. No work-order lock, no material-item lock, no inventory lock — this section has no coupling to stock. Per-row `expectedUpdatedAt` on modified/deleted entries catches within-section concurrent edits.
+- `save-sales-reps.ts` — atomic diff for sales reps. **Lock scope:** only the touched `flooring_work_order_sales_rep` rows. Same pattern as service items. The existing `@@unique([workOrderId, contactId])` constraint catches duplicate-contact races at the DB layer; the lock prevents the lost-update scenario on `percent` changes.
 - **Delete** `packages/application/src/flooring/work-orders/allocations/*` subfolder entirely.
 - **Review** consumers of the deleted allocation use cases (queues, worker): will have compile errors pointing at each call site. Each either deletes (no longer needed) or rewrites against cut logs.
 
