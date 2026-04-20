@@ -47,4 +47,16 @@ Inventort is entered by
 
 Open an inventory record view to manage cut logs - cut logs will later be linkable to work orders
 
-- 
+Work Order
+Main Section
+1. Update schema with new rows
+2. Harden the link to warehouse
+3. Harden the main section mutation to follow the cananicol. 
+1. Remove the allocation items table in between material items and inventory
+- Replace the allocation items child scoped rows of material items with cut logs
+- material items and work orders both link to cut logs
+- cut logs from work orders record view is what fufills a material items quantity
+2. Re wire the warehouse link so it porperly links to a work order row
+3. each added work order row is WO+1
+4. Re wire warehouse locations to link to inventory rows.
+5. 
