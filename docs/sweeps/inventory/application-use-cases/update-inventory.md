@@ -2,47 +2,39 @@
 
 `updateInventoryUseCase(id: string, input: InventoryForm, client?) → { inventory: InventoryDetailRecord }`
 
-## What it does
+## Use case
+
+### What it does
 Primary-section replace for one inventory row. Covers product change, location / warehouse reassignment, stock-count correction, dye-lot edit, `isImported` flip, cost / freight updates, notes.
 
-## Lock scope
+### Lock scope
 - `SELECT id FROM flooring_inventory WHERE id = $1 FOR UPDATE` — the single row being written.
 
-## Transport guard (pre-transaction)
-`assertExpectedUpdatedAt` against inventory snapshot.
+### Transport guard
+`assertExpectedUpdatedAt` against inventory snapshot pre-transaction.
 
-## Domain rules orchestrated
+### Orchestration
+1. Open transaction, lock inventory row.
+2. Load snapshot + re-assert `expectedUpdatedAt` inside the lock.
+3. Resolve `productId`, optional `locationId` (with its `warehouseId`), optional `warehouseId`.
+4. Run domain validators: `validateInventoryInput`, `assertLocationBelongsToWarehouse`, `stockCount >= 0`.
+5. **Stock-count reduction guard**: if `input.stockCount < snapshot.stockCount`, aggregate `SELECT COALESCE(SUM("cut"), 0) FROM flooring_cut_log WHERE "inventoryId" = $1` inside the lock. Assert `input.stockCount >= sumCuts`; throw `InventoryExecutionError({ code: "CUT_LOG_EXCEEDS_STARTING_BALANCE", status: 409 })` if the reduction would make `stockAvailable < 0`.
+6. `updateInventory(tx, id, input)` → `UPDATE flooring_inventory SET ... WHERE id = $1`.
+7. Re-read `getInventoryDetailById(id, tx)` — normalizer recomputes `stockAvailable` / `awaitingCut` / `coverageAvailable` against the new `stockCount`.
 
-### `stockCount >= 0`
-**Data-layer action**: none.
+### Response
+`{ inventory: InventoryDetailRecord }`
 
-### `assertLocationBelongsToWarehouse(location, input.warehouseId)`
-If the user changes warehouse, the UI clears the location selector when inconsistent; the use case re-validates at the server boundary.
-
-**Data-layer action**: `SELECT id, "warehouseId" FROM flooring_location WHERE id = $1` on the submitted `locationId`.
+## Domain
 
 ### `validateInventoryInput(input)`
-Structural.
+Structural validation — same contract as on create.
 
-**Data-layer action**: `SELECT id FROM flooring_product WHERE id = $1` — product existence.
+### `assertLocationBelongsToWarehouse(location, warehouseId)`
+When both fields are set, location's warehouse must match the row's. The UI clears `locationId` when the user changes warehouse to an incompatible one, but the server re-validates at the boundary.
 
-### Stock-count reduction guard
-If the new `stockCount` is lower than current, the use case must verify `newStockCount >= sum(cutLogs.cut)` — reducing below existing cut totals would violate `stockAvailable >= 0`.
+### `stockCount >= 0`
+Sanity on the starting balance.
 
-**Data-layer action**: scalar aggregate inside the lock:
-```sql
-SELECT COALESCE(SUM("cut"), 0) AS cut_total
-FROM flooring_cut_log WHERE "inventoryId" = $1;
-```
-Throws `CUT_LOG_EXCEEDS_STARTING_BALANCE` if the reduction would make the invariant fail.
-
-## Transaction flow
-1. Open transaction, lock inventory row.
-2. Load snapshot + re-assert `expectedUpdatedAt`.
-3. Resolve product + (if set) location + warehouse.
-4. Domain validation + stock-count reduction guard.
-5. `updateInventory(tx, id, input)` → `UPDATE flooring_inventory SET ... WHERE id = $1`.
-6. Re-read `getInventoryDetailById(id, tx)` — normalizer recomputes `stockAvailable` / `awaitingCut` / `coverageAvailable` against the new `stockCount`.
-
-## Response
-`{ inventory: InventoryDetailRecord }`
+### Stock-count reduction guard *(composed; in-use-case)*
+If the new `stockCount` would drop below the current `SUM(cutLogs.cut)` on this row, reject with `CUT_LOG_EXCEEDS_STARTING_BALANCE`. Same invariant as `computeStockAvailable` but evaluated against the proposed-new balance rather than the current one. Only relevant when the update lowers `stockCount`; no-op when increasing or unchanged.

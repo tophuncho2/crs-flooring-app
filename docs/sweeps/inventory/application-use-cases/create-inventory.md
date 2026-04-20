@@ -2,35 +2,36 @@
 
 `createInventoryUseCase(input: InventoryForm, client?) → { inventory: InventoryDetailRecord }`
 
-## What it does
+## Use case
+
+### What it does
 Standalone create of a single inventory row — from the inventory record view's `new` page, or a row-level fallback from the import grid. Creates only the row; cut logs are added separately via `saveInventoryCutLogsUseCase`.
 
-## Lock scope
-None beyond envelope receipt. New-row insert, no pre-existing rows to lock.
+### Lock scope
+None beyond envelope receipt. New-row insert.
 
-## Domain rules orchestrated
+### Transport guard
+Envelope idempotency receipt only.
 
-### `stockCount >= 0`
-Sanity on the starting balance.
+### Orchestration
+1. Open transaction.
+2. `SELECT id FROM flooring_product WHERE id = $1` — product existence.
+3. If `input.locationId` set: `SELECT id, "warehouseId" FROM flooring_location WHERE id = $1` — location existence + warehouse snapshot for the consistency check.
+4. If `input.warehouseId` set: `SELECT id FROM flooring_warehouse WHERE id = $1` — warehouse existence.
+5. Run domain validators: `validateInventoryInput`, `assertLocationBelongsToWarehouse`, `stockCount >= 0`.
+6. `createInventory(tx, input)` → `INSERT INTO flooring_inventory (...) VALUES (...)`. `isImported` defaults to `false`. `fifoReceivedAt` defaults to `now()` on standalone creates (no import FIFO anchor in this path).
+7. Re-read `getInventoryDetailById(newId, tx)` — normalizer computes `stockAvailable = stockCount` (no cut logs yet), `awaitingCut = 0`, `coverageAvailable = stockCount × product.coveragePerUnit`.
 
-**Data-layer action**: none.
+### Response
+`{ inventory: InventoryDetailRecord }`
 
-### `assertLocationBelongsToWarehouse(location, input.warehouseId)`
-If `warehouseId` and `locationId` are both set, they must be consistent (location's warehouse matches the row's chosen warehouse).
-
-**Data-layer action**: `SELECT id, "warehouseId" FROM flooring_location WHERE id = $1`. Mismatch → throws `INVENTORY_LOCATION_WAREHOUSE_MISMATCH`.
+## Domain
 
 ### `validateInventoryInput(input)`
-Structural: required product, non-negative numeric fields, string shape.
+Structural: required `productId`, non-negative decimals on numeric fields, string shape checks.
 
-**Data-layer action**: `SELECT id FROM flooring_product WHERE id = $1` — product existence check.
+### `assertLocationBelongsToWarehouse(location, warehouseId)`
+If both `warehouseId` and `locationId` are set, the location's own `warehouseId` must equal the row's. Throws `InventoryExecutionError({ code: "INVENTORY_LOCATION_WAREHOUSE_MISMATCH", status: 400 })` on mismatch.
 
-## Transaction flow
-1. Open transaction.
-2. Resolve product + (if set) location + warehouse existence.
-3. Run domain validators.
-4. `createInventory(tx, input)` → `INSERT INTO flooring_inventory (...) VALUES (...)`. `isImported` defaults to `false`. `fifoReceivedAt` defaults to `now()` for standalone creates (no import FIFO anchor).
-5. Re-read `getInventoryDetailById(newId, tx)` — normalizer computes `stockAvailable = stockCount` (no cut logs yet), `awaitingCut = 0`, `coverageAvailable = stockCount × product.coveragePerUnit`.
-
-## Response
-`{ inventory: InventoryDetailRecord }`
+### `stockCount >= 0`
+Sanity: starting balance can't be negative. Throws `INVENTORY_VALIDATION_FAILED` on violation.
