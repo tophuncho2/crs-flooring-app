@@ -1,0 +1,30 @@
+"use client"
+
+import { requestJson } from "@/modules/shared/engines/common/transport/http"
+import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
+import type { WarehouseForm } from "@builders/domain"
+import type { WarehouseRow } from "@/modules/warehouse/types"
+
+export async function createWarehouseRequest(input: WarehouseForm) {
+  return requestJson<{ warehouse: WarehouseRow }>("/api/warehouses", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta(input)),
+  })
+}
+
+export async function updateWarehouseRequest(id: string, input: WarehouseForm, revisionKey: string) {
+  return requestJson<{ warehouse: WarehouseRow }>(`/api/warehouses/${id}/primary/section`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta(input, revisionKey)),
+  })
+}
+
+export async function deleteWarehouseRequest(id: string, updatedAt: string) {
+  return requestJson<{ ok: true }>(`/api/warehouses/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta({}, updatedAt)),
+  })
+}

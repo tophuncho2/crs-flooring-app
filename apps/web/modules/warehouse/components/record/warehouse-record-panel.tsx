@@ -1,7 +1,5 @@
 "use client"
 
-import { useCallback, useEffect } from "react"
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -31,20 +29,6 @@ export function WarehouseRecordPanel({
     record: controller.record,
     publishRecord: controller.publishRecord,
   })
-
-  const deleteWarehouse = useCallback(async () => {
-    notices.clearNotices()
-
-    try {
-      await requestJson<{ ok: true }>(`/api/warehouses/${controller.record.id}`, {
-        method: "DELETE",
-      })
-      controller.clearRecordCache()
-      page.redirectToBack()
-    } catch (error) {
-      notices.showError(error instanceof Error ? error.message : "Failed to delete warehouse")
-    }
-  }, [controller, notices, page])
 
   return (
     <RecordMultiSectionPanel
@@ -130,7 +114,9 @@ export function WarehouseRecordPanel({
       footer={{
         deleteLabel: "Delete Warehouse",
         deleteConfirmMessage: buildDeleteConfirmationMessage("warehouse"),
-        onDelete: () => void deleteWarehouse(),
+        onDelete: () => {
+          void controller.deleteRecord?.()
+        },
       }}
     />
   )

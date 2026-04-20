@@ -1,6 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   createRecordSectionError,
   useSingleSectionRecordController,
@@ -8,6 +7,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import type { WarehouseForm } from "@builders/domain"
 import { toWarehouseForm, type WarehouseDetail } from "@/modules/warehouse/types"
+import { deleteWarehouseRequest, updateWarehouseRequest } from "@/modules/warehouse/data/mutations"
 
 export function useWarehousePrimarySection({
   page,
@@ -25,7 +25,7 @@ export function useWarehousePrimarySection({
     payloadKey: "warehouse",
     createLocalValue: toWarehouseForm,
     manageDirtySections: false,
-    saveSection: async ({ localValue, record }) => {
+    saveSection: async ({ localValue, record, revisionKey }) => {
       if (!localValue.name.trim()) {
         throw createRecordSectionError({
           kind: "validation",
@@ -34,16 +34,22 @@ export function useWarehousePrimarySection({
         })
       }
 
-      const payload = await requestJson<{ warehouse: WarehouseDetail }>(`/api/warehouses/${record.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
-      })
+      const { warehouse: updated } = await updateWarehouseRequest(record.id, localValue, revisionKey)
 
       return {
-        serverValue: payload.warehouse,
+        serverValue: {
+          ...record,
+          name: updated.name,
+          address: updated.address,
+          phone: updated.phone,
+          updatedAt: updated.updatedAt,
+        },
         noticeMessage: "Warehouse saved",
       }
     },
+    deleteRecord: async (record) => {
+      await deleteWarehouseRequest(record.id, record.updatedAt)
+    },
+    deleteErrorMessage: "Failed to delete warehouse",
   })
 }

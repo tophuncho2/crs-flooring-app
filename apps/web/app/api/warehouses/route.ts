@@ -1,5 +1,6 @@
-import { createWarehouseRow, listWarehouseRows } from "@/modules/warehouse/data/api"
-import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
+import { createWarehouseUseCase } from "@builders/application"
+import { listWarehouses } from "@builders/db"
+import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -9,16 +10,20 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateWarehouseInput } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await authorizeWarehouseRoute(request)
+  const access = await applyRoutePolicy(request, {
+    toolSlug: WAREHOUSE_TOOL_SLUG,
+  })
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/warehouses")
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, { warehouses: await listWarehouseRows() })
+    const warehouses = await listWarehouses()
+    return routeJson(access, { warehouses })
   } catch (error) {
     return routeError(access, error)
   }
@@ -26,9 +31,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: "warehouse",
+    capability: "system.access",
+    toolSlug: WAREHOUSE_TOOL_SLUG,
     rateLimit: {
-      scope: "warehouses.write",
+      scope: "warehouses.create",
       limit: 20,
       windowMs: 10 * 60 * 1000,
       route: "/api/warehouses",
@@ -38,7 +44,8 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+    const { input, mutation } = parseMutationEnvelope(body, validateWarehouseInput)
+
     const receipt = await enforceMutationReceipt({
       scope: "warehouses.create",
       request,
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
         route: "/api/warehouses",
         entityType: "flooringWarehouse",
       },
-      () => createWarehouseRow(input),
+      () => createWarehouseUseCase(input),
     )
 
     const responseBody = { warehouse }

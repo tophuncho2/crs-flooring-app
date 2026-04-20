@@ -1,6 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
 import {
   createRecordSectionError,
@@ -12,6 +11,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import type { WarehouseForm } from "@builders/domain"
 import { createWarehouseDetail, toWarehouseForm, type WarehouseDetail } from "@/modules/warehouse/types"
+import { createWarehouseRequest } from "@/modules/warehouse/data/mutations"
 import { WarehousePrimaryFieldsSection } from "./warehouse-primary-fields-section"
 
 const EMPTY_WAREHOUSE_DETAIL: WarehouseDetail = createWarehouseDetail(
@@ -49,14 +49,10 @@ function WarehouseCreatePanel({
         })
       }
 
-      const payload = await requestJson<{ warehouse: { id: string } }>("/api/warehouses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(localValue),
-      })
+      const { warehouse } = await createWarehouseRequest(localValue)
 
       return {
-        redirectTo: buildRecordDetailHref("/dashboard/warehouse", payload.warehouse.id, backHref),
+        redirectTo: buildRecordDetailHref("/dashboard/warehouse", warehouse.id, backHref),
       }
     },
   })

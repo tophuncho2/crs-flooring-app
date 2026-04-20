@@ -1,7 +1,8 @@
-import { deleteWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
-import { getWarehouseById } from "@builders/db"
-import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { updateWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
+import { getWarehouseById } from "@builders/db"
+import { validateWarehouseInput } from "../../../_validators"
+import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -12,17 +13,19 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 
-type RouteContext = { params: Promise<{ id: string }> }
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
 
-export async function DELETE(request: Request, { params }: RouteContext) {
+export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: WAREHOUSE_TOOL_SLUG,
     rateLimit: {
-      scope: "warehouses.delete",
-      limit: 20,
+      scope: "warehouses.primary.section.replace",
+      limit: 40,
       windowMs: 10 * 60 * 1000,
-      route: "/api/warehouses/[id]",
+      route: "/api/warehouses/[id]/primary/section",
     },
   })
   if (access instanceof Response) return access
@@ -31,10 +34,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input: _, mutation } = parseMutationEnvelope(body, (value) => value, {
+    const { input, mutation } = parseMutationEnvelope(body, validateWarehouseInput, {
       requireExpectedUpdatedAt: true,
     })
-
     const currentSnapshot = await getWarehouseById(id)
     if (!currentSnapshot) {
       throw new WarehouseExecutionError({
@@ -47,33 +49,36 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
       snapshot: { warehouse: currentSnapshot },
-      message: "Warehouse changed before delete completed. Refresh and try again.",
+      message: "Warehouse changed before section save completed. Refresh and try again.",
     })
-
     const receipt = await enforceMutationReceipt({
-      scope: "warehouses.delete",
+      scope: "warehouses.primary.section.replace",
       request,
       access,
       mutation,
       body,
     })
-    if (receipt.replay) return receipt.replay
+    if (receipt.replay) {
+      return receipt.replay
+    }
 
-    await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Warehouse deleted",
-        action: "warehouses.delete",
-        route: "/api/warehouses/[id]",
+        message: "Warehouse primary section replaced",
+        action: "warehouses.primary.section.replace",
+        route: "/api/warehouses/[id]/primary/section",
         entityType: "flooringWarehouse",
         entityId: id,
       },
-      () => deleteWarehouseUseCase(id),
+      () => updateWarehouseUseCase(id, input),
     )
 
-    const responseBody = { ok: true as const }
+    const responseBody = {
+      warehouse: result,
+    }
     await finalizeMutationReceipt({
-      scope: "warehouses.delete",
+      scope: "warehouses.primary.section.replace",
       access,
       mutation,
       responseStatus: 200,
