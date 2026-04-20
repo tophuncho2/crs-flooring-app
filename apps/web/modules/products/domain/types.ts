@@ -29,10 +29,8 @@ export type ProductRow = {
   sheetSize: string
   thickness: string
   unitWeight: string
-  baseColor: string
   coveragePerUnit: string
   coverageUnit: string
-  photoUrls: string[]
   notes: string
   createdAt: string
   updatedAt: string
@@ -51,43 +49,26 @@ export type ProductForm = {
   manufacturerId: string
   style: string
   color: string
-  baseColor: string
   width: string
   sheetSize: string
   thickness: string
   unitWeight: string
   coveragePerUnit: string
-  photoUrls: string[]
   notes: string
 }
 
 export type ProductInventoryRow = InventoryRow
-
-export const DEFAULT_BASE_COLOR_OPTIONS = [
-  "Beige",
-  "Black",
-  "Blue",
-  "Brown",
-  "Gray",
-  "Green",
-  "Multi",
-  "Red",
-  "Tan",
-  "White",
-]
 
 export const EMPTY_PRODUCT_FORM: ProductForm = {
   categoryId: "",
   manufacturerId: "",
   style: "",
   color: "",
-  baseColor: "",
   width: "",
   sheetSize: "",
   thickness: "",
   unitWeight: "",
   coveragePerUnit: "",
-  photoUrls: [],
   notes: "",
 }
 
@@ -97,25 +78,13 @@ export function toProductForm(product: ProductRow): ProductForm {
     manufacturerId: product.manufacturerId,
     style: product.style,
     color: product.color,
-    baseColor: product.baseColor,
     width: product.width,
     sheetSize: product.sheetSize,
     thickness: product.thickness,
     unitWeight: product.unitWeight,
     coveragePerUnit: product.coveragePerUnit,
-    photoUrls: product.photoUrls,
     notes: product.notes,
   }
-}
-
-export function buildProductBaseColorOptions(values: string[]) {
-  return Array.from(
-    new Set(
-      [...DEFAULT_BASE_COLOR_OPTIONS, ...values]
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
-  ).sort((left, right) => left.localeCompare(right))
 }
 
 export function validateProductPrimaryForm(input: ProductForm) {

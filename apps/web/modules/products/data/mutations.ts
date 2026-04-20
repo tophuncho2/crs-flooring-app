@@ -54,9 +54,7 @@ export async function createProduct(input: CreateProductInput) {
       sheetSize: input.sheetSize,
       thickness: input.thickness,
       unitWeight: input.unitWeight,
-      baseColor: input.baseColor,
       coveragePerUnit: input.coveragePerUnit,
-      photoUrls: input.photoUrls,
       notes: input.notes,
     },
     include: {
@@ -116,9 +114,7 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
       sheetSize: input.sheetSize,
       thickness: input.thickness,
       unitWeight: input.unitWeight,
-      baseColor: input.baseColor,
       coveragePerUnit: input.coveragePerUnit,
-      photoUrls: input.photoUrls,
       notes: input.notes,
       name: buildStoredProductName({
         categoryName,

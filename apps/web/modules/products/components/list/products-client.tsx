@@ -79,7 +79,6 @@ export default function FlooringProductsClient({
       { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName, groupable: true },
       { key: "style", label: "Style", getValue: (row) => row.style, groupable: true },
       { key: "color", label: "Color", getValue: (row) => row.color, groupable: true },
-      { key: "baseColor", label: "Base Color", getValue: (row) => row.baseColor, groupable: true },
       {
         key: "coverage",
         label: "Coverage",
@@ -90,7 +89,6 @@ export default function FlooringProductsClient({
       { key: "sheetSize", label: "Sheet Size", getValue: (row) => row.sheetSize, groupable: false },
       { key: "thickness", label: "Thickness", getValue: (row) => row.thickness, groupable: false },
       { key: "unitWeight", label: "Unit Weight", getValue: (row) => row.unitWeight, groupable: false },
-      { key: "photos", label: "Photos", getValue: (row) => String(row.photoUrls.length), groupable: false },
     ],
     sortField: (row) => row.name,
     sortFieldKey: "product",

@@ -1,6 +1,5 @@
 import type { Prisma } from "@builders/db"
-import { createAppError, parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
-import { isBucketFileUrl } from "@/server/storage/s3"
+import { parseDecimal, parseOptionalString, parseRequiredString } from "@/server/http/api-helpers"
 
 export type CreateProductInput = {
   categoryId: string
@@ -11,33 +10,11 @@ export type CreateProductInput = {
   sheetSize: string | null
   thickness: string | null
   unitWeight: string | null
-  baseColor: string | null
   coveragePerUnit: Prisma.Decimal | null
-  photoUrls: string[]
   notes: string | null
 }
 
 export type UpdateProductInput = Partial<CreateProductInput>
-
-function parsePhotoUrls(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value
-    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-    .map((item) => item.trim())
-    .map((item) => {
-      if (!isBucketFileUrl(item)) {
-        throw createAppError("photoUrls must contain uploaded product photo URLs only", {
-          field: "photoUrls",
-          status: 400,
-        })
-      }
-
-      return item
-    })
-}
 
 function parseCoveragePerUnit(value: unknown) {
   return value === "" || value === null || value === undefined ? null : parseDecimal(value, "coveragePerUnit", 4)
@@ -53,9 +30,7 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
     sheetSize: parseOptionalString(body.sheetSize),
     thickness: parseOptionalString(body.thickness),
     unitWeight: parseOptionalString(body.unitWeight),
-    baseColor: parseOptionalString(body.baseColor),
     coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
-    photoUrls: parsePhotoUrls(body.photoUrls),
     notes: parseOptionalString(body.notes),
   }
 }
@@ -71,9 +46,7 @@ export function validateUpdateProductInput(body: Record<string, unknown>): Updat
   if ("sheetSize" in body) input.sheetSize = parseOptionalString(body.sheetSize)
   if ("thickness" in body) input.thickness = parseOptionalString(body.thickness)
   if ("unitWeight" in body) input.unitWeight = parseOptionalString(body.unitWeight)
-  if ("baseColor" in body) input.baseColor = parseOptionalString(body.baseColor)
   if ("coveragePerUnit" in body) input.coveragePerUnit = parseCoveragePerUnit(body.coveragePerUnit)
-  if ("photoUrls" in body) input.photoUrls = parsePhotoUrls(body.photoUrls)
   if ("notes" in body) input.notes = parseOptionalString(body.notes)
 
   return input

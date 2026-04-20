@@ -15,7 +15,6 @@ function buildProductWhere(searchQuery: string): Prisma.FlooringProductWhereInpu
       { manufacturerName: { contains: searchQuery, mode: "insensitive" } },
       { style: { contains: searchQuery, mode: "insensitive" } },
       { color: { contains: searchQuery, mode: "insensitive" } },
-      { baseColor: { contains: searchQuery, mode: "insensitive" } },
       { category: { name: { contains: searchQuery, mode: "insensitive" } } },
     ],
   }
@@ -31,7 +30,6 @@ function buildProductOrderBy(tableState: ServerTableQueryState): Prisma.Flooring
     manufacturerName: { manufacturerName: direction },
     style: { style: direction },
     color: { color: direction },
-    baseColor: { baseColor: direction },
     width: { width: direction },
     sheetSize: { sheetSize: direction },
     thickness: { thickness: direction },

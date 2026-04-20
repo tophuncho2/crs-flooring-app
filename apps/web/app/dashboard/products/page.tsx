@@ -17,7 +17,7 @@ export default async function FlooringProductsPage({
     searchParams: resolvedSearchParams,
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
     defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
-    allowedGroupKeys: ["category", "manufacturer", "style", "color", "baseColor"],
+    allowedGroupKeys: ["category", "manufacturer", "style", "color"],
     defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["category"],
   })
   const pageData = await getProductsPageData(page, tableState)

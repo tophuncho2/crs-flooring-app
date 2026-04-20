@@ -1,6 +1,5 @@
 "use client"
 
-import { useCallback, useState } from "react"
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
 import {
@@ -33,10 +32,8 @@ const EMPTY_PRODUCT: ProductRow = {
   sheetSize: "",
   thickness: "",
   unitWeight: "",
-  baseColor: "",
   coveragePerUnit: "",
   coverageUnit: "",
-  photoUrls: [],
   notes: "",
   createdAt: "",
   updatedAt: "",
@@ -61,8 +58,6 @@ function ProductCreatePanel({
   categoryOptions: CategoryOption[]
   manufacturerOptions: ManufacturerOption[]
 }) {
-  const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
-  const [newBaseColor, setNewBaseColor] = useState("")
   const controller = useSingleSectionCreateController<ProductForm>({
     page,
     createInitialValue: () => ({ ...EMPTY_PRODUCT_FORM }),
@@ -91,22 +86,6 @@ function ProductCreatePanel({
     },
   })
 
-  const handleAddBaseColorOption = useCallback(() => {
-    const trimmed = newBaseColor.trim()
-    if (!trimmed) {
-      return
-    }
-
-    setCustomBaseColors((previous) =>
-      Array.from(new Set([...previous, trimmed])).sort((left, right) => left.localeCompare(right)),
-    )
-    controller.primarySection.setLocalValue((previous) => ({
-      ...previous,
-      baseColor: trimmed,
-    }))
-    setNewBaseColor("")
-  }, [controller.primarySection, newBaseColor])
-
   return (
     <div className="space-y-4">
       <RecordSingleSectionPanel
@@ -121,8 +100,6 @@ function ProductCreatePanel({
           draft={controller.primarySection.localValue}
           categoryOptions={categoryOptions}
           manufacturerOptions={manufacturerOptions}
-          customBaseColors={customBaseColors}
-          newBaseColor={newBaseColor}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -130,8 +107,6 @@ function ProductCreatePanel({
               [field]: value,
             }))
           }}
-          onNewBaseColorChange={setNewBaseColor}
-          onAddBaseColorOption={handleAddBaseColorOption}
         />
       </RecordSingleSectionPanel>
       <RecordPanelFooter onClose={page.closePage} />

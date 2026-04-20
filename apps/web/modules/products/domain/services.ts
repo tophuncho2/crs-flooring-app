@@ -31,9 +31,7 @@ export function normalizeCatalogProduct(product: {
   sheetSize: string | null
   thickness: string | null
   unitWeight: string | null
-  baseColor: string | null
   coveragePerUnit: Prisma.Decimal | null
-  photoUrls: string[]
   notes: string | null
   createdAt: Date
   updatedAt: Date
@@ -65,10 +63,8 @@ export function normalizeCatalogProduct(product: {
     sheetSize: product.sheetSize ?? "",
     thickness: product.thickness ?? "",
     unitWeight: product.unitWeight ?? "",
-    baseColor: product.baseColor ?? "",
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
     coverageUnit: product.category.itemCoverageUnit?.name ?? "",
-    photoUrls: product.photoUrls,
     notes: product.notes ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),

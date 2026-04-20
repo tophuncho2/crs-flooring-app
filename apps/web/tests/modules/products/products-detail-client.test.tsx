@@ -75,10 +75,8 @@ describe("ProductDetailClient", () => {
           sheetSize: "",
           thickness: "",
           unitWeight: "",
-          baseColor: "Tan",
           coveragePerUnit: "20",
           coverageUnit: "SF",
-          photoUrls: [],
           notes: "Primary note",
           createdAt: "2026-03-23T00:00:00.000Z",
           updatedAt: "2026-03-23T00:00:00.000Z",
@@ -122,12 +120,9 @@ describe("ProductDetailClient", () => {
     expect(screen.getByText("Inventory Rows")).toBeTruthy()
     expect(screen.getByText("Main Warehouse / Showroom / A1")).toBeTruthy()
     expect(screen.getByText("IMP-0001")).toBeTruthy()
+    // Cut logs are no longer rendered inline; the inventory row is open-only.
     expect(screen.queryByText("First cut")).toBeNull()
-
-    await user.click(screen.getByRole("button", { name: "Show cut logs for inventory A100" }))
-
-    expect(screen.getByRole("button", { name: "Hide cut logs for inventory A100" })).toBeTruthy()
-    expect(screen.getByText("First cut")).toBeTruthy()
+    expect(screen.queryByRole("button", { name: /Show cut logs for inventory/ })).toBeNull()
   })
 
   it("opens inventory rows through the canonical open button", async () => {
@@ -147,10 +142,8 @@ describe("ProductDetailClient", () => {
           sheetSize: "",
           thickness: "",
           unitWeight: "",
-          baseColor: "Tan",
           coveragePerUnit: "20",
           coverageUnit: "SF",
-          photoUrls: [],
           notes: "",
           createdAt: "2026-03-23T00:00:00.000Z",
           updatedAt: "2026-03-23T00:00:00.000Z",

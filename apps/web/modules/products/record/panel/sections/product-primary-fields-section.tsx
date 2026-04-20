@@ -5,52 +5,35 @@ import {
   RECORD_FIELD_CONTROL_CLASS_NAME,
   RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
-  RecordHeaderActionButton,
   RecordPrimaryFieldCell,
   RecordPrimaryFieldsGrid,
   RecordPrimaryPane,
   RecordPrimarySection,
 } from "@/modules/shared/engines/record-view"
-import {
-  buildProductBaseColorOptions,
-  type CategoryOption,
-  type ManufacturerOption,
-  type ProductForm,
-  type ProductRow,
+import type {
+  CategoryOption,
+  ManufacturerOption,
+  ProductForm,
+  ProductRow,
 } from "../../../domain/types"
 
-type ProductPrimaryField = Exclude<keyof ProductForm, "photoUrls">
-
 export function ProductPrimaryFieldsSection({
-  product,
   draft,
   categoryOptions,
   manufacturerOptions,
-  customBaseColors,
-  newBaseColor,
   disabled,
   onFieldChange,
-  onNewBaseColorChange,
-  onAddBaseColorOption,
 }: {
   product: ProductRow
   draft: ProductForm
   categoryOptions: CategoryOption[]
   manufacturerOptions: ManufacturerOption[]
-  customBaseColors: string[]
-  newBaseColor: string
   disabled: boolean
-  onFieldChange: (field: ProductPrimaryField, value: string) => void
-  onNewBaseColorChange: (value: string) => void
-  onAddBaseColorOption: () => void
+  onFieldChange: (field: keyof ProductForm, value: string) => void
 }) {
   const selectedCategory = useMemo(
     () => categoryOptions.find((category) => category.id === draft.categoryId) ?? null,
     [categoryOptions, draft.categoryId],
-  )
-  const baseColorOptions = useMemo(
-    () => buildProductBaseColorOptions([product.baseColor, draft.baseColor, ...customBaseColors]),
-    [customBaseColors, draft.baseColor, product.baseColor],
   )
 
   return (
@@ -132,38 +115,6 @@ export function ProductPrimaryFieldsSection({
 
       <RecordPrimaryPane variant="main" placement="right">
         <RecordPrimaryFieldsGrid>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Base Color">
-              <select
-                value={draft.baseColor}
-                onChange={(event) => onFieldChange("baseColor", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              >
-                <option value="">Select a base color</option>
-                {baseColorOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="md">
-            <RecordFormField label="Add Base Color">
-              <div className="flex gap-2">
-                <input
-                  value={newBaseColor}
-                  onChange={(event) => onNewBaseColorChange(event.target.value)}
-                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                  disabled={disabled}
-                />
-                <RecordHeaderActionButton onClick={onAddBaseColorOption} disabled={disabled || !newBaseColor.trim()}>
-                  Add
-                </RecordHeaderActionButton>
-              </div>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Thickness">
               <input

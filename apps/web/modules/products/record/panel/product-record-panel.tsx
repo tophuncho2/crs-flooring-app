@@ -36,34 +36,7 @@ export function ProductRecordPanel({
     product,
   })
   const inventoryNavigation = useRecordEntryNavigation("/dashboard/inventory")
-  const [customBaseColors, setCustomBaseColors] = useState<string[]>([])
-  const [newBaseColor, setNewBaseColor] = useState("")
-  const [expandedInventoryIds, setExpandedInventoryIds] = useState<string[]>([])
   const [loadingInventoryId, setLoadingInventoryId] = useState<string | null>(null)
-
-  const handleAddBaseColorOption = useCallback(() => {
-    const trimmed = newBaseColor.trim()
-    if (!trimmed) {
-      return
-    }
-
-    setCustomBaseColors((previous) =>
-      Array.from(new Set([...previous, trimmed])).sort((left, right) => left.localeCompare(right)),
-    )
-    controller.primarySection.setLocalValue((previous) => ({
-      ...previous,
-      baseColor: trimmed,
-    }))
-    setNewBaseColor("")
-  }, [controller.primarySection, newBaseColor])
-
-  const handleToggleInventoryCutLogs = useCallback((inventoryId: string) => {
-    setExpandedInventoryIds((previous) =>
-      previous.includes(inventoryId)
-        ? previous.filter((value) => value !== inventoryId)
-        : [...previous, inventoryId],
-    )
-  }, [])
 
   const handleOpenInventory = useCallback((inventoryId: string) => {
     page.confirmNavigation(() => {
@@ -103,8 +76,6 @@ export function ProductRecordPanel({
                 draft={controller.primarySection.localValue}
                 categoryOptions={categoryOptions}
                 manufacturerOptions={manufacturerOptions}
-                customBaseColors={customBaseColors}
-                newBaseColor={newBaseColor}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({
@@ -112,8 +83,6 @@ export function ProductRecordPanel({
                     [field]: value,
                   }))
                 }}
-                onNewBaseColorChange={setNewBaseColor}
-                onAddBaseColorOption={handleAddBaseColorOption}
               />
             </RecordPrimarySectionInstance>
           ),
@@ -125,7 +94,7 @@ export function ProductRecordPanel({
           render: () => (
             <ProductInventoryRowsSection
               subHeader={{
-                summary: "Open inventory rows to manage stock, location, and cut logs.",
+                summary: "Open an inventory row to manage stock, location, and cut logs.",
                 isDirty: false,
                 isSaving: false,
                 hasConflict: false,
@@ -133,9 +102,7 @@ export function ProductRecordPanel({
                 showStatus: false,
               }}
               inventoryRows={inventoryRows}
-              expandedInventoryIds={expandedInventoryIds}
               loadingInventoryId={loadingInventoryId}
-              onToggleInventoryCutLogs={handleToggleInventoryCutLogs}
               onOpenInventory={handleOpenInventory}
             />
           ),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { Prisma } from "@builders/db"
-import { normalizeCatalogProduct } from "@/modules/products/services"
+import { normalizeCatalogProduct } from "@/modules/products/domain/services"
 
 describe("normalizeCatalogProduct", () => {
   it("products resolve manufacturer display names from company name", () => {
@@ -16,9 +16,7 @@ describe("normalizeCatalogProduct", () => {
       sheetSize: null,
       thickness: null,
       unitWeight: null,
-      baseColor: null,
       coveragePerUnit: new Prisma.Decimal("12.5"),
-      photoUrls: [],
       notes: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),

@@ -60,7 +60,6 @@ export function ProductsTable({
       manufacturer: (columnIndex) => <DashboardListRowCell key="manufacturer" columnIndex={columnIndex}>{product.manufacturerName || "-"}</DashboardListRowCell>,
       style: (columnIndex) => <DashboardListRowCell key="style" columnIndex={columnIndex}>{product.style || "-"}</DashboardListRowCell>,
       color: (columnIndex) => <DashboardListRowCell key="color" columnIndex={columnIndex}>{product.color || "-"}</DashboardListRowCell>,
-      baseColor: (columnIndex) => <DashboardListRowCell key="baseColor" columnIndex={columnIndex}>{product.baseColor || "-"}</DashboardListRowCell>,
       coverage: (columnIndex) => (
         <DashboardListRowCell key="coverage" columnIndex={columnIndex}>
           {product.coveragePerUnit ? `${product.coveragePerUnit} / ${product.coverageUnit || "unit"}` : "-"}
@@ -70,7 +69,6 @@ export function ProductsTable({
       sheetSize: (columnIndex) => <DashboardListRowCell key="sheetSize" columnIndex={columnIndex}>{product.sheetSize || "-"}</DashboardListRowCell>,
       thickness: (columnIndex) => <DashboardListRowCell key="thickness" columnIndex={columnIndex}>{product.thickness || "-"}</DashboardListRowCell>,
       unitWeight: (columnIndex) => <DashboardListRowCell key="unitWeight" columnIndex={columnIndex}>{product.unitWeight || "-"}</DashboardListRowCell>,
-      photos: (columnIndex) => <DashboardListRowCell key="photos" columnIndex={columnIndex}>{product.photoUrls.length}</DashboardListRowCell>,
     }
 
     return (
