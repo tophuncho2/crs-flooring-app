@@ -16,18 +16,17 @@ enum Role {
 }
 
 model User {
-  id                      String                           @id @default(uuid())
-  email                   String                           @unique
-  password                String?
-  role                    Role                             @default(CUSTOMER)
-  isVerified              Boolean                          @default(false)
-  hiddenFlooringNavSlugs  String[]                         @default([])
-  flooringNavOrderSlugs   String[]                         @default([])
-  createdAt               DateTime                         @default(now())
-  activities              UserLoginActivity[]
-  requestedAllocationRuns FlooringWorkOrderAllocationRun[]
-  tablePreferences        UserTablePreference[]
-  mutationReceipts        AppMutationReceipt[]
+  id                     String                @id @default(uuid())
+  email                  String                @unique
+  password               String?
+  role                   Role                  @default(CUSTOMER)
+  isVerified             Boolean               @default(false)
+  hiddenFlooringNavSlugs String[]              @default([])
+  flooringNavOrderSlugs  String[]              @default([])
+  createdAt              DateTime              @default(now())
+  activities             UserLoginActivity[]
+  tablePreferences       UserTablePreference[]
+  mutationReceipts       AppMutationReceipt[]
 }
 
 model UserTablePreference {
@@ -88,20 +87,6 @@ enum FlooringWorkOrderStatus {
   MODIFY
 }
 
-enum FlooringAllocationMethod {
-  MANUAL
-  AUTO
-}
-
-enum FlooringWorkOrderAllocationRunStatus {
-  REQUESTED
-  QUEUED
-  PROCESSING
-  COMPLETED
-  FAILED
-  SUPERSEDED
-}
-
 enum QueueOutboxEventStatus {
   PENDING
   PROCESSING
@@ -117,13 +102,6 @@ enum FlooringVacancyStatus {
 enum FlooringChangeOrderStatus {
   SHORTAGE
   SUFFICIENT
-}
-
-enum FlooringWorkOrderItemAllocationStatus {
-  NOT_STARTED
-  PARTIALLY_ALLOCATED
-  FULLY_ALLOCATED
-  SHORTAGE
 }
 
 enum FlooringStoreCode {
@@ -299,30 +277,32 @@ model FlooringContact {
 }
 
 model FlooringInventory {
-  id                 String                            @id @default(uuid())
-  importEntryId      String?
-  importEntry        FlooringImportEntry?              @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
-  productId          String
-  product            FlooringProduct                   @relation(fields: [productId], references: [id], onDelete: Restrict)
-  itemNumber         String
-  dyeLot             String?
-  locationId         String?
-  location           FlooringLocation?                 @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  stockCount         Decimal                           @db.Decimal(12, 2)
-  reservedStockCount Decimal                           @default(0) @db.Decimal(12, 2)
-  cost               Decimal?                          @db.Decimal(10, 2)
-  freight            Decimal?                          @db.Decimal(10, 2)
-  notes              String?
-  fifoReceivedAt     DateTime
-  cutLogs            FlooringCutLog[]
-  allocations        FlooringWorkOrderItemAllocation[]
-  createdAt          DateTime                          @default(now())
-  updatedAt          DateTime                          @updatedAt
+  id             String               @id @default(uuid())
+  importEntryId  String?
+  importEntry    FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
+  productId      String
+  product        FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber     String
+  dyeLot         String?
+  warehouseId    String?
+  warehouse      FlooringWarehouse?   @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  locationId     String?
+  location       FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  stockCount     Decimal              @db.Decimal(12, 2)
+  isImported     Boolean              @default(false)
+  cost           Decimal?             @db.Decimal(10, 2)
+  freight        Decimal?             @db.Decimal(10, 2)
+  notes          String?
+  fifoReceivedAt DateTime
+  cutLogs        FlooringCutLog[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@unique([locationId, itemNumber])
   @@index([importEntryId])
   @@index([productId])
   @@index([locationId])
+  @@index([warehouseId])
   @@index([productId, fifoReceivedAt, itemNumber, id])
   @@map("flooring_inventory")
 }
@@ -357,6 +337,7 @@ model FlooringCutLog {
   before          Decimal                @db.Decimal(12, 2)
   cut             Decimal                @db.Decimal(12, 2)
   after           Decimal                @db.Decimal(12, 2)
+  status          String                 @default("PENDING")
   notes           String?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
@@ -451,18 +432,19 @@ model FlooringTemplateSalesRep {
 }
 
 model FlooringWarehouse {
-  id         String                @id @default(uuid())
-  number     Int                   @unique
-  name       String                @unique
-  address    String?
-  phone      String?
-  createdAt  DateTime              @default(now())
-  updatedAt  DateTime              @updatedAt
-  imports    FlooringImportEntry[]
-  sections   FlooringSection[]
-  locations  FlooringLocation[]
-  workOrders FlooringWorkOrder[]
-  templates  FlooringTemplate[]
+  id          String                @id @default(uuid())
+  number      Int                   @unique
+  name        String                @unique
+  address     String?
+  phone       String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  imports     FlooringImportEntry[]
+  sections    FlooringSection[]
+  locations   FlooringLocation[]
+  inventories FlooringInventory[]
+  workOrders  FlooringWorkOrder[]
+  templates   FlooringTemplate[]
 
   @@map("flooring_warehouse")
 }
@@ -526,7 +508,6 @@ model FlooringWorkOrder {
   items                FlooringWorkOrderItem[]
   serviceItems         FlooringWorkOrderServiceItem[]
   salesReps            FlooringWorkOrderSalesRep[]
-  allocationRuns       FlooringWorkOrderAllocationRun[]
   analytics            FlooringAnalytics?
   cutLogs              FlooringCutLog[]
 
@@ -543,50 +524,24 @@ model FlooringWorkOrder {
 }
 
 model FlooringWorkOrderItem {
-  id                   String                                @id @default(uuid())
+  id                   String            @id @default(uuid())
   workOrderId          String
-  workOrder            FlooringWorkOrder                     @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  workOrder            FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   productId            String
-  product              FlooringProduct                       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product              FlooringProduct   @relation(fields: [productId], references: [id], onDelete: Restrict)
   sourceTemplateItemId String?
-  quantity             Decimal                               @db.Decimal(10, 2)
-  unitPrice            Decimal                               @db.Decimal(10, 2)
+  quantity             Decimal           @db.Decimal(10, 2)
+  unitPrice            Decimal           @db.Decimal(10, 2)
   notes                String?
-  changeOrderStatus    FlooringChangeOrderStatus?            @default(SUFFICIENT)
-  allocationStatus     FlooringWorkOrderItemAllocationStatus @default(NOT_STARTED)
-  createdAt            DateTime                              @default(now())
-  updatedAt            DateTime                              @updatedAt
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
   cutLogs              FlooringCutLog[]
-  allocations          FlooringWorkOrderItemAllocation[]
 
   @@index([workOrderId])
-  @@index([workOrderId, allocationStatus])
   @@index([workOrderId, createdAt])
   @@index([productId])
   @@index([sourceTemplateItemId])
   @@map("flooring_work_order_item")
-}
-
-model FlooringWorkOrderItemAllocation {
-  id              String                   @id @default(uuid())
-  workOrderItemId String
-  workOrderItem   FlooringWorkOrderItem    @relation(fields: [workOrderItemId], references: [id], onDelete: Cascade)
-  inventoryId     String
-  inventory       FlooringInventory        @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
-  quantity        Decimal                  @db.Decimal(12, 2)
-  cutSize         String?
-  unitCost        Decimal                  @db.Decimal(10, 4)
-  method          FlooringAllocationMethod @default(MANUAL)
-  notes           String?
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-
-  @@index([workOrderItemId])
-  @@index([workOrderItemId, createdAt, id])
-  @@index([inventoryId])
-  @@index([inventoryId, method])
-  @@index([method])
-  @@map("flooring_work_order_item_allocation")
 }
 
 model FlooringWorkOrderServiceItem {
@@ -630,35 +585,6 @@ model FlooringWorkOrderSalesRep {
   @@index([workOrderId, createdAt])
   @@index([sourceTemplateSalesRepId])
   @@map("flooring_work_order_sales_rep")
-}
-
-model FlooringWorkOrderAllocationRun {
-  id                String                               @id @default(uuid())
-  workOrderId       String
-  workOrder         FlooringWorkOrder                    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  requestedByUserId String
-  requestedByUser   User                                 @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
-  sourceVersion     DateTime
-  idempotencyKey    String                               @unique
-  status            FlooringWorkOrderAllocationRunStatus @default(REQUESTED)
-  requestId         String?
-  queueJobId        String?
-  requestedAt       DateTime                             @default(now())
-  queuedAt          DateTime?
-  startedAt         DateTime?
-  completedAt       DateTime?
-  failedAt          DateTime?
-  failureCode       String?
-  failureMessage    String?
-  allocatedRowCount Int                                  @default(0)
-  shortageCount     Int                                  @default(0)
-  createdAt         DateTime                             @default(now())
-  updatedAt         DateTime                             @updatedAt
-
-  @@unique([workOrderId, sourceVersion])
-  @@index([workOrderId, requestedAt])
-  @@index([status, requestedAt])
-  @@map("flooring_work_order_allocation_run")
 }
 
 model QueueOutboxEvent {
