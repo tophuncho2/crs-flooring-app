@@ -6,6 +6,27 @@ Completed in prior sweeps (reference, not redone): Warehouse (3 phases), Product
 
 ---
 
+## Strict layering (non-negotiable for every module)
+
+- **`packages/domain/src/flooring/{module}/`** — all business rules, types, diff shapes, computed formulas, unit-conversion rules, errors. Pure. No I/O. Every rule is canonical here; consumers never re-implement.
+- **`packages/application/src/flooring/{module}/`** — use cases. Orchestrate domain rules + data reads/writes. Own transactions. No HTTP.
+- **`packages/db/src/flooring/{module}/`** — read + write repositories. Persistence only. No business logic. Each repo normalizes rows into the canonical Record shape returned to use cases.
+- **`apps/web/modules/{module}/`** — `controllers/`, `components/{list,record}/`, `data/{mutations,queries}.ts`. No domain/application logic. No direct Prisma. Client mutations wrap `withMutationMeta`; queries wrap `@builders/db` canonical reads.
+- **`apps/web/app/api/{module}/`** — routes. Each mutation route calls ONE use case. `_validators.ts` at the route edge. Full mutation lifecycle (`applyRoutePolicy` + rate limit + `parseMutationEnvelope` + `assertExpectedUpdatedAt` + `enforceMutationReceipt` + `withMutationTelemetry` + `finalizeMutationReceipt`). No business logic.
+- **`apps/web/app/dashboard/{module}/`** — pages import from `modules/{module}/data/queries.ts`. SSR loaders only.
+
+### Routes per module (section-per-file)
+
+Every module follows the same route shape. **Each section within a record view gets its own save route.**
+
+- `route.ts` — GET list (via `@builders/db::list{Module}`) + POST create (via `create{Module}UseCase`)
+- `[id]/primary/section/route.ts` — PATCH primary-section replace (via `update{Module}UseCase`). Main-section canonical.
+- `[id]/{section-name}/section/route.ts` — PATCH atomic diff for each child grid section. One file per section. Diff body uses **tempIds for new rows** and `expectedUpdatedAt` per modified/deleted row. Response returns `{ parent: Canonical{Module}DetailRecord, tempIdMap }` so the client reconciles temp → real ids in place.
+- `[id]/route.ts` — DELETE (via `delete{Module}UseCase`).
+- `options/route.ts` — GET form options (via `@builders/db`).
+
+---
+
 ## Scope map
 
 | Module | Main section | Child sections | Owns schema | Dashboard page |
@@ -20,25 +41,75 @@ Completed in prior sweeps (reference, not redone): Warehouse (3 phases), Product
 2. `FlooringInventory.isImported Boolean @default(false)`. Per-row "received into warehouse" flag. **Gate on cut logs**: an inventory row with `isImported=false` is ineligible for cut-log creation — use case rejects. Import-level `status: "PENDING" | "FINAL"` stays for UI display only this sweep (no behavior wired).
 3. **Drop `FlooringInventory.reservedStockCount`.** Dead field (previously written by allocation runner). No replacement stored — reserved-equivalent is now `awaitingCut` (computed from cut-log diffs, see below).
 4. `FlooringCutLog.status String`. Free-form with closed domain values `"PENDING"` / `"FINAL"`. Default `"PENDING"` via Prisma `@default("PENDING")`. Domain-validated; DB enum deferred (matches import-status pattern for now).
-5. **Drop `FlooringWorkOrderItemAllocation` entirely.** Drop `allocations` relations on `FlooringInventory` and `FlooringWorkOrderItem`. Drop `FlooringWorkOrderAllocationRun` (auto-allocation is deferred; see Out of Scope). Drop `FlooringWorkOrderAllocationRunStatus` enum. Drop `FlooringAllocationMethod` enum if orphaned. Keep `FlooringWorkOrderItemAllocationStatus` enum — `FlooringWorkOrderItem.allocationStatus` still stores a computed status value (now derived from cut-log cut totals vs item quantity).
-6. Material-item ↔ cut-log link already exists via `FlooringCutLog.workOrderItemId`. No new column needed.
+5. **Drop `FlooringWorkOrderItemAllocation` entirely.** Drop `allocations` relations on `FlooringInventory` and `FlooringWorkOrderItem`. Drop `FlooringWorkOrderAllocationRun` (auto-allocation is deferred; see Out of Scope). Drop `FlooringWorkOrderAllocationRunStatus` enum. Drop `FlooringAllocationMethod` enum if orphaned.
+6. **Drop `FlooringWorkOrderItem.allocationStatus` column + `FlooringWorkOrderItemAllocationStatus` enum entirely.** Fulfillment status is computed on read, never stored. The 4-value enum was scaffolding for the old allocation runner; binary is enough now.
+7. **Drop `FlooringWorkOrderItem.changeOrderStatus` column.** "Change order" vocabulary is retired — the concept collapses into the same computed fulfillment status as material items (is this item covered by its cut logs?). Keep the enum `FlooringChangeOrderStatus { SHORTAGE, SUFFICIENT }` itself since it's the TypeScript type for the computed `fulfillmentStatus` values surfaced by the read-repo normalizer — but nothing stores it on any column after this sweep.
+8. Material-item ↔ cut-log link already exists via `FlooringCutLog.workOrderItemId`. No new column needed. `FlooringCutLog.workOrderId` stays too. When a cut log is created from the work-order record view, both must be set (plus `inventoryId`). When created from the inventory record view, `workOrderId` + `workOrderItemId` are optional — the user picks via cascading dropdown (below).
 
 ### Inventory computed fields (not stored on schema — derived in domain)
 
 The schema stores only primary facts (`stockCount` = starting balance at import time, plus product/location/warehouse refs and `isImported`). Everything else is computed on read. Domain helpers in `packages/domain/src/flooring/inventory/`:
 
-- `stockAvailable = stockCount − sum(cutLogs.cut)` — single source of truth for "what's physically left on this row". Counts cuts regardless of status (a cut has happened whether or not it's been finalized).
-- `awaitingCut = sum(cutLogs.cut where status === "PENDING")` — how much of the total cuts are still awaiting confirmation. When a cut-log flips PENDING → FINAL, `awaitingCut` drops; `stockAvailable` does not change.
+- `stockAvailable = stockCount − sum(cutLogs.cut)` — single source of truth for "what's physically left on this row", in the product category's **stock unit** (e.g., boxes). Counts cuts regardless of status (a cut has happened whether or not it's been finalized).
+- `awaitingCut = sum(cutLogs.cut where status === "PENDING")` — how much of the total cuts are still awaiting confirmation, in the stock unit. When a cut-log flips PENDING → FINAL, `awaitingCut` drops; `stockAvailable` does not change.
 - `locationCode = "W{warehouse.number}-S{section.number}-R{location.rafter}-L{location.level}"` — display-only composite, computed by `formatFullLocationCode(...)` in `@builders/domain`. No longer stored; read queries `include` all four parts.
-- `coverageAvailable = stockAvailable * product.coveragePerUnit` — **low priority**, deferred. See Out of Scope. When added, lives in inventory domain as `computeCoverageAvailable({ stockAvailable, product })` and flows through to the record view's sidebar display.
+- **`coverageAvailable = stockAvailable × product.coveragePerUnit`** — **priority, in scope this sweep**. Translates from stock unit (e.g., boxes) to coverage unit (e.g., sqft) using the product's `coveragePerUnit` multiplier defined at the product level. Displayed on inventory list + record view. See unit-conversion rules below.
+
+### Category-driven unit conversion (in-scope domain rules)
+
+Categories and unit-of-measures are **seeded** and read-only. They provide the mapping between a product's stock unit, send unit, and coverage unit. The seeded vinyl-plank category is the canonical shape:
+
+| Category field | Seeded UoM | What it governs |
+|---|---|---|
+| `stockUnit` | Boxes | Inventory `stockCount` + `stockAvailable` + `cutLogs.cut` are all in this unit |
+| `sendUnit` | Square Feet | Work-order material-item `quantity` is in this unit |
+| `coverageAvailableUnit` | Square Feet | `coverageAvailable` (computed) is in this unit |
+| `itemCoverageUnit` | Square Feet | `product.coveragePerUnit`'s unit (e.g., 23.77 sqft per box) |
+| `serviceUnit` | — | Service-item pricing unit |
+
+**Conversion rules live in `packages/domain/src/flooring/inventory/unit-conversion.ts`**, keyed by category slug. Each rule declares whether the stock unit can split (decimals allowed) and the rounding direction when it can't.
+
+```ts
+export type CategoryUnitRule = { canSplit: boolean; rounding: "up" | "down" | "nearest" | "exact" }
+export const CATEGORY_UNIT_RULES: Record<string, CategoryUnitRule> = {
+  "vinyl-plank": { canSplit: false, rounding: "up" }, // boxes, whole, round up
+}
+```
+
+Core helpers (all pure):
+- `computeCoverageAvailable({ stockAvailable, coveragePerUnit }) → number` — `stockAvailable × coveragePerUnit`, in the category's coverage unit.
+- `computeStockRequiredForQuantity({ quantityInSendUnit, coveragePerUnit, categorySlug }) → number` — inverse. `ceil(quantity / coveragePerUnit)` for vinyl-plank; other categories plug in their rules. Used by work-order UI to suggest how many boxes cover `N` sqft.
+- `isItemFulfilled({ quantityInSendUnit, cutLogsCutTotal, coveragePerUnit }) → boolean` — `cutLogsCutTotal × coveragePerUnit ≥ quantityInSendUnit`. **Overage allowed** (a cut bigger than requested is fine; never restricted).
+- `computeItemFulfillmentStatus(...)` → returns `"SUFFICIENT"` or `"SHORTAGE"` via the above predicate.
+- `computeWorkOrderFulfillmentStatus(items)` → aggregate, all-or-nothing. Every item `SUFFICIENT` → `SUFFICIENT`; any item `SHORTAGE` → `SHORTAGE`.
+- `formatFulfillmentStatus(status)` → display label `"Short"` / `"Assigned"`.
+
+Rules extend as new categories get seeded. Categories and UoMs themselves are NOT edited by this sweep — we consume what they already provide.
 
 ### Invariants enforced at the application layer (not DB)
+
+**Warehouse / location:**
 - `inventory.warehouseId === location.warehouseId` when both are present. Warehouse is chosen first; locations dropdown is filtered to `listLocationsByWarehouse(warehouseId)`. Sections are **referenced transitively** through the chosen location (location → section → warehouse); no direct `sectionId` column on inventory.
 - Changing `warehouseId` on an inventory row clears `locationId` if the current location isn't in the new warehouse. The UI nudges the user to pick a new location; the use case doesn't silently try to remap.
 - `inventory.warehouseId === importEntry.warehouseId` when both are present. On import's inventory-rows section: the warehouse selector is **not shown per row** — rows inherit the import's warehouseId. The row's warehouseId is only editable from the inventory record view, standalone.
+
+**Cut logs:**
+- **Eligibility gate**: `canAddCutLog(inventory) = inventory.isImported === true`. Use case rejects `CUT_LOG_INVENTORY_NOT_IMPORTED` if false. Existing cut logs on a row whose `isImported` later flips back to `false` are preserved (no cascade); only new cuts are blocked.
+- **Arithmetic invariant**: `before − cut === after` per row. Enforced at domain.
+- **Starting-balance invariant**: `sum(cutLogs.cut) ≤ inventory.stockCount` at all times. Equivalently `stockAvailable ≥ 0`. Enforced at domain during cut-log save.
+- **Link requirements when saving from work-order record view**: cut log must carry all three of `{ inventoryId, workOrderId, workOrderItemId }`. Default-linked on create the same way import inventory rows default-link to the import's warehouse.
+- **Link requirements when saving from inventory record view**: `inventoryId` is required; `workOrderId` + `workOrderItemId` are optional. If the user wants to link, they use the cascading dropdown in the inventory record view's cut-logs section (below).
+- **Cascading dropdown behavior — inventory record view cut-logs section**:
+  1. Material-item dropdown is **disabled** until a work order is picked.
+  2. After picking a work order, the material-item dropdown filters to: items on that work order whose `productId === inventory.productId`.
+  3. If no matching items, the dropdown shows an empty state ("No material items on this work order use this product"). The cut log can still save without a material-item link.
 - A cut log's `workOrderItemId` (if set) must belong to a work order that scopes the same warehouse as the cut log's inventory row.
-- **Cut-log eligibility gate**: `canAddCutLog(inventory) = inventory.isImported === true`. Use case rejects `CUT_LOG_INVENTORY_NOT_IMPORTED` if false. Existing cut logs on a row whose `isImported` later flips back to `false` are preserved (no cascade); only new cuts are blocked.
-- **Cut-log arithmetic invariant**: `before − cut === after` per row. Enforced at the domain layer.
+
+**Material items / work order fulfillment:**
+- `item.fulfillmentStatus = isItemFulfilled({ quantity, cutLogsCutTotal, coveragePerUnit }) ? "SUFFICIENT" : "SHORTAGE"`. Computed on every read; never stored.
+- `workOrder.fulfillmentStatus = all items SUFFICIENT ? "SUFFICIENT" : "SHORTAGE"`. Computed on read.
+- **Overage allowed**: `cutLogsCutTotal × coveragePerUnit > quantity` is valid (never rejected). A job that needs 100 sqft can have a cut log supplying 120 sqft.
+- UI labels: `"Short"` (SHORTAGE) / `"Assigned"` (SUFFICIENT).
 
 ---
 
@@ -46,7 +117,7 @@ The schema stores only primary facts (`stockCount` = starting balance at import 
 
 Finish each layer for all four modules before moving to the next:
 
-- **Phase A — Prisma** (schema + single migration covering all five changes above)
+- **Phase A — Prisma** (schema + single migration covering all eight changes above)
 - **Phase B — `packages/domain/`** (types, rules, diff shapes, errors per module)
 - **Phase C — `packages/application/`** (use cases per module; each imports domain rules)
 - **Phase D — Routes** (`_validators.ts` + split files per section per module)
@@ -77,13 +148,16 @@ Each phase leaves the app buildable. Layer boundaries are the pause points where
   - add `status String` (closed-set string: `"PENDING"` / `"FINAL"`, default `"PENDING"` via Prisma `@default("PENDING")`. DB enum deferred for consistency with import-status pattern.)
 - `FlooringWorkOrderItem`:
   - **remove** `allocations FlooringWorkOrderItemAllocation[]`
+  - **remove** `allocationStatus FlooringWorkOrderItemAllocationStatus @default(NOT_STARTED)` column
+  - **remove** `changeOrderStatus FlooringChangeOrderStatus? @default(SUFFICIENT)` column
 - `FlooringWorkOrder`:
   - **remove** `allocationRuns FlooringWorkOrderAllocationRun[]`
+- `FlooringWorkOrderItemAllocationStatus` enum — **delete entire block**
+- `FlooringChangeOrderStatus` enum — **keep** (used as the TypeScript type for computed `fulfillmentStatus` returned by normalizers; nothing stored)
 - `FlooringWorkOrderItemAllocation` model — **delete entire block**
 - `FlooringWorkOrderAllocationRun` model — **delete entire block**
 - `FlooringWorkOrderAllocationRunStatus` enum — **delete**
 - `FlooringAllocationMethod` enum — **delete** (verify no other consumers)
-- Keep `FlooringWorkOrderItemAllocationStatus` enum (used by `FlooringWorkOrderItem.allocationStatus`)
 
 ### Migration
 
@@ -95,6 +169,13 @@ DROP TABLE IF EXISTS "flooring_work_order_allocation_run";
 DROP TABLE IF EXISTS "flooring_work_order_item_allocation";
 DROP TYPE IF EXISTS "FlooringWorkOrderAllocationRunStatus";
 DROP TYPE IF EXISTS "FlooringAllocationMethod";
+
+-- Drop stored allocation + change-order status columns on work-order items (now computed)
+ALTER TABLE "flooring_work_order_item"
+  DROP COLUMN "allocationStatus",
+  DROP COLUMN "changeOrderStatus";
+DROP TYPE IF EXISTS "FlooringWorkOrderItemAllocationStatus";
+-- Keep FlooringChangeOrderStatus enum — TypeScript type for computed fulfillmentStatus.
 
 -- Inventory: warehouse link + received flag + drop dead reservedStockCount
 ALTER TABLE "flooring_inventory"
@@ -136,14 +217,19 @@ Apply via `npm run db:deploy --workspace @builders/db`. Rebuild `@builders/db`.
   - `isInventoryDeleteBlocked(counts)` — block if any cut logs reference it, or any work-order item has linked cut logs that reference it.
   - `buildInventoryDeleteBlockedMessage`.
   - `assertLocationBelongsToWarehouse(location, warehouseId)` — throws typed issue.
-  - **`computeStockAvailable({ stockCount, cutLogs })`** — `stockCount − sum(cutLogs.cut)`. Counts cuts regardless of status.
+  - **`computeStockAvailable({ stockCount, cutLogs })`** — `stockCount − sum(cutLogs.cut)`. Counts cuts regardless of status. Asserts result `>= 0` at save time (rejects cut whose total exceeds starting balance).
   - **`computeAwaitingCut(cutLogs)`** — `sum(cutLogs.cut where status === "PENDING")`.
   - **`canAddCutLog(inventory)`** — returns `inventory.isImported === true`. The gate for cut-log creation.
   - `stockCount >= 0` on create/update.
-  - (Deferred) `computeCoverageAvailable({ stockAvailable, coveragePerUnit })` = `stockAvailable * coveragePerUnit`. Scaffold signature only; UI wire-up deferred.
+- `unit-conversion.ts` — category-aware conversion + fulfillment math (in scope this sweep; see the "Category-driven unit conversion" section above).
+  - `CategoryUnitRule` type + `CATEGORY_UNIT_RULES` lookup (seeded vinyl-plank = `{ canSplit: false, rounding: "up" }`). Default rule for unknown categories: `{ canSplit: true, rounding: "exact" }`.
+  - `convertStockToSend({ amountInStockUnit, coveragePerUnit })` — `amountInStockUnit × coveragePerUnit`. Pure multiplication, no rounding; used by work-order fulfillment checks where partial-box cut totals are valid inputs.
+  - `computeCoverageAvailable({ stockAvailable, coveragePerUnit })` — same math as `convertStockToSend`, semantically scoped to "available physical stock converted to coverage unit". Kept distinct for call-site clarity.
+  - `computeStockRequiredForQuantity({ quantityInSendUnit, coveragePerUnit, categorySlug })` — inverse. `quantity / coveragePerUnit` with category-aware rounding; returns whole boxes for vinyl-plank (`ceil`), decimals for fractional categories.
+  - `isItemFulfilled({ quantityInSendUnit, cutLogsCutTotal, coveragePerUnit })` — `cutLogsCutTotal × coveragePerUnit >= quantityInSendUnit`. Overage allowed (never rejected). Work-orders' `computeItemFulfillmentStatus` wraps this.
 - `formatters.ts` — consolidate `formatInventoryImportNumber`, `formatInventoryQuantity`, `formatInventoryStatus` (isImported → "Received" / "Pending"), `formatTransportType` (moved from imports' contracts to inventory formatters for shared use). **New** `formatFullLocationCode({ warehouseNumber, sectionNumber, rafter, level })` → `"W{wn}-S{sn}-R{r}-L{l}"`. Current `modules/inventory/domain/formatters.ts` contents migrate here.
 - `diff-types.ts` — `InventoryRowDraft`, `InventoryRowUpdate`, `InventoryRowDelete`, `InventoryRowsDiff`, `DiffValidationIssue` variants (`DUPLICATE_ITEM_NUMBER_PER_LOCATION`, `LOCATION_WAREHOUSE_MISMATCH`, `IMPORT_WAREHOUSE_MISMATCH`, `UNKNOWN_PRODUCT`, `UNKNOWN_LOCATION`), `validateInventoryRowsDiff(diff, existing, warehouseId)`, `describeInventoryRowsDiffIssue(issue)`.
-- `errors.ts` — `InventoryExecutionError` + code union (`INVENTORY_NOT_FOUND`, `INVENTORY_IN_USE`, `INVENTORY_VALIDATION_FAILED`, `INVENTORY_LOCATION_WAREHOUSE_MISMATCH`, `INVENTORY_WAREHOUSE_NOT_FOUND`, `INVENTORY_LOCATION_NOT_FOUND`, `CUT_LOG_INVENTORY_NOT_IMPORTED`).
+- `errors.ts` — `InventoryExecutionError` + code union (`INVENTORY_NOT_FOUND`, `INVENTORY_IN_USE`, `INVENTORY_VALIDATION_FAILED`, `INVENTORY_LOCATION_WAREHOUSE_MISMATCH`, `INVENTORY_WAREHOUSE_NOT_FOUND`, `INVENTORY_LOCATION_NOT_FOUND`, `CUT_LOG_INVENTORY_NOT_IMPORTED`, `CUT_LOG_EXCEEDS_STARTING_BALANCE`).
 - `index.ts` — barrel.
 
 ### B.3 — `cut-logs/`
@@ -157,16 +243,22 @@ Apply via `npm run db:deploy --workspace @builders/db`. Rebuild `@builders/db`.
 - `index.ts` — barrel.
 
 ### B.4 — `work-orders/`
-- `types.ts` — `WorkOrderRow`, `WorkOrderForm` (primary), `WorkOrderMaterialItemRow`/`Form`, `WorkOrderServiceItemRow`/`Form`, `WorkOrderSalesRepRow`/`Form`, empty forms, to-form helpers.
-- `work-order-rules.ts` — `isWorkOrderDeleteBlocked(counts)` (block if status is complete or cut logs exist), delete-block message, `computeMaterialItemAllocationStatus({ quantity, cutLogs })` (NOT_STARTED / PARTIALLY_ALLOCATED / FULLY_ALLOCATED / SHORTAGE based on sum of `cut` on child logs vs requested `quantity`).
-- `items-diff.ts` — material items diff including nested cut-log diff per item. `ItemsDiff = { added, modified, deleted }` where each added/modified item carries its own `cutLogs: CutLogsDiff`.
+- `types.ts` — `WorkOrderRow`, `WorkOrderForm` (primary), `WorkOrderMaterialItemRow`/`Form`, `WorkOrderServiceItemRow`/`Form`, `WorkOrderSalesRepRow`/`Form`, empty forms, to-form helpers. **No** `allocationStatus` or `changeOrderStatus` fields on material-item row (both columns dropped). `WorkOrderMaterialItemRow` carries a computed `fulfillmentStatus: "SHORTAGE" | "SUFFICIENT"` populated by the db read-repo normalizer. `WorkOrderRow` carries a computed `fulfillmentStatus: "SHORTAGE" | "SUFFICIENT"` populated the same way.
+- `fulfillment-status.ts` — the `FlooringChangeOrderStatus` enum is retired vocabulary-wise but the two-value TS union is what we use:
+  - `FULFILLMENT_STATUS_VALUES = ["SHORTAGE", "SUFFICIENT"] as const` + `FulfillmentStatus` union.
+  - `computeItemFulfillmentStatus({ quantityInSendUnit, cutLogsCutTotalInStockUnit, product, category })` → `"SHORTAGE" | "SUFFICIENT"`. Uses the inventory domain's category-aware unit conversion (`convertStockToSend(cutLogsCutTotalInStockUnit, product, category)`) to produce a send-unit total, then returns `SUFFICIENT` iff `sendUnitTotal >= quantityInSendUnit`. Overage is permitted (> is still SUFFICIENT).
+  - `computeWorkOrderFulfillmentStatus(items: { fulfillmentStatus }[])` → `"SHORTAGE" | "SUFFICIENT"`. All-or-nothing: every item SUFFICIENT → SUFFICIENT; any SHORTAGE (or zero items) → SHORTAGE.
+  - `formatFulfillmentStatus(value)` → `"Short"` / `"Assigned"` for UI labels.
+  - Fulfillment status is **computed only, never stored**. Read-repo normalizers on `WorkOrderMaterialItemRow` and `WorkOrderRow` run the computation at query time, pulling cut-log `cut` totals through the shared select payload.
+- `work-order-rules.ts` — `isWorkOrderDeleteBlocked(counts)` (block if cut logs exist on any item; status no longer participates because fulfillment is computed), delete-block message. "Change order" vocabulary is retired here — no `changeOrderStatus` references remain.
+- `items-diff.ts` — material items diff including nested cut-log diff per item. `ItemsDiff = { added, modified, deleted }` where each added/modified item carries its own `cutLogs: CutLogsDiff`. Diff item shape carries no fulfillment / allocation field (computed-only at read time).
 - `service-items-diff.ts` — simple row diff (no children).
 - `sales-reps-diff.ts` — simple row diff.
 - `errors.ts` — `WorkOrderExecutionError` + code union.
 - `index.ts` — barrel.
 - **Delete** existing `work-orders/allocations/*` subfolder wholesale (dead code after schema drop).
-- **Review** `work-orders/reservation-semantics.ts` — depended on allocations. Under the new model there's no stored `reservedStockCount`; "reserved-equivalent" for a given inventory row = `awaitingCut` (sum of its PENDING cut logs across all consumers). Rewrite any work-order-side reservation helpers to consume the inventory domain's `computeAwaitingCut`, or delete if fully supplanted by `computeMaterialItemAllocationStatus`.
-- **Review** `shared/inventory-allocation-totals.ts` — dead; inventory has no allocations field. Delete.
+- **Delete** `work-orders/reservation-semantics.ts`. Its original job (tracking reserved stock per work order) collapses into two concepts that now live in the inventory domain: `stockAvailable` (from the inventory row's cut totals, computed) and `awaitingCut` (sum of PENDING cut logs, computed). Nothing in the work-order domain needs a reservation helper anymore — the work-order-view cut-log grid reads these fields directly off each inventory row.
+- **Delete** `shared/inventory-allocation-totals.ts` — dead; inventory has no allocations field.
 
 ### Root index wiring
 Add `inventory/`, `cut-logs/`, `work-orders/` (updated) to `packages/domain/src/index.ts` exports. `imports/` already added during imports-plan draft.
@@ -230,12 +322,11 @@ Each use case: validate inputs via domain, resolve FKs via db read helpers, appl
 - `delete-work-order.ts` — `isWorkOrderDeleteBlocked`; cascade decision per schema `onDelete`.
 - `save-material-items.ts` — `saveWorkOrderMaterialItemsUseCase(workOrderId, diff)`:
   1. Lock parent work-order row.
-  2. Validate items diff + each item's nested cut-logs diff.
-  3. For added items: assign uuid, resolve product, default allocation status `NOT_STARTED`.
-  4. For added cut logs under each item: assign uuid, link `inventoryId`, set default `status: "PENDING_CUT"`.
-  5. Compute `allocationStatus` per item from cut totals (domain rule).
-  6. `applyWorkOrderMaterialItemsDiff`.
-  7. Return `{ workOrder, tempIdMap }` where tempIdMap covers both items and cut logs.
+  2. Validate items diff + each item's nested cut-logs diff. Cut-log diff validation includes `canAddCutLog(inventory)` — throws `CUT_LOG_INVENTORY_NOT_IMPORTED` if any added cut log targets an unimported inventory row.
+  3. For added items: assign uuid, resolve product. No allocation/fulfillment field written — computed at read time.
+  4. For added cut logs under each item: assign uuid, **link all three scoping fields from the work-order context**: `workOrderId` (parent work order), `workOrderItemId` (the specific material item), `inventoryId` (which inventory row the cut draws from). Default `status: "PENDING"`.
+  5. `applyWorkOrderMaterialItemsDiff`.
+  6. Return `{ workOrder: WorkOrderDetailRecord, tempIdMap }` where tempIdMap covers both items and cut logs. The response re-read runs normalizers, so each material item carries its computed `fulfillmentStatus` ("SHORTAGE" | "SUFFICIENT") and the work-order record carries its aggregate `fulfillmentStatus`.
 - `save-service-items.ts` — atomic diff for service items.
 - `save-sales-reps.ts` — atomic diff for sales reps.
 - **Delete** `packages/application/src/flooring/work-orders/allocations/*` subfolder entirely.
@@ -383,14 +474,16 @@ apps/web/modules/{module}/
 
 1. **Typecheck**: `npm run typecheck --workspace @builders/web 2>&1 | grep -c "error TS"`. Current baseline: 66. Expect a **massive drop** — the bulk of today's errors live in inventory / cut-logs / work-orders / imports `data/api.ts` files that are deleted. Residual errors should be only in modules not touched this sweep (management companies, properties, templates, admin).
 2. **Regression greps** (source only, exclude `.next`, `dist`, `migrations_archive_*`):
-   - `FlooringWorkOrderItemAllocation|FlooringAllocationMethod|FlooringWorkOrderAllocationRun` → zero.
+   - `FlooringWorkOrderItemAllocation|FlooringAllocationMethod|FlooringWorkOrderAllocationRun|FlooringWorkOrderItemAllocationStatus` → zero.
    - `@/modules/(imports|inventory|cut-logs|work-orders)/(domain|application|record)` → zero.
    - `allocationRuns|allocation-repository` → zero.
+   - `allocationStatus|changeOrderStatus|computeMaterialItemAllocationStatus` → zero (retired vocabulary; replaced by computed `fulfillmentStatus`).
+   - `reservedStockCount|reservation-semantics` → zero (column dropped, file deleted).
 3. **Packages build**: `db`, `domain`, `application` all clean.
 4. **Dev smoke — full flows**:
    - **Imports**: list → new (create with metadata only; redirect to detail using id from response, no refetch) → detail → primary save (record view stays open; reconciles inline) → add inventory rows (atomic diff with tempIds → real ids in response) → edit an inventory row's cost (modified diff) → delete a row (deleted diff) → status-FINAL delete block → delete non-final import.
-   - **Inventory**: list → new (standalone create — select warehouse first → location dropdown filters to that warehouse's R/L locations) → detail → primary save → `isImported` flip to `true` → add cut logs (atomic diff; blocked with `CUT_LOG_INVENTORY_NOT_IMPORTED` until `isImported=true`) → edit a cut log (modified diff with before-cut=after invariant) → mark cut log as `FINAL` (status field stores; `awaitingCut` drops) → delete cut log (deleted diff) → verify `stockAvailable` and `awaitingCut` display values match the computed rule → verify `W{n}-S{n}-R{n}-L{n}` code renders in the location column → delete inventory (blocked if cut logs exist).
-   - **Work Orders**: list → new → detail → primary save (property, template sync, warehouse, status) → add material items with cut-log children in one save (atomic diff nested) → edit an item's quantity (allocationStatus recomputed from cut totals) → delete item → delete work order.
+   - **Inventory**: list → new (standalone create — select warehouse first → location dropdown filters to that warehouse's R/L locations) → detail → primary save → `isImported` flip to `true` → add cut logs via the record-view cut-logs section (cascading dropdown: work-order picker → material-item picker filtered to items whose work order matches AND whose `productId` matches this inventory row; `inventoryId` auto-linked; `workOrderId` + `workOrderItemId` auto-linked from the picker) → atomic diff; blocked with `CUT_LOG_INVENTORY_NOT_IMPORTED` until `isImported=true` → edit a cut log (modified diff with before−cut=after invariant; `cut ≤ starting stockAvailable`) → mark cut log as `FINAL` (status field stores; `awaitingCut` drops; `stockAvailable` unchanged) → delete cut log (deleted diff) → verify `stockAvailable`, `awaitingCut`, and `coverageAvailable` display values match the computed rules (category-aware unit conversion; vinyl-plank boxes → whole-number sqft rounded up) → verify `W{n}-S{n}-R{n}-L{n}` code renders in the location column → delete inventory (blocked if cut logs exist).
+   - **Work Orders**: list → new → detail → primary save (property, template sync, warehouse) → add material items with cut-log children in one save (atomic diff nested; cut logs auto-link `workOrderId` + `workOrderItemId` + `inventoryId`) → edit an item's quantity (verify `fulfillmentStatus` recomputes SHORTAGE→SUFFICIENT once cut totals cover it; allow overage) → verify work-order-level `fulfillmentStatus` aggregates all-or-nothing → attempt to add a cut log against an unimported inventory row (blocks with `CUT_LOG_INVENTORY_NOT_IMPORTED`) → delete item → delete work order (blocked if cut logs exist).
 5. **Template sync** (work-orders only): `/api/work-orders/[id]/sync-template` re-runs; the new implementation writes items + cut logs via the section-save primitives, not the removed allocation primitive.
 6. **Idempotency replay** verified on each module's POST by retrying the same `idempotencyKey`.
 
@@ -403,8 +496,7 @@ apps/web/modules/{module}/
 - **Management Companies** — its own sweep.
 - **Admin users** — admin UI has some current TS errors; not in this sweep.
 - **Auto-allocation worker job** — entire auto-match flow is deferred. Will come back as a BullMQ worker job once the core system is stable. BullMQ / worker / relay / outbox infrastructure **stays** — only the allocation-specific producer + consumer code is removed. Same slot is reserved for the future "generate work-order files" worker and the re-added auto-allocation.
-- **Coverage-available computed field** — `coverageAvailable = stockAvailable × product.coveragePerUnit`. Low priority. Domain signature scaffolded in Phase B.2 (`computeCoverageAvailable`), UI wire-up deferred until the rest of the system is secure.
-- **Cut-log status behavior rules** — field is added and stored (`"PENDING"` / `"FINAL"`), but behavior like "FINAL cuts lock before/cut/after" or "FINAL cuts count differently toward fulfillment" is deferred. This sweep wires only the `awaitingCut` computation based on status.
+- **Cut-log status behavior rules beyond `awaitingCut`** — the `status` field is added, stored (`"PENDING"` / `"FINAL"`), wired into `awaitingCut`, and user-editable from the cut-log row. Additional behavior keyed on status — locking `before`/`cut`/`after` on FINAL, or having FINAL count differently toward fulfillment — is deferred. `computeItemFulfillmentStatus` currently sums `cut` across ALL cut logs regardless of status.
 - **`isImported` flip trigger** — field added and storable; the gate (no cuts on unimported rows) is wired in Phase B.2. But *what action* flips `isImported=true` (manual per-row checkbox vs. receiving workflow vs. FINAL-status auto-flip) is deferred. Default UI affordance for now: per-row toggle in the inventory record view.
 - **Tool slugs** — `imports`, `inventory`, `cut-logs`, `work-orders` currently all share `toolSlug: "warehouse"`. Dedicated slugs require capability plumbing; deferred.
 
@@ -415,12 +507,14 @@ apps/web/modules/{module}/
 1. **Schema drop is destructive** — `FlooringWorkOrderItemAllocation` and `FlooringWorkOrderAllocationRun` go away along with their data. Confirmed disposable. Migration won't roll back cleanly.
 2. **Expected typecheck spike after Phase A** — expected. The current TS blast is largely `locationId` / stale-location-shape references from inventory rows that never got swept during the warehouse pass. Phase A compounds that with allocation-removal errors. That growing error list IS the to-do list for Phases C/D/F; each row you clear is a consumer migrated. Don't try to typecheck clean at mid-Phase-A.
 3. **Auto-allocation behavior is dropped (temporarily)** — user direction: cherry-on-top later, re-added as a BullMQ worker job after the core system is stable. Per user: **keep the BullMQ worker app, web service, and relay app fully intact** — they're the host for the future auto-allocation job AND for the future "work-order file generation" worker. Only delete allocation-specific producer/consumer code, not the queue infrastructure itself. Practical targets for deletion: `packages/domain/src/queue/auto-allocate-work-order.ts` (the message-type definition for the allocation job), any queue handler in `apps/worker` that dispatches to it, the allocation-adjacent routes in `app/api/work-orders/[id]/auto-allocation/*`. KEEP: `packages/db/src/queues/outbox-repository.ts`, `QueueOutboxEventStatus` enum, `packages/domain/src/queue/send-work-order.ts`, `sync-inventory.ts`, `workflow-processing.ts` (other queue message types), and the worker + relay apps themselves.
-4. **Reservation semantics replaced, not removed** — user direction:
+4. **Reservation semantics reshaped around computed inventory fields** — user direction:
    - `reservedStockCount` column is **dropped** from `FlooringInventory` (dead after allocation removal).
-   - New `stockAvailable = stockCount − sum(cutLogs.cut)` — single source of truth for "what's physically available". Computed.
+   - New `stockAvailable = stockCount − sum(cutLogs.cut)` — single source of truth for "what's physically available". Computed. Invariant: `stockAvailable ≥ 0` (domain rejects cuts that would drive it negative with `CUT_LOG_EXCEEDS_STARTING_BALANCE`).
    - New `awaitingCut = sum(cutLogs.cut where status === "PENDING")` — the replacement concept for "reserved but not yet finalized". Computed. Flipping a cut log from `PENDING` → `FINAL` deducts from `awaitingCut` but leaves `stockAvailable` unchanged.
-   - Both are computed at the domain layer, not stored. Read queries include cut logs for the inventory rows they load; normalizers run the computation.
-5. **`FlooringWorkOrderItem.allocationStatus` column** — stays. Now populated by the domain `computeMaterialItemAllocationStatus` during work-order item saves, derived from child cut-log `cut` totals vs. requested `quantity`. Enum values unchanged.
+   - New `coverageAvailable = convertStockToSend(stockAvailable, product, category)` — the category-aware conversion of physical stock into sendable units (e.g., boxes → whole sqft, rounded up per the vinyl-plank rule). Computed.
+   - All three are computed at the domain layer, not stored. Read queries include cut logs + product + category for the inventory rows they load; normalizers run the computations.
+   - Work-order-side `reservation-semantics.ts` is **deleted** (not rewritten) — the work-order cut-log grid reads `stockAvailable` / `awaitingCut` / `coverageAvailable` directly off each inventory row it references. No work-order-side reservation helper survives.
+5. **Fulfillment status is computed, never stored** — `FlooringWorkOrderItem.allocationStatus` and `FlooringWorkOrderItem.changeOrderStatus` columns both drop in Phase A (option (b) per user). The replacement `fulfillmentStatus: "SHORTAGE" | "SUFFICIENT"` is a derived value applied by db read-repo normalizers at query time. Item-level rule: `SUFFICIENT` iff the category-converted send-unit total of child cut-log `cut` values is `≥` requested `quantity` (overage allowed). Work-order-level rule: all-or-nothing aggregate — every item SUFFICIENT → SUFFICIENT; any SHORTAGE (or zero items) → SHORTAGE. UI labels: "Short" / "Assigned" via `formatFulfillmentStatus`. Consequence: saves never write fulfillment; reads always recompute it — no drift, no batch backfill, no reconcile job.
 6. **Queue infrastructure stays intact** — duplicating risk #3 for emphasis. Do NOT delete `apps/worker` or `apps/relay`. Do NOT delete `packages/db/src/queues/`, `QueueOutboxEventStatus`, or the outbox repository. Only allocation-specific message types and handlers go.
 7. **Inventory row's `warehouseId` vs `location.warehouseId`** — two sources; domain rule enforces they match when both set. User direction: **warehouse is chosen first, then locations dropdown filters to that warehouse's `R/L` options.** No `sectionId` on inventory — sections are only referenced transitively through the chosen location. If the user later changes warehouse, `locationId` clears (the UI nudges a new selection). Display code: `W{n}-S{n}-R{n}-L{n}` via domain `formatFullLocationCode`.
 8. **Cut-log status values** — per user: `"PENDING"` and `"FINAL"` (not `"PENDING_CUT"`/`"CONFIRMED_CUT"`). Plan updated throughout.
