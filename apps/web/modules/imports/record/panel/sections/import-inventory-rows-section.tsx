@@ -14,8 +14,8 @@ import {
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
 } from "@/modules/shared/engines/record-view"
-import { calculateImportSummary } from "../../../domain/summary"
-import type { ImportInventoryRowDraft, LocationOption, ProductOption, WarehouseOption } from "../../../domain/types"
+import { calculateImportSummary } from "@builders/domain"
+import type { ImportInventoryRowDraft, LocationOption, ProductOption, WarehouseOption } from "../../drafts"
 
 const IMPORT_INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "product", minWidth: 240, grow: 1.3, label: "Product" },

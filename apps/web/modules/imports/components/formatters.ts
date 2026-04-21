@@ -8,14 +8,6 @@ export const IMPORT_STATUS_OPTIONS = [
   { value: "FINAL", label: "Final" },
 ] as const
 
-export function formatImportStatus(value: string) {
-  return value === "FINAL" ? "Final" : "Pending"
-}
-
-export function formatTransportType(value: string) {
-  return value === "RETURN" ? "Return" : "Purchase Order"
-}
-
 export function getImportStatusFieldClass(value: string) {
   return value === "FINAL"
     ? "border-emerald-300 bg-emerald-200 text-emerald-900"

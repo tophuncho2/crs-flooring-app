@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { calculateImportItemTotal, calculateImportSummary } from "@/modules/imports/summary"
+import { calculateImportItemTotal, calculateImportSummary } from "@builders/domain"
 
 describe("imports summary", () => {
   it("treats line total as cost plus freight without multiplying by stock count", () => {

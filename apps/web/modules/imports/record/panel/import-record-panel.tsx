@@ -11,7 +11,8 @@ import { ImportInventoryRowsSection } from "./sections/import-inventory-rows-sec
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
 import { useImportInventoryRowsSection } from "./controllers/use-import-inventory-rows-section"
 import { useImportPrimarySection } from "./controllers/use-import-primary-section"
-import type { ImportRow, LocationOption, ProductOption, WarehouseOption } from "../../domain/types"
+import type { ImportDetail as ImportRow } from "@builders/domain"
+import type { LocationOption, ProductOption, WarehouseOption } from "../drafts"
 
 export function ImportRecordPanel({
   page,

@@ -7,13 +7,15 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import {
+  toImportPrimaryForm,
+  type ImportDetail as ImportRow,
+  type ImportPrimaryForm,
+} from "@builders/domain"
+import {
   buildImportMutationPayload,
   toImportInventoryDrafts,
-  toImportPrimaryForm,
   validateImportPrimaryForm,
-  type ImportPrimaryForm,
-  type ImportRow,
-} from "../../../domain/types"
+} from "../../drafts"
 
 export function useImportPrimarySection({
   page,

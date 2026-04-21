@@ -5,7 +5,7 @@ import ImportsClient from "@/modules/imports/components/imports-client"
 import { getImportsPageData, listImportsPageFilterOptions } from "@/modules/imports/data/queries"
 import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableFilterState } from "@/modules/shared/engines/list-view/controllers/table-filter-state"
-import type { ImportPageFilterState } from "@/modules/imports/domain/filters"
+import type { ImportPageFilterState } from "@builders/domain"
 import { createImportsPageFilterDefinitions } from "@/modules/imports/table-filters"
 
 export default async function FlooringImportsPage({

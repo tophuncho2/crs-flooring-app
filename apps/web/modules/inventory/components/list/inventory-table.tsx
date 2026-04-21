@@ -17,10 +17,12 @@ import { formatInventoryImportNumber, formatInventoryQuantity } from "@/modules/
 import type { InventoryRow } from "@/modules/inventory/domain/types"
 import {
   formatImportStatus,
-  formatTransportType,
+  formatImportTransportType as formatTransportType,
+} from "@builders/domain"
+import {
   getImportStatusFieldClass,
   getTransportTypeFieldClass,
-} from "@/modules/imports/contracts"
+} from "@/modules/imports/components/formatters"
 
 export function InventoryTable({
   rows,

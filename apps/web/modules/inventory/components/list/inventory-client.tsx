@@ -24,8 +24,8 @@ import { InventoryTable } from "./inventory-table"
 import { createInventoryPageFilterDefinitions } from "@/modules/inventory/table-filters"
 import {
   formatImportStatus,
-  formatTransportType,
-} from "@/modules/imports/contracts"
+  formatImportTransportType as formatTransportType,
+} from "@builders/domain"
 
 export default function InventoryClient({
   initialInventory,

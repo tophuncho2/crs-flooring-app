@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ImportRow } from "../domain/types"
+import type { ImportRow } from "@builders/domain"
 
-export type { ImportRow } from "../domain/types"
+export type { ImportRow } from "@builders/domain"
 
 export function useImportsListController({
   initialImports,

@@ -14,8 +14,9 @@ import {
   IMPORT_TRANSPORT_TYPE_OPTIONS,
   getImportStatusFieldClass,
   getTransportTypeFieldClass,
-} from "../../../contracts"
-import type { ImportPrimaryForm, ImportRow, WarehouseOption } from "../../../domain/types"
+} from "../../../components/formatters"
+import type { ImportDetail as ImportRow, ImportPrimaryForm } from "@builders/domain"
+import type { WarehouseOption } from "../../drafts"
 
 export function ImportPrimaryFieldsSection({
   entry,

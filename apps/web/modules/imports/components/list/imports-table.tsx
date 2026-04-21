@@ -16,10 +16,12 @@ import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table
 import type { ImportRow } from "@/modules/imports/controllers/use-imports-list-controller"
 import {
   formatImportStatus,
-  formatTransportType,
+  formatImportTransportType as formatTransportType,
+} from "@builders/domain"
+import {
   getImportStatusFieldClass,
   getTransportTypeFieldClass,
-} from "@/modules/imports/contracts"
+} from "@/modules/imports/components/formatters"
 
 export function ImportsTable({
   rows,

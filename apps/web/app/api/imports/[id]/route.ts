@@ -1,5 +1,9 @@
-import { getImportEntryById } from "@/modules/imports/api"
-import { deleteImportEntryUseCase, updateImportEntryUseCase } from "@/modules/imports/application/import-entry"
+import { getImportDetailById } from "@builders/db"
+import {
+  deleteImportUseCase,
+  updateImportUseCase,
+  type UpdateImportInput,
+} from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { applyRoutePolicy, assertExpectedUpdatedAt, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
@@ -18,7 +22,7 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     const { id } = await context.params
-    return routeJson(access, { import: await getImportEntryById(id) })
+    return routeJson(access, { import: await getImportDetailById(id) })
   } catch (error) {
     return routeError(access, error)
   }
@@ -39,10 +43,18 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody, { requireExpectedUpdatedAt: true })
 
-    const existing = await getImportEntryById(id)
-    assertExpectedUpdatedAt(body, existing)
+    const existing = await getImportDetailById(id)
+    if (!existing) {
+      return routeError(access, new Error("Import not found"))
+    }
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: existing.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { import: existing },
+      message: "Import changed before save completed. Refresh and try again.",
+    })
 
     const receipt = await enforceMutationReceipt({ scope: "imports.update", request, access, mutation, body })
     if (receipt.replay) return receipt.replay
@@ -56,7 +68,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => updateImportEntryUseCase(id, input),
+      () => updateImportUseCase(id, input as UpdateImportInput),
     )
 
     const responseBody = { import: result }
@@ -82,10 +94,18 @@ export async function DELETE(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const { mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+    const { mutation } = parseMutationEnvelope(body, (inputBody) => inputBody, { requireExpectedUpdatedAt: true })
 
-    const existing = await getImportEntryById(id)
-    assertExpectedUpdatedAt(body, existing)
+    const existing = await getImportDetailById(id)
+    if (!existing) {
+      return routeError(access, new Error("Import not found"))
+    }
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: existing.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { import: existing },
+      message: "Import changed before save completed. Refresh and try again.",
+    })
 
     const receipt = await enforceMutationReceipt({ scope: "imports.delete", request, access, mutation, body })
     if (receipt.replay) return receipt.replay
@@ -99,7 +119,7 @@ export async function DELETE(request: Request, context: RouteContext) {
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => deleteImportEntryUseCase(id),
+      () => deleteImportUseCase(id),
     )
 
     const responseBody = { ok: true }

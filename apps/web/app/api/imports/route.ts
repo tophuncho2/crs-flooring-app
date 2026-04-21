@@ -1,5 +1,5 @@
-import { listImportEntries } from "@/modules/imports/api"
-import { createImportEntryUseCase } from "@/modules/imports/application/import-entry"
+import { listImports } from "@builders/db"
+import { createImportUseCase, type CreateImportInput } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, { imports: await listImportEntries() })
+    return routeJson(access, { imports: await listImports() })
   } catch (error) {
     return routeError(access, error)
   }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         route: "/api/imports",
         entityType: "flooringImportEntry",
       },
-      () => createImportEntryUseCase(input),
+      () => createImportUseCase(input as CreateImportInput),
     )
 
     const responseBody = { import: result }

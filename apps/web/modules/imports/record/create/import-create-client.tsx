@@ -11,10 +11,10 @@ import {
 } from "@/modules/shared/engines/record-view"
 import {
   EMPTY_IMPORT_PRIMARY_FORM,
+  type ImportDetail as ImportRow,
   type ImportPrimaryForm,
-  type ImportRow,
-  type WarehouseOption,
-} from "../../domain/types"
+} from "@builders/domain"
+import type { WarehouseOption } from "../drafts"
 import { ImportPrimaryFieldsSection } from "../panel/sections/import-primary-fields-section"
 
 const EMPTY_IMPORT_ROW: ImportRow = {

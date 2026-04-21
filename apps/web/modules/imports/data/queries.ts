@@ -1,11 +1,22 @@
-import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
+import {
+  Prisma,
+  createPrismaPageLoadIssue,
+  importRowSelect,
+  isPrismaNotFoundError,
+  listImportOptions,
+  normalizeImportRow,
+  prisma,
+  getImportDetailById,
+  withPrismaConnectivityHandling,
+  type ImportDetailRecord,
+  type ImportFormOptions,
+  type ImportRecord,
+  type PrismaDetailPageResult,
+} from "@builders/db"
+import { buildFlooringProductDisplayName } from "@builders/domain"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { getImportEntryById, listImportLocationOptions, normalizeImportEntry } from "@/modules/imports/api"
-import { buildFlooringProductDisplayName } from "@builders/domain"
-import {
-  type ImportPageFilterState,
-} from "@/modules/imports/domain/filters"
+import type { ImportPageFilterState } from "@builders/domain"
 
 function coerceFilterArray(value: string[] | string | undefined) {
   if (Array.isArray(value)) {
@@ -19,7 +30,7 @@ function coerceFilterArray(value: string[] | string | undefined) {
   return []
 }
 
-function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
+function buildImportsSearchWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
   if (!searchQuery) return undefined
 
   const numericImportNumber = Number(searchQuery)
@@ -40,49 +51,27 @@ function buildImportsWhere(searchQuery: string): Prisma.FlooringImportEntryWhere
 }
 
 function buildImportsStatusWhere(statuses: ImportPageFilterState["status"]): Prisma.FlooringImportEntryWhereInput | undefined {
-  const normalizedStatuses = coerceFilterArray(statuses)
-  if (normalizedStatuses.length === 0) {
-    return undefined
-  }
-
-  return {
-    status: {
-      in: normalizedStatuses,
-    },
-  }
+  const normalized = coerceFilterArray(statuses)
+  if (normalized.length === 0) return undefined
+  return { status: { in: normalized } }
 }
 
 function buildImportsWarehouseWhere(warehouseIds: string[] | string): Prisma.FlooringImportEntryWhereInput | undefined {
-  const normalizedWarehouseIds = coerceFilterArray(warehouseIds)
-  if (normalizedWarehouseIds.length === 0) {
-    return undefined
-  }
-
-  return {
-    warehouseId: {
-      in: normalizedWarehouseIds,
-    },
-  }
+  const normalized = coerceFilterArray(warehouseIds)
+  if (normalized.length === 0) return undefined
+  return { warehouseId: { in: normalized } }
 }
 
 function buildImportsCombinedWhere(searchQuery: string, filters: ImportPageFilterState): Prisma.FlooringImportEntryWhereInput | undefined {
-  const whereClauses = [
-    buildImportsWhere(searchQuery),
+  const clauses = [
+    buildImportsSearchWhere(searchQuery),
     buildImportsStatusWhere(filters.status),
     buildImportsWarehouseWhere(filters.warehouseId),
   ].filter(Boolean) as Prisma.FlooringImportEntryWhereInput[]
 
-  if (whereClauses.length === 0) {
-    return undefined
-  }
-
-  if (whereClauses.length === 1) {
-    return whereClauses[0]
-  }
-
-  return {
-    AND: whereClauses,
-  }
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
 }
 
 function buildImportsOrderBy(tableState: ServerTableQueryState): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
@@ -120,10 +109,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
   const totalItems = await prisma.flooringImportEntry.count({ where })
   const pagination = createServerPagination({ page, totalItems })
   const entries = await prisma.flooringImportEntry.findMany({
-    include: {
-      warehouse: { select: { id: true, name: true } },
-      _count: { select: { inventories: true } },
-    },
+    select: importRowSelect,
     where,
     orderBy: buildImportsOrderBy(tableState),
     skip: pagination.skip,
@@ -139,10 +125,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
     },
     tableState,
     filterState: filters,
-    initialImports: entries.map((entry) => ({
-      ...normalizeImportEntry(entry),
-      itemsCount: entry._count.inventories,
-    })),
+    initialImports: entries.map(normalizeImportRow),
   }
 }
 
@@ -162,63 +145,45 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
   )
 }
 
-export async function getImportFormOptions() {
-  return withLoaderTiming(
-    {
-      loader: "flooring.imports.options",
-    },
-    async () => {
-      const [products, warehouses, locations] = await Promise.all([
-        prisma.flooringProduct.findMany({
-          include: {
-            category: { select: { stockUnit: { select: { name: true } } } },
-          },
-          orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
-        }),
-        prisma.flooringWarehouse.findMany({
-          orderBy: { name: "asc" },
-          select: { id: true, name: true },
-        }),
-        listImportLocationOptions(),
-      ])
-
-      return {
-        productOptions: products.map((product) => ({
-          id: product.id,
-          label: buildFlooringProductDisplayName(product),
-          stockUnit: product.category.stockUnit?.name ?? "",
-        })),
-        warehouseOptions: warehouses,
-        locationOptions: locations.map((location) => ({
-          id: location.id,
-          warehouseId: location.warehouseId,
-          locationCode: location.locationCode,
-          label: location.locationCode,
-        })),
-      }
-    },
-  )
-}
-
-export async function getImportById(id: string) {
-  return getImportEntryById(id, prisma)
-}
-
-async function loadImportDetailOptions() {
-  return getImportFormOptions()
+export async function getImportFormOptions(): Promise<{
+  productOptions: Array<{ id: string; label: string; stockUnit: string }>
+  warehouseOptions: Array<{ id: string; name: string }>
+  locationOptions: Array<{ id: string; warehouseId: string; locationCode: string; label: string }>
+}> {
+  return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
+    const options: ImportFormOptions = await listImportOptions()
+    return {
+      productOptions: options.products.map((product) => ({
+        id: product.id,
+        label: buildFlooringProductDisplayName(product),
+        stockUnit: product.stockUnit,
+      })),
+      warehouseOptions: options.warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
+      locationOptions: options.locations.map((location) => ({
+        id: location.id,
+        warehouseId: location.warehouseId,
+        locationCode: location.locationCode,
+        label: location.locationCode,
+      })),
+    }
+  })
 }
 
 export async function getImportDetailPageData(id: string): Promise<PrismaDetailPageResult<{
-  entry: Awaited<ReturnType<typeof getImportById>>
-  productOptions: Awaited<ReturnType<typeof loadImportDetailOptions>>["productOptions"]
-  warehouseOptions: Awaited<ReturnType<typeof loadImportDetailOptions>>["warehouseOptions"]
-  locationOptions: Awaited<ReturnType<typeof loadImportDetailOptions>>["locationOptions"]
+  entry: ImportDetailRecord
+  productOptions: Awaited<ReturnType<typeof getImportFormOptions>>["productOptions"]
+  warehouseOptions: Awaited<ReturnType<typeof getImportFormOptions>>["warehouseOptions"]
+  locationOptions: Awaited<ReturnType<typeof getImportFormOptions>>["locationOptions"]
 }>> {
   try {
     const [entry, options] = await Promise.all([
-      getImportById(id),
-      loadImportDetailOptions(),
+      getImportDetailById(id),
+      getImportFormOptions(),
     ])
+
+    if (!entry) {
+      return { ok: false, notFound: true }
+    }
 
     return {
       ok: true,
@@ -249,3 +214,5 @@ export async function getImportDetailPageData(id: string): Promise<PrismaDetailP
 export async function getImportCreatePageData() {
   return getImportFormOptions()
 }
+
+export type { ImportRecord, ImportDetailRecord }

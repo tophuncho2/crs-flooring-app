@@ -6,17 +6,16 @@ import {
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
+import { toImportPrimaryForm, type ImportDetail as ImportRow } from "@builders/domain"
 import {
   applyDefaultLocationToImportRow,
   buildImportMutationPayload,
   createImportInventoryRowDraft,
   toImportInventoryDrafts,
-  toImportPrimaryForm,
   validateImportInventoryDrafts,
   type ImportInventoryRowDraft,
-  type ImportRow,
   type LocationOption,
-} from "../../../domain/types"
+} from "../../drafts"
 
 function createDraftRow(locationOptions: LocationOption[], warehouseId: string) {
   return applyDefaultLocationToImportRow(

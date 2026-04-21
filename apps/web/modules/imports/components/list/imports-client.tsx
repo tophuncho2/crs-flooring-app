@@ -13,15 +13,16 @@ import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controll
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
   formatImportStatus,
-  formatTransportType,
-} from "@/modules/imports/contracts"
-import type { ImportPageFilterState } from "@/modules/imports/domain/filters"
+  formatImportTransportType as formatTransportType,
+  type ImportPageFilterState,
+} from "@builders/domain"
 import { createImportsPageFilterDefinitions } from "@/modules/imports/table-filters"
 import {
   type ImportRow,
   useImportsListController,
 } from "@/modules/imports/controllers/use-imports-list-controller"
-import type { WarehouseOption } from "@/modules/imports/domain/types"
+
+type WarehouseOption = { id: string; name: string }
 import { ImportsTable } from "./imports-table"
 
 type ServerPaginationState = {

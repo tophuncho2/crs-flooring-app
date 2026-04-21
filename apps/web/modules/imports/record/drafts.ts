@@ -1,36 +1,13 @@
-export type ImportInventoryRow = {
-  id: string
-  productId: string
-  productName: string
-  stockUnit: string
-  itemNumber: string
-  dyeLot: string
-  stockCount: string
-  cost: string
-  freight: string
-  notes: string
-  locationId: string
-  locationCode: string
-  warehouseId: string
-  warehouseName: string
-  sectionName: string
-}
+import {
+  validateImportPrimaryForm as domainValidateImportPrimaryForm,
+  type ImportDetail,
+  type ImportInventoryRow,
+  type ImportPrimaryForm,
+  type ImportRow,
+} from "@builders/domain"
 
-export type ImportRow = {
-  id: string
-  importNumber: number
-  orderNumber: string
-  tag: string
-  transportType: string
-  status: string
-  notes: string
-  warehouseId: string
-  warehouseName: string
-  itemsCount: number
-  createdAt: string
-  updatedAt: string
-  inventories: ImportInventoryRow[]
-}
+// Record-view files pass `entry` with inventories attached — use ImportDetail shape.
+export type ImportRecordEntry = ImportDetail
 
 export type ProductOption = {
   id: string
@@ -50,15 +27,6 @@ export type LocationOption = {
   label: string
 }
 
-export type ImportPrimaryForm = {
-  orderNumber: string
-  tag: string
-  transportType: string
-  status: string
-  notes: string
-  warehouseId: string
-}
-
 export type ImportInventoryRowDraft = {
   clientId: string
   productId: string
@@ -69,26 +37,6 @@ export type ImportInventoryRowDraft = {
   cost: string
   freight: string
   notes: string
-}
-
-export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
-  orderNumber: "",
-  tag: "",
-  transportType: "PURCHASE_ORDER",
-  status: "PENDING",
-  notes: "",
-  warehouseId: "",
-}
-
-export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
-  return {
-    orderNumber: record.orderNumber,
-    tag: record.tag,
-    transportType: record.transportType,
-    status: record.status,
-    notes: record.notes,
-    warehouseId: record.warehouseId,
-  }
 }
 
 export function createImportInventoryRowDraft(item?: ImportInventoryRow): ImportInventoryRowDraft {
@@ -105,7 +53,7 @@ export function createImportInventoryRowDraft(item?: ImportInventoryRow): Import
   }
 }
 
-export function toImportInventoryDrafts(record: ImportRow) {
+export function toImportInventoryDrafts(record: ImportRow & { inventories: ImportInventoryRow[] }) {
   return record.inventories.map((item) => createImportInventoryRowDraft(item))
 }
 
@@ -129,12 +77,9 @@ export function applyDefaultLocationToImportRow(
   }
 }
 
-export function validateImportPrimaryForm(input: ImportPrimaryForm) {
-  if (!input.warehouseId.trim()) {
-    return "Select a warehouse before saving the import."
-  }
-
-  return ""
+export function validateImportPrimaryForm(input: ImportPrimaryForm): string {
+  const issues = domainValidateImportPrimaryForm(input)
+  return issues.length > 0 ? issues[0].message : ""
 }
 
 export function validateImportInventoryDrafts(items: ImportInventoryRowDraft[]) {
