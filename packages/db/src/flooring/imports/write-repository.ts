@@ -100,7 +100,7 @@ export async function deleteImportById(
  *  3. createMany added rows. Each gets:
  *       - id: resolved uuid from tempIdMap
  *       - importEntryId: input.importEntryId
- *       - fifoReceivedAt: input.importCreatedAt
+ *       - fifoReceivedAt: new Date() (each row owns its own fifo date)
  *       - isImported: false (flipped later by a separate flow)
  *       - warehouseId: locationIndex.get(locationId)?.warehouseId ?? null
  *  4. Per-row update for each modified entry (distinct patches; no bulk shape
@@ -110,7 +110,6 @@ export async function deleteImportById(
  */
 export type ApplyImportInventoryRowsDiffInput = {
   importEntryId: string
-  importCreatedAt: Date
   importWarehouseId: string | null
   diff: InventoryRowsDiff
   /** tempId → pre-assigned uuid (application layer calls assignInventoryDiffIds). */
@@ -128,7 +127,7 @@ export async function applyImportInventoryRowsDiff(
   input: ApplyImportInventoryRowsDiffInput,
   client: ImportsDbClient,
 ): Promise<ApplyImportInventoryRowsDiffResult> {
-  const { diff, importEntryId, importCreatedAt, addedIds, locationIndex } = input
+  const { diff, importEntryId, addedIds, locationIndex } = input
 
   // Step 1 — deleteMany
   if (diff.deleted.length > 0) {
@@ -165,7 +164,7 @@ export async function applyImportInventoryRowsDiff(
         freight: draft.freight,
         notes: draft.notes,
         isImported: false,
-        fifoReceivedAt: importCreatedAt,
+        fifoReceivedAt: new Date(),
       }
     })
     await client.flooringInventory.createMany({ data: rows })

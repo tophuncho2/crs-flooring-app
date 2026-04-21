@@ -1,4 +1,4 @@
-import type { ImportRecord } from "@builders/db"
+import type { ImportDetailRecord, ImportRecord } from "@builders/db"
 
 export type CreateImportInput = {
   orderNumber: string
@@ -12,3 +12,8 @@ export type CreateImportInput = {
 export type UpdateImportInput = Partial<CreateImportInput>
 
 export type ImportResult = ImportRecord
+
+export type SaveImportInventoryRowsResult = {
+  importEntry: ImportDetailRecord
+  tempIdMap: Record<string, string>
+}
