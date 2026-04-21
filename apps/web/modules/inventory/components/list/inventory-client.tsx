@@ -4,39 +4,21 @@ import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dash
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TableColumnSettings } from "@/modules/shared/engines/list-view/table/table-column-settings"
-import { TableFilterControls } from "@/modules/shared/engines/list-view/table/table-filter-controls"
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
+import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import {
   formatImportStatus,
   formatImportTransportType as formatTransportType,
-  type InventoryCategoryOption,
-  type InventoryPageFilterState,
-  type InventoryProductOption,
   type InventoryRow,
-  type InventoryWarehouseOption,
 } from "@builders/domain"
 import { useInventoryListController } from "../../controllers/use-inventory-list-controller"
-import { createInventoryPageFilterDefinitions } from "./table-filters"
 import { InventoryTable } from "./inventory-table"
 
 export default function InventoryClient({
   initialInventory,
-  filterState,
-  warehouseOptions,
-  categoryOptions,
-  productOptions,
-  initialTablePreferences,
 }: {
   initialInventory: InventoryRow[]
-  filterState: InventoryPageFilterState
-  warehouseOptions: InventoryWarehouseOption[]
-  categoryOptions: InventoryCategoryOption[]
-  productOptions: InventoryProductOption[]
-  initialTablePreferences?: TablePreferencePayload | null
 }) {
   const { rows, notices, openInventory } = useInventoryListController({
     initialInventory,
@@ -46,7 +28,6 @@ export default function InventoryClient({
     searchQuery,
     isAscendingSort,
     isGroupingEnabled,
-    groupByKeys,
     filteredRows,
     sortedRows,
     groupedRowTree,
@@ -57,16 +38,9 @@ export default function InventoryClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    allColumns,
     visibleColumns,
-    hiddenColumnKeys,
-    toggleColumnVisibility,
-    moveColumn,
-    setColumnOrder,
     onSearchQueryChange,
     onToggleSort,
-    onToggleGroupedColumn,
-    filterGroups,
   } = useConfiguredTableState({
     rows,
     tableKey: "inventory-main",
@@ -94,14 +68,6 @@ export default function InventoryClient({
     sortField: (row) => row.itemNumber,
     sortFieldKey: "itemNumber",
     defaultAscending: true,
-    initialPreferences: initialTablePreferences,
-    filterDefinitions: createInventoryPageFilterDefinitions({
-      warehouseOptions,
-      categoryOptions,
-      productOptions,
-    }),
-    initialFilters: filterState,
-    urlSyncMode: "router",
   })
 
   return (
@@ -117,19 +83,6 @@ export default function InventoryClient({
           onToggleSort={onToggleSort}
           ascendingSortLabel="A-Z"
           descendingSortLabel="Z-A"
-          filtersSlot={<TableFilterControls groups={filterGroups} panelKey="inventory-main-filters" />}
-          columnSettingsSlot={
-            <TableColumnSettings
-              columns={allColumns}
-              hiddenColumnKeys={hiddenColumnKeys}
-              onToggleColumn={toggleColumnVisibility}
-              onMoveColumn={moveColumn}
-              onSetColumnOrder={setColumnOrder}
-              groupedColumnKeys={isGroupingEnabled ? groupByKeys : []}
-              maxGroupFields={MAX_GROUP_FIELDS}
-              onToggleGroupedColumn={onToggleGroupedColumn}
-            />
-          }
         />
       }
       notices={<FormStatusNotices message={notices.message} error={notices.error} />}

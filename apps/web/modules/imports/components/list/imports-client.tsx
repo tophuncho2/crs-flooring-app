@@ -6,7 +6,6 @@ import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dash
 import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
 import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
 import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TableFilterControls } from "@/modules/shared/engines/list-view/table/table-filter-controls"
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
@@ -14,15 +13,11 @@ import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/
 import {
   formatImportStatus,
   formatImportTransportType as formatTransportType,
-  type ImportPageFilterState,
 } from "@builders/domain"
-import { createImportsPageFilterDefinitions } from "./table-filters"
 import {
   type ImportRow,
   useImportsListController,
 } from "@/modules/imports/controllers/use-imports-list-controller"
-
-type WarehouseOption = { id: string; name: string }
 import { ImportsTable } from "./imports-table"
 
 type ServerPaginationState = {
@@ -45,15 +40,11 @@ export default function ImportsClient({
   initialImports,
   initialTablePreferences,
   tableState,
-  filterState,
-  filterWarehouseOptions,
   pagination,
 }: {
   initialImports: ImportRow[]
   initialTablePreferences?: TablePreferencePayload | null
   tableState: ServerTableState
-  filterState: ImportPageFilterState
-  filterWarehouseOptions: WarehouseOption[]
   pagination?: ServerPaginationState
 }) {
   const {
@@ -83,7 +74,6 @@ export default function ImportsClient({
     visibleColumns: visibleImportColumns,
     onSearchQueryChange,
     onToggleSort,
-    filterGroups,
   } = useConfiguredTableState({
     rows: imports,
     tableKey: "imports-main",
@@ -102,9 +92,6 @@ export default function ImportsClient({
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
     defaultAscending: tableState.isAscendingSort,
-    filterDefinitions: createImportsPageFilterDefinitions(filterWarehouseOptions),
-    initialFilters: filterState,
-    urlSyncMode: "router",
     disableClientFiltering: true,
     disableClientSorting: true,
     disableClientPagination: true,
@@ -124,7 +111,6 @@ export default function ImportsClient({
             onToggleSort={onToggleSort}
             ascendingSortLabel="1-9"
             descendingSortLabel="9-1"
-            filtersSlot={<TableFilterControls groups={filterGroups} panelKey="imports-main-filters" />}
             primaryAction={
               <button
                 type="button"

@@ -16,19 +16,6 @@ import {
 import { buildFlooringProductDisplayName } from "@builders/domain"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import type { ImportPageFilterState } from "@builders/domain"
-
-function coerceFilterArray(value: string[] | string | undefined) {
-  if (Array.isArray(value)) {
-    return value.filter((entry) => entry.length > 0 && entry !== "all")
-  }
-
-  if (typeof value === "string" && value.length > 0 && value !== "all") {
-    return [value]
-  }
-
-  return []
-}
 
 function buildImportsSearchWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
   if (!searchQuery) return undefined
@@ -48,30 +35,6 @@ function buildImportsSearchWhere(searchQuery: string): Prisma.FlooringImportEntr
       { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
     ],
   }
-}
-
-function buildImportsStatusWhere(statuses: ImportPageFilterState["status"]): Prisma.FlooringImportEntryWhereInput | undefined {
-  const normalized = coerceFilterArray(statuses)
-  if (normalized.length === 0) return undefined
-  return { status: { in: normalized } }
-}
-
-function buildImportsWarehouseWhere(warehouseIds: string[] | string): Prisma.FlooringImportEntryWhereInput | undefined {
-  const normalized = coerceFilterArray(warehouseIds)
-  if (normalized.length === 0) return undefined
-  return { warehouseId: { in: normalized } }
-}
-
-function buildImportsCombinedWhere(searchQuery: string, filters: ImportPageFilterState): Prisma.FlooringImportEntryWhereInput | undefined {
-  const clauses = [
-    buildImportsSearchWhere(searchQuery),
-    buildImportsStatusWhere(filters.status),
-    buildImportsWarehouseWhere(filters.warehouseId),
-  ].filter(Boolean) as Prisma.FlooringImportEntryWhereInput[]
-
-  if (clauses.length === 0) return undefined
-  if (clauses.length === 1) return clauses[0]
-  return { AND: clauses }
 }
 
 function buildImportsOrderBy(tableState: ServerTableQueryState): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
@@ -97,15 +60,8 @@ function buildImportsOrderBy(tableState: ServerTableQueryState): Prisma.Flooring
   return orderBy
 }
 
-export async function listImportsPageFilterOptions() {
-  return prisma.flooringWarehouse.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  })
-}
-
-async function loadImportsPageData(page: number, tableState: ServerTableQueryState, filters: ImportPageFilterState) {
-  const where = buildImportsCombinedWhere(tableState.searchQuery, filters)
+async function loadImportsPageData(page: number, tableState: ServerTableQueryState) {
+  const where = buildImportsSearchWhere(tableState.searchQuery)
   const totalItems = await prisma.flooringImportEntry.count({ where })
   const pagination = createServerPagination({ page, totalItems })
   const entries = await prisma.flooringImportEntry.findMany({
@@ -124,12 +80,11 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
       totalPages: pagination.totalPages,
     },
     tableState,
-    filterState: filters,
     initialImports: entries.map((entry) => normalizeImportRow(entry)),
   }
 }
 
-export async function getImportsPageData(page: number, tableState: ServerTableQueryState, filters: ImportPageFilterState) {
+export async function getImportsPageData(page: number, tableState: ServerTableQueryState) {
   return withPrismaConnectivityHandling(() =>
     withLoaderTiming(
       {
@@ -140,7 +95,7 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
           groupCount: tableState.groupByKeys.length,
         },
       },
-      () => loadImportsPageData(page, tableState, filters),
+      () => loadImportsPageData(page, tableState),
     ),
   )
 }
