@@ -227,25 +227,22 @@ Two gates, both UI-first with a server-side backstop.
 
 ---
 
-## Change 5 — Auto-link warehouse on added imports-inventory rows
+## Change 5 — Auto-link warehouse on added imports-inventory rows ✅ **SHIPPED**
 
-Currently at `packages/db/src/flooring/imports/write-repository.ts:151–153`:
+Rolled into Change 2 Phase C. Full trace of the wired flow, confirmed end-to-end:
 
-```ts
-const resolvedWarehouseId = draft.locationId
-  ? locationIndex.get(draft.locationId)?.warehouseId ?? draft.warehouseId
-  : draft.warehouseId  // ← falls back to null when draft doesn't set it
-```
+1. **Client controller** `apps/web/modules/imports/controllers/use-import-inventory-rows-section.ts:51–54` — `toDraftPayload` sends `warehouseId: null` on added rows with an intentional comment deferring resolution to the use case. No change needed.
+2. **Use case** `packages/application/src/flooring/imports/save-inventory-rows.ts:241` — already passes `importWarehouseId: parent.warehouseId || null` into the diff primitive. No change needed.
+3. **DB primitive** `packages/db/src/flooring/imports/write-repository.ts:151–153` — Phase C added the `?? input.importWarehouseId` fallback on both the location-present and location-null branches:
+   ```ts
+   const resolvedWarehouseId = draft.locationId
+     ? locationIndex.get(draft.locationId)?.warehouseId ?? draft.warehouseId ?? input.importWarehouseId
+     : draft.warehouseId ?? input.importWarehouseId
+   ```
 
-**Fix** (one line):
+Result: an added row with no location picked persists with the parent import's `warehouseId` — never `null`. Validation remains enforced by `validateInventoryRowsDiff`'s existing `IMPORT_WAREHOUSE_MISMATCH` rule if a client explicitly sets a different warehouse.
 
-```ts
-const resolvedWarehouseId = draft.locationId
-  ? locationIndex.get(draft.locationId)?.warehouseId ?? draft.warehouseId ?? input.importWarehouseId
-  : draft.warehouseId ?? input.importWarehouseId  // ← new fallback
-```
-
-`input.importWarehouseId` is already passed into the diff primitive. No type changes. No migration.
+No type changes, no migration, no separate use case, no new route.
 
 ---
 
