@@ -23,16 +23,26 @@ Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYS
 
 ---
 
-## Change 1 — Inventory list view column trim
+## Change 1 — Inventory list view column trim + eligibility rule
 
-**Scope.** UI only. No DB, domain, application, or route changes.
+**Scope.** UI column trim + a single DB-side eligibility filter. All other layers untouched.
+
+### Eligibility rule — pending rows are hidden from the inventory list view
+
+Inventory rows where `isImported === false` are **not eligible** for the inventory dashboard list view and must not appear there. They are draft rows living on their parent import and are only activated by being marked FINAL from the imports record view's inventory-rows section. The rule:
+
+- The inventory list (`/dashboard/inventory`) only shows rows where `isImported === true`.
+- The imports record view's inventory-rows section (`/dashboard/imports/[id]`) continues to show **all** rows for that import — both PENDING and FINAL — because it's the surface where users flip the status.
+- The inventory record view (`/dashboard/inventory/[id]`) remains reachable by direct URL regardless of `isImported` (deep links, open-in-new-tab from the imports section). Combined with Change 4's edit gate, pending rows are read-only there.
+
+Implementation lives in Change 2 Phase C (data layer — `listInventory` gets an `isImported?: boolean` filter; the inventory dashboard query wrapper passes `{ isImported: true }`). No changes to the imports record view's read path.
 
 ### Files
 
 - `apps/web/modules/inventory/components/list/inventory-client.tsx`
   - Delete the `importTag` field definition.
   - Delete the `transport` field definition.
-  - Keep the status column. Change its getter to read the per-row `isImported` via a new domain formatter (below).
+  - Keep the status column. Change its getter to read the per-row `isImported` via a new domain formatter (below). (Post-filter the column always reads "Final" — kept for display consistency and future re-inclusion of pending rows if we ever expose a toggle.)
 - `apps/web/modules/inventory/components/list/inventory-table.tsx`
   - Delete the `importTag` and `transport` cell renderers.
   - Status cell: render via `formatImportedAsStatus(row.isImported)` + `getImportedStatusFieldClass(row.isImported)` (two tiny helpers added to `@builders/domain` for symmetry with the existing `formatImportStatus` / `getImportStatusFieldClass`).
@@ -42,7 +52,7 @@ Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYS
 
 ### Blast radius
 - Table prefs keyed on removed column names silently drop — matches warehouses/contacts pattern.
-- The existing `status` filter definition in `components/list/table-filters.ts` (tabs with values `"pending" | "final"`) needs its matching function repointed to `isImported` — see Change 2.
+- Pending inventory rows created from the imports record view will be invisible on the inventory list until flipped to FINAL. This is the intended UX — flag in dev smoke that a freshly-added row doesn't appear in the inventory list until its import status is set to FINAL from the imports section.
 
 ---
 
@@ -64,9 +74,11 @@ Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYS
 ### Phase C — Data
 
 - `packages/db/src/flooring/inventory/shared.ts` — already selects `isImported`. Remove the now-unused `importEntry.tag`, `importEntry.status`, `importEntry.transportType` from the select (keep `importEntry.warehouse` + `importEntry.warehouseId`, still used for read-side `importWarehouse*` fields).
-- `packages/db/src/flooring/inventory/read-repository.ts` — in `normalizeInventoryRow`:
-  - Remove `importTag`, `importStatus`, `importTransportType` from the returned object.
-  - `isImported` already passed through at line 131.
+- `packages/db/src/flooring/inventory/read-repository.ts`:
+  - In `normalizeInventoryRow` — remove `importTag`, `importStatus`, `importTransportType` from the returned object. `isImported` already passed through at line 131.
+  - Extend `InventoryListFilter` with `isImported?: boolean`.
+  - In `buildListWhere`, when `filter.isImported` is defined, add `isImported: filter.isImported` to the WHERE clause (supports both `true` and `false` for completeness; inventory dashboard will pass `true`).
+- `apps/web/modules/inventory/data/queries.ts` — `loadInventoryPageData` calls `listInventory({ isImported: true })` (not `listInventory()`). This is the single enforcement point for the eligibility rule from Change 1. Every other read path (`listInventory({ importEntryId })` inside the imports record view, single-row `getInventoryById` / `getInventoryDetailById` for direct links) is unaffected.
 - `packages/db/src/flooring/imports/write-repository.ts` — in `applyImportInventoryRowsDiff`:
   - **createMany block (line 143–170):** replace the hardcoded `isImported: false` with `draft.isImported ?? false` — respect the client's value, default to `false`.
   - **Warehouse auto-link fix:** when both `draft.warehouseId` and `draft.locationId` are null, fall back to the parent import's warehouseId (plumbed in via a new `importWarehouseId` param on the diff call — the use case already passes it). This closes the "added row with no location saved with `warehouseId = null`" gap at `write-repository.ts:151–153`.
@@ -217,7 +229,7 @@ Each change is a standalone commit.
   - `grep -rn "importTag\|importTransportType\|row\.importStatus\|importEntry\.status" apps packages | grep -v dist | grep -v node_modules` → zero hits outside the imports module itself.
   - `grep -rn "importStatus: importEntry" packages/db` → zero.
 - Dev smoke:
-  - **Inventory list:** import tag + transport columns gone; status pill reflects per-row `isImported`.
+  - **Inventory list:** import tag + transport columns gone; status pill reflects per-row `isImported`. Pending rows (`isImported === false`) never appear in the list; adding a new row from the imports record view leaves the inventory list unchanged until the user flips that row to FINAL.
   - **Inventory record:** primary section is **read-only** for pending rows. Pick an existing pending row → verify all inputs disabled + banner shown. Mark FINAL via imports record view → reload inventory record → all inputs editable.
   - **Inventory record (FINAL row):** warehouse is a `<select>`, required to save (clear → save → validation error). Change warehouse → location dropdown re-filters.
   - **Imports inventory-rows section:** new per-row "Import Status" select. PENDING rows: select is enabled. Flip to FINAL, save → select disables (one-way transition visible).
