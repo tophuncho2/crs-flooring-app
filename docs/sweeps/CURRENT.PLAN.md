@@ -78,15 +78,33 @@ Implementation lives in Change 2 Phase C (data layer — `listInventory` gets an
 ### Phase A — Database
 **No migration.** `FlooringInventory.isImported Boolean @default(false)` already exists.
 
-### Phase B — Domain (`packages/domain/src/flooring/inventory/`)
+### Phase B — Domain (`packages/domain/src/flooring/inventory/`) ✅ **SHIPPED**
 
-- `types.ts` — remove `importTag`, `importStatus`, `importTransportType` from `InventoryRow`. Keep `importWarehouseId` / `importWarehouseName` (used by the primary-section location-scope logic). `isImported: boolean` already present.
-- `filters.ts` — rewire `isPendingInventoryRow` to `!row.isImported && Boolean(row.importEntryId)`. Keep the `"pending" | "final"` filter vocabulary. Remove the `importStatus` field from `InventoryFilterableRow`.
-- `inventory-rules.ts` — add:
-  - `assertImportedTransitionAllowed(current: { isImported }, next: { isImported?: boolean })` — throws when `current.isImported === true` and `next.isImported === false`. One-way transition.
-  - New issue code `IMPORTED_REVERSAL_NOT_ALLOWED` surfaced via `describeInventoryValidationIssue`.
-- `diff-types.ts` — add `isImported?: boolean` to `InventoryRowDraft` and `InventoryRowUpdatePatch`. Add a validation case to `validateInventoryRowsDiff` that calls `assertImportedTransitionAllowed` per-row against existing state and collects it as an `IMPORTED_REVERSAL_NOT_ALLOWED` issue.
-- Re-export `formatImportedAsStatus` and the one-way-transition helpers from the barrel.
+Five files modified, all inside the domain package. Zero imports outside the package — purity preserved (only internal relative `./*.js` imports and `../../shared/line-totals.js` in the pre-existing summary file).
+
+- `types.ts` — removed `importTag`, `importStatus`, `importTransportType` from `InventoryRow`. `importWarehouseId` / `importWarehouseName` retained (used by the primary-section location-scope logic). `isImported: boolean` already present.
+- `filters.ts` — `InventoryFilterableRow` now carries `isImported: boolean` instead of `importStatus: string`. `isPendingInventoryRow` rewired to `!row.isImported && Boolean(row.importEntryId)`. `"pending" | "final"` filter vocabulary untouched.
+- `errors.ts` — added `IMPORTED_REVERSAL_NOT_ALLOWED` to `InventoryDomainErrorCode`.
+- `inventory-rules.ts` — added:
+  - `isImportedReversal(current, next) → boolean` — pure predicate, reused by diff validation to collect issues.
+  - `assertImportedTransitionAllowed(current, next)` — throws `InventoryDomainError("IMPORTED_REVERSAL_NOT_ALLOWED", ...)` when the predicate fires. Consumed by one-shot update paths that want to fail-fast.
+  - `InventoryValidationIssue` gained an `IMPORTED_REVERSAL_NOT_ALLOWED` variant; `describeInventoryValidationIssue` switch extended.
+- `diff-types.ts` — added optional `isImported?: boolean` to `InventoryRowDraft` and `InventoryRowUpdatePatch`; added required `isImported: boolean` to `DiffExistingInventoryRow`; added `{ code: "IMPORTED_REVERSAL_NOT_ALLOWED", rowId }` variant to `InventoryDiffValidationIssue` with `describeInventoryDiffIssue` case; added `findImportedReversals(diff, existing)` pure helper; wired it into `validateInventoryRowsDiff`.
+- Barrel re-exports — no change needed; the domain `index.ts` already does `export * from "./..."` for every sibling file, so `isImportedReversal`, `assertImportedTransitionAllowed`, and the new issue codes surface automatically.
+
+**Domain purity check.** Every new function is pure: `isImportedReversal` returns a boolean, `findImportedReversals` returns a plain issue array, `assertImportedTransitionAllowed` is the only function that throws and only raises the domain-owned `InventoryDomainError`. No `async`, no DB imports, no Prisma types, no Next.js, no repository or use-case logic landed in the domain package.
+
+**Downstream fallout from this phase** (expected, resolved by later phases — **not** Phase B's job):
+
+- `packages/db/src/flooring/inventory/read-repository.ts` — the normalizer still emits `importTag`, `importStatus`, `importTransportType` as excess properties on the `InventoryRow` return shape. +1 TS error under `@builders/db`. Resolved in **Phase C** when the normalizer drops those fields and the `importEntry.tag/status/transportType` select columns go with them.
+- `packages/application/src/flooring/imports/save-inventory-rows.ts` — `toDiffExisting` maps `ExistingRowMeta` → `DiffExistingInventoryRow` without `isImported`. +1 TS error under `@builders/application`. Resolved in **Phase D** (which already extends the query in `loadExistingRows` to select `isImported`, then threads it through `toDiffExisting`).
+- `apps/web/tests/modules/products/products-detail-client.test.tsx` — fixture still sets `importTag`, `importStatus`, `importTransportType`. The web `tsconfig.json` excludes the `tests` folder from typecheck, so no baseline impact today. Cleaned during Phase C as a bookkeeping step.
+
+**Baseline counts after Phase B:**
+- `@builders/domain`: 0 errors.
+- `@builders/db`: 1 new error (the read-repository excess property).
+- `@builders/application`: 1 new error (the diff-existing mapping).
+- `@builders/web`: unchanged at 107 (all pre-existing in `work-orders`, `admin`, `shared/record-view`, and `templates` — untouched by this sweep).
 
 ### Phase C — Data
 

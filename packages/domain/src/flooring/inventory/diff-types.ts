@@ -9,6 +9,7 @@ export type InventoryRowDraft = {
   cost: string | null
   freight: string | null
   notes: string | null
+  isImported?: boolean
 }
 
 export type InventoryRowUpdatePatch = {
@@ -21,6 +22,7 @@ export type InventoryRowUpdatePatch = {
   cost?: string | null
   freight?: string | null
   notes?: string | null
+  isImported?: boolean
 }
 
 export type InventoryRowUpdate = {
@@ -50,6 +52,7 @@ export type DiffExistingInventoryRow = {
   locationId: string | null
   warehouseId: string | null
   cutLogsCount: number
+  isImported: boolean
 }
 
 export type DiffLocationLookup = {
@@ -96,6 +99,10 @@ export type InventoryDiffValidationIssue =
       rowId: string
       cutLogsCount: number
     }
+  | {
+      code: "IMPORTED_REVERSAL_NOT_ALLOWED"
+      rowId: string
+    }
 
 export function describeInventoryDiffIssue(issue: InventoryDiffValidationIssue): string {
   switch (issue.code) {
@@ -111,6 +118,8 @@ export function describeInventoryDiffIssue(issue: InventoryDiffValidationIssue):
       return `Referenced location ${issue.locationId} does not exist.`
     case "DELETE_BLOCKED_BY_CUT_LOGS":
       return `Cannot delete inventory row with ${issue.cutLogsCount} cut log${issue.cutLogsCount === 1 ? "" : "s"} attached.`
+    case "IMPORTED_REVERSAL_NOT_ALLOWED":
+      return `Inventory row is already imported and cannot return to pending.`
   }
 }
 
@@ -292,6 +301,26 @@ function findBlockedDeletes(
   return issues
 }
 
+function findImportedReversals(
+  diff: InventoryRowsDiff,
+  existing: DiffExistingInventoryRow[],
+): InventoryDiffValidationIssue[] {
+  const issues: InventoryDiffValidationIssue[] = []
+  const existingById = new Map(existing.map((row) => [row.id, row]))
+  for (const update of diff.modified) {
+    if (update.patch.isImported === undefined) continue
+    const row = existingById.get(update.id)
+    if (!row) continue
+    if (row.isImported === true && update.patch.isImported === false) {
+      issues.push({
+        code: "IMPORTED_REVERSAL_NOT_ALLOWED",
+        rowId: update.id,
+      })
+    }
+  }
+  return issues
+}
+
 export type InventoryDiffResolution = {
   existing: DiffExistingInventoryRow[]
   locations: DiffLocationLookup[]
@@ -312,5 +341,6 @@ export function validateInventoryRowsDiff(
     ...findImportWarehouseMismatches(projected, parentContext),
     ...findUnknownProducts(projected, knownProductIds),
     ...findBlockedDeletes(diff, resolution.existing),
+    ...findImportedReversals(diff, resolution.existing),
   ]
 }

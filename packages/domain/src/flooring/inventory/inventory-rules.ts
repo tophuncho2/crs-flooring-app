@@ -1,3 +1,4 @@
+import { InventoryDomainError } from "./errors.js"
 import { parseInventoryDecimal } from "./formatters.js"
 
 export type InventoryValidationIssue =
@@ -7,6 +8,7 @@ export type InventoryValidationIssue =
   | { code: "STOCK_COUNT_INVALID"; value: string }
   | { code: "WAREHOUSE_REQUIRED_FOR_LOCATION" }
   | { code: "LOCATION_WAREHOUSE_MISMATCH"; locationWarehouseId: string; warehouseId: string }
+  | { code: "IMPORTED_REVERSAL_NOT_ALLOWED" }
 
 export type InventoryInputDraft = {
   productId: string
@@ -79,6 +81,31 @@ export function canAddCutLog(inventory: { isImported: boolean }): boolean {
   return inventory.isImported === true
 }
 
+/**
+ * Pure predicate: does `next` attempt to flip an already-imported row back to
+ * pending? Used by one-shot updates (via `assertImportedTransitionAllowed`) and
+ * by diff validation (via a direct check so issues can be collected rather than
+ * thrown). `isImported` is a one-way latch — once true, it stays true.
+ */
+export function isImportedReversal(
+  current: { isImported: boolean },
+  next: { isImported?: boolean },
+): boolean {
+  return current.isImported === true && next.isImported === false
+}
+
+export function assertImportedTransitionAllowed(
+  current: { isImported: boolean },
+  next: { isImported?: boolean },
+): void {
+  if (isImportedReversal(current, next)) {
+    throw new InventoryDomainError(
+      "IMPORTED_REVERSAL_NOT_ALLOWED",
+      "Inventory row is already imported and cannot return to pending.",
+    )
+  }
+}
+
 export function getCutLogBlockedReason(inventory: { isImported: boolean }): string {
   return canAddCutLog(inventory)
     ? ""
@@ -99,6 +126,8 @@ export function describeInventoryValidationIssue(issue: InventoryValidationIssue
       return "Select a warehouse before choosing a location."
     case "LOCATION_WAREHOUSE_MISMATCH":
       return "The selected location does not belong to the selected warehouse."
+    case "IMPORTED_REVERSAL_NOT_ALLOWED":
+      return "Inventory row is already imported and cannot return to pending."
   }
 }
 

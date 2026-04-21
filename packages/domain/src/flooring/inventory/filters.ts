@@ -12,7 +12,7 @@ export type InventoryPageFilterState = InventoryFilterState & {
 
 type InventoryFilterableRow = {
   importEntryId?: string | null
-  importStatus: string
+  isImported: boolean
   importWarehouseId?: string | null
   warehouseId?: string | null
 }
@@ -55,7 +55,7 @@ export function getEffectiveInventoryWarehouseId(row: InventoryFilterableRow) {
 }
 
 export function isPendingInventoryRow(row: InventoryFilterableRow) {
-  return Boolean(row.importEntryId) && row.importStatus === "PENDING"
+  return !row.isImported && Boolean(row.importEntryId)
 }
 
 export function matchesInventoryStatusFilter(

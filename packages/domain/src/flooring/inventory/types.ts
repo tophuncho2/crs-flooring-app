@@ -18,9 +18,6 @@ export type InventoryRow = {
   id: string
   importEntryId: string
   importNumber: string
-  importTag: string
-  importStatus: string
-  importTransportType: string
   importWarehouseId: string
   importWarehouseName: string
   productId: string
