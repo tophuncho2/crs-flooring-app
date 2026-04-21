@@ -1,4 +1,4 @@
-# Current Plan — Inventory UX sweep (per-row `isImported` status, warehouse editability, column trims, edit gates, `uncutBalance` → `physicalBalance`)
+# Current Plan — Inventory UX sweep (per-row `isImported` status, warehouse editability, column trims, edit gates)
 
 Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYSIS.md` (Sweep-2 routes / modules / dashboard decisions — shipped and green). This plan replaces the shipped Sweep-2 content.
 
@@ -16,9 +16,10 @@ Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYS
    - Inventory record view primary section and cut-logs section are **read-only** when `isImported === false`. The row lives on the parent import until marked FINAL.
    - Cut-log creation is already gated by the domain rule `canAddCutLog` (Sweep 3 wires the UI side).
 6. **Auto-link added inventory rows to the parent import's warehouse** even when no location is picked.
-7. **Rename `uncutBalance` → `physicalBalance`** for that computed field across UI + domain type + DB normalizer.
 
 **Prisma migrations needed:** zero. All state lives in existing columns.
+
+**Data baseline:** user deleted all inventory + import rows before this sweep. No back-fill DML needed — everything new lands with the right `isImported` defaults. Existing `POST /api/inventory` standalone create route is out of scope for this sweep (placeholder for a future single-row inventory form; not reachable from current UI).
 
 ---
 
@@ -150,8 +151,8 @@ Two gates, both UI-first with a server-side backstop.
 - **UI (cut-logs section):** in `inventory-cut-logs-section.tsx`, when `!isImported`, hide add-row controls + any inline edit affordances (Sweep 3 wires the edit UI — until then the section is already read-only, so just stub a pre-emptive banner: *"Cut logs unlock once this row is marked FINAL on the import."*).
 
 ### Blast radius
-- `isImported = false` is **every row today** (no flow flips it). On merge day, **every existing inventory record view becomes read-only** until a user marks it FINAL from the imports record view. Explicit migration step: we don't back-fill `isImported = true`; we let users mark rows FINAL as they process them. **Flag this** — if you want a one-time "back-fill every existing row to true" SQL, add it as a separate data migration before UI flip. Not a schema migration, just a DML.
-- The inventory primary section becoming read-only until `isImported=true` changes the UX of the standalone `POST /api/inventory` create path (created rows start `false` and are immediately uneditable). Acceptable because the same user created the row; they can flip it from the imports record view if associated with an import, or via a future dedicated "receive" action. **Flag to confirm:** is the standalone create path a real user flow, and if so, do we need an "auto-import" gesture on the create page?
+- All existing inventory + import rows were deleted before this sweep; no back-fill DML needed. New rows added via the imports record view start PENDING, then flip to FINAL through the same UI.
+- The standalone `POST /api/inventory` create path is out of scope (placeholder for a future single-row form; not reachable from current UI). Leaving it untouched — the path's "starts `false` → read-only" behaviour is irrelevant because no one hits it.
 
 ---
 
@@ -194,34 +195,18 @@ const resolvedWarehouseId = draft.locationId
 
 ---
 
-## Change 7 — Rename `uncutBalance` → `physicalBalance`
-
-Renames a single computed field. Not persisted; no migration.
-
-| Layer | File:line | Change |
-|---|---|---|
-| Domain type | `packages/domain/src/flooring/inventory/types.ts:52` | `uncutBalance` → `physicalBalance` |
-| DB normalizer | `packages/db/src/flooring/inventory/read-repository.ts:90, 135` | Local var `uncut` → `physical`; key `uncutBalance` → `physicalBalance` |
-| Inventory list columns | `apps/web/modules/inventory/components/list/inventory-client.tsx:84` | key + label |
-| Inventory list cells | `apps/web/modules/inventory/components/list/inventory-table.tsx:125–129` | key + field reference |
-| Inventory primary fields | `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx:77–82` | Label + field reference |
-| Products record view | `apps/web/modules/products/components/record/product-inventory-rows-section.tsx:28, 96–97` | key + label + reference |
-
-**Name-collision flag.** Sweep 3's categories unit-conversion plan introduces `physicalStock = stockCount − (awaitingCutBalance + totalCutBalance)` — different math from today's `uncutBalance = stockCount − totalCut`. We rename to `physicalBalance` now per your instruction; Sweep 3 may re-point or re-rename. One rename at a time.
-
----
-
 ## Execution order
 
-1. **Change 7 (rename)** — smallest, purely mechanical, green baseline.
-2. **Change 1 (list column trim)** — depends on Change 2's formatter helper; land its helper first, then this.
-3. **Change 5 (warehouse auto-link)** — single-line fix, preparing for Change 3's required-warehouse rule.
-4. **Change 3 (warehouse editable + required)** — UI + domain rule; validation cascades.
-5. **Change 2 (per-row isImported status)** — the central change. Drops derived fields, adds UI-editable path, one-way transition rule.
-6. **Change 4 (edit gates)** — lands on top of Change 2. Includes the data-migration decision about back-filling `isImported = true` for existing rows.
-7. **Change 6** — no-op (decision documented, no code change).
+1. **Change 1 (list column trim)** — depends on Change 2's formatter helper; land the helper first, then this.
+2. **Change 5 (warehouse auto-link)** — single-line fix, preparing for Change 3's required-warehouse rule.
+3. **Change 3 (warehouse editable + required)** — UI + domain rule; validation cascades.
+4. **Change 2 (per-row isImported status)** — the central change. Drops derived fields, adds UI-editable path, one-way transition rule.
+5. **Change 4 (edit gates)** — lands on top of Change 2.
+6. **Change 6** — no-op (decision documented, no code change).
 
-Each is a standalone commit.
+The `uncutBalance` → `physicalBalance` rename is **dropped from this sweep** — purely a naming preference, and Sweep 3's categories unit-conversion work may re-rename this field (to `physicalStock`) anyway. Revisit under Sweep 3.
+
+Each change is a standalone commit.
 
 ---
 
@@ -242,8 +227,9 @@ Each is a standalone commit.
 
 ---
 
-## Open questions
+## Resolved decisions (from earlier open questions)
 
-1. **Back-fill existing rows to `isImported = true`?** Every row in DB today is `false`. On merge day, every inventory record view becomes read-only. A one-time DML `UPDATE flooring_inventory SET "isImported" = true WHERE "importEntryId" IS NOT NULL` (or just `= true` globally) would un-brick existing records. Do you want that included, or do users manually mark them FINAL going forward? (Not a schema migration — a data migration.)
-2. **Standalone `POST /api/inventory` create path.** Standalone-created rows start `isImported = false`, immediately read-only. Is this path a real user flow in your UI today? If yes, we may want a "receive now" toggle on the create page, or flip the standalone create path to default `true`.
-3. **Rename collision** (`physicalBalance` vs Sweep 3's planned `physicalStock`). Stick with `physicalBalance` now (per your wording), accept a possible future rename when Sweep 3 lands.
+1. **Back-fill DML — not needed.** User deleted all inventory + import rows before this sweep. New rows get the correct `isImported` default (`false`) and flip to `true` via the imports record view as the UX intends.
+2. **Standalone `POST /api/inventory` create path — ignored this sweep.** Placeholder for a future single-row inventory form; not reachable from the UI today. No "receive now" affordance, no default flip. Leave the route + use case as-is.
+3. **`uncutBalance` → `physicalBalance` rename — dropped.** Purely a naming preference. Sweep 3's categories unit-conversion work introduces `physicalStock` with different math; decide the final name there. No rename this sweep.
+- because it is purely a naming preference we will drop this from this current plan. subject to change in sweep 3 
