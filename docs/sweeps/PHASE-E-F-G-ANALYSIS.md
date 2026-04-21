@@ -314,7 +314,7 @@ This mirrors the pattern we just executed for inventory's `saveImportInventoryRo
 ### Phase G — new / rewritten
 - `apps/web/app/dashboard/inventory/page.tsx`
 - `apps/web/app/dashboard/inventory/[id]/page.tsx`
-- `apps/web/app/dashboard/inventory/new/page.tsx` (if we keep standalone create UI)
+- ~~`apps/web/app/dashboard/inventory/new/page.tsx`~~ — **deferred** per locked decision #1 (API exists, no UI this sweep)
 
 ---
 
@@ -332,13 +332,27 @@ This mirrors the pattern we just executed for inventory's `saveImportInventoryRo
 
 ---
 
-## Open decisions flagged for you
+## Locked decisions
 
-1. **Standalone inventory create UI.** The API route `POST /api/inventory` stays per CURRENT.PLAN + existing `createInventoryUseCase`. But do we ship a **dashboard page** for it (`app/dashboard/inventory/new/page.tsx`) this sweep, or just the API and defer the UI? Lean: ship the page — the create path is already built end-to-end, no work saved by deferring.
-- i think we keep this in and defer. we dont need to ship a dashboard page or create flow for a single inv item right now. this can stay out of scope, we will address this in the future.
-2. **Table-filters file location.** Current `modules/inventory/table-filters.ts` — move to `components/list/table-filters.ts` (list-scoped) or `components/list/filters.tsx` (rename to match imports convention)? Lean: `components/list/table-filters.ts` (preserve filename, match canonical folder).
-- whichever makes more sense. as long as its under components. 
-3. **Cut-logs section shell depth.** In Phase F we scaffold `components/record/sections/inventory-cut-logs-section.tsx` + `controllers/use-inventory-cut-logs-section.ts` as empty shells. Do we render a read-only cut-logs grid now (using the data that's already computable since `status` is live), or truly empty until Sweep 3? Lean: read-only grid now — shows `totalCutBalance` + `awaitingCutBalance` + the cut-log list, no editing. Small lift, immediate user value.
-- they dont need to be manually set to read only. definetly lets include the scaffolding. changing weather its editable or not wont make a difference because mutations likely aren't correct. i think that would be scope creep to do anything other than include the component and ui primitives for the cut log section of inventory.
-- Confirm cut logs are not viewable by toggle of inventory row from imports record view.
+1. **Standalone inventory create UI — DEFERRED.**
+   - `POST /api/inventory` stays (route + `createInventoryUseCase`).
+   - **No dashboard page** for a single-item create flow this sweep (`app/dashboard/inventory/new/page.tsx` NOT created). The API is exposed but not reachable from the UI; revisited in a future sweep.
+
+2. **Table-filters file location — `components/list/table-filters.ts`.**
+   - List-scoped concern; canonical folder; filename preserved. No rename.
+
+3. **Cut-logs section shell — minimal scaffolding only.**
+   - Scaffold `components/record/sections/inventory-cut-logs-section.tsx` + `controllers/use-inventory-cut-logs-section.ts` as structural stubs wired into the record view.
+   - Include the UI primitives (the `cut-logs-client.tsx` render helper from `modules/cut-logs/components/`).
+   - **Do not** wire live data rendering, read-only toggles, or mutation hooks — Sweep 3 owns that. Minimizes scope creep; whether a disabled save button exists makes no functional difference when the save path isn't wired.
+
+### Cut-logs viewability from the imports record view — CONFIRMED NOT VIEWABLE
+
+Cut logs do **not** surface on the imports record view under any row-expand / toggle. The imports record view shows inventory rows as a flat list (item #, stock count, cost, freight, location, dye lot, notes). Cut logs live exclusively on the inventory record view's cut-logs section.
+
+Rationale:
+- Cut logs are children of inventory rows; inventory rows are children of imports. The child-of-child level is not surfaced at the grandparent aggregate.
+- The imports record view is about the import event (financial + warehouse receipt); cut logs are about downstream consumption — a different concern that belongs on the inventory record.
+- Keeping the imports record view's inventory-rows section free of cut-log data also keeps the atomic-diff payload narrow: just the inventory rows, nothing nested.
+- Users who need to see cut logs for a specific row click through: imports record → inventory row link → inventory record → cut-logs section.
 
