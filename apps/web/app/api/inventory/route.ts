@@ -1,30 +1,26 @@
-import { createInventoryRow, listInventoryRows } from "@/modules/inventory/api"
+import { listInventory } from "@builders/db"
+import { createInventoryUseCase } from "@builders/application"
+import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateCreateInventoryInput } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: "warehouse",
-    rateLimit: {
-      scope: "query",
-      limit: 100,
-      windowMs: 60 * 1000,
-      route: "/api/inventory",
-    },
-  })
+  const access = await authorizeWarehouseRoute(request)
   if (access instanceof Response) return access
 
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/inventory")
+  if (rateLimited) return rateLimited
+
   try {
-    const { searchParams } = new URL(request.url)
-    const productId = searchParams.get("productId")?.trim() ?? ""
-    return routeJson(access, { inventory: await listInventoryRows(undefined, productId || undefined) })
+    return routeJson(access, { inventory: await listInventory() })
   } catch (error) {
     return routeError(access, error)
   }
@@ -34,8 +30,8 @@ export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
-      scope: "inventory.write",
-      limit: 60,
+      scope: "inventory.create",
+      limit: 50,
       windowMs: 10 * 60 * 1000,
       route: "/api/inventory",
     },
@@ -44,7 +40,8 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+    const { input, mutation } = parseMutationEnvelope(body, validateCreateInventoryInput)
+
     const receipt = await enforceMutationReceipt({
       scope: "inventory.create",
       request,
@@ -54,18 +51,18 @@ export async function POST(request: Request) {
     })
     if (receipt.replay) return receipt.replay
 
-    const inventory = await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Inventory created",
+        message: "Inventory row created",
         action: "inventory.create",
         route: "/api/inventory",
         entityType: "flooringInventory",
       },
-      () => createInventoryRow(undefined, input),
+      () => createInventoryUseCase(input),
     )
 
-    const responseBody = { inventory }
+    const responseBody = { inventory: result }
     await finalizeMutationReceipt({
       scope: "inventory.create",
       access,

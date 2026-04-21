@@ -1,44 +1,28 @@
-import { getInventoryById, getInventoryDetailById } from "@builders/db"
-import { deleteInventoryUseCase } from "@builders/application"
-import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
+import { getInventoryById } from "@builders/db"
+import { updateInventoryUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
   enforceMutationReceipt,
-  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateUpdateInventoryInput } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(request: Request, context: RouteContext) {
-  const access = await authorizeWarehouseRoute(request)
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/inventory/[id]")
-  if (rateLimited) return rateLimited
-
-  try {
-    const { id } = await context.params
-    return routeJson(access, { inventory: await getInventoryDetailById(id) })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
-
-export async function DELETE(request: Request, context: RouteContext) {
+export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
-      scope: "inventory.delete",
-      limit: 30,
+      scope: "inventory.primary.section.replace",
+      limit: 50,
       windowMs: 10 * 60 * 1000,
-      route: "/api/inventory/[id]",
+      route: "/api/inventory/[id]/primary/section",
     },
   })
   if (access instanceof Response) return access
@@ -46,7 +30,7 @@ export async function DELETE(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const { mutation } = parseMutationEnvelope(body, (inputBody) => inputBody, {
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateInventoryInput, {
       requireExpectedUpdatedAt: true,
     })
 
@@ -62,7 +46,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "inventory.delete",
+      scope: "inventory.primary.section.replace",
       request,
       access,
       mutation,
@@ -70,21 +54,21 @@ export async function DELETE(request: Request, context: RouteContext) {
     })
     if (receipt.replay) return receipt.replay
 
-    await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Inventory row deleted",
-        action: "inventory.delete",
-        route: "/api/inventory/[id]",
+        message: "Inventory primary section updated",
+        action: "inventory.primary.section.replace",
+        route: "/api/inventory/[id]/primary/section",
         entityType: "flooringInventory",
         entityId: id,
       },
-      () => deleteInventoryUseCase(id),
+      () => updateInventoryUseCase(id, input),
     )
 
-    const responseBody = { ok: true }
+    const responseBody = { inventory: result }
     await finalizeMutationReceipt({
-      scope: "inventory.delete",
+      scope: "inventory.primary.section.replace",
       access,
       mutation,
       responseStatus: 200,
