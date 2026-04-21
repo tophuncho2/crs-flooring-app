@@ -58,12 +58,25 @@ async function loadExistingRows(
   }))
 }
 
-function collectReferencedIds(diff: InventoryRowsDiff): {
+function collectReferencedIds(
+  diff: InventoryRowsDiff,
+  existing: ExistingRowMeta[],
+): {
   productIds: string[]
   locationIds: string[]
 } {
   const productIds = new Set<string>()
   const locationIds = new Set<string>()
+  // Include every existing row's product + location so the domain diff
+  // validator can resolve unchanged references carried through modified-origin
+  // projections. Without this, any `modified` entry that doesn't repatch
+  // productId/locationId trips UNKNOWN_PRODUCT / UNKNOWN_LOCATION because the
+  // projected row keeps the existing id while the resolver only knew about
+  // patch values.
+  for (const row of existing) {
+    productIds.add(row.productId)
+    if (row.locationId) locationIds.add(row.locationId)
+  }
   for (const draft of diff.added) {
     productIds.add(draft.productId)
     if (draft.locationId) locationIds.add(draft.locationId)
@@ -196,7 +209,7 @@ export async function saveImportInventoryRowsUseCase(
 
     // Step 3 — resolve context for validation.
     const existing = await loadExistingRows(id, c)
-    const { productIds, locationIds } = collectReferencedIds(diff)
+    const { productIds, locationIds } = collectReferencedIds(diff, existing)
     const [knownProductIds, locations] = await Promise.all([
       resolveProducts(productIds, c),
       resolveLocations(locationIds, c),
