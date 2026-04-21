@@ -23,9 +23,26 @@ Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYS
 
 ---
 
-## Change 1 — Inventory list view column trim + eligibility rule
+## Change 1 — Inventory list view column trim + eligibility rule ✅ **PARTIAL**
 
 **Scope.** UI column trim + a single DB-side eligibility filter. All other layers untouched.
+
+**Status.** UI column trim and status-column helpers are shipped. DB-side eligibility filter is deferred to Change 2 Phase C (where the `listInventory` filter extension lives).
+
+### Completed this pass
+
+- `packages/domain/src/flooring/inventory/formatters.ts` — `formatImportedAsStatus(isImported) => "Pending" | "Final"` added and auto-re-exported via the inventory barrel.
+- `apps/web/modules/imports/components/formatters.ts` — `getImportedStatusFieldClass(isImported)` added, delegates to the existing `getImportStatusFieldClass("FINAL" | "PENDING")`.
+- `apps/web/modules/inventory/components/list/inventory-client.tsx` — `importTag` and `transport` field defs removed; status-column getter rewired to `formatImportedAsStatus(row.isImported)`; stale imports (`formatImportStatus`, `formatImportTransportType`) dropped.
+- `apps/web/modules/inventory/components/list/inventory-table.tsx` — `importTag` and `transport` cell renderers removed; status cell rendered via `formatImportedAsStatus(row.isImported)` + `getImportedStatusFieldClass(row.isImported)`; `getTransportTypeFieldClass` import dropped.
+- `@builders/domain` dist rebuilt so the new formatter resolves for web consumers.
+- Verification: regression greps zero, web typecheck baseline unchanged at 107 (all pre-existing in `modules/work-orders`), zero new errors in any Change-1 file.
+
+### Deferred from this pass
+
+- **DB-side eligibility filter** (`InventoryListFilter.isImported`, `buildListWhere` branch, `modules/inventory/data/queries.ts` passing `{ isImported: true }`) — lands in **Change 2 Phase C**.
+- **Removing derived `importTag` / `importStatus` / `importTransportType` from `InventoryRow`** and pruning the matching `importEntry.tag/status/transportType` selects in `packages/db/src/flooring/inventory/shared.ts` — lands in **Change 2 Phases B + C**. Until then these fields remain on the row type but are no longer read by the list view; consumers elsewhere (e.g. tests, products record view) still resolve.
+- Consequence: pending rows still appear in the list during this interim window — the eligibility filter is not yet enforced. Dev smoke for the full UX must wait for Change 2.
 
 ### Eligibility rule — pending rows are hidden from the inventory list view
 
