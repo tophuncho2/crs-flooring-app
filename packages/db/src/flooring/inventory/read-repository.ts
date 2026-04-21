@@ -25,6 +25,7 @@ export type InventoryListFilter = {
   warehouseId?: string
   productId?: string
   categoryId?: string
+  isImported?: boolean
 }
 
 export type InventoryCutLogAggregate = {
@@ -101,9 +102,6 @@ export function normalizeInventoryRow(
     id: payload.id,
     importEntryId: payload.importEntryId ?? "",
     importNumber: importEntry ? String(importEntry.importNumber) : "",
-    importTag: importEntry?.tag ?? "",
-    importStatus: importEntry?.status ?? "",
-    importTransportType: importEntry?.transportType ?? "",
     importWarehouseId: importEntry?.warehouseId ?? "",
     importWarehouseName: importEntry?.warehouse?.name ?? "",
     productId: payload.productId,
@@ -190,6 +188,7 @@ function buildListWhere(filter?: InventoryListFilter) {
   if (filter.warehouseId) where.warehouseId = filter.warehouseId
   if (filter.productId) where.productId = filter.productId
   if (filter.categoryId) where.product = { categoryId: filter.categoryId }
+  if (filter.isImported !== undefined) where.isImported = filter.isImported
   return where
 }
 

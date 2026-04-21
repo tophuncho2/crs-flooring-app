@@ -22,9 +22,6 @@ export const inventoryRowSelect = {
     select: {
       id: true,
       importNumber: true,
-      tag: true,
-      status: true,
-      transportType: true,
       warehouseId: true,
       warehouse: { select: { id: true, name: true, number: true } },
     },

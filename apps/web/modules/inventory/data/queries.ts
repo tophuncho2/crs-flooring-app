@@ -28,7 +28,7 @@ export type InventoryFilterOptions = {
 
 async function loadInventoryPageData(): Promise<InventoryListPageData> {
   return {
-    initialInventory: await listInventory(),
+    initialInventory: await listInventory({ isImported: true }),
   }
 }
 

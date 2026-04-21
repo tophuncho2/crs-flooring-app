@@ -106,19 +106,30 @@ Five files modified, all inside the domain package. Zero imports outside the pac
 - `@builders/application`: 1 new error (the diff-existing mapping).
 - `@builders/web`: unchanged at 107 (all pre-existing in `work-orders`, `admin`, `shared/record-view`, and `templates` — untouched by this sweep).
 
-### Phase C — Data
+### Phase C — Data ✅ **SHIPPED**
 
-- `packages/db/src/flooring/inventory/shared.ts` — already selects `isImported`. Remove the now-unused `importEntry.tag`, `importEntry.status`, `importEntry.transportType` from the select (keep `importEntry.warehouse` + `importEntry.warehouseId`, still used for read-side `importWarehouse*` fields).
+Five files touched (four source, one test fixture). No Prisma migration needed. `@builders/db` rebuilt clean; the Phase B downstream error in `@builders/db` is resolved. `@builders/web` baseline unchanged at 107 (zero errors in inventory/imports/products/dashboard/api paths).
+
+- `packages/db/src/flooring/inventory/shared.ts` — dropped `tag`, `status`, `transportType` from the `importEntry` select inside `inventoryRowSelect`. Kept `id`, `importNumber`, `warehouseId`, and `warehouse` (still populate `importWarehouse*` on the read shape). `InventoryRowPayload` / `InventoryDetailPayload` auto-narrow from the select.
 - `packages/db/src/flooring/inventory/read-repository.ts`:
-  - In `normalizeInventoryRow` — remove `importTag`, `importStatus`, `importTransportType` from the returned object. `isImported` already passed through at line 131.
-  - Extend `InventoryListFilter` with `isImported?: boolean`.
-  - In `buildListWhere`, when `filter.isImported` is defined, add `isImported: filter.isImported` to the WHERE clause (supports both `true` and `false` for completeness; inventory dashboard will pass `true`).
-- `apps/web/modules/inventory/data/queries.ts` — `loadInventoryPageData` calls `listInventory({ isImported: true })` (not `listInventory()`). This is the single enforcement point for the eligibility rule from Change 1. Every other read path (`listInventory({ importEntryId })` inside the imports record view, single-row `getInventoryById` / `getInventoryDetailById` for direct links) is unaffected.
-- `packages/db/src/flooring/imports/write-repository.ts` — in `applyImportInventoryRowsDiff`:
-  - **createMany block (line 143–170):** replace the hardcoded `isImported: false` with `draft.isImported ?? false` — respect the client's value, default to `false`.
-  - **Warehouse auto-link fix:** when both `draft.warehouseId` and `draft.locationId` are null, fall back to the parent import's warehouseId (plumbed in via a new `importWarehouseId` param on the diff call — the use case already passes it). This closes the "added row with no location saved with `warehouseId = null`" gap at `write-repository.ts:151–153`.
-  - **Per-row updates (line 174–205):** forward `patch.isImported` when present. Persist only the DB-native truthy/falsy value.
-- `packages/db/src/flooring/inventory/write-repository.ts` — already handles `isImported` on create + update. No change.
+  - Dropped `importTag`, `importStatus`, `importTransportType` from `normalizeInventoryRow`'s return object. No helpers were exclusive to those fields, so no dead code remained after the field removal — the normalizer stayed lean.
+  - Extended `InventoryListFilter` with `isImported?: boolean`.
+  - `buildListWhere` now forwards `filter.isImported` as `isImported: <bool>` in the WHERE clause when defined. Supports `true` and `false` for completeness; the dashboard passes `true`.
+- `apps/web/modules/inventory/data/queries.ts` — `loadInventoryPageData` now calls `listInventory({ isImported: true })`. This is the single enforcement point for the eligibility rule from Change 1. Every other read path is unaffected: the imports record view reads `listInventory({ importEntryId })` which doesn't filter on `isImported`; single-row `getInventoryById` / `getInventoryDetailById` for deep-link routes are unchanged.
+- `packages/db/src/flooring/imports/write-repository.ts` — `applyImportInventoryRowsDiff`:
+  - **createMany block:** new rows persist `isImported: draft.isImported ?? false` (respect the caller when set, default `false`).
+  - **Warehouse auto-link:** added fallback `?? input.importWarehouseId` on both the `draft.locationId`-present branch and the null-location branch. `input.importWarehouseId` is already passed by `saveImportInventoryRowsUseCase`, so no new plumbing — previously the field was only used for validation. Closes the "added row with no location saved with `warehouseId = null`" gap.
+  - **Per-row updates:** `patch.isImported` now flows through — `if (patch.isImported !== undefined) data.isImported = patch.isImported`. Forwards exactly what the caller sent.
+- `packages/db/src/flooring/inventory/write-repository.ts` — untouched. Already wired for `isImported` on both create + update.
+- `apps/web/tests/modules/products/products-detail-client.test.tsx` — dropped the now-stale `importTag`, `importStatus`, `importTransportType` fields from the inventory-row fixture factory. The file is outside the TS typecheck (`tsconfig.json` excludes `tests/`), but keeping fixture literals consistent with live types is hygiene.
+
+**Dead-normalizer audit.** Nothing was left behind. Grep confirms the only lingering references in `packages/` are inside `packages/db/dist/**` output (regenerates on build). Inside `apps/web/modules/imports/**` the `formatImportStatus` / `formatImportTransportType` / `getTransportTypeFieldClass` helpers stay — they still legitimately render the parent import's own `status` / `transportType` fields in the imports list and primary section (Change 6 decision: those stay editable-as-display on the import record).
+
+**Baselines after Phase C:**
+- `@builders/domain`: 0 errors.
+- `@builders/db`: 0 errors — Phase B's expected downstream breakage resolved.
+- `@builders/application`: 1 error — `save-inventory-rows.ts` `toDiffExisting` still missing `isImported` on the mapped `DiffExistingInventoryRow`. Resolved by **Phase D**.
+- `@builders/web`: unchanged at 107 (all pre-existing in `work-orders` / `admin` / `shared/record-view` / `templates`; zero new errors).
 
 ### Phase D — Application
 

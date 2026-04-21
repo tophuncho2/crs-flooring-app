@@ -149,8 +149,8 @@ export async function applyImportInventoryRowsDiff(
         )
       }
       const resolvedWarehouseId = draft.locationId
-        ? locationIndex.get(draft.locationId)?.warehouseId ?? draft.warehouseId
-        : draft.warehouseId
+        ? locationIndex.get(draft.locationId)?.warehouseId ?? draft.warehouseId ?? input.importWarehouseId
+        : draft.warehouseId ?? input.importWarehouseId
       return {
         id,
         importEntryId,
@@ -163,7 +163,7 @@ export async function applyImportInventoryRowsDiff(
         cost: draft.cost,
         freight: draft.freight,
         notes: draft.notes,
-        isImported: false,
+        isImported: draft.isImported ?? false,
         fifoReceivedAt: new Date(),
       }
     })
@@ -180,6 +180,7 @@ export async function applyImportInventoryRowsDiff(
     if (patch.cost !== undefined) data.cost = patch.cost
     if (patch.freight !== undefined) data.freight = patch.freight
     if (patch.notes !== undefined) data.notes = patch.notes
+    if (patch.isImported !== undefined) data.isImported = patch.isImported
     if (patch.productId !== undefined) {
       data.product = { connect: { id: patch.productId } }
     }
