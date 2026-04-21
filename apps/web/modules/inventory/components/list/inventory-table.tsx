@@ -5,8 +5,7 @@ import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
 import {
-  formatImportStatus,
-  formatImportTransportType as formatTransportType,
+  formatImportedAsStatus,
   formatInventoryImportNumber,
   formatInventoryQuantity,
   formatStableDate,
@@ -20,10 +19,7 @@ import {
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
-import {
-  getImportStatusFieldClass,
-  getTransportTypeFieldClass,
-} from "@/modules/imports/components/formatters"
+import { getImportedStatusFieldClass } from "@/modules/imports/components/formatters"
 
 export function InventoryTable({
   rows,
@@ -63,33 +59,12 @@ export function InventoryTable({
           {formatInventoryImportNumber(row.importNumber)}
         </DashboardListRowCell>
       ),
-      importTag: (columnIndex) => (
-        <DashboardListRowCell key="importTag" columnIndex={columnIndex}>
-          {row.importTag || "-"}
-        </DashboardListRowCell>
-      ),
       status: (columnIndex) => (
         <DashboardListRowCell key="status" columnIndex={columnIndex}>
-          {row.importStatus ? (
-            <StatusPill
-              label={formatImportStatus(row.importStatus)}
-              toneClassName={getImportStatusFieldClass(row.importStatus)}
-            />
-          ) : (
-            "-"
-          )}
-        </DashboardListRowCell>
-      ),
-      transport: (columnIndex) => (
-        <DashboardListRowCell key="transport" columnIndex={columnIndex}>
-          {row.importTransportType ? (
-            <StatusPill
-              label={formatTransportType(row.importTransportType)}
-              toneClassName={getTransportTypeFieldClass(row.importTransportType)}
-            />
-          ) : (
-            "-"
-          )}
+          <StatusPill
+            label={formatImportedAsStatus(row.isImported)}
+            toneClassName={getImportedStatusFieldClass(row.isImported)}
+          />
         </DashboardListRowCell>
       ),
       product: (columnIndex) => (

@@ -14,6 +14,10 @@ export function getImportStatusFieldClass(value: string) {
     : "border-sky-300 bg-sky-200 text-sky-900"
 }
 
+export function getImportedStatusFieldClass(isImported: boolean) {
+  return getImportStatusFieldClass(isImported ? "FINAL" : "PENDING")
+}
+
 export function getTransportTypeFieldClass(value: string) {
   return value === "RETURN"
     ? "border-stone-300 bg-stone-200 text-stone-900"

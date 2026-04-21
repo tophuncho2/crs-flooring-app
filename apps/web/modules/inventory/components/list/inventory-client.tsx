@@ -7,11 +7,7 @@ import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/sc
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import {
-  formatImportStatus,
-  formatImportTransportType as formatTransportType,
-  type InventoryRow,
-} from "@builders/domain"
+import { formatImportedAsStatus, type InventoryRow } from "@builders/domain"
 import { useInventoryListController } from "../../controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
 
@@ -46,9 +42,7 @@ export default function InventoryClient({
     tableKey: "inventory-main",
     fields: [
       { key: "importNumber", label: "Import #", getValue: (row) => row.importNumber, groupable: false },
-      { key: "importTag", label: "Import Tag", getValue: (row) => row.importTag, groupable: false },
-      { key: "status", label: "Import Status", getValue: (row) => formatImportStatus(row.importStatus), groupable: true },
-      { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.importTransportType), groupable: true },
+      { key: "status", label: "Import Status", getValue: (row) => formatImportedAsStatus(row.isImported), groupable: true },
       { key: "product", label: "Product", getValue: (row) => row.productName, groupable: true },
       { key: "itemNumber", label: "Item #", getValue: (row) => row.itemNumber, groupable: false },
       { key: "stockCount", label: "Starting Balance", getValue: (row) => row.stockCount, groupable: false },
