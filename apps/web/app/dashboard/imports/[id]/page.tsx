@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { getImportDetailPageData } from "@/modules/imports/data/queries"
-import { ImportDetailClient } from "@/modules/imports/record/detail/import-detail-client"
+import { ImportDetailClient } from "@/modules/imports/components/record/import-detail-client"
 
 export default async function ImportDetailPage({
   params,

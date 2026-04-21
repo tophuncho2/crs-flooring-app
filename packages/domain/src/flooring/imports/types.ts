@@ -61,6 +61,8 @@ export type ImportRow = {
   warehouseId: string
   warehouseName: string
   itemsCount: number
+  totalCost: number
+  totalCostLabel: string
   createdAt: string
   updatedAt: string
 }

@@ -1,12 +1,12 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import ImportsClient from "@/modules/imports/components/imports-client"
+import ImportsClient from "@/modules/imports/components/list/imports-client"
 import { getImportsPageData, listImportsPageFilterOptions } from "@/modules/imports/data/queries"
 import { getResolvedUserTablePreference } from "@builders/application"
 import { parseServerTableFilterState } from "@/modules/shared/engines/list-view/controllers/table-filter-state"
 import type { ImportPageFilterState } from "@builders/domain"
-import { createImportsPageFilterDefinitions } from "@/modules/imports/table-filters"
+import { createImportsPageFilterDefinitions } from "@/modules/imports/components/list/table-filters"
 
 export default async function FlooringImportsPage({
   searchParams,

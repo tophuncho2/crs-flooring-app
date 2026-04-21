@@ -14,9 +14,9 @@ import {
   IMPORT_TRANSPORT_TYPE_OPTIONS,
   getImportStatusFieldClass,
   getTransportTypeFieldClass,
-} from "../../../components/formatters"
+} from "../../formatters"
 import type { ImportDetail as ImportRow, ImportPrimaryForm } from "@builders/domain"
-import type { WarehouseOption } from "../../drafts"
+import type { WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportPrimaryFieldsSection({
   entry,
@@ -118,6 +118,11 @@ export function ImportPrimaryFieldsSection({
                 className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
                 disabled={disabled}
               />
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell size="md">
+            <RecordFormField label="Total Cost">
+              <div className={RECORD_FIELD_CONTROL_CLASS_NAME}>{entry.totalCostLabel}</div>
             </RecordFormField>
           </RecordPrimaryFieldCell>
         </RecordPrimaryFieldsGrid>

@@ -125,7 +125,7 @@ async function loadImportsPageData(page: number, tableState: ServerTableQuerySta
     },
     tableState,
     filterState: filters,
-    initialImports: entries.map(normalizeImportRow),
+    initialImports: entries.map((entry) => normalizeImportRow(entry)),
   }
 }
 

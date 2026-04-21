@@ -1,9 +1,9 @@
 "use client"
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { ImportRecordPanel } from "../panel/import-record-panel"
+import { ImportRecordPanel } from "./import-record-panel"
 import type { ImportDetail as ImportRow } from "@builders/domain"
-import type { LocationOption, ProductOption, WarehouseOption } from "../drafts"
+import type { LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 function formatImportNumber(value: number) {
   return `IMP-${String(value).padStart(4, "0")}`

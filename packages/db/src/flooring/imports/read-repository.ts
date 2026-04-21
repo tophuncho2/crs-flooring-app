@@ -1,4 +1,4 @@
-import { buildFlooringProductDisplayName } from "@builders/domain"
+import { buildFlooringProductDisplayName, calculateImportSummary } from "@builders/domain"
 import { db } from "../../client.js"
 import {
   importDetailSelect,
@@ -38,9 +38,13 @@ export type ImportRecord = {
   warehouseId: string
   warehouseName: string
   itemsCount: number
+  totalCost: number
+  totalCostLabel: string
   createdAt: string
   updatedAt: string
 }
+
+export type ImportCostAggregate = { cost: number; freight: number }
 
 export type ImportDetailRecord = ImportRecord & {
   inventories: ImportInventoryRecord[]
@@ -71,7 +75,13 @@ export function normalizeImportInventoryRow(row: ImportInventoryPayload): Import
   }
 }
 
-export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
+export function normalizeImportRow(
+  row: ImportRowPayload,
+  aggregate: ImportCostAggregate = { cost: 0, freight: 0 },
+): ImportRecord {
+  const summary = calculateImportSummary([
+    { stockCount: 0, cost: aggregate.cost, freight: aggregate.freight },
+  ])
   return {
     id: row.id,
     importNumber: row.importNumber,
@@ -83,16 +93,61 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
     warehouseId: row.warehouseId ?? "",
     warehouseName: row.warehouse?.name ?? "",
     itemsCount: row._count.inventories,
+    totalCost: summary.totalCost,
+    totalCostLabel: summary.totalCostLabel,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }
 }
 
 export function normalizeImportDetail(row: ImportDetailPayload): ImportDetailRecord {
+  const inventoryItems = row.inventories.map((inv) => ({
+    stockCount: inv.stockCount.toString(),
+    cost: inv.cost?.toString() ?? "0",
+    freight: inv.freight?.toString() ?? "0",
+  }))
+  const summary = calculateImportSummary(inventoryItems)
+  const base: ImportRecord = {
+    id: row.id,
+    importNumber: row.importNumber,
+    orderNumber: row.orderNumber ?? "",
+    tag: row.tag ?? "",
+    transportType: row.transportType,
+    status: row.status,
+    notes: row.notes ?? "",
+    warehouseId: row.warehouseId ?? "",
+    warehouseName: row.warehouse?.name ?? "",
+    itemsCount: row._count.inventories,
+    totalCost: summary.totalCost,
+    totalCostLabel: summary.totalCostLabel,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }
   return {
-    ...normalizeImportRow(row),
+    ...base,
     inventories: row.inventories.map(normalizeImportInventoryRow),
   }
+}
+
+async function fetchImportCostAggregates(
+  ids: string[],
+  client: ImportsDbClient,
+): Promise<Map<string, ImportCostAggregate>> {
+  if (ids.length === 0) return new Map()
+  const aggregates = await client.flooringInventory.groupBy({
+    by: ["importEntryId"],
+    where: { importEntryId: { in: ids } },
+    _sum: { cost: true, freight: true },
+  })
+  const map = new Map<string, ImportCostAggregate>()
+  for (const entry of aggregates) {
+    if (!entry.importEntryId) continue
+    map.set(entry.importEntryId, {
+      cost: Number(entry._sum.cost ?? 0),
+      freight: Number(entry._sum.freight ?? 0),
+    })
+  }
+  return map
 }
 
 export async function listImports(client: ImportsDbClient = db): Promise<ImportRecord[]> {
@@ -100,7 +155,11 @@ export async function listImports(client: ImportsDbClient = db): Promise<ImportR
     select: importRowSelect,
     orderBy: [{ createdAt: "desc" }, { importNumber: "desc" }],
   })
-  return rows.map(normalizeImportRow)
+  const aggregates = await fetchImportCostAggregates(
+    rows.map((row) => row.id),
+    client,
+  )
+  return rows.map((row) => normalizeImportRow(row, aggregates.get(row.id)))
 }
 
 export async function getImportById(
@@ -111,7 +170,9 @@ export async function getImportById(
     where: { id },
     select: importRowSelect,
   })
-  return row ? normalizeImportRow(row) : null
+  if (!row) return null
+  const aggregates = await fetchImportCostAggregates([id], client)
+  return normalizeImportRow(row, aggregates.get(id))
 }
 
 export async function getImportDetailById(

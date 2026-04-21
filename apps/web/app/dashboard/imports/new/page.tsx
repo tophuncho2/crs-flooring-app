@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { getImportCreatePageData } from "@/modules/imports/data/queries"
-import { ImportCreateClient } from "@/modules/imports/record/create/import-create-client"
+import { ImportCreateClient } from "@/modules/imports/components/record/import-create-client"
 
 export default async function ImportCreatePage({
   searchParams,

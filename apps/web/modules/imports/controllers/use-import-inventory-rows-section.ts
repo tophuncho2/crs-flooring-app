@@ -15,7 +15,7 @@ import {
   validateImportInventoryDrafts,
   type ImportInventoryRowDraft,
   type LocationOption,
-} from "../../drafts"
+} from "./drafts"
 
 function createDraftRow(locationOptions: LocationOption[], warehouseId: string) {
   return applyDefaultLocationToImportRow(

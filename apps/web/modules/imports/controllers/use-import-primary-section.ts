@@ -1,6 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import {
   createRecordSectionError,
   useSingleSectionRecordController,
@@ -11,11 +10,8 @@ import {
   type ImportDetail as ImportRow,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import {
-  buildImportMutationPayload,
-  toImportInventoryDrafts,
-  validateImportPrimaryForm,
-} from "../../drafts"
+import { validateImportPrimaryForm } from "./drafts"
+import { deleteImportRequest, updateImportRequest } from "@/modules/imports/data/mutations"
 
 export function useImportPrimarySection({
   page,
@@ -43,21 +39,14 @@ export function useImportPrimarySection({
         })
       }
 
-      const payload = await requestJson<{ import: ImportRow }>(`/api/imports/${record.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildImportMutationPayload(localValue, toImportInventoryDrafts(record))),
-      })
-
+      const payload = await updateImportRequest(record.id, localValue, record.updatedAt)
       return {
-        serverValue: payload.import,
+        serverValue: { ...record, ...payload.import },
         noticeMessage: "Import saved",
       }
     },
     deleteRecord: async (record) => {
-      await requestJson<{ ok: true }>(`/api/imports/${record.id}`, {
-        method: "DELETE",
-      })
+      await deleteImportRequest(record.id, record.updatedAt)
     },
     deleteErrorMessage: "Failed to delete import",
   })

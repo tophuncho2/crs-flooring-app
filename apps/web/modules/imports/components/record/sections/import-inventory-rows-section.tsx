@@ -15,7 +15,7 @@ import {
   type RecordRowColumnSpec,
 } from "@/modules/shared/engines/record-view"
 import { calculateImportSummary } from "@builders/domain"
-import type { ImportInventoryRowDraft, LocationOption, ProductOption, WarehouseOption } from "../../drafts"
+import type { ImportInventoryRowDraft, LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 const IMPORT_INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "product", minWidth: 240, grow: 1.3, label: "Product" },

@@ -16,7 +16,7 @@ import {
   formatImportTransportType as formatTransportType,
   type ImportPageFilterState,
 } from "@builders/domain"
-import { createImportsPageFilterDefinitions } from "@/modules/imports/table-filters"
+import { createImportsPageFilterDefinitions } from "./table-filters"
 import {
   type ImportRow,
   useImportsListController,

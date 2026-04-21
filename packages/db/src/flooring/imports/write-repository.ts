@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client"
 import { db } from "../../client.js"
-import { importRowSelect, type ImportsDbClient } from "./shared.js"
-import { normalizeImportRow, type ImportRecord } from "./read-repository.js"
+import { type ImportsDbClient } from "./shared.js"
+import { getImportById, type ImportRecord } from "./read-repository.js"
 
 export type CreateImportInput = {
   orderNumber: string | null
@@ -34,9 +34,11 @@ export async function createImport(
       notes: input.notes,
       warehouseId: input.warehouseId,
     },
-    select: importRowSelect,
+    select: { id: true },
   })
-  return normalizeImportRow(row)
+  const record = await getImportById(row.id, client)
+  if (!record) throw new Error("createImport: record disappeared mid-transaction")
+  return record
 }
 
 export async function updateImport(
@@ -56,12 +58,14 @@ export async function updateImport(
       : { disconnect: true }
   }
 
-  const row = await client.flooringImportEntry.update({
+  await client.flooringImportEntry.update({
     where: { id },
     data,
-    select: importRowSelect,
+    select: { id: true },
   })
-  return normalizeImportRow(row)
+  const record = await getImportById(id, client)
+  if (!record) throw new Error("updateImport: record not found after update")
+  return record
 }
 
 export async function deleteImportById(

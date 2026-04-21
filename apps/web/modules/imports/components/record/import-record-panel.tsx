@@ -9,10 +9,10 @@ import {
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { ImportInventoryRowsSection } from "./sections/import-inventory-rows-section"
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
-import { useImportInventoryRowsSection } from "./controllers/use-import-inventory-rows-section"
-import { useImportPrimarySection } from "./controllers/use-import-primary-section"
+import { useImportInventoryRowsSection } from "@/modules/imports/controllers/use-import-inventory-rows-section"
+import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
 import type { ImportDetail as ImportRow } from "@builders/domain"
-import type { LocationOption, ProductOption, WarehouseOption } from "../drafts"
+import type { LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,

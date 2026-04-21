@@ -6,9 +6,9 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event"
 import { navigationMocks } from "../../helpers/next-navigation-mock"
 import { requestJsonMock, resetSimpleTableClientMocks } from "../../helpers/simple-table-client-mocks"
-import ImportsClient from "@/modules/imports/components/imports-client"
-import { ImportDetailClient } from "@/modules/imports/record/detail/import-detail-client"
-import { ImportCreateClient } from "@/modules/imports/record/create/import-create-client"
+import ImportsClient from "@/modules/imports/components/list/imports-client"
+import { ImportDetailClient } from "@/modules/imports/components/record/import-detail-client"
+import { ImportCreateClient } from "@/modules/imports/components/record/import-create-client"
 
 vi.mock("@/modules/shared/engines/list-view/controllers/use-table-columns", () => ({
   useTableColumns: () => ({

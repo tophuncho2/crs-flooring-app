@@ -1,7 +1,7 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { createImportRequest } from "@/modules/imports/data/mutations"
 import {
   RecordCreateClientScaffold,
   RecordPanelFooter,
@@ -14,8 +14,8 @@ import {
   type ImportDetail as ImportRow,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import type { WarehouseOption } from "../drafts"
-import { ImportPrimaryFieldsSection } from "../panel/sections/import-primary-fields-section"
+import type { WarehouseOption } from "@/modules/imports/controllers/drafts"
+import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
 
 const EMPTY_IMPORT_ROW: ImportRow = {
   id: "new",
@@ -28,6 +28,8 @@ const EMPTY_IMPORT_ROW: ImportRow = {
   warehouseId: "",
   warehouseName: "",
   itemsCount: 0,
+  totalCost: 0,
+  totalCostLabel: "$0.00",
   createdAt: "",
   updatedAt: "",
   inventories: [],
@@ -46,15 +48,7 @@ function ImportCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_IMPORT_PRIMARY_FORM }),
     createRecord: async (localValue) => {
-      const payload = await requestJson<{ import: ImportRow }>("/api/imports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...localValue,
-          items: [],
-        }),
-      })
-
+      const payload = await createImportRequest(localValue)
       return {
         redirectTo: buildRecordDetailHref("/dashboard/imports", payload.import.id, backHref),
       }

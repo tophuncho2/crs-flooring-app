@@ -1,9 +1,16 @@
 import { listImports } from "@builders/db"
-import { createImportUseCase, type CreateImportInput } from "@builders/application"
+import { createImportUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
-import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
+import {
+  applyRoutePolicy,
+  enforceMutationReceipt,
+  enforceQueryRateLimit,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateCreateImportInput } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await authorizeWarehouseRoute(request)
@@ -23,7 +30,7 @@ export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
-      scope: "imports.write",
+      scope: "imports.create",
       limit: 50,
       windowMs: 10 * 60 * 1000,
       route: "/api/imports",
@@ -33,7 +40,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, (inputBody) => inputBody)
+    const { input, mutation } = parseMutationEnvelope(body, validateCreateImportInput)
 
     const receipt = await enforceMutationReceipt({ scope: "imports.create", request, access, mutation, body })
     if (receipt.replay) return receipt.replay
@@ -46,7 +53,7 @@ export async function POST(request: Request) {
         route: "/api/imports",
         entityType: "flooringImportEntry",
       },
-      () => createImportUseCase(input as CreateImportInput),
+      () => createImportUseCase(input),
     )
 
     const responseBody = { import: result }
