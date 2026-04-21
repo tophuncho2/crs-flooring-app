@@ -27,11 +27,37 @@ Companion to `docs/sweeps/CURRENT.PLAN.md`. Phases A → D are green; this doc p
 | "Creates are done through imports." | ⚠️ **Both paths exist.** Primary flow is the imports inventory-rows diff (adds rows into a specific import). But inventory also has a standalone `POST /api/inventory` for creating inventory rows **not** tied to any import (schema allows `importEntryId: null`; `createInventoryUseCase` supports this). Keep both — the standalone route is cheap and unlocks "I received material outside the normal import flow" workflows. |
 | Inventory API also has **GET list, GET form options, GET detail**. | ✅ Correct. `route.ts` GET list + POST create, `options/route.ts` GET, `[id]/route.ts` GET detail + DELETE. |
 | Routes follow the canonical gauntlet (auth → rate limit → mutation envelope → snapshot + expectedUpdatedAt → mutation receipt → telemetry + use case → finalize receipt → routeJson). | ✅ Exactly right. Lifecycle below. |
-| Routes call use cases; use cases call domain + db; domain tells the data layer what to do. | ✅ Correct modulo wording. **Use case** orchestrates: imports domain rules (pure validators), calls data-layer reads/writes inside `withDatabaseTransaction`, returns canonical records. Domain doesn't "tell the data layer" anything — it just validates. |
+| Routes call use cases; use cases call domain + db; domain tells the data layer what to do. | ⚠️ Wording correction. **Routes** call use cases. **Use cases (application)** orchestrate: they import domain for rules, import data for I/O, own the transaction, and decide what happens and in what order. **Domain** is a pure library of allowed-state rules and formatters — imported for consultation, never invokes anything, never touches the DB. **Data** executes exactly what the use case asks for and returns normalized records. The flow of *control* is routes → application → data; the flow of *rules* is application pulling from domain as needed. See §"Layer responsibility model" below for the full direction map. |
 
 **Imports POST create (`POST /api/imports`) — stays as-is.** That route creates import entries (the parent aggregate). It's Sweep-1 code, untouched by Sweep 2. Our new `saveImportInventoryRowsUseCase` is a separate route (PATCH section on an existing import). Confirmed: no regression risk to the imports create flow.
 
 Your Phase F + G understanding is otherwise correct — laid out in full below.
+
+---
+
+## Layer responsibility model
+
+Import direction (enforced by each package's `CLAUDE.md`):
+
+```
+routes              → application + (data for pure reads)
+application         → domain + data
+data                → (domain: pure helpers ONLY — Sweep-1 carve-out)
+domain              → (nothing — zero outbound imports)
+```
+
+- **Domain** — pure rules. Zero imports from data or application. Never computes against real data, never issues a write. A library of `validate*`, `is*Blocked`, `describe*Issue`, `format*` functions that application consults. Enforced by `packages/domain/CLAUDE.md` rule 1.
+- **Application** — the orchestrator. Imports domain for rules, data for I/O. Decides what happens: validate → existence-check → write → re-read → return canonical. Use cases own the transaction (`withDatabaseTransaction`). Enforced by `packages/application/CLAUDE.md` rule 5 ("Business rules are delegated to domain — use cases do not contain their own").
+- **Data** — executor. Issues Prisma queries as told. No conditional rules, no invariant checks. Enforced by `packages/db/CLAUDE.md` rule 2.
+
+### The one carve-out
+
+`packages/db/CLAUDE.md` rule 1 has a Sweep-1 carve-out: **data-layer normalizers MAY import pure domain helpers** (formatters + pure computations), never rules that throw. Examples:
+
+- `packages/db/src/flooring/imports/read-repository.ts:1` — imports `calculateImportSummary`, `buildFlooringProductDisplayName`
+- `packages/db/src/flooring/inventory/read-repository.ts:1` — imports `formatFullLocationCode`
+
+This is data *reusing* a pure utility so the same display string/math isn't re-implemented in both places. Domain is still a source of truth, not an actor. The helper has no side effects, no throws, no DB knowledge. Control flow still runs routes → application → data; rules flow from domain into application on demand.
 
 ---
 
@@ -309,5 +335,10 @@ This mirrors the pattern we just executed for inventory's `saveImportInventoryRo
 ## Open decisions flagged for you
 
 1. **Standalone inventory create UI.** The API route `POST /api/inventory` stays per CURRENT.PLAN + existing `createInventoryUseCase`. But do we ship a **dashboard page** for it (`app/dashboard/inventory/new/page.tsx`) this sweep, or just the API and defer the UI? Lean: ship the page — the create path is already built end-to-end, no work saved by deferring.
+- i think we keep this in and defer. we dont need to ship a dashboard page or create flow for a single inv item right now. this can stay out of scope, we will address this in the future.
 2. **Table-filters file location.** Current `modules/inventory/table-filters.ts` — move to `components/list/table-filters.ts` (list-scoped) or `components/list/filters.tsx` (rename to match imports convention)? Lean: `components/list/table-filters.ts` (preserve filename, match canonical folder).
+- whichever makes more sense. as long as its under components. 
 3. **Cut-logs section shell depth.** In Phase F we scaffold `components/record/sections/inventory-cut-logs-section.tsx` + `controllers/use-inventory-cut-logs-section.ts` as empty shells. Do we render a read-only cut-logs grid now (using the data that's already computable since `status` is live), or truly empty until Sweep 3? Lean: read-only grid now — shows `totalCutBalance` + `awaitingCutBalance` + the cut-log list, no editing. Small lift, immediate user value.
+- they dont need to be manually set to read only. definetly lets include the scaffolding. changing weather its editable or not wont make a difference because mutations likely aren't correct. i think that would be scope creep to do anything other than include the component and ui primitives for the cut log section of inventory.
+- Confirm cut logs are not viewable by toggle of inventory row from imports record view.
+
