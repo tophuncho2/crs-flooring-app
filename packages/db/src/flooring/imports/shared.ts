@@ -27,6 +27,7 @@ export const importInventorySelect = {
   freight: true,
   notes: true,
   locationId: true,
+  isImported: true,
   updatedAt: true,
   product: {
     select: {

@@ -6,7 +6,12 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import type { InventoryDetail, InventoryForm, InventoryLocationOption } from "@builders/domain"
+import type {
+  InventoryDetail,
+  InventoryForm,
+  InventoryLocationOption,
+  InventoryWarehouseOption,
+} from "@builders/domain"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./sections/inventory-cut-logs-section"
@@ -15,16 +20,19 @@ export function InventoryRecordPanel({
   page,
   inventory,
   locationOptions,
+  warehouseOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   inventory: InventoryDetail
   locationOptions: InventoryLocationOption[]
+  warehouseOptions: InventoryWarehouseOption[]
 }) {
   const controller = useInventoryPrimarySection({
     page,
     inventory,
     locationOptions,
   })
+  const isReadOnly = !inventory.isImported
 
   return (
     <RecordMultiSectionPanel
@@ -56,7 +64,7 @@ export function InventoryRecordPanel({
                 inventory={controller.record}
                 draft={controller.primarySection.localValue}
                 locationOptions={controller.availableLocationOptions}
-                warehouseName={controller.activeWarehouseName}
+                warehouseOptions={warehouseOptions}
                 sectionName={controller.activeSectionName}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
@@ -79,15 +87,23 @@ export function InventoryRecordPanel({
               stockUnit={controller.record.stockUnit}
               totalCutBalance={controller.record.totalCutBalance}
               awaitingCutBalance={controller.record.awaitingCutBalance}
+              isImported={controller.record.isImported}
             />
           ),
         },
       ]}
-      footer={{
-        deleteLabel: "Delete Inventory",
-        deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
-        onDelete: () => void controller.deleteRecord(),
-      }}
+      footer={
+        isReadOnly
+          ? {
+              deleteLabel: "Delete Inventory",
+              deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
+            }
+          : {
+              deleteLabel: "Delete Inventory",
+              deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
+              onDelete: () => void controller.deleteRecord(),
+            }
+      }
     />
   )
 }

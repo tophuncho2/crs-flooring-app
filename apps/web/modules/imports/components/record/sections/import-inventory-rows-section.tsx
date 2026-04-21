@@ -26,6 +26,7 @@ const IMPORT_INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "cost", minWidth: 132, align: "end", label: "Cost" },
   { key: "freight", minWidth: 132, align: "end", label: "Freight" },
   { key: "notes", minWidth: 280, grow: 1.2, label: "Notes" },
+  { key: "importStatus", minWidth: 140, align: "center", label: "Import Status" },
   { key: "status", minWidth: 120, align: "center", label: "Status" },
   { key: "remove", minWidth: 110, align: "center", label: "Remove" },
 ]
@@ -44,6 +45,7 @@ export function ImportInventoryRowsSection({
   noticeMessage,
   noticeError,
   onRowFieldChange,
+  onRowImportStatusChange,
   onRemoveRow,
 }: {
   subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
@@ -54,7 +56,12 @@ export function ImportInventoryRowsSection({
   locationOptions: LocationOption[]
   noticeMessage?: string
   noticeError?: string
-  onRowFieldChange: (index: number, field: keyof Omit<ImportInventoryRowDraft, "clientId">, value: string) => void
+  onRowFieldChange: (
+    index: number,
+    field: Exclude<keyof Omit<ImportInventoryRowDraft, "clientId">, "isImported">,
+    value: string,
+  ) => void
+  onRowImportStatusChange: (index: number, isImported: boolean) => void
   onRemoveRow: (index: number) => void
 }) {
   const summary = calculateImportSummary(rows.map((row) => ({
@@ -190,6 +197,19 @@ export function ImportInventoryRowsSection({
                     value={row.notes}
                     onChange={(event) => onRowFieldChange(index, "notes", event.target.value)}
                   />
+                </RecordItemCell>
+                <RecordItemCell columnKey="importStatus" chrome="grid" showLabel={index === 0}>
+                  <RecordGridCellSelect
+                    aria-label={`Import inventory row ${index + 1} import status`}
+                    value={row.isImported ? "FINAL" : "PENDING"}
+                    disabled={row.isImported}
+                    onChange={(event) =>
+                      onRowImportStatusChange(index, event.target.value === "FINAL")
+                    }
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="FINAL">Final</option>
+                  </RecordGridCellSelect>
                 </RecordItemCell>
                 <RecordItemSectionControls
                   capabilities={{ supportsStatusColumn: true, supportsRemoveRow: true }}

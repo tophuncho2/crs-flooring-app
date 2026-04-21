@@ -6,7 +6,7 @@ export type InventoryValidationIssue =
   | { code: "ITEM_NUMBER_REQUIRED" }
   | { code: "STOCK_COUNT_NEGATIVE"; value: string }
   | { code: "STOCK_COUNT_INVALID"; value: string }
-  | { code: "WAREHOUSE_REQUIRED_FOR_LOCATION" }
+  | { code: "WAREHOUSE_REQUIRED" }
   | { code: "LOCATION_WAREHOUSE_MISMATCH"; locationWarehouseId: string; warehouseId: string }
   | { code: "IMPORTED_REVERSAL_NOT_ALLOWED" }
 
@@ -36,8 +36,8 @@ export function validateInventoryInput(
     issues.push({ code: "STOCK_COUNT_NEGATIVE", value: input.stockCount })
   }
 
-  if (input.locationId && !input.warehouseId) {
-    issues.push({ code: "WAREHOUSE_REQUIRED_FOR_LOCATION" })
+  if (!input.warehouseId) {
+    issues.push({ code: "WAREHOUSE_REQUIRED" })
   }
 
   if (input.locationId && input.warehouseId && location) {
@@ -122,8 +122,8 @@ export function describeInventoryValidationIssue(issue: InventoryValidationIssue
       return "Starting balance must be a number."
     case "STOCK_COUNT_NEGATIVE":
       return "Starting balance cannot be negative."
-    case "WAREHOUSE_REQUIRED_FOR_LOCATION":
-      return "Select a warehouse before choosing a location."
+    case "WAREHOUSE_REQUIRED":
+      return "Warehouse is required."
     case "LOCATION_WAREHOUSE_MISMATCH":
       return "The selected location does not belong to the selected warehouse."
     case "IMPORTED_REVERSAL_NOT_ALLOWED":

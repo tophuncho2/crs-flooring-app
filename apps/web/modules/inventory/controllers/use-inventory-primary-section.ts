@@ -87,7 +87,10 @@ export function useInventoryPrimarySection({
   )
 
   const locationScopeId =
-    controller.record.importWarehouseId || controller.record.warehouseId || ""
+    controller.primarySection.localValue.warehouseId ||
+    controller.record.importWarehouseId ||
+    controller.record.warehouseId ||
+    ""
   const availableLocationOptions = useMemo(() => {
     if (!locationScopeId) {
       return locationOptions

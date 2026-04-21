@@ -55,6 +55,7 @@ export async function getInventoryDetailPageData(
   PrismaDetailPageResult<{
     inventory: InventoryDetailRecord
     locationOptions: Awaited<ReturnType<typeof listInventoryOptions>>["locations"]
+    warehouseOptions: Awaited<ReturnType<typeof listInventoryOptions>>["warehouses"]
   }>
 > {
   try {
@@ -72,6 +73,7 @@ export async function getInventoryDetailPageData(
       data: {
         inventory,
         locationOptions: options.locations,
+        warehouseOptions: options.warehouses,
       },
     }
   } catch (error) {

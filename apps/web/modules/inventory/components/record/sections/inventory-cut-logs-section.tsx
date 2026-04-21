@@ -35,13 +35,18 @@ export function InventoryCutLogsSection({
   stockUnit,
   totalCutBalance,
   awaitingCutBalance,
+  isImported,
 }: {
   cutLogs: CutLogRow[]
   stockUnit: string
   totalCutBalance: string
   awaitingCutBalance: string
+  isImported: boolean
 }) {
   const hasRows = cutLogs.length > 0
+  const pendingEmptyState = isImported
+    ? "No cut logs recorded for this inventory row."
+    : "Cut logs unlock once this row is marked Final on the imports record view."
 
   return (
     <RecordItemSection
@@ -62,12 +67,12 @@ export function InventoryCutLogsSection({
         supportsStatusColumn: true,
       }}
       isEmpty={!hasRows}
-      emptyState="No cut logs recorded for this inventory row."
+      emptyState={pendingEmptyState}
     >
       <RecordSectionGrid
         columns={INVENTORY_CUT_LOG_COLUMNS}
         isEmpty={!hasRows}
-        emptyState="No cut logs recorded for this inventory row."
+        emptyState={pendingEmptyState}
       >
         {cutLogs.map((cutLog, index) => {
           const statusResolution = resolveRecordRowStatus({})

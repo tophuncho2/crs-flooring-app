@@ -106,9 +106,22 @@ function requireArray(value: unknown, field: string): unknown[] {
   return value
 }
 
+function optionalDiffBoolean(value: unknown, field: string): boolean | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== "boolean") {
+    throw new InventoryExecutionError({
+      code: "INVENTORY_DIFF_VALIDATION_FAILED",
+      message: `${field} must be true or false`,
+      status: 400,
+      field,
+    })
+  }
+  return value
+}
+
 function shapeDraft(raw: unknown, idx: number): InventoryRowDraft {
   const row = requireObject(raw, `added[${idx}]`)
-  return {
+  const draft: InventoryRowDraft = {
     tempId: requireInventoryString(row.tempId, `added[${idx}].tempId`),
     productId: requireInventoryString(row.productId, `added[${idx}].productId`),
     itemNumber: requireInventoryString(row.itemNumber, `added[${idx}].itemNumber`),
@@ -120,6 +133,9 @@ function shapeDraft(raw: unknown, idx: number): InventoryRowDraft {
     freight: nullableString(row.freight, `added[${idx}].freight`),
     notes: nullableString(row.notes, `added[${idx}].notes`),
   }
+  const isImported = optionalDiffBoolean(row.isImported, `added[${idx}].isImported`)
+  if (isImported !== undefined) draft.isImported = isImported
+  return draft
 }
 
 function shapePatch(raw: unknown, idx: number): InventoryRowUpdatePatch {
@@ -134,6 +150,10 @@ function shapePatch(raw: unknown, idx: number): InventoryRowUpdatePatch {
   if (patch.cost !== undefined) result.cost = nullableString(patch.cost, `modified[${idx}].patch.cost`)
   if (patch.freight !== undefined) result.freight = nullableString(patch.freight, `modified[${idx}].patch.freight`)
   if (patch.notes !== undefined) result.notes = nullableString(patch.notes, `modified[${idx}].patch.notes`)
+  if (patch.isImported !== undefined) {
+    const parsed = optionalDiffBoolean(patch.isImported, `modified[${idx}].patch.isImported`)
+    if (parsed !== undefined) result.isImported = parsed
+  }
   return result
 }
 

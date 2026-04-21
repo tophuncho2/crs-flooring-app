@@ -57,6 +57,7 @@ function toDraftPayload(row: ImportInventoryRowDraft): InventoryRowDraft {
     cost: row.cost || null,
     freight: row.freight || null,
     notes: row.notes || null,
+    isImported: row.isImported,
   }
 }
 
@@ -75,6 +76,7 @@ function toUpdatePatch(
   if ((row.cost || null) !== (existing.cost || null)) patch.cost = row.cost || null
   if ((row.freight || null) !== (existing.freight || null)) patch.freight = row.freight || null
   if ((row.notes || null) !== (existing.notes || null)) patch.notes = row.notes || null
+  if (row.isImported !== existing.isImported) patch.isImported = row.isImported
   return patch
 }
 
@@ -210,7 +212,7 @@ export function useImportInventoryRowsSection({
 
   function setRowField(
     index: number,
-    field: keyof Omit<ImportInventoryRowDraft, "clientId">,
+    field: Exclude<keyof Omit<ImportInventoryRowDraft, "clientId">, "isImported">,
     value: string,
   ) {
     section.setLocalValue((previous) =>
@@ -218,6 +220,15 @@ export function useImportInventoryRowsSection({
         if (rowIndex !== index) return row
         return { ...row, [field]: value }
       }),
+    )
+    if (section.error) {
+      section.setError(null)
+    }
+  }
+
+  function setRowImportStatus(index: number, isImported: boolean) {
+    section.setLocalValue((previous) =>
+      previous.map((row, rowIndex) => (rowIndex === index ? { ...row, isImported } : row)),
     )
     if (section.error) {
       section.setError(null)
@@ -235,6 +246,7 @@ export function useImportInventoryRowsSection({
     addRow,
     removeRow,
     setRowField,
+    setRowImportStatus,
     handleWarehouseChange,
   }
 }

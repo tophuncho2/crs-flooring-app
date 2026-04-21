@@ -26,19 +26,6 @@ function optionalString(value: unknown, field: string): string {
   return value
 }
 
-function optionalBoolean(value: unknown, field: string): boolean | undefined {
-  if (value === undefined) return undefined
-  if (typeof value !== "boolean") {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: `${field} must be true or false`,
-      status: 400,
-      field,
-    })
-  }
-  return value
-}
-
 export function validateCreateInventoryInput(body: Record<string, unknown>): CreateInventoryInput {
   return {
     productId: requireString(body.productId, "productId"),
@@ -64,7 +51,5 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
   if (body.cost !== undefined) input.cost = optionalString(body.cost, "cost")
   if (body.freight !== undefined) input.freight = optionalString(body.freight, "freight")
   if (body.notes !== undefined) input.notes = optionalString(body.notes, "notes")
-  const isImported = optionalBoolean(body.isImported, "isImported")
-  if (isImported !== undefined) input.isImported = isImported
   return input
 }

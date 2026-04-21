@@ -152,28 +152,25 @@ Three files touched in `packages/application/`. `@builders/application` builds c
 
 All four backend layers are now green. Phase E (routes) strips `isImported` out of the inventory primary PATCH and threads it through the imports inventory-rows diff shaper.
 
-### Phase E — Routes
+### Phase E — Routes ✅ **SHIPPED**
 
-- `apps/web/app/api/inventory/_validators.ts` — **remove** `isImported` from `validateUpdateInventoryInput` (currently lines 67–68). The inventory primary section never edits this; only the imports diff path is allowed to set it.
-- `apps/web/app/api/imports/_validators.ts` — in `shapeDraft` / `shapePatch`, accept + forward `isImported` as a boolean.
+- `apps/web/app/api/inventory/_validators.ts` — `validateUpdateInventoryInput` no longer reads `isImported`; the `optionalBoolean` helper + lines 67–68 removed. Primary-section PATCH can't set the field.
+- `apps/web/app/api/imports/_validators.ts` — added `optionalDiffBoolean` shared helper; `shapeDraft` and `shapePatch` now pass `isImported` through as a boolean on added + modified rows.
 
-### Phase F — Modules
+### Phase F — Modules ✅ **SHIPPED**
 
-- `apps/web/modules/imports/controllers/drafts.ts`:
-  - Add `isImported: boolean` to `ImportInventoryRowDraft`.
-  - `createImportInventoryRowDraft` defaults to `item?.isImported ?? false`.
-- `packages/domain/src/flooring/imports/types.ts` — add `isImported: boolean` to `ImportInventoryRow` so seeded drafts can read it.
-- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx`:
-  - Add column `{ key: "importStatus", minWidth: 140, align: "center", label: "Import Status" }` — a `<RecordGridCellSelect>` bound to `row.isImported`, options `PENDING` (false) / `FINAL` (true).
-  - When `row.isImported === true`, **disable** the select — one-way transition visible in the UI.
-- `apps/web/modules/imports/controllers/use-import-inventory-rows-section.ts`:
-  - Extend `toDraftPayload` to forward `isImported` on added rows.
-  - Extend `toUpdatePatch` to diff `isImported`.
-- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx`:
-  - Add a read-only "Import Status" tile in the left pane (`RecordStaticFieldValue` rendering `formatImportedAsStatus(inventory.isImported)`).
+- `packages/domain/src/flooring/imports/types.ts` — `ImportInventoryRow` gained `isImported: boolean`.
+- `packages/db/src/flooring/imports/shared.ts` — `importInventorySelect` now selects `isImported: true`.
+- `packages/db/src/flooring/imports/read-repository.ts` — `ImportInventoryRecord` shape + `normalizeImportInventoryRow` emit `isImported` on every read.
+- `apps/web/modules/imports/controllers/drafts.ts` — `ImportInventoryRowDraft` gained `isImported: boolean`; `createImportInventoryRowDraft` seeds from `item?.isImported ?? false`.
+- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx` — new `importStatus` column with `<RecordGridCellSelect>` bound to `row.isImported` (PENDING/FINAL options). `disabled={row.isImported}` makes the one-way transition visible.
+- `apps/web/modules/imports/controllers/use-import-inventory-rows-section.ts` — added `setRowImportStatus(index, boolean)` setter; `setRowField` narrowed to the string-only fields to keep type safety; `toDraftPayload` forwards `isImported` on added rows; `toUpdatePatch` diffs it on modified rows.
+- `apps/web/modules/imports/components/record/import-record-panel.tsx` — wires `onRowImportStatusChange={inventoryRowsSection.setRowImportStatus}` into the section.
+- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — new read-only **Import Status** tile in the left pane (`RecordStaticFieldValue` rendering `formatImportedAsStatus(inventory.isImported)`).
 
-### Phase G — Dashboard
-No change.
+### Phase G — Dashboard ✅ **SHIPPED (no-op)**
+
+SSR page already passes `InventoryDetailRecord` through unchanged. Nothing to edit beyond the `warehouseOptions` thread that Change 3 required.
 
 ### Blast radius
 - **`InventoryRow` shape narrowing** removes three fields (`importTag`, `importStatus`, `importTransportType`). Grep confirms consumers are the inventory list view (already trimmed in Change 1), the `isPendingInventoryRow` filter helper (rewired), and a products test fixture. Test fixture updated to drop the fields.
@@ -182,48 +179,37 @@ No change.
 
 ---
 
-## Change 3 — Warehouse field editable + required (inventory record primary section)
+## Change 3 — Warehouse field editable + required (inventory record primary section) ✅ **SHIPPED**
 
-### Save path audit: already in place
-- **Route** `apps/web/app/api/inventory/[id]/primary/section/route.ts` uses `validateUpdateInventoryInput` which accepts `warehouseId`.
-- **Use case** `updateInventoryUseCase` (`packages/application/src/flooring/inventory/update-inventory.ts:82–94, 128–130`) validates warehouse existence + location-warehouse match + forwards to DB.
-- **DB write** `updateInventory` (`packages/db/src/flooring/inventory/write-repository.ts:60–64`) handles connect/disconnect.
-- **Controller** `use-inventory-primary-section.ts:43` already serializes `warehouseId` into the PATCH body.
+Save path was already wired (route → validator → use case → DB write → controller payload). UI + domain rule landed in this pass:
 
-### UI-only work
-
-- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx`:
-  - Replace the static `RecordStaticFieldValue` warehouse block (lines 48–54) with a `<select>` wired to `draft.warehouseId` + `onFieldChange("warehouseId", ...)`. New prop: `warehouseOptions: InventoryWarehouseOption[]`.
-  - Same pattern as the imports primary section (`import-primary-fields-section.tsx:86–100`).
-- `apps/web/modules/inventory/components/record/inventory-record-panel.tsx` — thread `warehouseOptions`.
-- `apps/web/modules/inventory/components/record/inventory-detail-client.tsx` — accept + forward `warehouseOptions`.
-- `apps/web/app/dashboard/inventory/[id]/page.tsx` — read `warehouseOptions` from `listInventoryOptions()` (already fetched in `getInventoryDetailPageData`, just not returned). Extend `getInventoryDetailPageData` to return the warehouses list.
-- `apps/web/modules/inventory/controllers/use-inventory-primary-section.ts` — location-scope logic at lines 89–95 currently prefers `importWarehouseId || warehouseId` from the **server record**. Update to prefer `draft.warehouseId` first so the location dropdown stays in sync when the user changes warehouse before saving.
-- `packages/domain/src/flooring/inventory/inventory-rules.ts`:
-  - Make `warehouseId` unconditionally required in `validateInventoryInput`. Add a `WAREHOUSE_REQUIRED` issue code (drop the narrower `WAREHOUSE_REQUIRED_FOR_LOCATION` — keep the single unified code).
+- `packages/domain/src/flooring/inventory/inventory-rules.ts` — `WAREHOUSE_REQUIRED_FOR_LOCATION` replaced by unified `WAREHOUSE_REQUIRED`. `validateInventoryInput` now pushes that issue whenever `warehouseId` is missing, regardless of location. `describeInventoryValidationIssue` case updated to return `"Warehouse is required."`.
+- `apps/web/modules/inventory/data/queries.ts` — `getInventoryDetailPageData` now returns `warehouseOptions` alongside `locationOptions`. Pulled from the already-fetched `listInventoryOptions()` bag — no extra query.
+- `apps/web/app/dashboard/inventory/[id]/page.tsx` — forwards `warehouseOptions` into the client.
+- `apps/web/modules/inventory/components/record/inventory-detail-client.tsx` + `inventory-record-panel.tsx` — thread `warehouseOptions` into the primary-fields section.
+- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — static `RecordStaticFieldValue` warehouse block swapped for a `<select required>` bound to `draft.warehouseId`. Uses the same classname as the other editable fields. `warehouseName` prop removed (derived from the selected option).
+- `apps/web/modules/inventory/controllers/use-inventory-primary-section.ts` — `locationScopeId` now prefers `controller.primarySection.localValue.warehouseId` (draft-first), then falls back to `importWarehouseId` / `warehouseId` from the server record. Location dropdown stays in sync while the user changes warehouse pre-save.
 
 ### Blast radius
-- Existing inventory rows with `warehouseId = NULL` stay untouched; they fail to save on next edit until the user picks a warehouse. Matches intent.
-- The imports-diff path stamps warehouse from the location's warehouse, or (new in Change 2) from the parent import's warehouse. Rows created via the imports path never have null warehouse after this sweep.
+- Existing rows with `warehouseId = NULL` now fail validation on primary-section save until the user picks a warehouse. Matches intent (all pre-sweep inventory was deleted, so no real rows in this state anyway).
+- The imports-diff path is unchanged — it stamps warehouse from the location's warehouse or the parent import's warehouseId (Change 5 rollup in Phase C). Rows created through the imports path never have null warehouse.
 
 ---
 
-## Change 4 — Edit gates on `isImported`
-
-Two gates, both UI-first with a server-side backstop.
+## Change 4 — Edit gates on `isImported` ✅ **SHIPPED**
 
 ### Gate A — Inventory primary-section edits disabled when `isImported === false`
-- **UI (primary):** in `inventory-primary-fields-section.tsx` + `inventory-record-panel.tsx`, compute `const isReadOnly = !inventory.isImported`. Disable every input / select, hide the "Save" button (or show it disabled). Display a small banner: *"This row is pending import. It becomes editable once marked as FINAL on the import record."*
-- **UI (delete):** likewise disable the delete button when `!isImported` (rows should be removed via the imports diff while pending).
-- **Server backstop:** add to `updateInventoryUseCase` (before the update write): if `current.isImported === false`, throw `InventoryExecutionError("INVENTORY_PENDING_IMPORT", 400)`. Extend `errors.ts`.
+- `inventory-primary-fields-section.tsx` — computes `isReadOnly = !inventory.isImported` and `controlDisabled = disabled || isReadOnly`. Every input / select / textarea now uses `disabled={controlDisabled}`. A banner renders at the top of the section when `isReadOnly` is true: *"This inventory row is pending import. It becomes editable once marked as Final on the imports record view."*
+- `inventory-record-panel.tsx` — when `isReadOnly`, the footer config omits `onDelete` so the Delete button doesn't render. The Save button cascades naturally to disabled because no edits can make `isDirty` true with inputs locked.
+- **Server backstop (`update-inventory.ts`):** immediately after loading `current`, the use case throws `InventoryExecutionError({ code: "INVENTORY_PENDING_IMPORT", status: 400 })` when `current.isImported === false`. Guaranteed refusal even if a client bypasses the UI. `InventoryErrorCode` gained `INVENTORY_PENDING_IMPORT`.
 
-### Gate B — Cut-logs section disabled when `isImported === false`
-- **Domain:** already exists (`canAddCutLog`, reserved error `CUT_LOG_INVENTORY_NOT_IMPORTED`).
-- **UI (cut-logs section):** in `inventory-cut-logs-section.tsx`, when `!isImported`, hide add-row controls + any inline edit affordances (Sweep 3 wires the edit UI — until then the section is already read-only, so just stub a pre-emptive banner: *"Cut logs unlock once this row is marked FINAL on the import."*).
+### Gate B — Cut-logs section
+- `inventory-cut-logs-section.tsx` — accepts `isImported: boolean`. Empty-state copy + grid emptyState switch to *"Cut logs unlock once this row is marked Final on the imports record view."* when pending. Domain gate (`canAddCutLog` + `CUT_LOG_INVENTORY_NOT_IMPORTED`) was already in place; the UI now renders that reality.
+- `inventory-record-panel.tsx` forwards `isImported={controller.record.isImported}` into the section.
 
 ### Blast radius
-- All existing inventory + import rows were deleted before this sweep; no back-fill DML needed. New rows added via the imports record view start PENDING, then flip to FINAL through the same UI.
-- The standalone `POST /api/inventory` create path is out of scope (placeholder for a future single-row form; not reachable from current UI). Leaving it untouched — the path's "starts `false` → read-only" behaviour is irrelevant because no one hits it.
+- All existing inventory + import rows were deleted before this sweep; no back-fill DML needed. New rows added via the imports record view start PENDING, then flip to FINAL through the imports section — at which point they appear in the inventory dashboard list AND become editable on the inventory record view.
+- The standalone `POST /api/inventory` create path stays out of scope. Its output starts `isImported = false`, which means the guard would immediately refuse any follow-up update; irrelevant because the path has no UI caller.
 
 ---
 

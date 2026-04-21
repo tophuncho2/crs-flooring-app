@@ -37,6 +37,7 @@ export type ImportInventoryRowDraft = {
   cost: string
   freight: string
   notes: string
+  isImported: boolean
 }
 
 export function createImportInventoryRowDraft(item?: ImportInventoryRow): ImportInventoryRowDraft {
@@ -50,6 +51,7 @@ export function createImportInventoryRowDraft(item?: ImportInventoryRow): Import
     cost: item?.cost ?? "",
     freight: item?.freight ?? "",
     notes: item?.notes ?? "",
+    isImported: item?.isImported ?? false,
   }
 }
 

@@ -116,6 +116,7 @@ export function ImportRecordPanel({
               noticeMessage={inventoryRowsSection.noticeMessage}
               noticeError={inventoryRowsSection.noticeError}
               onRowFieldChange={inventoryRowsSection.setRowField}
+              onRowImportStatusChange={inventoryRowsSection.setRowImportStatus}
               onRemoveRow={inventoryRowsSection.removeRow}
             />
           ),

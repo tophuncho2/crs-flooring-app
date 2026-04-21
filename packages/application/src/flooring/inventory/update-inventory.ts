@@ -38,6 +38,15 @@ export async function updateInventoryUseCase(
       })
     }
 
+    if (!current.isImported) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_PENDING_IMPORT",
+        message:
+          "Inventory row is pending import. Edits are only allowed once the row is marked Final from the imports record view.",
+        status: 400,
+      })
+    }
+
     if (isImportedReversal(current, input)) {
       throw new InventoryExecutionError({
         code: "IMPORTED_REVERSAL_NOT_ALLOWED",
