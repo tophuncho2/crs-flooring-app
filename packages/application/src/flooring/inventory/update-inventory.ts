@@ -10,6 +10,7 @@ import {
 } from "@builders/db"
 import {
   describeInventoryValidationIssues,
+  isImportedReversal,
   validateInventoryInput,
 } from "@builders/domain"
 import { InventoryExecutionError } from "./errors.js"
@@ -34,6 +35,15 @@ export async function updateInventoryUseCase(
         code: "INVENTORY_NOT_FOUND",
         message: "Inventory row not found.",
         status: 404,
+      })
+    }
+
+    if (isImportedReversal(current, input)) {
+      throw new InventoryExecutionError({
+        code: "IMPORTED_REVERSAL_NOT_ALLOWED",
+        message: "Inventory row is already imported and cannot return to pending.",
+        status: 400,
+        field: "isImported",
       })
     }
 

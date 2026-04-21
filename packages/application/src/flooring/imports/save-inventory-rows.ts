@@ -24,6 +24,7 @@ type ExistingRowMeta = {
   itemNumber: string
   locationId: string | null
   warehouseId: string | null
+  isImported: boolean
   updatedAt: Date
   cutLogsCount: number
 }
@@ -40,6 +41,7 @@ async function loadExistingRows(
       itemNumber: true,
       locationId: true,
       warehouseId: true,
+      isImported: true,
       updatedAt: true,
       _count: { select: { cutLogs: true } },
     },
@@ -50,6 +52,7 @@ async function loadExistingRows(
     itemNumber: row.itemNumber,
     locationId: row.locationId,
     warehouseId: row.warehouseId,
+    isImported: row.isImported,
     updatedAt: row.updatedAt,
     cutLogsCount: row._count.cutLogs,
   }))
@@ -109,6 +112,7 @@ function toDiffExisting(meta: ExistingRowMeta[]): DiffExistingInventoryRow[] {
     locationId: row.locationId,
     warehouseId: row.warehouseId,
     cutLogsCount: row.cutLogsCount,
+    isImported: row.isImported,
   }))
 }
 

@@ -131,13 +131,26 @@ Five files touched (four source, one test fixture). No Prisma migration needed. 
 - `@builders/application`: 1 error — `save-inventory-rows.ts` `toDiffExisting` still missing `isImported` on the mapped `DiffExistingInventoryRow`. Resolved by **Phase D**.
 - `@builders/web`: unchanged at 107 (all pre-existing in `work-orders` / `admin` / `shared/record-view` / `templates`; zero new errors).
 
-### Phase D — Application
+### Phase D — Application ✅ **SHIPPED**
 
-- `packages/application/src/flooring/inventory/update-inventory.ts`:
-  - After loading `current`, call `assertImportedTransitionAllowed(current, input)` before validation. Throw `InventoryExecutionError("IMPORTED_REVERSAL_NOT_ALLOWED", 400)`.
-  - The primary-section PATCH body does **not** accept `isImported` — see Phase E. But keep the use case permissive so imports-diff-driven saves still work.
-- `packages/application/src/flooring/inventory/errors.ts` — add `IMPORTED_REVERSAL_NOT_ALLOWED` to `InventoryErrorCode`.
-- `packages/application/src/flooring/imports/save-inventory-rows.ts` — already calls `validateInventoryRowsDiff`; new `IMPORTED_REVERSAL_NOT_ALLOWED` issue flows through `describeInventoryDiffIssues`. No other change.
+Three files touched in `packages/application/`. `@builders/application` builds clean, `dist/` rebuilt, and the final Phase-B downstream error (the `toDiffExisting` mapping) is resolved. `@builders/web` baseline still 107 (zero new errors).
+
+- `packages/application/src/flooring/inventory/errors.ts` — added `IMPORTED_REVERSAL_NOT_ALLOWED` to `InventoryErrorCode`.
+- `packages/application/src/flooring/inventory/update-inventory.ts` — added a reversal guard immediately after the `current` load (before validation). Uses the domain predicate `isImportedReversal(current, input)` from `@builders/domain`; when it fires, throws `InventoryExecutionError({ code: "IMPORTED_REVERSAL_NOT_ALLOWED", status: 400, field: "isImported" })`. The use case stays permissive when `input.isImported` is undefined or matches current — only true-→false transitions are blocked. Primary-section PATCH body won't carry `isImported` (Phase E strips it), but this guard protects every caller: imports-diff-driven saves, standalone update, and any future writer.
+  - Design note — used the pure predicate `isImportedReversal` instead of calling `assertImportedTransitionAllowed` + catching the domain error. Matches existing update-inventory.ts style where the use case explicitly raises `InventoryExecutionError` with route-layer-friendly fields (status + field). The domain `assert*` helper stays available for callers that prefer fail-fast.
+- `packages/application/src/flooring/imports/save-inventory-rows.ts` — Phase B's required `isImported` field on `DiffExistingInventoryRow` forced one update here:
+  - `ExistingRowMeta` gained `isImported: boolean`.
+  - `loadExistingRows` Prisma `select` block now includes `isImported: true`.
+  - `toDiffExisting` now forwards `isImported: row.isImported` into `DiffExistingInventoryRow`.
+  - No change to the use-case body — the existing call to `validateInventoryRowsDiff` already threads the new `IMPORTED_REVERSAL_NOT_ALLOWED` issue through `describeInventoryDiffIssues`, so a stale-reversal diff rolls up into `InventoryExecutionError("INVENTORY_DIFF_VALIDATION_FAILED", 400)` with the human-readable reason in the message.
+
+**Baselines after Phase D:**
+- `@builders/domain`: 0 errors.
+- `@builders/db`: 0 errors.
+- `@builders/application`: 0 errors — the last Phase-B/C downstream breakage is resolved.
+- `@builders/web`: unchanged at 107 (all pre-existing outside this sweep's scope).
+
+All four backend layers are now green. Phase E (routes) strips `isImported` out of the inventory primary PATCH and threads it through the imports inventory-rows diff shaper.
 
 ### Phase E — Routes
 
