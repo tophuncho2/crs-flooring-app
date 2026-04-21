@@ -3,7 +3,6 @@ import { parseInventoryDecimal } from "./formatters.js"
 
 export type InventoryValidationIssue =
   | { code: "PRODUCT_REQUIRED" }
-  | { code: "ITEM_NUMBER_REQUIRED" }
   | { code: "STOCK_COUNT_NEGATIVE"; value: string }
   | { code: "STOCK_COUNT_INVALID"; value: string }
   | { code: "WAREHOUSE_REQUIRED" }
@@ -27,7 +26,6 @@ export function validateInventoryInput(
   const issues: InventoryValidationIssue[] = []
 
   if (!input.productId.trim()) issues.push({ code: "PRODUCT_REQUIRED" })
-  if (!input.itemNumber.trim()) issues.push({ code: "ITEM_NUMBER_REQUIRED" })
 
   const raw = input.stockCount.trim()
   if (raw.length === 0 || !Number.isFinite(Number(raw))) {
@@ -116,8 +114,6 @@ export function describeInventoryValidationIssue(issue: InventoryValidationIssue
   switch (issue.code) {
     case "PRODUCT_REQUIRED":
       return "Select a product for the inventory row."
-    case "ITEM_NUMBER_REQUIRED":
-      return "Item # is required."
     case "STOCK_COUNT_INVALID":
       return "Starting balance must be a number."
     case "STOCK_COUNT_NEGATIVE":
