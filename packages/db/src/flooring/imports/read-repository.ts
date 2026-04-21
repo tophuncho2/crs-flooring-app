@@ -25,6 +25,7 @@ export type ImportInventoryRecord = {
   warehouseId: string
   warehouseName: string
   sectionName: string
+  updatedAt: string
 }
 
 export type ImportRecord = {
@@ -72,6 +73,7 @@ export function normalizeImportInventoryRow(row: ImportInventoryPayload): Import
     warehouseId: row.location?.warehouse.id ?? "",
     warehouseName: row.location?.warehouse.name ?? "",
     sectionName: row.location?.section ? String(row.location.section.number) : "",
+    updatedAt: row.updatedAt.toISOString(),
   }
 }
 

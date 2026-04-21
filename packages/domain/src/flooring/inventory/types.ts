@@ -101,6 +101,7 @@ export function toInventoryForm(row: InventoryRow): InventoryForm {
 export type InventoryProductOption = {
   id: string
   name: string
+  label: string
   style: string | null
   color: string | null
   categoryId: string

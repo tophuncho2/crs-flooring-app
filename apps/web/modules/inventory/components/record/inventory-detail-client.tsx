@@ -1,16 +1,19 @@
 "use client"
 
-import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
-import { InventoryRecordPanel } from "../panel/inventory-record-panel"
-import type { InventoryRow, LocationOption } from "../../domain/types"
+import {
+  RecordDetailClientScaffold,
+  type RecordDetailClientScaffoldContext,
+} from "@/modules/shared/engines/record-view"
+import type { InventoryDetail, InventoryLocationOption } from "@builders/domain"
+import { InventoryRecordPanel } from "./inventory-record-panel"
 
 export function InventoryDetailClient({
   initialRecord,
   locationOptions,
   backHref,
 }: {
-  initialRecord: InventoryRow
-  locationOptions: LocationOption[]
+  initialRecord: InventoryDetail
+  locationOptions: InventoryLocationOption[]
   backHref: string
 }) {
   return (

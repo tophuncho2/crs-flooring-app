@@ -9,7 +9,7 @@ import {
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
-import type { InventoryRow } from "@/modules/inventory/domain/types"
+import type { InventoryRow } from "@builders/domain"
 import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
 import { ProductInventoryRowsSection } from "./product-inventory-rows-section"
 import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"

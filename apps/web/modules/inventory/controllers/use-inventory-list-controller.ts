@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useCanonicalDetailNavigation } from "@/modules/shared/engines/common/navigation/use-canonical-detail-navigation"
 import { useRecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
-import type { InventoryRow } from "@/modules/inventory/domain/types"
+import type { InventoryRow } from "@builders/domain"
 
 export function useInventoryListController({
   initialInventory,
@@ -12,7 +12,7 @@ export function useInventoryListController({
 }) {
   const inventoryNavigation = useCanonicalDetailNavigation("/dashboard/inventory")
   const notices = useRecordNotices()
-  const [rows, setRows] = useState(initialInventory)
+  const [rows] = useState(initialInventory)
 
   return {
     rows,

@@ -1,4 +1,4 @@
-import { formatFullLocationCode } from "@builders/domain"
+import { buildFlooringProductDisplayName, formatFullLocationCode } from "@builders/domain"
 import type {
   CutLogRow,
   InventoryDetail,
@@ -292,6 +292,11 @@ export async function listInventoryOptions(
     products: products.map((row) => ({
       id: row.id,
       name: row.name,
+      label: buildFlooringProductDisplayName({
+        name: row.name,
+        style: row.style,
+        color: row.color,
+      }),
       style: row.style,
       color: row.color,
       categoryId: row.categoryId,

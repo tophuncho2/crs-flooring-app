@@ -4,6 +4,7 @@ import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import type { ImportRecord, ImportDetailRecord } from "@builders/db"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
+import type { InventoryRowsDiff } from "@builders/domain"
 
 export async function createImportRequest(input: CreateImportInput) {
   return requestJson<{ import: ImportRecord }>("/api/imports", {
@@ -27,6 +28,21 @@ export async function deleteImportRequest(id: string, updatedAt: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
+}
+
+export async function updateImportInventoryRowsRequest(
+  importId: string,
+  diff: InventoryRowsDiff,
+  revisionKey: string,
+) {
+  return requestJson<{ import: ImportDetailRecord; tempIdMap: Record<string, string> }>(
+    `/api/imports/${importId}/inventory-rows/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta({ diff }, revisionKey)),
+    },
+  )
 }
 
 export type { ImportRecord, ImportDetailRecord }

@@ -1,7 +1,11 @@
 "use client"
 
-import { calculateInventoryCostSummary } from "@builders/domain"
-import { formatInventoryImportNumber, formatInventoryQuantity } from "@/modules/inventory/domain/formatters"
+import {
+  calculateInventoryCostSummary,
+  formatInventoryImportNumber,
+  formatInventoryQuantity,
+  type InventoryRow,
+} from "@builders/domain"
 import {
   RecordItemCell,
   RecordItemSection,
@@ -12,7 +16,6 @@ import {
   type RecordRowColumnSpec,
   type RecordSectionSubHeaderProps,
 } from "@/modules/shared/engines/record-view"
-import type { InventoryRow } from "@/modules/inventory/domain/types"
 
 const INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "itemNumber", minWidth: 140, grow: 1, label: "Item #" },
@@ -21,13 +24,13 @@ const INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
   { key: "stock", minWidth: 140, grow: 1, align: "center", label: "Stock" },
   { key: "cost", minWidth: 132, grow: 1, align: "end", label: "Cost" },
   { key: "freight", minWidth: 132, grow: 1, align: "end", label: "Freight" },
-  { key: "cutTotal", minWidth: 148, grow: 1, align: "center", label: "Cut Total" },
-  { key: "runningBalance", minWidth: 168, grow: 1, align: "center", label: "Running Balance" },
+  { key: "totalCutBalance", minWidth: 148, grow: 1, align: "center", label: "Cut Balance" },
+  { key: "uncutBalance", minWidth: 168, grow: 1, align: "center", label: "Uncut Balance" },
   { key: "open", minWidth: 108, grow: 0, align: "center", label: "Open" },
 ]
 
 function readLocationLabel(row: InventoryRow) {
-  const parts = [row.warehouseName, row.sectionName, row.locationCode].filter(Boolean)
+  const parts = [row.warehouseName, row.sectionNumber, row.locationCode].filter(Boolean)
   return parts.length > 0 ? parts.join(" / ") : "No location"
 }
 
@@ -87,11 +90,11 @@ export function ProductInventoryRowsSection({
             <RecordItemCell columnKey="freight" chrome="grid" showLabel={index === 0}>
               <TextCell align="right">{row.freight ? `$${row.freight}` : "-"}</TextCell>
             </RecordItemCell>
-            <RecordItemCell columnKey="cutTotal" chrome="grid" showLabel={index === 0}>
-              <TextCell align="center">{formatInventoryQuantity(row.cutTotal, row.stockUnit)}</TextCell>
+            <RecordItemCell columnKey="totalCutBalance" chrome="grid" showLabel={index === 0}>
+              <TextCell align="center">{formatInventoryQuantity(row.totalCutBalance, row.stockUnit)}</TextCell>
             </RecordItemCell>
-            <RecordItemCell columnKey="runningBalance" chrome="grid" showLabel={index === 0}>
-              <TextCell align="center">{formatInventoryQuantity(row.runningBalance, row.stockUnit)}</TextCell>
+            <RecordItemCell columnKey="uncutBalance" chrome="grid" showLabel={index === 0}>
+              <TextCell align="center">{formatInventoryQuantity(row.uncutBalance, row.stockUnit)}</TextCell>
             </RecordItemCell>
             <RecordItemSectionControls
               capabilities={{ supportsOpenRow: true }}

@@ -3,7 +3,7 @@ import type {
   InventoryCategoryOption,
   InventoryProductOption,
   InventoryWarehouseOption,
-} from "@/modules/inventory/domain/types"
+} from "@builders/domain"
 
 export function createInventoryPageFilterDefinitions({
   warehouseOptions,
@@ -32,12 +32,10 @@ export function createInventoryPageFilterDefinitions({
       type: "select",
       label: "Warehouse",
       clearLabel: "All Warehouses",
-      options: [
-        ...warehouseOptions.map((warehouse) => ({
-          value: warehouse.id,
-          label: warehouse.name,
-        })),
-      ],
+      options: warehouseOptions.map((warehouse) => ({
+        value: warehouse.id,
+        label: warehouse.name,
+      })),
     },
     {
       key: "categoryId",
@@ -45,12 +43,10 @@ export function createInventoryPageFilterDefinitions({
       type: "select",
       label: "Category",
       clearLabel: "All Categories",
-      options: [
-        ...categoryOptions.map((category) => ({
-          value: category.id,
-          label: category.name,
-        })),
-      ],
+      options: categoryOptions.map((category) => ({
+        value: category.id,
+        label: category.name,
+      })),
     },
     {
       key: "productId",
@@ -58,17 +54,17 @@ export function createInventoryPageFilterDefinitions({
       type: "select",
       label: "Product",
       clearLabel: "All Products",
-      options: [
-        ...productOptions.map((product) => ({
-          value: product.id,
-          label: product.label,
-        })),
-      ],
+      options: productOptions.map((product) => ({
+        value: product.id,
+        label: product.label,
+      })),
     },
   ]
 }
 
-export function createInventoryChildFilterDefinitions(warehouseOptions: InventoryWarehouseOption[]): TableFilterDefinition[] {
+export function createInventoryChildFilterDefinitions(
+  warehouseOptions: InventoryWarehouseOption[],
+): TableFilterDefinition[] {
   return createInventoryPageFilterDefinitions({
     warehouseOptions,
     categoryOptions: [],

@@ -2,8 +2,8 @@ import { notFound } from "next/navigation"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { InventoryDetailClient } from "@/modules/inventory/record/detail/inventory-detail-client"
-import { getInventoryDetailPageData } from "@/modules/inventory/queries"
+import { InventoryDetailClient } from "@/modules/inventory/components/record/inventory-detail-client"
+import { getInventoryDetailPageData } from "@/modules/inventory/data/queries"
 
 export default async function InventoryDetailPage({
   params,

@@ -5,17 +5,23 @@ import {
   createRecordSectionError,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import { toImportPrimaryForm, type ImportDetail as ImportRow } from "@builders/domain"
+import type {
+  ImportDetail as ImportRow,
+  InventoryRowDraft,
+  InventoryRowDelete,
+  InventoryRowUpdate,
+  InventoryRowUpdatePatch,
+  InventoryRowsDiff,
+} from "@builders/domain"
 import {
   applyDefaultLocationToImportRow,
-  buildImportMutationPayload,
   createImportInventoryRowDraft,
   toImportInventoryDrafts,
   validateImportInventoryDrafts,
   type ImportInventoryRowDraft,
   type LocationOption,
 } from "./drafts"
+import { updateImportInventoryRowsRequest } from "../data/mutations"
 
 function createDraftRow(locationOptions: LocationOption[], warehouseId: string) {
   return applyDefaultLocationToImportRow(
@@ -28,8 +34,105 @@ function createDraftRow(locationOptions: LocationOption[], warehouseId: string) 
   )
 }
 
+function isLocalDraftRow(row: ImportInventoryRowDraft) {
+  return row.clientId.startsWith("local:")
+}
+
 function createRowsRevisionKey(record: ImportRow) {
   return `${record.updatedAt}:${record.inventories.length}`
+}
+
+function toDraftPayload(row: ImportInventoryRowDraft): InventoryRowDraft {
+  return {
+    tempId: row.clientId,
+    productId: row.productId,
+    itemNumber: row.itemNumber,
+    dyeLot: row.dyeLot || null,
+    // warehouseId flows from the import's warehouseId via the use case's
+    // source-of-truth stamping. The domain shape accepts null here; use case
+    // re-resolves from the location's warehouseId at write time.
+    warehouseId: null,
+    locationId: row.locationId || null,
+    stockCount: row.stockCount,
+    cost: row.cost || null,
+    freight: row.freight || null,
+    notes: row.notes || null,
+  }
+}
+
+function toUpdatePatch(
+  row: ImportInventoryRowDraft,
+  existing: ImportRow["inventories"][number],
+): InventoryRowUpdatePatch {
+  const patch: InventoryRowUpdatePatch = {}
+  if (row.productId !== existing.productId) patch.productId = row.productId
+  if (row.itemNumber !== existing.itemNumber) patch.itemNumber = row.itemNumber
+  if ((row.dyeLot || null) !== (existing.dyeLot || null)) patch.dyeLot = row.dyeLot || null
+  if ((row.locationId || null) !== (existing.locationId || null)) {
+    patch.locationId = row.locationId || null
+  }
+  if (row.stockCount !== existing.stockCount) patch.stockCount = row.stockCount
+  if ((row.cost || null) !== (existing.cost || null)) patch.cost = row.cost || null
+  if ((row.freight || null) !== (existing.freight || null)) patch.freight = row.freight || null
+  if ((row.notes || null) !== (existing.notes || null)) patch.notes = row.notes || null
+  return patch
+}
+
+function buildInventoryRowsDiff(
+  localRows: ImportInventoryRowDraft[],
+  serverRows: ImportRow["inventories"],
+): InventoryRowsDiff {
+  const serverById = new Map(serverRows.map((row) => [row.id, row]))
+  const localServerIds = new Set(
+    localRows.filter((row) => !isLocalDraftRow(row)).map((row) => row.clientId),
+  )
+
+  const added: InventoryRowDraft[] = []
+  const modified: InventoryRowUpdate[] = []
+  const deleted: InventoryRowDelete[] = []
+
+  for (const row of localRows) {
+    if (isLocalDraftRow(row)) {
+      added.push(toDraftPayload(row))
+      continue
+    }
+    const existing = serverById.get(row.clientId)
+    if (!existing) {
+      // Drift (client references a server id that no longer exists) — treat as add.
+      added.push(toDraftPayload(row))
+      continue
+    }
+    const patch = toUpdatePatch(row, existing)
+    if (Object.keys(patch).length > 0) {
+      modified.push({
+        id: existing.id,
+        expectedUpdatedAt: existing.updatedAt,
+        patch,
+      })
+    }
+  }
+
+  for (const serverRow of serverRows) {
+    if (!localServerIds.has(serverRow.id)) {
+      deleted.push({
+        id: serverRow.id,
+        expectedUpdatedAt: serverRow.updatedAt,
+      })
+    }
+  }
+
+  return { added, modified, deleted }
+}
+
+function reconcileTempIds(
+  localRows: ImportInventoryRowDraft[],
+  tempIdMap: Record<string, string>,
+): ImportInventoryRowDraft[] {
+  return localRows.map((row) => {
+    if (!isLocalDraftRow(row)) return row
+    const realId = tempIdMap[row.clientId]
+    return realId ? { ...row, clientId: realId } : row
+  })
 }
 
 export function useImportInventoryRowsSection({
@@ -62,17 +165,27 @@ export function useImportInventoryRowsSection({
         })
       }
 
-      const payload = await requestJson<{ import: ImportRow }>(`/api/imports/${currentRecord.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildImportMutationPayload(toImportPrimaryForm(currentRecord), localValue)),
-      })
+      const diff = buildInventoryRowsDiff(localValue, currentRecord.inventories)
+      if (diff.added.length === 0 && diff.modified.length === 0 && diff.deleted.length === 0) {
+        return {
+          serverValue: currentRecord,
+          serverRevisionKey: createRowsRevisionKey(currentRecord),
+          noticeMessage: "No changes to save",
+        }
+      }
 
-      publishRecord(payload.import)
+      const response = await updateImportInventoryRowsRequest(
+        currentRecord.id,
+        diff,
+        currentRecord.updatedAt,
+      )
+      publishRecord(response.import)
 
+      const reconciledLocal = reconcileTempIds(localValue, response.tempIdMap)
       return {
-        serverValue: payload.import,
-        serverRevisionKey: createRowsRevisionKey(payload.import),
+        serverValue: response.import,
+        serverRevisionKey: createRowsRevisionKey(response.import),
+        localValue: reconciledLocal,
         noticeMessage: "Import inventory rows saved",
       }
     },
@@ -95,26 +208,17 @@ export function useImportInventoryRowsSection({
     }
   }
 
-  function setRowField(index: number, field: keyof Omit<ImportInventoryRowDraft, "clientId">, value: string) {
+  function setRowField(
+    index: number,
+    field: keyof Omit<ImportInventoryRowDraft, "clientId">,
+    value: string,
+  ) {
     section.setLocalValue((previous) =>
       previous.map((row, rowIndex) => {
-        if (rowIndex !== index) {
-          return row
-        }
-
-        const nextRow = {
-          ...row,
-          [field]: value,
-        }
-
-        if (field === "locationId") {
-          return nextRow
-        }
-
-        return nextRow
+        if (rowIndex !== index) return row
+        return { ...row, [field]: value }
       }),
     )
-
     if (section.error) {
       section.setError(null)
     }

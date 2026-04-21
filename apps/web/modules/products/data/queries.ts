@@ -3,6 +3,7 @@ import {
   getProductDetailById,
   getProductFormOptions,
   isPrismaNotFoundError,
+  listInventory,
   listProducts,
   withPrismaConnectivityHandling,
   type CategoryRecord,
@@ -13,8 +14,7 @@ import {
   type ProductRecord,
 } from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { listInventoryRows } from "@/modules/inventory/data/api"
-import type { InventoryRow } from "@/modules/inventory/domain/types"
+import type { InventoryRow } from "@builders/domain"
 
 // ---- List page loader ----
 
@@ -44,13 +44,9 @@ export type ProductDetailPageData = {
   inventoryRows: InventoryRow[]
 }
 
-// Inventory module's data/api.ts still uses the pre-sweep Prisma selects and
-// fails at runtime (see docs/PLAN.md § Pending — Inventory module sweep). Until
-// that module lands, we degrade the detail page gracefully: log and render with
-// an empty inventory section rather than 500 the whole page.
 async function loadProductInventoryRowsSafely(productId: string): Promise<InventoryRow[]> {
   try {
-    return await listInventoryRows(undefined, productId)
+    return await listInventory({ productId })
   } catch (error) {
     console.warn(
       "[flooring.products.detail] inventory fetch failed; rendering detail with empty inventory rows",

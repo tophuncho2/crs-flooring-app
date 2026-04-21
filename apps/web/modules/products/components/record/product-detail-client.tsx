@@ -5,7 +5,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
-import type { InventoryRow } from "@/modules/inventory/domain/types"
+import type { InventoryRow } from "@builders/domain"
 import { ProductRecordPanel } from "./product-record-panel"
 
 export function ProductDetailClient({

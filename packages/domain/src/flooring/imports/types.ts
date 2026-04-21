@@ -48,6 +48,7 @@ export type ImportInventoryRow = {
   warehouseId: string
   warehouseName: string
   sectionName: string
+  updatedAt: string
 }
 
 export type ImportRow = {

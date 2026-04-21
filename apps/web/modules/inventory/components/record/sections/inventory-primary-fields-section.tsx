@@ -17,8 +17,10 @@ import {
 import {
   formatInventoryImportNumber,
   formatInventoryQuantity,
-} from "../../../domain/formatters"
-import type { InventoryPrimaryForm, InventoryRow, LocationOption } from "../../../domain/types"
+  type InventoryForm,
+  type InventoryLocationOption,
+  type InventoryRow,
+} from "@builders/domain"
 
 const READONLY_FIELD_CLASS_NAME = `${RECORD_FIELD_CONTROL_CLASS_NAME} cursor-default`
 
@@ -32,12 +34,12 @@ export function InventoryPrimaryFieldsSection({
   onFieldChange,
 }: {
   inventory: InventoryRow
-  draft: InventoryPrimaryForm
-  locationOptions: LocationOption[]
+  draft: InventoryForm
+  locationOptions: InventoryLocationOption[]
   warehouseName: string
   sectionName: string
   disabled: boolean
-  onFieldChange: (field: keyof InventoryPrimaryForm, value: string) => void
+  onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
   return (
     <RecordPrimarySection>
@@ -58,23 +60,30 @@ export function InventoryPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Starting Stock">
+            <RecordFormField label="Starting Balance">
               <RecordStaticFieldValue>
                 {formatInventoryQuantity(inventory.stockCount, inventory.stockUnit)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Cut Total">
+            <RecordFormField label="Cut Balance">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.cutTotal, inventory.stockUnit)}
+                {formatInventoryQuantity(inventory.totalCutBalance, inventory.stockUnit)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Running Balance">
+            <RecordFormField label="Uncut Balance">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.runningBalance, inventory.stockUnit)}
+                {formatInventoryQuantity(inventory.uncutBalance, inventory.stockUnit)}
+              </RecordStaticFieldValue>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
+            <RecordFormField label="Available Balance">
+              <RecordStaticFieldValue>
+                {formatInventoryQuantity(inventory.availableBalance, inventory.stockUnit)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -90,7 +99,11 @@ export function InventoryPrimaryFieldsSection({
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Import #">
-              <input value={formatInventoryImportNumber(inventory.importNumber)} readOnly className={READONLY_FIELD_CLASS_NAME} />
+              <input
+                value={formatInventoryImportNumber(inventory.importNumber)}
+                readOnly
+                className={READONLY_FIELD_CLASS_NAME}
+              />
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="sm">

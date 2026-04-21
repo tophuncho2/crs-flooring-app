@@ -10,47 +10,35 @@ import { TablePaginationControls } from "@/modules/shared/engines/list-view/tabl
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
 import { MAX_GROUP_FIELDS, type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
-import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
-import type {
-  InventoryCategoryOption,
-  InventoryServerFilterState,
-  InventoryProductOption,
-  InventoryRow,
-  InventoryWarehouseOption,
-  ServerPaginationState,
-  ServerTableState,
-} from "@/modules/inventory/domain/types"
-import { InventoryTable } from "./inventory-table"
-import { createInventoryPageFilterDefinitions } from "@/modules/inventory/table-filters"
 import {
   formatImportStatus,
   formatImportTransportType as formatTransportType,
+  type InventoryCategoryOption,
+  type InventoryPageFilterState,
+  type InventoryProductOption,
+  type InventoryRow,
+  type InventoryWarehouseOption,
 } from "@builders/domain"
+import { useInventoryListController } from "../../controllers/use-inventory-list-controller"
+import { createInventoryPageFilterDefinitions } from "./table-filters"
+import { InventoryTable } from "./inventory-table"
 
 export default function InventoryClient({
   initialInventory,
-  tableState,
   filterState,
   warehouseOptions,
   categoryOptions,
   productOptions,
-  pagination,
   initialTablePreferences,
 }: {
   initialInventory: InventoryRow[]
-  tableState: ServerTableState
-  filterState: InventoryServerFilterState
+  filterState: InventoryPageFilterState
   warehouseOptions: InventoryWarehouseOption[]
   categoryOptions: InventoryCategoryOption[]
   productOptions: InventoryProductOption[]
-  pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
 }) {
-  const {
-    rows,
-    notices,
-    openInventory,
-  } = useInventoryListController({
+  const { rows, notices, openInventory } = useInventoryListController({
     initialInventory,
   })
 
@@ -89,12 +77,12 @@ export default function InventoryClient({
       { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.importTransportType), groupable: true },
       { key: "product", label: "Product", getValue: (row) => row.productName, groupable: true },
       { key: "itemNumber", label: "Item #", getValue: (row) => row.itemNumber, groupable: false },
-      { key: "stockCount", label: "Starting Stock", getValue: (row) => row.stockCount, groupable: false },
-      { key: "cutTotal", label: "Cuts Total", getValue: (row) => row.cutTotal, groupable: false },
-      { key: "allocatedInventory", label: "Allocated Inventory", getValue: (row) => row.totalAllocated, groupable: false },
-      { key: "openInventory", label: "Open Inventory", getValue: (row) => row.availableToAllocate, groupable: false },
-      { key: "runningBalance", label: "Running Balance", getValue: (row) => row.runningBalance, groupable: false },
-      { key: "section", label: "Section", getValue: (row) => row.sectionName, groupable: true },
+      { key: "stockCount", label: "Starting Balance", getValue: (row) => row.stockCount, groupable: false },
+      { key: "totalCutBalance", label: "Cut Balance", getValue: (row) => row.totalCutBalance, groupable: false },
+      { key: "awaitingCutBalance", label: "Awaiting Cut", getValue: (row) => row.awaitingCutBalance, groupable: false },
+      { key: "availableBalance", label: "Available Balance", getValue: (row) => row.availableBalance, groupable: false },
+      { key: "uncutBalance", label: "Uncut Balance", getValue: (row) => row.uncutBalance, groupable: false },
+      { key: "section", label: "Section", getValue: (row) => row.sectionNumber, groupable: true },
       { key: "location", label: "Location", getValue: (row) => row.locationCode, groupable: true },
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.importWarehouseName || row.warehouseName, groupable: true },
       { key: "dyeLot", label: "Dye Lot", getValue: (row) => row.dyeLot, groupable: false },
@@ -105,10 +93,7 @@ export default function InventoryClient({
     ],
     sortField: (row) => row.itemNumber,
     sortFieldKey: "itemNumber",
-    initialSearchQuery: tableState.searchQuery,
-    defaultGrouped: tableState.isGroupingEnabled,
-    defaultGroupKeys: tableState.groupByKeys,
-    defaultAscending: tableState.isAscendingSort,
+    defaultAscending: true,
     initialPreferences: initialTablePreferences,
     filterDefinitions: createInventoryPageFilterDefinitions({
       warehouseOptions,
@@ -117,9 +102,6 @@ export default function InventoryClient({
     }),
     initialFilters: filterState,
     urlSyncMode: "router",
-    disableClientFiltering: true,
-    disableClientSorting: true,
-    disableClientPagination: true,
   })
 
   return (
@@ -158,7 +140,6 @@ export default function InventoryClient({
           isGroupingEnabled={isGroupingEnabled}
           visibleColumnKeys={visibleColumns.map((column) => column.key)}
           visibleColumns={visibleColumns.map((column) => ({ key: column.key, label: column.label }))}
-          pagination={pagination}
           page={page}
           totalPages={totalPages}
           pageSize={pageSize}
@@ -172,16 +153,14 @@ export default function InventoryClient({
       }
       pagination={
         <TablePaginationControls
-          page={pagination?.page ?? page}
-          totalPages={pagination?.totalPages ?? totalPages}
-          pageSize={pagination?.pageSize ?? pageSize}
-          totalItems={pagination?.totalItems ?? filteredRows.length}
-          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-          onPreviousPage={pagination ? undefined : goToPreviousPage}
-          onNextPage={pagination ? undefined : goToNextPage}
-          previousPageHref={pagination?.previousPageHref}
-          nextPageHref={pagination?.nextPageHref}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredRows.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
         />
       }
     />

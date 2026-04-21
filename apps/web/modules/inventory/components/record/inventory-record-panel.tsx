@@ -1,17 +1,15 @@
 "use client"
 
-import { useEffect } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import { InventoryCutLogsSection } from "./sections/inventory-cut-logs-section"
+import type { InventoryDetail, InventoryForm, InventoryLocationOption } from "@builders/domain"
+import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
-import { useInventoryCutLogsSection } from "./controllers/use-inventory-cut-logs-section"
-import { useInventoryPrimarySection } from "./controllers/use-inventory-primary-section"
-import type { InventoryPrimaryForm, InventoryRow, LocationOption } from "../../domain/types"
+import { InventoryCutLogsSection } from "./sections/inventory-cut-logs-section"
 
 export function InventoryRecordPanel({
   page,
@@ -19,17 +17,13 @@ export function InventoryRecordPanel({
   locationOptions,
 }: {
   page: RecordDetailClientScaffoldContext
-  inventory: InventoryRow
-  locationOptions: LocationOption[]
+  inventory: InventoryDetail
+  locationOptions: InventoryLocationOption[]
 }) {
   const controller = useInventoryPrimarySection({
     page,
     inventory,
     locationOptions,
-  })
-  const cutLogsSection = useInventoryCutLogsSection({
-    record: controller.record,
-    publishRecord: controller.publishRecord,
   })
 
   return (
@@ -66,7 +60,7 @@ export function InventoryRecordPanel({
                 sectionName={controller.activeSectionName}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
-                  controller.primarySection.setLocalValue((previous: InventoryPrimaryForm) => ({
+                  controller.primarySection.setLocalValue((previous: InventoryForm) => ({
                     ...previous,
                     [field]: value,
                   }))
@@ -79,39 +73,12 @@ export function InventoryRecordPanel({
           key: "cut-logs",
           type: "item",
           order: 10,
-          dirtyLabel: "cut logs",
-          controller: cutLogsSection,
           render: () => (
             <InventoryCutLogsSection
-              subHeader={{
-                summary: cutLogsSection.blockedSummary || undefined,
-                isDirty: cutLogsSection.isDirty,
-                isSaving: cutLogsSection.isSaving,
-                hasConflict: cutLogsSection.hasConflict,
-                error: cutLogsSection.error,
-                onSave: () => void cutLogsSection.save(),
-                onDiscard: () => cutLogsSection.discard(),
-                saveLabel: "Save Cut Log",
-                savingLabel: "Saving Cut Log...",
-                actions: [
-                  {
-                    key: "add-cut-log",
-                    kind: "add-row",
-                    label: "Add Cut Log",
-                    onClick: cutLogsSection.addDraft,
-                    disabled: !cutLogsSection.canAddDraft,
-                  },
-                ],
-              }}
               cutLogs={controller.record.cutLogs}
               stockUnit={controller.record.stockUnit}
-              cutTotal={controller.record.cutTotal}
-              draft={cutLogsSection.localValue}
-              draftBefore={cutLogsSection.draftBefore}
-              draftAfter={cutLogsSection.draftAfter}
-              noticeMessage={cutLogsSection.noticeMessage}
-              noticeError={cutLogsSection.noticeError}
-              onDraftChange={cutLogsSection.setDraftField}
+              totalCutBalance={controller.record.totalCutBalance}
+              awaitingCutBalance={controller.record.awaitingCutBalance}
             />
           ),
         },
