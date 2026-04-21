@@ -1,4 +1,4 @@
-import { getInventoryById } from "@builders/db"
+import { getInventoryById, getInventoryDetailById } from "@builders/db"
 import { updateInventoryUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -66,7 +66,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       () => updateInventoryUseCase(id, input),
     )
 
-    const responseBody = { inventory: result }
+    // Client controller expects InventoryDetailRecord (row + cutLogs) so the
+    // record view reconciler can re-render the cut-logs section after save.
+    // Use case returns the flat row; compose the detail at the route boundary.
+    const detail = (await getInventoryDetailById(result.id)) ?? result
+    const responseBody = { inventory: detail }
     await finalizeMutationReceipt({
       scope: "inventory.primary.section.replace",
       access,
