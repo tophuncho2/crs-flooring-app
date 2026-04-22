@@ -44,7 +44,7 @@ This plan also establishes a **per-module home for dropdown-option adapters**, s
 
 ### Blast radius
 - Three files in the inventory module. No domain, no DB, no route changes. Zero downstream consumers of `activeSectionName`.
-- **Out of scope unless confirmed.** The inventory list view still has a "Section" column (`inventory-client.tsx:53`, `inventory-table.tsx:107`). Plan-default: leave it in the list view. See open flags.
+- The inventory list view's "Section" column (`inventory-client.tsx:53`, `inventory-table.tsx:107`) stays (locked by R1).
 
 ---
 
@@ -69,9 +69,9 @@ This plan also establishes a **per-module home for dropdown-option adapters**, s
 - `apps/web/modules/imports/data/queries.ts` — the `getImportFormOptions` location loader threads `shortCode` into the bag passed to the UI.
 
 ### UI
-- `apps/web/modules/inventory/components/list/inventory-client.tsx` + `inventory-table.tsx` — location column + cell read `row.locationShortCode`. Column label stays "Location".
-- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — dropdown option labels use `shortCode`. Add a new read-only **"Full Location"** tile in the left pane showing `selectedLocation.locationCode` (full code).
-- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx` — dropdown option labels use `shortCode`. Grid does **not** get a separate full-code field; warehouse column already supplies warehouse context. See open flags if you want it added.
+- `apps/web/modules/inventory/components/list/inventory-client.tsx` + `inventory-table.tsx` — existing Location column + cell read `row.locationShortCode`. Column label stays "Location". Add a second column `fullLocation` reading `row.locationCode` (full `W{n}-S{n}-R{n}-L{n}`), `defaultHidden: true` — follows the existing `cost` / `freight` / `notes` hidden-by-default pattern and is toggleable via the columns manager.
+- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — dropdown option labels use `shortCode`. Add a new read-only **"Full Location"** tile in the left pane showing `selectedLocation.locationCode` (full code). "Full Location" is the canonical label everywhere — the plan no longer references "full warehouse code".
+- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx` — dropdown option labels use `shortCode`. Grid does **not** get a separate full-code field; the import's top-level warehouse plus the short code in the location cell is sufficient.
 
 ### Blast radius
 - Domain: +2 fields, +1 formatter. Additive, non-breaking.
@@ -123,7 +123,11 @@ export function RecordCombobox<T>({
 - Popover contents: header **search input** (plain `<input>`, bound to local state, filtering intentionally **stubbed**, clearly marked as deferred to the future table-controls + search sweep), then a scrollable option list.
 - Keyboard: `Esc` closes, `Enter` selects focused, `↑/↓` navigate, `Tab` closes.
 - ARIA: `combobox` role on trigger, `listbox` on panel.
-- Implementation choice: native positioning inside the record panel (no portal) to avoid z-index fights with the dirty-section mechanics of `RecordMultiSectionPanel`. If positioning complications arise, fall back to a portal keyed to the panel root.
+
+### Positioning (and why it is orthogonal to dirty tracking)
+- **Dirty-state tracking is unaffected by DOM position.** Dirty tracking is React state driven by `useRecordScopedSectionController` — selection fires `onChange` → controller updates its draft → section becomes dirty. This is identical to how `<select>` works today and remains true whether the popover is rendered inline or portalled. Dropdown changes join dirty tracking / local-change-pre-save the same way every other field does.
+- **The real risk is clipping, not state.** A popover absolutely positioned inside the trigger's parent is clipped by ancestor `overflow-hidden` (`sections/structure/record-section-tokens.ts:12` on section items) and the grid's `overflow-x-auto` horizontal scroller (`sections/rows/record-section-grid.tsx:47`). Inventory primary section is safe inline; the imports inventory-rows grid is not.
+- **Decision:** render the popover via a document-level portal (to `document.body`) with `position: fixed` positioning computed from the trigger's `getBoundingClientRect()`. Close on outside click, outside scroll, and `Esc`. Controller-side state is unchanged; only the popover DOM escapes the clipping ancestors. If we later measure that inline positioning is safe for the inventory primary section, we can add an `inline` escape hatch — but portal-first keeps a single code path.
 
 ### Shared helpers
 - `useRecordComboboxDisclosure()` — open/close + focus-management hook.
@@ -166,15 +170,19 @@ apps/web/modules/imports/data/dropdown-options/
 2. `toComboboxOption(option) => { value, label, searchText, meta }` — the shape `RecordCombobox` accepts.
 3. (Reserved) `matchComboboxOption(option, query)` — stub for future search. Returns `true` for now.
 
+### Type normalization (imports)
+- `apps/web/modules/imports/controllers/drafts.ts:23` currently defines a UI-local `LocationOption` that duplicates `InventoryLocationOption` with a redundant `label` alias. As part of this category, delete the UI-local type and consume `InventoryLocationOption` directly from `@builders/domain`. `modules/imports/data/queries.ts` stops emitting the `label` alias in its `locationOptions` bag — the combobox adapter supplies the display label.
+
 ### Blast radius
-- New folders + files only. Zero type changes in domain or data layers. Each module's existing `data/queries.ts` still returns the same option bags; the new files are thin UI-side adapters consuming those bags.
+- New folders + files only. One UI-local type deleted (imports `LocationOption`). Zero type changes in domain or data layers. Each module's existing `data/queries.ts` still returns the same option bags (minus the `label` alias for imports); the new files are thin UI-side adapters consuming those bags.
 
 ---
 
 ## Category E · Wire inventory + imports location dropdowns into the combobox
 
-- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — replace the raw `<select>` for Location with `<RecordCombobox>`; options fed via `modules/inventory/data/dropdown-options/inventory-location-options.toComboboxOption`. Add the "Full Location" tile introduced in Category B.
-- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx` — replace the `<RecordGridCellSelect>` for the location column with `<RecordCombobox size="compact">`. Options fed from `modules/imports/data/dropdown-options/import-location-options`.
+- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — replace the raw `<select>` for Location with `<RecordCombobox>`; options fed via `modules/inventory/data/dropdown-options/inventory-location-options.toComboboxOption`. **Filter options by `draft.warehouseId`** (mirroring `import-inventory-rows-section.tsx:103-105`) so only locations in the selected warehouse show. Add the "Full Location" tile introduced in Category B.
+- `apps/web/modules/inventory/controllers/use-inventory-primary-section.ts` — when the `warehouseId` draft field changes, clear `draft.locationId` if the current location no longer belongs to the new warehouse. This mirrors `applyDefaultLocationToImportRow` in `apps/web/modules/imports/controllers/drafts.ts:62-80`. Lift that helper to a shared location-draft utility once we have a second consumer (see flag F1 below).
+- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx` — replace the `<RecordGridCellSelect>` for the location column with `<RecordCombobox size="compact">`. Options fed from `modules/imports/data/dropdown-options/import-location-options`. Existing warehouse filter stays.
 - No route / API / domain / DB changes — purely UI wire-up consuming the Category B option shape + the Category D adapters.
 
 ### Blast radius
@@ -209,9 +217,28 @@ Each step is a standalone commit. You can pause at any boundary.
 
 ---
 
-## Open flags for confirmation
+## Resolved decisions (from user review)
 
-1. **Section list column.** The "Section" column in the inventory list view is currently separate from this sweep. Plan-default: **keep it**. Say otherwise if you want it dropped alongside the record-view tile.
-2. **Full-Location in the imports grid.** Plan-default: **no separate full-code field inside the imports grid row** (warehouse column + the location cell's short form is enough). Flag if you'd rather see both.
-3. **Folder location for `dropdown-options/`.** Plan-default: under `data/` (co-located with `queries.ts` + `mutations.ts`). Alternative: under `components/` as a pure UI-adapter layer. Pick one so it's consistent across modules going forward.
-4. **Component name.** Plan-default: `RecordCombobox`. Alternatives considered: `RecordSearchSelect`, `RecordDropdown`. Pick the name we'll standardize on.
+These were open flags in the prior revision. Locked in here so the plan body is the single source of truth.
+
+- **R1 — Section column in inventory list view:** keep it.
+- **R2 — Full-Location column in inventory list view:** add it as `defaultHidden: true` (toggleable via the columns manager). Not a separate concern from Category B; baked into the UI bullet above.
+- **R3 — Full-Location in the imports grid row:** do **not** add. The import's top-level warehouse plus the short code in the location cell is enough.
+- **R4 — Inventory record view location dropdown:** filter by `draft.warehouseId`; clear `locationId` when warehouse changes so a stale location can't survive a warehouse switch (Category E).
+- **R5 — Terminology:** the full `W{n}-S{n}-R{n}-L{n}` string is always "Full Location". Drop any "full warehouse code" phrasing.
+- **R6 — Type normalization:** the UI-local `LocationOption` in `imports/controllers/drafts.ts` is deleted and replaced with domain `InventoryLocationOption` (Category D).
+- **R7 — Dropdown folder location:** `apps/web/modules/shared/engines/record-view/sections/dropdowns/` (consistent with sibling `cells/`, `panels/`, `rows/`).
+- **R8 — Module-level option home:** `apps/web/modules/{module}/data/dropdown-options/` (co-located with `queries.ts` + `mutations.ts`).
+- **R9 — Combobox component name:** `RecordCombobox`.
+- **R10 — Popover positioning:** portal to `document.body` + `position: fixed`. Dirty tracking is unaffected because it lives in React controller state.
+- **R11 — Loader architecture:** per-module `data/dropdown-options/` is for code organization, not SSR parallelism. Dashboard pages already `Promise.all` their options (max wall-clock, not sum). Progressive streaming is a separate future sweep (React `<Suspense>` boundaries) and not in scope here.
+
+---
+
+## Open flags / questions
+
+1. **F1 — Shared location-draft utility home.** Once we need `applyDefaultLocationToImportRow` logic in both imports and inventory controllers (Category E), where does the lifted helper live? Options: (a) a new file under `apps/web/modules/shared/engines/record-view/sections/dropdowns/` (co-located with the combobox primitive); (b) `apps/web/modules/shared/utilities/`; (c) `packages/domain/src/flooring/inventory/` as a pure helper. **Plan-default: (a)** — keeps location-draft logic next to the UI that uses it, and the helper is UI-shaped (takes option arrays, not entities). Confirm.
+2. **F2 — Full-Location list column key + label.** Proposed column config: `{ key: "fullLocation", label: "Full Location", getValue: (row) => row.locationCode, defaultHidden: true, groupable: true }`. Confirm key name (`fullLocation` vs `fullLocationCode`) and label.
+3. **F3 — Inventory record view location combobox when no warehouse is selected.** On a freshly created draft with `warehouseId === ""`, should the location combobox be (a) **disabled** with placeholder "Select warehouse first", or (b) show the full unfiltered list? Imports grid today uses (b). **Plan-default: (a) for the inventory record view** (cleaner UX for record creation); imports grid keeps (b) for now. Confirm, or unify.
+4. **F4 — Adapter files for 2-option selects.** `RecordGridCellSelect` stays for Import Status / Transport Type. Do those also get adapter files under `data/dropdown-options/` for pattern uniformity, even though their call sites keep rendering native `<select>`? **Plan-default: no** — reserve `dropdown-options/` for combobox-adopting options only, to avoid dead mappers. Confirm.
+5. **F5 — Keyboard-navigation scope for the portalled popover.** With the popover in `document.body`, arrow-key nav + focus trapping needs to work despite the trigger being in the panel's tab order. The combobox handles this internally (listbox focus management), but worth flagging: if you ever introduce a second popover primitive, the `useRecordComboboxDisclosure` hook should be factored to share the portal-management bits.
