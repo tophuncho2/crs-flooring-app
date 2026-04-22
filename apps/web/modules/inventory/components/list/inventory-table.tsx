@@ -5,13 +5,11 @@ import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
 import {
-  formatImportedAsStatus,
   formatInventoryImportNumber,
   formatInventoryQuantity,
   formatStableDate,
   type InventoryRow,
 } from "@builders/domain"
-import { StatusPill } from "@/modules/shared/engines/common/feedback/status-pill"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -19,7 +17,6 @@ import {
 } from "@/modules/shared/engines/list-view/table/table-shell"
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
-import { getImportedStatusFieldClass } from "@/modules/imports/components/formatters"
 
 export function InventoryTable({
   rows,
@@ -57,14 +54,6 @@ export function InventoryTable({
       importNumber: (columnIndex) => (
         <DashboardListRowCell key="importNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
           {formatInventoryImportNumber(row.importNumber)}
-        </DashboardListRowCell>
-      ),
-      status: (columnIndex) => (
-        <DashboardListRowCell key="status" columnIndex={columnIndex}>
-          <StatusPill
-            label={formatImportedAsStatus(row.isImported)}
-            toneClassName={getImportedStatusFieldClass(row.isImported)}
-          />
         </DashboardListRowCell>
       ),
       product: (columnIndex) => (
@@ -109,12 +98,17 @@ export function InventoryTable({
       ),
       location: (columnIndex) => (
         <DashboardListRowCell key="location" columnIndex={columnIndex}>
-          {row.locationCode || "-"}
+          {row.locationShortCode || "-"}
         </DashboardListRowCell>
       ),
       warehouse: (columnIndex) => (
         <DashboardListRowCell key="warehouse" columnIndex={columnIndex}>
           {row.importWarehouseName || row.warehouseName || "-"}
+        </DashboardListRowCell>
+      ),
+      fullLocation: (columnIndex) => (
+        <DashboardListRowCell key="fullLocation" columnIndex={columnIndex}>
+          {row.locationCode || "-"}
         </DashboardListRowCell>
       ),
       dyeLot: (columnIndex) => (

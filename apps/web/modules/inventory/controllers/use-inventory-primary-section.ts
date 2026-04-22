@@ -93,7 +93,7 @@ export function useInventoryPrimarySection({
     ""
   const availableLocationOptions = useMemo(() => {
     if (!locationScopeId) {
-      return locationOptions
+      return []
     }
     return locationOptions.filter((location) => location.warehouseId === locationScopeId)
   }, [locationOptions, locationScopeId])
@@ -103,15 +103,12 @@ export function useInventoryPrimarySection({
     controller.record.importWarehouseName ||
     controller.record.warehouseName ||
     ""
-  const activeSectionName =
-    selectedLocation?.sectionNumber !== null && selectedLocation?.sectionNumber !== undefined
-      ? String(selectedLocation.sectionNumber)
-      : controller.record.sectionNumber || ""
 
   return {
     ...controller,
     availableLocationOptions,
     activeWarehouseName,
-    activeSectionName,
+    selectedLocation,
+    locationScopeId,
   }
 }

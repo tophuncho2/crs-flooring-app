@@ -24,6 +24,7 @@ export type LocationOption = {
   id: string
   warehouseId: string
   locationCode: string
+  shortCode: string
   label: string
 }
 

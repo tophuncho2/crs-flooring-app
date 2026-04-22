@@ -1,4 +1,8 @@
-import { buildFlooringProductDisplayName, formatFullLocationCode } from "@builders/domain"
+import {
+  buildFlooringProductDisplayName,
+  formatFullLocationCode,
+  formatLocationRafterLevel,
+} from "@builders/domain"
 import type {
   CutLogRow,
   InventoryDetail,
@@ -58,6 +62,11 @@ function buildLocationCode(location: InventoryRowPayload["location"]): string {
   })
 }
 
+function buildLocationShortCode(location: InventoryRowPayload["location"]): string {
+  if (!location) return ""
+  return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
+}
+
 function computeAvailableCoverage(
   availableBalance: number,
   coveragePerUnit: number | null,
@@ -95,6 +104,7 @@ export function normalizeInventoryRow(
   const pricePerUnit = stockCount > 0 ? costNum / stockCount : 0
 
   const locationCode = buildLocationCode(payload.location)
+  const locationShortCode = buildLocationShortCode(payload.location)
   const location = payload.location
   const importEntry = payload.importEntry
 
@@ -118,6 +128,7 @@ export function normalizeInventoryRow(
     warehouseNumber: payload.warehouse ? String(payload.warehouse.number) : "",
     locationId: payload.locationId ?? "",
     locationCode,
+    locationShortCode,
     sectionNumber: location?.section ? String(location.section.number) : "",
     rafter: location ? String(location.rafter) : "",
     level: location ? String(location.level) : "",
@@ -313,6 +324,7 @@ export async function listInventoryOptions(
         rafter: row.rafter,
         level: row.level,
       }),
+      shortCode: formatLocationRafterLevel({ rafter: row.rafter, level: row.level }),
       sectionNumber: row.section.number,
       warehouseName: row.warehouse.name,
     })),

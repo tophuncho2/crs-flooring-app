@@ -103,7 +103,13 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
 export async function getImportFormOptions(): Promise<{
   productOptions: Array<{ id: string; label: string; stockUnit: string }>
   warehouseOptions: Array<{ id: string; name: string }>
-  locationOptions: Array<{ id: string; warehouseId: string; locationCode: string; label: string }>
+  locationOptions: Array<{
+    id: string
+    warehouseId: string
+    locationCode: string
+    shortCode: string
+    label: string
+  }>
 }> {
   return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
     const options: ImportFormOptions = await listImportOptions()
@@ -118,7 +124,8 @@ export async function getImportFormOptions(): Promise<{
         id: location.id,
         warehouseId: location.warehouseId,
         locationCode: location.locationCode,
-        label: location.locationCode,
+        shortCode: location.shortCode,
+        label: location.shortCode,
       })),
     }
   })

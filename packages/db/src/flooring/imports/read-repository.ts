@@ -1,4 +1,9 @@
-import { buildFlooringProductDisplayName, calculateImportSummary } from "@builders/domain"
+import {
+  buildFlooringProductDisplayName,
+  calculateImportSummary,
+  formatFullLocationCode,
+  formatLocationRafterLevel,
+} from "@builders/domain"
 import { db } from "../../client.js"
 import {
   importDetailSelect,
@@ -22,6 +27,7 @@ export type ImportInventoryRecord = {
   notes: string
   locationId: string
   locationCode: string
+  locationShortCode: string
   warehouseId: string
   warehouseName: string
   sectionName: string
@@ -52,9 +58,19 @@ export type ImportDetailRecord = ImportRecord & {
   inventories: ImportInventoryRecord[]
 }
 
-function formatImportLocationCode(location: ImportInventoryPayload["location"]): string {
+function buildImportLocationCode(location: ImportInventoryPayload["location"]): string {
   if (!location) return ""
-  return `W${location.warehouse.number}-S${location.section.number}-R${location.rafter}-L${location.level}`
+  return formatFullLocationCode({
+    warehouseNumber: location.warehouse.number,
+    sectionNumber: location.section.number,
+    rafter: location.rafter,
+    level: location.level,
+  })
+}
+
+function buildImportLocationShortCode(location: ImportInventoryPayload["location"]): string {
+  if (!location) return ""
+  return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
 }
 
 export function normalizeImportInventoryRow(row: ImportInventoryPayload): ImportInventoryRecord {
@@ -70,7 +86,8 @@ export function normalizeImportInventoryRow(row: ImportInventoryPayload): Import
     freight: row.freight?.toString() ?? "",
     notes: row.notes ?? "",
     locationId: row.locationId ?? "",
-    locationCode: formatImportLocationCode(row.location),
+    locationCode: buildImportLocationCode(row.location),
+    locationShortCode: buildImportLocationShortCode(row.location),
     warehouseId: row.location?.warehouse.id ?? "",
     warehouseName: row.location?.warehouse.name ?? "",
     sectionName: row.location?.section ? String(row.location.section.number) : "",
@@ -208,6 +225,7 @@ export type ImportLocationOption = {
   id: string
   warehouseId: string
   locationCode: string
+  shortCode: string
   sectionNumber: number | null
   warehouseName: string
 }
@@ -260,7 +278,13 @@ export async function listImportOptions(client: ImportsDbClient = db): Promise<I
     locations: locations.map((row) => ({
       id: row.id,
       warehouseId: row.warehouseId,
-      locationCode: `W${row.warehouse.number}-S${row.section.number}-R${row.rafter}-L${row.level}`,
+      locationCode: formatFullLocationCode({
+        warehouseNumber: row.warehouse.number,
+        sectionNumber: row.section.number,
+        rafter: row.rafter,
+        level: row.level,
+      }),
+      shortCode: formatLocationRafterLevel({ rafter: row.rafter, level: row.level }),
       sectionNumber: row.section.number,
       warehouseName: row.warehouse.name,
     })),

@@ -45,6 +45,7 @@ export type ImportInventoryRow = {
   notes: string
   locationId: string
   locationCode: string
+  locationShortCode: string
   warehouseId: string
   warehouseName: string
   sectionName: string

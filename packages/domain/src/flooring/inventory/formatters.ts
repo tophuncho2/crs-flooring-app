@@ -34,3 +34,7 @@ export type FullLocationCodeInput = {
 export function formatFullLocationCode(input: FullLocationCodeInput): string {
   return `W${input.warehouseNumber}-S${input.sectionNumber}-R${input.rafter}-L${input.level}`
 }
+
+export function formatLocationRafterLevel(input: { rafter: number; level: number }): string {
+  return `R${input.rafter}-L${input.level}`
+}

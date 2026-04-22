@@ -15,7 +15,6 @@ import {
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
 import {
-  formatImportedAsStatus,
   formatInventoryImportNumber,
   formatInventoryQuantity,
   type InventoryForm,
@@ -31,7 +30,7 @@ export function InventoryPrimaryFieldsSection({
   draft,
   locationOptions,
   warehouseOptions,
-  sectionName,
+  selectedLocation,
   disabled,
   onFieldChange,
 }: {
@@ -39,7 +38,7 @@ export function InventoryPrimaryFieldsSection({
   draft: InventoryForm
   locationOptions: InventoryLocationOption[]
   warehouseOptions: InventoryWarehouseOption[]
-  sectionName: string
+  selectedLocation: InventoryLocationOption | null
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
@@ -75,16 +74,9 @@ export function InventoryPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Import Status">
+            <RecordFormField label="Full Location">
               <RecordStaticFieldValue>
-                {formatImportedAsStatus(inventory.isImported)}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Section">
-              <RecordStaticFieldValue>
-                {sectionName || "-"}
+                {selectedLocation?.locationCode || "-"}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -141,12 +133,14 @@ export function InventoryPrimaryFieldsSection({
                 value={draft.locationId}
                 onChange={(event) => onFieldChange("locationId", event.target.value)}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={controlDisabled}
+                disabled={controlDisabled || !draft.warehouseId}
               >
-                <option value="">Select Location</option>
+                <option value="">
+                  {draft.warehouseId ? "Select Location" : "Select warehouse first"}
+                </option>
                 {locationOptions.map((location) => (
                   <option key={location.id} value={location.id}>
-                    {location.locationCode}
+                    {location.shortCode}
                   </option>
                 ))}
               </select>

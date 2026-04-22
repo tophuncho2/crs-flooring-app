@@ -7,7 +7,7 @@ import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/sc
 import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import { formatImportedAsStatus, type InventoryRow } from "@builders/domain"
+import type { InventoryRow } from "@builders/domain"
 import { useInventoryListController } from "../../controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
 
@@ -42,7 +42,6 @@ export default function InventoryClient({
     tableKey: "inventory-main",
     fields: [
       { key: "importNumber", label: "Import #", getValue: (row) => row.importNumber, groupable: false },
-      { key: "status", label: "Import Status", getValue: (row) => formatImportedAsStatus(row.isImported), groupable: true },
       { key: "product", label: "Product", getValue: (row) => row.productName, groupable: true },
       { key: "itemNumber", label: "Item #", getValue: (row) => row.itemNumber, groupable: false },
       { key: "stockCount", label: "Starting Balance", getValue: (row) => row.stockCount, groupable: false },
@@ -51,8 +50,9 @@ export default function InventoryClient({
       { key: "availableBalance", label: "Available Balance", getValue: (row) => row.availableBalance, groupable: false },
       { key: "uncutBalance", label: "Uncut Balance", getValue: (row) => row.uncutBalance, groupable: false },
       { key: "section", label: "Section", getValue: (row) => row.sectionNumber, groupable: true },
-      { key: "location", label: "Location", getValue: (row) => row.locationCode, groupable: true },
+      { key: "location", label: "Location", getValue: (row) => row.locationShortCode, groupable: true },
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.importWarehouseName || row.warehouseName, groupable: true },
+      { key: "fullLocation", label: "Full Location", getValue: (row) => row.locationCode, defaultHidden: true, groupable: true },
       { key: "dyeLot", label: "Dye Lot", getValue: (row) => row.dyeLot, groupable: false },
       { key: "cost", label: "Cost $", getValue: (row) => row.cost, defaultHidden: true, groupable: false },
       { key: "freight", label: "Freight $", getValue: (row) => row.freight, defaultHidden: true, groupable: false },

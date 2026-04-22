@@ -34,17 +34,25 @@ This plan also establishes a **per-module home for dropdown-option adapters**, s
 
 ---
 
-## Category A · Remove the Section tile from the inventory record view primary section
+## Category A · Remove redundant static cells (section + import status)
 
-### Changes
+### A.1 · Section tile (inventory record view)
 - `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — delete the `<RecordFormField label="Section">` block in the left pane.
 - `apps/web/modules/inventory/components/record/inventory-record-panel.tsx` — stop threading `sectionName`.
 - `apps/web/modules/inventory/controllers/use-inventory-primary-section.ts` — delete the `activeSectionName` computation and its return.
 - `InventoryLocationOption.sectionNumber` stays in domain — harmless, potentially useful for future grouping/search.
 
+### A.2 · Import Status tile (inventory record view, per R15)
+- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — delete the `<RecordFormField label="Import Status">` block. Drop the `formatImportedAsStatus` import if no remaining usage in this file.
+- Rationale: the tile is read-only; status is only editable from the imports inventory-rows section.
+
+### A.3 · Import Status column (inventory list view, per R15)
+- `apps/web/modules/inventory/components/list/inventory-client.tsx` — delete the `status` column definition.
+- `apps/web/modules/inventory/components/list/inventory-table.tsx` — delete the `status` cell renderer. Drop `StatusPill`, `getImportedStatusFieldClass`, and `formatImportedAsStatus` imports if no remaining usage in this file.
+
 ### Blast radius
-- Three files in the inventory module. No domain, no DB, no route changes. Zero downstream consumers of `activeSectionName`.
-- The inventory list view's "Section" column (`inventory-client.tsx:53`, `inventory-table.tsx:107`) stays (locked by R1).
+- Five files in the inventory module. No domain, no DB, no route changes. Zero downstream consumers of `activeSectionName`.
+- The inventory list view's "Section" column (`inventory-client.tsx`, `inventory-table.tsx`) stays (locked by R1).
 
 ---
 
@@ -190,13 +198,17 @@ apps/web/modules/imports/data/dropdown-options/
 
 ---
 
-## Execution order (low → high risk)
+## Execution order
 
-1. **Category A** — Section tile removal. Purely deletive, three module files. Leaves a green baseline.
-2. **Category B** — Location short/full split: domain + data + UI cascade. Foundation for C and E.
-3. **Category D** — Create per-module `data/dropdown-options/` folders + adapter files. Structural prep, no behaviour change.
-4. **Category C** — Build `RecordCombobox` primitive in shared engines (no consumers yet).
-5. **Category E** — Migrate the two location dropdowns (inventory + imports) to `RecordCombobox` using the adapters from D.
+### Phase 1 — shipping now (no new primitives, native `<select>` stays)
+1. **Category A** — Section tile + Import Status tile/column removal (A.1 + A.2 + A.3).
+2. **Category B** — Location short/full split: domain + data + UI cascade (list column, hidden full column, record-view tile, option labels via `label = shortCode`).
+3. **Bonus (from Category E):** disable inventory record view location `<select>` until a warehouse is chosen (R13 / F3). One-line controller change + one attribute on the `<select>`.
+
+### Phase 2 — backlog (dropdown design)
+4. **Category D** — Create per-module `data/dropdown-options/` folders + adapter files. Normalize UI-local `LocationOption` in `imports/controllers/drafts.ts` onto domain `InventoryLocationOption`.
+5. **Category C** — Build `RecordCombobox` primitive in `modules/shared/engines/record-view/sections/dropdowns/`.
+6. **Category E** — Migrate the two location dropdowns (inventory + imports) to `RecordCombobox` using the adapters from D. Extract `isLocationInWarehouse` predicate to domain; refactor `applyDefaultLocationToImportRow` + add the inventory equivalent (clear `locationId` on warehouse change).
 
 Each step is a standalone commit. You can pause at any boundary.
 
@@ -232,14 +244,18 @@ These were open flags in the prior revision. Locked in here so the plan body is 
 - **R9 — Combobox component name:** `RecordCombobox`.
 - **R10 — Popover positioning:** portal to `document.body` + `position: fixed`. Dirty tracking is unaffected because it lives in React controller state.
 - **R11 — Loader architecture:** per-module `data/dropdown-options/` is for code organization, not SSR parallelism. Dashboard pages already `Promise.all` their options (max wall-clock, not sum). Progressive streaming is a separate future sweep (React `<Suspense>` boundaries) and not in scope here.
+- **R12 — Full-Location list column key + label:** `{ key: "fullLocation", label: "Full Location", defaultHidden: true, groupable: true }` (resolves F2).
+- **R13 — Inventory record view location `<select>` when no warehouse is selected:** disabled with placeholder "Select warehouse first" (resolves F3). Imports grid keeps its current behaviour (warehouse always present on the import row, so the edge case rarely surfaces).
+- **R14 — Adapter files for 2-option selects:** no — `RecordGridCellSelect` stays native for Import Status / Transport Type, and they don't get adapter files (resolves F4).
+- **R15 — Import Status cell removal from inventory:** delete both the record-view tile and the list-view column. Status is read-only from the inventory module; editing lives exclusively on the imports inventory-rows section.
 
 ---
 
-## Open flags / questions
+## Open flags / questions (Phase 2)
 
-1. **F1 — Shared location-draft utility home.** Once we need `applyDefaultLocationToImportRow` logic in both imports and inventory controllers (Category E), where does the lifted helper live? Options: (a) a new file under `apps/web/modules/shared/engines/record-view/sections/dropdowns/` (co-located with the combobox primitive); (b) `apps/web/modules/shared/utilities/`; (c) `packages/domain/src/flooring/inventory/` as a pure helper. **Plan-default: (a)** — keeps location-draft logic next to the UI that uses it, and the helper is UI-shaped (takes option arrays, not entities). Confirm.
+All Phase 1 flags are resolved (see R12–R15). The remaining flags only apply when Phase 2 is picked up.
 
-2. **F2 — Full-Location list column key + label.** Proposed column config: `{ key: "fullLocation", label: "Full Location", getValue: (row) => row.locationCode, defaultHidden: true, groupable: true }`. Confirm key name (`fullLocation` vs `fullLocationCode`) and label.
-3. **F3 — Inventory record view location combobox when no warehouse is selected.** On a freshly created draft with `warehouseId === ""`, should the location combobox be (a) **disabled** with placeholder "Select warehouse first", or (b) show the full unfiltered list? Imports grid today uses (b). **Plan-default: (a) for the inventory record view** (cleaner UX for record creation); imports grid keeps (b) for now. Confirm, or unify.
-4. **F4 — Adapter files for 2-option selects.** `RecordGridCellSelect` stays for Import Status / Transport Type. Do those also get adapter files under `data/dropdown-options/` for pattern uniformity, even though their call sites keep rendering native `<select>`? **Plan-default: no** — reserve `dropdown-options/` for combobox-adopting options only, to avoid dead mappers. Confirm.
-5. **F5 — Keyboard-navigation scope for the portalled popover.** With the popover in `document.body`, arrow-key nav + focus trapping needs to work despite the trigger being in the panel's tab order. The combobox handles this internally (listbox focus management), but worth flagging: if you ever introduce a second popover primitive, the `useRecordComboboxDisclosure` hook should be factored to share the portal-management bits.
+1. **F1 — `applyDefaultLocationToImportRow` → domain predicate.** The function (at `apps/web/modules/imports/controllers/drafts.ts:62-80`) encodes a domain invariant ("a location belongs to exactly one warehouse; if a draft's `locationId` isn't in the selected warehouse, clear it"), but it's currently UI-shaped (operates on `ImportInventoryRowDraft` which carries `clientId` and other UI state). Per `packages/domain/CLAUDE.md` rule 4 ("functions are pure — accept plain data, return plain data"), domain functions shouldn't take UI draft types. **Proposed Phase 2 split:**
+   - Extract `isLocationInWarehouse(locationId: string, warehouseId: string, locations: ReadonlyArray<{ id: string; warehouseId: string }>): boolean` to `packages/domain/src/flooring/inventory/`. This is the pure invariant and is testable at the domain level.
+   - Keep a draft-shaped wrapper in UI (imports + new inventory controller version) that uses the predicate to decide whether to clear `locationId`. Once both modules have wrappers, consider lifting the wrapper to `apps/web/modules/shared/` — but not before. Confirm split is acceptable.
+2. **F5 — Keyboard-navigation scope for the portalled popover.** With the popover in `document.body`, arrow-key nav + focus trapping needs to work despite the trigger being in the panel's tab order. The combobox handles this internally (listbox focus management), but worth flagging: if you ever introduce a second popover primitive, the `useRecordComboboxDisclosure` hook should be factored to share the portal-management bits.

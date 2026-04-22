@@ -34,6 +34,7 @@ export type InventoryRow = {
   warehouseNumber: string
   locationId: string
   locationCode: string
+  locationShortCode: string
   sectionNumber: string
   rafter: string
   level: string
@@ -117,6 +118,7 @@ export type InventoryLocationOption = {
   id: string
   warehouseId: string
   locationCode: string
+  shortCode: string
   sectionNumber: number | null
   warehouseName: string
 }
