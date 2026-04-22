@@ -25,11 +25,30 @@ Domain is **pure rules**. Application is **orchestration**. They do not mix — 
 
 ---
 
-## Open questions (blocking before Phase 3 — semantic decisions inside domain)
+## Inventory balance semantics (decided)
 
-1. **`availableBalance` ↔ `uncutBalance` semantics.** User spec: `availableBalance = stockCount − finalCuts`, `uncutBalance = availableBalance − awaitingCut`. Current code: swapped. Confirm the user spec is the target so Phase 3 Domain lands with the correct math. (If current code is intent, we rename only — no math swap.)
+The current code is correct; no math changes needed in Phase 3. The four balance fields mean exactly what their names say:
 
-Answer this and the sweep executes top to bottom.
+| Field | Formula | Meaning |
+|---|---|---|
+| `stockCount` | — | Starting balance at import time (immutable input; schema naming is "stockCount" but semantically it's "starting balance" — see pending flag 1) |
+| `totalCutBalance` | `sum(cuts where status === "FINAL")` | Cuts that have physically happened |
+| `awaitingCutBalance` | `sum(cuts where status === "PENDING")` | Cuts promised but not yet executed |
+| `uncutBalance` | `stockCount − totalCutBalance` | Physical stock that has NOT been cut yet (pending cuts are still physically there) |
+| `availableBalance` | `stockCount − (totalCutBalance + awaitingCutBalance)` | Stock that is NOT committed to anything — free to allocate to a new cut |
+
+Algebraic identity: `uncutBalance − awaitingCutBalance = availableBalance`. Not a definition, just arithmetic.
+
+**`availableCoverage` derives through the canonical category computation function** (the hub-and-spoke primitive from `packages/domain/src/flooring/categories/`). For each inventory row:
+
+`availableCoverage = convertStockToCoverage({ stockAmount: availableBalance, coveragePerUnit: product.coveragePerUnit, categorySlug: category.slug })`
+
+The category rule governs the conversion:
+- `vinyl-plank`, `carpet`, `pad` — `hasCoverageUnit: true` → emits a number.
+- `baseboard` — `hasCoverageUnit: false` → emits `null` → normalizer renders `""`.
+- Any category with `coveragePerUnit === null` on the product → also emits `null`.
+
+The normalizer never does inline coverage math. Every coverage field in the system — `inventory.availableCoverage`, `cutLog.coverage`, and future work-order fulfillment totals — flows through the same `convertStockToCoverage` call. One source of truth per category, seeded once.
 
 ## Cut-log editability model (decided)
 
@@ -377,9 +396,9 @@ Today `CutLogStatus` + `CutLogRow` live inline in `packages/domain/src/flooring/
 ### Wiring
 - `packages/domain/src/index.ts` — `export * from "./flooring/cut-logs/index.js"`.
 
-## Inventory — adapter + semantic fix
+## Inventory — adapter
 
-Two concerns here: (1) add a thin adapter to the categories primitive for inventory-specific coverage, (2) resolve the `availableBalance` ↔ `uncutBalance` semantic question (pending decision on Open Question #1).
+Add a thin adapter to the categories primitive so inventory's normalizer stops doing inline coverage math. Balance semantics (`availableBalance`, `uncutBalance`, etc.) are already correct in the current code — no math changes, no rename.
 
 ### `packages/domain/src/flooring/inventory/` changes
 
@@ -401,7 +420,7 @@ Two concerns here: (1) add a thin adapter to the categories primitive for invent
   }
   ```
 - **Modified:** `types.ts` — `InventoryRow` already carries all five balance fields + category data. No shape change beyond cut-log extraction.
-- **Modified:** `inventory-rules.ts` — update `canAddCutLog` / the cut-log-precondition helper (if it exists) to use the target semantics: the post-diff `uncutBalance` (= `stockCount − totalCuts`) must be `≥ 0`. Throws `CUT_LOG_EXCEEDS_STARTING_BALANCE` from the cut-logs domain. **Pending Open Question #1:** if the current `availableBalance`/`uncutBalance` meaning is what was actually wanted, this rule stays; only the field names shift.
+- **Modified:** `inventory-rules.ts` — the cut-log-precondition helper uses the current-code semantics: the post-diff sum of all cuts (`totalCut + awaitingCut`) must be `≤ stockCount`, i.e. `availableBalance ≥ 0`. Throws `CUT_LOG_EXCEEDS_STARTING_BALANCE` from the cut-logs domain. No rename, no math change.
 - **Modified:** `errors.ts` — no new codes (the invariant code lives in `cut-logs/errors.ts`).
 
 ### Work Orders
@@ -440,25 +459,20 @@ No write repository — categories are seed-only.
 **No standalone cut-logs data module.** Cut-log reads flow through inventory's normalizer; writes flow through parent atomic-diff primitives. Phase 7 confirms this decision.
 
 - `packages/db/src/flooring/inventory/shared.ts`:
-  - Cut-log select payload: add `price: true` and `isWaste: true`.
+  - Cut-log select payload: add `cost: true`, `freight: true`, and `isWaste: true`.
   - Inventory select: add `product.category.slug` (needed by the category-math adapter). Today it includes `product.category.name`; extend with `slug` and the five unit relations' `name` + `abbreviation`.
 - `packages/db/src/flooring/inventory/read-repository.ts`:
-  - `normalizeCutLogRow(row, coveragePerUnit, category)` — import `computeCutCoverage` from `@builders/domain`'s `cut-logs/category-math.ts`. Emits `price` (`""` when null) and `isWaste`.
-  - `normalizeInventoryRow(payload, aggregate)` — replace the inline `computeAvailableCoverage` helper with `computeInventoryAvailableCoverage` from `@builders/domain`'s `inventory/category-math.ts`. Thread `category.slug` + `coveragePerUnit`.
-  - **Semantic fix (pending Open Question #1):** if user confirms spec, update the aggregate math:
-    ```ts
-    const available = stockCount - aggregate.totalCut            // was: stockCount - total - awaiting
-    const uncut     = available - aggregate.awaitingCut          // was: stockCount - total
-    ```
+  - `normalizeCutLogRow(row, coveragePerUnit, category)` — import `computeCutCoverage` from `@builders/domain`'s `cut-logs/category-math.ts`. Emits `cost` and `freight` (`""` when null in DB), `isWaste`, and computed `coverage`.
+  - `normalizeInventoryRow(payload, aggregate)` — replace the inline `computeAvailableCoverage` helper with `computeInventoryAvailableCoverage` from `@builders/domain`'s `inventory/category-math.ts`. Thread `category.slug` + `coveragePerUnit`. Balance math (`uncut = stockCount − totalCut`, `available = stockCount − totalCut − awaitingCut`) stays as-is — semantics are already correct.
   - Detail variant (`normalizeInventoryDetail`) threads the same args into its cut-log mapping.
 
 ## Inventory (writes)
 
 - `packages/db/src/flooring/inventory/write-repository.ts` — no changes for cut-log writes directly (the atomic-diff primitive lives alongside):
 - `packages/db/src/flooring/inventory/` — confirm or add `applyInventoryCutLogsDiff(tx, input) → { logs, tempIdMap }` per REFERENCE.md. This primitive:
-  - CREATE: persists `before`, `cut`, `after`, `status`, `notes`, `isWaste`, **`price` from input** (application layer has already computed it).
-  - UPDATE: forwards each patched field including `price` recompute results from the application layer.
-  - DELETE: removes cut logs by id.
+  - CREATE: persists `before`, `cut`, `after`, `status`, `notes`, `isWaste`, **`cost` and `freight` from input** (application layer has already computed them from the inventory snapshot).
+  - UPDATE: forwards each patched field from the restricted modify-set (`status`, `isWaste`, `notes`). Never recomputes `cost` / `freight` / `before` / `after` / `cut` — those are frozen on create.
+  - DELETE: removes cut logs by id. Reverse-order-only rule enforced at application layer, not here.
   - No business logic — takes what the caller passes.
 
 ## Imports
@@ -798,10 +812,10 @@ All clean. `@builders/web` typecheck baseline: 107 pre-existing (all in `work-or
 3. Attempt to edit `cost` from inventory record view → no editable input surface (PREFLIGHT item 7).
 4. Back to imports: flip the row to FINAL, save. Confirm imports view now renders `cost` / `freight` cells read-only on this row (PREFLIGHT item 7).
 5. Reload inventory record: balance tiles show `availableBalance = 10`, `uncutBalance = 10`, `awaitingCutBalance = 0`, `totalCutBalance = 0`, `availableCoverage = 237.70` (= 10 × 23.77).
-6. Add cut A (PENDING, `cut = 2`): `availableBalance = 10`, `uncutBalance = 8`, `awaitingCutBalance = 2`, `totalCutBalance = 0`. Cut row persists with `cut = 2`, `before = 10`, `after = 8`, `cost = 20.00`, `freight = 4.00`, `coverage = 47.54`, `workOrderId = null`, `workOrderItemId = null`.
-7. Flip cut A to FINAL: `availableBalance = 8`, `uncutBalance = 8`, `awaitingCutBalance = 0`, `totalCutBalance = 2`, `availableCoverage = 190.16`. `cost` / `freight` / `before` / `after` / `cut` unchanged (frozen).
-8. Flip cut A back to PENDING → saves clean (no reject). Inventory balances recompute: `availableBalance = 10`, `awaitingCutBalance = 2`, `totalCutBalance = 0`. Cut row's `cost` / `freight` still frozen.
-9. Add cut B (PENDING, `cut = 1`): cut B's `before = 9` (= stockCount − existing 2), `after = 8`, `cost = 10.00`, `freight = 2.00`.
+6. Add cut A (PENDING, `cut = 2`): `availableBalance = 8` (stockCount − all cuts), `uncutBalance = 10` (stockCount − final; nothing final yet), `awaitingCutBalance = 2`, `totalCutBalance = 0`, `availableCoverage = convertStockToCoverage({ stockAmount: 8, coveragePerUnit: 23.77, categorySlug: "vinyl-plank" }) = 190.16`. Cut row persists with `cut = 2`, `before = 10`, `after = 8`, `cost = 20.00`, `freight = 4.00`, `coverage = 47.54`, `workOrderId = null`, `workOrderItemId = null`.
+7. Flip cut A to FINAL: `availableBalance = 8`, `uncutBalance = 8`, `awaitingCutBalance = 0`, `totalCutBalance = 2`, `availableCoverage = 190.16`. `cost` / `freight` / `before` / `after` / `cut` unchanged (frozen). `availableBalance` unchanged because status flip doesn't move stock between "cut" and "not cut" categories — only between pending and final. `uncutBalance` drops from 10 to 8 because the cut has now physically happened.
+8. Flip cut A back to PENDING → saves clean (no reject). Inventory balances recompute: `availableBalance = 8`, `uncutBalance = 10`, `awaitingCutBalance = 2`, `totalCutBalance = 0`, `availableCoverage = 190.16`. Cut row's `cost` / `freight` still frozen.
+9. Add cut B (PENDING, `cut = 1`): cut B's `before = 8` (= stockCount − existing cuts = 10 − 2), `after = 7`, `cost = 10.00`, `freight = 2.00`. Inventory: `availableBalance = 7`, `uncutBalance = 10`, `awaitingCutBalance = 3`, `totalCutBalance = 0`, `availableCoverage = 166.39`.
 10. Attempt to delete cut A (not the newest) → UI trash icon is disabled; direct API attempt returns `CUT_LOG_DELETE_NOT_MOST_RECENT`.
 11. Delete cut B (newest) → saves. Now cut A is newest again; its trash icon enables.
 12. Attempt to edit cut A's `cut` via direct API patch with `cut: 5` in body → validator rejects with `400 INVALID_BODY`.
@@ -837,7 +851,7 @@ All clean. `@builders/web` typecheck baseline: 107 pre-existing (all in `work-or
 1. **Pre-flight** — see `PREFLIGHT.md`. Sweep-2 verification + two Sweep-3 hardening rules (inventory cost/freight lock; freight validator reach).
 2. **Phase 1** — Prisma migration. Apply, rebuild `@builders/db`.
 3. **Phase 2** — Seed carpet, pad, baseboard. Re-run seed.
-4. **Phase 3** — Domain. In order: Categories primitive → Cut Logs (incl. `category-math` spoke) → Inventory adapter + semantic fix.
+4. **Phase 3** — Domain. In order: Categories primitive → Cut Logs (incl. `category-math` spoke) → Inventory adapter.
 5. **Phase 4** — Data. Update `inventory/shared.ts` selects, normalizers in `inventory/read-repository.ts`, confirm `applyInventoryCutLogsDiff` primitive shape.
 6. **Phase 5** — Application. `saveInventoryCutLogsUseCase` with lock scope, fresh-total load, server-stamped `cost` + `freight` + `before` + `after` on added rows, link-only modify path, domain-rule enforcement.
 7. **Phase 6** — Routes. `apps/web/app/api/inventory/[id]/cut-logs/section/route.ts` + `_validators.ts` updates.
@@ -874,14 +888,12 @@ Open items that still warrant discussion before or during execution.
 
 2. **Read-only `workOrder` / `workOrderItem` columns may look broken in this sweep.** Every cut created from the inventory record view renders blank in those columns. Users may read "blank" as "broken." Options: (a) hide both columns entirely until the work-orders sweep ships — recommended, less noise; (b) show with tooltip explaining "Work-order linkage activates with the work-orders sweep"; (c) leave blank without explanation. Decide during Phase 7.
 
-3. **`availableBalance` / `uncutBalance` naming still pending confirmation.** Open Question #1 at the top of the plan. Resolve before Phase 3 lands domain code. Implementation cost is low (two lines in the normalizer); consumer cost is moderate (list columns, record tiles).
+3. **Reverse-order delete interaction with concurrent writes.** Two users both targeting the current newest cut for deletion: first commit wins; second gets `CUT_LOG_DELETE_NOT_MOST_RECENT` because what was "newest" is now gone. Server error is correct; UI needs to handle it gracefully — refresh the section with new server state and show a brief toast. Non-blocking; Phase 7 UI polish.
 
-4. **Reverse-order delete interaction with concurrent writes.** Two users both targeting the current newest cut for deletion: first commit wins; second gets `CUT_LOG_DELETE_NOT_MOST_RECENT` because what was "newest" is now gone. Server error is correct; UI needs to handle it gracefully — refresh the section with new server state and show a brief toast. Non-blocking; Phase 7 UI polish.
+4. **Edge case: `stockCount = 0` inventory row.** Schema allows `>= 0`. Any cut immediately violates `CUT_LOG_EXCEEDS_STARTING_BALANCE`. No special handling; existing guard catches it. Flagged for awareness only.
 
-5. **Edge case: `stockCount = 0` inventory row.** Schema allows `>= 0`. Any cut immediately violates `CUT_LOG_EXCEEDS_STARTING_BALANCE`. No special handling; existing guard catches it. Flagged for awareness only.
+5. **`stockCount = 0` at creation — additional nuance.** Users cannot create cut logs that would drive `availableBalance` negative (same guard as above). Normal flow on a zero-stock row: no cuts possible. Combined with (4) means such a row is effectively unusable — which may or may not be desired. If the product side wants to prevent `stockCount = 0` rows from being saved in the first place, that's an inventory-side validation change (not in this sweep).
 
-6. **`stockCount = 0` at creation — additional nuance.** Users cannot create cut logs that would drive `uncutBalance` negative (same guard as above). Normal flow on a zero-stock row: no cuts possible. This is correct behavior but combined with (5) means such a row is effectively unusable — which may or may not be desired. If the product side wants to prevent `stockCount = 0` rows from being saved in the first place, that's an inventory-side validation change (not in this sweep).
+6. **Material-item-delete cascade-clear is a future-sweep contract.** When the work-orders sweep ships material-item delete, it must null both `cutLog.workOrderId` and `cutLog.workOrderItemId` on every cut referencing the deleted item. Add a `TODO` or schema-level note near `FlooringCutLog.workOrderItemId` during Phase 1 so this commitment survives across sweeps.
 
-7. **Material-item-delete cascade-clear is a future-sweep contract.** When work-orders sweep ships material-item delete, it must null both `cutLog.workOrderId` and `cutLog.workOrderItemId` on every cut referencing the deleted item. Add a `TODO` or schema-level note near `FlooringCutLog.workOrderItemId` during Phase 1 so this commitment survives across sweeps.
-
-8. **Verify `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` is fully purged.** Earlier drafts of this plan included the code. Grep during Phase 3: `grep -rn "FINAL_REVERSAL\|isFinalReversal" packages apps/web | grep -v dist | grep -v node_modules` → zero. Non-blocking, just hygiene.
+7. **Verify `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` is fully purged.** Earlier drafts of this plan included the code. Grep during Phase 3: `grep -rn "FINAL_REVERSAL\|isFinalReversal" packages apps/web | grep -v dist | grep -v node_modules` → zero. Non-blocking, just hygiene.
