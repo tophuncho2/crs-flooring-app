@@ -8,21 +8,6 @@ Run this checklist in order. Any drift or missing coverage: fix in place → reb
 
 ## Sweep-2 verification (read-only)
 
-### 1. Import primary `status` stays editable (original Sweep-2 Change 6)
-- `apps/web/modules/imports/components/record/sections/import-primary-fields-section.tsx` — `<select>` with PENDING/FINAL.
-- `apps/web/modules/imports/components/list/imports-table.tsx` — status column renders via `formatImportStatus` + `getImportStatusFieldClass`.
-- `grep -rn "importEntry\.status\|row\.importStatus" apps packages | grep -v dist | grep -v node_modules` → zero hits outside the imports module itself.
-
-### 2. Per-row `isImported` pipeline intact
-- Domain: `InventoryRow.isImported: boolean`; `importTag`/`importStatus`/`importTransportType` absent; `isImportedReversal`, `assertImportedTransitionAllowed`, `IMPORTED_REVERSAL_NOT_ALLOWED` exported.
-- Domain diff: `InventoryDiffValidationIssue` includes `IMPORTED_REVERSAL_NOT_ALLOWED`.
-- Application: `update-inventory.ts` throws `IMPORTED_REVERSAL_NOT_ALLOWED` on true→false; `save-inventory-rows.ts::toDiffExisting` forwards `isImported`.
-- Data: `inventoryRowSelect` drops `importEntry.tag/status/transportType`; `InventoryListFilter.isImported?: boolean` supported; `importInventorySelect` includes `isImported`; `applyImportInventoryRowsDiff` persists `isImported` on create + update with `?? input.importWarehouseId` warehouse fallback.
-- Routes: `validateUpdateInventoryInput` does NOT accept `isImported`; `optionalDiffBoolean` passes `isImported` through imports diff.
-- Modules: `use-import-inventory-rows-section.ts` exports `setRowImportStatus`; `import-inventory-rows-section.tsx` renders per-row status select with `disabled={row.isImported}`.
-
-### 3. Inventory list eligibility filter
-- `apps/web/modules/inventory/data/queries.ts::loadInventoryPageData` calls `listInventory({ isImported: true })`.
 
 ### 4. Inventory record edit gates
 - `inventory-primary-fields-section.tsx` — `isReadOnly = !inventory.isImported`; inputs disabled; banner when read-only.
