@@ -19,8 +19,10 @@
 
 ---
 
+**Strategy refs:** `coverage: product-multiplier` · `fulfillment: coverage-sum`
+
 **Available balance → Coverage balance:**
-`availableCoverage = availableBalance × product.coveragePerUnit` — Boxes → Sqft.
+`availableCoverage = availableBalance × product.coveragePerUnit` — Boxes → Sqft. Strategy `product-multiplier`.
 
 **Material item fulfillment:**
-`quantityAssigned = sum(cut.cut × product.coveragePerUnit)` — each cut's box count converts to Sqft before comparing against the item's requested quantity (Sqft).
+`quantityAssigned = sum(cutLog.coverage)` where `coverage` is computed per cut via `product-multiplier` → each cut's box count converts to Sqft. Compares against the item's requested quantity (Sqft).

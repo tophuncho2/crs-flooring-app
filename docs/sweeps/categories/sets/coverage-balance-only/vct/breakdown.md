@@ -19,8 +19,10 @@
 
 ---
 
+**Strategy refs:** `coverage: product-multiplier` · `fulfillment: stock-count`
+
 **Available balance → Coverage balance:**
-`availableCoverage = availableBalance × product.coveragePerUnit` — Boxes → Sqyd.
+`availableCoverage = availableBalance × product.coveragePerUnit` — Boxes → Sqyd. Strategy `product-multiplier`.
 
 **Material item fulfillment:**
-`quantityAssigned = sum(cut.cut)` — Send unit equals Stock unit, so cut's box count compares directly to the item's requested quantity (Boxes). No conversion.
+`quantityAssigned = sum(cutLog.cut)` — Send unit equals Stock unit, so cut's box count compares directly to the item's requested quantity (Boxes). Strategy `stock-count`.

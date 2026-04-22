@@ -19,10 +19,12 @@
 
 ---
 
+**Strategy refs:** `coverage: none` · `fulfillment: stock-count`
+
 **Available balance → Coverage balance:**
-N/A — category opts out of coverage.
+N/A — strategy `none`. Category opts out of coverage.
 
 **Material item fulfillment:**
-`quantityAssigned = sum(cut.cut)` — strict 1:1 stock count, no conversion.
+`quantityAssigned = sum(cutLog.cut)` — strict 1:1 stock count. Strategy `stock-count`.
 
 <!-- Flagged in DATA-MODEL.md: likely intended as "Kilz" (brand name for primer line). Confirm slug. -->

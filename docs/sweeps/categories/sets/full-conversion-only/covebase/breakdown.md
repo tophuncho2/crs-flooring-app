@@ -19,8 +19,10 @@
 
 ---
 
+**Strategy refs:** `coverage: product-multiplier` · `fulfillment: coverage-sum`
+
 **Available balance → Coverage balance:**
-`availableCoverage = availableBalance × product.coveragePerUnit` — Boxes → Linear Feet.
+`availableCoverage = availableBalance × product.coveragePerUnit` — Boxes → Linear Feet. Strategy `product-multiplier`.
 
 **Material item fulfillment:**
-`quantityAssigned = sum(cut.cut × product.coveragePerUnit)` — each cut's box count converts to Linear Feet before comparing against the item's requested quantity (Linear Feet).
+`quantityAssigned = sum(cutLog.coverage)` where `coverage` is computed per cut via `product-multiplier` → each cut's box count converts to Linear Feet. Compares against the item's requested quantity (Linear Feet).
