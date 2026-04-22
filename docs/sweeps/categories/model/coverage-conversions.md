@@ -19,7 +19,9 @@ Consumers of these strategies:
 
 ---
 
-## `product-multiplier`
+## Active strategies
+
+### `product-multiplier`
 
 Uses the product's per-unit coverage factor.
 
@@ -36,27 +38,10 @@ Uses the product's per-unit coverage factor.
 - `carpet-tile` (Boxes → Sqyd, varies per product)
 - `pad` (Rolls → Sqyd, varies per product)
 - `covebase` (Boxes → Linear Feet, varies per product)
-- `vct` (Boxes → Sqyd, varies per product)
 
 ---
 
-## `linear-feet-to-sqyd-12ft-roll`
-
-Fixed constant `1.333 sqyd per linear foot`. Derived from standard 12-foot roll width: `12 sqft / 9 sqft-per-sqyd = 1.333 sqyd / linear ft`.
-
-```ts
-(stock, _product) => stock * 1.333
-```
-
-**Product create requirement:** `coveragePerUnit` is NOT required (and is ignored if set — the constant wins).
-
-**Used by:**
-- `carpet` (Linear Feet → Sqyd)
-- `vinyl-sheet` (Linear Feet → Sqyd)
-
----
-
-## `none`
+### `none`
 
 Category has no coverage unit; coverage concept doesn't apply.
 
@@ -66,7 +51,7 @@ Category has no coverage unit; coverage concept doesn't apply.
 
 **Product create requirement:** `coveragePerUnit` is NOT required (and is meaningless for these categories).
 
-**Used by (one-to-one categories):** adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kils, scent-stop, moisture-barrier, primer.
+**Used by (all one-to-one categories):** carpet, vinyl-sheet, vct, adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kils, scent-stop, moisture-barrier, primer.
 
 ---
 
@@ -74,9 +59,8 @@ Category has no coverage unit; coverage concept doesn't apply.
 
 ```ts
 export const COVERAGE_STRATEGIES = {
-  "product-multiplier":            (stock, product) => product.coveragePerUnit !== null ? stock * product.coveragePerUnit : null,
-  "linear-feet-to-sqyd-12ft-roll": (stock, _product) => stock * 1.333,
-  "none":                          (_stock, _product) => null,
+  "product-multiplier": (stock, product) => product.coveragePerUnit !== null ? stock * product.coveragePerUnit : null,
+  "none":               (_stock, _product) => null,
 } as const satisfies Record<string, CoverageStrategy>
 
 export const CATEGORY_COVERAGE_STRATEGY: Record<string, keyof typeof COVERAGE_STRATEGIES> = {
@@ -85,11 +69,10 @@ export const CATEGORY_COVERAGE_STRATEGY: Record<string, keyof typeof COVERAGE_ST
   "carpet-tile":       "product-multiplier",
   "pad":               "product-multiplier",
   "covebase":          "product-multiplier",
-  // coverage-balance-only
-  "carpet":            "linear-feet-to-sqyd-12ft-roll",
-  "vinyl-sheet":       "linear-feet-to-sqyd-12ft-roll",
-  "vct":               "product-multiplier",
   // one-to-one
+  "carpet":            "none",
+  "vinyl-sheet":       "none",
+  "vct":               "none",
   "adhesive":          "none",
   "baseboard":         "none",
   "trim":              "none",
@@ -115,3 +98,31 @@ export const CATEGORY_COVERAGE_STRATEGY: Record<string, keyof typeof COVERAGE_ST
 3. (Optional) Update each `sets/{category}/breakdown.md` to reference the new strategy slug.
 
 No changes to consumers — inventory + cut-log normalizers look up by slug and run the strategy.
+
+---
+
+## Out of scope / pending
+
+Strategies fully specified below but **not wired this sweep**. Categories that would use them currently ship with `coverage: none` (display Coverage Unit: N/A; no `availableCoverage` tile; cut logs emit blank `coverage`). When activated, flip the category's entry in `CATEGORY_COVERAGE_STRATEGY` from `none` to the strategy slug — no other code changes needed.
+
+### `linear-feet-to-sqyd-12ft-roll` *(pending)*
+
+Fixed constant `1.333 sqyd per linear foot`. Derived from standard 12-foot roll width: `12 sqft / 9 sqft-per-sqyd = 1.333 sqyd / linear ft`.
+
+```ts
+(stock, _product) => stock * 1.333
+```
+
+**Product create requirement when active:** `coveragePerUnit` is NOT required (and is ignored if set — the constant wins).
+
+**Future users when active:**
+- `carpet` (Linear Feet → Sqyd)
+- `vinyl-sheet` (Linear Feet → Sqyd)
+
+**Why deferred:** simplifying Sweep 3's coverage surface. Neither carpet nor vinyl-sheet's fulfillment computation needs the sqyd conversion (Send Unit = Stock Unit = Linear Feet, so material items compare directly in linear feet). The sqyd coverage would only exist as a display balance on the inventory record view — useful but not load-bearing. Ship when a concrete consumer (reporting, UI tile) asks for it.
+
+**Activation checklist (when the time comes):**
+1. Re-add `"linear-feet-to-sqyd-12ft-roll"` to `COVERAGE_STRATEGIES` in the active registry.
+2. Flip `CATEGORY_COVERAGE_STRATEGY["carpet"]` and `["vinyl-sheet"]` from `"none"` to `"linear-feet-to-sqyd-12ft-roll"`.
+3. Update each category's `sets/one-to-one/{category}/breakdown.md` — Coverage Unit: Sqyd, `Inventory Coverage Balance enabled: true`, coverage strategy ref. Consider moving the folder back into a `coverage-balance-only/` bucket if more than these two ever use the strategy.
+4. Update seeded category row's `coverageAvailableUnitId` / `itemCoverageUnitId` to the Sqyd unit-of-measure id.

@@ -26,9 +26,7 @@ Sums the raw `cut` field (in the category's Stock Unit).
 
 **Applies when** Send Unit = Stock Unit. No conversion needed — the cut's stock-count amount IS the fulfillment quantity.
 
-**Used by:**
-- All `coverage-balance-only` categories: `carpet`, `vinyl-sheet`, `vct`.
-- All `one-to-one` categories: adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kils, scent-stop, moisture-barrier, primer.
+**Used by (all one-to-one categories):** carpet, vinyl-sheet, vct, adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kils, scent-stop, moisture-barrier, primer.
 
 ---
 
@@ -66,11 +64,10 @@ export const CATEGORY_FULFILLMENT_SOURCE: Record<string, keyof typeof FULFILLMEN
   "carpet-tile":       "coverage-sum",
   "pad":               "coverage-sum",
   "covebase":          "coverage-sum",
-  // coverage-balance-only (send = stock → read stock directly)
+  // one-to-one (send = stock → read stock directly)
   "carpet":            "stock-count",
   "vinyl-sheet":       "stock-count",
   "vct":               "stock-count",
-  // one-to-one (send = stock → read stock directly)
   "adhesive":          "stock-count",
   "baseboard":         "stock-count",
   "trim":              "stock-count",
