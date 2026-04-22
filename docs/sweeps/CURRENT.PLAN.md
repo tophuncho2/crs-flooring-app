@@ -21,69 +21,40 @@ Companion context: `REFERENCE.md` (four-module vision). Sweep 2 (`isImported` UX
 
 Domain is **pure rules**. Application is **orchestration**. They do not mix — domain rules don't know about transactions; application use cases don't embed arithmetic invariants they can import. Violations of these boundaries are the first thing to grep for in verification.
 
----
-
-## Pre-flight — Verify Sweep 2 still intact
-
-Before any Sweep-3 work. Read-only verification; fix in place if drift detected, then proceed. This preserves the old Change 6 "keep import status editable as display metadata" decision as part of a broader audit.
-
-### Checklist
-
-1. **Import primary `status` stays editable (original Change 6):**
-   - `apps/web/modules/imports/components/record/sections/import-primary-fields-section.tsx` — `<select>` with PENDING/FINAL.
-   - `apps/web/modules/imports/components/list/imports-table.tsx` — status column renders via `formatImportStatus` + `getImportStatusFieldClass`.
-   - `grep -rn "importEntry\.status\|row\.importStatus" apps packages | grep -v dist | grep -v node_modules` → zero hits outside the imports module itself.
-
-2. **Per-row `isImported` pipeline intact:**
-   - Domain: `InventoryRow.isImported: boolean`; `importTag`/`importStatus`/`importTransportType` absent; `isImportedReversal`, `assertImportedTransitionAllowed`, `IMPORTED_REVERSAL_NOT_ALLOWED` exported.
-   - Domain diff: `InventoryDiffValidationIssue` includes `IMPORTED_REVERSAL_NOT_ALLOWED`.
-   - Application: `update-inventory.ts` throws `IMPORTED_REVERSAL_NOT_ALLOWED` on true→false; `save-inventory-rows.ts::toDiffExisting` forwards `isImported`.
-   - Data: `inventoryRowSelect` drops `importEntry.tag/status/transportType`; `InventoryListFilter.isImported?: boolean` supported; `importInventorySelect` includes `isImported`; `applyImportInventoryRowsDiff` persists `isImported` on create + update with `?? input.importWarehouseId` warehouse fallback.
-   - Routes: `validateUpdateInventoryInput` does NOT accept `isImported`; `optionalDiffBoolean` passes `isImported` through imports diff.
-   - Modules: `use-import-inventory-rows-section.ts` exports `setRowImportStatus`; `import-inventory-rows-section.tsx` renders per-row status select with `disabled={row.isImported}`.
-
-3. **Inventory list eligibility filter:**
-   - `apps/web/modules/inventory/data/queries.ts::loadInventoryPageData` calls `listInventory({ isImported: true })`.
-
-4. **Inventory record edit gates:**
-   - `inventory-primary-fields-section.tsx` — `isReadOnly = !inventory.isImported`; inputs disabled; banner when read-only.
-   - `inventory-record-panel.tsx` — footer omits `onDelete` when read-only.
-   - `update-inventory.ts` — refuses updates via `INVENTORY_PENDING_IMPORT` when `current.isImported === false`.
-   - `inventory-cut-logs-section.tsx` — empty-state swap when pending.
-
-5. **Warehouse required on inventory primary:**
-   - Domain `validateInventoryInput` pushes `WAREHOUSE_REQUIRED` when `warehouseId` missing.
-   - `getInventoryDetailPageData` returns `warehouseOptions`; page forwards it.
-   - Primary section renders `<select required>` for warehouse.
-
-6. **Warehouse auto-link on import-diff added rows:**
-   - `applyImportInventoryRowsDiff` has `?? input.importWarehouseId` fallback on both branches.
-
-### Exit condition
-All six sections green. Any drift: fix → rebuild affected packages → re-check → proceed. Expected: 15 min read-through if nothing regressed.
+**Pre-flight is a separate document.** See `PREFLIGHT.md` in this directory. Sweep 2 verification + two Sweep-3 hardening rules (lock inventory cost/freight post-import; confirm freight validator reach) must land before Phase 1 below begins.
 
 ---
 
 ## Open questions (blocking before Phase 3 — semantic decisions inside domain)
 
 1. **`availableBalance` ↔ `uncutBalance` semantics.** User spec: `availableBalance = stockCount − finalCuts`, `uncutBalance = availableBalance − awaitingCut`. Current code: swapped. Confirm the user spec is the target so Phase 3 Domain lands with the correct math. (If current code is intent, we rename only — no math swap.)
-2. **Cut-log `cost` / `freight` nullability.** Both stored `Decimal?`, null when the corresponding inventory source value is null or `stockCount == 0`. Alternative: require `cost` (and `freight`?) at inventory create. Default: nullable (safer given current data model — an inventory row may legitimately have unknown freight at import time).
 
-Answer these and the sweep executes top to bottom.
+Answer this and the sweep executes top to bottom.
 
 ## Cut-log editability model (decided)
 
-Frozen on create; deletion is the only way to "edit" them:
+**Frozen on create; deletion is the only way to "edit" the quantity-shaped fields.**
 
-- `cut`, `before`, `after`, `cost`, `freight` — all stored columns, all computed at create time, all immutable thereafter. To change a cut amount, delete the cut and create a new one.
+- `cut`, `before`, `after`, `cost`, `freight` — all stored columns, all computed at create time, all immutable thereafter. To change a cut amount: delete the cut (in reverse order, see below) and re-create.
 
-Editable post-create:
+**Editable post-create:**
 
-- `status` — `"PENDING"` / `"FINAL"` toggle. **Freely flippable both directions** (no one-way rule). Flipping changes what counts toward `availableBalance` but does NOT recompute cost/freight.
+- `status` — `"PENDING"` / `"FINAL"` toggle. Freely flippable both directions. Flipping changes what counts toward `availableBalance` but does NOT recompute cost/freight. The save is idempotent + transactional + row-locked; the inventory row's computed balances update on save.
 - `isWaste` — free toggle.
 - `notes` — free-form edit.
-- `workOrderId` — reverse link, dropdown. Editable to relink a cut to a different work order (or unlink by clearing).
-- `workOrderItemId` — cascaded dropdown. Disabled until `workOrderId` is chosen. Options filter to items on that work order whose `productId === inventory.productId`. Editable to relink a cut's material-item context.
+
+**Read-only on inventory record view (set only via work-order record view in a future sweep):**
+
+- `workOrderId` — linked work order.
+- `workOrderItemId` — linked material item.
+
+Rationale for read-only: cut-log ↔ work-order linkage is established through the work-order record view's material-item section (future sweep). A cut added directly from the inventory record view has NO work-order link (both fields null). A cut added from the work-order side auto-links both. There is no reverse-editing path from the inventory side — preserves a single source of truth for where work-order linkage is decided.
+
+**Delete rule — reverse order only.**
+
+A cut log is deletable only if it is the most-recent cut against its inventory row (by `createdAt`). Attempting to delete any other cut rejects with `CUT_LOG_DELETE_NOT_MOST_RECENT`. This preserves the meaning of each cut's stored `before` / `after` snapshots — they can never be left describing a history that no longer exists.
+
+**Material-item delete does NOT cascade to cut logs** (next-sweep rule, documented here for continuity). When a work-order material item is deleted, any cut logs linked to it stay intact with their `workOrderId` and `workOrderItemId` both nullified. The cuts against inventory are a physical fact; only the link to the work-order context clears.
 
 This is what the validator enforces, what the use case honors, and what the UI reflects.
 
@@ -314,24 +285,25 @@ Today `CutLogStatus` + `CutLogRow` live inline in `packages/domain/src/flooring/
   export const CUT_LOG_STATUS_VALUES = ["PENDING", "FINAL"] as const
   export type CutLogStatus = typeof CUT_LOG_STATUS_VALUES[number]
 
-  // Frozen fields: set on create, immutable thereafter (user must delete + recreate to change):
-  //   before, cut, after, cost, freight
-  // Editable post-create:
-  //   status, isWaste, notes, workOrderId, workOrderItemId
+  // Frozen on create: before, cut, after, cost, freight.
+  // Editable post-create (from inventory record view): status, isWaste, notes.
+  // Work-order linkage (workOrderId, workOrderItemId) is READ-ONLY from the inventory record view.
+  // Those fields are populated by future work-order-record-view flow; cuts created from inventory
+  // side always have both fields null.
   export type CutLogRow = {
     id: string
     inventoryId: string
-    workOrderId: string | null        // editable post-create
-    workOrderItemId: string | null    // editable post-create (cascaded: requires workOrderId)
+    workOrderId: string | null        // display-only from inventory side; set by work-orders sweep
+    workOrderItemId: string | null    // display-only from inventory side; set by work-orders sweep
     before: string                    // frozen at create
     cut: string                       // frozen at create
     after: string                     // frozen at create (= before − cut)
-    status: CutLogStatus              // editable post-create, flips freely both directions
-    isWaste: boolean                  // editable post-create
+    status: CutLogStatus              // editable, flips freely both directions
+    isWaste: boolean                  // editable
     cost: string                      // frozen at create; "" when null in DB
     freight: string                   // frozen at create; "" when null in DB
     coverage: string                  // computed at normalize time; "" when no coverage applicable
-    notes: string                     // editable post-create
+    notes: string                     // editable
     createdAt: string
     updatedAt: string
   }
@@ -343,6 +315,28 @@ Today `CutLogStatus` + `CutLogRow` live inline in `packages/domain/src/flooring/
     before: string; cut: string; after: string
   }): void { /* throws CutLogDomainError on mismatch — only relevant on create */ }
   export function formatCutLogStatus(status: CutLogStatus): "Pending Cut" | "Final Cut" { … }
+
+  // Delete is only allowed for the most-recent cut against an inventory row.
+  // siblingsSameInventory is the list of all cuts against the same inventoryId (includes `cutLog` itself).
+  export function isCutLogMostRecent(
+    cutLog: Pick<CutLogRow, "id" | "createdAt">,
+    siblingsSameInventory: ReadonlyArray<Pick<CutLogRow, "id" | "createdAt">>,
+  ): boolean {
+    // Find max createdAt; the cut whose id matches that winner is the most recent.
+    const newest = siblingsSameInventory.reduce((a, b) =>
+      a.createdAt >= b.createdAt ? a : b,
+    )
+    return newest.id === cutLog.id
+  }
+
+  export function assertCutLogDeleteAllowed(
+    cutLog: Pick<CutLogRow, "id" | "createdAt">,
+    siblingsSameInventory: ReadonlyArray<Pick<CutLogRow, "id" | "createdAt">>,
+  ): void {
+    if (!isCutLogMostRecent(cutLog, siblingsSameInventory)) {
+      throw new CutLogDomainError("CUT_LOG_DELETE_NOT_MOST_RECENT", { cutLogId: cutLog.id })
+    }
+  }
   ```
 
   No `isFinalReversal` helper — status flips freely both directions. The domain does not treat PENDING ↔ FINAL as a guarded transition.
@@ -370,15 +364,11 @@ Today `CutLogStatus` + `CutLogRow` live inline in `packages/domain/src/flooring/
     | "CUT_LOG_ARITHMETIC_MISMATCH"
     | "CUT_LOG_INVENTORY_NOT_IMPORTED"
     | "CUT_LOG_EXCEEDS_STARTING_BALANCE"
-    | "CUT_LOG_WORK_ORDER_ITEM_PRODUCT_MISMATCH"   // material item's product must match inventory row's product
-    | "CUT_LOG_WORK_ORDER_ITEM_REQUIRES_WORK_ORDER" // workOrderItemId set without workOrderId
+    | "CUT_LOG_DELETE_NOT_MOST_RECENT"
   export class CutLogDomainError extends Error { /* code, field, detail */ }
   ```
 
-  No `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` — flips are free. The two new codes guard the cascaded work-order/material-item link:
-
-  - `CUT_LOG_WORK_ORDER_ITEM_REQUIRES_WORK_ORDER` — if `workOrderItemId` is set, `workOrderId` must also be set (validator catches it upstream, but domain backstops).
-  - `CUT_LOG_WORK_ORDER_ITEM_PRODUCT_MISMATCH` — if a material item is picked, its work-order must scope the same product as the inventory row. Pure domain predicate: `materialItem.productId === inventory.productId`.
+  No `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` — flips are free. No work-order / material-item link validation codes — those concerns move to the work-orders sweep where the linking UI lives; cut-log save from the inventory record view never accepts those fields as client input.
 - `index.ts` — barrel.
 
 ### Inventory removal step
@@ -510,33 +500,31 @@ The central use case this sweep. Orchestrates cut-log CRUD against an inventory 
 2. `SELECT id FROM flooring_inventory WHERE id = $1 FOR UPDATE` — parent lock.
 3. If diff contains modified / deleted cut-log rows: `SELECT id FROM flooring_cut_log WHERE id = ANY($1) ORDER BY id FOR UPDATE`.
 4. Load current `inventory` row including `cost`, `freight`, `stockCount`, `isImported`, `product.id`, `product.coveragePerUnit`, `product.category.slug`. Use db reader.
-5. **Domain checks — added cuts:**
+5. Load full sibling list of cut logs for this inventory (`id`, `createdAt`) — used for reverse-delete enforcement.
+6. **Domain checks — added cuts:**
    - `canAddCutLog(inventory)` → throws `CUT_LOG_INVENTORY_NOT_IMPORTED` if `inventory.isImported === false`.
    - `isCutLogStatus(status)` — enum guard.
-   - `assertBeforeCutAfterInvariant({ before, cut, after })` — arithmetic invariant. `before` is taken as the inventory's `stockCount − sum(existing final cuts against other rows before this one)` snapshot OR simply the row's current `availableBalance`-equivalent from the aggregate — decided in implementation. `after = before − cut`.
-   - Work-order / material-item link checks (see below).
-6. **Domain checks — modified cuts (restricted):**
-   - Allowed fields on a modify patch: `status`, `isWaste`, `notes`, `workOrderId`, `workOrderItemId`. **Any attempt to modify `cut`, `before`, `after`, `cost`, `freight` is rejected by the validator before reaching the use case.** The use case backstops by ignoring those fields if they somehow reach it (trusted-internal contract; defensive).
+   - `assertBeforeCutAfterInvariant({ before, cut, after })` — arithmetic invariant on the server-computed snapshot. `after = before − cut`.
+7. **Domain checks — modified cuts (restricted):**
+   - Allowed fields on a modify patch: `status`, `isWaste`, `notes`. **Any attempt to modify `cut`, `before`, `after`, `cost`, `freight`, `workOrderId`, `workOrderItemId` is rejected by the validator before reaching the use case.** The use case backstops by ignoring those fields if they somehow reach it.
    - `isCutLogStatus(status)` on status changes.
-   - Work-order / material-item link checks if link fields are in the patch.
-7. **Domain checks — post-diff aggregate:**
+8. **Domain checks — deleted cuts:**
+   - For each deleted `id`, call `assertCutLogDeleteAllowed(cutLog, siblings)`. Throws `CUT_LOG_DELETE_NOT_MOST_RECENT` unless the cut is the newest by `createdAt`. If the diff deletes multiple cuts, they must be the `N` most-recent cuts in reverse order — validated by walking from newest backward and checking each deleted id against the receding tail.
+9. **Domain checks — post-diff aggregate:**
    - Compute fresh `SUM(cut)` across all this inventory's cut logs after applying the diff.
    - Throw `CUT_LOG_EXCEEDS_STARTING_BALANCE` if `stockCount − newSumOfCuts < 0`.
-8. **Work-order / material-item link checks (added + modified):**
-   - If `workOrderItemId != null && workOrderId == null` → `CUT_LOG_WORK_ORDER_ITEM_REQUIRES_WORK_ORDER`.
-   - If `workOrderItemId != null`: fetch the material item, verify `materialItem.workOrderId === workOrderId` AND `materialItem.productId === inventory.product.id`. On mismatch → `CUT_LOG_WORK_ORDER_ITEM_PRODUCT_MISMATCH`.
-   - `workOrderId` alone with no `workOrderItemId` is valid (user linked the work order without committing to a specific material item).
-9. **Server-stamped cost + freight (added cuts only — frozen at create):**
-   - `costPerUnit = (inventory.cost != null && inventory.stockCount > 0) ? inventory.cost / inventory.stockCount : null`
-   - `freightPerUnit = (inventory.freight != null && inventory.stockCount > 0) ? inventory.freight / inventory.stockCount : null`
-   - `cutCost = costPerUnit != null ? costPerUnit × cut : null` → persisted to `FlooringCutLog.cost`.
-   - `cutFreight = freightPerUnit != null ? freightPerUnit × cut : null` → persisted to `FlooringCutLog.freight`.
-   - `before = stockCount − sum(existing cut logs' cut)` (snapshot at moment of create) → persisted.
-   - `after = before − cut` → persisted.
-   - These are **frozen**. Modifying a cut never recomputes them (cut amount itself is immutable).
-10. **Link-only modify path:** for modified rows, the patch contains only the editable subset (`status`, `isWaste`, `notes`, `workOrderId`, `workOrderItemId`). No cost / freight / before / after / cut re-computation.
-11. Call `applyInventoryCutLogsDiff(tx, { inventoryId, diff })`.
-12. Re-read full detail, return `{ inventory: InventoryDetailRecord, tempIdMap }`.
+10. **Server-stamped cost + freight + before + after (added cuts only — frozen at create):**
+    - `costPerUnit = (inventory.cost != null && inventory.stockCount > 0) ? inventory.cost / inventory.stockCount : null`
+    - `freightPerUnit = (inventory.freight != null && inventory.stockCount > 0) ? inventory.freight / inventory.stockCount : null`
+    - `cutCost = costPerUnit != null ? costPerUnit × cut : null` → persisted to `FlooringCutLog.cost`.
+    - `cutFreight = freightPerUnit != null ? freightPerUnit × cut : null` → persisted to `FlooringCutLog.freight`.
+    - `before = stockCount − sum(existing cut logs' cut)` (snapshot at moment of create) → persisted.
+    - `after = before − cut` → persisted.
+    - `workOrderId` and `workOrderItemId` → **always null** on cuts added from the inventory record view. (Future work-orders sweep adds a distinct save path that sets these on create.)
+    - These are **frozen**. Modifying a cut never recomputes them (cut amount itself is immutable).
+11. **Link-only modify path:** for modified rows, the patch contains only the editable subset (`status`, `isWaste`, `notes`). No cost / freight / before / after / cut re-computation and no work-order linkage changes.
+12. Call `applyInventoryCutLogsDiff(tx, { inventoryId, diff })`.
+13. Re-read full detail, return `{ inventory: InventoryDetailRecord, tempIdMap }`.
 
 ### `packages/application/src/flooring/inventory/update-inventory.ts`
 Unchanged by Sweep 3 directly; the Sweep-2 `IMPORTED_REVERSAL_NOT_ALLOWED` + `INVENTORY_PENDING_IMPORT` guards stay.
@@ -546,8 +534,8 @@ Add execution-error codes if not present:
 - `CUT_LOG_INVENTORY_NOT_IMPORTED`
 - `CUT_LOG_EXCEEDS_STARTING_BALANCE`
 - `CUT_LOG_ARITHMETIC_MISMATCH`
-- `CUT_LOG_WORK_ORDER_ITEM_REQUIRES_WORK_ORDER`
-- `CUT_LOG_WORK_ORDER_ITEM_PRODUCT_MISMATCH`
+- `CUT_LOG_DELETE_NOT_MOST_RECENT`
+- `INVENTORY_COST_LOCKED_POST_IMPORT` (from PREFLIGHT item 7 — the cost/freight lock-down rule)
 
 (Map them to HTTP 400 / domain-code fields in the route layer.)
 
@@ -586,7 +574,7 @@ Out of scope.
 - Response: `{ inventory: InventoryDetailRecord, tempIdMap }` so client reconciles temp ids → real ids in place.
 
 ### `apps/web/app/api/inventory/_validators.ts::validateCutLogsDiff`
-Shape is asymmetric by intent — added rows carry the full create payload, modified rows carry only the editable subset.
+Shape is asymmetric by intent — added rows carry the create payload, modified rows carry only the editable subset, deletes carry `id`+`expectedUpdatedAt` and are validated reverse-order-only at the use-case layer.
 
 - **Added rows** accept:
   - `inventoryId` (required, matches the route's `[id]` param)
@@ -594,19 +582,15 @@ Shape is asymmetric by intent — added rows carry the full create payload, modi
   - `status` (optional, default `"PENDING"`)
   - `isWaste` (optional, default `false`)
   - `notes` (optional)
-  - `workOrderId` (optional, nullable)
-  - `workOrderItemId` (optional, nullable, requires `workOrderId` to be set)
-  - **Server computes** `before`, `after`, `cost`, `freight`. Not client-writable.
+  - **Rejected** at validator: `before`, `after`, `cost`, `freight`, `workOrderId`, `workOrderItemId`. Server computes the first four; the last two stay null on inventory-side creates.
 - **Modified rows** accept **only** the editable-post-create subset:
   - `id` (required)
   - `expectedUpdatedAt` (required — per-row concurrency check)
   - `status` (optional)
   - `isWaste` (optional)
   - `notes` (optional)
-  - `workOrderId` (optional, nullable — explicit null means "unlink")
-  - `workOrderItemId` (optional, nullable — requires `workOrderId` to be set when non-null)
-  - **Rejected** at validator: `cut`, `before`, `after`, `cost`, `freight`. Any of these in a modify patch → `400 INVALID_BODY`. The message should point the user to delete + recreate for cut-amount changes.
-- **Deleted rows:** `id`, `expectedUpdatedAt`.
+  - **Rejected** at validator: `cut`, `before`, `after`, `cost`, `freight`, `workOrderId`, `workOrderItemId`. Any of these in a modify patch → `400 INVALID_BODY`. The message should point the user to delete + recreate for cut-amount changes; work-order linkage is managed from the work-order record view (future sweep).
+- **Deleted rows:** `id`, `expectedUpdatedAt`. The reverse-order-only rule is enforced at the domain / use-case layer, not the validator — the validator just accepts the shape.
 
 ## Inventory — primary-section route
 No change. Primary PATCH doesn't touch cut logs.
@@ -661,39 +645,43 @@ apps/web/modules/inventory/
 ### Cut-logs section updates — `components/record/sections/inventory-cut-logs-section.tsx`
 
 Grid columns (left to right):
-- `cut` — input on **added** rows only; on persisted rows renders as read-only text. To change, user deletes + re-creates.
+- `cut` — input on **added** (unsaved) rows only; on persisted rows renders as read-only text. To change the value: delete the cut (must be the newest) and re-add.
 - `before` — read-only on all rows (server-computed on create, frozen).
 - `after` — read-only on all rows (server-computed on create, frozen).
-- `status` — editable `<select>` PENDING/FINAL on **all** rows (including persisted ones). Freely flippable.
+- `status` — editable `<select>` PENDING/FINAL on **all** rows (including persisted). Freely flippable both directions.
 - `isWaste` — editable checkbox on all rows.
-- `cost` — read-only on all rows. Renders `row.cost` ("" → blank/dash).
-- `freight` — read-only on all rows. Renders `row.freight` ("" → blank/dash).
-- `coverage` — read-only on all rows. Renders `row.coverage` ("" → blank/dash when category has no coverage unit or product has no `coveragePerUnit`).
-- `workOrder` — editable `<select>` on all rows. Options: list of work orders. Nullable (empty option means "unlinked").
-- `workOrderItem` — editable `<select>` on all rows. **Disabled** until `workOrderId` is set on this row. Options: material items on the selected work order filtered to `item.productId === inventory.productId`. Empty state: "No material items on this work order use this product." Nullable.
+- `cost` — read-only on all rows. Renders `row.cost` (blank/dash when `""`).
+- `freight` — read-only on all rows. Renders `row.freight` (blank/dash when `""`).
+- `coverage` — read-only on all rows. Renders `row.coverage` (blank/dash when `""` — baseboard or product with null `coveragePerUnit`).
+- `workOrder` — **read-only label**. Renders the linked work-order number when `row.workOrderId` is set; blank otherwise. No dropdown, no setter. Work-order linkage is managed exclusively from the work-order record view (future sweep).
+- `workOrderItem` — **read-only label**. Renders the linked material-item label when `row.workOrderItemId` is set; blank otherwise. No dropdown, no setter.
 - `notes` — editable text input on all rows.
-- Delete action — "trash" icon per row. The only way to remove a cut (and the only way to change `cut`/`before`/`after`/`cost`/`freight` indirectly).
+- Delete action — "trash" icon per row. **Only rendered on the most-recent cut** (the cut with the latest `createdAt`). All older cuts show the icon disabled with a tooltip: "Delete the newer cut first." The UI mirrors the domain rule; the server backstops with `CUT_LOG_DELETE_NOT_MOST_RECENT`.
 
 Empty state + gate:
 - When `!isImported`: "Cut logs unlock once this row is marked Final on the imports record view." (Sweep-2 behavior preserved.)
 
 ### Controller updates — `controllers/use-inventory-cut-logs-section.ts`
 
-Setters (all operate on the draft, then the section's dirty-diff generator shapes payloads on submit):
-- `setRowCut(index, string)` — active only on unsaved (added) rows. Ignored for persisted rows.
+Setters (all operate on the draft; the section's dirty-diff generator shapes payloads on submit):
+- `setRowCut(index, string)` — active only on unsaved (added) rows. No-op on persisted rows.
 - `setRowStatus(index, CutLogStatus)` — all rows.
 - `setRowIsWaste(index, boolean)` — all rows.
 - `setRowNotes(index, string)` — all rows.
-- `setRowWorkOrderId(index, string | null)` — all rows. Setting to null clears `workOrderItemId` too (since the cascaded select is invalid without a work order).
-- `setRowWorkOrderItemId(index, string | null)` — all rows. Validator + UI ensure `workOrderId` is present first.
+
+No setters for `workOrderId`, `workOrderItemId`, `cut` (on persisted rows), `before`, `after`, `cost`, `freight`. Attempting them is a type error.
+
+Delete-handler logic:
+- `canDeleteRow(index)` returns `true` only when the row is the one with the max `createdAt` among saved rows. Draft (unsaved) rows can always be removed from the local draft (they haven't hit the server yet).
+- The grid's trash-icon renderer calls `canDeleteRow` and flips disabled state accordingly.
 
 Diff payload generators:
-- `toDraftPayload(row)` → `{ inventoryId, cut, status, isWaste, notes, workOrderId, workOrderItemId }`. **No** `before`/`after`/`cost`/`freight` — server computes.
-- `toUpdatePatch(row, original)` → diff of changed fields only from the editable subset: `{ status?, isWaste?, notes?, workOrderId?, workOrderItemId? }`. Plus `id` + `expectedUpdatedAt`. Never emits `cut`/`before`/`after`/`cost`/`freight` — the controller treats those as immutable on persisted rows.
+- `toDraftPayload(row)` → `{ inventoryId, cut, status, isWaste, notes }`. **No** `before`/`after`/`cost`/`freight`/`workOrderId`/`workOrderItemId` — server computes or leaves null.
+- `toUpdatePatch(row, original)` → diff of changed fields only from the editable subset: `{ status?, isWaste?, notes? }`. Plus `id` + `expectedUpdatedAt`. Never emits other fields.
 
-Loader dependencies — the section needs two new option bundles from the page loader:
-- `workOrderOptions`: list of `{ id, number, label }` for all work orders scoped to the inventory row's warehouse (reuse `listWorkOrders({ warehouseId })` or an existing helper).
-- `materialItemOptionsByWorkOrder`: either pre-fetched as `Record<workOrderId, MaterialItem[]>`, or loaded on-demand when a work-order is picked. Pre-fetch is simpler for the first pass given WO counts are typically bounded per warehouse.
+Loader dependencies:
+- No new option bundles. `workOrderOptions` / `materialItemOptionsByWorkOrder` are NOT needed for this sweep (dropdowns removed). The section renders the read-only work-order / material-item labels from whatever the normalizer already returns on `CutLogRow`.
+- If the normalizer needs to surface work-order / material-item **display strings** (not just IDs), add minimal relation-loading in `inventoryRowSelect`: `cutLogs → workOrder { number } → workOrderItem { id, label-source }`. Emit `workOrderLabel: string` and `workOrderItemLabel: string` on the normalized cut-log row for UI consumption. **Default:** skip this nicety for this sweep — show `""` for both labels until the work-orders sweep lights up the linking path and a fully meaningful label is available.
 
 ### Primary section updates — `components/record/sections/inventory-primary-fields-section.tsx`
 New read-only "Balances" tile group in the right pane:
@@ -807,19 +795,20 @@ All clean. `@builders/web` typecheck baseline: 107 pre-existing (all in `work-or
 ### Inventory + cut logs — vinyl-plank
 1. Create import with warehouse W; add an inventory row for vinyl-plank product, `stockCount = 10`, `cost = 100`, `freight = 20`; leave PENDING.
 2. From inventory record view: grid is locked (Sweep-2 gate — confirms pre-flight).
-3. Back to imports: flip the row to FINAL, save.
-4. Reload inventory record: balance tiles show `availableBalance = 10`, `uncutBalance = 10`, `awaitingCutBalance = 0`, `totalCutBalance = 0`, `availableCoverage = 237.70` (= 10 × 23.77).
-5. Add PENDING cut of 2: `availableBalance = 10`, `uncutBalance = 8`, `awaitingCutBalance = 2`, `totalCutBalance = 0`, `availableCoverage = 237.70`. Cut row persists with `cut = 2`, `before = 10`, `after = 8`, `cost = 20.00` (= 100/10 × 2), `freight = 4.00` (= 20/10 × 2), `coverage = 47.54`.
-6. Flip cut to FINAL: `availableBalance = 8`, `uncutBalance = 8`, `awaitingCutBalance = 0`, `totalCutBalance = 2`, `availableCoverage = 190.16`. `cost` / `freight` / `before` / `after` / `cut` all unchanged on the cut row (frozen).
-7. Flip FINAL cut back to PENDING → saves clean (no reject). Inventory balances recompute: `availableBalance = 10`, `awaitingCutBalance = 2`, `totalCutBalance = 0`. Cut row's `cost` / `freight` still frozen at original values.
-8. Attempt to edit `cut` on the persisted row via UI → input is read-only. Attempt via direct API patch with `cut` in body → validator rejects with `400 INVALID_BODY` citing immutable fields.
-9. Delete the cut, re-add as `cut = 3` → new row with `cost = 30.00`, `freight = 6.00`, `before = 10`, `after = 7`.
-10. Attempt to add a cut of 11 → `CUT_LOG_EXCEEDS_STARTING_BALANCE`.
-11. Toggle `isWaste` on a FINAL cut → saves clean. Row persists with `isWaste = true`.
-12. Link a cut to a work order (dropdown): pick WO-A from the work-order select. The material-item select enables. Pick an item whose `productId` matches → saves.
-13. Clear the work-order link (set to unlinked) → `workOrderItemId` auto-clears in the UI; payload sends both nullified.
-14. Attempt to link a cut to a material item whose `productId` differs from the inventory row's product (direct API call bypassing UI filter) → rejected with `CUT_LOG_WORK_ORDER_ITEM_PRODUCT_MISMATCH`.
-15. Attempt to set `workOrderItemId` without `workOrderId` (direct API call) → rejected with `CUT_LOG_WORK_ORDER_ITEM_REQUIRES_WORK_ORDER`.
+3. Attempt to edit `cost` from inventory record view → no editable input surface (PREFLIGHT item 7).
+4. Back to imports: flip the row to FINAL, save. Confirm imports view now renders `cost` / `freight` cells read-only on this row (PREFLIGHT item 7).
+5. Reload inventory record: balance tiles show `availableBalance = 10`, `uncutBalance = 10`, `awaitingCutBalance = 0`, `totalCutBalance = 0`, `availableCoverage = 237.70` (= 10 × 23.77).
+6. Add cut A (PENDING, `cut = 2`): `availableBalance = 10`, `uncutBalance = 8`, `awaitingCutBalance = 2`, `totalCutBalance = 0`. Cut row persists with `cut = 2`, `before = 10`, `after = 8`, `cost = 20.00`, `freight = 4.00`, `coverage = 47.54`, `workOrderId = null`, `workOrderItemId = null`.
+7. Flip cut A to FINAL: `availableBalance = 8`, `uncutBalance = 8`, `awaitingCutBalance = 0`, `totalCutBalance = 2`, `availableCoverage = 190.16`. `cost` / `freight` / `before` / `after` / `cut` unchanged (frozen).
+8. Flip cut A back to PENDING → saves clean (no reject). Inventory balances recompute: `availableBalance = 10`, `awaitingCutBalance = 2`, `totalCutBalance = 0`. Cut row's `cost` / `freight` still frozen.
+9. Add cut B (PENDING, `cut = 1`): cut B's `before = 9` (= stockCount − existing 2), `after = 8`, `cost = 10.00`, `freight = 2.00`.
+10. Attempt to delete cut A (not the newest) → UI trash icon is disabled; direct API attempt returns `CUT_LOG_DELETE_NOT_MOST_RECENT`.
+11. Delete cut B (newest) → saves. Now cut A is newest again; its trash icon enables.
+12. Attempt to edit cut A's `cut` via direct API patch with `cut: 5` in body → validator rejects with `400 INVALID_BODY`.
+13. Delete cut A → no cuts remain. Balances return to initial.
+14. Add a cut of 11 → `CUT_LOG_EXCEEDS_STARTING_BALANCE`.
+15. Add a cut of 2, toggle `isWaste = true` → saves clean. Row persists with `isWaste = true`.
+16. Inventory record view's cut-logs grid: verify `workOrder` and `workOrderItem` columns render blank (no editable dropdown anywhere — display-only, no linked WO since creation was from inventory side).
 
 ### Inventory + cut logs — carpet
 1. Create a carpet product with `coveragePerUnit = 3` (meaningful because carpet has `hasCoverageUnit: true`); inventory row `stockCount = 10`, `cost = 500`, `freight = 100`.
@@ -845,7 +834,7 @@ All clean. `@builders/web` typecheck baseline: 107 pre-existing (all in `work-or
 
 # Execution order
 
-1. **Pre-flight** — Sweep-2 audit (read-only, ~15 min).
+1. **Pre-flight** — see `PREFLIGHT.md`. Sweep-2 verification + two Sweep-3 hardening rules (inventory cost/freight lock; freight validator reach).
 2. **Phase 1** — Prisma migration. Apply, rebuild `@builders/db`.
 3. **Phase 2** — Seed carpet, pad, baseboard. Re-run seed.
 4. **Phase 3** — Domain. In order: Categories primitive → Cut Logs (incl. `category-math` spoke) → Inventory adapter + semantic fix.
@@ -860,63 +849,39 @@ Each phase leaves the tree buildable. Layer boundaries are the pause points. One
 
 ---
 
-# Flags & concerns
+# Resolved decisions (for posterity)
 
-Open items worth raising before / during execution. Not blockers by default, but worth a decision before the code lands.
+These were open questions in earlier drafts. Each has been folded into the plan; no action needed beyond following it.
 
-1. **Column-name shadowing across tables.** `FlooringCutLog.cost` + `FlooringCutLog.freight` re-use the same names already present on `FlooringInventory`. Prisma namespaces them by model so the generated client is fine, but `cost` / `freight` without context is ambiguous when reading code or SQL. Alternatives: `cutCost` / `cutFreight` on the cut-log model (clearer in isolation, uglier when paired with `cut`/`before`/`after`), or accept the shadowing with discipline (current plan). Decide before Phase 1.
-- I agree with your naming convention correctness,
+- **Column naming — keep `cost` / `freight` on `FlooringCutLog`.** Shadowing with `FlooringInventory.cost` / `.freight` is accepted. Prisma namespaces by model; paired with `cut` / `before` / `after` the meaning is obvious at call-sites.
+- **Cost/freight historical drift — solved architecturally.** Inventory cost + freight are only editable from the imports record view AND only while `isImported === false`. Once confirmed, those fields lock forever. Cut-log snapshots against a confirmed row always equal the final immutable inventory value. No drift possible. Enforcement is PREFLIGHT item 7.
+- **`before` / `after` stored — paired with reverse-order-only delete.** Stored as real columns. The reverse-order-only delete rule (most-recent cut deletable first, then next, etc.) means the `before` / `after` snapshots can never describe a stale history. Simpler than computed-on-read and preserves the audit shape of each individual cut.
+- **Work-order linkage — one-way from the work-order record view.** Cut-log ↔ work-order / material-item linking is set exclusively through the work-order record view (future sweep). Cuts created from the inventory record view produce null links. Inventory-side UI shows those fields as read-only display. Removes the entire cascading-dropdown / product-match-invariant path from this sweep.
+- **Material-item delete does NOT cascade to cut logs.** Future-sweep rule, documented here for continuity: deleting a material item sets `cutLog.workOrderId = null` AND `cutLog.workOrderItemId = null` on every cut that referenced it. Cuts against inventory are physical facts; only the link to the WO context clears.
+- **Fulfillment + work-order totals are computed on read.** Never stored. Matches REFERENCE.md. No drift, no reconcile job, no backfill. Work-orders sweep implements.
+- **Dropdown UX questions — moot.** No dropdowns in the inventory-side cut-logs UI this sweep. `workOrder` and `workOrderItem` columns are read-only labels (or hidden entirely — see pending flag 2).
+- **Nullable `cost` / `freight` propagation.** Cut-log snapshot carries null if the inventory source was null at create time. No backfill when inventory cost is later set. Frozen-snapshot contract.
+- **No "change quantity" shortcut.** Delete-in-reverse-order is the only quantity-change path.
+- **Status flip needs no audit trail.** Row-locked, transactional, idempotent save covers correctness. Any cut-logs use case locks the inventory row + its cut logs. Inventory balances recompute on save.
 
-2. **Historical drift between cut-log and inventory cost.** Because `cost` / `freight` snapshot at create time and the cut amount is immutable, a FINAL cut's cost can diverge from the then-current inventory cost basis if the inventory row's `cost` or `freight` is edited later. This is intentional (accounting snapshot), but two cuts of the same `cut` size against the same row can show different `cost` values if they were created on different days with different inventory costs. Work-order expense rollups (future sweep) will reflect this spread. Flag to finance/accounting stakeholder if not already aligned.
-- Add this to the preflight check list that we will make the inventory cost only editable from the imports record view inventory section pre-import confirmed. price won't be editable from inventory record view. Cut logs still get a snapshot of the cost and freight.
+---
 
-3. **`before` / `after` becoming nonsensical after intermediate deletes.** If cuts are created in sequence A=2, B=3, C=1 against `stockCount=10`, they'll each snapshot `before`/`after` based on the then-current aggregate. Delete B later and A/C's stored `before`/`after` still describe their original creation context — which will no longer correspond to the linear "walk down the balance" narrative. Inventory's computed balances stay correct (they're re-aggregated from live cut totals). Flag: consider whether `before`/`after` should be **computed on read** instead of stored, using a stable ordering (e.g., `createdAt`). Stored is simpler and matches today's schema; computed is more defensible. Decide before Phase 1.
-- cut logs should only be deleted in the reverse order of which they happen. so the most recent cut is the only one deleteable till its delete. then the one before that is deleteable ect. the before and after quantities are important they should stay as real fields. unless it creates some crazy blockage, thoughts?
+# Pending flags and concerns
 
-4. **Work-order relink mutation surface.** Allowing `workOrderId` / `workOrderItemId` to be edited post-create means a single cut can move between work orders. Consequences (next sweep, out of scope this sweep but worth pre-mortem):
-   - Work-order expense totals shift when a cut is relinked. Accounting/reporting needs to reflect a cut's current link, not its historical one.
-   - Material-item fulfillment status recomputes based on current linked cuts. A cut moving from WO-A's item to WO-B's item can flip both items' SHORTAGE/SUFFICIENT status.
-   - No write-side rule prevents rapid-fire relinking. Server validates product-match invariant on each save; that's the only gate.
+Open items that still warrant discussion before or during execution.
 
-   my thoughts on #4. 
-  - we should make it so cut logs only get linked to work orders/ material items through the work order record view. no backward editability froim inventories cut log section. 
-  - adding cut log from work orders auto links the work order and material item to the cut log. cut logs can't be made from work order material items section without them. cut logs can still be made from inventory record view with non editable fields of the work order and material item its linked to.
-  - Deleting a cut logs does not delete the material item. Deleting a material item does not delete the cuts either. if a material item is deleted, the cuts linked to it drop the material item and work order link. Cuts stay intact. only can delete cut logs from an inv item in the order they were made.
-  - cut logs in work order material item section  
-   - work order material items fufillment quantity and status should be computed fields as well as the work order caluclations. will that withhold long term?
-   - Multiple cut logs from the same inv item can be assigned to a material item, in this section cuts from the same inventory  delete order still persist.
-   - am i missing what your describing on this flag or did i resolve this
-   - we may sweep work orders module so the cut log logic can be added cleanly.
+1. **`FlooringInventory.stockCount` is semantically "starting balance," not "current stock."** Schema naming mismatch — the name sounds live but the column is immutable. Stays (migration cost > rename benefit). Mitigate with a `StartingBalance` TypeScript alias + JSDoc on the domain `InventoryRow` type, so call-sites reading `stockCount` for the first time are not misled. Decide during Phase 3 whether to add the alias.
 
-5. **Cascading dropdown UX: clearing the work order.** When the user clears `workOrderId` on a persisted cut that has a `workOrderItemId`, the controller auto-clears the material item in the draft and the payload sends both nullified. Confirm this is the desired UX vs. a confirmation prompt ("Clearing the work order will also unlink the material item. Continue?"). Plan defaults to silent auto-clear.
-- yes either a cut log has both a work order and material item or neither.
+2. **Read-only `workOrder` / `workOrderItem` columns may look broken in this sweep.** Every cut created from the inventory record view renders blank in those columns. Users may read "blank" as "broken." Options: (a) hide both columns entirely until the work-orders sweep ships — recommended, less noise; (b) show with tooltip explaining "Work-order linkage activates with the work-orders sweep"; (c) leave blank without explanation. Decide during Phase 7.
 
-6. **Pre-fetch vs. on-demand material items.** The cut-logs section needs to populate the material-item dropdown filtered by work order + product. Pre-fetching `materialItemOptionsByWorkOrder` for every work order scoped to the warehouse is cheap at current scale but grows with WO count × item count. If dev smoke shows the page loader is heavy, switch to an on-demand endpoint (`GET /api/work-orders/[id]/items?productId=…`). First pass ships pre-fetch.
-- we no longer need the material item drop down based on my previous comments.
+3. **`availableBalance` / `uncutBalance` naming still pending confirmation.** Open Question #1 at the top of the plan. Resolve before Phase 3 lands domain code. Implementation cost is low (two lines in the normalizer); consumer cost is moderate (list columns, record tiles).
 
-7. **`cut` field validation when inventory.stockCount is 0.** Edge case: a just-created inventory row with `stockCount = 0` (shouldn't happen per domain validation `stockCount >= 0` + UI enforcement `> 0` for usable rows, but possible via direct API). Any cut against it immediately violates `CUT_LOG_EXCEEDS_STARTING_BALANCE`. No special handling needed — the existing guard catches it. Flag only to note the edge exists.
-- yes just flag so its existence is known.
-- users can't create cutlogs which make the inventories computed available balance 0. the stock count column in inventory prisma model is the starting balance. slight naming convention mismatch, it will need to stay.
+4. **Reverse-order delete interaction with concurrent writes.** Two users both targeting the current newest cut for deletion: first commit wins; second gets `CUT_LOG_DELETE_NOT_MOST_RECENT` because what was "newest" is now gone. Server error is correct; UI needs to handle it gracefully — refresh the section with new server state and show a brief toast. Non-blocking; Phase 7 UI polish.
 
-8. **Nullable `cost` / `freight` propagation.** A cut against a row with `inventory.cost == null` gets `cost = null`. If the user later sets `inventory.cost` to a real value, existing cuts stay null — no backfill. This matches the "snapshot is frozen" contract. Product owner should confirm this is the desired behavior; alternative would be to require `cost`/`freight` at inventory-create time (larger scope, not in this sweep).
-- i agree with this. if cost or freight is null on the inv item when a cut is made the computation can handle null
+5. **Edge case: `stockCount = 0` inventory row.** Schema allows `>= 0`. Any cut immediately violates `CUT_LOG_EXCEEDS_STARTING_BALANCE`. No special handling; existing guard catches it. Flagged for awareness only.
 
-9. **"Delete + recreate" UX cost.** Users changing a cut amount must delete and re-add, which:
-   - Loses any edits made to `status`, `isWaste`, `notes`, work-order link on the existing cut (they have to re-apply on the new cut).
-   - Generates two audit log entries (delete + create) instead of one (update).
-   - Is slower than a direct edit, which may frustrate power users.
-   Flag: consider whether the UX should offer a "change quantity" affordance that does delete+create transactionally under the hood while preserving the surrounding field values. Deferred — first pass keeps the mechanics visible.
+6. **`stockCount = 0` at creation — additional nuance.** Users cannot create cut logs that would drive `uncutBalance` negative (same guard as above). Normal flow on a zero-stock row: no cuts possible. This is correct behavior but combined with (5) means such a row is effectively unusable — which may or may not be desired. If the product side wants to prevent `stockCount = 0` rows from being saved in the first place, that's an inventory-side validation change (not in this sweep).
 
-   - no, users must delete the most recent cuts in order to edit cut log balance. status ect. are editable as mentioned.
+7. **Material-item-delete cascade-clear is a future-sweep contract.** When work-orders sweep ships material-item delete, it must null both `cutLog.workOrderId` and `cutLog.workOrderItemId` on every cut referencing the deleted item. Add a `TODO` or schema-level note near `FlooringCutLog.workOrderItemId` during Phase 1 so this commitment survives across sweeps.
 
-10. **Status flip with zero guardrails.** Because FINAL ↔ PENDING flips freely, a user can accidentally un-finalize a FINAL cut and re-finalize it mid-session with no audit trail beyond `updatedAt`. If accounting compliance needs an immutable "once final, reported" marker, the current design doesn't capture it. Deferred per user direction; revisit if compliance requirements surface.
-- this use case will be idempotent and transactional and row locked. 
-- any use case for cut logs locks the inventory row and its cut logs.
-- the cut log status moves freely and the inventory row balances update on save.
-
-11. **Drop `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` references.** Nothing in the domain uses it now that the rule is gone. Verify during Phase 3 that no lingering reference (error code, test, validator branch) remains — if anything carries it forward from an earlier draft of the plan, purge.
-
-12. **Inventory `freight` must be in the Sweep-2 validator reach.** Confirm `validateInventoryInput` and the imports-diff shaper both accept `freight` as an optional decimal string (Sweep 2 should have covered this, but worth re-verifying before Phase 5 since the cut-log compute depends on it).
-
-Add another file to docs/sweeps/ root called pre flight and add the preflight items from this plan to it and remove them from this file.
-Add pending flags and concerns at the bottom of each file.
+8. **Verify `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` is fully purged.** Earlier drafts of this plan included the code. Grep during Phase 3: `grep -rn "FINAL_REVERSAL\|isFinalReversal" packages apps/web | grep -v dist | grep -v node_modules` → zero. Non-blocking, just hygiene.
