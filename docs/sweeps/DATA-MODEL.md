@@ -35,12 +35,12 @@ Canonical spec for seeded units, category unit bindings, inventory balance defin
 | Vinyl Sheet | Linear Feet | Linear Feet | Sqyd |
 | VCT | Boxes | Boxes | Sqyd |
 | Covebase | Boxes | Linear Feet | Linear Feet |
-| Adhesive | Buckets | Buckets | Sqft |
+| Adhesive | Buckets | Buckets | N/A |
 | Baseboard | Pieces | Pieces | N/A |
 | Trim | Pieces | Pieces | N/A |
 | Metals | Pieces | Pieces | N/A |
-| Luan | Sheets | Sheets | Sqft |
-| Plywood | Sheets | Sheets | Sqft |
+| Luan | Sheets | Sheets | N/A |
+| Plywood | Sheets | Sheets | N/A |
 | Patch | Bags | Bags | N/A |
 | Shoe Molding | Pieces | Pieces | N/A |
 | Wax Ring | Boxes | Boxes | N/A |
