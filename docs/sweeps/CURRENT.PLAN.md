@@ -1,289 +1,659 @@
-# Current Plan — Inventory UX sweep (per-row `isImported` status, warehouse editability, column trims, edit gates)
+# Current Plan — Sweep 3: Categories · Cut Logs · Inventory Computed Fields
 
-Companion context: `REFERENCE.md` (full four-module vision), `PHASE-E-F-G-ANALYSIS.md` (Sweep-2 routes / modules / dashboard decisions — shipped and green). This plan replaces the shipped Sweep-2 content.
+Companion context: `REFERENCE.md` (the four-module vision — this sweep lands the "Category-driven unit conversion" + "Cut logs" pieces of it). Sweep 2 (`isImported` UX) is fully shipped; every change in the previous `CURRENT.PLAN.md` was marked ✅. This plan replaces that content.
 
-**Design pivot (after audit).** `FlooringInventory.isImported: Boolean @default(false)` already exists and is plumbed through every layer (schema → select → normalizer → domain type → domain rule `canAddCutLog` → app types → update use case → API validator → write repo → diff primitive). No code ever flips it to `true` today, but all the infrastructure is there. **We reuse it as the per-row import status** instead of adding a new `importStatus` column — no Prisma migration needed.
+**Purpose.** Secure cut logs, wire inventory's computed balances to the user-spec semantics, snapshot cut-log cost + waste, and extend category seeds. Work-order material-item fulfillment is **out of scope** — this sweep stops at "cut log mutations from the inventory record view are complete and categories are the source of truth for computation."
+
+**Pre-wiring audit finding (critical):** a lot of this is already plumbed from Sweep 1/2:
+
+- `FlooringCategory` schema has all five unit slots — `stockUnitId`, `sendUnitId`, `coverageAvailableUnitId`, `itemCoverageUnitId`, `serviceUnitId`. ✅
+- `FlooringProduct.categoryId` required; `FlooringProduct.coveragePerUnit` nullable `Decimal`. ✅
+- `FlooringInventory.productId` required — `inventory → product → category` is always reachable; no need for a redundant `categoryId` on inventory or cut-log. ✅
+- `FlooringCutLog.status String @default("PENDING")` exists; `before`, `cut`, `after` exist. ✅
+- `InventoryRow` domain type already carries `categoryId`, `categoryName`, `stockUnit`, `sendUnit`, `coveragePerUnit`, and the five balance fields (`uncutBalance`, `availableBalance`, `availableCoverage`, `awaitingCutBalance`, `totalCutBalance`). ✅
+- `packages/db/src/flooring/inventory/read-repository.ts::normalizeInventoryRow` populates all five balances from a `groupBy` aggregate over cut logs by status. ✅
+
+**What's actually new this sweep** (the delta):
+
+1. Cut-log schema gains `price Decimal?` + `isWaste Boolean @default(false)` — one migration.
+2. More seeded categories: carpet, pad, baseboard. All required unit-of-measures already seeded.
+3. Domain `unit-conversion.ts` + `CATEGORY_UNIT_RULES` map (vinyl-plank rounds up, carpet/pad split, baseboard opts out of coverage).
+4. Domain `cut-logs/` subfolder (today all cut-log rules live inline in inventory-rules.ts; extract).
+5. Cut-log row gets a computed `coverage` field (`cut × coveragePerUnit`, blank when category has no coverage unit).
+6. Inventory normalizer's `availableBalance` vs `uncutBalance` semantics need a sign swap to match the user's spec — Change 5.
+7. UI: cut-logs grid columns for `coverage`, `price`, `isWaste`, and status toggle. Inventory primary section surfaces the five balance tiles.
+
+**Prisma migrations needed:** exactly one (cut-log `price` + `isWaste`).
 
 ---
 
-## Goals
+## Change 1 — Verify Sweep-2 is still intact (formerly Change 6)
 
-1. **Trim inventory list columns.** Drop `importTag` and `transport` columns. Keep `importNumber` and the status column, now backed per-row by `isImported` (rendered as a PENDING/FINAL pill).
-2. **Per-row import status (reuses `isImported`).** Each inventory row owns its status. Editable only through the imports record view's inventory-rows section. Read-only everywhere else. **One-way transition:** once a row is marked FINAL (`isImported = true`), it cannot be flipped back to PENDING.
-3. **Warehouse editable + required** on the inventory record view's primary section (already 95% wired on the save path — UI-only work).
-4. **Import record's primary `status` stays editable** (low-blast-radius choice). It's a user-facing display convenience; no code depends on it after Goal 2 lands. Option B — computing it from children — is documented but **deferred** since it would invalidate the existing editable field, primary-form draft, validator, and use cases.
-5. **Edit gates keyed on `isImported`:**
-   - Inventory record view primary section and cut-logs section are **read-only** when `isImported === false`. The row lives on the parent import until marked FINAL.
-   - Cut-log creation is already gated by the domain rule `canAddCutLog` (Sweep 3 wires the UI side).
-6. **Auto-link added inventory rows to the parent import's warehouse** even when no location is picked.
+**Purpose.** Before touching cut logs, re-confirm the Sweep-2 foundation is still in place end-to-end. Sweep-2's old Change 6 was the "keep `FlooringImportEntry.status` editable as pure display metadata" decision. Moving it here expands it into the full Sweep-2 audit, because every downstream change in this sweep sits on top of that foundation.
 
-**Prisma migrations needed:** zero. All state lives in existing columns.
+**Scope.** Read-only verification. No code changes unless drift is detected. If drift is detected, fix in place and re-verify before proceeding to Change 2.
 
-**Data baseline:** user deleted all inventory + import rows before this sweep. No back-fill DML needed — everything new lands with the right `isImported` defaults. Existing `POST /api/inventory` standalone create route is out of scope for this sweep (placeholder for a future single-row inventory form; not reachable from current UI).
+### Verification checklist
 
----
+Run these greps and reads; each line must return the expected result:
 
-## Change 1 — Inventory list view column trim + eligibility rule ✅ **PARTIAL**
+1. **Import status stays editable** (the literal old-Change-6 decision):
+   - `apps/web/modules/imports/components/record/sections/import-primary-fields-section.tsx` — primary `status` is a `<select>` with PENDING/FINAL options.
+   - `apps/web/modules/imports/components/list/imports-table.tsx` — `status` column renders via `formatImportStatus` + `getImportStatusFieldClass`.
+   - Grep `grep -rn "importEntry\.status\|row\.importStatus" apps packages | grep -v dist | grep -v node_modules` → zero hits outside the imports module itself. Import status is **decorative only** — nothing depends on it.
 
-**Scope.** UI column trim + a single DB-side eligibility filter. All other layers untouched.
+2. **Per-row `isImported` pipeline is whole:**
+   - Domain: `InventoryRow.isImported: boolean` present; `importTag`, `importStatus`, `importTransportType` absent.
+   - Domain: `isImportedReversal`, `assertImportedTransitionAllowed`, `IMPORTED_REVERSAL_NOT_ALLOWED` exported from `packages/domain/src/flooring/inventory/`.
+   - Domain diff: `InventoryDiffValidationIssue` includes `IMPORTED_REVERSAL_NOT_ALLOWED` variant.
+   - Application: `update-inventory.ts` throws `InventoryExecutionError("IMPORTED_REVERSAL_NOT_ALLOWED")` on true→false transitions.
+   - Application: `save-inventory-rows.ts::toDiffExisting` forwards `isImported`.
+   - Data: `inventoryRowSelect` in `packages/db/src/flooring/inventory/shared.ts` does NOT select `importEntry.tag/status/transportType`; `InventoryListFilter.isImported?: boolean` supported; `buildListWhere` forwards it.
+   - Data: `importInventorySelect` includes `isImported: true`; `normalizeImportInventoryRow` emits it.
+   - Data: `applyImportInventoryRowsDiff` persists `isImported` on create + update and falls back to `input.importWarehouseId` on added-row warehouse resolution.
+   - Routes: `apps/web/app/api/inventory/_validators.ts::validateUpdateInventoryInput` does NOT accept `isImported`.
+   - Routes: `apps/web/app/api/imports/_validators.ts` uses `optionalDiffBoolean` to pass `isImported` on added + modified rows.
+   - Modules: `apps/web/modules/imports/controllers/use-import-inventory-rows-section.ts` exports `setRowImportStatus`; `toDraftPayload`/`toUpdatePatch` forward `isImported`.
+   - Modules: `import-inventory-rows-section.tsx` renders the per-row `importStatus` select with `disabled={row.isImported}` (one-way transition visible).
 
-**Status.** UI column trim and status-column helpers are shipped. DB-side eligibility filter is deferred to Change 2 Phase C (where the `listInventory` filter extension lives).
+3. **Inventory list eligibility filter:**
+   - `apps/web/modules/inventory/data/queries.ts::loadInventoryPageData` calls `listInventory({ isImported: true })`. Pending rows cannot reach the dashboard list.
 
-### Completed this pass
+4. **Inventory record edit gates:**
+   - `inventory-primary-fields-section.tsx` — `isReadOnly = !inventory.isImported`; every input receives `disabled={controlDisabled}`; banner renders when `isReadOnly`.
+   - `inventory-record-panel.tsx` — footer omits `onDelete` when `isReadOnly`.
+   - `update-inventory.ts` — refuses updates on rows where `current.isImported === false` via `INVENTORY_PENDING_IMPORT`.
+   - `inventory-cut-logs-section.tsx` — renders the "Cut logs unlock once this row is marked Final" empty state when pending.
 
-- `packages/domain/src/flooring/inventory/formatters.ts` — `formatImportedAsStatus(isImported) => "Pending" | "Final"` added and auto-re-exported via the inventory barrel.
-- `apps/web/modules/imports/components/formatters.ts` — `getImportedStatusFieldClass(isImported)` added, delegates to the existing `getImportStatusFieldClass("FINAL" | "PENDING")`.
-- `apps/web/modules/inventory/components/list/inventory-client.tsx` — `importTag` and `transport` field defs removed; status-column getter rewired to `formatImportedAsStatus(row.isImported)`; stale imports (`formatImportStatus`, `formatImportTransportType`) dropped.
-- `apps/web/modules/inventory/components/list/inventory-table.tsx` — `importTag` and `transport` cell renderers removed; status cell rendered via `formatImportedAsStatus(row.isImported)` + `getImportedStatusFieldClass(row.isImported)`; `getTransportTypeFieldClass` import dropped.
-- `@builders/domain` dist rebuilt so the new formatter resolves for web consumers.
-- Verification: regression greps zero, web typecheck baseline unchanged at 107 (all pre-existing in `modules/work-orders`), zero new errors in any Change-1 file.
+5. **Warehouse editable + required:**
+   - Domain: `validateInventoryInput` pushes `WAREHOUSE_REQUIRED` whenever `warehouseId` is missing (regardless of location).
+   - Data: `getInventoryDetailPageData` returns `warehouseOptions` alongside `locationOptions`.
+   - Page loader: `apps/web/app/dashboard/inventory/[id]/page.tsx` forwards `warehouseOptions`.
+   - UI: `inventory-primary-fields-section.tsx` renders warehouse as a `<select required>`.
+   - Controller: `use-inventory-primary-section.ts` prefers `draft.warehouseId` → `importWarehouseId` → `warehouseId` for location-scope.
 
-### Deferred from this pass
+6. **Warehouse auto-link on import-diff added rows:**
+   - `applyImportInventoryRowsDiff` falls back to `?? input.importWarehouseId` on both the location-present and null-location branches.
 
-- **DB-side eligibility filter** (`InventoryListFilter.isImported`, `buildListWhere` branch, `modules/inventory/data/queries.ts` passing `{ isImported: true }`) — lands in **Change 2 Phase C**.
-- **Removing derived `importTag` / `importStatus` / `importTransportType` from `InventoryRow`** and pruning the matching `importEntry.tag/status/transportType` selects in `packages/db/src/flooring/inventory/shared.ts` — lands in **Change 2 Phases B + C**. Until then these fields remain on the row type but are no longer read by the list view; consumers elsewhere (e.g. tests, products record view) still resolve.
-- Consequence: pending rows still appear in the list during this interim window — the eligibility filter is not yet enforced. Dev smoke for the full UX must wait for Change 2.
+### Exit condition
 
-### Eligibility rule — pending rows are hidden from the inventory list view
+All six sections check green. Any drift: fix, rebuild affected packages, re-run the applicable check, then proceed to Change 2.
 
-Inventory rows where `isImported === false` are **not eligible** for the inventory dashboard list view and must not appear there. They are draft rows living on their parent import and are only activated by being marked FINAL from the imports record view's inventory-rows section. The rule:
+**Expected: this is a 15-minute read-through.** If anything takes longer, it means a regression slipped in — that becomes the real work and the cut-log changes wait until the foundation is restored.
 
-- The inventory list (`/dashboard/inventory`) only shows rows where `isImported === true`.
-- The imports record view's inventory-rows section (`/dashboard/imports/[id]`) continues to show **all** rows for that import — both PENDING and FINAL — because it's the surface where users flip the status.
-- The inventory record view (`/dashboard/inventory/[id]`) remains reachable by direct URL regardless of `isImported` (deep links, open-in-new-tab from the imports section). Combined with Change 4's edit gate, pending rows are read-only there.
-
-Implementation lives in Change 2 Phase C (data layer — `listInventory` gets an `isImported?: boolean` filter; the inventory dashboard query wrapper passes `{ isImported: true }`). No changes to the imports record view's read path.
-
-### Files
-
-- `apps/web/modules/inventory/components/list/inventory-client.tsx`
-  - Delete the `importTag` field definition.
-  - Delete the `transport` field definition.
-  - Keep the status column. Change its getter to read the per-row `isImported` via a new domain formatter (below). (Post-filter the column always reads "Final" — kept for display consistency and future re-inclusion of pending rows if we ever expose a toggle.)
-- `apps/web/modules/inventory/components/list/inventory-table.tsx`
-  - Delete the `importTag` and `transport` cell renderers.
-  - Status cell: render via `formatImportedAsStatus(row.isImported)` + `getImportedStatusFieldClass(row.isImported)` (two tiny helpers added to `@builders/domain` for symmetry with the existing `formatImportStatus` / `getImportStatusFieldClass`).
-  - Remove now-unused imports (`formatImportTransportType`, `getTransportTypeFieldClass`).
-- `packages/domain/src/flooring/inventory/formatters.ts` — add `formatImportedAsStatus(isImported: boolean) => "Pending" | "Final"` so tone helpers can key off the same source of truth.
-- `apps/web/modules/imports/components/formatters.ts` — add `getImportedStatusFieldClass(isImported: boolean)` mirroring `getImportStatusFieldClass`.
+### Files (no expected edits)
+None if the audit comes back green.
 
 ### Blast radius
-- Table prefs keyed on removed column names silently drop — matches warehouses/contacts pattern.
-- Pending inventory rows created from the imports record view will be invisible on the inventory list until flipped to FINAL. This is the intended UX — flag in dev smoke that a freshly-added row doesn't appear in the inventory list until its import status is set to FINAL from the imports section.
+Zero, unless drift is detected. Drift repair is a commit in its own right, separate from Change 2+.
 
 ---
 
-## Change 2 — Per-row import status (reuse `isImported`, drop derived fields)
+## Change 2 — Cut-log schema: `price` + `isWaste` (Prisma migration)
 
-### Phase A — Database
-**No migration.** `FlooringInventory.isImported Boolean @default(false)` already exists.
+**Intent.** Two columns, one migration. `price` stores the cost of a single cut at the moment it was saved (snapshot — frozen, not recomputed). `isWaste` is the tax-write-off flag.
 
-### Phase B — Domain (`packages/domain/src/flooring/inventory/`) ✅ **SHIPPED**
+### Schema edits — `packages/db/prisma/schema.prisma`
 
-Five files modified, all inside the domain package. Zero imports outside the package — purity preserved (only internal relative `./*.js` imports and `../../shared/line-totals.js` in the pre-existing summary file).
+```prisma
+model FlooringCutLog {
+  // existing fields …
+  price   Decimal? @db.Decimal(10, 2)
+  isWaste Boolean  @default(false)
+  // …
+}
+```
 
-- `types.ts` — removed `importTag`, `importStatus`, `importTransportType` from `InventoryRow`. `importWarehouseId` / `importWarehouseName` retained (used by the primary-section location-scope logic). `isImported: boolean` already present.
-- `filters.ts` — `InventoryFilterableRow` now carries `isImported: boolean` instead of `importStatus: string`. `isPendingInventoryRow` rewired to `!row.isImported && Boolean(row.importEntryId)`. `"pending" | "final"` filter vocabulary untouched.
-- `errors.ts` — added `IMPORTED_REVERSAL_NOT_ALLOWED` to `InventoryDomainErrorCode`.
-- `inventory-rules.ts` — added:
-  - `isImportedReversal(current, next) → boolean` — pure predicate, reused by diff validation to collect issues.
-  - `assertImportedTransitionAllowed(current, next)` — throws `InventoryDomainError("IMPORTED_REVERSAL_NOT_ALLOWED", ...)` when the predicate fires. Consumed by one-shot update paths that want to fail-fast.
-  - `InventoryValidationIssue` gained an `IMPORTED_REVERSAL_NOT_ALLOWED` variant; `describeInventoryValidationIssue` switch extended.
-- `diff-types.ts` — added optional `isImported?: boolean` to `InventoryRowDraft` and `InventoryRowUpdatePatch`; added required `isImported: boolean` to `DiffExistingInventoryRow`; added `{ code: "IMPORTED_REVERSAL_NOT_ALLOWED", rowId }` variant to `InventoryDiffValidationIssue` with `describeInventoryDiffIssue` case; added `findImportedReversals(diff, existing)` pure helper; wired it into `validateInventoryRowsDiff`.
-- Barrel re-exports — no change needed; the domain `index.ts` already does `export * from "./..."` for every sibling file, so `isImportedReversal`, `assertImportedTransitionAllowed`, and the new issue codes surface automatically.
+- `price` is nullable because a cut against an inventory row with `cost === null` can't snapshot a price. When `inventory.cost` and `inventory.stockCount` are both present and non-zero, the use case computes `price = (cost / stockCount) × cut` at save time and persists. If either is missing, `price` stays `null`.
+- `isWaste` defaults `false`. Editable from the cut-logs grid.
 
-**Domain purity check.** Every new function is pure: `isImportedReversal` returns a boolean, `findImportedReversals` returns a plain issue array, `assertImportedTransitionAllowed` is the only function that throws and only raises the domain-owned `InventoryDomainError`. No `async`, no DB imports, no Prisma types, no Next.js, no repository or use-case logic landed in the domain package.
+### Migration
 
-**Downstream fallout from this phase** (expected, resolved by later phases — **not** Phase B's job):
+Handcraft `packages/db/prisma/migrations/YYYYMMDDHHMMSS_cut_log_price_and_waste/migration.sql`:
 
-- `packages/db/src/flooring/inventory/read-repository.ts` — the normalizer still emits `importTag`, `importStatus`, `importTransportType` as excess properties on the `InventoryRow` return shape. +1 TS error under `@builders/db`. Resolved in **Phase C** when the normalizer drops those fields and the `importEntry.tag/status/transportType` select columns go with them.
-- `packages/application/src/flooring/imports/save-inventory-rows.ts` — `toDiffExisting` maps `ExistingRowMeta` → `DiffExistingInventoryRow` without `isImported`. +1 TS error under `@builders/application`. Resolved in **Phase D** (which already extends the query in `loadExistingRows` to select `isImported`, then threads it through `toDiffExisting`).
-- `apps/web/tests/modules/products/products-detail-client.test.tsx` — fixture still sets `importTag`, `importStatus`, `importTransportType`. The web `tsconfig.json` excludes the `tests` folder from typecheck, so no baseline impact today. Cleaned during Phase C as a bookkeeping step.
+```sql
+ALTER TABLE "flooring_cut_log"
+  ADD COLUMN "price"   DECIMAL(10, 2),
+  ADD COLUMN "isWaste" BOOLEAN NOT NULL DEFAULT false;
+```
 
-**Baseline counts after Phase B:**
-- `@builders/domain`: 0 errors.
-- `@builders/db`: 1 new error (the read-repository excess property).
-- `@builders/application`: 1 new error (the diff-existing mapping).
-- `@builders/web`: unchanged at 107 (all pre-existing in `work-orders`, `admin`, `shared/record-view`, and `templates` — untouched by this sweep).
+Apply via `npm run db:deploy --workspace @builders/db`. Rebuild `@builders/db`.
 
-### Phase C — Data ✅ **SHIPPED**
+### Decision: `price` as stored column, not computed
 
-Five files touched (four source, one test fixture). No Prisma migration needed. `@builders/db` rebuilt clean; the Phase B downstream error in `@builders/db` is resolved. `@builders/web` baseline unchanged at 107 (zero errors in inventory/imports/products/dashboard/api paths).
+Considered computing `price` on read (`pricePerUnit × cut` with `pricePerUnit` already computed in `normalizeInventoryRow`). Rejected because:
 
-- `packages/db/src/flooring/inventory/shared.ts` — dropped `tag`, `status`, `transportType` from the `importEntry` select inside `inventoryRowSelect`. Kept `id`, `importNumber`, `warehouseId`, and `warehouse` (still populate `importWarehouse*` on the read shape). `InventoryRowPayload` / `InventoryDetailPayload` auto-narrow from the select.
-- `packages/db/src/flooring/inventory/read-repository.ts`:
-  - Dropped `importTag`, `importStatus`, `importTransportType` from `normalizeInventoryRow`'s return object. No helpers were exclusive to those fields, so no dead code remained after the field removal — the normalizer stayed lean.
-  - Extended `InventoryListFilter` with `isImported?: boolean`.
-  - `buildListWhere` now forwards `filter.isImported` as `isImported: <bool>` in the WHERE clause when defined. Supports `true` and `false` for completeness; the dashboard passes `true`.
-- `apps/web/modules/inventory/data/queries.ts` — `loadInventoryPageData` now calls `listInventory({ isImported: true })`. This is the single enforcement point for the eligibility rule from Change 1. Every other read path is unaffected: the imports record view reads `listInventory({ importEntryId })` which doesn't filter on `isImported`; single-row `getInventoryById` / `getInventoryDetailById` for deep-link routes are unchanged.
-- `packages/db/src/flooring/imports/write-repository.ts` — `applyImportInventoryRowsDiff`:
-  - **createMany block:** new rows persist `isImported: draft.isImported ?? false` (respect the caller when set, default `false`).
-  - **Warehouse auto-link:** added fallback `?? input.importWarehouseId` on both the `draft.locationId`-present branch and the null-location branch. `input.importWarehouseId` is already passed by `saveImportInventoryRowsUseCase`, so no new plumbing — previously the field was only used for validation. Closes the "added row with no location saved with `warehouseId = null`" gap.
-  - **Per-row updates:** `patch.isImported` now flows through — `if (patch.isImported !== undefined) data.isImported = patch.isImported`. Forwards exactly what the caller sent.
-- `packages/db/src/flooring/inventory/write-repository.ts` — untouched. Already wired for `isImported` on both create + update.
-- `apps/web/tests/modules/products/products-detail-client.test.tsx` — dropped the now-stale `importTag`, `importStatus`, `importTransportType` fields from the inventory-row fixture factory. The file is outside the TS typecheck (`tsconfig.json` excludes `tests/`), but keeping fixture literals consistent with live types is hygiene.
+1. `inventory.cost` can change over the row's lifetime (user edits stock cost after a cut happened). A stored snapshot of `price` at cut time preserves the historical cost of each cut — correct for accounting / tax.
+2. `cut` itself can change on a PENDING cut; on edit, the price snapshot re-captures from the (then-current) `inventory.cost / stockCount`. On FINAL, `price` is frozen.
+3. Reporting downstream (future) will want cut-log cost totals without re-joining to inventory.
 
-**Dead-normalizer audit.** Nothing was left behind. Grep confirms the only lingering references in `packages/` are inside `packages/db/dist/**` output (regenerates on build). Inside `apps/web/modules/imports/**` the `formatImportStatus` / `formatImportTransportType` / `getTransportTypeFieldClass` helpers stay — they still legitimately render the parent import's own `status` / `transportType` fields in the imports list and primary section (Change 6 decision: those stay editable-as-display on the import record).
+This matches the `before` / `after` stored-column pattern — they're also snapshots, frozen at save time.
 
-**Baselines after Phase C:**
-- `@builders/domain`: 0 errors.
-- `@builders/db`: 0 errors — Phase B's expected downstream breakage resolved.
-- `@builders/application`: 1 error — `save-inventory-rows.ts` `toDiffExisting` still missing `isImported` on the mapped `DiffExistingInventoryRow`. Resolved by **Phase D**.
-- `@builders/web`: unchanged at 107 (all pre-existing in `work-orders` / `admin` / `shared/record-view` / `templates`; zero new errors).
+### Files touched
+- `packages/db/prisma/schema.prisma`
+- `packages/db/prisma/migrations/YYYYMMDDHHMMSS_cut_log_price_and_waste/migration.sql` (new)
 
-### Phase D — Application ✅ **SHIPPED**
-
-Three files touched in `packages/application/`. `@builders/application` builds clean, `dist/` rebuilt, and the final Phase-B downstream error (the `toDiffExisting` mapping) is resolved. `@builders/web` baseline still 107 (zero new errors).
-
-- `packages/application/src/flooring/inventory/errors.ts` — added `IMPORTED_REVERSAL_NOT_ALLOWED` to `InventoryErrorCode`.
-- `packages/application/src/flooring/inventory/update-inventory.ts` — added a reversal guard immediately after the `current` load (before validation). Uses the domain predicate `isImportedReversal(current, input)` from `@builders/domain`; when it fires, throws `InventoryExecutionError({ code: "IMPORTED_REVERSAL_NOT_ALLOWED", status: 400, field: "isImported" })`. The use case stays permissive when `input.isImported` is undefined or matches current — only true-→false transitions are blocked. Primary-section PATCH body won't carry `isImported` (Phase E strips it), but this guard protects every caller: imports-diff-driven saves, standalone update, and any future writer.
-  - Design note — used the pure predicate `isImportedReversal` instead of calling `assertImportedTransitionAllowed` + catching the domain error. Matches existing update-inventory.ts style where the use case explicitly raises `InventoryExecutionError` with route-layer-friendly fields (status + field). The domain `assert*` helper stays available for callers that prefer fail-fast.
-- `packages/application/src/flooring/imports/save-inventory-rows.ts` — Phase B's required `isImported` field on `DiffExistingInventoryRow` forced one update here:
-  - `ExistingRowMeta` gained `isImported: boolean`.
-  - `loadExistingRows` Prisma `select` block now includes `isImported: true`.
-  - `toDiffExisting` now forwards `isImported: row.isImported` into `DiffExistingInventoryRow`.
-  - No change to the use-case body — the existing call to `validateInventoryRowsDiff` already threads the new `IMPORTED_REVERSAL_NOT_ALLOWED` issue through `describeInventoryDiffIssues`, so a stale-reversal diff rolls up into `InventoryExecutionError("INVENTORY_DIFF_VALIDATION_FAILED", 400)` with the human-readable reason in the message.
-
-**Baselines after Phase D:**
-- `@builders/domain`: 0 errors.
-- `@builders/db`: 0 errors.
-- `@builders/application`: 0 errors — the last Phase-B/C downstream breakage is resolved.
-- `@builders/web`: unchanged at 107 (all pre-existing outside this sweep's scope).
-
-All four backend layers are now green. Phase E (routes) strips `isImported` out of the inventory primary PATCH and threads it through the imports inventory-rows diff shaper.
-
-### Phase E — Routes ✅ **SHIPPED**
-
-- `apps/web/app/api/inventory/_validators.ts` — `validateUpdateInventoryInput` no longer reads `isImported`; the `optionalBoolean` helper + lines 67–68 removed. Primary-section PATCH can't set the field.
-- `apps/web/app/api/imports/_validators.ts` — added `optionalDiffBoolean` shared helper; `shapeDraft` and `shapePatch` now pass `isImported` through as a boolean on added + modified rows.
-
-### Phase F — Modules ✅ **SHIPPED**
-
-- `packages/domain/src/flooring/imports/types.ts` — `ImportInventoryRow` gained `isImported: boolean`.
-- `packages/db/src/flooring/imports/shared.ts` — `importInventorySelect` now selects `isImported: true`.
-- `packages/db/src/flooring/imports/read-repository.ts` — `ImportInventoryRecord` shape + `normalizeImportInventoryRow` emit `isImported` on every read.
-- `apps/web/modules/imports/controllers/drafts.ts` — `ImportInventoryRowDraft` gained `isImported: boolean`; `createImportInventoryRowDraft` seeds from `item?.isImported ?? false`.
-- `apps/web/modules/imports/components/record/sections/import-inventory-rows-section.tsx` — new `importStatus` column with `<RecordGridCellSelect>` bound to `row.isImported` (PENDING/FINAL options). `disabled={row.isImported}` makes the one-way transition visible.
-- `apps/web/modules/imports/controllers/use-import-inventory-rows-section.ts` — added `setRowImportStatus(index, boolean)` setter; `setRowField` narrowed to the string-only fields to keep type safety; `toDraftPayload` forwards `isImported` on added rows; `toUpdatePatch` diffs it on modified rows.
-- `apps/web/modules/imports/components/record/import-record-panel.tsx` — wires `onRowImportStatusChange={inventoryRowsSection.setRowImportStatus}` into the section.
-- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — new read-only **Import Status** tile in the left pane (`RecordStaticFieldValue` rendering `formatImportedAsStatus(inventory.isImported)`).
-
-### Phase G — Dashboard ✅ **SHIPPED (no-op)**
-
-SSR page already passes `InventoryDetailRecord` through unchanged. Nothing to edit beyond the `warehouseOptions` thread that Change 3 required.
+### Verification gate
+- `npm run build --workspace @builders/db` clean.
+- Generated client has `FlooringCutLog.price: Decimal | null` and `FlooringCutLog.isWaste: boolean`.
+- Expected small TS fallout in downstream packages (domain/app) where `CutLogRow` / diff shapes don't yet include the new fields. Resolved by Change 4.
 
 ### Blast radius
-- **`InventoryRow` shape narrowing** removes three fields (`importTag`, `importStatus`, `importTransportType`). Grep confirms consumers are the inventory list view (already trimmed in Change 1), the `isPendingInventoryRow` filter helper (rewired), and a products test fixture. Test fixture updated to drop the fields.
-- **API surface shrinks:** `PATCH /api/inventory/[id]/primary/section` no longer accepts `isImported` — the only path to edit is the imports diff route. Matches the user's intent.
-- **One-way transition** is enforced at two layers: domain diff validation (imports-diff path) and domain one-shot rule (standalone update path). Both funnel through `assertImportedTransitionAllowed`.
+Migration is additive — no data loss, no backfill needed (all existing rows get `price = null`, `isWaste = false`).
 
 ---
 
-## Change 3 — Warehouse field editable + required (inventory record primary section) ✅ **SHIPPED**
+## Change 3 — Seed additional categories (carpet, pad, baseboard)
 
-Save path was already wired (route → validator → use case → DB write → controller payload). UI + domain rule landed in this pass:
+**Intent.** Three new categories covering the three distinct shapes the product needs to support:
 
-- `packages/domain/src/flooring/inventory/inventory-rules.ts` — `WAREHOUSE_REQUIRED_FOR_LOCATION` replaced by unified `WAREHOUSE_REQUIRED`. `validateInventoryInput` now pushes that issue whenever `warehouseId` is missing, regardless of location. `describeInventoryValidationIssue` case updated to return `"Warehouse is required."`.
-- `apps/web/modules/inventory/data/queries.ts` — `getInventoryDetailPageData` now returns `warehouseOptions` alongside `locationOptions`. Pulled from the already-fetched `listInventoryOptions()` bag — no extra query.
-- `apps/web/app/dashboard/inventory/[id]/page.tsx` — forwards `warehouseOptions` into the client.
-- `apps/web/modules/inventory/components/record/inventory-detail-client.tsx` + `inventory-record-panel.tsx` — thread `warehouseOptions` into the primary-fields section.
-- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — static `RecordStaticFieldValue` warehouse block swapped for a `<select required>` bound to `draft.warehouseId`. Uses the same classname as the other editable fields. `warehouseName` prop removed (derived from the selected option).
-- `apps/web/modules/inventory/controllers/use-inventory-primary-section.ts` — `locationScopeId` now prefers `controller.primarySection.localValue.warehouseId` (draft-first), then falls back to `importWarehouseId` / `warehouseId` from the server record. Location dropdown stays in sync while the user changes warehouse pre-save.
+| Category | Has coverage unit? | Used by material-item fulfillment? | Rounding rule |
+|---|---|---|---|
+| `vinyl-plank` (seeded) | Yes (sqft) | Yes | `ceil` (whole boxes) |
+| `carpet` (new) | Yes (sqyd) | No — strict 1:1 stock count on allocation | `exact` (linear feet split) |
+| `pad` (new) | Yes (sqyd) | Yes | `exact` (rolls split is OK, coverage matters for material items) |
+| `baseboard` (new) | **No** (null coverageAvailableUnitId / itemCoverageUnitId) | No | n/a — strict 1:1 |
+
+Rationale, drawn from the user-provided spec:
+
+- **carpet** — stock unit linear feet, send unit square yards, coverage unit square yards. Product authoring does NOT require `coveragePerUnit` input (carpet rolls have a standard width factor). The inventory row's `availableCoverage` still computes as `availableBalance × coveragePerUnit` when `coveragePerUnit` is set by the product. When a material-item requests carpet, work-orders do NOT consult coverage — one cut log = one stock-unit assignment on the material item.
+- **pad** — stock unit rolls, send unit square yards, coverage unit square yards. Product authoring DOES require `coveragePerUnit` input (one roll = X sqyd). Inventory row shows computed coverage. Material-item assignment (next sweep) reads coverage totals.
+- **baseboard** — stock unit pieces, send unit pieces, coverage-available and item-coverage units set to `null`. `availableCoverage` on the inventory row renders blank. Material-item assignment is strict 1:1 on stock count.
+
+### Files touched
+
+#### `packages/db/src/seed/categories.ts`
+
+```ts
+export const SEEDED_CATEGORIES = [
+  {
+    slug: "vinyl-plank",
+    name: "Vinyl Plank",
+    stockUnitSlug: "boxes",
+    sendUnitSlug: "square-feet",
+    coverageAvailableUnitSlug: "square-feet",
+    itemCoverageUnitSlug: "square-feet",
+    serviceUnitSlug: null,
+  },
+  {
+    slug: "carpet",
+    name: "Carpet",
+    stockUnitSlug: "linear-feet",
+    sendUnitSlug: "square-yard",
+    coverageAvailableUnitSlug: "square-yard",
+    itemCoverageUnitSlug: "square-yard",
+    serviceUnitSlug: null,
+  },
+  {
+    slug: "pad",
+    name: "Pad",
+    stockUnitSlug: "rolls",
+    sendUnitSlug: "square-yard",
+    coverageAvailableUnitSlug: "square-yard",
+    itemCoverageUnitSlug: "square-yard",
+    serviceUnitSlug: null,
+  },
+  {
+    slug: "baseboard",
+    name: "Baseboard",
+    stockUnitSlug: "pieces",
+    sendUnitSlug: "pieces",
+    coverageAvailableUnitSlug: null, // opts out of coverage computation
+    itemCoverageUnitSlug: null,
+    serviceUnitSlug: null,
+  },
+] as const
+```
+
+Audit the category-seed runner (`packages/db/src/seed/…` entry point — likely `seed.ts` or equivalent) to confirm it iterates `SEEDED_CATEGORIES` and upserts by `slug`. Additive change; no deletions of existing data.
+
+#### `packages/db/src/seed/unit-of-measures.ts`
+
+No changes — `pieces`, `linear-feet`, `square-yard`, `rolls`, `boxes`, `square-feet` are all already seeded. Verified: see file contents.
+
+### Verification gate
+
+- `npm run db:seed --workspace @builders/db` (or equivalent) runs clean and upserts four categories.
+- In dev DB after re-seed: `SELECT slug, name FROM flooring_category ORDER BY slug` returns `baseboard, carpet, pad, vinyl-plank`.
+- For each new category: `coverageAvailableUnit` / `itemCoverageUnit` reflect the table above (null for baseboard; square-yard for carpet + pad).
 
 ### Blast radius
-- Existing rows with `warehouseId = NULL` now fail validation on primary-section save until the user picks a warehouse. Matches intent (all pre-sweep inventory was deleted, so no real rows in this state anyway).
-- The imports-diff path is unchanged — it stamps warehouse from the location's warehouse or the parent import's warehouseId (Change 5 rollup in Phase C). Rows created through the imports path never have null warehouse.
+Additive — new rows only. No existing category modified. No existing product impacted (existing products all linked to vinyl-plank).
 
 ---
 
-## Change 4 — Edit gates on `isImported` ✅ **SHIPPED**
+## Change 4 — Cut-log domain surface: `price`, `isWaste`, computed `coverage`, extract to `cut-logs/` subfolder
 
-### Gate A — Inventory primary-section edits disabled when `isImported === false`
-- `inventory-primary-fields-section.tsx` — computes `isReadOnly = !inventory.isImported` and `controlDisabled = disabled || isReadOnly`. Every input / select / textarea now uses `disabled={controlDisabled}`. A banner renders at the top of the section when `isReadOnly` is true: *"This inventory row is pending import. It becomes editable once marked as Final on the imports record view."*
-- `inventory-record-panel.tsx` — when `isReadOnly`, the footer config omits `onDelete` so the Delete button doesn't render. The Save button cascades naturally to disabled because no edits can make `isDirty` true with inputs locked.
-- **Server backstop (`update-inventory.ts`):** immediately after loading `current`, the use case throws `InventoryExecutionError({ code: "INVENTORY_PENDING_IMPORT", status: 400 })` when `current.isImported === false`. Guaranteed refusal even if a client bypasses the UI. `InventoryErrorCode` gained `INVENTORY_PENDING_IMPORT`.
+**Intent.** Pull cut-log types + rules out of `packages/domain/src/flooring/inventory/` into their own `cut-logs/` subfolder (matching the REFERENCE.md shape). Extend `CutLogRow` with the two new stored fields + the computed `coverage` field.
 
-### Gate B — Cut-logs section
-- `inventory-cut-logs-section.tsx` — accepts `isImported: boolean`. Empty-state copy + grid emptyState switch to *"Cut logs unlock once this row is marked Final on the imports record view."* when pending. Domain gate (`canAddCutLog` + `CUT_LOG_INVENTORY_NOT_IMPORTED`) was already in place; the UI now renders that reality.
-- `inventory-record-panel.tsx` forwards `isImported={controller.record.isImported}` into the section.
+### Domain package edits
+
+#### New: `packages/domain/src/flooring/cut-logs/`
+
+- `types.ts`:
+  ```ts
+  export const CUT_LOG_STATUS_VALUES = ["PENDING", "FINAL"] as const
+  export type CutLogStatus = typeof CUT_LOG_STATUS_VALUES[number]
+
+  export type CutLogRow = {
+    id: string
+    inventoryId: string
+    workOrderId: string | null
+    workOrderItemId: string | null
+    before: string
+    cut: string
+    after: string
+    status: CutLogStatus
+    isWaste: boolean
+    price: string             // "" when null (inventory.cost or stockCount was null at save time)
+    coverage: string          // computed: toFixedString(Number(cut) × coveragePerUnit); "" when coveragePerUnit null or category has no coverage unit
+    notes: string
+    createdAt: string
+    updatedAt: string
+  }
+  ```
+- `cut-log-rules.ts`:
+  - `isCutLogStatus(value): value is CutLogStatus` — enum guard.
+  - `assertBeforeCutAfterInvariant({ before, cut, after })` — throws typed issue if `before - cut !== after`. Decimal-safe arithmetic (stringify + compare).
+  - `formatCutLogStatus(status): "Pending Cut" | "Final Cut"` — UI label helper.
+- `errors.ts` — `CutLogDomainError`, `CutLogDomainErrorCode` union (`CUT_LOG_INVALID_STATUS`, `CUT_LOG_ARITHMETIC_MISMATCH`, `CUT_LOG_INVENTORY_NOT_IMPORTED`, `CUT_LOG_EXCEEDS_STARTING_BALANCE`). Migrate equivalents from `packages/domain/src/flooring/inventory/errors.ts` and re-export if any app code imports from the old location.
+- `index.ts` — barrel.
+
+#### Moved / modified: `packages/domain/src/flooring/inventory/types.ts`
+
+- Delete the inline `CutLogStatus` + `CutLogRow` definitions (lines 1–15 today).
+- Import `CutLogRow`, `CutLogStatus` from `../cut-logs` and re-export them for back-compat with existing consumers. (Consumers outside the package should switch to the new path over time; the re-export is courtesy.)
+
+#### Modified: `packages/domain/src/index.ts`
+
+Add `export * from "./flooring/cut-logs/index.js"` alongside the existing inventory re-export.
+
+### DB package edits
+
+#### `packages/db/src/flooring/inventory/shared.ts`
+
+Cut-log select: add `price`, `isWaste` to the selected columns. Payload type auto-narrows.
+
+#### `packages/db/src/flooring/inventory/read-repository.ts::normalizeCutLogRow`
+
+```ts
+export function normalizeCutLogRow(
+  row: CutLogRowPayload,
+  coveragePerUnit: number | null, // passed in from parent inventory's product.coveragePerUnit
+  categoryHasCoverageUnit: boolean, // true when inventory.product.category.coverageAvailableUnitId is set
+): InventoryCutLogRecord {
+  const cutNum = toNumber(row.cut)
+  const coverage =
+    coveragePerUnit !== null && categoryHasCoverageUnit
+      ? toFixedString(cutNum * coveragePerUnit)
+      : ""
+  return {
+    id: row.id,
+    inventoryId: row.inventoryId,
+    workOrderId: row.workOrderId ?? null,
+    workOrderItemId: row.workOrderItemId ?? null,
+    before: row.before.toString(),
+    cut: row.cut.toString(),
+    after: row.after.toString(),
+    status: row.status === "FINAL" ? "FINAL" : "PENDING",
+    isWaste: row.isWaste,
+    price: row.price === null ? "" : row.price.toString(),
+    coverage,
+    notes: row.notes ?? "",
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }
+}
+```
+
+`normalizeInventoryDetail` threads `coveragePerUnit` + `categoryHasCoverageUnit` into the `.map(normalizeCutLogRow)` call (both already available via `payload.product.coveragePerUnit` and `payload.product.category.coverageAvailableUnitId != null`).
+
+### Application package edits
+
+- `packages/application/src/flooring/inventory/save-cut-logs.ts` (if it exists — else the equivalent use case for cut-log diff):
+  - On create: compute `price = (cost / stockCount) × cut` when `inventory.cost != null && inventory.stockCount > 0`; else `price = null`.
+  - On update: recompute `price` from (then-current) inventory `cost` and `stockCount` only when `status === "PENDING"` and either `cut` or the inventory `cost`/`stockCount` changed. For `status === "FINAL"`, leave `price` frozen — never recomputed on edit.
+  - Pass `isWaste` through the diff straight from the client payload (no domain rule restricts it).
+
+### Route-layer edits
+
+- `apps/web/app/api/inventory/_validators.ts::validateCutLogsDiff` (or equivalent) — accept `isWaste: boolean` and `status: CutLogStatus` on added + modified cut-log entries. `price` is NOT a client-writable field (server computes).
+
+### UI-layer edits
+
+- `apps/web/modules/inventory/components/record/sections/inventory-cut-logs-section.tsx`:
+  - Add grid columns: `coverage` (read-only computed), `price` (read-only computed), `isWaste` (editable checkbox), `status` (editable select — PENDING/FINAL).
+  - `coverage` column renders blank when `row.coverage === ""` (either `coveragePerUnit` null or category has no coverage unit — baseboard).
+- `apps/web/modules/inventory/controllers/use-inventory-cut-logs-section.ts` (or equivalent controller):
+  - `setRowIsWaste(index, boolean)` and `setRowStatus(index, CutLogStatus)` setters.
+  - `toDraftPayload` / `toUpdatePatch` forward `isWaste` and `status`.
 
 ### Blast radius
-- All existing inventory + import rows were deleted before this sweep; no back-fill DML needed. New rows added via the imports record view start PENDING, then flip to FINAL through the imports section — at which point they appear in the inventory dashboard list AND become editable on the inventory record view.
-- The standalone `POST /api/inventory` create path stays out of scope. Its output starts `isImported = false`, which means the guard would immediately refuse any follow-up update; irrelevant because the path has no UI caller.
+
+- Adding `price`, `isWaste`, `coverage` to `CutLogRow` is additive — existing consumers that destructure (`{ id, before, cut, after, status }`) keep working. New consumers opt in.
+- Moving `CutLogRow` / `CutLogStatus` to `cut-logs/` breaks imports from the inventory subpath only if they're direct file imports (bypassing the inventory barrel). Barrel re-export covers the common case.
+- The computed `coverage` column on cut logs only means something when the category has a coverage unit. For baseboard it's always blank.
 
 ---
 
-## Change 5 — Auto-link warehouse on added imports-inventory rows ✅ **SHIPPED**
+## Change 5 — Inventory computed-balance semantics: swap `availableBalance` ↔ `uncutBalance` to match spec
 
-Rolled into Change 2 Phase C. Full trace of the wired flow, confirmed end-to-end:
+**Intent.** Correct a naming / semantics mismatch in the current normalizer so downstream UI + cut-log math align with the user's spec.
 
-1. **Client controller** `apps/web/modules/imports/controllers/use-import-inventory-rows-section.ts:51–54` — `toDraftPayload` sends `warehouseId: null` on added rows with an intentional comment deferring resolution to the use case. No change needed.
-2. **Use case** `packages/application/src/flooring/imports/save-inventory-rows.ts:241` — already passes `importWarehouseId: parent.warehouseId || null` into the diff primitive. No change needed.
-3. **DB primitive** `packages/db/src/flooring/imports/write-repository.ts:151–153` — Phase C added the `?? input.importWarehouseId` fallback on both the location-present and location-null branches:
-   ```ts
-   const resolvedWarehouseId = draft.locationId
-     ? locationIndex.get(draft.locationId)?.warehouseId ?? draft.warehouseId ?? input.importWarehouseId
-     : draft.warehouseId ?? input.importWarehouseId
-   ```
+### Current code (to be swapped)
 
-Result: an added row with no location picked persists with the parent import's `warehouseId` — never `null`. Validation remains enforced by `validateInventoryRowsDiff`'s existing `IMPORT_WAREHOUSE_MISMATCH` rule if a client explicitly sets a different warehouse.
+In `packages/db/src/flooring/inventory/read-repository.ts::normalizeInventoryRow`:
 
-No type changes, no migration, no separate use case, no new route.
+```ts
+const uncut = stockCount - aggregate.totalCut                         // ← today's uncutBalance
+const available = stockCount - (aggregate.awaitingCut + aggregate.totalCut) // ← today's availableBalance
+```
+
+### Target code (new semantics)
+
+```ts
+const available = stockCount - aggregate.totalCut                      // ← physically remaining in warehouse (final cuts only)
+const uncut = available - aggregate.awaitingCut                        // ← truly free (not committed to any cut)
+```
+
+So:
+
+| Field | Formula (new) | Meaning |
+|---|---|---|
+| `stockCount` (already stored) | — | Starting balance at import time |
+| `availableBalance` | `stockCount − sum(final cuts)` | What's physically left on the shelf. Drops when a cut is FINALIZED, not when it's pending. |
+| `awaitingCutBalance` | `sum(pending cuts)` | Stock committed to pending cuts |
+| `uncutBalance` | `availableBalance − awaitingCutBalance` = `stockCount − sum(all cuts)` | Truly free stock (not promised to any cut, pending or final) |
+| `totalCutBalance` | `sum(final cuts)` | Completed cut output |
+
+### Invariant moves with the names
+
+The domain rule "sum of all cuts ≤ stockCount" (what the user calls `uncutBalance ≥ 0`) stays — it's just now expressed as `uncut >= 0` instead of `available >= 0`. Update the cut-log save use case's precondition check + error:
+
+- Error code rename: `CUT_LOG_EXCEEDS_STARTING_BALANCE` stays (same meaning, just the formula it checks against now).
+- `canAddCutLog(inventory, proposedCutTotal)` in the cut-log-diff validator throws this error when `stockCount − (existingTotal + proposedCutTotal) < 0`.
+
+### `availableCoverage` still keys off `availableBalance`
+
+```ts
+const availableCoverage = computeAvailableCoverage(available, coveragePerUnit)
+```
+
+i.e. the *physically remaining* stock converted to coverage unit. This matches the user's spec: "available coverage is the available balance converted to available coverage using the category specific computation function." So when a FINAL cut happens, `availableCoverage` drops. When a PENDING cut is added, `availableCoverage` stays the same (because the stock isn't physically gone yet).
+
+### Files touched
+
+- `packages/db/src/flooring/inventory/read-repository.ts` — the two-line semantic swap above.
+- `packages/domain/src/flooring/inventory/inventory-rules.ts` — if any helper references the old semantics by name (e.g. `canAddCutLog`), update the formula.
+- `packages/application/src/flooring/inventory/save-cut-logs.ts` (or equivalent) — the precondition check uses the uncut-based formula.
+- UI tiles — if any card / label reads `availableBalance` or `uncutBalance` and labels it with a human phrase, re-check the phrasing still matches. (Labels likely stay — "Available" still means "physically on shelf"; "Uncut" still means "not committed." The math changes, the labels don't.)
+
+### Verification gate
+
+- Unit test: given `stockCount=10`, one PENDING cut of 2, one FINAL cut of 3:
+  - `availableBalance` should be `10 − 3 = 7` (not today's `10 − 3 − 2 = 5`).
+  - `awaitingCutBalance` should be `2`.
+  - `uncutBalance` should be `7 − 2 = 5`.
+  - `totalCutBalance` should be `3`.
+  - `availableCoverage` (if `coveragePerUnit = 23.77`): `7 × 23.77 = 166.39`.
+- Smoke in dev DB: create a vinyl-plank inventory row with `stockCount=5`, add one PENDING cut of 1 → `availableBalance` stays `5`, `uncutBalance` becomes `4`. Flip to FINAL → `availableBalance` becomes `4`, `uncutBalance` stays `4`.
+
+### Blast radius
+
+- **⚠️ This silently changes what any existing consumer of `availableBalance` / `uncutBalance` shows.** Audit before shipping:
+  - `apps/web/modules/inventory/components/list/` — any column that reads these fields.
+  - `apps/web/modules/inventory/components/record/` — any tile / summary.
+  - Tests under `apps/web/tests/modules/inventory/` — fixture-based assertions need updates.
+- User intent is the spec the sweep follows; current code was the anomaly. Confirm before merging that no dashboard is intentionally depending on the old `availableBalance` meaning.
+
+**Decision needed before Change 5 lands:** confirm this swap matches intent. (I flagged the mismatch during pre-sweep audit; if the current code is what was actually wanted and the user spec is aspirational, we skip this change and just rename the fields.)
 
 ---
 
-## Change 6 — Import record's primary `status` stays editable (low-blast-radius choice)
+## Change 6 — Unit-conversion domain helpers + `CATEGORY_UNIT_RULES`
 
-**Decision:** keep `FlooringImportEntry.status` as an editable string, displayed in the imports primary section and list view.
+**Intent.** Ship the in-scope piece of REFERENCE.md's "Category-driven unit conversion" section. Cut-log-side coverage math (used in Change 4's normalizer) and inventory-side `availableCoverage` both call these helpers. Reverse-direction math (`computeStockRequiredForQuantity` — used by work-order material items) is a pure helper that lands here too, even though no consumer uses it yet; keeping it co-located avoids a future "where does this go?" decision.
 
-- Nothing else depends on it after Change 2 removes the derived `InventoryRow.importStatus`. It becomes pure user-facing display metadata — a note the user can tag the import with.
-- **Blast radius of this decision:** zero. No code change, no schema change. Keep the existing `<select>` in `import-primary-fields-section.tsx`, keep the existing `status` column in `imports-table.tsx`.
+### New file — `packages/domain/src/flooring/inventory/unit-conversion.ts`
 
-**Deferred alternative** (Option B — computed rollup): derive parent status from children: `FINAL` if every child row `isImported === true` and at least one exists; `PENDING` otherwise. Requires:
-- Drop `status` from `ImportPrimaryForm`, `EMPTY_IMPORT_PRIMARY_FORM`, validators, create + update use cases.
-- Compute in `packages/domain/src/flooring/imports/summary.ts` (new `calculateImportRollupStatus(rows)`) and expose on `ImportRow` + `ImportDetail` normalizers.
-- Swap the `<select>` for a read-only `StatusPill`.
-- Eventually drop the column via migration (separate sweep).
+```ts
+export type CategoryUnitRule = {
+  canSplit: boolean                            // decimals allowed when going quantity → stock?
+  rounding: "up" | "down" | "nearest" | "exact"
+  hasCoverageUnit: boolean                     // false for baseboard; true for vinyl-plank, carpet, pad
+}
 
-**Not doing this sweep** per the note that high blast radius should be skipped. Can be picked up standalone later.
+export const CATEGORY_UNIT_RULES: Record<string, CategoryUnitRule> = {
+  "vinyl-plank": { canSplit: false, rounding: "up",    hasCoverageUnit: true  },
+  "carpet":      { canSplit: true,  rounding: "exact", hasCoverageUnit: true  },
+  "pad":         { canSplit: false, rounding: "up",    hasCoverageUnit: true  },
+  "baseboard":   { canSplit: false, rounding: "exact", hasCoverageUnit: false },
+}
+
+export const DEFAULT_CATEGORY_UNIT_RULE: CategoryUnitRule = {
+  canSplit: true,
+  rounding: "exact",
+  hasCoverageUnit: false,
+}
+
+export function getCategoryUnitRule(categorySlug: string | null | undefined): CategoryUnitRule {
+  if (!categorySlug) return DEFAULT_CATEGORY_UNIT_RULE
+  return CATEGORY_UNIT_RULES[categorySlug] ?? DEFAULT_CATEGORY_UNIT_RULE
+}
+
+// Stock → coverage. Pure multiplication; rounding happens on the inverse direction only.
+export function computeCoverageAvailable(input: {
+  stockAvailable: number            // the row's availableBalance (Change 5 semantics)
+  coveragePerUnit: number | null
+  categorySlug: string | null
+}): number | null {
+  if (input.coveragePerUnit === null) return null
+  const rule = getCategoryUnitRule(input.categorySlug)
+  if (!rule.hasCoverageUnit) return null
+  return input.stockAvailable * input.coveragePerUnit
+}
+
+// Coverage → stock. Category-aware rounding. Unused this sweep (work-order next sweep).
+// Landing here keeps category math in one file.
+export function computeStockRequiredForQuantity(input: {
+  quantityInSendUnit: number
+  coveragePerUnit: number | null    // required for non-strict-1:1 categories
+  categorySlug: string | null
+}): number {
+  const rule = getCategoryUnitRule(input.categorySlug)
+  if (!rule.hasCoverageUnit || input.coveragePerUnit === null) {
+    // Strict 1:1: stock unit === send unit (baseboard, or any category without coverage)
+    return input.quantityInSendUnit
+  }
+  const raw = input.quantityInSendUnit / input.coveragePerUnit
+  switch (rule.rounding) {
+    case "up":      return Math.ceil(raw)
+    case "down":    return Math.floor(raw)
+    case "nearest": return Math.round(raw)
+    case "exact":   return raw
+  }
+}
+
+// Cut log's computed coverage (used by Change 4's normalizeCutLogRow).
+export function computeCutCoverage(input: {
+  cut: number
+  coveragePerUnit: number | null
+  categorySlug: string | null
+}): number | null {
+  if (input.coveragePerUnit === null) return null
+  const rule = getCategoryUnitRule(input.categorySlug)
+  if (!rule.hasCoverageUnit) return null
+  return input.cut * input.coveragePerUnit
+}
+```
+
+### Hookups
+
+- `packages/db/src/flooring/inventory/read-repository.ts::normalizeInventoryRow` — replace the inlined `computeAvailableCoverage` helper (currently in the same file) with `computeCoverageAvailable` from the domain import. Thread `category.slug` through.
+- `packages/db/src/flooring/inventory/read-repository.ts::normalizeCutLogRow` (Change 4 rewrite) — use `computeCutCoverage` from the domain import.
+- Data-layer uses pure domain helpers — matches the existing carve-out in `packages/db/CLAUDE.md` (rule 1: "data-layer normalizers MAY import pure domain helpers").
+
+### Schema / select additions
+
+`inventoryRowSelect` in `packages/db/src/flooring/inventory/shared.ts` — add `slug: true` to the `product.category` nested select. Tiny additive change.
+
+### Verification gate
+
+- Unit test per category:
+  - vinyl-plank, `stockAvailable=5`, `coveragePerUnit=23.77` → `computeCoverageAvailable = 118.85`.
+  - carpet, `stockAvailable=10`, `coveragePerUnit=0.33` → `computeCoverageAvailable = 3.30`.
+  - pad, `stockAvailable=2`, `coveragePerUnit=18` → `computeCoverageAvailable = 36`.
+  - baseboard, `stockAvailable=100`, `coveragePerUnit=null` → `computeCoverageAvailable = null`.
+  - baseboard, `stockAvailable=100`, `coveragePerUnit=2` → `computeCoverageAvailable = null` (rule opts out even if product author set coverage).
+- `computeStockRequiredForQuantity` unit tests even though no caller wires it yet — proves the helper works for the next sweep. Vinyl-plank `quantity=100, cpu=23.77` → `5` (ceil of 4.21). Carpet `quantity=100, cpu=3` → `33.333…` (exact). Baseboard `quantity=100, cpu=anything` → `100` (1:1).
+
+### Blast radius
+
+- Moving `computeAvailableCoverage` from data-inline to domain is a refactor; behavior preserved for vinyl-plank (the only seeded category before this sweep). New categories get their coverage-unit opt-out at the same time.
+- `computeStockRequiredForQuantity` is dead code until work-orders sweep — accepted cost for keeping category math in one place.
+
+---
+
+## Change 7 — Inventory record view: surface the five balance tiles
+
+**Intent.** UI-only. Expose `availableBalance`, `uncutBalance`, `awaitingCutBalance`, `totalCutBalance`, `availableCoverage` on the inventory record's primary section so the user sees the computed state. Read-only tiles — these are derivatives, never direct inputs.
+
+### Files touched
+
+- `apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx`:
+  - New right-pane / summary section "Balances":
+    - `availableBalance` — "Available (stock unit)"
+    - `uncutBalance` — "Uncut"
+    - `awaitingCutBalance` — "Awaiting cut"
+    - `totalCutBalance` — "Total cut"
+    - `availableCoverage` — "Available coverage (send unit)". Hidden / dashed-out when empty string (baseboard).
+  - Every tile uses `RecordStaticFieldValue` — never an `<input>`. Tooltips / labels reference the stock unit name from `inventory.stockUnit` so the user sees "Available (boxes)" for vinyl-plank, "Available (linear feet)" for carpet, etc.
+- `apps/web/modules/inventory/components/list/inventory-table.tsx`:
+  - Optional: `availableBalance` + `availableCoverage` columns (opt-in via columns manager). Current `uncutBalance` column — if it's already there — flips label to match the new semantics per Change 5.
+
+### Verification gate
+- Dev smoke: open an inventory record, confirm all five tiles render with the correct numbers for a row with mixed pending + final cuts. Baseboard row shows a dash (`—`) for coverage.
+
+### Blast radius
+- List columns are keyed on field name; renaming a column changes the user's saved prefs if they ever renamed. Contacts / warehouses pattern: drop silently.
+- Adding tiles to the primary section expands the section's vertical footprint. Low risk.
+
+---
+
+## Change 8 — Cut-log edit gates + server-side price computation + validator additions
+
+**Intent.** Close the loop on cut-log mutations from the inventory record view. Everything the cut-log grid accepts must be server-validated; the server stamps `price`; status transitions have a rule.
+
+### Domain rules (per cut log, on save)
+
+- `before − cut === after` (already in place in domain).
+- `status ∈ {PENDING, FINAL}` (Change 4 helper).
+- `isWaste ∈ {true, false}` (enum-trivial).
+- `PENDING → FINAL` allowed freely. `FINAL → PENDING` **rejected** with `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED` at domain level (matches the `isImported` one-way-transition pattern from Sweep 2).
+- `sum(cut) ≤ inventory.stockCount` post-diff (Change 5 rephrased: `uncutBalance ≥ 0`).
+- `inventory.isImported === true` — Sweep-2 gate, already in place via `canAddCutLog`.
+
+### Application / save use case
+
+On save (create + update):
+
+1. Lock `flooring_inventory` row `FOR UPDATE` (same lock scope Sweep-2's cut-log-save already uses).
+2. For added / modified rows: compute `price = (inventory.cost / inventory.stockCount) × cut` when `inventory.cost != null && inventory.stockCount > 0`; else `null`.
+3. For modified rows where existing `status === "FINAL"` and the patch leaves status `"FINAL"`: **do not recompute** `price` — the snapshot is frozen. Only update `cut`, `isWaste`, `notes`.
+4. For modified rows where `status === "PENDING"` (either existing or via transition PENDING→FINAL): recompute `price` from (then-current) inventory cost/stockCount.
+5. Reject `FINAL → PENDING` transitions with `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED`.
+
+### Route-layer
+
+`apps/web/app/api/inventory/[id]/cut-logs/section/route.ts` (or equivalent) — no change beyond `_validators.ts` extension (Change 4).
+
+### UI
+
+- `inventory-cut-logs-section.tsx` (Change 4):
+  - Status column: `<select>` PENDING/FINAL. When existing `status === "FINAL"`, the select is disabled (UI mirror of the server-side rule); tooltip explains.
+  - isWaste checkbox: always editable — even for FINAL rows (waste flag can be corrected post-cut for tax reasons).
+  - Cut input: editable for PENDING rows. For FINAL rows, cut stays editable only if the user also un-finals it, but since un-finaling is blocked, effectively cut is read-only on FINAL rows. Disable with tooltip.
+  - Price column: read-only, rendered from server value.
+  - Coverage column: read-only, rendered from server computation (Change 4).
+
+### Verification gate
+
+- Create a PENDING cut for 2 boxes on a vinyl-plank row with `cost=100, stockCount=10` → save → cut's `price` stored as `20.00` (= 10 × 2), coverage = `47.54` (= 23.77 × 2).
+- Edit the cut to 3 boxes → `price` re-stamps to `30.00`, coverage re-computes to `71.31`.
+- Flip status to FINAL → save clean. Inventory's `availableBalance` drops by 3 (Change 5 semantics — FINAL cuts deduct from available).
+- Try to flip the FINAL cut back to PENDING → rejected with `CUT_LOG_FINAL_REVERSAL_NOT_ALLOWED`.
+- Try to cut 11 boxes on the `stockCount=10` row → rejected with `CUT_LOG_EXCEEDS_STARTING_BALANCE`.
+- Toggle `isWaste` on a FINAL cut → saves (waste flag always editable).
+
+### Blast radius
+
+- One-way FINAL transition may frustrate a user who clicks too fast; UI tooltip + disabled state prevent it at the interaction layer. Server backstop catches bypasses.
+- Price snapshot diverges from live inventory cost over time. This is intentional (per Change 2 decision rationale) — reports referencing cut-log cost see the moment-in-time value.
+
+---
+
+## Change 9 — Imports record view: cut-log visibility is explicitly deferred
+
+**Not doing this sweep.** Cut logs stay accessible only from the inventory record view. The imports record view renders its inventory-rows section (already done in Sweep 2) but does NOT show cut logs per row.
+
+Rationale: cuts are an inventory concern, not an import concern. A pending import row has `isImported === false` and domain rule `canAddCutLog` already blocks cut creation against it. Showing empty cut-logs sections on pending rows in the imports view adds noise without enabling any action the user can't already do.
+
+Deferred — revisit if/when users ask.
+
+---
+
+## Change 10 — Out of scope (next sweep)
+
+- **Work-order material items ↔ cut logs wiring.** The whole "material item's computed `quantityAssigned` reads cut-log coverage; fulfillment status SHORTAGE/SUFFICIENT aggregates over items" flow. Requires work-orders main-section mutations landed first (different sweep).
+- **Reverse-direction allocation helpers in use.** `computeStockRequiredForQuantity` lands in Change 6 but has no caller until work-orders.
+- **Cut-log dashboards / cut-log standalone CRUD.** Cut logs stay child-only.
+- **Cost-basis recalc on FINAL cuts when inventory.cost changes afterward.** By design — the snapshot freezes.
+- **Additional categories beyond carpet/pad/baseboard.** Whatever business adds later follows the same 3-slot pattern (stock / send / coverageAvailable + optional item-coverage).
+- **Service items using category.serviceUnitId.** Services aren't touched this sweep.
+- **Migration of `FlooringProduct.coveragePerUnit` to be required for certain categories.** Today it's nullable; product authoring enforces at the UI level per category. DB-level required-if-category constraint is future work.
 
 ---
 
 ## Execution order
 
-1. **Change 1 (list column trim)** — depends on Change 2's formatter helper; land the helper first, then this.
-2. **Change 5 (warehouse auto-link)** — single-line fix, preparing for Change 3's required-warehouse rule.
-3. **Change 3 (warehouse editable + required)** — UI + domain rule; validation cascades.
-4. **Change 2 (per-row isImported status)** — the central change. Drops derived fields, adds UI-editable path, one-way transition rule.
-5. **Change 4 (edit gates)** — lands on top of Change 2.
-6. **Change 6** — no-op (decision documented, no code change).
-
-The `uncutBalance` → `physicalBalance` rename is **dropped from this sweep** — purely a naming preference, and Sweep 3's categories unit-conversion work may re-rename this field (to `physicalStock`) anyway. Revisit under Sweep 3.
+1. **Change 1** — verify Sweep-2 intact. Must come first. If green, proceed.
+2. **Change 2** — schema migration for `price` + `isWaste`. Additive; safe to run before domain work.
+3. **Change 3** — seed carpet/pad/baseboard. Independent, runs after migration is applied so seeds land into the new client.
+4. **Change 6** — unit-conversion domain helpers + `CATEGORY_UNIT_RULES`. Lands before Change 4 because Change 4's cut-log coverage normalizer imports it.
+5. **Change 4** — cut-log domain surface (types + normalizer + route validators + UI columns). Depends on 2 and 6.
+6. **Change 5** — semantic swap of `availableBalance` ↔ `uncutBalance`. **Blocker question for user**: confirm this matches intent. Lands AFTER Change 4 so the cut-log fields are already threaded when downstream tiles shift meaning.
+7. **Change 7** — surface balance tiles. Depends on 5.
+8. **Change 8** — cut-log edit gates + server-side price computation. Depends on 2 + 4.
+9. **Change 9** — no-op (deferred).
+10. **Change 10** — no-op (scope fence).
 
 Each change is a standalone commit.
 
 ---
 
-## Verification gates
+## Verification gates (end-of-sweep)
 
-- Per-package builds clean after each change: `pnpm -F @builders/domain build && pnpm -F @builders/db build && pnpm -F @builders/application build && pnpm -F @builders/web typecheck`.
-- Regression greps (after Change 2):
-  - `grep -rn "importTag\|importTransportType\|row\.importStatus\|importEntry\.status" apps packages | grep -v dist | grep -v node_modules` → zero hits outside the imports module itself.
-  - `grep -rn "importStatus: importEntry" packages/db` → zero.
+- Per-package builds clean: `pnpm -F @builders/domain build && pnpm -F @builders/db build && pnpm -F @builders/application build && pnpm -F @builders/web typecheck`.
+- `@builders/web` typecheck baseline: current 107 pre-existing errors (all in `work-orders`/`admin`/`shared/record-view`/`templates`, untouched by this sweep). Expect unchanged at 107 post-sweep.
+- Regression greps:
+  - `grep -rn "FlooringCutLog" packages/db apps/web | grep -v dist | grep -v node_modules` — confirm `price` and `isWaste` appear wherever `before`/`cut`/`after` appear.
+  - `grep -rn "computeAvailableCoverage\|CATEGORY_UNIT_RULES" packages apps/web | grep -v dist` — helpers imported from `@builders/domain`, not re-implemented inline.
+  - `grep -rn "vinyl-plank\|carpet\|pad\|baseboard" packages/db/src/seed` — all four categories present.
 - Dev smoke:
-  - **Inventory list:** import tag + transport columns gone; status pill reflects per-row `isImported`. Pending rows (`isImported === false`) never appear in the list; adding a new row from the imports record view leaves the inventory list unchanged until the user flips that row to FINAL.
-  - **Inventory record:** primary section is **read-only** for pending rows. Pick an existing pending row → verify all inputs disabled + banner shown. Mark FINAL via imports record view → reload inventory record → all inputs editable.
-  - **Inventory record (FINAL row):** warehouse is a `<select>`, required to save (clear → save → validation error). Change warehouse → location dropdown re-filters.
-  - **Imports inventory-rows section:** new per-row "Import Status" select. PENDING rows: select is enabled. Flip to FINAL, save → select disables (one-way transition visible).
-  - **Server backstop:** PATCH `/api/inventory/[id]/primary/section` with `isImported` in body → validator strips it (property not in shape). PATCH an already-FINAL row via imports diff with `isImported: false` → rejected with `IMPORTED_REVERSAL_NOT_ALLOWED`.
-  - **Warehouse auto-link:** on import record with warehouse W, add inventory row with **no location picked** → save → row persists with `warehouseId = W` (not null).
-- Import record: parent `status` select still editable, still purely cosmetic after this sweep (no other code reads it).
+  - **Seed:** re-run seed; 4 categories present, 3 of them seeded new (carpet, pad, baseboard).
+  - **Product creation:** create a carpet product — `coveragePerUnit` input present. Create a baseboard product — `coveragePerUnit` input optional or hidden (category has no coverage unit).
+  - **Inventory row (vinyl-plank):** starting stock 10, one PENDING cut of 2 → tiles show available 10, awaiting 2, uncut 8, total 0, coverage 237.7 (= 10 × 23.77). Flip cut to FINAL → available 8, awaiting 0, uncut 8, total 2, coverage 190.16 (= 8 × 23.77). Add another PENDING cut of 1 → available 8, awaiting 1, uncut 7, total 2, coverage 190.16. `price` per cut stamped from `inventory.cost / stockCount × cut`.
+  - **Inventory row (carpet):** same flow, but stock unit = linear feet, coverage = sqyd. Coverage math reads `coveragePerUnit` from product.
+  - **Inventory row (baseboard):** coverage column renders blank across all cuts; inventory primary tile shows "—" for Available coverage.
+  - **Cut log waste flag:** toggle on a FINAL cut, save clean. Status column disabled on FINAL row. Un-final attempt rejected with domain error.
+  - **Starting-balance invariant:** attempt a cut exceeding starting stock → rejected with `CUT_LOG_EXCEEDS_STARTING_BALANCE`.
 
 ---
 
-## Resolved decisions (from earlier open questions)
+## Open questions (blocking before final exec)
 
-1. **Back-fill DML — not needed.** User deleted all inventory + import rows before this sweep. New rows get the correct `isImported` default (`false`) and flip to `true` via the imports record view as the UX intends.
-2. **Standalone `POST /api/inventory` create path — ignored this sweep.** Placeholder for a future single-row inventory form; not reachable from the UI today. No "receive now" affordance, no default flip. Leave the route + use case as-is.
-3. **`uncutBalance` → `physicalBalance` rename — dropped.** Purely a naming preference. Sweep 3's categories unit-conversion work introduces `physicalStock` with different math; decide the final name there. No rename this sweep.
-- because it is purely a naming preference we will drop this from this current plan. subject to change in sweep 3 
+1. **Change 5 (availableBalance ↔ uncutBalance semantic swap).** User spec reads: `availableBalance = starting − final cuts`, `uncutBalance = available − pending cuts`. Current code: opposite. Confirm the user's spec is the target so I swap with confidence. If current code is what was actually wanted, we keep the math and just rename fields in the type.
+2. **Change 8 (FINAL → PENDING transition).** Reject outright (current plan), or allow with a confirmation prompt? Reject is simpler and matches the one-way-transition precedent for `isImported`.
+3. **Change 2 (price nullability).** Stored `Decimal?` — null when inventory cost/stockCount not both set. Alternative: require cost at inventory create so `price` is always non-null. Nullable is safer given the current data model allows cost-less inventory; confirm this is acceptable.
+
+Answer these three and the sweep can execute top-to-bottom.
