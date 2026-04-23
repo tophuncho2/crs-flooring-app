@@ -19,6 +19,8 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Drop `store` column — confirmed dead (only in `schema.prisma` + baseline migration; no app reads/writes)
 - [ ] Rename `templateTag` to `unitType`
 - [ ] Add `jobTypeId` + relation to new `FlooringJobType`
+- [ ] Add `managementCompanyId` + relation to `FlooringManagementCompany` (optional)
+- [ ] Add `propertyInstructions` — snapshot from linked property on link, editable thereafter; independent of the existing `instructions` column
 - [ ] Remove `serviceItems` relation (unlink from `FlooringTemplateServiceItem`)
 - [ ] Remove `salesReps` relation (unlink from `FlooringTemplateSalesRep`)
 - [ ] Drop `FlooringTemplateServiceItem` model entirely
@@ -32,7 +34,8 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Drop `googleDocUrl` + `googleDriveSlip` columns — refactor of `apps/web/modules/work-orders/` callers required (see domain/data/application/api-routes layer files)
 - [ ] Remove `status` column
 - [ ] Rename `unitLabel` to `unitNumber` - stays as string, not number only
-- [ ] Make `analytics` relation required (every work order must be linked to an analytics row)
+- [ ] Add `propertyInstructions` — snapshot from linked property on link, editable thereafter; independent of the existing `instructions` column
+- [ ] Keep `analytics` relation optional (work orders are not required to link to an analytics row — prior "make required" item retracted)
 - [ ] Remove `serviceItems` relation (unlink from `FlooringWorkOrderServiceItem`)
 - [ ] Remove `salesReps` relation (unlink from `FlooringWorkOrderSalesRep`)
 - [ ] Drop `FlooringWorkOrderServiceItem` model entirely
