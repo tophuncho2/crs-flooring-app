@@ -18,7 +18,7 @@ Every dashboard page follows the same shape:
 1. **Access guard** — `await require<Module>Access()` (or `requireToolAccess("<slug>")`) returns the user or a 401/403 response. Run before any data fetch.
 2. **Params + search params** — both are `Promise`-typed in Next.js 15+; `await` them.
 3. **Query state parse** — `parseServerTableQueryState(searchParams, { defaultAscending, defaultGrouped, allowedGroupKeys, … })` for list pages.
-4. **Fetch** — call the module's `data/queries.ts` function directly: `getContactsPageData()`, `getManufacturerDetailPageData(id)`. Loaders may call `queries.ts`; they never call `mutations.ts`.
+4. **Fetch** — call the module's `data/queries.ts` function directly (e.g. `get<Module-plural>PageData()`, `get<Module>DetailPageData(id)`). Loaders may call `queries.ts`; they never call `mutations.ts`.
 5. **Result handling** — queries return a discriminated union:
    - `PrismaPageDataResult<T>` = `{ ok: true; data: T } | { ok: false; error: PageError } | { ok: false; notFound: true }`.
    - `PrismaDetailPageResult<T>` — same shape for single records.
@@ -27,8 +27,8 @@ Every dashboard page follows the same shape:
 
 ## Props passed to the client
 
-- List pages: full record arrays as `initialContacts: ContactRow[]` (no DTO layer).
-- Detail pages: full record as `contact: ContactDetail` or `manufacturer: ManufacturerRow`.
+- List pages: full record arrays as `initial<Module-plural>: <Module>Row[]` (no DTO layer).
+- Detail pages: full record as `<module>: <Module>Detail`.
 - Table metadata: `initialTablePreferences` (from `getResolvedUserTablePreference`) and `tableState` (from `parseServerTableQueryState`).
 - Return-to links: `resolveReturnTo(searchParams?.returnTo, "/dashboard/<module>")`.
 
@@ -36,13 +36,13 @@ Every dashboard page follows the same shape:
 
 - **Server side**: `parseServerTableQueryState` reads `searchQuery`, `isAscendingSort`, `isGroupingEnabled`, `groupByKeys` from the URL.
 - **Client side**: `useConfiguredTableState` merges server state with the user's saved preferences; columns declare `sortField` + `groupable`.
-- Pagination is client-managed (no server-side cursor in the reference modules).
+- Pagination is client-managed in the reference implementations (no server-side cursor).
 
 ## Error and loading UX
 
 - Error surface: `<DashboardErrorState title message detail errorCode />` rendered from the page when `!result.ok`.
 - 404s: Next.js `notFound()` — no custom 404 rendering in the page.
-- No explicit `<Suspense>` boundaries in the reference modules; data is `await`ed at the top of the page.
+- No explicit `<Suspense>` boundaries in the canonical shape; data is `await`ed at the top of the page.
 - Client-side form feedback: `useRecordNotices()` on the client, not the loader.
 
 ## Violations checklist

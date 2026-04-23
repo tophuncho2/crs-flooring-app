@@ -12,12 +12,12 @@ The application layer owns use cases: the discrete workflows the system supports
 
 ## Structure per module
 
-Typical contents (contacts as the reference):
+Typical contents:
 
 - `create-<module>.ts` — `create<Module>UseCase(input, client?)`.
 - `update-<module>.ts` — `update<Module>UseCase(id, input, client?)`.
 - `delete-<module>.ts` — `delete<Module>UseCase(id, client?)`.
-- `errors.ts` — module-scoped execution error class (e.g. `ContactExecutionError`).
+- `errors.ts` — module-scoped execution error class (`<Module>ExecutionError`).
 - `types.ts` — input/output types consumed by use cases.
 - `index.ts` — barrel file.
 
@@ -27,7 +27,7 @@ Typical contents (contacts as the reference):
 - Signature: `<verb><Module>UseCase(...args, client?: Prisma.TransactionClient)`. The optional client lets a caller compose use cases inside a larger transaction.
 - Wrap multi-step logic in `withDatabaseTransaction` (or the project's equivalent) when atomicity is required.
 - Throw module-scoped execution errors (`<Module>ExecutionError`) with a `code`, optional `field`, and status hint. Never throw generic `Error`.
-- Catch `Prisma.PrismaClientKnownRequestError` and translate it to a module-scoped execution error (e.g. unique-constraint → `CONTACT_NAME_CONFLICT`).
+- Catch `Prisma.PrismaClientKnownRequestError` and translate it to a module-scoped execution error (e.g. unique-constraint → `<MODULE>_NAME_CONFLICT`).
 
 ## What belongs here
 
@@ -52,14 +52,14 @@ Typical contents (contacts as the reference):
 ## Example
 
 ```typescript
-// packages/application/src/flooring/contacts/delete-contact.ts
-export async function deleteContactUseCase(id: string, client?: Prisma.TransactionClient) {
+// packages/application/src/flooring/<module>/delete-<module>.ts
+export async function delete<Module>UseCase(id: string, client?: Prisma.TransactionClient) {
   return withDatabaseTransaction(async (tx) => {
-    const linkState = await getContactDeleteState(id, tx)
-    if (isContactDeleteBlocked(linkState)) {
-      throw new ContactExecutionError({ code: "CONTACT_IN_USE" })
+    const linkState = await get<Module>DeleteState(id, tx)
+    if (is<Module>DeleteBlocked(linkState)) {
+      throw new <Module>ExecutionError({ code: "<MODULE>_IN_USE" })
     }
-    await deleteContactRecordById(id, tx)
+    await delete<Module>ById(id, tx)
     return { ok: true }
   }, client)
 }

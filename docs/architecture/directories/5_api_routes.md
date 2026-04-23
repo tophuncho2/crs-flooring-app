@@ -16,7 +16,7 @@ The API routes layer is the HTTP boundary. It converts a request into a typed us
 Every route handler follows the same shape:
 
 1. **Policy** — `applyRoutePolicy(request, { toolSlug, capability, rateLimit? })`. Returns either an `AuthorizedRouteContext` or a `Response`; if a `Response` comes back, return it immediately.
-2. **Rate limit** — `enforceQueryRateLimit` for reads, scope-specific limits for writes (e.g. `contacts.write` 60/10min).
+2. **Rate limit** — `enforceQueryRateLimit` for reads, scope-specific limits for writes (e.g. `<module>.write`).
 3. **Parse + validate** — for writes, `parseMutationEnvelope(body, validate<Module>Input, { requireExpectedUpdatedAt })` extracts the typed input and the mutation metadata (idempotency key, expected-updated-at). Validators live in `_validators.ts` and throw typed execution errors (`<Module>ExecutionError`).
 4. **Optimistic lock** — `assertExpectedUpdatedAt({ actual, expected, … })` for PATCH/PUT; returns 409 on conflict.
 5. **Idempotency** — `enforceMutationReceipt` before the write; `finalizeMutationReceipt` after. Replays return the stored response.
@@ -25,13 +25,13 @@ Every route handler follows the same shape:
 
 ## Response shape
 
-- Wrapped objects keyed by the resource: `{ contact: ContactDetail }`, `{ manufacturer: ManufacturerRow }`, `{ contacts: ContactRow[] }`.
+- Wrapped objects keyed by the resource: `{ <module>: <Module>Detail }` for a single record, `{ <module-plural>: <Module>Row[] }` for a collection.
 - Status-only mutations return `{ ok: true }`.
 - Errors are normalized by `routeError` (status, field, payload).
 
 ## Auth and access
 
-- Tool slugs come from `@/modules/shared/access/lookup-domains` (`CONTACTS_TOOL_SLUG`, `MANUFACTURERS_TOOL_SLUG`, etc.).
+- Tool slugs come from `@/modules/shared/access/lookup-domains` (e.g. `<MODULE>_TOOL_SLUG`).
 - Capabilities are passed in the policy call (e.g. `capability: "system.access"`).
 - Routes never read the session directly; `applyRoutePolicy` is the only entry point.
 

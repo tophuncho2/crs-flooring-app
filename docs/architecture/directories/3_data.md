@@ -19,12 +19,12 @@ The data layer is the canonical boundary to persistence. It owns read and write 
 
 ## Structure per module
 
-Typical contents (contacts as the reference):
+Typical contents:
 
-- `read-repository.ts` — `listContacts`, `getContactById`, `getContactDeleteState`, `getContactOptions`, etc.
-- `write-repository.ts` — `createContactRecord`, `updateContactRecord`, `deleteContactRecordById`.
-- Normalizers — Prisma row → domain record mappers (e.g. `normalizeContactDetail`) handling Date → ISO string, null coalescing, relation counts, and enum label mapping. May be colocated in `read-repository.ts` or split out.
-- Include/select shape constants (e.g. `contactCountInclude`).
+- `read-repository.ts` — read functions (`list<Module>s`, `get<Module>ById`, `get<Module>DeleteState`, `get<Module>Options`).
+- `write-repository.ts` — write functions (`create<Module>Record`, `update<Module>Record`, `delete<Module>ById`).
+- Normalizers — Prisma row → domain record mappers handling Date → ISO string, null coalescing, relation counts, and enum label mapping. May be colocated in `read-repository.ts` or split out.
+- Include/select shape constants.
 - `index.ts` — barrel file.
 
 ## Function conventions
@@ -57,13 +57,13 @@ Typical contents (contacts as the reference):
 ## Example
 
 ```typescript
-// packages/db/src/flooring/contacts/read-repository.ts
-export async function getContactById(id: string, client = db): Promise<ContactRecord> {
-  const contact = await client.flooringContact.findUniqueOrThrow({
+// packages/db/src/flooring/<module>/read-repository.ts
+export async function get<Module>ById(id: string, client = db): Promise<<Module>Record> {
+  const row = await client.flooring<Module>.findUniqueOrThrow({
     where: { id },
-    include: contactCountInclude,
+    include: <module>CountInclude,
   })
-  return normalizeContactDetail(contact)
+  return normalize<Module>Detail(row)
 }
 ```
 
