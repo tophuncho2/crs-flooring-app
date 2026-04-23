@@ -12,18 +12,11 @@ Layer contracts (re-affirmed):
 - Domain owns error message strings. Use cases throw module-scoped execution errors with `code` + `status` + the domain-supplied `message`.
 - Route-level concerns (auth, rate limit, idempotency, optimistic locks) are not use-case scope.
 
-## Open questions — answer before execution
+## Decisions (resolved)
 
-1. **Property name uniqueness** — schema has no `@unique` on `Property.name` today. Three choices:
-   - **(a) Add `@unique` via micro-migration (recommended).** Schema-authoritative uniqueness; use case catches P2002 and returns `PROPERTY_NAME_CONFLICT`. Race-free.
-   - **(b) App-layer pre-check only.** Race-prone — two concurrent creates can both pass the check.
-   - **(c) Defer uniqueness.** Skip the rule until a migration is scheduled.
-   Recommend (a).
-
-2. **Property name unique scope** — global, or per-management-company? If (a), schema needs either `@unique` (global) or `@@unique([managementCompanyId, name])` (per-mgmt-co). Global is the simpler default; confirm intent.
-
-3. **Job-type delete block — templates too?** — user stated "no delete if linked to work order". `FlooringTemplate.jobTypeId` also links. Block on **both** (work orders and templates) or **only** on work orders?
-   Recommend both (semantic consistency: if anything references the type, don't delete).
+1. **Property name uniqueness — skip.** No schema change, no app-layer check. `PropertyExecutionError` does not carry a `NAME_CONFLICT` code. Duplicate property names are allowed.
+2. **Property name scope — n/a** (skipped per decision 1).
+3. **Job-type delete blocker — block on both work orders AND templates.** `JobTypeDeleteLinkState` carries both counts; `isJobTypeDeleteBlocked` returns true if either > 0.
 
 ## Structure
 
@@ -71,8 +64,8 @@ export const MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE = "Management company not foun
 
 ```ts
 export const PROPERTY_NAME_REQUIRED_MESSAGE = "Property name is required"
-export const PROPERTY_NAME_CONFLICT_MESSAGE = "Property name must be unique"
 export const PROPERTY_NOT_FOUND_MESSAGE = "Property not found"
+// No NAME_CONFLICT — property name is not unique.
 ```
 
 ### `packages/domain/src/management/job-types/error-messages.ts` (new)
@@ -88,7 +81,7 @@ export const JOB_TYPE_NOT_FOUND_MESSAGE = "Job type not found"
 ```ts
 export type JobTypeDeleteLinkState = {
   workOrderCount: number
-  templateCount: number   // included only if open question #3 resolves to "both"
+  templateCount: number
 }
 
 export function isJobTypeDeleteBlocked(state: JobTypeDeleteLinkState) {
@@ -122,16 +115,9 @@ export async function countTemplatesByJobTypeId(jobTypeId: string, client?) : Pr
 
 Both count into the relevant tables with `where: { jobTypeId }`.
 
-### `packages/db/src/management/properties/read-repository.ts` (existing — add name lookup if needed)
+### Properties data — no additions
 
-If we choose (a) for the uniqueness question, no new read needed — Prisma P2002 handles it.
-If (b), add `propertyNameExists(name: string, client?) : Promise<boolean>` (NOT recommended — race-prone).
-
-### Optional schema micro-migration (choice (a) for question 1)
-
-- `packages/db/prisma/schema.prisma` — add `@unique` to `Property.name` (or `@@unique([managementCompanyId, name])` per question 2).
-- Generate a small migration via `prisma migrate diff` pointed at staging, review, apply via `npm run db:deploy`.
-- Scope: one column addition. Staging already has zero properties (verified in Phase 1), so no backfill.
+Uniqueness is skipped per decision 1. No `propertyNameExists` read, no schema change.
 
 ## Use case shapes
 
@@ -152,9 +138,9 @@ If (b), add `propertyNameExists(name: string, client?) : Promise<boolean>` (NOT 
 
 ### Properties
 
-- **createPropertyUseCase** — same pattern as management-companies, but check `PROPERTY_NAME_CONFLICT` depends on question 1. Instructions field flows through the record input.
-- **updatePropertyUseCase** — same.
-- **deletePropertyUseCase** — `countTemplatesByPropertyId` → `isPropertyDeleteBlocked` → throw `PROPERTY_IN_USE` with `getPropertyDeleteBlockedMessage(state)`.
+- **createPropertyUseCase** — validate name required → `createPropertyRecord` → return detail. No P2002 handling (name not unique). `instructions` + all new schema fields flow through the record input.
+- **updatePropertyUseCase** — validate name-when-provided → `updatePropertyRecord` → catch P2025 → `PROPERTY_NOT_FOUND`.
+- **deletePropertyUseCase** — `countTemplatesByPropertyId` → `isPropertyDeleteBlocked` → throw `PROPERTY_IN_USE` with `getPropertyDeleteBlockedMessage(state)`; else `deletePropertyRecordById` → catch P2025 → `PROPERTY_NOT_FOUND`.
 
 ### Job Types
 
@@ -178,9 +164,9 @@ MANAGEMENT_COMPANY_IN_USE
 ```
 PROPERTY_VALIDATION_FAILED
 PROPERTY_NOT_FOUND
-PROPERTY_NAME_CONFLICT
 PROPERTY_IN_USE
 ```
+(No `NAME_CONFLICT` — property name is not unique.)
 
 ### Job Types error codes
 ```
@@ -216,21 +202,18 @@ Each `errors.ts` exports the class + a union of codes.
 - `packages/db/src/management/job-types/read-repository.ts` — add `countWorkOrdersByJobTypeId` + `countTemplatesByJobTypeId`.
 - `packages/application/src/index.ts` — add three new module barrels.
 
-**Optional (question 1 = (a)):**
-- `packages/db/prisma/schema.prisma` — `@unique` on `Property.name`.
-- New migration folder under `packages/db/prisma/migrations/` applied to staging.
+(No schema migration this phase.)
 
 ## Execution order
 
 1. **Pre-flight** — all three packages build green (confirm baseline after Phase 4).
-2. **Question 1 + 2 + 3 answered** before coding.
-3. **Domain additions** (error-messages + job-type delete-rules), wire into index barrels, build `@builders/domain` green.
-4. **Data additions** (job-type count helpers, optional property schema migration), build `@builders/db` green.
-5. **Application — management companies** module files (errors → types → create → update → delete → index), wire into `packages/application/src/index.ts`. Build `@builders/application` green after each sub-module lands.
-6. **Application — properties** module files (same).
-7. **Application — job types** module files (same).
-8. **Verification** (see below).
-9. **Single commit**: "Phase 5: application layer for management-companies, properties, job-types (create/update/delete use cases)".
+2. **Domain additions** (error-messages for all three modules + job-type delete-rules), wire into index barrels, build `@builders/domain` green.
+3. **Data additions** (job-type `countWorkOrdersByJobTypeId` + `countTemplatesByJobTypeId`), build `@builders/db` green.
+4. **Application — management companies** module files (errors → types → create → update → delete → index), wire into `packages/application/src/index.ts`. Build `@builders/application` green after each sub-module lands.
+5. **Application — properties** module files (same).
+6. **Application — job types** module files (same).
+7. **Verification** (see below).
+8. **Single commit**: "Phase 5: application layer for management-companies, properties, job-types (create/update/delete use cases)".
 
 ## Concerns
 
@@ -238,7 +221,7 @@ Each `errors.ts` exports the class + a union of codes.
 2. **Form validation in use cases is minimal.** We only check `name.trim() !== ""` since the rich `validateXForm` functions include UI-form fields (zip normalization, etc.) that the record input doesn't carry. The full form validators still live in domain for the UI to call pre-submit.
 3. **Thin-wrapper write-mutations in module `data/mutations.ts`** (from Phase 3) still exist and bypass use cases. Phase 7 API-route rebuild will delete those thin wrappers in favor of importing use cases from `@builders/application`. This phase does not touch those wrappers.
 4. **Job-type delete query cost** — counting work-orders + templates on every delete is O(indexed). Both FK columns have indexes (`@@index([jobTypeId])` on template + work-order). No risk.
-5. **Property uniqueness** — if question 1 resolves to (c) defer, the use case still throws `PROPERTY_VALIDATION_FAILED` on empty name, but uniqueness isn't enforced. Document the gap.
+5. **Property uniqueness gap (accepted).** `Property.name` is not unique at the schema level and `createPropertyUseCase` does not check for duplicates. Two properties with identical names are legal. Document in the plan and revisit only if a future requirement forces the issue.
 6. **P2025 catch** — Prisma throws on update/delete when no record matched. Caught at the use-case boundary and translated to `*_NOT_FOUND` with the domain-supplied message.
 7. **Transaction composition** — all three delete use cases do a count-read + delete-write inside a single transaction; if another process creates a linked row between the count and delete, the FK constraint at delete time would fail. Accept this race (rare; FK error would bubble as Prisma error). Alternative: serialize via `SELECT FOR UPDATE` — overkill for current scale.
 8. **Tests are out of scope** this phase, per sweep direction.
