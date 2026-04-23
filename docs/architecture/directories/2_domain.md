@@ -6,7 +6,7 @@ The domain layer is the source of truth for types, rules, and invariants. It con
 
 ## Location
 
-- Canonical path: `packages/domain/src/flooring/<module>/`
+- Canonical path: `packages/domain/src/flooring/<module>/` or `packages/domain/src/management/<module>/`
 - Exported via `@builders/domain`.
 - Domain never lives inside `apps/web/modules/<module>/`.
 

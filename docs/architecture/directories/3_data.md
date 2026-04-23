@@ -6,7 +6,7 @@ The data layer is the canonical boundary to persistence. It owns read and write 
 
 ## Location
 
-- Canonical path: `packages/db/src/flooring/<module>/`
+- Canonical path: `packages/db/src/flooring/<module>/` or `packages/db/src//management/<module>/`
 - Exported via `@builders/db`.
 - Persistence code does not live inside `apps/web/modules/<module>/`.
 
