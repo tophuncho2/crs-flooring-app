@@ -14,7 +14,7 @@ Layer contracts being respected:
 - Application layer is Phase 4 — it composes data + domain.
 
 ## Reference pattern (verbatim from existing repos)
-
+                                       
 `packages/db/src/flooring/contacts/` is the canonical shape:
 
 ```
