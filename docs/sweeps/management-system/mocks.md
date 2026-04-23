@@ -29,6 +29,11 @@ model FlooringManagementCompany {
   @@map("flooring_management_company")
 }
 ```
+Prisma
+**need a link to work orders**
+**need a link to templates**
+
+
 
 ### `Property` — `properties`
 
@@ -329,9 +334,27 @@ model FlooringService {
 }
 ```
 
-### `user-data/job-type`
+### `FlooringJobType` — `user-data/job-type`
 
-_No Prisma model yet — see `plans.md` step 3 ("add job types module")._
+_Planned — not yet in `schema.prisma`. See `plans.md` step 3 ("add job types module")._
+
+```prisma
+model FlooringJobType {
+  id         String              @id @default(uuid())
+  name       String              @unique
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  templates  FlooringTemplate[]
+  workOrders FlooringWorkOrder[]
+
+  @@index([name])
+  @@map("flooring_job_type")
+}
+```
+
+> Companion changes on the existing models:
+> - `FlooringTemplate` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
+> - `FlooringWorkOrder` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
 
 ---
 
@@ -362,5 +385,26 @@ enum FlooringContactType {
   SALES_REP
   CONTRACTOR
   OTHER
+}
+```
+
+---
+
+## Analytics
+
+### `FlooringAnalytics`
+
+```prisma
+model FlooringAnalytics {
+  id                String            @id @default(uuid())
+  workOrderId       String            @unique
+  workOrder         FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  totalMaterialCost Decimal           @db.Decimal(12, 2)
+  totalServiceCost  Decimal           @db.Decimal(12, 2)
+  totalCost         Decimal           @db.Decimal(12, 2)
+  createdAt         DateTime          @default(now())
+
+  @@index([workOrderId])
+  @@map("flooring_analytics")
 }
 ```
