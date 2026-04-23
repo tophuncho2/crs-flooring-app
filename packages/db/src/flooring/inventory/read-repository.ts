@@ -1,5 +1,7 @@
 import {
   buildFlooringProductDisplayName,
+  computeCutCoverage,
+  computeInventoryAvailableCoverage,
   formatFullLocationCode,
   formatLocationRafterLevel,
 } from "@builders/domain"
@@ -67,16 +69,26 @@ function buildLocationShortCode(location: InventoryRowPayload["location"]): stri
   return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
 }
 
-function computeAvailableCoverage(
-  availableBalance: number,
-  coveragePerUnit: number | null,
-): string {
-  if (coveragePerUnit === null) return ""
-  return toFixedString(availableBalance * coveragePerUnit)
+function formatCoverage(value: number | null): string {
+  return value === null ? "" : toFixedString(value)
 }
 
-export function normalizeCutLogRow(row: CutLogRowPayload): InventoryCutLogRecord {
+export type CutLogNormalizeContext = {
+  categorySlug: string | null
+  coveragePerUnit: number | null
+}
+
+export function normalizeCutLogRow(
+  row: CutLogRowPayload,
+  context: CutLogNormalizeContext,
+): InventoryCutLogRecord {
   const status = row.status === "FINAL" ? "FINAL" : "PENDING"
+  const cutNumber = toNumber(row.cut)
+  const coverage = computeCutCoverage({
+    cut: cutNumber,
+    coveragePerUnit: context.coveragePerUnit,
+    category: { slug: context.categorySlug },
+  })
   return {
     id: row.id,
     inventoryId: row.inventoryId,
@@ -86,6 +98,10 @@ export function normalizeCutLogRow(row: CutLogRowPayload): InventoryCutLogRecord
     cut: row.cut.toString(),
     after: row.after.toString(),
     status,
+    isWaste: row.isWaste,
+    cost: toDecimalString(row.cost),
+    freight: toDecimalString(row.freight),
+    coverage: formatCoverage(coverage),
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -143,7 +159,13 @@ export function normalizeInventoryRow(
     updatedAt: payload.updatedAt.toISOString(),
     uncutBalance: toFixedString(uncut),
     availableBalance: toFixedString(available),
-    availableCoverage: computeAvailableCoverage(available, coveragePerUnit),
+    availableCoverage: formatCoverage(
+      computeInventoryAvailableCoverage({
+        availableBalance: available,
+        coveragePerUnit,
+        category: { slug: payload.product.category.slug },
+      }),
+    ),
     awaitingCutBalance: toFixedString(aggregate.awaitingCut),
     totalCutBalance: toFixedString(aggregate.totalCut),
   }
@@ -154,9 +176,13 @@ export function normalizeInventoryDetail(
   aggregate?: InventoryCutLogAggregate,
 ): InventoryDetailRecord {
   const resolved = aggregate ?? aggregateCutLogs(payload.cutLogs)
+  const categorySlug = payload.product.category.slug
+  const coveragePerUnit =
+    payload.product.coveragePerUnit === null ? null : toNumber(payload.product.coveragePerUnit)
+  const context: CutLogNormalizeContext = { categorySlug, coveragePerUnit }
   return {
     ...normalizeInventoryRow(payload, resolved),
-    cutLogs: payload.cutLogs.map(normalizeCutLogRow),
+    cutLogs: payload.cutLogs.map((log) => normalizeCutLogRow(log, context)),
   }
 }
 

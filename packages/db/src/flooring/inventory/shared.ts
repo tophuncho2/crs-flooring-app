@@ -36,6 +36,7 @@ export const inventoryRowSelect = {
       category: {
         select: {
           id: true,
+          slug: true,
           name: true,
           stockUnit: { select: { name: true, abbreviation: true } },
           sendUnit: { select: { name: true, abbreviation: true } },
@@ -66,6 +67,9 @@ export const cutLogRowSelect = {
   cut: true,
   after: true,
   status: true,
+  cost: true,
+  freight: true,
+  isWaste: true,
   notes: true,
   createdAt: true,
   updatedAt: true,

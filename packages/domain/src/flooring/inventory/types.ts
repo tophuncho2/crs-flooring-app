@@ -1,18 +1,6 @@
-export type CutLogStatus = "PENDING" | "FINAL"
+export { CUT_LOG_STATUS_VALUES, type CutLogRow, type CutLogStatus } from "../cut-logs/types.js"
 
-export type CutLogRow = {
-  id: string
-  inventoryId: string
-  workOrderId: string | null
-  workOrderItemId: string | null
-  before: string
-  cut: string
-  after: string
-  status: CutLogStatus
-  notes: string
-  createdAt: string
-  updatedAt: string
-}
+import type { CutLogRow } from "../cut-logs/types.js"
 
 export type InventoryRow = {
   id: string
