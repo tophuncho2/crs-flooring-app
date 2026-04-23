@@ -41,48 +41,61 @@ References for new work:
 
 ```
 packages/domain/src/management/
-├── management-companies/   (existing — re-verify)
-├── properties/             (existing — re-verify; add delete-rules.ts)
-├── templates/              NEW
+├── management-companies/        (existing — re-verify; add delete-rules.ts)
+├── properties/                  (existing — re-verify; add delete-rules.ts)
+├── templates/                   NEW
 │   ├── index.ts
-│   ├── types.ts            TemplateDetail, TemplateRow, TemplateOption, TemplateForm, TemplateMaterialItemRow, TemplateMaterialItemForm
-│   ├── form-rules.ts       validateTemplateForm (propertyId required), toTemplateForm
-│   ├── delete-rules.ts     isTemplateDeleteBlocked → always false (material items cascade, WOs SetNull)
-│   └── normalizers.ts      normalizeTemplate{,ListRow,Option,MaterialItem}
-└── job-types/              NEW
+│   ├── types.ts                 TemplateDetail, TemplateRow, TemplateOption, TemplateForm
+│   ├── form-rules.ts            validateTemplateForm (propertyId required), toTemplateForm
+│   ├── delete-rules.ts          isTemplateDeleteBlocked → always false (material items cascade, WOs SetNull)
+│   ├── normalizers.ts           normalizeTemplate{,ListRow,Option}
+│   └── material-items/          NEW subfolder — mirrors warehouses/location-rules style
+│       ├── index.ts
+│       ├── types.ts             TemplateMaterialItemRow, TemplateMaterialItemForm
+│       ├── rules.ts             validateTemplateMaterialItemForm, diff rules for saveSection
+│       └── normalizers.ts       normalizeTemplateMaterialItem
+└── job-types/                   NEW (writeable — not UI-only)
     ├── index.ts
-    ├── types.ts            JobType, JobTypeOption
-    └── normalizers.ts      normalizeJobType{,Option}
-
-packages/domain/src/management/management-companies/
-└── delete-rules.ts         isManagementCompanyDeleteBlocked (blocked if propertyCount > 0)
+    ├── types.ts                 JobType, JobTypeOption, JobTypeForm
+    ├── form-rules.ts            validateJobTypeForm (name required, unique-name check is DB-side)
+    └── normalizers.ts           normalizeJobType{,Option}
 
 packages/domain/src/flooring/work-orders/
-├── index.ts                RE-WRITE (current file re-exports dead allocations.ts + stub)
-├── types.ts                NEW: WorkOrderDetail, WorkOrderRow, WorkOrderOption, WorkOrderForm
-├── form-rules.ts           NEW: validateWorkOrderForm (propertyId required), toWorkOrderForm
-├── delete-rules.ts         NEW: isWorkOrderDeleteBlocked → always false
-└── normalizers.ts          NEW: normalizeWorkOrder{,ListRow,Option}
+├── index.ts                     RE-WRITE (current file re-exports dead allocations + stub)
+├── types.ts                     NEW: WorkOrderDetail, WorkOrderRow, WorkOrderOption, WorkOrderForm
+├── form-rules.ts                NEW: validateWorkOrderForm (propertyId required), toWorkOrderForm
+├── delete-rules.ts              NEW: isWorkOrderDeleteBlocked → always false
+├── normalizers.ts               NEW: normalizeWorkOrder{,ListRow,Option}
+└── material-items/              DEFERRED — placeholder location documented, NOT created this phase
+                                 (work-order material items stay broken until a later phase picks them up;
+                                  pattern will mirror templates/material-items/ when built)
 
 packages/db/src/management/
-├── management-companies/   (existing)
-├── properties/             (existing)
-├── templates/              NEW
-│   ├── read-repository.ts  listTemplates, listTemplateOptions, getTemplateById, countTemplates, listTemplateMaterialItems
-│   ├── write-repository.ts createTemplateRecord, updateTemplateRecord, deleteTemplateRecordById, create/update/delete material items, saveTemplateMaterialItemsSection (diff)
-│   └── index.ts
-└── job-types/              NEW (READ ONLY)
-    ├── read-repository.ts  listJobTypes, listJobTypeOptions, getJobTypeById
+├── management-companies/        (existing)
+├── properties/                  (existing)
+├── templates/                   NEW
+│   ├── read-repository.ts       listTemplates, listTemplateOptions, getTemplateById, countTemplates
+│   ├── write-repository.ts      createTemplateRecord, updateTemplateRecord, deleteTemplateRecordById
+│   ├── index.ts
+│   └── material-items/          NEW subfolder — mirrors domain layout
+│       ├── read-repository.ts   listTemplateMaterialItems(templateId, client?)
+│       ├── write-repository.ts  create/update/delete + saveTemplateMaterialItemsSection (diff)
+│       └── index.ts
+└── job-types/                   NEW (read + write)
+    ├── read-repository.ts       listJobTypes, listJobTypeOptions, getJobTypeById, countJobTypes
+    ├── write-repository.ts      createJobTypeRecord, updateJobTypeRecord, deleteJobTypeRecordById
     └── index.ts
 
 packages/db/src/flooring/work-orders/   NEW (currently empty)
-├── shared.ts               workOrderRowSelect, workOrderDetailSelect, WorkOrderRowPayload, WorkOrderDetailPayload
-├── read-repository.ts      listWorkOrders, getWorkOrderById, listWorkOrderOptions, countWorkOrders
-├── write-repository.ts     createWorkOrderRecord, updateWorkOrderRecord, deleteWorkOrderRecordById
+├── shared.ts                    workOrderRowSelect, workOrderDetailSelect, WorkOrderRowPayload, WorkOrderDetailPayload
+├── read-repository.ts           listWorkOrders, getWorkOrderById, listWorkOrderOptions, countWorkOrders
+├── write-repository.ts          createWorkOrderRecord, updateWorkOrderRecord, deleteWorkOrderRecordById
 └── index.ts
+(material-items/ subfolder: DEFERRED — same note as domain side)
 
 packages/db/scripts/
-└── seed-job-types.js       NEW (seed script for FlooringJobType; user supplies initial list)
+└── seed-job-types.js            NEW (seeds initial job-type names; user will supply the list.
+                                 Canonical list can be edited later via the write repo once a UI ships.)
 ```
 
 ## Files to delete outright (dead logic)
@@ -168,8 +181,8 @@ packages/db/scripts/
 ## Templates — what gets built in `packages/domain/src/management/templates/`
 
 ```ts
-// types.ts
-export type TemplateTemplateItemRow = {
+// templates/material-items/types.ts
+export type TemplateMaterialItemRow = {
   id: string
   productId: string
   productName: string
@@ -178,6 +191,14 @@ export type TemplateTemplateItemRow = {
   notes: string
 }
 
+export type TemplateMaterialItemForm = {
+  productId: string
+  quantity: string
+  unitPrice: string
+  notes: string
+}
+
+// templates/types.ts
 export type TemplateListRow = {
   id: string
   templateNumber: string
@@ -200,7 +221,7 @@ export type TemplateDetail = TemplateListRow & {
   instructions: string
   propertyInstructions: string
   templateNotes: string
-  items: TemplateTemplateItemRow[]
+  items: TemplateMaterialItemRow[]   // from material-items/types.ts
 }
 
 export type TemplateOption = { id: string; templateNumber: string; unitType: string }
@@ -280,22 +301,62 @@ export type WorkOrderForm = {
 // form-rules.ts / delete-rules.ts / normalizers.ts mirror the template shape.
 ```
 
-## Job Types — read-only
+## Job Types — read + write, seeded initial data
+
+A job type is just a name string surfaced as a dropdown on templates and work orders. No UI this sweep — seed script loads initial values. Write repo still ships (user confirmed) so a future minimal UI or seed-rerun can add/edit/delete without a retrofit.
 
 ```ts
 // packages/domain/src/management/job-types/types.ts
 export type JobType = { id: string; name: string }
 export type JobTypeOption = JobType
+export type JobTypeForm = { name: string }
+
+// packages/domain/src/management/job-types/form-rules.ts
+export function validateJobTypeForm(input: JobTypeForm) {
+  if (!input.name.trim()) return "Job type name is required"
+  return ""  // uniqueness is DB-side (`name String @unique` on FlooringJobType)
+}
 ```
 
 ```ts
 // packages/db/src/management/job-types/read-repository.ts
-export async function listJobTypes(client?)  // all rows, ordered by name
+export async function listJobTypes(client?)
 export async function listJobTypeOptions(client?)
 export async function getJobTypeById(id, client?)
+export async function countJobTypes(client?)
+
+// packages/db/src/management/job-types/write-repository.ts
+export async function createJobTypeRecord(input: { name: string }, client?)
+export async function updateJobTypeRecord(id, input: Partial<{ name: string }>, client?)
+export async function deleteJobTypeRecordById(id, client?)
 ```
 
-No write repo. Seed script stubs out with a placeholder list; user fills with real job types later.
+Seed script at `packages/db/scripts/seed-job-types.js` ships with a TODO placeholder list. User supplies the canonical names; rerunning the script is idempotent (upsert by `name`).
+
+## Templates — material items co-located under templates
+
+Material items are a **child section** of a template, not a separate module. Following the warehouses pattern where `location-rules.ts` and `section-rules.ts` sit alongside `warehouse-rules.ts`, templates get a `material-items/` subfolder inside both `packages/domain/src/management/templates/` and `packages/db/src/management/templates/`:
+
+```ts
+// packages/domain/src/management/templates/material-items/types.ts
+// (see "Templates — what gets built" section above)
+
+// packages/domain/src/management/templates/material-items/rules.ts
+export function validateTemplateMaterialItemForm(input: TemplateMaterialItemForm) {
+  if (!input.productId) return "Product is required"
+  if (!input.quantity || Number(input.quantity) <= 0) return "Quantity must be greater than zero"
+  return ""
+}
+// plus any diff helpers (computeMaterialItemDiff(current, next))
+
+// packages/db/src/management/templates/material-items/write-repository.ts
+export async function createTemplateMaterialItemRecord(templateId, input, client?)
+export async function updateTemplateMaterialItemRecord(id, input, client?)
+export async function deleteTemplateMaterialItemRecordById(id, client?)
+export async function saveTemplateMaterialItemsSection(templateId, diff, client?)  // atomic diff-save
+```
+
+**Work-order material items are deferred this phase** — but the intent is the same nesting: `packages/domain/src/flooring/work-orders/material-items/` and `packages/db/src/flooring/work-orders/material-items/` when a later phase picks them up.
 
 ## Execution order
 
@@ -304,9 +365,9 @@ No write repo. Seed script stubs out with a placeholder list; user fills with re
 3. **Contacts cleanup** — same pattern.
 4. **Management companies** — add `delete-rules.ts` to domain; add `countPropertiesByManagementCompanyId(client?)` helper to mgmt-co read repo so the use-case can consult it later (Phase 5).
 5. **Properties** — add `delete-rules.ts` to domain; add `countTemplatesByPropertyId(client?)` helper to properties read repo.
-6. **Job Types** — create domain + read-only data repo + seed script stub; wire into `packages/db/src/index.ts` + `packages/domain/src/index.ts`.
-7. **Templates domain** — new folder under `packages/domain/src/management/templates/`; wire barrel into domain package index.
-8. **Templates data** — new folder under `packages/db/src/management/templates/`; wire barrel into db package index.
+6. **Job Types** — create domain (types + form-rules) + read repo + write repo + seed script stub; wire into `packages/db/src/index.ts` + `packages/domain/src/index.ts`.
+7. **Templates domain** — new folder `packages/domain/src/management/templates/` with parent files (`types.ts`, `form-rules.ts`, `delete-rules.ts`, `normalizers.ts`) **plus** the `material-items/` subfolder (`types.ts`, `rules.ts`, `normalizers.ts`, `index.ts`). Parent `index.ts` re-exports through the subfolder barrel. Wire into domain package index.
+8. **Templates data** — new folder `packages/db/src/management/templates/` with parent `read-repository.ts` + `write-repository.ts` **plus** `material-items/` subfolder (read + write + index). Wire into db package index.
 9. **Templates module purge** — delete dead files/folders, rewrite `apps/web/modules/templates/data/{queries,mutations}.ts` as thin boundary wrappers pointing at `@builders/db`. Delete module root `services.ts` / `queries.ts` / `mutations.ts` / `types.ts` / `validators.ts` — replaced by canonical imports + a single `validators.ts` (HTTP parser) that only contains the new shape.
 10. **Templates consumers** — repoint dashboard pages + remaining API routes (`/api/templates/...`) at `@builders/db` / `@builders/domain`. Delete the dead route folders (`service-items`, `sales-reps`, `calculations`).
 11. **Work Orders domain** — nuke `packages/domain/src/flooring/work-orders/allocations/`, `allocations.ts`, `reservation-semantics.ts`. Add new `types.ts`, `form-rules.ts`, `delete-rules.ts`, `normalizers.ts`, `index.ts`.
@@ -319,28 +380,18 @@ No write repo. Seed script stubs out with a placeholder list; user fills with re
 
 ## Concerns
 
-1. **Application layer cross-over.** Only two files in `packages/application/` get edited: `delete-service.ts` and `delete-contact.ts`. Scope creep is minimal and justified (collateral damage from dropping the domain predicates). Everything else in `packages/application/` remains untouched and will be rewritten in Phase 5.
-- goos 
-2. **UI cascades.** Many record-panel files reference types that are disappearing (e.g., `DraftWorkOrder.status`). Where a component still renders a field we're dropping (status dropdown, pad product select, service-items grid, sales-reps grid, template sync modal), the component's file is deleted outright in this phase. The remaining primary-fields section for each module will have compile errors against the new types until Phase 6 rebuilds the UI — this is the expected red-build surface.
-- confirn, ui is out of scope
-3. **Dashboard pages** for templates and work-orders will compile-error on removed imports. Acceptable for this phase — the page files get surgical fixes (drop the dead import, swap to canonical data reads) so the app can at least resolve modules. The full UI doesn't need to render for Phase 4 to ship.
-- good
-4. **API routes** — any route tied to a deleted flow must be physically removed, not just have its handler gutted, otherwise Next.js would still resolve it. Removing the route folder also removes the file from the router.
-- agreed. api routes will be rebuilt / restuctured for the modules in scope in next phases after application is set up
-5. **Job-types seed script** ships as a stub with TODO comments. User will supply the canonical list; first working seed lands before the templates/work-orders UI goes live in Phase 7.
-- agreed, job type is just regular string text being linked by a dropdown in templates and work orders. still need domaian read and write. 
-6. **Work Orders domain location.** User confirmed stays under `flooring/` (with manufacturers + warehouses as reference). Everything else in the sweep lives under `management/`. Cross-package imports are fine — both packages export through their barrels.
-- confirmed. templates goes under management/ however.
-7. **Services/contacts delete-rules removal.** Deleting `isContactDeleteBlocked` and `isServiceDeleteBlocked` from domain means no UI messaging remains for blocked deletes. Since the relations no longer exist, deletion is always safe at the DB level — the messages were dead. Module UI doesn't currently render those messages (verified in scan), so no UI regression.
-- agreed
-8. **`analytics` on work orders stays optional** (user retracted the "make required" earlier). The new domain `WorkOrderDetail` doesn't surface analytics at all; analytics is a separate module scope for a later phase.
-- agreed. dont worry about analytics yet,.
-9. **Deferred files stay put** (we don't touch them): `apps/web/modules/work-orders/record/panel/sections/work-order-material-items-section.tsx`, `use-work-order-material-section.ts`, material API routes, cut-log wiring. They're in a known-broken state after this phase (references to removed types / old signatures); a later phase picks them up.
-- yes work order material items are broken right now. still keep material item domain tied with the parent work order. so the domain and data layer for work order and template material items go with the template or work order domain. not seperate directories. 
-- look at warehouses domain. the location / section rules have there own file. work orders and templates should follow that pattern for material items (cut logs still out of scope). prefferebly material items have a folder under either template and work order in domain. so example is domain/src/management/templates/material-items/rules ectt. files
-10. **Reservation semantics** — if any non-auto-allocation consumer imports from `packages/domain/src/flooring/work-orders/reservation-semantics.ts`, the grep comes back empty (file is a stub). Safe to delete.
-- agreed, auto allocation is stale, worker and relay flows will fix these later.
-- stale code can go, worker and relay services stay.
+1. **Application-layer cross-over (confirmed).** Only `packages/application/src/flooring/services/delete-service.ts` and `.../contacts/delete-contact.ts` get edited this phase — they consume the domain delete predicates we're removing. Everything else in `packages/application/` remains untouched; full rewrite is Phase 5.
+2. **UI out of scope (confirmed).** Deleted section components + controllers are gone outright. Primary-fields sections for templates and work-orders will have compile errors against the new types — accepted as the Phase-6 surface. Dashboard pages get surgical fixes (drop dead imports, repoint to canonical reads) so imports at least resolve; rendering correctness is not required this phase.
+3. **API routes (confirmed).** Dead route folders are physically removed (Next.js would otherwise still resolve them). All surviving routes for in-scope modules will be rebuilt after the application layer ships (Phase 5+).
+4. **Job Types — write repo included (confirmed).** Job type is a simple `{ name }` dropdown value. Domain gets types + form-rules + normalizers. Data gets both read and write repos. Seed script populates initial values; rerun is idempotent via `upsert` on the unique `name`.
+5. **Work Orders domain location (confirmed).** Stays under `packages/domain/src/flooring/work-orders/`. Templates, management-companies, properties, and job-types live under `management/`.
+6. **Services / contacts delete-rules removal (confirmed).** `isServiceDeleteBlocked` and `isContactDeleteBlocked` are dead code — relations don't exist. No UI regression (list/detail views don't render blocked-delete messaging).
+7. **Analytics (confirmed).** Stays optional. `WorkOrderDetail` does not surface analytics; out of scope until a later phase revisits it.
+8. **Material items placement (confirmed).** Material-item domain + data lives **as a subfolder under its parent**, not a sibling module:
+   - Templates: `packages/domain/src/management/templates/material-items/` + `packages/db/src/management/templates/material-items/` (IN SCOPE this phase — templates material items are built).
+   - Work Orders: `packages/domain/src/flooring/work-orders/material-items/` + `packages/db/src/flooring/work-orders/material-items/` (DEFERRED — documented but not created this phase; the existing broken module files stay broken until a later phase picks them up).
+   - Pattern mirrors warehouses (where `location-rules.ts` and `section-rules.ts` live alongside `warehouse-rules.ts`), but with a dedicated subfolder given material-items has its own types + rules + normalizers + two repos.
+9. **Auto-allocation + reservation-semantics deletion (confirmed).** All stale. Worker and relay services stay intact (they're independent lifecycle; the workflow wiring to auto-allocation is dead but the infrastructure packages are fine). A future phase rebuilds allocation after the core modules stabilize.
 
 
 ## Verification
