@@ -1,163 +1,25 @@
-import { Prisma, prisma } from "@builders/db"
 import {
+  countManagementCompanies,
   createPrismaPageLoadIssue,
+  getManagementCompanyById,
   isPrismaNotFoundError,
+  listManagementCompanies,
+  listManagementCompanyOptions,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import {
-  normalizeManagementCompany,
-  normalizeManagementCompanyListRow,
-  normalizeManagementCompanyOption,
-} from "@builders/domain"
+import { createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 
-function buildManagementCompaniesWhere(searchQuery: string): Prisma.FlooringManagementCompanyWhereInput | undefined {
-  if (!searchQuery) return undefined
-
+function toListSort(tableState: ServerTableQueryState) {
   return {
-    OR: [
-      { name: { contains: searchQuery, mode: "insensitive" } },
-      { streetAddress: { contains: searchQuery, mode: "insensitive" } },
-      { city: { contains: searchQuery, mode: "insensitive" } },
-      { state: { contains: searchQuery, mode: "insensitive" } },
-      { postalCode: { contains: searchQuery, mode: "insensitive" } },
-      { phone: { contains: searchQuery, mode: "insensitive" } },
-      { email: { contains: searchQuery, mode: "insensitive" } },
-      {
-        properties: {
-          some: {
-            OR: [
-              { name: { contains: searchQuery, mode: "insensitive" } },
-              { streetAddress: { contains: searchQuery, mode: "insensitive" } },
-              { city: { contains: searchQuery, mode: "insensitive" } },
-              { state: { contains: searchQuery, mode: "insensitive" } },
-              { postalCode: { contains: searchQuery, mode: "insensitive" } },
-            ],
-          },
-        },
-      },
-    ],
+    direction: tableState.isAscendingSort ? ("asc" as const) : ("desc" as const),
+    groupByKeys: tableState.groupByKeys,
+    isGroupingEnabled: tableState.isGroupingEnabled,
   }
 }
 
-function buildManagementCompaniesOrderBy(
-  tableState: ServerTableQueryState,
-): Prisma.FlooringManagementCompanyOrderByWithRelationInput[] {
-  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
-  const orderBy: Prisma.FlooringManagementCompanyOrderByWithRelationInput[] = []
-  const fieldMap: Record<string, Prisma.FlooringManagementCompanyOrderByWithRelationInput> = {
-    company: { name: direction },
-    street: { streetAddress: direction },
-    city: { city: direction },
-    state: { state: direction },
-    zip: { postalCode: direction },
-    phone: { phone: direction },
-    email: { email: direction },
-    fullAddress: { streetAddress: direction },
-  }
-
-  if (tableState.isGroupingEnabled) {
-    for (const groupKey of tableState.groupByKeys) {
-      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
-    }
-  }
-
-  appendUniqueOrderBy(orderBy, { name: direction })
-
-  return orderBy
-}
-
-export async function listManagementCompanies(
-  pagination: { skip: number; take: number } | undefined,
-  tableState: ServerTableQueryState,
-) {
-  const companies = await prisma.flooringManagementCompany.findMany({
-    where: buildManagementCompaniesWhere(tableState.searchQuery),
-    orderBy: buildManagementCompaniesOrderBy(tableState),
-    select: {
-      id: true,
-      updatedAt: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      phone: true,
-      email: true,
-      _count: {
-        select: { properties: true },
-      },
-      properties: {
-        select: {
-          id: true,
-          name: true,
-        },
-        orderBy: { name: "asc" },
-        take: 3,
-      },
-    },
-    ...(pagination ?? {}),
-  })
-
-  return companies.map(normalizeManagementCompanyListRow)
-}
-
-export async function listManagementCompanyOptions() {
-  const companies = await prisma.flooringManagementCompany.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  })
-
-  return companies.map(normalizeManagementCompanyOption)
-}
-
-export async function getManagementCompanyById(id: string) {
-  const company = await prisma.flooringManagementCompany.findUniqueOrThrow({
-    where: { id },
-    select: {
-      id: true,
-      updatedAt: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      phone: true,
-      email: true,
-      properties: {
-        select: {
-          id: true,
-          name: true,
-          streetAddress: true,
-          city: true,
-          state: true,
-          postalCode: true,
-          templates: {
-            select: {
-              id: true,
-              templateTag: true,
-              warehouse: {
-                select: { name: true },
-              },
-              _count: {
-                select: {
-                  items: true,
-                  serviceItems: true,
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-        },
-        orderBy: { name: "asc" },
-      },
-    },
-  })
-
-  return normalizeManagementCompany(company)
-}
+export { listManagementCompanies, listManagementCompanyOptions, getManagementCompanyById }
 
 export async function getManagementCompanyDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   company: Awaited<ReturnType<typeof getManagementCompanyById>>
@@ -187,10 +49,13 @@ export async function getManagementCompanyDetailPageData(id: string): Promise<Pr
 }
 
 async function loadManagementCompaniesPageData(page: number, tableState: ServerTableQueryState) {
-  const where = buildManagementCompaniesWhere(tableState.searchQuery)
-  const totalItems = await prisma.flooringManagementCompany.count({ where })
+  const totalItems = await countManagementCompanies({ searchQuery: tableState.searchQuery })
   const pagination = createServerPagination({ page, totalItems })
-  const initialCompanies = await listManagementCompanies({ skip: pagination.skip, take: pagination.take }, tableState)
+  const initialCompanies = await listManagementCompanies({
+    searchQuery: tableState.searchQuery,
+    sort: toListSort(tableState),
+    pagination: { skip: pagination.skip, take: pagination.take },
+  })
 
   return {
     pagination: {

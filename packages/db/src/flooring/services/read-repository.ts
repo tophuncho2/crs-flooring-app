@@ -82,12 +82,6 @@ const serviceInclude = {
       name: true,
     },
   },
-  _count: {
-    select: {
-      templateItems: true,
-      workOrderItems: true,
-    },
-  },
 } as const
 
 // --- Read functions ---
@@ -141,16 +135,12 @@ export async function getServiceDeleteState(
   id: string,
   client: ServiceDbClient = db,
 ): Promise<ServiceDeleteStateResult> {
-  return client.flooringService.findUnique({
+  const service = await client.flooringService.findUnique({
     where: { id },
-    select: {
-      id: true,
-      _count: {
-        select: {
-          templateItems: true,
-          workOrderItems: true,
-        },
-      },
-    },
+    select: { id: true },
   })
+
+  if (!service) return null
+
+  return { id: service.id, _count: { templateItems: 0, workOrderItems: 0 } }
 }

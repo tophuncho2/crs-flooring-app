@@ -6,15 +6,6 @@ type ContactDbClient = PrismaClient | Prisma.TransactionClient
 
 type ContactType = "SALES_REP" | "CONTRACTOR" | "OTHER"
 
-const contactCountInclude = {
-  _count: {
-    select: {
-      templateSalesReps: true,
-      workOrderSalesReps: true,
-    },
-  },
-} as const
-
 export async function createContactRecord(
   input: { name: string; type: ContactType },
   client: ContactDbClient = db,
@@ -24,7 +15,6 @@ export async function createContactRecord(
       name: input.name.trim(),
       type: input.type,
     },
-    include: contactCountInclude,
   })
 
   return normalizeContactDetail(contact)
@@ -41,7 +31,6 @@ export async function updateContactRecord(
       name: input.name.trim(),
       type: input.type,
     },
-    include: contactCountInclude,
   })
 
   return normalizeContactDetail(contact)

@@ -119,6 +119,17 @@ export async function listWarehouses(client: WarehousesDbClient = db): Promise<W
   return rows.map(normalizeWarehouseRow)
 }
 
+export type WarehouseOption = { id: string; name: string }
+
+export async function listWarehouseOptions(
+  client: WarehousesDbClient = db,
+): Promise<WarehouseOption[]> {
+  return client.flooringWarehouse.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  })
+}
+
 export async function getWarehouseById(
   id: string,
   client: WarehousesDbClient = db,

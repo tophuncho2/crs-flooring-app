@@ -11,12 +11,6 @@ const serviceInclude = {
       name: true,
     },
   },
-  _count: {
-    select: {
-      templateItems: true,
-      workOrderItems: true,
-    },
-  },
 } as const
 
 export async function createServiceRecord(

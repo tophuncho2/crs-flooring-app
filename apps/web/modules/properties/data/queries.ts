@@ -1,171 +1,35 @@
-import { Prisma, createPrismaPageLoadIssue, isPrismaNotFoundError, prisma, withPrismaConnectivityHandling, type PrismaDetailPageResult } from "@builders/db"
-import { buildPadProductDisplayName, normalizeProperty, normalizePropertyListRow, normalizePropertyOption } from "@builders/domain"
+import {
+  countProperties,
+  createPrismaPageLoadIssue,
+  getPropertyById,
+  isPrismaNotFoundError,
+  listManagementCompanyOptions,
+  listProperties,
+  listPropertyOptions,
+  listWarehouseOptions,
+  withPrismaConnectivityHandling,
+  type PrismaDetailPageResult,
+} from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
+import { createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 
-function buildPropertiesWhere(searchQuery: string): Prisma.PropertyWhereInput | undefined {
-  if (!searchQuery) return undefined
-
+function toListSort(tableState: ServerTableQueryState) {
   return {
-    OR: [
-      { name: { contains: searchQuery, mode: "insensitive" } },
-      { streetAddress: { contains: searchQuery, mode: "insensitive" } },
-      { city: { contains: searchQuery, mode: "insensitive" } },
-      { state: { contains: searchQuery, mode: "insensitive" } },
-      { postalCode: { contains: searchQuery, mode: "insensitive" } },
-      { phone: { contains: searchQuery, mode: "insensitive" } },
-      { email: { contains: searchQuery, mode: "insensitive" } },
-      { managementCompany: { name: { contains: searchQuery, mode: "insensitive" } } },
-    ],
+    direction: tableState.isAscendingSort ? ("asc" as const) : ("desc" as const),
+    groupByKeys: tableState.groupByKeys,
+    isGroupingEnabled: tableState.isGroupingEnabled,
   }
 }
 
-function buildPropertiesOrderBy(tableState: ServerTableQueryState): Prisma.PropertyOrderByWithRelationInput[] {
-  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
-  const orderBy: Prisma.PropertyOrderByWithRelationInput[] = []
-  const fieldMap: Record<string, Prisma.PropertyOrderByWithRelationInput> = {
-    property: { name: direction },
-    street: { streetAddress: direction },
-    city: { city: direction },
-    state: { state: direction },
-    zip: { postalCode: direction },
-    phone: { phone: direction },
-    email: { email: direction },
-    fullAddress: { streetAddress: direction },
-    managementCompany: { managementCompany: { name: direction } },
-  }
-
-  if (tableState.isGroupingEnabled) {
-    for (const groupKey of tableState.groupByKeys) {
-      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
-    }
-  }
-
-  appendUniqueOrderBy(orderBy, { name: direction })
-
-  return orderBy
-}
-
-export async function listProperties(
-  pagination: { skip: number; take: number } | undefined,
-  tableState: ServerTableQueryState,
-) {
-  const properties = await prisma.property.findMany({
-    where: buildPropertiesWhere(tableState.searchQuery),
-    orderBy: buildPropertiesOrderBy(tableState),
-    select: {
-      id: true,
-      updatedAt: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      phone: true,
-      email: true,
-      managementCompany: {
-        select: { id: true, name: true },
-      },
-      _count: {
-        select: { templates: true },
-      },
-      templates: {
-        select: {
-          id: true,
-          unitType: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      },
-    },
-    ...(pagination ?? {}),
-  })
-
-  return properties.map(normalizePropertyListRow)
-}
-
-export async function listPropertyOptions() {
-  const properties = await prisma.property.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      updatedAt: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-    },
-  })
-
-  return properties.map(normalizePropertyOption)
-}
-
-export async function getPropertyById(id: string) {
-  const property = await prisma.property.findUniqueOrThrow({
-    where: { id },
-    select: {
-      id: true,
-      updatedAt: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      phone: true,
-      email: true,
-      managementCompany: {
-        select: { id: true, name: true },
-      },
-      templates: {
-        select: {
-          id: true,
-          unitType: true,
-          warehouse: { select: { name: true } },
-          _count: { select: { items: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  })
-
-  return normalizeProperty(property)
-}
+export { listProperties, listPropertyOptions, getPropertyById }
 
 async function loadPropertyDetailOptions() {
-  const [managementOptions, warehouses, padProducts] = await Promise.all([
-    prisma.flooringManagementCompany.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.flooringWarehouse.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.flooringProduct.findMany({
-      where: {
-        category: {
-          name: "Pad",
-        },
-      },
-      orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        style: true,
-        color: true,
-      },
-    }),
+  const [managementOptions, warehouseOptions] = await Promise.all([
+    listManagementCompanyOptions(),
+    listWarehouseOptions(),
   ])
 
-  return {
-    managementOptions,
-    warehouseOptions: warehouses,
-    padProductOptions: padProducts.map((product) => ({
-      id: product.id,
-      label: buildPadProductDisplayName(product),
-    })),
-  }
+  return { managementOptions, warehouseOptions }
 }
 
 export async function getPropertyCreatePageOptions() {
@@ -176,7 +40,6 @@ export async function getPropertyDetailPageData(id: string): Promise<PrismaDetai
   property: Awaited<ReturnType<typeof getPropertyById>>
   managementOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["managementOptions"]
   warehouseOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["warehouseOptions"]
-  padProductOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["padProductOptions"]
 }>> {
   try {
     const [property, options] = await Promise.all([
@@ -190,7 +53,6 @@ export async function getPropertyDetailPageData(id: string): Promise<PrismaDetai
         property,
         managementOptions: options.managementOptions,
         warehouseOptions: options.warehouseOptions,
-        padProductOptions: options.padProductOptions,
       },
     }
   } catch (error) {
@@ -211,15 +73,15 @@ export async function getPropertyDetailPageData(id: string): Promise<PrismaDetai
 }
 
 async function loadPropertiesPageData(page: number, tableState: ServerTableQueryState) {
-  const where = buildPropertiesWhere(tableState.searchQuery)
-  const totalItems = await prisma.property.count({ where })
+  const totalItems = await countProperties({ searchQuery: tableState.searchQuery })
   const pagination = createServerPagination({ page, totalItems })
   const [initialProperties, managementOptions] = await Promise.all([
-    listProperties({ skip: pagination.skip, take: pagination.take }, tableState),
-    prisma.flooringManagementCompany.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
+    listProperties({
+      searchQuery: tableState.searchQuery,
+      sort: toListSort(tableState),
+      pagination: { skip: pagination.skip, take: pagination.take },
     }),
+    listManagementCompanyOptions(),
   ])
 
   return {

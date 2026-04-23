@@ -174,6 +174,12 @@ The new repos read the current (post-migration) schema only:
 
 ## Execution order
 
+**Step 0 — Pre-flight (blocker, do first):**
+
+- 0a. Verify no cycle: `rg '"@builders/db"' packages/domain/package.json packages/domain/src` returns zero hits.
+- 0b. Check `packages/db/package.json` for `@builders/domain` dep. If missing, add `"@builders/domain": "file:../domain"` (mirror `packages/application/package.json` convention), run `npm install`. Can land as a prep commit ahead of the Phase 3 commit.
+- 0c. Baseline guard: `npm run build --workspace @builders/db` → exit 0 before any code changes. Any pre-existing errors (e.g., Phase-1 leftovers like stale `FlooringWorkOrderStatus` re-exports or back-relation counts on dropped relations) get patched surgically here so the baseline is green.
+
 1. **Scan the warehouses repo** for an existing `listWarehouseOptions` or equivalent. If missing, add it alongside the new repos.
 2. Create `packages/db/src/management/management-companies/{read-repository,write-repository,index}.ts`.
 3. Create `packages/db/src/management/properties/{read-repository,write-repository,index}.ts`.
@@ -190,7 +196,7 @@ The new repos read the current (post-migration) schema only:
 1. **`packages/db` may need `@builders/domain` as a dependency** for the normalizer imports. If the workspace edges aren't wired, `db.build` fails. Verify `packages/db/package.json` has `@builders/domain` listed (it currently doesn't look like it does based on earlier reads) — add it if missing. Domain has no db dependency, so no circular risk.
 2. **`ServerTableQueryState` type leaks.** Keeping the repos' list function args data-native (`{ searchQuery?, sort?: { direction, groupByKeys? }, pagination? }`) means the module boundary translates `ServerTableQueryState` → those args. Cheap mapping, keeps data layer free of apps/web types.
 3. **`withLoaderTiming` stays in the module boundary** — it's an app-telemetry wrapper and doesn't belong in the data layer. `withPrismaConnectivityHandling` similarly stays at the boundary since it's where the envelope result is constructed.
-4. **Thin-wrapper pass-throughs in module `data/mutations.ts`** may look redundant after this phase — they're one-liners calling `@builders/db`. Contacts keeps them because the module's API routes import from `@/modules/{module}/data/mutations`. Keeping them preserves the module-facing API until Phase 4 moves routes to call the canonical writes directly (or, more likely, through `packages/application/` use cases).
+4. **Thin write-wrapper policy (Phase 3 rule).** Module `data/mutations.ts` keeps thin wrappers (`createManagementCompany` → `createManagementCompanyRecord`) as the module-facing API. Existing route consumers continue to import from `@/modules/{module}/data/mutations`. No route changes in Phase 3. **Phase 4 disposition:** routes will be rewired to import use cases from `@builders/application`; once that lands, the thin wrappers have zero consumers and are deleted as part of Phase 4's cleanup. Routes never import canonical writes from `@builders/db` directly — the application layer is mandatory per `apps/web/app/CLAUDE.md`.
 5. **Normalizer ownership.** Option A: repos call the domain normalizers and return already-normalized records (matches contacts). Option B: repos return raw rows and callers normalize. Going with **Option A** — it's consistent with the reference module and keeps callers simple. Risk: if the domain normalizer shape drifts from the Prisma select, the repo fails to compile (which is a feature, not a bug).
 6. **No test coverage added.** Per sweep direction, stale tests for both modules were already deleted; new tests will be authored in a later pass.
 7. **After this phase the modules still violate `modules/CLAUDE.md`** on other axes (record/** UI placement, singular controllers, pad-product dropdown UI that will be cut once record/** is rebuilt). Those are Phase 6. Not in scope here.

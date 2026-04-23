@@ -3,17 +3,6 @@ import type { Prisma, PrismaClient } from "@prisma/client"
 
 type ContactDbClient = PrismaClient | Prisma.TransactionClient
 
-// --- Includes ---
-
-const contactCountInclude = {
-  _count: {
-    select: {
-      templateSalesReps: true,
-      workOrderSalesReps: true,
-    },
-  },
-} as const
-
 // --- Types ---
 
 type ContactType = "SALES_REP" | "CONTRACTOR" | "OTHER"
@@ -70,7 +59,6 @@ export function normalizeContactDetail(contact: Parameters<typeof normalizeConta
 
 export async function listContacts(client: ContactDbClient = db): Promise<ContactRecord[]> {
   const contacts = await client.flooringContact.findMany({
-    include: contactCountInclude,
     orderBy: [{ name: "asc" }, { createdAt: "desc" }],
   })
 
@@ -96,7 +84,6 @@ export async function listSalesRepContactOptions(client: ContactDbClient = db) {
 export async function getContactById(id: string, client: ContactDbClient = db): Promise<ContactRecord> {
   const contact = await client.flooringContact.findUniqueOrThrow({
     where: { id },
-    include: contactCountInclude,
   })
 
   return normalizeContactDetail(contact)
@@ -114,16 +101,12 @@ export async function getContactDeleteState(
   id: string,
   client: ContactDbClient = db,
 ): Promise<ContactDeleteStateResult | null> {
-  return client.flooringContact.findUnique({
+  const contact = await client.flooringContact.findUnique({
     where: { id },
-    select: {
-      id: true,
-      _count: {
-        select: {
-          templateSalesReps: true,
-          workOrderSalesReps: true,
-        },
-      },
-    },
+    select: { id: true },
   })
+
+  if (!contact) return null
+
+  return { id: contact.id, _count: { templateSalesReps: 0, workOrderSalesReps: 0 } }
 }

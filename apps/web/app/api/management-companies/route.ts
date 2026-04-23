@@ -21,12 +21,7 @@ export async function GET(request: Request) {
 
   try {
     return routeJson(access, {
-      managementCompanies: await listManagementCompanies(undefined, {
-        searchQuery: "",
-        isAscendingSort: true,
-        isGroupingEnabled: false,
-        groupByKeys: [],
-      }),
+      managementCompanies: await listManagementCompanies({}),
     })
   } catch (error) {
     return routeError(access, error)
