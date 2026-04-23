@@ -27,33 +27,7 @@ Run this checklist in order. Any drift or missing coverage: fix in place → reb
 
 ## Sweep-3 hardening (apply if missing)
 
-### 7. Inventory `cost` / `freight` — editable only from imports record view, pre-import confirmation
 
-**Rule.** `FlooringInventory.cost` and `FlooringInventory.freight` are only writable through the imports record view's inventory-rows section, and only while the row has `isImported === false`. Once a row flips to `isImported = true`, its `cost` / `freight` are locked forever. The inventory record view never exposes these fields as editable.
-
-**Rationale.** Cut logs snapshot `cost` and `freight` on create. If inventory cost can change after import confirmation, the snapshot-vs-current spread grows unbounded. Locking cost/freight at import-confirm time eliminates the drift: every cut against a row sees the same numbers the row was received with. No accounting surprises.
-
-**Checklist.**
-- **Imports record view inventory-rows section** — `cost` and `freight` cells remain editable on rows where `isImported === false`. On rows where `isImported === true`, the cells render read-only (matches the "one-way transition" pattern for `isImported` itself).
-- **Inventory record view primary section** — `cost` and `freight` are NOT present as inputs. If they currently render as editable inputs, convert them to `RecordStaticFieldValue` read-only tiles. If they're absent from the section, leave them absent.
-- **Route `apps/web/app/api/inventory/[id]/primary/section/route.ts`** — `validateUpdateInventoryInput` does NOT accept `cost` or `freight`. Strip these keys at the validator (matches the Sweep-2 pattern of dropping `isImported` here).
-- **Route `apps/web/app/api/imports/[id]/inventory-rows/section/route.ts`** — `validateImportInventoryRowsDiff` accepts `cost` and `freight` on added rows AND on modified rows whose pre-diff `isImported === false`. If modified diff targets a row with `isImported === true` and a `cost` or `freight` value is present in the patch, reject with `400 INVALID_BODY` citing the locked fields.
-- **Application `save-inventory-rows` use case** — enforce the same invariant in domain (`isInventoryCostLocked(row) = row.isImported === true`). Throw `INVENTORY_COST_LOCKED_POST_IMPORT` if a patch touches cost/freight on a confirmed row. Keeps the data-layer dumb; the business rule lives in domain + application.
-
-**Verify with:**
-- `grep -n "cost\|freight" apps/web/app/api/inventory/_validators.ts` — no accepted keys for `cost` or `freight` in the primary-section validator.
-- `grep -n "cost\|freight" apps/web/modules/inventory/components/record/sections/inventory-primary-fields-section.tsx` — present only in `RecordStaticFieldValue` tiles (display) or absent entirely. No `<input>` / `<select>` / controller setters for these fields.
-- Dev smoke: create a PENDING inventory row via imports → set `cost = 100`, `freight = 20`, save → flip row to FINAL via imports → attempt to edit `cost` from the inventory record view → no input surface; direct API patch with `cost` in body → 400.
-
-### 8. Inventory `freight` reaches the validators
-
-**Rule.** Sweep 2 added `isImported` plumbing. Confirm `freight` is already a first-class input on the inventory-rows diff path (added rows + modified pre-import rows), since the cut-log compute depends on it.
-
-**Checklist.**
-- `apps/web/app/api/imports/_validators.ts` — `shapeDraft` and `shapePatch` accept `freight` as optional decimal string (alongside `cost`).
-- `packages/domain/src/flooring/inventory/` — diff shaper includes `freight` on `InventoryRowDraft` + `InventoryRowUpdatePatch`.
-- `packages/db/src/flooring/imports/write-repository.ts` — `applyImportInventoryRowsDiff` persists `freight` on create + update.
-- Spot check: create an import row with `freight = 25.50` → save → row in DB carries `freight: 25.5`.
 
 ---
 
