@@ -1,7 +1,6 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
 import {
-  computeTemplateMaterialItemsDiff,
   normalizeTemplateMaterialItem,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemRow,
@@ -69,20 +68,48 @@ export async function deleteTemplateMaterialItemRecordById(
   await client.flooringTemplateItem.delete({ where: { id } })
 }
 
-export async function saveTemplateMaterialItemsSection(
-  templateId: string,
-  next: Array<{ id: string | null; form: TemplateMaterialItemForm }>,
-  client: TemplatesDbClient = db,
-): Promise<TemplateMaterialItemRow[]> {
-  const existing = await listTemplateMaterialItems(templateId, client)
-  const diff = computeTemplateMaterialItemsDiff(existing, next)
+export type ApplyTemplateMaterialItemsDiffInput = {
+  templateId: string
+  added: Array<{ id: string; tempId: string; form: TemplateMaterialItemForm }>
+  modified: Array<{ id: string; form: TemplateMaterialItemForm }>
+  deleted: Array<{ id: string }>
+}
 
-  if (diff.deletes.length > 0) {
-    await client.flooringTemplateItem.deleteMany({ where: { id: { in: diff.deletes } } })
+export type ApplyTemplateMaterialItemsDiffResult = {
+  items: TemplateMaterialItemRow[]
+  tempIdMap: Record<string, string>
+}
+
+export async function applyTemplateMaterialItemsDiff(
+  tx: Prisma.TransactionClient,
+  input: ApplyTemplateMaterialItemsDiffInput,
+): Promise<ApplyTemplateMaterialItemsDiffResult> {
+  if (input.deleted.length > 0) {
+    await tx.flooringTemplateItem.deleteMany({
+      where: { id: { in: input.deleted.map((d) => d.id) } },
+    })
   }
 
-  for (const update of diff.updates) {
-    await client.flooringTemplateItem.update({
+  const tempIdMap: Record<string, string> = {}
+  for (const draft of input.added) {
+    tempIdMap[draft.tempId] = draft.id
+  }
+
+  if (input.added.length > 0) {
+    await tx.flooringTemplateItem.createMany({
+      data: input.added.map((draft) => ({
+        id: draft.id,
+        templateId: input.templateId,
+        productId: draft.form.productId,
+        quantity: toDecimal(draft.form.quantity),
+        unitPrice: toDecimal(draft.form.unitPrice),
+        notes: draft.form.notes ? draft.form.notes : null,
+      })),
+    })
+  }
+
+  for (const update of input.modified) {
+    await tx.flooringTemplateItem.update({
       where: { id: update.id },
       data: {
         productId: update.form.productId,
@@ -93,17 +120,6 @@ export async function saveTemplateMaterialItemsSection(
     })
   }
 
-  for (const create of diff.creates) {
-    await client.flooringTemplateItem.create({
-      data: {
-        templateId,
-        productId: create.productId,
-        quantity: toDecimal(create.quantity),
-        unitPrice: toDecimal(create.unitPrice),
-        notes: create.notes ? create.notes : null,
-      },
-    })
-  }
-
-  return listTemplateMaterialItems(templateId, client)
+  const items = await listTemplateMaterialItems(input.templateId, tx)
+  return { items, tempIdMap }
 }

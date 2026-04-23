@@ -1,4 +1,8 @@
-import type { TemplateMaterialItemForm, TemplateMaterialItemRow } from "@builders/domain"
+import type {
+  TemplateMaterialItemForm,
+  TemplateMaterialItemRow,
+  TemplateMaterialItemsDiff,
+} from "@builders/domain"
 
 export type CreateTemplateMaterialItemUseCaseInput = {
   templateId: string
@@ -16,8 +20,12 @@ export type DeleteTemplateMaterialItemUseCaseInput = {
 
 export type SaveTemplateMaterialItemsSectionUseCaseInput = {
   templateId: string
-  next: Array<{ id: string | null; form: TemplateMaterialItemForm }>
+  diff: TemplateMaterialItemsDiff
 }
 
 export type TemplateMaterialItemUseCaseResult = TemplateMaterialItemRow
-export type TemplateMaterialItemsSectionUseCaseResult = TemplateMaterialItemRow[]
+
+export type SaveTemplateMaterialItemsSectionUseCaseResult = {
+  items: TemplateMaterialItemRow[]
+  tempIdMap: Record<string, string>
+}
