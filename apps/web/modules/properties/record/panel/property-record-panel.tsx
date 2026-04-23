@@ -12,7 +12,7 @@ import { normalizeAddressState } from "@builders/domain"
 import { usePropertyPrimarySection } from "./controllers/use-property-primary-section"
 import { PropertyPrimaryFieldsSection } from "./sections/property-primary-fields-section"
 import { PropertyTemplatesSection } from "./sections/property-templates-section"
-import type { PropertyDetailRecord, PropertyPrimaryForm } from "../../domain/types"
+import type { PropertyDetailRecord, PropertyPrimaryForm } from "@builders/domain"
 
 export function PropertyRecordPanel({
   page,

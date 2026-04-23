@@ -1,6 +1,6 @@
 import { PROPERTIES_TOOL_SLUG, authorizePropertiesRoute } from "@/modules/shared/access/domain-tools"
-import { createProperty } from "@/modules/properties/mutations"
-import { listProperties } from "@/modules/properties/queries"
+import { createProperty } from "@/modules/properties/data/mutations"
+import { listProperties } from "@/modules/properties/data/queries"
 import { validateCreatePropertyInput } from "@/modules/properties/validators"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"

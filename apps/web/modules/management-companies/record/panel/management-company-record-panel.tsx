@@ -12,7 +12,7 @@ import { normalizeAddressState } from "@builders/domain"
 import { useManagementCompanyPrimarySection } from "./controllers/use-management-company-primary-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./sections/management-company-primary-fields-section"
 import { ManagementCompanyPropertiesSection } from "./sections/management-company-properties-section"
-import type { ManagementCompanyDetail, ManagementCompanyForm } from "../../domain/types"
+import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 
 export function ManagementCompanyRecordPanel({
   page,

@@ -11,7 +11,7 @@ import {
   normalizeManagementCompany,
   normalizeManagementCompanyListRow,
   normalizeManagementCompanyOption,
-} from "../services"
+} from "@builders/domain"
 
 function buildManagementCompaniesWhere(searchQuery: string): Prisma.FlooringManagementCompanyWhereInput | undefined {
   if (!searchQuery) return undefined

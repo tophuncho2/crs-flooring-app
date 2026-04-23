@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { getPropertyCreatePageOptions } from "@/modules/properties/queries"
+import { getPropertyCreatePageOptions } from "@/modules/properties/data/queries"
 import { PropertyCreateClient } from "@/modules/properties/record/create/property-create-client"
 
 export default async function PropertyCreatePage({

@@ -10,7 +10,7 @@ import {
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
 } from "@/modules/shared/engines/record-view"
-import type { PropertyTemplateRow } from "../../../domain/types"
+import type { PropertyTemplateRow } from "@builders/domain"
 
 const TEMPLATE_COLUMNS: RecordRowColumnSpec[] = [
   { key: "template", minWidth: 220, grow: 2, label: "Template" },

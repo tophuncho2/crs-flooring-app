@@ -10,7 +10,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
-import type { PropertyDetailRecord, PropertyPrimaryForm } from "../../domain/types"
+import type { PropertyDetailRecord, PropertyPrimaryForm } from "@builders/domain"
 import { PropertyPrimaryFieldsSection } from "../panel/sections/property-primary-fields-section"
 
 const EMPTY_PROPERTY: PropertyDetailRecord = {

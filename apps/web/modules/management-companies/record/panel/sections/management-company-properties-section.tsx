@@ -13,7 +13,7 @@ import {
   type RecordRowColumnSpec,
   type RecordGridLayout,
 } from "@/modules/shared/engines/record-view"
-import type { ManagementCompanyPropertyRow, ManagementCompanyTemplateRow } from "../../../domain/types"
+import type { ManagementCompanyPropertyRow, ManagementCompanyTemplateRow } from "@builders/domain"
 
 const PROPERTY_COLUMNS: RecordRowColumnSpec[] = [
   { key: "property", minWidth: 240, grow: 2, label: "Property" },

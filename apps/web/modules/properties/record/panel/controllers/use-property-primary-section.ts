@@ -11,7 +11,7 @@ import {
   validatePropertyPrimaryForm,
   type PropertyDetailRecord,
   type PropertyPrimaryForm,
-} from "../../../domain/types"
+} from "@builders/domain"
 
 export function usePropertyPrimarySection({
   page,

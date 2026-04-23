@@ -2,7 +2,7 @@
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { PropertyRecordPanel } from "../panel/property-record-panel"
-import type { PropertyDetailRecord } from "../../domain/types"
+import type { PropertyDetailRecord } from "@builders/domain"
 
 export function PropertyDetailClient({
   property,

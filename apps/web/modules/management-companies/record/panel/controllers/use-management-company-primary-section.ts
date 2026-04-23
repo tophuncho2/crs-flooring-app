@@ -11,7 +11,7 @@ import {
   validateManagementCompanyForm,
   type ManagementCompanyDetail,
   type ManagementCompanyForm,
-} from "../../../domain/types"
+} from "@builders/domain"
 
 export function useManagementCompanyPrimarySection({
   page,

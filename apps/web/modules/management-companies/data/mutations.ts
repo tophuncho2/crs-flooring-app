@@ -1,5 +1,5 @@
 import { prisma } from "@builders/db"
-import { normalizeManagementCompany } from "../services"
+import { normalizeManagementCompany } from "@builders/domain"
 import type { CreateManagementCompanyInput, UpdateManagementCompanyInput } from "../validators"
 
 const managementCompanySelect = {

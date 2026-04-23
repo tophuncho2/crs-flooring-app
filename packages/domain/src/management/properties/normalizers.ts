@@ -1,13 +1,7 @@
-export function normalizePropertyAddress(value: {
-  streetAddress: string | null
-  city: string | null
-  state: string | null
-  postalCode: string | null
-}) {
-  return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
-}
+import { buildAddressLine } from "../../shared/address/index.js"
+import type { PropertyDetailRecord, PropertyListRow, PropertyOption } from "./types.js"
 
-export function normalizeProperty(property: {
+type PropertyDetailInput = {
   id: string
   updatedAt: Date | string
   name: string
@@ -20,33 +14,13 @@ export function normalizeProperty(property: {
   managementCompany: { id: string; name: string } | null
   templates: Array<{
     id: string
-    templateTag: string
+    unitType: string
     warehouse: { name: string } | null
-    _count: { items: number; serviceItems: number }
+    _count: { items: number }
   }>
-}) {
-  return {
-    id: property.id,
-    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
-    name: property.name,
-    streetAddress: property.streetAddress ?? "",
-    city: property.city ?? "",
-    state: property.state ?? "",
-    zip: property.postalCode ?? "",
-    phone: property.phone ?? "",
-    email: property.email ?? "",
-    fullAddress: normalizePropertyAddress(property),
-    managementCompany: property.managementCompany,
-    templates: property.templates.map((template) => ({
-      id: template.id,
-      templateTag: template.templateTag,
-      warehouseName: template.warehouse?.name ?? "",
-      itemsCount: template._count.items + template._count.serviceItems,
-    })),
-  }
 }
 
-export function normalizePropertyListRow(property: {
+type PropertyListRowInput = {
   id: string
   updatedAt: Date | string
   name: string
@@ -59,28 +33,12 @@ export function normalizePropertyListRow(property: {
   managementCompany: { id: string; name: string } | null
   templates: Array<{
     id: string
-    templateTag: string
+    unitType: string
   }>
   _count: { templates: number }
-}) {
-  return {
-    id: property.id,
-    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
-    name: property.name,
-    streetAddress: property.streetAddress ?? "",
-    city: property.city ?? "",
-    state: property.state ?? "",
-    zip: property.postalCode ?? "",
-    phone: property.phone ?? "",
-    email: property.email ?? "",
-    fullAddress: normalizePropertyAddress(property),
-    managementCompany: property.managementCompany,
-    templateCount: property._count.templates,
-    templatePreviewTags: property.templates.map((template) => template.templateTag),
-  }
 }
 
-export function normalizePropertyOption(property: {
+type PropertyOptionInput = {
   id: string
   name: string
   updatedAt?: Date | string
@@ -88,10 +46,52 @@ export function normalizePropertyOption(property: {
   city: string | null
   state: string | null
   postalCode: string | null
-}) {
+}
+
+export function normalizeProperty(property: PropertyDetailInput): PropertyDetailRecord {
+  return {
+    id: property.id,
+    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
+    name: property.name,
+    streetAddress: property.streetAddress ?? "",
+    city: property.city ?? "",
+    state: property.state ?? "",
+    zip: property.postalCode ?? "",
+    phone: property.phone ?? "",
+    email: property.email ?? "",
+    fullAddress: buildAddressLine(property),
+    managementCompany: property.managementCompany,
+    templates: property.templates.map((template) => ({
+      id: template.id,
+      unitType: template.unitType,
+      warehouseName: template.warehouse?.name ?? "",
+      itemsCount: template._count.items,
+    })),
+  }
+}
+
+export function normalizePropertyListRow(property: PropertyListRowInput): PropertyListRow {
+  return {
+    id: property.id,
+    updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
+    name: property.name,
+    streetAddress: property.streetAddress ?? "",
+    city: property.city ?? "",
+    state: property.state ?? "",
+    zip: property.postalCode ?? "",
+    phone: property.phone ?? "",
+    email: property.email ?? "",
+    fullAddress: buildAddressLine(property),
+    managementCompany: property.managementCompany,
+    templateCount: property._count.templates,
+    templatePreviewTags: property.templates.map((template) => template.unitType),
+  }
+}
+
+export function normalizePropertyOption(property: PropertyOptionInput): PropertyOption {
   return {
     id: property.id,
     name: property.name,
-    address: normalizePropertyAddress(property),
+    address: buildAddressLine(property),
   }
 }

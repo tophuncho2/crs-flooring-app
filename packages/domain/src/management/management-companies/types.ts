@@ -1,6 +1,6 @@
 export type ManagementCompanyTemplateRow = {
   id: string
-  templateTag: string
+  unitType: string
   warehouseName: string
   itemsCount: number
 }
@@ -27,6 +27,26 @@ export type ManagementCompanyDetail = {
   properties: ManagementCompanyPropertyRow[]
 }
 
+export type ManagementCompanyListRow = {
+  id: string
+  updatedAt: string
+  name: string
+  streetAddress: string
+  city: string
+  state: string
+  zip: string
+  phone: string
+  email: string
+  fullAddress: string
+  propertyCount: number
+  propertyPreviewNames: string[]
+}
+
+export type ManagementCompanyOption = {
+  id: string
+  name: string
+}
+
 export type ManagementCompanyForm = {
   name: string
   streetAddress: string
@@ -35,24 +55,4 @@ export type ManagementCompanyForm = {
   zip: string
   phone: string
   email: string
-}
-
-export function toManagementCompanyForm(company: ManagementCompanyDetail): ManagementCompanyForm {
-  return {
-    name: company.name,
-    streetAddress: company.streetAddress,
-    city: company.city,
-    state: company.state,
-    zip: company.zip,
-    phone: company.phone,
-    email: company.email,
-  }
-}
-
-export function validateManagementCompanyForm(input: ManagementCompanyForm) {
-  if (!input.name.trim()) {
-    return "Company name is required"
-  }
-
-  return ""
 }

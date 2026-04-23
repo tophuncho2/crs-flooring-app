@@ -1,6 +1,6 @@
 import { deleteProperty, updateProperty } from "@/modules/properties/data/mutations"
 import { getPropertyById } from "@/modules/properties/data/queries"
-import { validateUpdatePropertyInput } from "@/modules/properties/domain/validators"
+import { validateUpdatePropertyInput } from "@/modules/properties/validators"
 import { PROPERTIES_TOOL_SLUG, authorizePropertiesRoute } from "@/modules/shared/access/domain-tools"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"

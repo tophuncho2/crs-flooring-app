@@ -10,7 +10,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
-import type { ManagementCompanyDetail, ManagementCompanyForm } from "../../domain/types"
+import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 import { ManagementCompanyPrimaryFieldsSection } from "../panel/sections/management-company-primary-fields-section"
 
 const EMPTY_MANAGEMENT_COMPANY: ManagementCompanyDetail = {

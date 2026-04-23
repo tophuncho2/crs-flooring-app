@@ -2,7 +2,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@builders/application"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import { getPropertiesPageData } from "@/modules/properties/queries"
+import { getPropertiesPageData } from "@/modules/properties/data/queries"
 import PropertiesClient from "@/modules/properties/components/properties-client"
 
 export default async function FlooringPropertiesPage({

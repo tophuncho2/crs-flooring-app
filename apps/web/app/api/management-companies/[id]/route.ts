@@ -1,6 +1,6 @@
 import { deleteManagementCompany, updateManagementCompany } from "@/modules/management-companies/data/mutations"
 import { getManagementCompanyById } from "@/modules/management-companies/data/queries"
-import { validateUpdateManagementCompanyInput } from "@/modules/management-companies/domain/validators"
+import { validateUpdateManagementCompanyInput } from "@/modules/management-companies/validators"
 import { MANAGEMENT_COMPANIES_TOOL_SLUG, authorizeManagementCompaniesRoute } from "@/modules/shared/access/domain-tools"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"

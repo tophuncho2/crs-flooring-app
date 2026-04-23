@@ -9,7 +9,7 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
-import type { PropertyDetailRecord, PropertyPrimaryForm } from "../../../domain/types"
+import type { PropertyDetailRecord, PropertyPrimaryForm } from "@builders/domain"
 
 export function PropertyPrimaryFieldsSection({
   property,

@@ -2,7 +2,7 @@
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { ManagementCompanyRecordPanel } from "../panel/management-company-record-panel"
-import type { ManagementCompanyDetail } from "../../domain/types"
+import type { ManagementCompanyDetail } from "@builders/domain"
 
 export function ManagementCompanyDetailClient({
   company,

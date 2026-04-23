@@ -9,7 +9,7 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
-import type { ManagementCompanyDetail, ManagementCompanyForm } from "../../../domain/types"
+import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 
 export function ManagementCompanyPrimaryFieldsSection({
   company,

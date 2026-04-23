@@ -1,13 +1,11 @@
-function normalizeAddress(value: {
-  streetAddress: string | null
-  city: string | null
-  state: string | null
-  postalCode: string | null
-}) {
-  return [value.streetAddress, value.city, value.state, value.postalCode].filter(Boolean).join(", ")
-}
+import { buildAddressLine } from "../../shared/address/index.js"
+import type {
+  ManagementCompanyDetail,
+  ManagementCompanyListRow,
+  ManagementCompanyOption,
+} from "./types.js"
 
-export function normalizeManagementCompany(company: {
+type ManagementCompanyDetailInput = {
   id: string
   updatedAt: Date | string
   name: string
@@ -26,39 +24,14 @@ export function normalizeManagementCompany(company: {
     postalCode: string | null
     templates: Array<{
       id: string
-      templateTag: string
+      unitType: string
       warehouse: { name: string } | null
-      _count: { items: number; serviceItems: number }
+      _count: { items: number }
     }>
   }>
-}) {
-  return {
-    id: company.id,
-    updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
-    name: company.name,
-    streetAddress: company.streetAddress ?? "",
-    city: company.city ?? "",
-    state: company.state ?? "",
-    zip: company.postalCode ?? "",
-    phone: company.phone ?? "",
-    email: company.email ?? "",
-    fullAddress: normalizeAddress(company),
-    properties: company.properties.map((property) => ({
-      id: property.id,
-      name: property.name,
-      fullAddress: normalizeAddress(property),
-      templateCount: property.templates.length,
-      templates: property.templates.map((template) => ({
-        id: template.id,
-        templateTag: template.templateTag,
-        warehouseName: template.warehouse?.name ?? "",
-        itemsCount: template._count.items + template._count.serviceItems,
-      })),
-    })),
-  }
 }
 
-export function normalizeManagementCompanyListRow(company: {
+type ManagementCompanyListRowInput = {
   id: string
   updatedAt: Date | string
   name: string
@@ -73,7 +46,9 @@ export function normalizeManagementCompanyListRow(company: {
     name: string
   }>
   _count: { properties: number }
-}) {
+}
+
+export function normalizeManagementCompany(company: ManagementCompanyDetailInput): ManagementCompanyDetail {
   return {
     id: company.id,
     updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
@@ -84,12 +59,39 @@ export function normalizeManagementCompanyListRow(company: {
     zip: company.postalCode ?? "",
     phone: company.phone ?? "",
     email: company.email ?? "",
-    fullAddress: normalizeAddress(company),
+    fullAddress: buildAddressLine(company),
+    properties: company.properties.map((property) => ({
+      id: property.id,
+      name: property.name,
+      fullAddress: buildAddressLine(property),
+      templateCount: property.templates.length,
+      templates: property.templates.map((template) => ({
+        id: template.id,
+        unitType: template.unitType,
+        warehouseName: template.warehouse?.name ?? "",
+        itemsCount: template._count.items,
+      })),
+    })),
+  }
+}
+
+export function normalizeManagementCompanyListRow(company: ManagementCompanyListRowInput): ManagementCompanyListRow {
+  return {
+    id: company.id,
+    updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
+    name: company.name,
+    streetAddress: company.streetAddress ?? "",
+    city: company.city ?? "",
+    state: company.state ?? "",
+    zip: company.postalCode ?? "",
+    phone: company.phone ?? "",
+    email: company.email ?? "",
+    fullAddress: buildAddressLine(company),
     propertyCount: company._count.properties,
     propertyPreviewNames: company.properties.map((property) => property.name),
   }
 }
 
-export function normalizeManagementCompanyOption(company: { id: string; name: string }) {
+export function normalizeManagementCompanyOption(company: { id: string; name: string }): ManagementCompanyOption {
   return { id: company.id, name: company.name }
 }
