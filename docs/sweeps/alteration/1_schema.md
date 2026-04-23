@@ -2,17 +2,17 @@
 
 Schema changes for the management-system sweep. Grouped by module. Source comments in `../mocks.md`.
 
-## Clients / Management Companies (`FlooringManagementCompany`)
+## Management Companies (`FlooringManagementCompany`)
 
 - [ ] Add relation to work orders (1 work order won't have more than 1 management company)
 - [ ] Add relation to templates (1 template won't have more than 1 management company)
 - [ ] Keep the link optional on templates and work orders (not a required field)
 
-## Clients / Properties (`Property`)
+## Properties (`Property`)
 
 - [ ] Add `instructions` column
 
-## Main-Hub / Templates (`FlooringTemplate`)
+## Templates (`FlooringTemplate`)
 
 - [ ] Remove `padProductId` + `padProduct` relation
 - [ ] Add `description` field
@@ -20,7 +20,7 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Rename `templateTag` to `unitType`
 - [ ] Add `jobTypeId` + relation to new `FlooringJobType`
 
-## Main-Hub / Work Orders (`FlooringWorkOrder`)
+## Work Orders (`FlooringWorkOrder`)
 
 - [ ] Add relation to management companies
 - [ ] Add relation to job types
@@ -30,7 +30,7 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Rename `unitLabel` to `unitNumber` - stays as string, not number only
 - [ ] Make `analytics` relation required (every work order must be linked to an analytics row)
 
-## User Data / Job Type (`FlooringJobType`) — new model
+## Job Type (`FlooringJobType`) — new model
 
 - [ ] Add `FlooringJobType` model (`id`, `name`, relations to templates and work orders) — see `../mocks.md`
 - [ ] Add `jobTypeId` + `jobType` relation on `FlooringTemplate` with `@@index([jobTypeId])`
