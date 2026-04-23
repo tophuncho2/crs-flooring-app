@@ -101,7 +101,7 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
 }
 
 export async function getImportFormOptions(): Promise<{
-  productOptions: Array<{ id: string; label: string; stockUnit: string }>
+  productOptions: Array<{ id: string; label: string; stockUnit: string; categoryId: string }>
   warehouseOptions: Array<{ id: string; name: string }>
   locationOptions: Array<{
     id: string
@@ -110,6 +110,7 @@ export async function getImportFormOptions(): Promise<{
     shortCode: string
     label: string
   }>
+  categoryOptions: Array<{ id: string; label: string }>
 }> {
   return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
     const options: ImportFormOptions = await listImportOptions()
@@ -118,6 +119,7 @@ export async function getImportFormOptions(): Promise<{
         id: product.id,
         label: buildFlooringProductDisplayName(product),
         stockUnit: product.stockUnit,
+        categoryId: product.categoryId,
       })),
       warehouseOptions: options.warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
       locationOptions: options.locations.map((location) => ({
@@ -127,6 +129,7 @@ export async function getImportFormOptions(): Promise<{
         shortCode: location.shortCode,
         label: location.shortCode,
       })),
+      categoryOptions: options.categories.map((category) => ({ id: category.id, label: category.name })),
     }
   })
 }
@@ -136,6 +139,7 @@ export async function getImportDetailPageData(id: string): Promise<PrismaDetailP
   productOptions: Awaited<ReturnType<typeof getImportFormOptions>>["productOptions"]
   warehouseOptions: Awaited<ReturnType<typeof getImportFormOptions>>["warehouseOptions"]
   locationOptions: Awaited<ReturnType<typeof getImportFormOptions>>["locationOptions"]
+  categoryOptions: Awaited<ReturnType<typeof getImportFormOptions>>["categoryOptions"]
 }>> {
   try {
     const [entry, options] = await Promise.all([
@@ -154,6 +158,7 @@ export async function getImportDetailPageData(id: string): Promise<PrismaDetailP
         productOptions: options.productOptions,
         warehouseOptions: options.warehouseOptions,
         locationOptions: options.locationOptions,
+        categoryOptions: options.categoryOptions,
       },
     }
   } catch (error) {

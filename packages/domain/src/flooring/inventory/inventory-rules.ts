@@ -80,6 +80,20 @@ export function canAddCutLog(inventory: { isImported: boolean }): boolean {
 }
 
 /**
+ * Pure predicate: are the row's `cost` / `freight` fields locked from further
+ * edits? True once the row is `isImported = true` — the import is confirmed
+ * and cut logs can now snapshot cost/freight. Any later edit would drift the
+ * per-cut snapshots from the live row, corrupting accounting rollups.
+ *
+ * Enforced at the application layer (imports diff `save-inventory-rows`) and
+ * at the UI layer (cost/freight inputs disabled when `isImported`). The
+ * inventory record view doesn't expose these fields at all once imported.
+ */
+export function isInventoryCostLocked(inventory: { isImported: boolean }): boolean {
+  return inventory.isImported === true
+}
+
+/**
  * Pure predicate: does `next` attempt to flip an already-imported row back to
  * pending? Used by one-shot updates (via `assertImportedTransitionAllowed`) and
  * by diff validation (via a direct check so issues can be collected rather than

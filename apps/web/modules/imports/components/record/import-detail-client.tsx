@@ -3,7 +3,7 @@
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { ImportRecordPanel } from "./import-record-panel"
 import type { ImportDetail as ImportRow } from "@builders/domain"
-import type { LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { CategoryOption, LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 function formatImportNumber(value: number) {
   return `IMP-${String(value).padStart(4, "0")}`
@@ -14,12 +14,14 @@ export function ImportDetailClient({
   productOptions,
   warehouseOptions,
   locationOptions,
+  categoryOptions,
   backHref,
 }: {
   initialImport: ImportRow
   productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
+  categoryOptions: CategoryOption[]
   backHref: string
 }) {
   return (
@@ -36,6 +38,7 @@ export function ImportDetailClient({
           productOptions={productOptions}
           warehouseOptions={warehouseOptions}
           locationOptions={locationOptions}
+          categoryOptions={categoryOptions}
         />
       )}
     </RecordDetailClientScaffold>

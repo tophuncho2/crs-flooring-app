@@ -41,6 +41,11 @@ export function validateCreateInventoryInput(body: Record<string, unknown>): Cre
 }
 
 export function validateUpdateInventoryInput(body: Record<string, unknown>): UpdateInventoryInput {
+  // Cost and freight are intentionally NOT accepted here. They are editable only
+  // from the imports record view's inventory-rows section while `isImported = false`.
+  // Once a row is imported, cost/freight are locked to preserve the accounting
+  // snapshot that cut logs reference. Attempts to set them via this route are
+  // silently dropped; rely on the imports-diff path for any pre-import edits.
   const input: UpdateInventoryInput = {}
   if (body.productId !== undefined) input.productId = requireString(body.productId, "productId")
   if (body.warehouseId !== undefined) input.warehouseId = optionalString(body.warehouseId, "warehouseId")
@@ -48,8 +53,6 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
   if (body.itemNumber !== undefined) input.itemNumber = requireString(body.itemNumber, "itemNumber")
   if (body.dyeLot !== undefined) input.dyeLot = optionalString(body.dyeLot, "dyeLot")
   if (body.stockCount !== undefined) input.stockCount = requireString(body.stockCount, "stockCount")
-  if (body.cost !== undefined) input.cost = optionalString(body.cost, "cost")
-  if (body.freight !== undefined) input.freight = optionalString(body.freight, "freight")
   if (body.notes !== undefined) input.notes = optionalString(body.notes, "notes")
   return input
 }

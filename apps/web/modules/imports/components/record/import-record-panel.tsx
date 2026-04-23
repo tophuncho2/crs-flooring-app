@@ -12,7 +12,7 @@ import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-sec
 import { useImportInventoryRowsSection } from "@/modules/imports/controllers/use-import-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
 import type { ImportDetail as ImportRow } from "@builders/domain"
-import type { LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { CategoryOption, LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,
@@ -20,12 +20,14 @@ export function ImportRecordPanel({
   productOptions,
   warehouseOptions,
   locationOptions,
+  categoryOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ImportRow
   productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
+  categoryOptions: CategoryOption[]
 }) {
   const controller = useImportPrimarySection({
     page,
@@ -113,10 +115,12 @@ export function ImportRecordPanel({
               productOptions={productOptions}
               warehouseOptions={warehouseOptions}
               locationOptions={locationOptions}
+              categoryOptions={categoryOptions}
               noticeMessage={inventoryRowsSection.noticeMessage}
               noticeError={inventoryRowsSection.noticeError}
               onRowFieldChange={inventoryRowsSection.setRowField}
               onRowImportStatusChange={inventoryRowsSection.setRowImportStatus}
+              onRowCategoryFilterChange={inventoryRowsSection.setRowCategoryFilter}
               onRemoveRow={inventoryRowsSection.removeRow}
             />
           ),

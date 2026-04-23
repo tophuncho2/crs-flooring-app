@@ -298,7 +298,6 @@ model FlooringInventory {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
-  @@unique([locationId, itemNumber])
   @@index([importEntryId])
   @@index([productId])
   @@index([locationId])

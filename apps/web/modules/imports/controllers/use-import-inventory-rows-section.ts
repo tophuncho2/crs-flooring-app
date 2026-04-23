@@ -212,7 +212,10 @@ export function useImportInventoryRowsSection({
 
   function setRowField(
     index: number,
-    field: Exclude<keyof Omit<ImportInventoryRowDraft, "clientId">, "isImported">,
+    field: Exclude<
+      keyof Omit<ImportInventoryRowDraft, "clientId">,
+      "isImported" | "categoryFilterId"
+    >,
     value: string,
   ) {
     section.setLocalValue((previous) =>
@@ -235,6 +238,24 @@ export function useImportInventoryRowsSection({
     }
   }
 
+  /**
+   * Set the row's category filter. Client-only state; does NOT flow into the
+   * save payload. Used to narrow the product dropdown. Passing `null` clears
+   * the filter. Does NOT auto-clear the row's productId — the saved product
+   * is preserved across filter changes (section UI re-includes it in the
+   * product option list even when it doesn't match the filter).
+   */
+  function setRowCategoryFilter(index: number, categoryId: string | null) {
+    section.setLocalValue((previous) =>
+      previous.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, categoryFilterId: categoryId } : row,
+      ),
+    )
+    if (section.error) {
+      section.setError(null)
+    }
+  }
+
   function handleWarehouseChange(nextWarehouseId: string) {
     section.setLocalValue((previous) =>
       previous.map((row) => applyDefaultLocationToImportRow(row, nextWarehouseId, locationOptions)),
@@ -247,6 +268,7 @@ export function useImportInventoryRowsSection({
     removeRow,
     setRowField,
     setRowImportStatus,
+    setRowCategoryFilter,
     handleWarehouseChange,
   }
 }

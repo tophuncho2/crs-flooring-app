@@ -1,39 +1,44 @@
 "use client"
 
 import {
+  RecordGridCellDropdown,
   RecordGridCellInput,
   RecordGridCellSelect,
   RecordItemCell,
   RecordItemSection,
   RecordItemSectionControls,
   RecordRowLayout,
-  RecordRowStatusBadge,
   RecordSectionGrid,
   RecordSectionGridRow,
-  resolveRecordRowStatus,
   type RecordSectionSubHeaderProps,
   type RecordRowColumnSpec,
 } from "@/modules/shared/engines/record-view"
 import { calculateImportSummary } from "@builders/domain"
-import type { ImportInventoryRowDraft, LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type {
+  CategoryOption,
+  ImportInventoryRowDraft,
+  LocationOption,
+  ProductOption,
+  WarehouseOption,
+} from "@/modules/imports/controllers/drafts"
 
+// Column widths tuned to fit a typical ~1440px viewport without horizontal
+// scroll on average row content, and to stay within a reasonable bound when
+// scroll is needed. `product` + `notes` keep small grow factors so they
+// absorb extra space first; everything else stays at its min-width.
 const IMPORT_INVENTORY_ROW_COLUMNS: RecordRowColumnSpec[] = [
-  { key: "product", minWidth: 240, grow: 1.3, label: "Product" },
-  { key: "itemNumber", minWidth: 132, label: "Item #" },
-  { key: "stock", minWidth: 164, align: "center", label: "Stock" },
-  { key: "location", minWidth: 220, label: "Location" },
-  { key: "dyeLot", minWidth: 144, label: "Dye Lot" },
-  { key: "cost", minWidth: 132, align: "end", label: "Cost" },
-  { key: "freight", minWidth: 132, align: "end", label: "Freight" },
-  { key: "notes", minWidth: 280, grow: 1.2, label: "Notes" },
-  { key: "importStatus", minWidth: 140, align: "center", label: "Import Status" },
-  { key: "status", minWidth: 120, align: "center", label: "Status" },
-  { key: "remove", minWidth: 110, align: "center", label: "Remove" },
+  { key: "categoryFilter", minWidth: 132, label: "Filter" },
+  { key: "product", minWidth: 220, grow: 1.3, label: "Product" },
+  { key: "itemNumber", minWidth: 116, label: "Item #" },
+  { key: "stock", minWidth: 156, align: "center", label: "Stock" },
+  { key: "location", minWidth: 196, label: "Location" },
+  { key: "dyeLot", minWidth: 124, label: "Dye Lot" },
+  { key: "cost", minWidth: 116, align: "end", label: "Cost" },
+  { key: "freight", minWidth: 116, align: "end", label: "Freight" },
+  { key: "notes", minWidth: 240, grow: 1.2, label: "Notes" },
+  { key: "importStatus", minWidth: 132, align: "center", label: "Import Status" },
+  { key: "remove", minWidth: 100, align: "center", label: "Remove" },
 ]
-
-function isDraftRow(row: ImportInventoryRowDraft) {
-  return row.clientId.startsWith("local:")
-}
 
 export function ImportInventoryRowsSection({
   subHeader,
@@ -42,10 +47,12 @@ export function ImportInventoryRowsSection({
   productOptions,
   warehouseOptions: _warehouseOptions,
   locationOptions,
+  categoryOptions,
   noticeMessage,
   noticeError,
   onRowFieldChange,
   onRowImportStatusChange,
+  onRowCategoryFilterChange,
   onRemoveRow,
 }: {
   subHeader?: Omit<RecordSectionSubHeaderProps, "sectionType" | "capabilities">
@@ -54,14 +61,19 @@ export function ImportInventoryRowsSection({
   productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
+  categoryOptions: CategoryOption[]
   noticeMessage?: string
   noticeError?: string
   onRowFieldChange: (
     index: number,
-    field: Exclude<keyof Omit<ImportInventoryRowDraft, "clientId">, "isImported">,
+    field: Exclude<
+      keyof Omit<ImportInventoryRowDraft, "clientId">,
+      "isImported" | "categoryFilterId"
+    >,
     value: string,
   ) => void
   onRowImportStatusChange: (index: number, isImported: boolean) => void
+  onRowCategoryFilterChange: (index: number, categoryId: string | null) => void
   onRemoveRow: (index: number) => void
 }) {
   const summary = calculateImportSummary(rows.map((row) => ({
@@ -86,7 +98,7 @@ export function ImportInventoryRowsSection({
         supportsAddRow: true,
         supportsSaveDiscard: true,
         supportsRemoveRow: true,
-        supportsStatusColumn: true,
+        supportsStatusColumn: false,
         supportsMetrics: true,
         supportsSummary: true,
         supportsEmptyState: true,
@@ -104,23 +116,48 @@ export function ImportInventoryRowsSection({
             ? locationOptions.filter((location) => location.warehouseId === warehouseId)
             : locationOptions
           const selectedProduct = productOptions.find((product) => product.id === row.productId)
-          const status = resolveRecordRowStatus({ isUnsaved: isDraftRow(row) })
+          // Row-wide editability: once `isImported = true`, the row is locked.
+          // The inventory record view becomes the only edit surface. This mirrors
+          // the domain rule `isInventoryCostLocked` for cost/freight (which
+          // extends to ALL fields here — single clean handoff).
+          const locked = row.isImported
+          // Category filter: narrows the product dropdown. ALWAYS includes the
+          // currently-selected product so a saved row never renders "broken"
+          // just because its category is filtered out.
+          const visibleProducts = row.categoryFilterId
+            ? productOptions.filter(
+                (product) =>
+                  product.categoryId === row.categoryFilterId || product.id === row.productId,
+              )
+            : productOptions
 
           return (
             <RecordSectionGridRow
               key={row.clientId}
               columns={IMPORT_INVENTORY_ROW_COLUMNS}
-              rowTone={status.key === "unsaved" ? "allocation" : "default"}
+              rowTone="default"
             >
               <RecordRowLayout columns={IMPORT_INVENTORY_ROW_COLUMNS}>
+                <RecordItemCell columnKey="categoryFilter" chrome="grid" showLabel={index === 0}>
+                  <RecordGridCellDropdown
+                    ariaLabel={`Import inventory row ${index + 1} category filter`}
+                    value={row.categoryFilterId}
+                    options={categoryOptions.map((category) => ({ id: category.id, label: category.label }))}
+                    placeholder="All categories"
+                    allowClear
+                    disabled={locked}
+                    onChange={(next) => onRowCategoryFilterChange(index, next)}
+                  />
+                </RecordItemCell>
                 <RecordItemCell columnKey="product" chrome="grid" showLabel={index === 0}>
                   <RecordGridCellSelect
                     aria-label={`Import inventory row ${index + 1} product`}
                     value={row.productId}
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "productId", event.target.value)}
                   >
                     <option value="">Select product</option>
-                    {productOptions.map((product) => (
+                    {visibleProducts.map((product) => (
                       <option key={product.id} value={product.id}>
                         {product.label}
                       </option>
@@ -131,6 +168,7 @@ export function ImportInventoryRowsSection({
                   <RecordGridCellInput
                     aria-label={`Import inventory row ${index + 1} item number`}
                     value={row.itemNumber}
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "itemNumber", event.target.value)}
                   />
                 </RecordItemCell>
@@ -143,6 +181,7 @@ export function ImportInventoryRowsSection({
                       placeholder="0.00"
                       align="center"
                       controlSize="compact"
+                      disabled={locked}
                       onChange={(event) => onRowFieldChange(index, "stockCount", event.target.value)}
                     />
                     <span className="text-xs text-[var(--foreground)]/60">{selectedProduct?.stockUnit || "unit"}</span>
@@ -152,6 +191,7 @@ export function ImportInventoryRowsSection({
                   <RecordGridCellSelect
                     aria-label={`Import inventory row ${index + 1} location`}
                     value={row.locationId}
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "locationId", event.target.value)}
                   >
                     <option value="">Select location</option>
@@ -166,6 +206,7 @@ export function ImportInventoryRowsSection({
                   <RecordGridCellInput
                     aria-label={`Import inventory row ${index + 1} dye lot`}
                     value={row.dyeLot}
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "dyeLot", event.target.value)}
                   />
                 </RecordItemCell>
@@ -177,6 +218,7 @@ export function ImportInventoryRowsSection({
                     placeholder="0.00"
                     align="right"
                     controlSize="compact"
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "cost", event.target.value)}
                   />
                 </RecordItemCell>
@@ -188,6 +230,7 @@ export function ImportInventoryRowsSection({
                     placeholder="0.00"
                     align="right"
                     controlSize="compact"
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "freight", event.target.value)}
                   />
                 </RecordItemCell>
@@ -195,6 +238,7 @@ export function ImportInventoryRowsSection({
                   <RecordGridCellInput
                     aria-label={`Import inventory row ${index + 1} notes`}
                     value={row.notes}
+                    disabled={locked}
                     onChange={(event) => onRowFieldChange(index, "notes", event.target.value)}
                   />
                 </RecordItemCell>
@@ -212,18 +256,12 @@ export function ImportInventoryRowsSection({
                   </RecordGridCellSelect>
                 </RecordItemCell>
                 <RecordItemSectionControls
-                  capabilities={{ supportsStatusColumn: true, supportsRemoveRow: true }}
+                  capabilities={{ supportsStatusColumn: false, supportsRemoveRow: true }}
                   cellChrome="grid"
                   showCellLabels={index === 0}
-                  status={{
-                    content: (
-                      <RecordRowStatusBadge tone={status.tone}>
-                        {status.label}
-                      </RecordRowStatusBadge>
-                    ),
-                  }}
                   remove={{
                     onRemove: () => onRemoveRow(index),
+                    disabled: locked,
                   }}
                 />
               </RecordRowLayout>

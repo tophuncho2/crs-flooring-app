@@ -236,16 +236,23 @@ export type ImportProductOption = {
   style: string | null
   color: string | null
   stockUnit: string
+  categoryId: string
+}
+
+export type ImportCategoryOption = {
+  id: string
+  name: string
 }
 
 export type ImportFormOptions = {
   warehouses: ImportWarehouseOption[]
   locations: ImportLocationOption[]
   products: ImportProductOption[]
+  categories: ImportCategoryOption[]
 }
 
 export async function listImportOptions(client: ImportsDbClient = db): Promise<ImportFormOptions> {
-  const [warehouses, locations, products] = await Promise.all([
+  const [warehouses, locations, products, categories] = await Promise.all([
     client.flooringWarehouse.findMany({
       select: { id: true, name: true, number: true },
       orderBy: { number: "asc" },
@@ -267,8 +274,13 @@ export async function listImportOptions(client: ImportsDbClient = db): Promise<I
         name: true,
         style: true,
         color: true,
+        categoryId: true,
         category: { select: { stockUnit: { select: { name: true } } } },
       },
+      orderBy: { name: "asc" },
+    }),
+    client.flooringCategory.findMany({
+      select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
   ])
@@ -294,6 +306,8 @@ export async function listImportOptions(client: ImportsDbClient = db): Promise<I
       style: row.style,
       color: row.color,
       stockUnit: row.category.stockUnit?.name ?? "",
+      categoryId: row.categoryId,
     })),
+    categories,
   }
 }

@@ -4,6 +4,7 @@ export * from "./cells/currency-cell"
 export * from "./cells/quantity-cell"
 export * from "./cells/record-grid-cell-input"
 export * from "./cells/record-grid-cell-select"
+export * from "./cells/record-grid-cell-dropdown"
 export * from "./cells/record-item-cell"
 export * from "./cells/record-inline-actions-cell"
 

@@ -140,8 +140,11 @@ export async function updateInventoryUseCase(
     if (input.itemNumber !== undefined) dbInput.itemNumber = input.itemNumber.trim()
     if (input.dyeLot !== undefined) dbInput.dyeLot = emptyToNull(input.dyeLot)
     if (input.stockCount !== undefined) dbInput.stockCount = input.stockCount.trim()
-    if (input.cost !== undefined) dbInput.cost = emptyToNull(input.cost)
-    if (input.freight !== undefined) dbInput.freight = emptyToNull(input.freight)
+    // NOTE: cost and freight are intentionally NOT forwarded from this use case.
+    // They are write-once-at-import fields, editable only through the imports
+    // inventory-rows diff while `isImported = false`. Once imported, the values
+    // must remain stable for accounting snapshots. See
+    // `isInventoryCostLocked` in @builders/domain.
     if (input.notes !== undefined) dbInput.notes = emptyToNull(input.notes)
     if (input.isImported !== undefined) dbInput.isImported = input.isImported
     if (input.warehouseId !== undefined) {

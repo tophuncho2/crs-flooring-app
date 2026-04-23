@@ -3,9 +3,6 @@
 import {
   RECORD_CURRENCY_PREFIX,
   RECORD_FIELD_CONTROL_CLASS_NAME,
-  RECORD_PREFIX_CONTROL_CLASS_NAME,
-  RECORD_PREFIXED_CONTROL_CONTAINER_CLASS_NAME,
-  RECORD_PREFIXED_CONTROL_INPUT_CLASS_NAME,
   RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
   RecordPrimaryFieldCell,
@@ -168,38 +165,16 @@ export function InventoryPrimaryFieldsSection({
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Cost">
-              <div className={RECORD_PREFIXED_CONTROL_CONTAINER_CLASS_NAME}>
-                <span aria-hidden="true" className={RECORD_PREFIX_CONTROL_CLASS_NAME}>
-                  {RECORD_CURRENCY_PREFIX}
-                </span>
-                <input
-                  aria-label="Cost"
-                  value={draft.cost}
-                  onChange={(event) => onFieldChange("cost", event.target.value)}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className={RECORD_PREFIXED_CONTROL_INPUT_CLASS_NAME}
-                  disabled={controlDisabled}
-                />
-              </div>
+              <RecordStaticFieldValue>
+                {inventory.cost ? `${RECORD_CURRENCY_PREFIX}${inventory.cost}` : "-"}
+              </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Freight">
-              <div className={RECORD_PREFIXED_CONTROL_CONTAINER_CLASS_NAME}>
-                <span aria-hidden="true" className={RECORD_PREFIX_CONTROL_CLASS_NAME}>
-                  {RECORD_CURRENCY_PREFIX}
-                </span>
-                <input
-                  aria-label="Freight"
-                  value={draft.freight}
-                  onChange={(event) => onFieldChange("freight", event.target.value)}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className={RECORD_PREFIXED_CONTROL_INPUT_CLASS_NAME}
-                  disabled={controlDisabled}
-                />
-              </div>
+              <RecordStaticFieldValue>
+                {inventory.freight ? `${RECORD_CURRENCY_PREFIX}${inventory.freight}` : "-"}
+              </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="lg">

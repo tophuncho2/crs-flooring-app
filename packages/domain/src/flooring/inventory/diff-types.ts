@@ -62,13 +62,6 @@ export type DiffLocationLookup = {
 
 export type InventoryDiffValidationIssue =
   | {
-      code: "DUPLICATE_ITEM_NUMBER_PER_LOCATION"
-      itemNumber: string
-      locationId: string | null
-      offendingIds: string[]
-      offendingTempIds: string[]
-    }
-  | {
       code: "LOCATION_WAREHOUSE_MISMATCH"
       locationId: string
       expectedWarehouseId: string
@@ -103,11 +96,14 @@ export type InventoryDiffValidationIssue =
       code: "IMPORTED_REVERSAL_NOT_ALLOWED"
       rowId: string
     }
+  | {
+      code: "INVENTORY_COST_LOCKED_POST_IMPORT"
+      rowId: string
+      attemptedFields: Array<"cost" | "freight">
+    }
 
 export function describeInventoryDiffIssue(issue: InventoryDiffValidationIssue): string {
   switch (issue.code) {
-    case "DUPLICATE_ITEM_NUMBER_PER_LOCATION":
-      return `Item # "${issue.itemNumber}" is used more than once at the same location. Each item # must be unique per location.`
     case "LOCATION_WAREHOUSE_MISMATCH":
       return `The selected location does not belong to the chosen warehouse.`
     case "IMPORT_WAREHOUSE_MISMATCH":
@@ -120,6 +116,8 @@ export function describeInventoryDiffIssue(issue: InventoryDiffValidationIssue):
       return `Cannot delete inventory row with ${issue.cutLogsCount} cut log${issue.cutLogsCount === 1 ? "" : "s"} attached.`
     case "IMPORTED_REVERSAL_NOT_ALLOWED":
       return `Inventory row is already imported and cannot return to pending.`
+    case "INVENTORY_COST_LOCKED_POST_IMPORT":
+      return `Inventory row is imported — ${issue.attemptedFields.join(" and ")} can no longer be edited. Cost and freight lock once a row is marked final.`
   }
 }
 
@@ -185,28 +183,6 @@ function projectPostDiffRows(
   }
 
   return projected
-}
-
-function findDuplicateItemNumbers(rows: ProjectedRow[]): InventoryDiffValidationIssue[] {
-  const issues: InventoryDiffValidationIssue[] = []
-  const groups = new Map<string, ProjectedRow[]>()
-  for (const row of rows) {
-    const key = `${row.locationId ?? "∅"}::${row.itemNumber}`
-    const list = groups.get(key) ?? []
-    list.push(row)
-    groups.set(key, list)
-  }
-  for (const list of groups.values()) {
-    if (list.length <= 1) continue
-    issues.push({
-      code: "DUPLICATE_ITEM_NUMBER_PER_LOCATION",
-      itemNumber: list[0].itemNumber,
-      locationId: list[0].locationId,
-      offendingIds: list.map((r) => r.id).filter((id): id is string => id !== null),
-      offendingTempIds: list.map((r) => r.tempId).filter((t): t is string => t !== null),
-    })
-  }
-  return issues
 }
 
 function findLocationWarehouseMismatches(
@@ -301,6 +277,29 @@ function findBlockedDeletes(
   return issues
 }
 
+function findCostFreightLocksPostImport(
+  diff: InventoryRowsDiff,
+  existing: DiffExistingInventoryRow[],
+): InventoryDiffValidationIssue[] {
+  const issues: InventoryDiffValidationIssue[] = []
+  const existingById = new Map(existing.map((row) => [row.id, row]))
+  for (const update of diff.modified) {
+    const row = existingById.get(update.id)
+    if (!row) continue
+    if (row.isImported !== true) continue
+    const attempted: Array<"cost" | "freight"> = []
+    if (update.patch.cost !== undefined) attempted.push("cost")
+    if (update.patch.freight !== undefined) attempted.push("freight")
+    if (attempted.length === 0) continue
+    issues.push({
+      code: "INVENTORY_COST_LOCKED_POST_IMPORT",
+      rowId: update.id,
+      attemptedFields: attempted,
+    })
+  }
+  return issues
+}
+
 function findImportedReversals(
   diff: InventoryRowsDiff,
   existing: DiffExistingInventoryRow[],
@@ -336,11 +335,11 @@ export function validateInventoryRowsDiff(
   const knownProductIds = new Set(resolution.knownProductIds)
   const projected = projectPostDiffRows(diff, resolution.existing)
   return [
-    ...findDuplicateItemNumbers(projected),
     ...findLocationWarehouseMismatches(projected, locationIndex),
     ...findImportWarehouseMismatches(projected, parentContext),
     ...findUnknownProducts(projected, knownProductIds),
     ...findBlockedDeletes(diff, resolution.existing),
     ...findImportedReversals(diff, resolution.existing),
+    ...findCostFreightLocksPostImport(diff, resolution.existing),
   ]
 }

@@ -13,6 +13,12 @@ export type ProductOption = {
   id: string
   label: string
   stockUnit: string
+  categoryId: string
+}
+
+export type CategoryOption = {
+  id: string
+  label: string
 }
 
 export type WarehouseOption = {
@@ -39,6 +45,13 @@ export type ImportInventoryRowDraft = {
   freight: string
   notes: string
   isImported: boolean
+  /**
+   * Client-only helper: scopes the product dropdown to products matching this
+   * category. `null` = show all products. Not persisted — never appears in the
+   * mutation payload. Surviving across re-renders via the draft state is
+   * enough.
+   */
+  categoryFilterId: string | null
 }
 
 export function createImportInventoryRowDraft(item?: ImportInventoryRow): ImportInventoryRowDraft {
@@ -53,6 +66,7 @@ export function createImportInventoryRowDraft(item?: ImportInventoryRow): Import
     freight: item?.freight ?? "",
     notes: item?.notes ?? "",
     isImported: item?.isImported ?? false,
+    categoryFilterId: null,
   }
 }
 
