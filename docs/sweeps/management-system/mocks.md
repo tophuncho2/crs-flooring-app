@@ -310,7 +310,7 @@ model FlooringWorkOrderSalesRep {
 
 ## User Data
 
-### `FlooringContact` — `user-data/contacts`
+### `FlooringContact` — `user-data/contacts` ✅
 
 ```prisma
 model FlooringContact {
@@ -328,7 +328,7 @@ model FlooringContact {
 }
 ```
 
-### `FlooringService` — `user-data/services`
+### `FlooringService` — `user-data/services` ✅
 
 ```prisma
 model FlooringService {
