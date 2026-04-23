@@ -27,13 +27,8 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Add `description` column
 - [ ] Drop `googleDocUrl` + `googleDriveSlip` columns — refactor of `apps/web/modules/work-orders/` callers required (see domain/data/application/api-routes layer files)
 - [ ] Remove `status` column
-- [ ] Remove `isComplete` boolean
 - [ ] Rename `unitLabel` to `unitNumber` - stays as string, not number only
 - [ ] Make `analytics` relation required (every work order must be linked to an analytics row)
-
-## Main-Hub / Work Orders / Items (`FlooringWorkOrderItem`, `FlooringWorkOrderServiceItem`, `FlooringWorkOrderSalesRep`)
-
-- [ ] Clarify purpose of `sourceTemplateItemId` / `sourceTemplateServiceItemId` / `sourceTemplateSalesRepId` — is this for template-linked stats tracking?
 
 ## User Data / Job Type (`FlooringJobType`) — new model
 
