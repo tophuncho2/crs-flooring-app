@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { Prisma, applyTemplateMaterialItemsDiff, withDatabaseTransaction } from "@builders/db"
-import { assignDiffIds, validateTemplateMaterialItemForm } from "@builders/domain"
+import { assignDraftIds, validateTemplateMaterialItemForm } from "@builders/domain"
 import { TemplateMaterialItemExecutionError } from "./errors.js"
 import type {
   SaveTemplateMaterialItemsSectionUseCaseInput,
@@ -38,7 +38,7 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       }
     }
 
-    const addedWithIds = assignDiffIds(input.diff.added, randomUUID)
+    const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
     return applyTemplateMaterialItemsDiff(c, {
       templateId: input.templateId,
