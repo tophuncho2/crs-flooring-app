@@ -26,7 +26,7 @@ Sums the raw `cut` field (in the category's Stock Unit).
 
 **Applies when** Send Unit = Stock Unit. No conversion needed — the cut's stock-count amount IS the fulfillment quantity.
 
-**Used by (all one-to-one categories):** carpet, vinyl-sheet, vct, adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kils, scent-stop, moisture-barrier, primer.
+**Used by (all one-to-one categories):** carpet, vinyl-sheet, vct, adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kilz, scent-stop, moisture-barrier, primer.
 
 ---
 
@@ -77,7 +77,7 @@ export const CATEGORY_FULFILLMENT_SOURCE: Record<string, keyof typeof FULFILLMEN
   "patch":             "stock-count",
   "shoe-molding":      "stock-count",
   "wax-ring":          "stock-count",
-  "kils":              "stock-count",
+  "kilz":              "stock-count",
   "scent-stop":        "stock-count",
   "moisture-barrier":  "stock-count",
   "primer":            "stock-count",

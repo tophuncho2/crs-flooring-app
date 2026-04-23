@@ -51,7 +51,7 @@ Category has no coverage unit; coverage concept doesn't apply.
 
 **Product create requirement:** `coveragePerUnit` is NOT required (and is meaningless for these categories).
 
-**Used by (all one-to-one categories):** carpet, vinyl-sheet, vct, adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kils, scent-stop, moisture-barrier, primer.
+**Used by (all one-to-one categories):** carpet, vinyl-sheet, vct, adhesive, baseboard, trim, metals, luan, plywood, patch, shoe-molding, wax-ring, kilz, scent-stop, moisture-barrier, primer.
 
 ---
 
@@ -82,7 +82,7 @@ export const CATEGORY_COVERAGE_STRATEGY: Record<string, keyof typeof COVERAGE_ST
   "patch":             "none",
   "shoe-molding":      "none",
   "wax-ring":          "none",
-  "kils":              "none",
+  "kilz":              "none",
   "scent-stop":        "none",
   "moisture-barrier":  "none",
   "primer":            "none",

@@ -1,11 +1,11 @@
-# Kils
+# Kilz
 
-**Slug:** `kils`
+**Slug:** `kilz`
 
 ---
 
-**Stock Unit:** Buckets
-**Send Unit:** Buckets
+**Stock Unit:** Units
+**Send Unit:** Units
 **Coverage Unit:** N/A
 
 ---
@@ -26,5 +26,3 @@ N/A — strategy `none`. Category opts out of coverage.
 
 **Material item fulfillment:**
 `quantityAssigned = sum(cutLog.cut)` — strict 1:1 stock count. Strategy `stock-count`.
-
-<!-- Flagged in DATA-MODEL.md: likely intended as "Kilz" (brand name for primer line). Confirm slug. -->
