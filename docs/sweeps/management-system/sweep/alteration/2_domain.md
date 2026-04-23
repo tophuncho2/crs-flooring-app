@@ -14,3 +14,5 @@ Domain rules, logic, and types. Grouped by module. Source comments in `../mocks.
 
 - [ ] Template → work order sync is deferred until the templates and work orders modules are secure.
 - [ ] Invariant: every work order must be linked to an analytics row.
+- [ ] Drop `googleDocUrl` / `googleDriveSlip` from validators in `apps/web/modules/work-orders/validators.ts` (lines ~48–49, 453–454, 476–477).
+- [ ] Remove `googleDocUrl` / `googleDriveSlip` entries from the `TEMPLATE_SYNC_POLICY` in `apps/web/modules/work-orders/contracts.ts` (lines ~40–41).

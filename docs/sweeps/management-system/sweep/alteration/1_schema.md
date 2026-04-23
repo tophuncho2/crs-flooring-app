@@ -25,7 +25,7 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Add relation to management companies
 - [ ] Add relation to job types
 - [ ] Add `description` column
-- [ ] Decide fate of `googleDocUrl` / `googleDriveSlip` — actively written in `apps/web/modules/work-orders/` (validators, contracts, mutations, services, `application/manage-work-order.ts`); API input maps `workOrderImageUrl` → `googleDriveSlip`. Removal requires refactoring those callers, not just a schema prune.
+- [ ] Drop `googleDocUrl` + `googleDriveSlip` columns — refactor of `apps/web/modules/work-orders/` callers required (see domain/data/application/api-routes layer files)
 - [ ] Remove `status` column
 - [ ] Remove `isComplete` boolean
 - [ ] Rename `unitLabel` to `unitNumber` - stays as string, not number only

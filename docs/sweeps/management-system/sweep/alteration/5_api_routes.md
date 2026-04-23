@@ -2,4 +2,6 @@
 
 HTTP / tRPC endpoints. Grouped by module. Source comments in `../mocks.md`.
 
-_TBD — no comments in `../mocks.md` currently map to this layer._
+## Main-Hub / Work Orders
+
+- [ ] Remove the `workOrderImageUrl` → `googleDriveSlip` and `googleDocUrl` → `googleDocUrl` input mappings from the work-order create/update endpoints. Breaking change — coordinate with any external/API consumers before release.
