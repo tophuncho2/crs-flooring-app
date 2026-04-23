@@ -12,7 +12,6 @@ export type ServiceRecord = {
   unitName: string
   baseCost: string
   notes: string
-  usageCount: number
   createdAt: string
   updatedAt: string
 }
@@ -26,10 +25,7 @@ export type ServiceOptionRecord = {
   notes: string
 }
 
-export type ServiceDeleteStateResult = {
-  id: string
-  _count: { templateItems: number; workOrderItems: number }
-} | null
+export type ServiceDeleteStateResult = { id: string } | null
 
 // --- Normalizers ---
 
@@ -41,7 +37,6 @@ export function normalizeServiceRow(service: {
   createdAt: Date
   updatedAt: Date
   unit: { id: string; name: string }
-  _count?: { templateItems: number; workOrderItems: number }
 }): ServiceRecord {
   return {
     id: service.id,
@@ -50,7 +45,6 @@ export function normalizeServiceRow(service: {
     unitName: service.unit.name,
     baseCost: service.baseCost.toString(),
     notes: service.notes ?? "",
-    usageCount: service._count ? service._count.templateItems + service._count.workOrderItems : 0,
     createdAt: service.createdAt.toISOString(),
     updatedAt: service.updatedAt.toISOString(),
   }
@@ -135,12 +129,8 @@ export async function getServiceDeleteState(
   id: string,
   client: ServiceDbClient = db,
 ): Promise<ServiceDeleteStateResult> {
-  const service = await client.flooringService.findUnique({
+  return client.flooringService.findUnique({
     where: { id },
     select: { id: true },
   })
-
-  if (!service) return null
-
-  return { id: service.id, _count: { templateItems: 0, workOrderItems: 0 } }
 }

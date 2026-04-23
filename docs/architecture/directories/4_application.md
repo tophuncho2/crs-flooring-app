@@ -40,14 +40,15 @@ Typical contents:
 
 - HTTP concerns (`Request`, `Response`, `NextResponse`, status codes beyond error hints).
 - Rendering, React, or `"use server"` directives.
-- Domain rules (belong in `@builders/domain`) or persistence (belong in `@builders/db`).
+- Domain rules (belong in `@builders/domain`)
+- Persistence (belong in `@builders/db`).
 - Session handling, rate limiting, idempotency receipts, or optimistic-lock checks — those are route-level concerns.
 
 ## Import rules
 
 - **May import**: `@builders/domain`, `@builders/db`, Prisma types.
 - **Must not import**: routes, pages, React code, `@/modules/...`.
-- Use cases should not import each other unless the higher-level use case genuinely composes the other.
+- Use cases should not import  other use cases 
 
 ## Example
 

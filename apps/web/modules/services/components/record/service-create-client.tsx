@@ -18,7 +18,6 @@ const EMPTY_SERVICE: ServiceRow = {
   unitName: "",
   baseCost: "",
   notes: "",
-  usageCount: 0,
   createdAt: "",
   updatedAt: "",
 }

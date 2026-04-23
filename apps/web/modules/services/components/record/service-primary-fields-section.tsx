@@ -84,9 +84,6 @@ export function ServicePrimaryFieldsSection({
 
       <RecordPrimaryPane variant="side">
         <RecordPrimaryFieldsGrid variant="side">
-          <RecordFormField label="Usage">
-            <RecordStaticFieldValue>{service.usageCount}</RecordStaticFieldValue>
-          </RecordFormField>
           <RecordFormField label="Created">
             <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>

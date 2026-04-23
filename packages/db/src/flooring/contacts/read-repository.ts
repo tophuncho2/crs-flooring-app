@@ -18,7 +18,6 @@ export type ContactRecord = {
   name: string
   type: ContactType
   typeLabel: string
-  assignmentsCount: number
   createdAt: string
   updatedAt: string
 }
@@ -35,17 +34,12 @@ export function normalizeContactRow(contact: {
   type: ContactType
   createdAt: Date
   updatedAt: Date
-  _count?: {
-    templateSalesReps: number
-    workOrderSalesReps: number
-  }
 }): ContactRecord {
   return {
     id: contact.id,
     name: contact.name,
     type: contact.type,
     typeLabel: getContactTypeLabel(contact.type),
-    assignmentsCount: (contact._count?.templateSalesReps ?? 0) + (contact._count?.workOrderSalesReps ?? 0),
     createdAt: contact.createdAt.toISOString(),
     updatedAt: contact.updatedAt.toISOString(),
   }
@@ -89,24 +83,14 @@ export async function getContactById(id: string, client: ContactDbClient = db): 
   return normalizeContactDetail(contact)
 }
 
-export type ContactDeleteStateResult = {
-  id: string
-  _count: {
-    templateSalesReps: number
-    workOrderSalesReps: number
-  }
-}
+export type ContactDeleteStateResult = { id: string }
 
 export async function getContactDeleteState(
   id: string,
   client: ContactDbClient = db,
 ): Promise<ContactDeleteStateResult | null> {
-  const contact = await client.flooringContact.findUnique({
+  return client.flooringContact.findUnique({
     where: { id },
     select: { id: true },
   })
-
-  if (!contact) return null
-
-  return { id: contact.id, _count: { templateSalesReps: 0, workOrderSalesReps: 0 } }
 }

@@ -185,3 +185,10 @@ export async function countManagementCompanies(
     where: buildManagementCompaniesWhere(args.searchQuery),
   })
 }
+
+export async function countPropertiesByManagementCompanyId(
+  managementCompanyId: string,
+  client: ManagementCompaniesDbClient = db,
+): Promise<number> {
+  return client.property.count({ where: { managementCompanyId } })
+}

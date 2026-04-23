@@ -16,7 +16,6 @@ const EMPTY_CONTACT: ContactDetail = {
   name: "",
   type: "OTHER",
   typeLabel: "",
-  assignmentsCount: 0,
   createdAt: "",
   updatedAt: "",
 }

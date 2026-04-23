@@ -13,7 +13,6 @@ export type ContactRow = {
   name: string
   type: ContactType
   typeLabel: string
-  assignmentsCount: number
   createdAt: string
   updatedAt: string
 }

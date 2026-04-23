@@ -29,7 +29,6 @@ export function ContactsTable({
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
       name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
       type: (columnIndex) => <DashboardListRowCell key="type" columnIndex={columnIndex}>{row.typeLabel}</DashboardListRowCell>,
-      assignments: (columnIndex) => <DashboardListRowCell key="assignments" columnIndex={columnIndex}>{row.assignmentsCount}</DashboardListRowCell>,
     }
 
     return (

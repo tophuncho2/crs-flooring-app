@@ -179,3 +179,10 @@ export async function countProperties(
     where: buildPropertiesWhere(args.searchQuery),
   })
 }
+
+export async function countTemplatesByPropertyId(
+  propertyId: string,
+  client: PropertiesDbClient = db,
+): Promise<number> {
+  return client.flooringTemplate.count({ where: { propertyId } })
+}

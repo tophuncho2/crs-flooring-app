@@ -5,7 +5,6 @@ export type ServiceRow = {
   unitName: string
   baseCost: string
   notes: string
-  usageCount: number
   createdAt: string
   updatedAt: string
 }

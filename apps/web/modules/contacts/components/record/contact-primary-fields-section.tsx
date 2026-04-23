@@ -61,9 +61,6 @@ export function ContactPrimaryFieldsSection({
 
       <RecordPrimaryPane variant="side">
         <RecordPrimaryFieldsGrid variant="side">
-          <RecordFormField label="Assignments">
-            <RecordStaticFieldValue>{contact.assignmentsCount}</RecordStaticFieldValue>
-          </RecordFormField>
           <RecordFormField label="Created">
             <RecordStaticFieldValue>{createdLabel}</RecordStaticFieldValue>
           </RecordFormField>
