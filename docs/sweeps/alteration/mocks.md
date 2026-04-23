@@ -114,51 +114,6 @@ model FlooringTemplateItem {
 }
 ```
 
-### `FlooringTemplateServiceItem` — `templates/service items`
-
-```prisma
-model FlooringTemplateServiceItem {
-  id         String                @id @default(uuid())
-  templateId String
-  template   FlooringTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  serviceId  String?
-  service    FlooringService?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
-  name       String
-  unitId     String
-  unit       FlooringUnitOfMeasure @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  quantity   Decimal               @db.Decimal(10, 2)
-  unitPrice  Decimal               @db.Decimal(10, 2)
-  notes      String?
-  createdAt  DateTime              @default(now())
-
-  @@index([templateId])
-  @@index([templateId, createdAt])
-  @@index([serviceId])
-  @@index([unitId])
-  @@map("flooring_template_service_item")
-}
-```
-
-### `FlooringTemplateSalesRep` — `templates/sales reps`
-
-```prisma
-model FlooringTemplateSalesRep {
-  id         String           @id @default(uuid())
-  templateId String
-  template   FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  contactId  String
-  contact    FlooringContact  @relation(fields: [contactId], references: [id], onDelete: Restrict)
-  percent    Decimal          @db.Decimal(5, 2)
-  createdAt  DateTime         @default(now())
-
-  @@unique([templateId, contactId])
-  @@index([templateId])
-  @@index([contactId])
-  @@index([templateId, createdAt])
-  @@map("flooring_template_sales_rep")
-}
-```
-
 ---
 
 ## Main-Hub / Work Orders
@@ -235,7 +190,84 @@ model FlooringWorkOrderItem {
 }
 ```
 
-### `FlooringWorkOrderServiceItem` — `work-orders/service items`
+---
+
+## User Data
+
+### `FlooringJobType` — `user-data/job-type`
+
+_Planned — not yet in `schema.prisma`. See `plans.md` step 3 ("add job types module")._
+
+```prisma
+model FlooringJobType {
+  id         String              @id @default(uuid())
+  name       String              @unique
+  templates  FlooringTemplate[]
+  workOrders FlooringWorkOrder[]
+
+  @@index([name])
+  @@map("flooring_job_type")
+}
+```
+
+> Companion changes on the existing models:
+> - `FlooringTemplate` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
+> - `FlooringWorkOrder` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
+
+---
+
+## Affected Models — Service-Item / Sales-Rep Removal
+
+Current `schema.prisma` state for models touched by the templates/work-orders service-item + sales-rep removal. Reference for the checklist in `./1_schema.md`. Template material items (`FlooringTemplateItem`) and work order material items (`FlooringWorkOrderItem`) are **not** being removed — they stay exactly as shown in their sections above.
+
+### Models being dropped
+
+#### `FlooringTemplateServiceItem` — `templates/service items`
+
+```prisma
+model FlooringTemplateServiceItem {
+  id         String                @id @default(uuid())
+  templateId String
+  template   FlooringTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  serviceId  String?
+  service    FlooringService?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  name       String
+  unitId     String
+  unit       FlooringUnitOfMeasure @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  quantity   Decimal               @db.Decimal(10, 2)
+  unitPrice  Decimal               @db.Decimal(10, 2)
+  notes      String?
+  createdAt  DateTime              @default(now())
+
+  @@index([templateId])
+  @@index([templateId, createdAt])
+  @@index([serviceId])
+  @@index([unitId])
+  @@map("flooring_template_service_item")
+}
+```
+
+#### `FlooringTemplateSalesRep` — `templates/sales reps`
+
+```prisma
+model FlooringTemplateSalesRep {
+  id         String           @id @default(uuid())
+  templateId String
+  template   FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    FlooringContact  @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  percent    Decimal          @db.Decimal(5, 2)
+  createdAt  DateTime         @default(now())
+
+  @@unique([templateId, contactId])
+  @@index([templateId])
+  @@index([contactId])
+  @@index([templateId, createdAt])
+  @@map("flooring_template_sales_rep")
+}
+```
+
+#### `FlooringWorkOrderServiceItem` — `work-orders/service items`
 
 ```prisma
 model FlooringWorkOrderServiceItem {
@@ -263,7 +295,7 @@ model FlooringWorkOrderServiceItem {
 }
 ```
 
-### `FlooringWorkOrderSalesRep` — `work-orders/sales reps`
+#### `FlooringWorkOrderSalesRep` — `work-orders/sales reps`
 
 ```prisma
 model FlooringWorkOrderSalesRep {
@@ -286,29 +318,11 @@ model FlooringWorkOrderSalesRep {
 }
 ```
 
----
+### Models kept — only back-relations dropped
 
-## User Data
+Both models stay intact. The four `FlooringTemplate*` / `FlooringWorkOrder*` back-relations shown here disappear when the models above are dropped.
 
-### `FlooringContact` — `user-data/contacts` ✅
-
-```prisma
-model FlooringContact {
-  id                 String                      @id @default(uuid())
-  name               String
-  type               FlooringContactType
-  createdAt          DateTime                    @default(now())
-  updatedAt          DateTime                    @updatedAt
-  templateSalesReps  FlooringTemplateSalesRep[]
-  workOrderSalesReps FlooringWorkOrderSalesRep[]
-
-  @@index([name])
-  @@index([type])
-  @@map("flooring_contact")
-}
-```
-
-### `FlooringService` — `user-data/services` ✅
+#### `FlooringService` — `user-data/services`
 
 ```prisma
 model FlooringService {
@@ -330,25 +344,23 @@ model FlooringService {
 }
 ```
 
-### `FlooringJobType` — `user-data/job-type`
-
-_Planned — not yet in `schema.prisma`. See `plans.md` step 3 ("add job types module")._
+#### `FlooringContact` — `user-data/contacts`
 
 ```prisma
-model FlooringJobType {
-  id         String              @id @default(uuid())
-  name       String              @unique
-  templates  FlooringTemplate[]
-  workOrders FlooringWorkOrder[]
+model FlooringContact {
+  id                 String                      @id @default(uuid())
+  name               String
+  type               FlooringContactType
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  templateSalesReps  FlooringTemplateSalesRep[]
+  workOrderSalesReps FlooringWorkOrderSalesRep[]
 
   @@index([name])
-  @@map("flooring_job_type")
+  @@index([type])
+  @@map("flooring_contact")
 }
 ```
-
-> Companion changes on the existing models:
-> - `FlooringTemplate` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
-> - `FlooringWorkOrder` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
 
 ---
 

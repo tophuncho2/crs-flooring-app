@@ -2,6 +2,23 @@
 
 Work intentionally pushed past this sweep. Each item should be safe to revisit as an additive, isolated follow-up; if anything here starts blocking sweep goals, promote it back into `alteration/`.
 
+## Sync, file generation, and auto-allocation — pending cut logs
+
+**Deferred (all blocked on cut logs being secured across inventory and work orders):**
+- [ ] Template → work order sync mutation flow.
+- [ ] Work order sync / snapshot reconciliation (template pull).
+- [ ] Cut logs integration inside work order material items (scope completed under `inventory-system/balances/cut-logs`; management-system waits on it).
+- [ ] File generation for work orders (mirrors the template file-generation flow).
+- [ ] Auto-allocation (inventory → work orders).
+
+**Scope clarification for this sweep:**
+- In-scope: management companies, properties, job types, templates main section + material items diff-save, work orders main section.
+- Out-of-scope (until cut logs are secured): everything in the list above, plus work orders material items (its child-scope cut-log wiring is the blocker).
+
+**Conditions that pull these back in:**
+- Cut logs are secured within inventory and work orders.
+- Templates main and work orders main sections are both stable, with their use cases exercised by the dashboard.
+
 ## File generation for templates (worker + bucket)
 
 **Deferred:**
