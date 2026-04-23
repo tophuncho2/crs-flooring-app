@@ -20,24 +20,31 @@ Companion changes on existing models:
 
 ## Domain
 
-_TBD_
+1. Name uniqueness
+2. No delete if linked to work order or template
 
 ## Data
 
-_TBD_
+1. cananicol read and write repositories.
 
 ## Application
 
-_TBD_
+1. create through form
+2. update through record view
+3. delete through record view
 
 ## Routing
 
-_TBD_
+**seperate route for each**
+1. Create
+2. Update
+3. Delte
 
 ## Modules
 
-_TBD_
+1. Cananicol list view
+2. single section record view with cananicol controllers with dirty state tracking
 
 ## Dashboard
 
-_TBD_
+1. Renders by importing from modules
