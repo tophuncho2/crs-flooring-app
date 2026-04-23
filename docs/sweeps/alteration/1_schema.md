@@ -19,6 +19,10 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Drop `store` column — confirmed dead (only in `schema.prisma` + baseline migration; no app reads/writes)
 - [ ] Rename `templateTag` to `unitType`
 - [ ] Add `jobTypeId` + relation to new `FlooringJobType`
+- [ ] Remove `serviceItems` relation (unlink from `FlooringTemplateServiceItem`)
+- [ ] Remove `salesReps` relation (unlink from `FlooringTemplateSalesRep`)
+- [ ] Drop `FlooringTemplateServiceItem` model entirely
+- [ ] Drop `FlooringTemplateSalesRep` model entirely
 
 ## Work Orders (`FlooringWorkOrder`)
 
@@ -29,6 +33,16 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Remove `status` column
 - [ ] Rename `unitLabel` to `unitNumber` - stays as string, not number only
 - [ ] Make `analytics` relation required (every work order must be linked to an analytics row)
+- [ ] Remove `serviceItems` relation (unlink from `FlooringWorkOrderServiceItem`)
+- [ ] Remove `salesReps` relation (unlink from `FlooringWorkOrderSalesRep`)
+- [ ] Drop `FlooringWorkOrderServiceItem` model entirely
+- [ ] Drop `FlooringWorkOrderSalesRep` model entirely
+
+## Dependent Relation Cleanup (from dropped service-item / sales rep models)
+
+- [ ] `FlooringService` — remove `templateItems` and `workOrderItems` back-relations (model itself stays intact)
+- [ ] `FlooringContact` — remove `templateSalesReps` and `workOrderSalesReps` back-relations (model itself stays intact)
+- [ ] `FlooringUnitOfMeasure` — remove `templateServiceItems` and `workOrderServiceItems` back-relations
 
 ## Job Type (`FlooringJobType`) — new model
 
