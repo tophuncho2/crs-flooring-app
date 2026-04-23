@@ -37,3 +37,17 @@ export async function getJobTypeById(
 export async function countJobTypes(client: JobTypesDbClient = db): Promise<number> {
   return client.flooringJobType.count()
 }
+
+export async function countWorkOrdersByJobTypeId(
+  jobTypeId: string,
+  client: JobTypesDbClient = db,
+): Promise<number> {
+  return client.flooringWorkOrder.count({ where: { jobTypeId } })
+}
+
+export async function countTemplatesByJobTypeId(
+  jobTypeId: string,
+  client: JobTypesDbClient = db,
+): Promise<number> {
+  return client.flooringTemplate.count({ where: { jobTypeId } })
+}
