@@ -1,6 +1,6 @@
-import { createManagementCompanyUseCase } from "@builders/application"
-import { listManagementCompanies } from "@builders/db"
-import { MANAGEMENT_COMPANIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
+import { createTemplateUseCase } from "@builders/application"
+import { listTemplates } from "@builders/db"
+import { TEMPLATES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -10,20 +10,20 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreateManagementCompanyInput } from "./_validators"
+import { validateCreateTemplateInput } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: MANAGEMENT_COMPANIES_TOOL_SLUG,
+    toolSlug: TEMPLATES_TOOL_SLUG,
   })
   if (access instanceof Response) return access
 
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/management-companies")
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/templates")
   if (rateLimited) return rateLimited
 
   try {
-    const managementCompanies = await listManagementCompanies({})
-    return routeJson(access, { managementCompanies })
+    const templates = await listTemplates({})
+    return routeJson(access, { templates })
   } catch (error) {
     return routeError(access, error)
   }
@@ -32,22 +32,22 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
-    toolSlug: MANAGEMENT_COMPANIES_TOOL_SLUG,
+    toolSlug: TEMPLATES_TOOL_SLUG,
     rateLimit: {
-      scope: "managementCompanies.create",
+      scope: "templates.create",
       limit: 20,
       windowMs: 10 * 60 * 1000,
-      route: "/api/management-companies",
+      route: "/api/templates",
     },
   })
   if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreateManagementCompanyInput)
+    const { input, mutation } = parseMutationEnvelope(body, validateCreateTemplateInput)
 
     const receipt = await enforceMutationReceipt({
-      scope: "managementCompanies.create",
+      scope: "templates.create",
       request,
       access,
       mutation,
@@ -58,17 +58,17 @@ export async function POST(request: Request) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Management company created",
-        action: "managementCompanies.create",
-        route: "/api/management-companies",
-        entityType: "flooringManagementCompany",
+        message: "Template created",
+        action: "templates.create",
+        route: "/api/templates",
+        entityType: "flooringTemplate",
       },
-      () => createManagementCompanyUseCase(input),
+      () => createTemplateUseCase(input),
     )
 
-    const responseBody = { managementCompany: result }
+    const responseBody = { template: result }
     await finalizeMutationReceipt({
-      scope: "managementCompanies.create",
+      scope: "templates.create",
       access,
       mutation,
       responseStatus: 201,

@@ -1,6 +1,6 @@
-import { deleteManagementCompanyUseCase } from "@builders/application"
-import { getManagementCompanyById } from "@builders/db"
-import { MANAGEMENT_COMPANIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
+import { deleteTemplateUseCase } from "@builders/application"
+import { getTemplateById } from "@builders/db"
+import { TEMPLATES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -19,22 +19,18 @@ type RouteContext = {
 
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: MANAGEMENT_COMPANIES_TOOL_SLUG,
+    toolSlug: TEMPLATES_TOOL_SLUG,
   })
   if (access instanceof Response) return access
 
-  const rateLimited = await enforceQueryRateLimit(
-    request,
-    access,
-    "/api/management-companies/[id]",
-  )
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/templates/[id]")
   if (rateLimited) return rateLimited
 
   try {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
-    const managementCompany = await getManagementCompanyById(id)
-    return routeJson(access, { managementCompany })
+    const template = await getTemplateById(id)
+    return routeJson(access, { template })
   } catch (error) {
     return routeError(access, error)
   }
@@ -43,12 +39,12 @@ export async function GET(request: Request, { params }: RouteContext) {
 export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
-    toolSlug: MANAGEMENT_COMPANIES_TOOL_SLUG,
+    toolSlug: TEMPLATES_TOOL_SLUG,
     rateLimit: {
-      scope: "managementCompanies.delete",
+      scope: "templates.delete",
       limit: 10,
       windowMs: 10 * 60 * 1000,
-      route: "/api/management-companies/[id]",
+      route: "/api/templates/[id]",
     },
   })
   if (access instanceof Response) return access
@@ -61,16 +57,16 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       requireExpectedUpdatedAt: true,
     })
 
-    const currentSnapshot = await getManagementCompanyById(id)
+    const currentSnapshot = await getTemplateById(id)
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { managementCompany: currentSnapshot },
-      message: "Management company changed before delete completed. Refresh and try again.",
+      snapshot: { template: currentSnapshot },
+      message: "Template changed before delete completed. Refresh and try again.",
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "managementCompanies.delete",
+      scope: "templates.delete",
       request,
       access,
       mutation,
@@ -81,18 +77,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     await withMutationTelemetry(
       access,
       {
-        message: "Management company deleted",
-        action: "managementCompanies.delete",
-        route: "/api/management-companies/[id]",
-        entityType: "flooringManagementCompany",
+        message: "Template deleted",
+        action: "templates.delete",
+        route: "/api/templates/[id]",
+        entityType: "flooringTemplate",
         entityId: id,
       },
-      () => deleteManagementCompanyUseCase(id),
+      () => deleteTemplateUseCase(id),
     )
 
     const responseBody = { ok: true as const }
     await finalizeMutationReceipt({
-      scope: "managementCompanies.delete",
+      scope: "templates.delete",
       access,
       mutation,
       responseStatus: 200,

@@ -1,4 +1,4 @@
-import { deletePropertyUseCase } from "@builders/application"
+import { updatePropertyUseCase } from "@builders/application"
 import { getPropertyById } from "@builders/db"
 import { PROPERTIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -8,43 +8,24 @@ import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
   enforceMutationReceipt,
-  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
+import { validateUpdatePropertyInput } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: PROPERTIES_TOOL_SLUG,
-  })
-  if (access instanceof Response) return access
-
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/properties/[id]")
-  if (rateLimited) return rateLimited
-
-  try {
-    const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
-    const property = await getPropertyById(id)
-    return routeJson(access, { property })
-  } catch (error) {
-    return routeError(access, error)
-  }
-}
-
-export async function DELETE(request: Request, { params }: RouteContext) {
+export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: PROPERTIES_TOOL_SLUG,
     rateLimit: {
-      scope: "properties.delete",
-      limit: 10,
+      scope: "properties.primary.section.replace",
+      limit: 40,
       windowMs: 10 * 60 * 1000,
-      route: "/api/properties/[id]",
+      route: "/api/properties/[id]/primary/section",
     },
   })
   if (access instanceof Response) return access
@@ -53,7 +34,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input: _input, mutation } = parseMutationEnvelope(body, (value) => value, {
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdatePropertyInput, {
       requireExpectedUpdatedAt: true,
     })
 
@@ -62,11 +43,11 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
       snapshot: { property: currentSnapshot },
-      message: "Property changed before delete completed. Refresh and try again.",
+      message: "Property changed before section save completed. Refresh and try again.",
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "properties.delete",
+      scope: "properties.primary.section.replace",
       request,
       access,
       mutation,
@@ -74,21 +55,21 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     })
     if (receipt.replay) return receipt.replay
 
-    await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Property deleted",
-        action: "properties.delete",
-        route: "/api/properties/[id]",
+        message: "Property primary section replaced",
+        action: "properties.primary.section.replace",
+        route: "/api/properties/[id]/primary/section",
         entityType: "flooringProperty",
         entityId: id,
       },
-      () => deletePropertyUseCase(id),
+      () => updatePropertyUseCase(id, input),
     )
 
-    const responseBody = { ok: true as const }
+    const responseBody = { property: result }
     await finalizeMutationReceipt({
-      scope: "properties.delete",
+      scope: "properties.primary.section.replace",
       access,
       mutation,
       responseStatus: 200,
