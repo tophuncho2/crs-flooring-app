@@ -59,7 +59,8 @@ model Property {
   @@map("property_hub")
 }
 ```
-
+**need to add an "insructions columns** - 
+**when a property is linked to a work order or template, those records get a snapshot of the text of the instructions so they remain editable, doesnt affect the text in properties row.**
 ---
 
 ## Main-Hub / Templates
@@ -96,6 +97,12 @@ model FlooringTemplate {
   @@map("flooring_template")
 }
 ```
+**we need to remove padproductid and padproduct**
+**add description field**
+**make instructions sync from the properties instructions when property is linked, editable after link**
+**identify the purpose of the store column, and confirm warehouse is the dropdown in the ui**
+**Change unit type column to unit type**
+**add link to new job type prisma model**
 
 ### `FlooringTemplateItem` — `templates/material items`
 
@@ -214,6 +221,15 @@ model FlooringWorkOrder {
 }
 ```
 
+**add link to management companies**
+**add link to job types**
+**add description column**
+**remove google doc url, google drives slip, do these have any callers?**
+**remove status**
+**change unit label to unit number**
+**template to work order sync is pending fix till templates and work order modules are secure.**
+**every work order must be linked to the analytics row**
+
 ### `FlooringWorkOrderItem` — `work-orders/material items`
 
 ```prisma
@@ -238,7 +254,7 @@ model FlooringWorkOrderItem {
   @@map("flooring_work_order_item")
 }
 ```
-
+**what is this field for? - sourceTemplateItemId String?**
 ### `FlooringWorkOrderServiceItem` — `work-orders/service items`
 
 ```prisma
@@ -334,27 +350,9 @@ model FlooringService {
 }
 ```
 
-### `FlooringJobType` — `user-data/job-type`
+### `user-data/job-type`
 
-_Planned — not yet in `schema.prisma`. See `plans.md` step 3 ("add job types module")._
-
-```prisma
-model FlooringJobType {
-  id         String              @id @default(uuid())
-  name       String              @unique
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime            @updatedAt
-  templates  FlooringTemplate[]
-  workOrders FlooringWorkOrder[]
-
-  @@index([name])
-  @@map("flooring_job_type")
-}
-```
-
-> Companion changes on the existing models:
-> - `FlooringTemplate` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
-> - `FlooringWorkOrder` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
+_No Prisma model yet — see `plans.md` step 3 ("add job types module")._
 
 ---
 
@@ -385,26 +383,5 @@ enum FlooringContactType {
   SALES_REP
   CONTRACTOR
   OTHER
-}
-```
-
----
-
-## Analytics
-
-### `FlooringAnalytics`
-
-```prisma
-model FlooringAnalytics {
-  id                String            @id @default(uuid())
-  workOrderId       String            @unique
-  workOrder         FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  totalMaterialCost Decimal           @db.Decimal(12, 2)
-  totalServiceCost  Decimal           @db.Decimal(12, 2)
-  totalCost         Decimal           @db.Decimal(12, 2)
-  createdAt         DateTime          @default(now())
-
-  @@index([workOrderId])
-  @@map("flooring_analytics")
 }
 ```
