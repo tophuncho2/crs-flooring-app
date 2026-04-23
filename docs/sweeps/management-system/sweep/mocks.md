@@ -29,13 +29,6 @@ model FlooringManagementCompany {
   @@map("flooring_management_company")
 }
 ```
-Prisma
-**need a link to work orders, 1 work order wont have more than 1 management compamy**
-**need a link to templates, 1 template wont have more than 1 management compamy**
-**not a required field for templates or work orders**
-
-
-
 
 
 ### `Property` — `properties`
@@ -62,9 +55,7 @@ model Property {
   @@map("property_hub")
 }
 ```
-**need to add an "insructions column** - 
-**when a property is linked to a work order or template, those records get a snapshot of the text of the instructions so they remain editable, doesnt affect the text in properties row.**
-**In work orders and templates record view, the drop down for properties is filtered to the lined management company if one is selected**
+
 ---
 
 ## Main-Hub / Templates
@@ -101,18 +92,6 @@ model FlooringTemplate {
   @@map("flooring_template")
 }
 ```
-**each template added, template # is +1, if this is poor setup long term we can adjust or remove that. prefferred to keep**
-**remove padproductid and padproduct**
-**add description field**
-**make instructions sync from the properties instructions when property is linked, remains editable after link, edits dont effect properties actual row**
-**identify the purpose of the "store" column, and confirm warehouse is the dropdown of record view**
-**Change template tag column to unit type**
-**add link to new "job type" prisma model, dropdown will be used in record view**
-**make instructions column sync from the properties instructions when property is linked, remains editable after link, edits dont effect properties actual row**
-**needs a bucket connection for files, will be there first module to use a worker for file generation**
-**need to decide if files get auto downloaded to users device is the simplist path, work orders later mimic a slightly different version of the job.**
-
-
 
 ### `FlooringTemplateItem` — `templates/material items`
 
@@ -231,16 +210,6 @@ model FlooringWorkOrder {
 }
 ```
 
-**add link to management companies**
-**add link to job types**
-**add description column**
-**remove google doc url, google drives slip, do these have any callers? are they used anywhere?**
-**remove status column, remove is complete boolean**
-**change unit label to unit number**
-**template to work order sync is pending fix till templates and work order modules are secure.**
-**every work order must be linked to the analytics row**
-
-
 ### `FlooringWorkOrderItem` — `work-orders/material items`
 
 ```prisma
@@ -265,7 +234,7 @@ model FlooringWorkOrderItem {
   @@map("flooring_work_order_item")
 }
 ```
-**what is this field for? - sourceTemplateItemId String? same for service items and flooringwork orders,sales rep, is this so the template can track stats on linked work orders?**
+
 ### `FlooringWorkOrderServiceItem` — `work-orders/service items`
 
 ```prisma
@@ -413,5 +382,3 @@ enum FlooringContactType {
   OTHER
 }
 ```
-**where is flooringstore code enum used?, its stale**
-**flooringworkorderstatus can be dropped**

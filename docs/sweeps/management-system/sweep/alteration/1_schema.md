@@ -14,10 +14,9 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 
 ## Main-Hub / Templates (`FlooringTemplate`)
 
-- [ ] Keep the auto-increment template number (`TP-#####`) for now; revisit if it becomes a problem long-term
 - [ ] Remove `padProductId` + `padProduct` relation
 - [ ] Add `description` field
-- [ ] Identify purpose of the `store` column (candidate for removal)
+- [ ] Drop `store` column — confirmed dead (only in `schema.prisma` + baseline migration; no app reads/writes)
 - [ ] Rename `templateTag` to `unitType`
 - [ ] Add `jobTypeId` + relation to new `FlooringJobType`
 
@@ -26,10 +25,10 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 - [ ] Add relation to management companies
 - [ ] Add relation to job types
 - [ ] Add `description` column
-- [ ] Investigate callers of `googleDocUrl` and `googleDriveSlip`; remove if unused
+- [ ] Decide fate of `googleDocUrl` / `googleDriveSlip` — actively written in `apps/web/modules/work-orders/` (validators, contracts, mutations, services, `application/manage-work-order.ts`); API input maps `workOrderImageUrl` → `googleDriveSlip`. Removal requires refactoring those callers, not just a schema prune.
 - [ ] Remove `status` column
 - [ ] Remove `isComplete` boolean
-- [ ] Rename `unitLabel` to `unitNumber`
+- [ ] Rename `unitLabel` to `unitNumber` - stays as string, not number only
 - [ ] Make `analytics` relation required (every work order must be linked to an analytics row)
 
 ## Main-Hub / Work Orders / Items (`FlooringWorkOrderItem`, `FlooringWorkOrderServiceItem`, `FlooringWorkOrderSalesRep`)
@@ -44,5 +43,5 @@ Schema changes for the management-system sweep. Grouped by module. Source commen
 
 ## Referenced Enums
 
-- [ ] Verify where `FlooringStoreCode` is used — likely stale
+- [ ] Drop `FlooringStoreCode` enum — confirmed dead (defined in `schema.prisma` + baseline migration, no app usages)
 - [ ] Drop `FlooringWorkOrderStatus` enum (status column is being removed)
