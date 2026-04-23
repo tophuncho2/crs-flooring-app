@@ -135,66 +135,7 @@ Out of scope. No schema change.
 
 # Phase 2 — Seed
 
-**Intent.** Add three categories. No new units needed (all required units seeded: `boxes`, `linear-feet`, `square-feet`, `square-yard`, `rolls`, `pieces`).
-
-## Categories
-
-### File — `packages/db/src/seed/categories.ts`
-
-Extend `SEEDED_CATEGORIES`:
-
-```ts
-export const SEEDED_CATEGORIES = [
-  {
-    slug: "vinyl-plank",
-    name: "Vinyl Plank",
-    stockUnitSlug: "boxes",
-    sendUnitSlug: "square-feet",
-    coverageAvailableUnitSlug: "square-feet",
-    itemCoverageUnitSlug: "square-feet",
-    serviceUnitSlug: null,
-  },
-  {
-    slug: "carpet",
-    name: "Carpet",
-    stockUnitSlug: "linear-feet",
-    sendUnitSlug: "square-yard",
-    coverageAvailableUnitSlug: "square-yard",
-    itemCoverageUnitSlug: "square-yard",
-    serviceUnitSlug: null,
-  },
-  {
-    slug: "pad",
-    name: "Pad",
-    stockUnitSlug: "rolls",
-    sendUnitSlug: "square-yard",
-    coverageAvailableUnitSlug: "square-yard",
-    itemCoverageUnitSlug: "square-yard",
-    serviceUnitSlug: null,
-  },
-  {
-    slug: "baseboard",
-    name: "Baseboard",
-    stockUnitSlug: "pieces",
-    sendUnitSlug: "pieces",
-    coverageAvailableUnitSlug: null,   // opts out of coverage computation
-    itemCoverageUnitSlug: null,        // no product coveragePerUnit required at authoring
-    serviceUnitSlug: null,
-  },
-] as const
-```
-
-Audit the seed runner (entry file in `packages/db/src/seed/`) to confirm it iterates this list and upserts by `slug`. Additive only.
-
-## Unit of measures
-No change — `packages/db/src/seed/unit-of-measures.ts` already covers every slug referenced above.
-
-### Verification gate
-- Re-run seed in dev DB.
-- `SELECT slug, name FROM flooring_category ORDER BY slug` → `baseboard, carpet, pad, vinyl-plank`.
-- For each new category, confirm the `coverageAvailableUnitId` / `itemCoverageUnitId` match the table (null for baseboard, set for carpet + pad).
-
----
+**Complete** 
 
 # Phase 3 — Domain (pure rules, types, math)
 
