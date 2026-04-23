@@ -350,9 +350,25 @@ model FlooringService {
 }
 ```
 
-### `user-data/job-type`
+### `FlooringJobType` — `user-data/job-type`
 
-_No Prisma model yet — see `plans.md` step 3 ("add job types module")._
+_Planned — not yet in `schema.prisma`. See `plans.md` step 3 ("add job types module")._
+
+```prisma
+model FlooringJobType {
+  id         String              @id @default(uuid())
+  name       String              @unique
+  templates  FlooringTemplate[]
+  workOrders FlooringWorkOrder[]
+
+  @@index([name])
+  @@map("flooring_job_type")
+}
+```
+
+> Companion changes on the existing models:
+> - `FlooringTemplate` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
+> - `FlooringWorkOrder` gains `jobTypeId String?` + `jobType FlooringJobType? @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)` and `@@index([jobTypeId])`.
 
 ---
 
