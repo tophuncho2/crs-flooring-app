@@ -8,7 +8,9 @@ import {
 } from "@builders/db"
 import {
   ProductExecutionError,
+  buildCategoryCoveragePerUnitRequiredMessage,
   buildStoredFlooringProductName,
+  categoryRequiresCoveragePerUnit,
   resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
@@ -28,6 +30,15 @@ export async function createProductUseCase(
         message: "Selected category was not found",
         status: 400,
         field: "categoryId",
+      })
+    }
+
+    if (categoryRequiresCoveragePerUnit(category.slug) && input.coveragePerUnit === null) {
+      throw new ProductExecutionError({
+        code: "PRODUCT_COVERAGE_PER_UNIT_REQUIRED",
+        message: buildCategoryCoveragePerUnitRequiredMessage(category.name),
+        status: 400,
+        field: "coveragePerUnit",
       })
     }
 

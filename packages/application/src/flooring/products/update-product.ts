@@ -9,7 +9,9 @@ import {
 } from "@builders/db"
 import {
   ProductExecutionError,
+  buildCategoryCoveragePerUnitRequiredMessage,
   buildStoredFlooringProductName,
+  categoryRequiresCoveragePerUnit,
   resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
@@ -39,6 +41,7 @@ export async function updateProductUseCase(
     const nameAffected = categoryChanged || "style" in input || "color" in input
 
     let categoryName = current.category.name
+    let categorySlug = current.category.slug
     if (categoryChanged) {
       const category = await getCategoryById(nextCategoryId, c)
       if (!category) {
@@ -50,6 +53,20 @@ export async function updateProductUseCase(
         })
       }
       categoryName = category.name
+      categorySlug = category.slug
+    }
+
+    const nextCoverageIsEmpty =
+      "coveragePerUnit" in input
+        ? input.coveragePerUnit === null
+        : !current.coveragePerUnit
+    if (categoryRequiresCoveragePerUnit(categorySlug) && nextCoverageIsEmpty) {
+      throw new ProductExecutionError({
+        code: "PRODUCT_COVERAGE_PER_UNIT_REQUIRED",
+        message: buildCategoryCoveragePerUnitRequiredMessage(categoryName),
+        status: 400,
+        field: "coveragePerUnit",
+      })
     }
 
     let manufacturerName: string | null | undefined

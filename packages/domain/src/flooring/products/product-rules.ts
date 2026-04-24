@@ -1,6 +1,11 @@
 // Pure business rules for the product domain. Consumed by the use-case layer
 // (packages/application) — no I/O, no framework imports.
 
+import {
+  buildCategoryCoveragePerUnitRequiredMessage,
+  categoryRequiresCoveragePerUnit,
+} from "../categories/rules.js"
+
 /**
  * Count shape returned by `getProductDeleteState` in @builders/db. Kept here
  * so domain rules express their contract without reaching into data-layer types.
@@ -74,12 +79,21 @@ export function isProductNameConflict(a: string, b: string): boolean {
 export function validateProductPrimaryForm(input: {
   categoryId: string
   coveragePerUnit: string
+  categorySlug?: string | null
+  categoryName?: string | null
 }): string {
   if (!input.categoryId.trim()) {
     return "Category is required"
   }
   if (input.coveragePerUnit.trim() && !/^\d+(\.\d{0,4})?$/.test(input.coveragePerUnit.trim())) {
     return "Coverage per unit must be numeric with up to 4 decimals"
+  }
+  if (
+    input.categorySlug &&
+    categoryRequiresCoveragePerUnit(input.categorySlug) &&
+    !input.coveragePerUnit.trim()
+  ) {
+    return buildCategoryCoveragePerUnitRequiredMessage(input.categoryName ?? "this category")
   }
   return ""
 }

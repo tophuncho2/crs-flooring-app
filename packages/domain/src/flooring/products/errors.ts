@@ -5,6 +5,7 @@ export type ProductErrorCode =
   | "PRODUCT_VALIDATION_FAILED"
   | "PRODUCT_CATEGORY_NOT_FOUND"
   | "PRODUCT_MANUFACTURER_NOT_FOUND"
+  | "PRODUCT_COVERAGE_PER_UNIT_REQUIRED"
 
 export class ProductExecutionError extends Error {
   readonly code: ProductErrorCode

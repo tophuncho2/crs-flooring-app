@@ -10,7 +10,7 @@ import {
   RecordPrimaryPane,
   RecordPrimarySection,
 } from "@/modules/shared/engines/record-view"
-import type { ProductForm } from "@builders/domain"
+import { categoryRequiresCoveragePerUnit, type ProductForm } from "@builders/domain"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
 
 export function ProductPrimaryFieldsSection({
@@ -31,6 +31,7 @@ export function ProductPrimaryFieldsSection({
     () => categoryOptions.find((category) => category.id === draft.categoryId) ?? null,
     [categoryOptions, draft.categoryId],
   )
+  const coverageRequired = categoryRequiresCoveragePerUnit(selectedCategory?.slug)
 
   return (
     <RecordPrimarySection>
@@ -91,7 +92,7 @@ export function ProductPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Coverage Per Unit">
+            <RecordFormField label={coverageRequired ? "Coverage Per Unit *" : "Coverage Per Unit"}>
               <div className="flex w-full overflow-hidden rounded-lg border border-sky-500/35 bg-transparent transition focus-within:border-sky-400/70 focus-within:ring-2 focus-within:ring-sky-500/20">
                 <input
                   value={draft.coveragePerUnit}
