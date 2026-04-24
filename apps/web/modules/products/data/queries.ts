@@ -3,7 +3,6 @@ import {
   getProductDetailById,
   getProductFormOptions,
   isPrismaNotFoundError,
-  listInventory,
   listProducts,
   withPrismaConnectivityHandling,
   type CategoryRecord,
@@ -14,7 +13,6 @@ import {
   type ProductRecord,
 } from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import type { InventoryRow } from "@builders/domain"
 
 // ---- List page loader ----
 
@@ -41,32 +39,18 @@ export type ProductDetailPageData = {
   product: ProductDetailRecord
   categoryOptions: CategoryRecord[]
   manufacturerOptions: ManufacturerRecord[]
-  inventoryRows: InventoryRow[]
-}
-
-async function loadProductInventoryRowsSafely(productId: string): Promise<InventoryRow[]> {
-  try {
-    return await listInventory({ productId })
-  } catch (error) {
-    console.warn(
-      "[flooring.products.detail] inventory fetch failed; rendering detail with empty inventory rows",
-      { productId, error: error instanceof Error ? error.message : error },
-    )
-    return []
-  }
 }
 
 export async function getProductDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<ProductDetailPageData>> {
   try {
-    const [product, options, inventoryRows] = await Promise.all([
+    const [product, options] = await Promise.all([
       withLoaderTiming(
         { loader: "flooring.products.detail", details: { productId: id } },
         () => getProductDetailById(id),
       ),
       getProductFormOptions(),
-      loadProductInventoryRowsSafely(id),
     ])
     if (!product) return { ok: false, notFound: true }
     return {
@@ -75,7 +59,6 @@ export async function getProductDetailPageData(
         product,
         categoryOptions: options.categoryOptions,
         manufacturerOptions: options.manufacturerOptions,
-        inventoryRows,
       },
     }
   } catch (error) {

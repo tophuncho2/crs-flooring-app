@@ -41,7 +41,6 @@ export default async function ProductDetailPage({
       initialProduct={result.data.product}
       categoryOptions={result.data.categoryOptions}
       manufacturerOptions={result.data.manufacturerOptions}
-      inventoryRows={result.data.inventoryRows}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/products")}
     />
   )

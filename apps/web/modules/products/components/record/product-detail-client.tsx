@@ -5,20 +5,17 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
-import type { InventoryRow } from "@builders/domain"
 import { ProductRecordPanel } from "./product-record-panel"
 
 export function ProductDetailClient({
   initialProduct,
   categoryOptions,
   manufacturerOptions,
-  inventoryRows,
   backHref,
 }: {
   initialProduct: ProductRecord
   categoryOptions: CategoryRecord[]
   manufacturerOptions: ManufacturerRecord[]
-  inventoryRows: InventoryRow[]
   backHref: string
 }) {
   return (
@@ -34,7 +31,6 @@ export function ProductDetailClient({
           product={initialProduct}
           categoryOptions={categoryOptions}
           manufacturerOptions={manufacturerOptions}
-          inventoryRows={inventoryRows}
         />
       )}
     </RecordDetailClientScaffold>
