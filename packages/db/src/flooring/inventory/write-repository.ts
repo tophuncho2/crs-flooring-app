@@ -1,79 +1,98 @@
-// @ts-nocheck — inventory write repo pending rebuild in the next sweep.
-// See shared.ts header for context.
 import type { Prisma } from "@prisma/client"
 import { db } from "../../client.js"
 import { type InventoryDbClient } from "./shared.js"
 import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 
-export type CreateInventoryInput = {
+/**
+ * Create input for a real inventory row. Every field is worker-owned — the
+ * worker materializes staged rows into real inventory at import time, stamping
+ * `costPerUnit` / `freightPerUnit` / `coveragePerUnit` as needed and picking
+ * up the FIFO timestamp. User flows never call this directly.
+ */
+export type CreateInventoryRecordInput = {
+  importEntryId: string | null
   productId: string
   itemNumber: string
   dyeLot: string | null
-  warehouseId: string | null
+  warehouseId: string
   locationId: string | null
-  stockCount: string
-  cost: string | null
-  freight: string | null
+  startingStock: Prisma.Decimal | string | number
+  cost: Prisma.Decimal | string | number | null
+  freight: Prisma.Decimal | string | number | null
+  costPerUnit: Prisma.Decimal | string | number | null
+  freightPerUnit: Prisma.Decimal | string | number | null
+  coveragePerUnit: Prisma.Decimal | string | number | null
   notes: string | null
-  importEntryId: string | null
-  fifoReceivedAt: Date | null
-  isImported: boolean
+  fifoReceivedAt: Date
 }
 
-export type UpdateInventoryInput = {
+/**
+ * Update input — editable subset only. Mirrors domain.editability
+ * INVENTORY_EDITABLE_FIELDS. Immutable fields (startingStock, cost, freight,
+ * cost/freight/coverage-per-unit, importEntryId, productId, fifoReceivedAt)
+ * are deliberately absent from this shape.
+ */
+export type UpdateInventoryRecordInput = {
   itemNumber?: string
   dyeLot?: string | null
-  warehouseId?: string | null
+  warehouseId?: string
   locationId?: string | null
-  stockCount?: string
-  cost?: string | null
-  freight?: string | null
   notes?: string | null
-  isImported?: boolean
+  isArchived?: boolean
 }
 
-function buildCreateData(input: CreateInventoryInput): Prisma.FlooringInventoryCreateInput {
+/**
+ * Transactional helper — only called inside cut-log write transactions so the
+ * `totalCutSum` running total stays in sync with the cut-log rows. Regular
+ * user / worker code should never touch this directly.
+ */
+export type UpdateInventoryTotalCutSumInput = {
+  totalCutSum: Prisma.Decimal | string | number
+}
+
+function buildCreateData(
+  input: CreateInventoryRecordInput,
+): Prisma.FlooringInventoryCreateInput {
   const data: Prisma.FlooringInventoryCreateInput = {
+    product: { connect: { id: input.productId } },
+    warehouse: { connect: { id: input.warehouseId } },
     itemNumber: input.itemNumber,
     dyeLot: input.dyeLot,
-    stockCount: input.stockCount,
+    startingStock: input.startingStock,
     cost: input.cost,
     freight: input.freight,
+    costPerUnit: input.costPerUnit,
+    freightPerUnit: input.freightPerUnit,
+    coveragePerUnit: input.coveragePerUnit,
     notes: input.notes,
-    isImported: input.isImported,
-    fifoReceivedAt: input.fifoReceivedAt ?? new Date(),
-    product: { connect: { id: input.productId } },
+    fifoReceivedAt: input.fifoReceivedAt,
   }
-  if (input.warehouseId) data.warehouse = { connect: { id: input.warehouseId } }
   if (input.locationId) data.location = { connect: { id: input.locationId } }
   if (input.importEntryId) data.importEntry = { connect: { id: input.importEntryId } }
   return data
 }
 
-function buildUpdateData(input: UpdateInventoryInput): Prisma.FlooringInventoryUpdateInput {
+function buildUpdateData(
+  input: UpdateInventoryRecordInput,
+): Prisma.FlooringInventoryUpdateInput {
   const data: Prisma.FlooringInventoryUpdateInput = {}
   if (input.itemNumber !== undefined) data.itemNumber = input.itemNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
-  if (input.stockCount !== undefined) data.stockCount = input.stockCount
-  if (input.cost !== undefined) data.cost = input.cost
-  if (input.freight !== undefined) data.freight = input.freight
-  if (input.notes !== undefined) data.notes = input.notes
-  if (input.isImported !== undefined) data.isImported = input.isImported
   if (input.warehouseId !== undefined) {
-    data.warehouse = input.warehouseId
-      ? { connect: { id: input.warehouseId } }
-      : { disconnect: true }
+    data.warehouse = { connect: { id: input.warehouseId } }
   }
   if (input.locationId !== undefined) {
     data.location = input.locationId
       ? { connect: { id: input.locationId } }
       : { disconnect: true }
   }
+  if (input.notes !== undefined) data.notes = input.notes
+  if (input.isArchived !== undefined) data.isArchived = input.isArchived
   return data
 }
 
-export async function createInventory(
-  input: CreateInventoryInput,
+export async function createInventoryRecord(
+  input: CreateInventoryRecordInput,
   client: InventoryDbClient = db,
 ): Promise<InventoryRecord> {
   const row = await client.flooringInventory.create({
@@ -81,32 +100,46 @@ export async function createInventory(
     select: { id: true },
   })
   const record = await getInventoryById(row.id, client)
-  if (!record) throw new Error("createInventory: record disappeared mid-transaction")
+  if (!record) throw new Error("createInventoryRecord: record disappeared mid-transaction")
   return record
 }
 
-export async function updateInventory(
+export async function updateInventoryRecord(
   id: string,
-  input: UpdateInventoryInput,
+  input: UpdateInventoryRecordInput,
   client: InventoryDbClient = db,
 ): Promise<InventoryRecord> {
   const data = buildUpdateData(input)
-  if (Object.keys(data).length === 0) {
-    const existing = await getInventoryById(id, client)
-    if (!existing) throw new Error(`updateInventory: inventory ${id} not found`)
-    return existing
+  if (Object.keys(data).length > 0) {
+    await client.flooringInventory.update({
+      where: { id },
+      data,
+      select: { id: true },
+    })
   }
-  await client.flooringInventory.update({
-    where: { id },
-    data,
-    select: { id: true },
-  })
   const record = await getInventoryById(id, client)
-  if (!record) throw new Error(`updateInventory: inventory ${id} disappeared mid-transaction`)
+  if (!record) throw new Error(`updateInventoryRecord: inventory ${id} not found after update`)
   return record
 }
 
-export async function deleteInventoryById(
+export async function updateInventoryTotalCutSum(
+  id: string,
+  input: UpdateInventoryTotalCutSumInput,
+  client: InventoryDbClient = db,
+): Promise<InventoryRecord> {
+  await client.flooringInventory.update({
+    where: { id },
+    data: { totalCutSum: input.totalCutSum },
+    select: { id: true },
+  })
+  const record = await getInventoryById(id, client)
+  if (!record) {
+    throw new Error(`updateInventoryTotalCutSum: inventory ${id} not found after update`)
+  }
+  return record
+}
+
+export async function deleteInventoryRecordById(
   id: string,
   client: InventoryDbClient = db,
 ): Promise<void> {

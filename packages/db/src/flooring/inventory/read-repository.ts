@@ -1,11 +1,11 @@
-// @ts-nocheck — inventory read repo pending rebuild in the next sweep.
-// See shared.ts header for context.
 import {
   buildFlooringProductDisplayName,
   computeCutCoverage,
-  computeInventoryAvailableCoverage,
+  computeInventoryBalance,
+  computeInventoryCoverage,
   formatFullLocationCode,
   formatLocationRafterLevel,
+  toInventoryFixedString,
 } from "@builders/domain"
 import type {
   CutLogRow,
@@ -33,27 +33,18 @@ export type InventoryListFilter = {
   warehouseId?: string
   productId?: string
   categoryId?: string
-  isImported?: boolean
+  isArchived?: boolean
 }
 
-export type InventoryCutLogAggregate = {
-  awaitingCut: number
-  totalCut: number
+function toDecimalString(value: { toString(): string } | null | undefined): string {
+  if (value === null || value === undefined) return ""
+  return value.toString()
 }
 
 function toNumber(value: { toString(): string } | number | null | undefined): number {
   if (value === null || value === undefined) return 0
   const parsed = typeof value === "number" ? value : Number(value.toString())
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-function toFixedString(value: number): string {
-  return value.toFixed(2)
-}
-
-function toDecimalString(value: { toString(): string } | null | undefined): string {
-  if (value === null || value === undefined) return ""
-  return value.toString()
 }
 
 function buildLocationCode(location: InventoryRowPayload["location"]): string {
@@ -69,10 +60,6 @@ function buildLocationCode(location: InventoryRowPayload["location"]): string {
 function buildLocationShortCode(location: InventoryRowPayload["location"]): string {
   if (!location) return ""
   return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
-}
-
-function formatCoverage(value: number | null): string {
-  return value === null ? "" : toFixedString(value)
 }
 
 export type CutLogNormalizeContext = {
@@ -103,26 +90,33 @@ export function normalizeCutLogRow(
     isWaste: row.isWaste,
     cost: toDecimalString(row.cost),
     freight: toDecimalString(row.freight),
-    coverage: formatCoverage(coverage),
+    coverage: coverage === null ? "" : toInventoryFixedString(coverage),
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }
 }
 
-export function normalizeInventoryRow(
-  payload: InventoryRowPayload,
-  aggregate: InventoryCutLogAggregate = { awaitingCut: 0, totalCut: 0 },
-): InventoryRecord {
-  const stockCount = toNumber(payload.stockCount)
-  const uncut = stockCount - aggregate.totalCut
-  const available = stockCount - (aggregate.awaitingCut + aggregate.totalCut)
-  const coveragePerUnit = payload.product.coveragePerUnit === null ? null : toNumber(payload.product.coveragePerUnit)
-  const costNum = toNumber(payload.cost)
-  const pricePerUnit = stockCount > 0 ? costNum / stockCount : 0
+/**
+ * Normalize an inventory row into the domain read shape. Stamps the two
+ * computed fields (`balance`, `coverage`) by calling the pure domain helpers
+ * — single source of truth for the math. Per the data-package carve-out, this
+ * is a data-layer normalizer reusing pure domain formatters/computations; it
+ * MUST NOT call domain rules that throw.
+ */
+export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
+  const categorySlug = payload.product.category.slug
+  const balanceNum = computeInventoryBalance({
+    startingStock: payload.startingStock.toString(),
+    totalCutSum: payload.totalCutSum.toString(),
+  })
+  const coverageNum = computeInventoryCoverage({
+    balance: balanceNum,
+    coveragePerUnit:
+      payload.coveragePerUnit === null ? null : payload.coveragePerUnit.toString(),
+    categorySlug,
+  })
 
-  const locationCode = buildLocationCode(payload.location)
-  const locationShortCode = buildLocationShortCode(payload.location)
   const location = payload.location
   const importEntry = payload.importEntry
 
@@ -133,91 +127,55 @@ export function normalizeInventoryRow(
     importWarehouseId: importEntry?.warehouseId ?? "",
     importWarehouseName: importEntry?.warehouse?.name ?? "",
     productId: payload.productId,
-    productName: payload.product.name,
+    productName: buildFlooringProductDisplayName({
+      name: payload.product.name,
+      style: payload.product.style,
+      color: payload.product.color,
+    }),
     categoryId: payload.product.category.id,
     categoryName: payload.product.category.name,
+    categorySlug,
     stockUnit: payload.product.category.stockUnit?.name ?? "",
     sendUnit: payload.product.category.sendUnit?.name ?? "",
-    coveragePerUnit: coveragePerUnit === null ? "" : toDecimalString(payload.product.coveragePerUnit),
     itemNumber: payload.itemNumber,
     dyeLot: payload.dyeLot ?? "",
-    warehouseId: payload.warehouseId ?? "",
-    warehouseName: payload.warehouse?.name ?? "",
-    warehouseNumber: payload.warehouse ? String(payload.warehouse.number) : "",
+    warehouseId: payload.warehouseId,
+    warehouseName: payload.warehouse.name,
+    warehouseNumber: String(payload.warehouse.number),
     locationId: payload.locationId ?? "",
-    locationCode,
-    locationShortCode,
+    locationCode: buildLocationCode(location),
+    locationShortCode: buildLocationShortCode(location),
     sectionNumber: location?.section ? String(location.section.number) : "",
     rafter: location ? String(location.rafter) : "",
     level: location ? String(location.level) : "",
-    stockCount: toDecimalString(payload.stockCount),
+    startingStock: toDecimalString(payload.startingStock),
+    totalCutSum: toDecimalString(payload.totalCutSum),
     cost: toDecimalString(payload.cost),
     freight: toDecimalString(payload.freight),
-    pricePerUnit: toFixedString(pricePerUnit),
+    costPerUnit: toDecimalString(payload.costPerUnit),
+    freightPerUnit: toDecimalString(payload.freightPerUnit),
+    coveragePerUnit: toDecimalString(payload.coveragePerUnit),
+    balance: toInventoryFixedString(balanceNum),
+    coverage: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
+    isArchived: payload.isArchived,
     notes: payload.notes ?? "",
-    isImported: payload.isImported,
     fifoReceivedAt: payload.fifoReceivedAt.toISOString(),
     createdAt: payload.createdAt.toISOString(),
     updatedAt: payload.updatedAt.toISOString(),
-    uncutBalance: toFixedString(uncut),
-    availableBalance: toFixedString(available),
-    availableCoverage: formatCoverage(
-      computeInventoryAvailableCoverage({
-        availableBalance: available,
-        coveragePerUnit,
-        category: { slug: payload.product.category.slug },
-      }),
-    ),
-    awaitingCutBalance: toFixedString(aggregate.awaitingCut),
-    totalCutBalance: toFixedString(aggregate.totalCut),
   }
 }
 
 export function normalizeInventoryDetail(
   payload: InventoryDetailPayload,
-  aggregate?: InventoryCutLogAggregate,
 ): InventoryDetailRecord {
-  const resolved = aggregate ?? aggregateCutLogs(payload.cutLogs)
   const categorySlug = payload.product.category.slug
   const coveragePerUnit =
-    payload.product.coveragePerUnit === null ? null : toNumber(payload.product.coveragePerUnit)
+    payload.coveragePerUnit === null ? null : toNumber(payload.coveragePerUnit)
   const context: CutLogNormalizeContext = { categorySlug, coveragePerUnit }
   return {
-    ...normalizeInventoryRow(payload, resolved),
+    ...normalizeInventoryRow(payload),
     cutLogs: payload.cutLogs.map((log) => normalizeCutLogRow(log, context)),
   }
-}
-
-function aggregateCutLogs(cutLogs: CutLogRowPayload[]): InventoryCutLogAggregate {
-  let awaitingCut = 0
-  let totalCut = 0
-  for (const log of cutLogs) {
-    const amount = toNumber(log.cut)
-    if (log.status === "FINAL") totalCut += amount
-    else awaitingCut += amount
-  }
-  return { awaitingCut, totalCut }
-}
-
-async function fetchCutLogAggregates(
-  inventoryIds: string[],
-  client: InventoryDbClient,
-): Promise<Map<string, InventoryCutLogAggregate>> {
-  const result = new Map<string, InventoryCutLogAggregate>()
-  if (inventoryIds.length === 0) return result
-  const rows = await client.flooringCutLog.groupBy({
-    by: ["inventoryId", "status"],
-    where: { inventoryId: { in: inventoryIds } },
-    _sum: { cut: true },
-  })
-  for (const row of rows) {
-    const prior = result.get(row.inventoryId) ?? { awaitingCut: 0, totalCut: 0 }
-    const amount = toNumber(row._sum.cut)
-    if (row.status === "FINAL") prior.totalCut += amount
-    else prior.awaitingCut += amount
-    result.set(row.inventoryId, prior)
-  }
-  return result
 }
 
 function buildListWhere(filter?: InventoryListFilter) {
@@ -227,7 +185,7 @@ function buildListWhere(filter?: InventoryListFilter) {
   if (filter.warehouseId) where.warehouseId = filter.warehouseId
   if (filter.productId) where.productId = filter.productId
   if (filter.categoryId) where.product = { categoryId: filter.categoryId }
-  if (filter.isImported !== undefined) where.isImported = filter.isImported
+  if (filter.isArchived !== undefined) where.isArchived = filter.isArchived
   return where
 }
 
@@ -240,11 +198,7 @@ export async function listInventory(
     select: inventoryRowSelect,
     orderBy: [{ fifoReceivedAt: "asc" }, { itemNumber: "asc" }, { id: "asc" }],
   })
-  const aggregates = await fetchCutLogAggregates(
-    rows.map((row) => row.id),
-    client,
-  )
-  return rows.map((row) => normalizeInventoryRow(row, aggregates.get(row.id)))
+  return rows.map(normalizeInventoryRow)
 }
 
 export async function getInventoryById(
@@ -255,9 +209,7 @@ export async function getInventoryById(
     where: { id },
     select: inventoryRowSelect,
   })
-  if (!row) return null
-  const aggregates = await fetchCutLogAggregates([id], client)
-  return normalizeInventoryRow(row, aggregates.get(id))
+  return row ? normalizeInventoryRow(row) : null
 }
 
 export async function getInventoryDetailById(
@@ -271,6 +223,13 @@ export async function getInventoryDetailById(
   return row ? normalizeInventoryDetail(row) : null
 }
 
+export async function countInventory(
+  filter?: InventoryListFilter,
+  client: InventoryDbClient = db,
+): Promise<number> {
+  return client.flooringInventory.count({ where: buildListWhere(filter) })
+}
+
 export async function getInventoryDeleteState(
   id: string,
   client: InventoryDbClient = db,
@@ -282,6 +241,13 @@ export async function getInventoryDeleteState(
   if (!row) return null
   const cutLogsCount = row._count.cutLogs
   return { hasCutLogs: cutLogsCount > 0, cutLogsCount }
+}
+
+export async function countInventoriesByProductId(
+  productId: string,
+  client: InventoryDbClient = db,
+): Promise<number> {
+  return client.flooringInventory.count({ where: { productId } })
 }
 
 export async function listInventoryOptions(
@@ -298,6 +264,7 @@ export async function listInventoryOptions(
         coveragePerUnit: true,
         category: {
           select: {
+            slug: true,
             stockUnit: { select: { name: true } },
             sendUnit: { select: { name: true } },
           },
@@ -338,6 +305,7 @@ export async function listInventoryOptions(
       style: row.style,
       color: row.color,
       categoryId: row.categoryId,
+      categorySlug: row.category.slug,
       stockUnit: row.category.stockUnit?.name ?? "",
       sendUnit: row.category.sendUnit?.name ?? "",
       coveragePerUnit: toDecimalString(row.coveragePerUnit),
@@ -359,4 +327,3 @@ export async function listInventoryOptions(
     categories,
   }
 }
-

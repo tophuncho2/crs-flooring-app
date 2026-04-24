@@ -1,7 +1,3 @@
-// @ts-nocheck — inventory data layer pending rebuild in the next sweep.
-// Fields renamed / removed: stockCount → startingStock, isImported dropped,
-// warehouseId now required. Temporarily bypassing strict checks so @builders/db
-// compiles; callers already fail type-check and will be rewired next sweep.
 import type { Prisma, PrismaClient } from "@prisma/client"
 
 export type InventoryDbClient = PrismaClient | Prisma.TransactionClient
@@ -9,19 +5,6 @@ export type InventoryDbClient = PrismaClient | Prisma.TransactionClient
 export const inventoryRowSelect = {
   id: true,
   importEntryId: true,
-  productId: true,
-  itemNumber: true,
-  dyeLot: true,
-  warehouseId: true,
-  locationId: true,
-  stockCount: true,
-  isImported: true,
-  cost: true,
-  freight: true,
-  notes: true,
-  fifoReceivedAt: true,
-  createdAt: true,
-  updatedAt: true,
   importEntry: {
     select: {
       id: true,
@@ -30,6 +13,7 @@ export const inventoryRowSelect = {
       warehouse: { select: { id: true, name: true, number: true } },
     },
   },
+  productId: true,
   product: {
     select: {
       id: true,
@@ -48,18 +32,33 @@ export const inventoryRowSelect = {
       },
     },
   },
+  itemNumber: true,
+  dyeLot: true,
+  warehouseId: true,
   warehouse: { select: { id: true, name: true, number: true } },
+  locationId: true,
   location: {
     select: {
       id: true,
       rafter: true,
       level: true,
-      warehouseId: true,
       section: { select: { id: true, number: true } },
       warehouse: { select: { id: true, name: true, number: true } },
     },
   },
+  startingStock: true,
+  totalCutSum: true,
+  cost: true,
+  freight: true,
+  costPerUnit: true,
+  freightPerUnit: true,
+  coveragePerUnit: true,
+  isArchived: true,
+  notes: true,
+  fifoReceivedAt: true,
   _count: { select: { cutLogs: true } },
+  createdAt: true,
+  updatedAt: true,
 } as const satisfies Prisma.FlooringInventorySelect
 
 export const cutLogRowSelect = {

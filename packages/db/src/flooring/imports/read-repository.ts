@@ -1,189 +1,81 @@
-// @ts-nocheck — imports read repo pending rebuild next sweep. Column set
-// changed (transportType/status dropped, percent/manufacturerId added,
-// stockCount → startingStock on joined inventory rows).
-import {
-  buildFlooringProductDisplayName,
-  calculateImportSummary,
-  formatFullLocationCode,
-  formatLocationRafterLevel,
-} from "@builders/domain"
+import type { ImportDetail, ImportRow } from "@builders/domain"
 import { db } from "../../client.js"
 import {
   importDetailSelect,
   importRowSelect,
   type ImportDetailPayload,
-  type ImportInventoryPayload,
   type ImportRowPayload,
   type ImportsDbClient,
 } from "./shared.js"
 
-export type ImportInventoryRecord = {
-  id: string
-  productId: string
-  productName: string
-  stockUnit: string
-  itemNumber: string
-  dyeLot: string
-  stockCount: string
-  cost: string
-  freight: string
-  notes: string
-  locationId: string
-  locationCode: string
-  locationShortCode: string
-  warehouseId: string
-  warehouseName: string
-  sectionName: string
-  isImported: boolean
-  updatedAt: string
+export type ImportRecord = ImportRow
+export type ImportDetailRecord = ImportDetail
+
+export type ImportsListFilter = {
+  searchQuery?: string
+  warehouseId?: string
+  manufacturerId?: string
 }
 
-export type ImportRecord = {
-  id: string
-  importNumber: number
-  orderNumber: string
-  tag: string
-  transportType: string
-  status: string
-  notes: string
-  warehouseId: string
-  warehouseName: string
-  itemsCount: number
-  totalCost: number
-  totalCostLabel: string
-  createdAt: string
-  updatedAt: string
+function toDecimalString(value: { toString(): string } | null | undefined): string {
+  if (value === null || value === undefined) return ""
+  return value.toString()
 }
 
-export type ImportCostAggregate = { cost: number; freight: number }
-
-export type ImportDetailRecord = ImportRecord & {
-  inventories: ImportInventoryRecord[]
-}
-
-function buildImportLocationCode(location: ImportInventoryPayload["location"]): string {
-  if (!location) return ""
-  return formatFullLocationCode({
-    warehouseNumber: location.warehouse.number,
-    sectionNumber: location.section.number,
-    rafter: location.rafter,
-    level: location.level,
-  })
-}
-
-function buildImportLocationShortCode(location: ImportInventoryPayload["location"]): string {
-  if (!location) return ""
-  return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
-}
-
-export function normalizeImportInventoryRow(row: ImportInventoryPayload): ImportInventoryRecord {
-  return {
-    id: row.id,
-    productId: row.productId,
-    productName: buildFlooringProductDisplayName(row.product),
-    stockUnit: row.product.category.stockUnit?.name ?? "",
-    itemNumber: row.itemNumber,
-    dyeLot: row.dyeLot ?? "",
-    stockCount: row.stockCount.toString(),
-    cost: row.cost?.toString() ?? "",
-    freight: row.freight?.toString() ?? "",
-    notes: row.notes ?? "",
-    locationId: row.locationId ?? "",
-    locationCode: buildImportLocationCode(row.location),
-    locationShortCode: buildImportLocationShortCode(row.location),
-    warehouseId: row.location?.warehouse.id ?? "",
-    warehouseName: row.location?.warehouse.name ?? "",
-    sectionName: row.location?.section ? String(row.location.section.number) : "",
-    isImported: row.isImported,
-    updatedAt: row.updatedAt.toISOString(),
-  }
-}
-
-export function normalizeImportRow(
-  row: ImportRowPayload,
-  aggregate: ImportCostAggregate = { cost: 0, freight: 0 },
-): ImportRecord {
-  const summary = calculateImportSummary([
-    { stockCount: 0, cost: aggregate.cost, freight: aggregate.freight },
-  ])
+export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
   return {
     id: row.id,
     importNumber: row.importNumber,
     orderNumber: row.orderNumber ?? "",
     tag: row.tag ?? "",
-    transportType: row.transportType,
-    status: row.status,
+    percent: toDecimalString(row.percent),
     notes: row.notes ?? "",
-    warehouseId: row.warehouseId ?? "",
+    warehouseId: row.warehouseId,
     warehouseName: row.warehouse?.name ?? "",
-    itemsCount: row._count.inventories,
-    totalCost: summary.totalCost,
-    totalCostLabel: summary.totalCostLabel,
+    manufacturerId: row.manufacturerId ?? "",
+    manufacturerName: row.manufacturer?.companyName ?? "",
+    stagedInventoryRowsCount: row._count.stagedInventoryRows,
+    liveInventoryRowsCount: row._count.inventories,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }
 }
 
 export function normalizeImportDetail(row: ImportDetailPayload): ImportDetailRecord {
-  const inventoryItems = row.inventories.map((inv) => ({
-    stockCount: inv.stockCount.toString(),
-    cost: inv.cost?.toString() ?? "0",
-    freight: inv.freight?.toString() ?? "0",
-  }))
-  const summary = calculateImportSummary(inventoryItems)
-  const base: ImportRecord = {
-    id: row.id,
-    importNumber: row.importNumber,
-    orderNumber: row.orderNumber ?? "",
-    tag: row.tag ?? "",
-    transportType: row.transportType,
-    status: row.status,
-    notes: row.notes ?? "",
-    warehouseId: row.warehouseId ?? "",
-    warehouseName: row.warehouse?.name ?? "",
-    itemsCount: row._count.inventories,
-    totalCost: summary.totalCost,
-    totalCostLabel: summary.totalCostLabel,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }
   return {
-    ...base,
-    inventories: row.inventories.map(normalizeImportInventoryRow),
+    ...normalizeImportRow(row),
+    stagedInventoryRows: row.stagedInventoryRows.map((entry) => ({ id: entry.id })),
+    inventories: row.inventories.map((entry) => ({ id: entry.id })),
   }
 }
 
-async function fetchImportCostAggregates(
-  ids: string[],
-  client: ImportsDbClient,
-): Promise<Map<string, ImportCostAggregate>> {
-  if (ids.length === 0) return new Map()
-  const aggregates = await client.flooringInventory.groupBy({
-    by: ["importEntryId"],
-    where: { importEntryId: { in: ids } },
-    _sum: { cost: true, freight: true },
-  })
-  const map = new Map<string, ImportCostAggregate>()
-  for (const entry of aggregates) {
-    if (!entry.importEntryId) continue
-    map.set(entry.importEntryId, {
-      cost: Number(entry._sum.cost ?? 0),
-      freight: Number(entry._sum.freight ?? 0),
-    })
+function buildListWhere(filter?: ImportsListFilter) {
+  if (!filter) return undefined
+  const where: Record<string, unknown> = {}
+  if (filter.warehouseId) where.warehouseId = filter.warehouseId
+  if (filter.manufacturerId) where.manufacturerId = filter.manufacturerId
+  if (filter.searchQuery) {
+    const searchQuery = filter.searchQuery
+    where.OR = [
+      { orderNumber: { contains: searchQuery, mode: "insensitive" } },
+      { tag: { contains: searchQuery, mode: "insensitive" } },
+      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { manufacturer: { companyName: { contains: searchQuery, mode: "insensitive" } } },
+    ]
   }
-  return map
+  return where
 }
 
-export async function listImports(client: ImportsDbClient = db): Promise<ImportRecord[]> {
+export async function listImports(
+  filter?: ImportsListFilter,
+  client: ImportsDbClient = db,
+): Promise<ImportRecord[]> {
   const rows = await client.flooringImportEntry.findMany({
+    where: buildListWhere(filter),
     select: importRowSelect,
     orderBy: [{ createdAt: "desc" }, { importNumber: "desc" }],
   })
-  const aggregates = await fetchImportCostAggregates(
-    rows.map((row) => row.id),
-    client,
-  )
-  return rows.map((row) => normalizeImportRow(row, aggregates.get(row.id)))
+  return rows.map(normalizeImportRow)
 }
 
 export async function getImportById(
@@ -194,9 +86,7 @@ export async function getImportById(
     where: { id },
     select: importRowSelect,
   })
-  if (!row) return null
-  const aggregates = await fetchImportCostAggregates([id], client)
-  return normalizeImportRow(row, aggregates.get(id))
+  return row ? normalizeImportRow(row) : null
 }
 
 export async function getImportDetailById(
@@ -210,107 +100,23 @@ export async function getImportDetailById(
   return row ? normalizeImportDetail(row) : null
 }
 
-export async function getImportDeleteState(
-  id: string,
+export async function countImports(
+  filter?: ImportsListFilter,
   client: ImportsDbClient = db,
-): Promise<{ hasInventory: boolean } | null> {
-  const row = await client.flooringImportEntry.findUnique({
-    where: { id },
-    select: { _count: { select: { inventories: true } } },
-  })
-  if (!row) return null
-  return { hasInventory: row._count.inventories > 0 }
+): Promise<number> {
+  return client.flooringImportEntry.count({ where: buildListWhere(filter) })
 }
 
-export type ImportWarehouseOption = { id: string; name: string; number: number }
-
-export type ImportLocationOption = {
-  id: string
-  warehouseId: string
-  locationCode: string
-  shortCode: string
-  sectionNumber: number | null
-  warehouseName: string
+export async function countStagedInventoryByImportId(
+  importEntryId: string,
+  client: ImportsDbClient = db,
+): Promise<number> {
+  return client.flooringImportStagedInventoryRow.count({ where: { importEntryId } })
 }
 
-export type ImportProductOption = {
-  id: string
-  name: string
-  style: string | null
-  color: string | null
-  stockUnit: string
-  categoryId: string
-}
-
-export type ImportCategoryOption = {
-  id: string
-  name: string
-}
-
-export type ImportFormOptions = {
-  warehouses: ImportWarehouseOption[]
-  locations: ImportLocationOption[]
-  products: ImportProductOption[]
-  categories: ImportCategoryOption[]
-}
-
-export async function listImportOptions(client: ImportsDbClient = db): Promise<ImportFormOptions> {
-  const [warehouses, locations, products, categories] = await Promise.all([
-    client.flooringWarehouse.findMany({
-      select: { id: true, name: true, number: true },
-      orderBy: { number: "asc" },
-    }),
-    client.flooringLocation.findMany({
-      select: {
-        id: true,
-        warehouseId: true,
-        rafter: true,
-        level: true,
-        section: { select: { number: true } },
-        warehouse: { select: { name: true, number: true } },
-      },
-      orderBy: [{ warehouse: { name: "asc" } }, { rafter: "asc" }, { level: "asc" }],
-    }),
-    client.flooringProduct.findMany({
-      select: {
-        id: true,
-        name: true,
-        style: true,
-        color: true,
-        categoryId: true,
-        category: { select: { stockUnit: { select: { name: true } } } },
-      },
-      orderBy: { name: "asc" },
-    }),
-    client.flooringCategory.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-  ])
-
-  return {
-    warehouses,
-    locations: locations.map((row) => ({
-      id: row.id,
-      warehouseId: row.warehouseId,
-      locationCode: formatFullLocationCode({
-        warehouseNumber: row.warehouse.number,
-        sectionNumber: row.section.number,
-        rafter: row.rafter,
-        level: row.level,
-      }),
-      shortCode: formatLocationRafterLevel({ rafter: row.rafter, level: row.level }),
-      sectionNumber: row.section.number,
-      warehouseName: row.warehouse.name,
-    })),
-    products: products.map((row) => ({
-      id: row.id,
-      name: row.name,
-      style: row.style,
-      color: row.color,
-      stockUnit: row.category.stockUnit?.name ?? "",
-      categoryId: row.categoryId,
-    })),
-    categories,
-  }
+export async function countLiveInventoryByImportId(
+  importEntryId: string,
+  client: ImportsDbClient = db,
+): Promise<number> {
+  return client.flooringInventory.count({ where: { importEntryId } })
 }
