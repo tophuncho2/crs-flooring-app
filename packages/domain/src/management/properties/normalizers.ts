@@ -11,6 +11,7 @@ type PropertyDetailInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  instructions: string | null
   managementCompany: { id: string; name: string } | null
   templates: Array<{
     id: string
@@ -59,6 +60,7 @@ export function normalizeProperty(property: PropertyDetailInput): PropertyDetail
     zip: property.postalCode ?? "",
     phone: property.phone ?? "",
     email: property.email ?? "",
+    instructions: property.instructions ?? "",
     fullAddress: buildAddressLine(property),
     managementCompany: property.managementCompany,
     templates: property.templates.map((template) => ({

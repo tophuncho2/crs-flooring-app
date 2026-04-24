@@ -9,6 +9,7 @@ export function toPropertyPrimaryForm(property: PropertyDetailRecord): PropertyP
     zip: property.zip,
     phone: property.phone,
     email: property.email,
+    instructions: property.instructions,
     managementCompanyId: property.managementCompany?.id ?? "",
   }
 }

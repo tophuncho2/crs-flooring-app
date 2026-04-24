@@ -11,9 +11,9 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { PropertyListRow } from "@builders/domain"
-import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { PropertiesTable } from "./properties-table"
+import type { TemplateListRow } from "@builders/domain"
+import { useTemplatesListController } from "@/modules/templates/controllers/use-templates-list-controller"
+import { TemplatesTable } from "./templates-table"
 
 type ServerPaginationState = {
   page: number
@@ -31,19 +31,19 @@ type ServerTableState = {
   groupByKeys: string[]
 }
 
-export default function PropertiesClient({
-  initialProperties,
+export default function TemplatesClient({
+  initialTemplates,
   tableState,
   pagination,
   initialTablePreferences,
 }: {
-  initialProperties: PropertyListRow[]
+  initialTemplates: TemplateListRow[]
   tableState: ServerTableState
   pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
 }) {
-  const controller = usePropertiesListController(initialProperties)
-  const propertyNavigation = useRecordEntryNavigation("/dashboard/properties")
+  const controller = useTemplatesListController(initialTemplates)
+  const templateNavigation = useRecordEntryNavigation("/dashboard/templates")
 
   const {
     searchQuery,
@@ -64,20 +64,19 @@ export default function PropertiesClient({
     onToggleSort,
   } = useConfiguredTableState({
     rows: controller.rows,
-    tableKey: "properties-main",
+    tableKey: "templates-main",
     fields: [
-      { key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompany?.name ?? "" },
-      { key: "name", label: "Property", getValue: (row) => row.name },
-      { key: "street", label: "Street", getValue: (row) => row.streetAddress },
-      { key: "city", label: "City", getValue: (row) => row.city },
-      { key: "state", label: "State", getValue: (row) => row.state },
-      { key: "zip", label: "Zip", getValue: (row) => row.zip },
-      { key: "phone", label: "Phone", getValue: (row) => row.phone },
-      { key: "email", label: "Email", getValue: (row) => row.email },
-      { key: "templates", label: "Templates", getValue: (row) => String(row.templateCount) },
+      { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber },
+      { key: "unitType", label: "Unit Type", getValue: (row) => row.unitType },
+      { key: "property", label: "Property", getValue: (row) => row.propertyName },
+      { key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompanyName ?? "" },
+      { key: "jobType", label: "Job Type", getValue: (row) => row.jobTypeName ?? "" },
+      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
+      { key: "description", label: "Description", getValue: (row) => row.description },
+      { key: "items", label: "Items", getValue: (row) => String(row.itemsCount) },
     ],
-    sortField: (row) => row.name,
-    sortFieldKey: "name",
+    sortField: (row) => row.templateNumber,
+    sortFieldKey: "templateNumber",
     initialSearchQuery: tableState.searchQuery,
     defaultGrouped: tableState.isGroupingEnabled,
     defaultGroupKeys: tableState.groupByKeys,
@@ -91,23 +90,23 @@ export default function PropertiesClient({
 
   return (
     <DashboardListPageScaffold
-      title={<DashboardCardTitle>Properties</DashboardCardTitle>}
+      title={<DashboardCardTitle>Templates</DashboardCardTitle>}
       controls={
         <DashboardListPageControls
           count={filteredRows.length}
           searchQuery={searchQuery}
           onSearchQueryChange={onSearchQueryChange}
-          searchPlaceholder="Search properties..."
+          searchPlaceholder="Search templates..."
           isAscendingSort={isAscendingSort}
           onToggleSort={onToggleSort}
           primaryAction={
             <button
               type="button"
-              onClick={() => propertyNavigation.openCreate()}
+              onClick={() => templateNavigation.openCreate()}
               className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
             >
               <Plus size={16} />
-              Property
+              Template
             </button>
           }
         />
@@ -116,12 +115,12 @@ export default function PropertiesClient({
         <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
       }
       table={
-        <PropertiesTable
+        <TemplatesTable
           rows={sortedRows}
           visibleColumns={visibleColumns}
-          groupedRows={groupedRowTree as GroupedRowTree<PropertyListRow>[]}
+          groupedRows={groupedRowTree as GroupedRowTree<TemplateListRow>[]}
           isGroupingEnabled={isGroupingEnabled}
-          onOpen={(row) => propertyNavigation.openRecord(row.id)}
+          onOpen={(row) => templateNavigation.openRecord(row.id)}
         />
       }
       pagination={

@@ -56,6 +56,7 @@ const propertyDetailSelect = {
   postalCode: true,
   phone: true,
   email: true,
+  instructions: true,
   managementCompany: {
     select: { id: true, name: true },
   },

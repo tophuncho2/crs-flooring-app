@@ -3,7 +3,7 @@ import { getResolvedUserTablePreference } from "@builders/application"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { getManagementCompaniesPageData } from "@/modules/management-companies/data/queries"
-import ManagementCompaniesClient from "@/modules/management-companies/components/management-companies-client"
+import ManagementCompaniesClient from "@/modules/management-companies/components/list/management-companies-client"
 
 export default async function ManagementCompaniesPage({
   searchParams,

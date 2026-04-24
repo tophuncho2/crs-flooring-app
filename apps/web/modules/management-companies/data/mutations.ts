@@ -1,19 +1,36 @@
-import {
-  createManagementCompanyRecord,
-  deleteManagementCompanyRecordById,
-  updateManagementCompanyRecord,
-  type CreateManagementCompanyRecordInput,
-  type UpdateManagementCompanyRecordInput,
-} from "@builders/db"
+"use client"
 
-export async function createManagementCompany(input: CreateManagementCompanyRecordInput) {
-  return createManagementCompanyRecord(input)
+import { requestJson } from "@/modules/shared/engines/common/transport/http"
+import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
+import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
+
+export async function createManagementCompanyRequest(input: ManagementCompanyForm) {
+  return requestJson<{ managementCompany: ManagementCompanyDetail }>("/api/management-companies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta(input)),
+  })
 }
 
-export async function updateManagementCompany(id: string, input: UpdateManagementCompanyRecordInput) {
-  return updateManagementCompanyRecord(id, input)
+export async function updateManagementCompanyRequest(
+  id: string,
+  input: ManagementCompanyForm,
+  revisionKey: string,
+) {
+  return requestJson<{ managementCompany: ManagementCompanyDetail }>(
+    `/api/management-companies/${id}/primary/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(input, revisionKey)),
+    },
+  )
 }
 
-export async function deleteManagementCompany(id: string) {
-  return deleteManagementCompanyRecordById(id)
+export async function deleteManagementCompanyRequest(id: string, updatedAt: string) {
+  return requestJson<{ ok: true }>(`/api/management-companies/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta({}, updatedAt)),
+  })
 }

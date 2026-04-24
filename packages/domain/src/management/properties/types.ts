@@ -20,6 +20,7 @@ export type PropertyDetailRecord = {
   zip: string
   phone: string
   email: string
+  instructions: string
   fullAddress: string
   managementCompany: PropertyManagementCompany | null
   templates: PropertyTemplateRow[]
@@ -55,6 +56,7 @@ export type PropertyPrimaryForm = {
   zip: string
   phone: string
   email: string
+  instructions: string
   managementCompanyId: string
 }
 

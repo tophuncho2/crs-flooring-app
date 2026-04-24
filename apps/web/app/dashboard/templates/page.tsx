@@ -2,26 +2,26 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireToolAccess } from "@/server/auth/session"
 import { getResolvedUserTablePreference } from "@builders/application"
 import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import { getPropertiesPageData } from "@/modules/properties/data/queries"
-import PropertiesClient from "@/modules/properties/components/list/properties-client"
+import { getTemplatesPageData } from "@/modules/templates/data/queries"
+import TemplatesClient from "@/modules/templates/components/list/templates-client"
 
-export default async function FlooringPropertiesPage({
+export default async function TemplatesPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("warehouse")
+  const user = await requireToolAccess("templates")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const page = parsePageParam(resolvedSearchParams?.page)
-  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "properties-main")
+  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "templates-main")
   const tableState = parseServerTableQueryState({
     searchParams: resolvedSearchParams,
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
     defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
-    allowedGroupKeys: ["city", "state", "managementCompany"],
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["managementCompany"],
+    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : [],
+    allowedGroupKeys: ["property", "managementCompany", "jobType", "warehouse", "unitType"],
   })
-  const result = await getPropertiesPageData(page, tableState)
+  const result = await getTemplatesPageData(page, tableState)
 
   if (!result.ok) {
     return (
@@ -37,15 +37,15 @@ export default async function FlooringPropertiesPage({
   const pageData = result.data
 
   return (
-    <PropertiesClient
-      key={`properties-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
-      initialProperties={pageData.initialProperties}
+    <TemplatesClient
+      key={`templates-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
+      initialTemplates={pageData.initialTemplates}
       tableState={pageData.tableState}
       initialTablePreferences={initialTablePreferences}
       pagination={{
         ...pageData.pagination,
-        previousPageHref: buildPageHrefWithSearchParams("/dashboard/properties", pageData.pagination.page - 1, resolvedSearchParams),
-        nextPageHref: buildPageHrefWithSearchParams("/dashboard/properties", pageData.pagination.page + 1, resolvedSearchParams),
+        previousPageHref: buildPageHrefWithSearchParams("/dashboard/templates", pageData.pagination.page - 1, resolvedSearchParams),
+        nextPageHref: buildPageHrefWithSearchParams("/dashboard/templates", pageData.pagination.page + 1, resolvedSearchParams),
       }}
     />
   )

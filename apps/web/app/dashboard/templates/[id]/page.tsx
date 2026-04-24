@@ -2,21 +2,21 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { notFound } from "next/navigation"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { getManagementCompanyDetailPageData } from "@/modules/management-companies/data/queries"
-import { ManagementCompanyDetailClient } from "@/modules/management-companies/components/record/management-company-detail-client"
+import { getTemplateDetailPageData } from "@/modules/templates/data/queries"
+import { TemplateDetailClient } from "@/modules/templates/components/record/template-detail-client"
 
-export default async function ManagementCompanyDetailPage({
+export default async function TemplateDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireToolAccess("templates")
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const result = await getManagementCompanyDetailPageData(id)
+  const result = await getTemplateDetailPageData(id)
 
   if (!result.ok) {
     if ("notFound" in result && result.notFound) {
@@ -37,9 +37,14 @@ export default async function ManagementCompanyDetailPage({
   }
 
   return (
-    <ManagementCompanyDetailClient
-      company={result.data.company}
-      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/management-companies")}
+    <TemplateDetailClient
+      template={result.data.template}
+      managementOptions={result.data.managementOptions}
+      propertyOptions={result.data.propertyOptions}
+      jobTypeOptions={result.data.jobTypeOptions}
+      warehouseOptions={result.data.warehouseOptions}
+      productOptions={result.data.productOptions}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/templates")}
     />
   )
 }
