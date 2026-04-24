@@ -120,3 +120,54 @@ model FlooringWorkOrderItem {
   @@map("flooring_work_order_item")
 }
 ```
+
+---
+
+## `FlooringWorkOrder` — work orders (parent of material items)
+
+```prisma
+model FlooringWorkOrder {
+  id                   String                     @id @default(uuid())
+  workOrderNumber      String                     @unique @default(dbgenerated("('WO-'::text || lpad((nextval('flooring_work_order_number_seq'::regclass))::text, 5, '0'::text))")) @map("work_order_number")
+  propertyId           String
+  property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  templateId           String?
+  template             FlooringTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  managementCompanyId  String?
+  managementCompany    FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
+  jobTypeId            String?
+  jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
+  warehouseId          String?
+  warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  isComplete           Boolean                    @default(false) @map("is_complete")
+  vacancy              FlooringVacancyStatus?
+  scheduledFor         DateTime?                  @db.Date
+  unitNumber           String?
+  unitType             String?
+  customAddress        String?
+  description          String?
+  instructions         String?
+  propertyInstructions String?
+  notes                String?
+  templateSyncedAt     DateTime?
+  templateSyncMode     String?
+  templateSnapshotHash String?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  items                FlooringWorkOrderItem[]
+  analytics            FlooringAnalytics?
+  cutLogs              FlooringCutLog[]
+
+  @@index([workOrderNumber])
+  @@index([isComplete])
+  @@index([propertyId])
+  @@index([templateId])
+  @@index([managementCompanyId])
+  @@index([jobTypeId])
+  @@index([warehouseId])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@map("flooring_work_order")
+}
+```

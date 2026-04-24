@@ -9,7 +9,7 @@ Per-model schema alterations for the imports / inventory / cut-logs / work-order
 - [ ] Add `percent` column
 - [ ] Remove `status` column
 - [ ] Add `cost` column
-- [ ] Add optional FK link to `FlooringManufacturer` (not required)
+- [ ] Add FK link to `FlooringManufacturer` — `manufacturerId String?` + `manufacturer FlooringManufacturer?` (nullable column, not required on save)
 
 ---
 
@@ -33,7 +33,7 @@ Per-model schema alterations for the imports / inventory / cut-logs / work-order
 
 ## `FlooringWorkOrderItem`
 
-- [ ] Add `cost` column
+- [ ] Add `assignedcost` column
 - [ ] Add `assignedQuantity` column
 
 ---
