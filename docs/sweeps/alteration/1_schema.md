@@ -56,9 +56,11 @@ Based on the current `FlooringInventory` shape, with these specifics:
   - [ ] `isImported` Boolean @default(false) — KEEP on staged (unlike inventory, where it's removed)
   - [ ] `cost` Decimal? @db.Decimal(10, 2)
   - [ ] `freight` Decimal? @db.Decimal(10, 2)
-  - [ ] `costPerUnit` Decimal? @db.Decimal(10, 2)
-  - [ ] `freightPerUnit` Decimal? @db.Decimal(10, 2)
+  - [ ] `costPerUnit` Decimal? @db.Decimal(10, 2) **remove**
+  - [ ] `freightPerUnit` Decimal? @db.Decimal(10, 2) **remove**
   - [ ] `notes` String?
   - [ ] `createdAt`, `updatedAt`
 - [ ] Omit `fifoReceivedAt` — not applicable to staged rows
 - [ ] Omit `cutLogs` relation — staged rows are not linked to cut logs
+ 
+ *per unit caluclations are done by worker at time of import.
