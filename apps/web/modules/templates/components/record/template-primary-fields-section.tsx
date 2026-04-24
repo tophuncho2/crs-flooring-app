@@ -89,6 +89,16 @@ export function TemplatePrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
+            <RecordFormField label="Unit Type">
+              <input
+                value={draft.unitType}
+                onChange={(event) => onFieldChange("unitType", event.target.value)}
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
+                disabled={disabled}
+              />
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
             <RecordFormField label="Warehouse">
               <select
                 value={draft.warehouseId}
@@ -110,16 +120,6 @@ export function TemplatePrimaryFieldsSection({
 
       <RecordPrimaryPane variant="main" placement="right">
         <RecordPrimaryFieldsGrid>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Unit Type">
-              <input
-                value={draft.unitType}
-                onChange={(event) => onFieldChange("unitType", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="lg">
             <RecordFormField label="Description">
               <input
