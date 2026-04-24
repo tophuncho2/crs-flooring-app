@@ -260,29 +260,30 @@ model FlooringContact {
 }
 
 model FlooringInventory {
-  id             String               @id @default(uuid())
-  importEntryId  String?
-  importEntry    FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
-  productId      String
-  product        FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
-  itemNumber     String
-  dyeLot         String?
-  warehouseId    String
-  warehouse      FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  locationId     String?
-  location       FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  startingStock  Decimal              @db.Decimal(12, 2)
-  totalCutSum    Decimal              @default(0) @db.Decimal(12, 2)
-  cost           Decimal?             @db.Decimal(10, 2)
-  freight        Decimal?             @db.Decimal(10, 2)
-  costPerUnit    Decimal?             @db.Decimal(10, 2)
-  freightPerUnit Decimal?             @db.Decimal(10, 2)
-  isArchived     Boolean              @default(false)
-  notes          String?
-  fifoReceivedAt DateTime
-  cutLogs        FlooringCutLog[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id              String               @id @default(uuid())
+  importEntryId   String?
+  importEntry     FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
+  productId       String
+  product         FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber      String
+  dyeLot          String?
+  warehouseId     String
+  warehouse       FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  locationId      String?
+  location        FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startingStock   Decimal              @db.Decimal(12, 2)
+  totalCutSum     Decimal              @default(0) @db.Decimal(12, 2)
+  cost            Decimal?             @db.Decimal(10, 2)
+  freight         Decimal?             @db.Decimal(10, 2)
+  costPerUnit     Decimal?             @db.Decimal(10, 2)
+  freightPerUnit  Decimal?             @db.Decimal(10, 2)
+  coveragePerUnit Decimal?             @db.Decimal(10, 2)
+  isArchived      Boolean              @default(false)
+  notes           String?
+  fifoReceivedAt  DateTime
+  cutLogs         FlooringCutLog[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@index([importEntryId])
   @@index([productId])

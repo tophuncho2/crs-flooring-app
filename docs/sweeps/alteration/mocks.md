@@ -89,6 +89,7 @@ model FlooringInventory {
   freight        Decimal?             @db.Decimal(10, 2)
   costPerUnit    Decimal?             @db.Decimal(10, 2)
   freightPerUnit Decimal?             @db.Decimal(10, 2)
+  coveragePerUnit Decimal?            @db.Decimal(10, 2)
   isArchived     Boolean              @default(false)
   notes          String?
   fifoReceivedAt DateTime

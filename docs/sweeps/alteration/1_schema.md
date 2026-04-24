@@ -23,6 +23,7 @@ Split in two sections. **Migrating now** (top) lists the deltas that ship in the
 - [x] Add `totalCutSum` Decimal(12,2) default 0 (maintained in cut-log transactions — deferred sweep wires that)
 - [x] Add `costPerUnit` Decimal(10,2)? column
 - [x] Add `freightPerUnit` Decimal(10,2)? column
+- [x] Add `coveragePerUnit` Decimal(10,2)? column (worker copies from linked product's `coveragePerUnit` at import time when the product's category requires it — per the four-slug rule)
 - [x] Add `isArchived` Boolean default false + `@@index([isArchived])`
 - [x] Drop `isImported` boolean
 - [x] Change `warehouseId` from nullable to required `String` + `onDelete: Restrict`
