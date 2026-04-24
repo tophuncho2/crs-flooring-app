@@ -265,6 +265,7 @@ model FlooringInventory {
   importEntry     FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   productId       String
   product         FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  categorySlug    String
   itemNumber      String
   dyeLot          String?
   warehouseId     String

@@ -108,6 +108,35 @@ export function buildProductCoveragePerUnitChangeBlockedMessage(
 }
 
 /**
+ * A product's category is snapshotted onto every inventory row (as the row's
+ * `categorySlug`) at worker-create time. Changing the product's category
+ * after inventory exists would drift the product's classification from all
+ * the snapshots on its inventory rows — a semantic mismatch between the
+ * joined display fields (categoryId/categoryName) and the point-in-time slug
+ * used by the cuts-math (computeInventoryCoverage). Rule: once any inventory
+ * row references this product, the category is locked.
+ *
+ * Returns true when the caller is attempting to change the category AND
+ * there are inventory rows. Returns false when no inventory exists OR the
+ * id isn't actually changing. Both ids are compared trimmed so whitespace
+ * noise doesn't trigger a false positive.
+ */
+export function isProductCategoryChangeBlocked(
+  state: ProductInventoryLinkState,
+  currentCategoryId: string,
+  nextCategoryId: string,
+): boolean {
+  if (state.inventoryCount <= 0) return false
+  return currentCategoryId.trim() !== nextCategoryId.trim()
+}
+
+export function buildProductCategoryChangeBlockedMessage(
+  state: ProductInventoryLinkState,
+): string {
+  return `Category cannot change while ${state.inventoryCount} inventory row${state.inventoryCount === 1 ? "" : "s"} reference this product. Archive or remove the inventory rows before changing category.`
+}
+
+/**
  * Client-side pre-submit validation of the primary section form.
  * Returns an empty string when valid, or a user-readable error message.
  *

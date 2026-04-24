@@ -105,7 +105,13 @@ export function normalizeCutLogRow(
  * MUST NOT call domain rules that throw.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
-  const categorySlug = payload.product.category.slug
+  // Read the snapshot column, not the joined product.category.slug. The
+  // snapshot is stamped at worker-create time and is immutable thereafter;
+  // the product's category can no longer change while inventory exists (see
+  // isProductCategoryChangeBlocked), so the joined display fields
+  // categoryId/categoryName on product.category stay consistent with this
+  // slug by construction.
+  const categorySlug = payload.categorySlug
   const balanceNum = computeInventoryBalance({
     startingStock: payload.startingStock.toString(),
     totalCutSum: payload.totalCutSum.toString(),
@@ -168,7 +174,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
 export function normalizeInventoryDetail(
   payload: InventoryDetailPayload,
 ): InventoryDetailRecord {
-  const categorySlug = payload.product.category.slug
+  const categorySlug = payload.categorySlug
   const coveragePerUnit =
     payload.coveragePerUnit === null ? null : toNumber(payload.coveragePerUnit)
   const context: CutLogNormalizeContext = { categorySlug, coveragePerUnit }

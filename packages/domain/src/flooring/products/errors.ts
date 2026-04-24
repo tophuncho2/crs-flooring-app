@@ -8,6 +8,7 @@ export type ProductErrorCode =
   | "PRODUCT_COVERAGE_PER_UNIT_REQUIRED"
   | "PRODUCT_COVERAGE_PER_UNIT_NOT_ALLOWED"
   | "PRODUCT_COVERAGE_PER_UNIT_LOCKED"
+  | "PRODUCT_CATEGORY_LOCKED"
 
 export class ProductExecutionError extends Error {
   readonly code: ProductErrorCode

@@ -32,6 +32,7 @@ export const inventoryRowSelect = {
       },
     },
   },
+  categorySlug: true,
   itemNumber: true,
   dyeLot: true,
   warehouseId: true,

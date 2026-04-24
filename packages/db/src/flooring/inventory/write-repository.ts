@@ -6,12 +6,17 @@ import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 /**
  * Create input for a real inventory row. Every field is worker-owned — the
  * worker materializes staged rows into real inventory at import time, stamping
- * `costPerUnit` / `freightPerUnit` / `coveragePerUnit` as needed and picking
- * up the FIFO timestamp. User flows never call this directly.
+ * `costPerUnit` / `freightPerUnit` / `coveragePerUnit` / `categorySlug` as
+ * needed and picking up the FIFO timestamp. User flows never call this
+ * directly. `categorySlug` is a point-in-time snapshot of the product's
+ * category slug (same pattern as `FlooringProduct.manufacturerName`); the
+ * product-level `isProductCategoryChangeBlocked` rule prevents drift after
+ * inventory exists.
  */
 export type CreateInventoryRecordInput = {
   importEntryId: string | null
   productId: string
+  categorySlug: string
   itemNumber: string
   dyeLot: string | null
   warehouseId: string
@@ -29,8 +34,8 @@ export type CreateInventoryRecordInput = {
 /**
  * Update input — editable subset only. Mirrors domain.editability
  * INVENTORY_EDITABLE_FIELDS. Immutable fields (startingStock, cost, freight,
- * cost/freight/coverage-per-unit, importEntryId, productId, fifoReceivedAt)
- * are deliberately absent from this shape.
+ * cost/freight/coverage-per-unit, importEntryId, productId, categorySlug,
+ * fifoReceivedAt) are deliberately absent from this shape.
  */
 export type UpdateInventoryRecordInput = {
   itemNumber?: string
@@ -56,6 +61,7 @@ function buildCreateData(
   const data: Prisma.FlooringInventoryCreateInput = {
     product: { connect: { id: input.productId } },
     warehouse: { connect: { id: input.warehouseId } },
+    categorySlug: input.categorySlug,
     itemNumber: input.itemNumber,
     dyeLot: input.dyeLot,
     startingStock: input.startingStock,

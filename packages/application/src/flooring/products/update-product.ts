@@ -12,9 +12,11 @@ import {
   ProductExecutionError,
   buildCategoryCoveragePerUnitNotAllowedMessage,
   buildCategoryCoveragePerUnitRequiredMessage,
+  buildProductCategoryChangeBlockedMessage,
   buildProductCoveragePerUnitChangeBlockedMessage,
   buildStoredFlooringProductName,
   categoryRequiresCoveragePerUnit,
+  isProductCategoryChangeBlocked,
   isProductCoveragePerUnitChangeBlocked,
   resolveProductManufacturerName,
 } from "@builders/domain"
@@ -47,6 +49,26 @@ export async function updateProductUseCase(
     let categoryName = current.category.name
     let categorySlug = current.category.slug
     if (categoryChanged) {
+      // Lock: once any inventory references this product, the category is
+      // frozen. Inventory rows snapshot categorySlug at worker-create time
+      // and rely on it for coverage math — drift here would silently
+      // re-interpret historical rows.
+      const inventoryCount = await countInventoriesByProductId(id, c)
+      if (
+        isProductCategoryChangeBlocked(
+          { inventoryCount },
+          current.categoryId,
+          nextCategoryId,
+        )
+      ) {
+        throw new ProductExecutionError({
+          code: "PRODUCT_CATEGORY_LOCKED",
+          message: buildProductCategoryChangeBlockedMessage({ inventoryCount }),
+          status: 409,
+          field: "categoryId",
+        })
+      }
+
       const category = await getCategoryById(nextCategoryId, c)
       if (!category) {
         throw new ProductExecutionError({
