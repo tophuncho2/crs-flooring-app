@@ -27,11 +27,6 @@ model FlooringImportEntry {
 }
 ```
 
-**add a percent column**
-**remove status**
-**add cost column**
-**add link to manufacturer, not required column**
-
 ---
 
 ## `FlooringInventory` — inventory rows
@@ -67,12 +62,7 @@ model FlooringInventory {
   @@map("flooring_inventory")
 }
 ```
-**change # stock count column name to starting stock**
-**add # column named total cut sum**
-**add freight per unit column**
-**add cost per unit column**
-**do not link to import staged inventory rows**
-**remove is imported boolean**
+
 ---
 
 ## `FlooringCutLog` — cut logs (draws against an inventory row)
@@ -103,8 +93,7 @@ model FlooringCutLog {
   @@map("flooring_cut_log")
 }
 ```
-**add a boolean column named void**
-**add a coverage cut column**
+
 ---
 
 ## `FlooringWorkOrderItem` — work order material items
@@ -131,34 +120,3 @@ model FlooringWorkOrderItem {
   @@map("flooring_work_order_item")
 }
 ```
-**add cost column**
-**add assigned quantity column**
-
-
--------------
-
-Add mock model named Staged Inventory Imports
-
-**add that mocked model here**
-
-
-  id             String               @id @default(uuid())
-  importEntryId  
-  importEntry    
-  productId      String
-  product        FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
-  itemNumber     String
-  dyeLot         String?
-  warehouseId    String?
-  warehouse      FlooringWarehouse?   @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  locationId     String?
-  location       FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  **starting stock**     Decimal              @db.Decimal(12, 2)
-  isImported     Boolean              @default(false)
-  cost           Decimal?             @db.Decimal(10, 2)
-  freight        Decimal?             @db.Decimal(10, 2)
-  notes          String?
- **fifo received at is not for this model**
-  **not linked to cut logs**
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
