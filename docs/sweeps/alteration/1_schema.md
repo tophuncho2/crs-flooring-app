@@ -56,6 +56,8 @@ Based on the current `FlooringInventory` shape, with these specifics:
   - [ ] `isImported` Boolean @default(false) — KEEP on staged (unlike inventory, where it's removed)
   - [ ] `cost` Decimal? @db.Decimal(10, 2)
   - [ ] `freight` Decimal? @db.Decimal(10, 2)
+  - [ ] `costPerUnit` Decimal? @db.Decimal(10, 2)
+  - [ ] `freightPerUnit` Decimal? @db.Decimal(10, 2)
   - [ ] `notes` String?
   - [ ] `createdAt`, `updatedAt`
 - [ ] Omit `fifoReceivedAt` — not applicable to staged rows
