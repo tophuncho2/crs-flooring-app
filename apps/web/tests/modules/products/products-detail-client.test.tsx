@@ -82,11 +82,10 @@ describe("ProductDetailClient", () => {
             name: "Carpet",
             sendUnit: "SY",
             stockUnit: "SF",
-            coverageAvailableUnit: "SF",
             itemCoverageUnit: "SF",
           },
         }}
-        categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", coverageAvailableUnit: "SF", itemCoverageUnit: "SF" }]}
+        categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", itemCoverageUnit: "SF" }]}
         manufacturerOptions={[{ id: "man-1", name: "Acme", website: "", phone: "", email: "" }]}
         inventoryRows={[
           createInventoryRow({
@@ -149,11 +148,10 @@ describe("ProductDetailClient", () => {
             name: "Carpet",
             sendUnit: "SY",
             stockUnit: "SF",
-            coverageAvailableUnit: "SF",
             itemCoverageUnit: "SF",
           },
         }}
-        categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", coverageAvailableUnit: "SF", itemCoverageUnit: "SF" }]}
+        categoryOptions={[{ id: "cat-1", name: "Carpet", sendUnit: "SY", stockUnit: "SF", itemCoverageUnit: "SF" }]}
         manufacturerOptions={[{ id: "man-1", name: "Acme", website: "", phone: "", email: "" }]}
         inventoryRows={[createInventoryRow()]}
         backHref="/dashboard/products"

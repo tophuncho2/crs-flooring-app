@@ -25,9 +25,7 @@ describe("normalizeProductRow", () => {
         name: "Carpet",
         sendUnit: { id: "u1", name: "SY" },
         stockUnit: { id: "u2", name: "Roll" },
-        coverageAvailableUnit: null,
         itemCoverageUnit: { id: "u3", name: "SF" },
-        serviceUnit: null,
       },
       manufacturer: {
         id: "mfg-1",
@@ -61,9 +59,7 @@ describe("normalizeProductRow", () => {
         name: "Carpet",
         sendUnit: null,
         stockUnit: null,
-        coverageAvailableUnit: null,
         itemCoverageUnit: null,
-        serviceUnit: null,
       },
       manufacturer: null,
     })

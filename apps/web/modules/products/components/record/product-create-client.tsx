@@ -37,14 +37,10 @@ const EMPTY_PRODUCT: ProductRecord = {
     name: "",
     sendUnitId: "",
     stockUnitId: "",
-    coverageAvailableUnitId: "",
     itemCoverageUnitId: "",
-    serviceUnitId: "",
     sendUnit: "",
     stockUnit: "",
-    coverageAvailableUnit: "",
     itemCoverageUnit: "",
-    serviceUnit: "",
   },
 }
 

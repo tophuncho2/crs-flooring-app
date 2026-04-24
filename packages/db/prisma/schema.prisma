@@ -141,44 +141,36 @@ model Property {
 }
 
 model FlooringCategory {
-  id                      String                 @id @default(uuid())
-  slug                    String                 @unique
-  name                    String                 @unique
-  sendUnitId              String?
-  stockUnitId             String?
-  coverageAvailableUnitId String?
-  itemCoverageUnitId      String?
-  serviceUnitId           String?
-  sendUnit                FlooringUnitOfMeasure? @relation("FlooringCategorySendUnit", fields: [sendUnitId], references: [id], onDelete: Restrict)
-  stockUnit               FlooringUnitOfMeasure? @relation("FlooringCategoryStockUnit", fields: [stockUnitId], references: [id], onDelete: Restrict)
-  coverageAvailableUnit   FlooringUnitOfMeasure? @relation("FlooringCategoryCoverageAvailableUnit", fields: [coverageAvailableUnitId], references: [id], onDelete: Restrict)
-  itemCoverageUnit        FlooringUnitOfMeasure? @relation("FlooringCategoryItemCoverageUnit", fields: [itemCoverageUnitId], references: [id], onDelete: Restrict)
-  serviceUnit             FlooringUnitOfMeasure? @relation("FlooringCategoryServiceUnit", fields: [serviceUnitId], references: [id], onDelete: Restrict)
-  products                FlooringProduct[]
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
+  id                 String                 @id @default(uuid())
+  slug               String                 @unique
+  name               String                 @unique
+  sendUnitId         String?
+  stockUnitId        String?
+  itemCoverageUnitId String?
+  sendUnit           FlooringUnitOfMeasure? @relation("FlooringCategorySendUnit", fields: [sendUnitId], references: [id], onDelete: Restrict)
+  stockUnit          FlooringUnitOfMeasure? @relation("FlooringCategoryStockUnit", fields: [stockUnitId], references: [id], onDelete: Restrict)
+  itemCoverageUnit   FlooringUnitOfMeasure? @relation("FlooringCategoryItemCoverageUnit", fields: [itemCoverageUnitId], references: [id], onDelete: Restrict)
+  products           FlooringProduct[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 
   @@index([sendUnitId])
   @@index([stockUnitId])
-  @@index([coverageAvailableUnitId])
   @@index([itemCoverageUnitId])
-  @@index([serviceUnitId])
   @@map("flooring_category")
 }
 
 model FlooringUnitOfMeasure {
-  id                              String             @id @default(uuid())
-  slug                            String             @unique
-  name                            String             @unique
-  abbreviation                    String
-  createdAt                       DateTime           @default(now())
-  updatedAt                       DateTime           @updatedAt
-  sendUnitCategories              FlooringCategory[] @relation("FlooringCategorySendUnit")
-  stockUnitCategories             FlooringCategory[] @relation("FlooringCategoryStockUnit")
-  coverageAvailableUnitCategories FlooringCategory[] @relation("FlooringCategoryCoverageAvailableUnit")
-  itemCoverageUnitCategories      FlooringCategory[] @relation("FlooringCategoryItemCoverageUnit")
-  serviceUnitCategories           FlooringCategory[] @relation("FlooringCategoryServiceUnit")
-  services                        FlooringService[]
+  id                         String             @id @default(uuid())
+  slug                       String             @unique
+  name                       String             @unique
+  abbreviation               String
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  sendUnitCategories         FlooringCategory[] @relation("FlooringCategorySendUnit")
+  stockUnitCategories        FlooringCategory[] @relation("FlooringCategoryStockUnit")
+  itemCoverageUnitCategories FlooringCategory[] @relation("FlooringCategoryItemCoverageUnit")
+  services                   FlooringService[]
 
   @@map("flooring_unit_of_measure")
 }
@@ -260,31 +252,37 @@ model FlooringContact {
 }
 
 model FlooringInventory {
-  id              String               @id @default(uuid())
-  importEntryId   String?
-  importEntry     FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
-  productId       String
-  product         FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
-  categorySlug    String
-  itemNumber      String
-  dyeLot          String?
-  warehouseId     String
-  warehouse       FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  locationId      String?
-  location        FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  startingStock   Decimal              @db.Decimal(12, 2)
-  totalCutSum     Decimal              @default(0) @db.Decimal(12, 2)
-  cost            Decimal?             @db.Decimal(10, 2)
-  freight         Decimal?             @db.Decimal(10, 2)
-  costPerUnit     Decimal?             @db.Decimal(10, 2)
-  freightPerUnit  Decimal?             @db.Decimal(10, 2)
-  coveragePerUnit Decimal?             @db.Decimal(10, 2)
-  isArchived      Boolean              @default(false)
-  notes           String?
-  fifoReceivedAt  DateTime
-  cutLogs         FlooringCutLog[]
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id                     String               @id @default(uuid())
+  importEntryId          String?
+  importEntry            FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
+  productId              String
+  product                FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  categorySlug           String
+  stockUnitName          String?
+  stockUnitAbbrev        String?
+  itemCoverageUnitName   String?
+  itemCoverageUnitAbbrev String?
+  sendUnitName           String?
+  sendUnitAbbrev         String?
+  itemNumber             String
+  dyeLot                 String?
+  warehouseId            String
+  warehouse              FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  locationId             String?
+  location               FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startingStock          Decimal              @db.Decimal(12, 2)
+  totalCutSum            Decimal              @default(0) @db.Decimal(12, 2)
+  cost                   Decimal?             @db.Decimal(10, 2)
+  freight                Decimal?             @db.Decimal(10, 2)
+  costPerUnit            Decimal?             @db.Decimal(10, 2)
+  freightPerUnit         Decimal?             @db.Decimal(10, 2)
+  coveragePerUnit        Decimal?             @db.Decimal(10, 2)
+  isArchived             Boolean              @default(false)
+  notes                  String?
+  fifoReceivedAt         DateTime
+  cutLogs                FlooringCutLog[]
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
 
   @@index([importEntryId])
   @@index([productId])

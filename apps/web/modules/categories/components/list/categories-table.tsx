@@ -19,9 +19,7 @@ export function CategoriesTable({
       name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
       sendUnit: (columnIndex) => <DashboardListRowCell key="sendUnit" columnIndex={columnIndex}>{row.sendUnit || "-"}</DashboardListRowCell>,
       stockUnit: (columnIndex) => <DashboardListRowCell key="stockUnit" columnIndex={columnIndex}>{row.stockUnit || "-"}</DashboardListRowCell>,
-      coverageAvailableUnit: (columnIndex) => <DashboardListRowCell key="coverageAvailableUnit" columnIndex={columnIndex}>{row.coverageAvailableUnit || "-"}</DashboardListRowCell>,
       itemCoverageUnit: (columnIndex) => <DashboardListRowCell key="itemCoverageUnit" columnIndex={columnIndex}>{row.itemCoverageUnit || "-"}</DashboardListRowCell>,
-      serviceUnit: (columnIndex) => <DashboardListRowCell key="serviceUnit" columnIndex={columnIndex}>{row.serviceUnit || "-"}</DashboardListRowCell>,
     }
 
     return (

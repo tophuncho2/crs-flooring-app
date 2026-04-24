@@ -14,9 +14,7 @@ const CATEGORY_FIELDS = [
   { key: "name", label: "Category", getValue: (row: CategoryRow) => row.name, groupable: false },
   { key: "sendUnit", label: "Send Unit", getValue: (row: CategoryRow) => row.sendUnit, groupable: false },
   { key: "stockUnit", label: "Stock Unit", getValue: (row: CategoryRow) => row.stockUnit, groupable: false },
-  { key: "coverageAvailableUnit", label: "Coverage Available Unit", getValue: (row: CategoryRow) => row.coverageAvailableUnit, groupable: false },
   { key: "itemCoverageUnit", label: "Item Coverage Unit", getValue: (row: CategoryRow) => row.itemCoverageUnit, groupable: false },
-  { key: "serviceUnit", label: "Service Unit", getValue: (row: CategoryRow) => row.serviceUnit, groupable: false },
 ]
 
 export default function CategoriesClient({

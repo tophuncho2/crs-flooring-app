@@ -10,8 +10,6 @@ export type CategoryMeta = {
   stockUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  coverageAvailableUnitName: string | null
-  coverageAvailableUnitAbbrev: string | null
   itemCoverageUnitName: string | null
   itemCoverageUnitAbbrev: string | null
 }

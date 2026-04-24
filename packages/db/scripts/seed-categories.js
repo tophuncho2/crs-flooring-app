@@ -11,180 +11,140 @@ const SEEDED_CATEGORIES = [
     name: "Vinyl Plank",
     sendUnitSlug: "square-feet",
     stockUnitSlug: "boxes",
-    coverageAvailableUnitSlug: "square-feet",
     itemCoverageUnitSlug: "square-feet",
-    serviceUnitSlug: null,
   },
   {
     slug: "carpet-tile",
     name: "Carpet Tile",
     sendUnitSlug: "square-yard",
     stockUnitSlug: "boxes",
-    coverageAvailableUnitSlug: "square-yard",
     itemCoverageUnitSlug: "square-yard",
-    serviceUnitSlug: null,
   },
   {
     slug: "covebase",
     name: "Covebase",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "boxes",
-    coverageAvailableUnitSlug: "linear-feet",
     itemCoverageUnitSlug: "linear-feet",
-    serviceUnitSlug: null,
   },
   {
     slug: "pad",
     name: "Pad",
     sendUnitSlug: "square-yard",
     stockUnitSlug: "rolls",
-    coverageAvailableUnitSlug: "square-yard",
     itemCoverageUnitSlug: "square-yard",
-    serviceUnitSlug: null,
   },
   {
     slug: "adhesive",
     name: "Adhesive",
     sendUnitSlug: "buckets",
     stockUnitSlug: "buckets",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "baseboard",
     name: "Baseboard",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "carpet",
     name: "Carpet",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "linear-feet",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "kilz",
     name: "Kilz",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "luan",
     name: "Luan",
     sendUnitSlug: "sheets",
     stockUnitSlug: "sheets",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "metals",
     name: "Metals",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "moisture-barrier",
     name: "Moisture Barrier",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "patch",
     name: "Patch",
     sendUnitSlug: "bags",
     stockUnitSlug: "bags",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "plywood",
     name: "Plywood",
     sendUnitSlug: "sheets",
     stockUnitSlug: "sheets",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "primer",
     name: "Primer",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "scent-stop",
     name: "Scent Stop",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "shoe-molding",
     name: "Shoe Molding",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "trim",
     name: "Trim",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "vct",
     name: "VCT",
     sendUnitSlug: "boxes",
     stockUnitSlug: "boxes",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "vinyl-sheet",
     name: "Vinyl Sheet",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "linear-feet",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
   {
     slug: "wax-ring",
     name: "Wax Ring",
     sendUnitSlug: "boxes",
     stockUnitSlug: "boxes",
-    coverageAvailableUnitSlug: null,
     itemCoverageUnitSlug: null,
-    serviceUnitSlug: null,
   },
 ]
 
@@ -193,7 +153,7 @@ function verifySyncWithTypeScriptSource() {
   const tsSource = readFileSync(tsPath, "utf8")
 
   const entryPattern =
-    /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*sendUnitSlug:\s*(?:"([^"]+)"|null),\s*stockUnitSlug:\s*(?:"([^"]+)"|null),\s*coverageAvailableUnitSlug:\s*(?:"([^"]+)"|null),\s*itemCoverageUnitSlug:\s*(?:"([^"]+)"|null),\s*serviceUnitSlug:\s*(?:"([^"]+)"|null)\s*,?\s*\}/g
+    /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*sendUnitSlug:\s*(?:"([^"]+)"|null),\s*stockUnitSlug:\s*(?:"([^"]+)"|null),\s*itemCoverageUnitSlug:\s*(?:"([^"]+)"|null)\s*,?\s*\}/g
   const tsEntries = []
   let match
   while ((match = entryPattern.exec(tsSource)) !== null) {
@@ -202,14 +162,12 @@ function verifySyncWithTypeScriptSource() {
       name: match[2],
       sendUnitSlug: match[3] ?? null,
       stockUnitSlug: match[4] ?? null,
-      coverageAvailableUnitSlug: match[5] ?? null,
-      itemCoverageUnitSlug: match[6] ?? null,
-      serviceUnitSlug: match[7] ?? null,
+      itemCoverageUnitSlug: match[5] ?? null,
     })
   }
 
   const jsKey = (entry) =>
-    `${entry.slug}|${entry.name}|${entry.sendUnitSlug}|${entry.stockUnitSlug}|${entry.coverageAvailableUnitSlug}|${entry.itemCoverageUnitSlug}|${entry.serviceUnitSlug}`
+    `${entry.slug}|${entry.name}|${entry.sendUnitSlug}|${entry.stockUnitSlug}|${entry.itemCoverageUnitSlug}`
   const jsKeys = SEEDED_CATEGORIES.map(jsKey)
   const tsKeys = tsEntries.map(jsKey)
 
@@ -258,9 +216,7 @@ async function seedCategories({ prisma, logger = console }) {
     for (const entry of SEEDED_CATEGORIES) {
       const sendUnitId = resolveUnitId(unitSlugMap, entry.sendUnitSlug, "sendUnitSlug", entry.slug)
       const stockUnitId = resolveUnitId(unitSlugMap, entry.stockUnitSlug, "stockUnitSlug", entry.slug)
-      const coverageAvailableUnitId = resolveUnitId(unitSlugMap, entry.coverageAvailableUnitSlug, "coverageAvailableUnitSlug", entry.slug)
       const itemCoverageUnitId = resolveUnitId(unitSlugMap, entry.itemCoverageUnitSlug, "itemCoverageUnitSlug", entry.slug)
-      const serviceUnitId = resolveUnitId(unitSlugMap, entry.serviceUnitSlug, "serviceUnitSlug", entry.slug)
 
       const existing = await tx.flooringCategory.findUnique({
         where: { slug: entry.slug },
@@ -274,9 +230,7 @@ async function seedCategories({ prisma, logger = console }) {
             name: entry.name,
             sendUnitId,
             stockUnitId,
-            coverageAvailableUnitId,
             itemCoverageUnitId,
-            serviceUnitId,
           },
         })
         updated += 1
@@ -287,9 +241,7 @@ async function seedCategories({ prisma, logger = console }) {
             name: entry.name,
             sendUnitId,
             stockUnitId,
-            coverageAvailableUnitId,
             itemCoverageUnitId,
-            serviceUnitId,
           },
         })
         created += 1
