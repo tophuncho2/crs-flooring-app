@@ -15,10 +15,6 @@ export function formatInventoryQuantity(value: string, unitLabel: string): strin
   return `${value} ${unitLabel}`.trim()
 }
 
-export function formatImportedAsStatus(isImported: boolean): "Pending" | "Final" {
-  return isImported ? "Final" : "Pending"
-}
-
 export type FullLocationCodeInput = {
   warehouseNumber: number
   sectionNumber: number

@@ -173,6 +173,19 @@ export async function getProductDeleteState(
   })
 }
 
+/**
+ * Count of live inventory rows referencing this product. Used by the update
+ * use case to enforce the domain rule `isProductCoveragePerUnitChangeBlocked`:
+ * once any inventory row has snapshotted the product's coveragePerUnit, the
+ * product value is locked.
+ */
+export async function countInventoriesByProductId(
+  productId: string,
+  client: ProductsDbClient = db,
+): Promise<number> {
+  return client.flooringInventory.count({ where: { productId } })
+}
+
 export async function getProductFormOptions(
   client: ProductsDbClient = db,
 ): Promise<ProductFormOptions> {

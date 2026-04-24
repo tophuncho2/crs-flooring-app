@@ -2,8 +2,6 @@ export type InventoryDomainErrorCode =
   | "INVENTORY_VALIDATION_FAILED"
   | "INVENTORY_LOCATION_WAREHOUSE_MISMATCH"
   | "INVENTORY_DELETE_BLOCKED"
-  | "IMPORTED_REVERSAL_NOT_ALLOWED"
-  | "INVENTORY_COST_LOCKED_POST_IMPORT"
 
 export class InventoryDomainError extends Error {
   readonly code: InventoryDomainErrorCode

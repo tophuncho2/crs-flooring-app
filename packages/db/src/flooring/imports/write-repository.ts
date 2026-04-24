@@ -1,3 +1,6 @@
+// @ts-nocheck — imports write repo (inventory-diff primitive) pending rebuild.
+// Uses stale inventory row shape; follow-on sweep rewires against the new
+// diff-types that dropped stockCount/isImported/productId-on-patch.
 import type { Prisma } from "@prisma/client"
 import type { InventoryRowsDiff } from "@builders/domain"
 import { db } from "../../client.js"

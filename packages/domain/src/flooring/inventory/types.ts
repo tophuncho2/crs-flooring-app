@@ -2,6 +2,12 @@ export { CUT_LOG_STATUS_VALUES, type CutLogRow, type CutLogStatus } from "../cut
 
 import type { CutLogRow } from "../cut-logs/types.js"
 
+/**
+ * Read shape for a real-inventory row (post-alteration). `isImported` is gone
+ * — staged rows own that flag now. Computed-at-read fields (`balance`,
+ * `coverage`) are stamped by the data-layer normalizer via the pure functions
+ * in `computed.ts`; list/record UIs never recompute on render.
+ */
 export type InventoryRow = {
   id: string
   importEntryId: string
@@ -12,9 +18,9 @@ export type InventoryRow = {
   productName: string
   categoryId: string
   categoryName: string
+  categorySlug: string
   stockUnit: string
   sendUnit: string
-  coveragePerUnit: string
   itemNumber: string
   dyeLot: string
   warehouseId: string
@@ -26,61 +32,58 @@ export type InventoryRow = {
   sectionNumber: string
   rafter: string
   level: string
-  stockCount: string
+  startingStock: string
+  totalCutSum: string
   cost: string
   freight: string
-  pricePerUnit: string
+  costPerUnit: string
+  freightPerUnit: string
+  coveragePerUnit: string
+  balance: string
+  coverage: string
+  isArchived: boolean
   notes: string
-  isImported: boolean
   fifoReceivedAt: string
   createdAt: string
   updatedAt: string
-  uncutBalance: string
-  availableBalance: string
-  availableCoverage: string
-  awaitingCutBalance: string
-  totalCutBalance: string
 }
 
 export type InventoryDetail = InventoryRow & {
   cutLogs: CutLogRow[]
 }
 
+/**
+ * Edit form for the inventory primary section. Only the columns the user is
+ * allowed to change post-create — see `editability.ts` for the canonical
+ * immutable/editable split. The worker seeds startingStock + cost + freight
+ * + cost/freight/coverage-per-unit; those never appear on a user form.
+ */
 export type InventoryForm = {
-  productId: string
-  warehouseId: string
-  locationId: string
   itemNumber: string
   dyeLot: string
-  stockCount: string
-  cost: string
-  freight: string
+  warehouseId: string
+  locationId: string
   notes: string
+  isArchived: boolean
 }
 
 export const EMPTY_INVENTORY_FORM: InventoryForm = {
-  productId: "",
-  warehouseId: "",
-  locationId: "",
   itemNumber: "",
   dyeLot: "",
-  stockCount: "",
-  cost: "",
-  freight: "",
+  warehouseId: "",
+  locationId: "",
   notes: "",
+  isArchived: false,
 }
 
 export function toInventoryForm(row: InventoryRow): InventoryForm {
   return {
-    productId: row.productId,
-    warehouseId: row.warehouseId,
-    locationId: row.locationId,
     itemNumber: row.itemNumber,
     dyeLot: row.dyeLot,
-    stockCount: row.stockCount,
-    cost: row.cost,
-    freight: row.freight,
+    warehouseId: row.warehouseId,
+    locationId: row.locationId,
     notes: row.notes,
+    isArchived: row.isArchived,
   }
 }
 
@@ -91,6 +94,7 @@ export type InventoryProductOption = {
   style: string | null
   color: string | null
   categoryId: string
+  categorySlug: string
   stockUnit: string
   sendUnit: string
   coveragePerUnit: string

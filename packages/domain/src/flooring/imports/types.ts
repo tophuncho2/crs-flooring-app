@@ -1,104 +1,58 @@
-export const IMPORT_STATUS_VALUES = ["PENDING", "FINAL"] as const
-
-export type ImportStatus = (typeof IMPORT_STATUS_VALUES)[number]
-
-export const IMPORT_STATUS_LABELS: Record<ImportStatus, string> = {
-  PENDING: "Pending",
-  FINAL: "Final",
-}
-
-export const IMPORT_TRANSPORT_TYPE_VALUES = ["RETURN", "PURCHASE_ORDER"] as const
-
-export type ImportTransportType = (typeof IMPORT_TRANSPORT_TYPE_VALUES)[number]
-
-export const IMPORT_TRANSPORT_TYPE_LABELS: Record<ImportTransportType, string> = {
-  RETURN: "Return",
-  PURCHASE_ORDER: "Purchase Order",
-}
-
-export function isImportStatus(value: string): value is ImportStatus {
-  return IMPORT_STATUS_VALUES.includes(value as ImportStatus)
-}
-
-export function isImportTransportType(value: string): value is ImportTransportType {
-  return IMPORT_TRANSPORT_TYPE_VALUES.includes(value as ImportTransportType)
-}
-
-export function formatImportStatus(value: string): string {
-  return isImportStatus(value) ? IMPORT_STATUS_LABELS[value] : "Pending"
-}
-
-export function formatImportTransportType(value: string): string {
-  return isImportTransportType(value) ? IMPORT_TRANSPORT_TYPE_LABELS[value] : "Purchase Order"
-}
-
-export type ImportInventoryRow = {
-  id: string
-  productId: string
-  productName: string
-  stockUnit: string
-  itemNumber: string
-  dyeLot: string
-  stockCount: string
-  cost: string
-  freight: string
-  notes: string
-  locationId: string
-  locationCode: string
-  locationShortCode: string
-  warehouseId: string
-  warehouseName: string
-  sectionName: string
-  isImported: boolean
-  updatedAt: string
-}
+// Imports domain — read + form shapes for the post-alteration schema.
+// No status / transportType concepts (dropped in the imports_staged_inventory_alteration
+// migration). Percent is a worker-maintained Decimal(5,2). Manufacturer is optional.
 
 export type ImportRow = {
   id: string
   importNumber: number
   orderNumber: string
   tag: string
-  transportType: string
-  status: string
+  percent: string
   notes: string
   warehouseId: string
   warehouseName: string
-  itemsCount: number
-  totalCost: number
-  totalCostLabel: string
+  manufacturerId: string
+  manufacturerName: string
+  stagedInventoryRowsCount: number
+  liveInventoryRowsCount: number
   createdAt: string
   updatedAt: string
 }
 
+/**
+ * Detail shape used by the import record view. Consumers will see both the
+ * staged rows (the draft inventory workers prep) and the live inventory rows
+ * (the real inventory the worker materialized from staged). Row types are
+ * declared in their own domain folders; this file only references the shapes
+ * structurally so the types can resolve without a cross-module import.
+ */
 export type ImportDetail = ImportRow & {
-  inventories: ImportInventoryRow[]
+  stagedInventoryRows: ReadonlyArray<{ id: string }>
+  inventories: ReadonlyArray<{ id: string }>
 }
 
 export type ImportPrimaryForm = {
   orderNumber: string
   tag: string
-  transportType: string
-  status: string
   notes: string
   warehouseId: string
+  manufacturerId: string
 }
 
 export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
   orderNumber: "",
   tag: "",
-  transportType: "PURCHASE_ORDER",
-  status: "PENDING",
   notes: "",
   warehouseId: "",
+  manufacturerId: "",
 }
 
 export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
   return {
     orderNumber: record.orderNumber,
     tag: record.tag,
-    transportType: record.transportType,
-    status: record.status,
     notes: record.notes,
     warehouseId: record.warehouseId,
+    manufacturerId: record.manufacturerId,
   }
 }

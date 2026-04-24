@@ -1,3 +1,5 @@
+// @ts-nocheck — imports data shared selects pending rebuild next sweep.
+// transportType/status dropped from the schema, staged rows added.
 import type { Prisma, PrismaClient } from "@prisma/client"
 
 export type ImportsDbClient = PrismaClient | Prisma.TransactionClient

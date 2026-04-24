@@ -2,6 +2,7 @@
 // (packages/application) — no I/O, no framework imports.
 
 import {
+  buildCategoryCoveragePerUnitNotAllowedMessage,
   buildCategoryCoveragePerUnitRequiredMessage,
   categoryRequiresCoveragePerUnit,
 } from "../categories/rules.js"
@@ -70,6 +71,43 @@ export function isProductNameConflict(a: string, b: string): boolean {
 }
 
 /**
+ * Count shape describing how many inventory rows reference this product. Kept
+ * here (not reaching into @builders/db types) so domain rules stay pure.
+ */
+export type ProductInventoryLinkState = {
+  inventoryCount: number
+}
+
+/**
+ * A product's `coveragePerUnit` is snapshotted onto each inventory row at
+ * import time (the worker copies `product.coveragePerUnit` → `inventory.coveragePerUnit`
+ * for categories that require coverage). Changing the product value after
+ * inventory exists would drift the product value from all the snapshots on
+ * inventory rows — corrupting reporting / accounting rollups.
+ *
+ * Returns true when the caller is attempting to change the value AND there are
+ * inventory rows. Returns false when no inventory rows exist OR the value isn't
+ * actually changing. Both `current` and `next` are compared trimmed so
+ * whitespace noise doesn't trigger a false positive.
+ */
+export function isProductCoveragePerUnitChangeBlocked(
+  state: ProductInventoryLinkState,
+  current: string | null | undefined,
+  next: string | null | undefined,
+): boolean {
+  if (state.inventoryCount <= 0) return false
+  const currentNormalized = (current ?? "").trim()
+  const nextNormalized = (next ?? "").trim()
+  return currentNormalized !== nextNormalized
+}
+
+export function buildProductCoveragePerUnitChangeBlockedMessage(
+  state: ProductInventoryLinkState,
+): string {
+  return `Coverage per unit cannot change while ${state.inventoryCount} inventory row${state.inventoryCount === 1 ? "" : "s"} reference this product. Archive or remove the inventory rows before editing coverage per unit.`
+}
+
+/**
  * Client-side pre-submit validation of the primary section form.
  * Returns an empty string when valid, or a user-readable error message.
  *
@@ -94,6 +132,13 @@ export function validateProductPrimaryForm(input: {
     !input.coveragePerUnit.trim()
   ) {
     return buildCategoryCoveragePerUnitRequiredMessage(input.categoryName ?? "this category")
+  }
+  if (
+    input.categorySlug &&
+    !categoryRequiresCoveragePerUnit(input.categorySlug) &&
+    input.coveragePerUnit.trim()
+  ) {
+    return buildCategoryCoveragePerUnitNotAllowedMessage(input.categoryName ?? "this category")
   }
   return ""
 }

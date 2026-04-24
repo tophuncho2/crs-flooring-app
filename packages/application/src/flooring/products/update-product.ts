@@ -1,5 +1,6 @@
 import {
   Prisma,
+  countInventoriesByProductId,
   getCategoryById,
   getManufacturerById,
   getProductById,
@@ -9,9 +10,12 @@ import {
 } from "@builders/db"
 import {
   ProductExecutionError,
+  buildCategoryCoveragePerUnitNotAllowedMessage,
   buildCategoryCoveragePerUnitRequiredMessage,
+  buildProductCoveragePerUnitChangeBlockedMessage,
   buildStoredFlooringProductName,
   categoryRequiresCoveragePerUnit,
+  isProductCoveragePerUnitChangeBlocked,
   resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
@@ -67,6 +71,38 @@ export async function updateProductUseCase(
         status: 400,
         field: "coveragePerUnit",
       })
+    }
+
+    if (!categoryRequiresCoveragePerUnit(categorySlug) && !nextCoverageIsEmpty) {
+      throw new ProductExecutionError({
+        code: "PRODUCT_COVERAGE_PER_UNIT_NOT_ALLOWED",
+        message: buildCategoryCoveragePerUnitNotAllowedMessage(categoryName),
+        status: 400,
+        field: "coveragePerUnit",
+      })
+    }
+
+    if ("coveragePerUnit" in input) {
+      const currentCoverageStr = (current.coveragePerUnit ?? "").trim()
+      const rawNextCoverage = input.coveragePerUnit
+      const nextCoverageStr = rawNextCoverage == null ? "" : rawNextCoverage.toString()
+      if (nextCoverageStr !== currentCoverageStr) {
+        const inventoryCount = await countInventoriesByProductId(id, c)
+        if (
+          isProductCoveragePerUnitChangeBlocked(
+            { inventoryCount },
+            currentCoverageStr,
+            nextCoverageStr,
+          )
+        ) {
+          throw new ProductExecutionError({
+            code: "PRODUCT_COVERAGE_PER_UNIT_LOCKED",
+            message: buildProductCoveragePerUnitChangeBlockedMessage({ inventoryCount }),
+            status: 409,
+            field: "coveragePerUnit",
+          })
+        }
+      }
     }
 
     let manufacturerName: string | null | undefined

@@ -1,32 +1,21 @@
-import { IMPORT_STATUS_VALUES, type ImportStatus } from "./types.js"
-
-export type ImportStatusFilter = ImportStatus
+// Imports list/page filters. Status dropped in the alteration sweep (there's no
+// status column any more); warehouse + manufacturer remain as filter axes.
 
 export type ImportPageFilterState = {
-  status: ImportStatusFilter[]
   warehouseId: string[]
+  manufacturerId: string[]
 }
 
-export function parseImportStatusFilter(value: unknown): ImportStatusFilter[] {
-  const normalizedValues = Array.isArray(value) ? value : [value]
+function parseIdArray(value: unknown): string[] {
+  const normalized = Array.isArray(value) ? value : [value]
   return Array.from(
     new Set(
-      normalizedValues
-        .map((entry) => String(entry ?? "").trim().toUpperCase())
-        .filter((entry): entry is ImportStatusFilter =>
-          IMPORT_STATUS_VALUES.includes(entry as ImportStatus),
-        ),
-    ),
-  )
-}
-
-export function parseImportWarehouseFilter(value: unknown): string[] {
-  const normalizedValues = Array.isArray(value) ? value : [value]
-  return Array.from(
-    new Set(
-      normalizedValues
+      normalized
         .map((entry) => String(entry ?? "").trim())
         .filter((entry) => entry.length > 0),
     ),
   )
 }
+
+export const parseImportWarehouseFilter = parseIdArray
+export const parseImportManufacturerFilter = parseIdArray

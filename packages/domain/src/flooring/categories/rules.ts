@@ -42,3 +42,14 @@ export function buildCategoryCoveragePerUnitRequiredMessage(
 ): string {
   return `Coverage per unit is required for ${categoryName} products`
 }
+
+/**
+ * Human-readable explanation for the inverse rule: products whose category is
+ * NOT in the coverage-per-unit set must not carry a value. Only categories that
+ * are flagged via `categoryRequiresCoveragePerUnit` accept a coveragePerUnit.
+ */
+export function buildCategoryCoveragePerUnitNotAllowedMessage(
+  categoryName: string,
+): string {
+  return `Coverage per unit is not allowed for ${categoryName} products`
+}

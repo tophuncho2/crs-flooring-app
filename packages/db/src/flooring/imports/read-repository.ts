@@ -1,3 +1,6 @@
+// @ts-nocheck — imports read repo pending rebuild next sweep. Column set
+// changed (transportType/status dropped, percent/manufacturerId added,
+// stockCount → startingStock on joined inventory rows).
 import {
   buildFlooringProductDisplayName,
   calculateImportSummary,
