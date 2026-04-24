@@ -1,35 +1,74 @@
-# Alteration Sweep — Prisma Model Snapshot (before changes)
+# Alteration Sweep — Prisma Model Snapshot
 
-Current state of the four models in scope for this sweep, copied verbatim from `packages/db/prisma/schema.prisma`. Use this as the "before" reference while designing the alteration (new `FlooringImportStagedInventoryRow` model + changes to `FlooringInventory` and `FlooringCutLog`).
+Split in two sections. **Migrating now** (top) = the post-migration shapes that `schema.prisma` already holds after the `imports_staged_inventory_alteration` migration lands. **Deferred** (bottom) = current pre-alteration shapes for models we plan to touch in a follow-on sweep.
 
 ---
+
+# Migrating now
 
 ## `FlooringImportEntry` — imports (parent container)
 
 ```prisma
 model FlooringImportEntry {
-  id            String              @id @default(uuid())
-  importNumber  Int                 @unique @default(autoincrement())
-  orderNumber   String?
-  tag           String?
-  transportType String
-  status        String
-  warehouseId   String?
-  warehouse     FlooringWarehouse?  @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  notes         String?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  inventories   FlooringInventory[]
+  id                  String                             @id @default(uuid())
+  importNumber        Int                                @unique @default(autoincrement())
+  orderNumber         String?
+  tag                 String?
+  percent             Decimal                            @default(0) @db.Decimal(5, 2)
+  warehouseId         String
+  warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  manufacturerId      String?
+  manufacturer        FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+  notes               String?
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  stagedInventoryRows FlooringImportStagedInventoryRow[]
+  inventories         FlooringInventory[]
 
   @@index([createdAt])
   @@index([warehouseId])
+  @@index([manufacturerId])
   @@map("flooring_import_entry")
 }
 ```
 
 ---
 
-## `FlooringInventory` — inventory rows
+## `FlooringImportStagedInventoryRow` — staged inventory rows (NEW)
+
+```prisma
+model FlooringImportStagedInventoryRow {
+  id            String              @id @default(uuid())
+  importEntryId String
+  importEntry   FlooringImportEntry @relation(fields: [importEntryId], references: [id], onDelete: Cascade)
+  productId     String
+  product       FlooringProduct     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber    String
+  dyeLot        String?
+  warehouseId   String
+  warehouse     FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  locationId    String?
+  location      FlooringLocation?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startingStock Decimal             @db.Decimal(12, 2)
+  isImported    Boolean             @default(false)
+  cost          Decimal?            @db.Decimal(10, 2)
+  freight       Decimal?            @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([importEntryId])
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([locationId])
+  @@index([importEntryId, isImported])
+  @@map("flooring_import_staged_inventory_row")
+}
+```
+
+---
+
+## `FlooringInventory` — real inventory rows
 
 ```prisma
 model FlooringInventory {
@@ -40,14 +79,17 @@ model FlooringInventory {
   product        FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
   itemNumber     String
   dyeLot         String?
-  warehouseId    String?
-  warehouse      FlooringWarehouse?   @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  warehouseId    String
+  warehouse      FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   locationId     String?
   location       FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  stockCount     Decimal              @db.Decimal(12, 2)
-  isImported     Boolean              @default(false)
+  startingStock  Decimal              @db.Decimal(12, 2)
+  totalCutSum    Decimal              @default(0) @db.Decimal(12, 2)
   cost           Decimal?             @db.Decimal(10, 2)
   freight        Decimal?             @db.Decimal(10, 2)
+  costPerUnit    Decimal?             @db.Decimal(10, 2)
+  freightPerUnit Decimal?             @db.Decimal(10, 2)
+  isArchived     Boolean              @default(false)
   notes          String?
   fifoReceivedAt DateTime
   cutLogs        FlooringCutLog[]
@@ -58,6 +100,7 @@ model FlooringInventory {
   @@index([productId])
   @@index([locationId])
   @@index([warehouseId])
+  @@index([isArchived])
   @@index([productId, fifoReceivedAt, itemNumber, id])
   @@map("flooring_inventory")
 }
@@ -65,7 +108,86 @@ model FlooringInventory {
 
 ---
 
-## `FlooringCutLog` — cut logs (draws against an inventory row)
+## `FlooringWarehouse` — back-relation added
+
+```prisma
+model FlooringWarehouse {
+  id                  String                             @id @default(uuid())
+  number              Int                                @unique
+  name                String                             @unique
+  address             String?
+  phone               String?
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  imports             FlooringImportEntry[]
+  stagedInventoryRows FlooringImportStagedInventoryRow[]
+  sections            FlooringSection[]
+  locations           FlooringLocation[]
+  inventories         FlooringInventory[]
+  workOrders          FlooringWorkOrder[]
+  templates           FlooringTemplate[]
+
+  @@map("flooring_warehouse")
+}
+```
+
+---
+
+## `FlooringLocation` — back-relation added
+
+```prisma
+model FlooringLocation {
+  id                  String                             @id @default(uuid())
+  warehouseId         String
+  warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  sectionId           String
+  section             FlooringSection                    @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  rafter              Int
+  level               Int
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  inventories         FlooringInventory[]
+  stagedInventoryRows FlooringImportStagedInventoryRow[]
+
+  @@unique([warehouseId, rafter, level])
+  @@index([sectionId])
+  @@index([warehouseId])
+  @@map("flooring_location")
+}
+```
+
+---
+
+## `FlooringManufacturer` — back-relation added
+
+```prisma
+model FlooringManufacturer {
+  id                    String                @id @default(uuid())
+  companyName           String
+  companyNameNormalized String                @unique
+  agentName             String?
+  website               String?
+  phone                 String?
+  email                 String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  products              FlooringProduct[]
+  imports               FlooringImportEntry[]
+
+  @@index([companyName])
+  @@map("flooring_manufacturer")
+}
+```
+
+---
+
+# Deferred
+
+The models below are left at their **current pre-alteration** shape. They are copied here verbatim from `packages/db/prisma/schema.prisma` as the reference for the next sweep.
+
+---
+
+## `FlooringCutLog` — cut logs (deferred changes: add `void` boolean + `coverageCut` column)
 
 ```prisma
 model FlooringCutLog {
@@ -96,7 +218,7 @@ model FlooringCutLog {
 
 ---
 
-## `FlooringWorkOrderItem` — work order material items
+## `FlooringWorkOrderItem` — work order material items (deferred changes: add `assignedCost` + `assignedQuantity`)
 
 ```prisma
 model FlooringWorkOrderItem {
@@ -123,7 +245,7 @@ model FlooringWorkOrderItem {
 
 ---
 
-## `FlooringWorkOrder` — work orders (parent of material items)
+## `FlooringWorkOrder` — work orders (unchanged; parent of material items — for context)
 
 ```prisma
 model FlooringWorkOrder {

@@ -184,45 +184,47 @@ model FlooringUnitOfMeasure {
 }
 
 model FlooringManufacturer {
-  id                    String            @id @default(uuid())
+  id                    String                @id @default(uuid())
   companyName           String
-  companyNameNormalized String            @unique
+  companyNameNormalized String                @unique
   agentName             String?
   website               String?
   phone                 String?
   email                 String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
   products              FlooringProduct[]
+  imports               FlooringImportEntry[]
 
   @@index([companyName])
   @@map("flooring_manufacturer")
 }
 
 model FlooringProduct {
-  id               String                  @id @default(uuid())
-  name             String                  @default("")
-  categoryId       String
-  category         FlooringCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  manufacturerName String?                 @map("manufacturer")
-  manufacturerId   String?
-  manufacturer     FlooringManufacturer?   @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
-  style            String?
-  color            String?
-  width            String?
-  sheetSize        String?
-  thickness        String?
-  unitWeight       String?
-  coveragePerUnit  Decimal?                @db.Decimal(12, 4)
-  cost             Decimal?                @db.Decimal(10, 2)
-  isPublic         Boolean                 @default(false)
-  notes            String?
-  subOrder         String?
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
-  templateItems    FlooringTemplateItem[]
-  workOrderItems   FlooringWorkOrderItem[]
-  inventories      FlooringInventory[]
+  id                               String                             @id @default(uuid())
+  name                             String                             @default("")
+  categoryId                       String
+  category                         FlooringCategory                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  manufacturerName                 String?                            @map("manufacturer")
+  manufacturerId                   String?
+  manufacturer                     FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
+  style                            String?
+  color                            String?
+  width                            String?
+  sheetSize                        String?
+  thickness                        String?
+  unitWeight                       String?
+  coveragePerUnit                  Decimal?                           @db.Decimal(12, 4)
+  cost                             Decimal?                           @db.Decimal(10, 2)
+  isPublic                         Boolean                            @default(false)
+  notes                            String?
+  subOrder                         String?
+  createdAt                        DateTime                           @default(now())
+  updatedAt                        DateTime                           @updatedAt
+  templateItems                    FlooringTemplateItem[]
+  workOrderItems                   FlooringWorkOrderItem[]
+  inventories                      FlooringInventory[]
+  FlooringImportStagedInventoryRow FlooringImportStagedInventoryRow[]
 
   @@index([manufacturerId])
   @@index([name])
@@ -265,14 +267,17 @@ model FlooringInventory {
   product        FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
   itemNumber     String
   dyeLot         String?
-  warehouseId    String?
-  warehouse      FlooringWarehouse?   @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  warehouseId    String
+  warehouse      FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   locationId     String?
   location       FlooringLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  stockCount     Decimal              @db.Decimal(12, 2)
-  isImported     Boolean              @default(false)
+  startingStock  Decimal              @db.Decimal(12, 2)
+  totalCutSum    Decimal              @default(0) @db.Decimal(12, 2)
   cost           Decimal?             @db.Decimal(10, 2)
   freight        Decimal?             @db.Decimal(10, 2)
+  costPerUnit    Decimal?             @db.Decimal(10, 2)
+  freightPerUnit Decimal?             @db.Decimal(10, 2)
+  isArchived     Boolean              @default(false)
   notes          String?
   fifoReceivedAt DateTime
   cutLogs        FlooringCutLog[]
@@ -283,26 +288,58 @@ model FlooringInventory {
   @@index([productId])
   @@index([locationId])
   @@index([warehouseId])
+  @@index([isArchived])
   @@index([productId, fifoReceivedAt, itemNumber, id])
   @@map("flooring_inventory")
 }
 
-model FlooringImportEntry {
+model FlooringImportStagedInventoryRow {
   id            String              @id @default(uuid())
-  importNumber  Int                 @unique @default(autoincrement())
-  orderNumber   String?
-  tag           String?
-  transportType String
-  status        String
-  warehouseId   String?
-  warehouse     FlooringWarehouse?  @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  importEntryId String
+  importEntry   FlooringImportEntry @relation(fields: [importEntryId], references: [id], onDelete: Cascade)
+  productId     String
+  product       FlooringProduct     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber    String
+  dyeLot        String?
+  warehouseId   String
+  warehouse     FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  locationId    String?
+  location      FlooringLocation?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startingStock Decimal             @db.Decimal(12, 2)
+  isImported    Boolean             @default(false)
+  cost          Decimal?            @db.Decimal(10, 2)
+  freight       Decimal?            @db.Decimal(10, 2)
   notes         String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-  inventories   FlooringInventory[]
+
+  @@index([importEntryId])
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([locationId])
+  @@index([importEntryId, isImported])
+  @@map("flooring_import_staged_inventory_row")
+}
+
+model FlooringImportEntry {
+  id                  String                             @id @default(uuid())
+  importNumber        Int                                @unique @default(autoincrement())
+  orderNumber         String?
+  tag                 String?
+  percent             Decimal                            @default(0) @db.Decimal(5, 2)
+  warehouseId         String
+  warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  manufacturerId      String?
+  manufacturer        FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+  notes               String?
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  stagedInventoryRows FlooringImportStagedInventoryRow[]
+  inventories         FlooringInventory[]
 
   @@index([createdAt])
   @@index([warehouseId])
+  @@index([manufacturerId])
   @@map("flooring_import_entry")
 }
 
@@ -393,19 +430,20 @@ model FlooringTemplateItem {
 }
 
 model FlooringWarehouse {
-  id          String                @id @default(uuid())
-  number      Int                   @unique
-  name        String                @unique
-  address     String?
-  phone       String?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  imports     FlooringImportEntry[]
-  sections    FlooringSection[]
-  locations   FlooringLocation[]
-  inventories FlooringInventory[]
-  workOrders  FlooringWorkOrder[]
-  templates   FlooringTemplate[]
+  id                  String                             @id @default(uuid())
+  number              Int                                @unique
+  name                String                             @unique
+  address             String?
+  phone               String?
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  imports             FlooringImportEntry[]
+  stagedInventoryRows FlooringImportStagedInventoryRow[]
+  sections            FlooringSection[]
+  locations           FlooringLocation[]
+  inventories         FlooringInventory[]
+  workOrders          FlooringWorkOrder[]
+  templates           FlooringTemplate[]
 
   @@map("flooring_warehouse")
 }
@@ -424,16 +462,17 @@ model FlooringSection {
 }
 
 model FlooringLocation {
-  id          String              @id @default(uuid())
-  warehouseId String
-  warehouse   FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  sectionId   String
-  section     FlooringSection     @relation(fields: [sectionId], references: [id], onDelete: Restrict)
-  rafter      Int
-  level       Int
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  inventories FlooringInventory[]
+  id                  String                             @id @default(uuid())
+  warehouseId         String
+  warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  sectionId           String
+  section             FlooringSection                    @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  rafter              Int
+  level               Int
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  inventories         FlooringInventory[]
+  stagedInventoryRows FlooringImportStagedInventoryRow[]
 
   @@unique([warehouseId, rafter, level])
   @@index([sectionId])
