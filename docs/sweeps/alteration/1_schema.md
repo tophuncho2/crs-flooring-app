@@ -21,6 +21,7 @@ Per-model schema alterations for the imports / inventory / cut-logs / work-order
 - [ ] Add `costPerUnit` column
 - [ ] Do NOT link to `FlooringImportStagedInventoryRow` (no relation from inventory → staged)
 - [ ] Remove `isImported` boolean
+- **add is archived boolean**
 
 ---
 
