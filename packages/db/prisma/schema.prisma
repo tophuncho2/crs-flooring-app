@@ -100,6 +100,18 @@ enum FlooringContactType {
   OTHER
 }
 
+enum FlooringStagedRowStatus {
+  DRAFT
+  QUEUED
+  IMPORTED
+}
+
+enum FlooringCutLogStatus {
+  PENDING
+  FINAL
+  VOID
+}
+
 model FlooringManagementCompany {
   id            String              @id @default(uuid())
   name          String              @unique
@@ -253,6 +265,7 @@ model FlooringContact {
 
 model FlooringInventory {
   id                     String               @id @default(uuid())
+  inventoryNumber        String               @unique @default(dbgenerated("('INV-'::text || lpad((nextval('flooring_inventory_number_seq'::regclass))::text, 5, '0'::text))")) @map("inventory_number")
   importEntryId          String?
   importEntry            FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   productId              String
@@ -264,7 +277,7 @@ model FlooringInventory {
   itemCoverageUnitAbbrev String?
   sendUnitName           String?
   sendUnitAbbrev         String?
-  itemNumber             String
+  itemNumber             String?
   dyeLot                 String?
   warehouseId            String
   warehouse              FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
@@ -284,6 +297,7 @@ model FlooringInventory {
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
 
+  @@index([inventoryNumber])
   @@index([importEntryId])
   @@index([productId])
   @@index([locationId])
@@ -294,30 +308,33 @@ model FlooringInventory {
 }
 
 model FlooringImportStagedInventoryRow {
-  id            String              @id @default(uuid())
+  id            String                  @id @default(uuid())
   importEntryId String
-  importEntry   FlooringImportEntry @relation(fields: [importEntryId], references: [id], onDelete: Cascade)
+  importEntry   FlooringImportEntry     @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   productId     String
-  product       FlooringProduct     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  itemNumber    String
+  product       FlooringProduct         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber    String?
   dyeLot        String?
   warehouseId   String
-  warehouse     FlooringWarehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  warehouse     FlooringWarehouse       @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   locationId    String?
-  location      FlooringLocation?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  startingStock Decimal             @db.Decimal(12, 2)
-  isImported    Boolean             @default(false)
-  cost          Decimal?            @db.Decimal(10, 2)
-  freight       Decimal?            @db.Decimal(10, 2)
+  location      FlooringLocation?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startingStock Decimal                 @db.Decimal(12, 2)
+  isImported    Boolean                 @default(false)
+  status        FlooringStagedRowStatus @default(DRAFT)
+  cost          Decimal?                @db.Decimal(10, 2)
+  freight       Decimal?                @db.Decimal(10, 2)
   notes         String?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
   @@index([importEntryId])
   @@index([productId])
   @@index([warehouseId])
   @@index([locationId])
   @@index([importEntryId, isImported])
+  @@index([importEntryId, status])
+  @@index([status, isImported])
   @@map("flooring_import_staged_inventory_row")
 }
 
@@ -355,7 +372,7 @@ model FlooringCutLog {
   cut             Decimal                @db.Decimal(12, 2)
   coverageCut     Decimal?               @db.Decimal(12, 2)
   after           Decimal                @db.Decimal(12, 2)
-  status          String                 @default("PENDING")
+  status          FlooringCutLogStatus   @default(PENDING)
   cost            Decimal?               @db.Decimal(10, 2)
   freight         Decimal?               @db.Decimal(10, 2)
   isWaste         Boolean                @default(false)
@@ -367,6 +384,8 @@ model FlooringCutLog {
   @@index([inventoryId])
   @@index([workOrderId])
   @@index([workOrderItemId])
+  @@index([workOrderItemId, status])
+  @@index([inventoryId, status])
   @@map("flooring_cut_log")
 }
 
