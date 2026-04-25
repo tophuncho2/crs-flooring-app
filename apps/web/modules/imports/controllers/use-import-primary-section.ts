@@ -41,7 +41,7 @@ export function useImportPrimarySection({
 
       const payload = await updateImportRequest(record.id, localValue, record.updatedAt)
       return {
-        serverValue: { ...record, ...payload.import },
+        serverValue: payload.import,
         noticeMessage: "Import saved",
       }
     },

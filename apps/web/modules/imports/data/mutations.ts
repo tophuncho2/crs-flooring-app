@@ -15,7 +15,7 @@ export async function createImportRequest(input: CreateImportInput) {
 }
 
 export async function updateImportRequest(id: string, input: UpdateImportInput, revisionKey: string) {
-  return requestJson<{ import: ImportRecord }>(`/api/imports/${id}/primary/section`, {
+  return requestJson<{ import: ImportDetailRecord }>(`/api/imports/${id}/primary/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input, revisionKey)),

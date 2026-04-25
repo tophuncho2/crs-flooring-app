@@ -1,4 +1,4 @@
-import { getImportById } from "@builders/db"
+import { getImportById, getImportDetailById } from "@builders/db"
 import { ImportExecutionError, updateImportUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -70,7 +70,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       () => updateImportUseCase(id, input),
     )
 
-    const responseBody = { import: result }
+    // Client controller expects ImportDetailRecord (row + id-pointer arrays for
+    // staged + live inventory) so the record view's section reconciliation
+    // stays consistent. Use case returns the flat row; compose the detail at
+    // the route boundary — mirrors the inventory primary section route pattern.
+    const detail = (await getImportDetailById(id)) ?? result
+    const responseBody = { import: detail }
     await finalizeMutationReceipt({
       scope: "imports.primary.section.replace",
       access,
