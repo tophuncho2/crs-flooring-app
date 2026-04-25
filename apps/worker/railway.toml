@@ -1,0 +1,20 @@
+# Railway service config for the BullMQ worker.
+#
+# The build script chains only worker's package dependencies (db → domain →
+# application → lib → worker) so failures in apps/web or apps/relay do not
+# cascade into this service's deploy.
+#
+# No healthcheck — the worker is a pure job processor with no HTTP server.
+# Liveness is enforced via BullMQ's `lockDuration` (default 60s); a wedged
+# job releases its lock and another worker picks it up.
+#
+# In the Railway dashboard, set this service's "Config-as-code path" to
+# `apps/worker/railway.toml` so this file is picked up.
+
+[build]
+buildCommand = "npm run build:worker"
+
+[deploy]
+startCommand = "npm run start:worker"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

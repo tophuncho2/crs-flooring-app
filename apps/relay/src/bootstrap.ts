@@ -1,12 +1,8 @@
 import { getDatabaseEnvironment } from "@builders/db"
-import {
-  WORK_ORDER_AUTO_ALLOCATION_QUEUE,
-  type AutoAllocateWorkOrderJobV1,
-} from "@builders/domain"
 import { logStructuredEvent, parseRedisConnectionUrl } from "@builders/lib"
-import { Queue } from "bullmq"
 import { startBullBoardServer } from "./bull-board.js"
-import { createWorkOrderAllocationOutboxDispatcher } from "./dispatch/work-order-allocation-outbox-dispatcher.js"
+import { buildDispatchers } from "./dispatch/dispatchers.js"
+import { dispatchBatchForTopic } from "./dispatch/topic-dispatcher.js"
 import { getRelayEnvironment } from "./env.js"
 
 function sleep(ms: number) {
@@ -19,16 +15,11 @@ async function main() {
   getDatabaseEnvironment()
   const env = getRelayEnvironment()
   const connection = parseRedisConnectionUrl(env.queueRedisUrl)
-  const autoAllocationQueue = new Queue<AutoAllocateWorkOrderJobV1>(WORK_ORDER_AUTO_ALLOCATION_QUEUE, {
-    connection,
-  })
-  const allocationDispatcher = createWorkOrderAllocationOutboxDispatcher()
+  const dispatchers = buildDispatchers(connection)
 
-  await Promise.all([autoAllocationQueue.waitUntilReady()])
-  const bullBoardServer = await startBullBoardServer({
-    env,
-    autoAllocationQueue,
-  })
+  await Promise.all(dispatchers.map((d) => d.queue.waitUntilReady()))
+
+  const bullBoardServer = await startBullBoardServer({ env, dispatchers })
 
   logStructuredEvent({
     service: env.serviceName,
@@ -37,7 +28,7 @@ async function main() {
     action: "relay.ready",
     status: "ready",
     details: {
-      queue: WORK_ORDER_AUTO_ALLOCATION_QUEUE,
+      topics: dispatchers.map((d) => d.topic),
       batchSize: env.batchSize,
       pollIntervalMs: env.pollIntervalMs,
     },
@@ -53,17 +44,22 @@ async function main() {
   process.on("SIGTERM", shutdown)
 
   while (!shuttingDown) {
-    try {
-      await allocationDispatcher.dispatchBatch(env, autoAllocationQueue)
-    } catch (error) {
-      logStructuredEvent({
-        level: "error",
-        service: env.serviceName,
-        environment: env.environmentName,
-        message: "Relay dispatch loop failed",
-        action: "relay.loop",
-        error,
-      })
+    const results = await Promise.allSettled(
+      dispatchers.map((d) => dispatchBatchForTopic(env, d)),
+    )
+
+    for (const [index, result] of results.entries()) {
+      if (result.status === "rejected") {
+        logStructuredEvent({
+          level: "error",
+          service: env.serviceName,
+          environment: env.environmentName,
+          message: "Relay dispatch loop failed",
+          action: "relay.loop",
+          details: { topic: dispatchers[index]?.topic },
+          error: result.reason,
+        })
+      }
     }
 
     await sleep(env.pollIntervalMs)
@@ -71,13 +67,18 @@ async function main() {
 
   process.off("SIGINT", shutdown)
   process.off("SIGTERM", shutdown)
-  await Promise.all([bullBoardServer?.close(), autoAllocationQueue.close()])
+
+  await Promise.all([
+    bullBoardServer?.close(),
+    ...dispatchers.map((d) => d.close()),
+  ])
 }
 
 main().catch((error) => {
   logStructuredEvent({
     level: "error",
     service: "relay",
+    environment: process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? "unknown",
     message: "Relay fatal startup error",
     action: "relay.fatal",
     error,

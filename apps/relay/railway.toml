@@ -1,0 +1,18 @@
+# Railway service config for the outbox relay.
+#
+# The build script chains only relay's package dependencies (db → domain →
+# application → lib → relay) so failures in apps/web or apps/worker do not
+# cascade into this service's deploy.
+#
+# In the Railway dashboard, set this service's "Config-as-code path" to
+# `apps/relay/railway.toml` so this file is picked up.
+
+[build]
+buildCommand = "npm run build:relay"
+
+[deploy]
+startCommand = "npm run start:relay"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

@@ -5,6 +5,7 @@
     { "path": "./packages/domain" },
     { "path": "./packages/application" },
     { "path": "./packages/lib" },
+    { "path": "./apps/relay" },
     { "path": "./apps/worker" },
     { "path": "./apps/web" }
   ]

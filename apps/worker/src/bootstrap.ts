@@ -1,103 +1,95 @@
 import { getDatabaseEnvironment } from "@builders/db"
 import {
-  WORK_ORDER_AUTO_ALLOCATION_QUEUE,
-  parseAutoAllocateWorkOrderJob,
-  isWorkflowProcessingError,
-  type AutoAllocateWorkOrderJobV1,
+  IMPORT_MATERIALIZE_QUEUE,
+  type ImportMaterializeBatchPayload,
 } from "@builders/domain"
-import { QueueEvents, UnrecoverableError, Worker } from "bullmq"
 import { logStructuredEvent } from "@builders/lib"
+import { QueueEvents, Worker } from "bullmq"
 import { getWorkerEnvironment } from "./env.js"
-import { createWorkOrderAutoAllocationProcessor } from "./processors/process-work-order-auto-allocation.js"
+import { createMaterializeImportBatchHandler } from "./processors/materialize-import-batch.js"
 import { createQueueConnection } from "./queues/connection.js"
 
 async function main() {
   getDatabaseEnvironment()
   const env = getWorkerEnvironment()
-  const connection = await createQueueConnection(env)
-  const processAutoAllocation = createWorkOrderAutoAllocationProcessor()
-  const autoAllocationWorker = new Worker<AutoAllocateWorkOrderJobV1>(
-    WORK_ORDER_AUTO_ALLOCATION_QUEUE,
-    async (job) => {
-      try {
-        return await processAutoAllocation(parseAutoAllocateWorkOrderJob(job.data), env, {
-          attemptNumber: job.attemptsMade + 1,
-          maxAttempts: typeof job.opts.attempts === "number" ? job.opts.attempts : 1,
-        })
-      } catch (error) {
-        if (isWorkflowProcessingError(error) && !error.retryable) {
-          throw new UnrecoverableError(error.message)
-        }
-        throw error
-      }
-    },
+  const connection = createQueueConnection(env)
+  const handler = createMaterializeImportBatchHandler()
+
+  const materializeWorker = new Worker<ImportMaterializeBatchPayload>(
+    IMPORT_MATERIALIZE_QUEUE,
+    async (job) => handler(job),
     {
       connection,
-      concurrency: env.autoAllocationWorkerConcurrency,
-      lockDuration: env.autoAllocationWorkerLockDurationMs,
+      concurrency: env.materializeWorkerConcurrency,
+      lockDuration: env.materializeWorkerLockDurationMs,
     },
   )
-  const autoAllocationEvents = new QueueEvents(WORK_ORDER_AUTO_ALLOCATION_QUEUE, {
-    connection,
-  })
 
-  autoAllocationWorker.on("active", (job) => {
+  const materializeEvents = new QueueEvents(IMPORT_MATERIALIZE_QUEUE, { connection })
+
+  materializeWorker.on("active", (job) => {
     logStructuredEvent({
       service: env.serviceName,
       environment: env.environmentName,
-      message: "Work order auto-allocation job active",
-      action: "worker.workOrders.autoAllocation.active",
-      requestId: job.data.requestId,
-      workOrderId: job.data.workOrderId,
-      generationId: job.data.allocationRunId,
-      idempotencyKey: job.data.idempotencyKey,
-      queueJobId: job.id ?? job.data.idempotencyKey,
+      message: "Materialize import batch job active",
+      action: "worker.imports.materialize.active",
+      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
+      queueJobId: typeof job.id === "string" ? job.id : undefined,
       attempt: job.attemptsStarted,
       status: "PROCESSING",
+      details: {
+        importEntryId: job.data.importEntryId,
+        stagedRowCount: job.data.stagedRowIds.length,
+      },
     })
   })
 
-  autoAllocationWorker.on("completed", (job, result) => {
+  materializeWorker.on("completed", (job, result) => {
     logStructuredEvent({
       service: env.serviceName,
       environment: env.environmentName,
-      message: "Work order auto-allocation job completed",
-      action: "worker.workOrders.autoAllocation.completed",
-      requestId: job.data.requestId,
-      workOrderId: job.data.workOrderId,
-      generationId: job.data.allocationRunId,
-      idempotencyKey: job.data.idempotencyKey,
-      queueJobId: job.id ?? job.data.idempotencyKey,
+      message: "Materialize import batch job completed",
+      action: "worker.imports.materialize.completed",
+      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
+      queueJobId: typeof job.id === "string" ? job.id : undefined,
       attempt: job.attemptsStarted,
       status: "COMPLETED",
-      details:
-        result && typeof result === "object"
-          ? result
-          : undefined,
+      details: {
+        importEntryId: job.data.importEntryId,
+        stagedRowCount: job.data.stagedRowIds.length,
+        materializedCount:
+          result && typeof result === "object" && "materializedStagedRowIds" in result &&
+          Array.isArray((result as { materializedStagedRowIds: unknown[] }).materializedStagedRowIds)
+            ? (result as { materializedStagedRowIds: unknown[] }).materializedStagedRowIds.length
+            : undefined,
+      },
     })
   })
 
-  autoAllocationWorker.on("failed", (job, error) => {
+  materializeWorker.on("failed", (job, error) => {
     logStructuredEvent({
       level: "error",
       service: env.serviceName,
       environment: env.environmentName,
-      message: "Work order auto-allocation job failed",
-      action: "worker.workOrders.autoAllocation.failed",
-      requestId: job?.data.requestId,
-      workOrderId: job?.data.workOrderId,
-      generationId: job?.data.allocationRunId,
-      idempotencyKey: job?.data.idempotencyKey,
-      queueJobId: job?.id ?? job?.data.idempotencyKey,
+      message: "Materialize import batch job failed",
+      action: "worker.imports.materialize.failed",
+      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
+      queueJobId: typeof job?.id === "string" ? job.id : undefined,
       attempt: job?.attemptsStarted,
       status: "FAILED",
+      details: job
+        ? {
+            importEntryId: job.data.importEntryId,
+            stagedRowCount: job.data.stagedRowIds.length,
+          }
+        : undefined,
       error,
     })
   })
 
   await Promise.all([
-    autoAllocationWorker.waitUntilReady(),
-    autoAllocationEvents.waitUntilReady(),
+    materializeWorker.waitUntilReady(),
+    materializeEvents.waitUntilReady(),
   ])
 
   logStructuredEvent({
@@ -107,7 +99,9 @@ async function main() {
     action: "worker.ready",
     status: "ready",
     details: {
-      queues: [WORK_ORDER_AUTO_ALLOCATION_QUEUE],
+      queues: [IMPORT_MATERIALIZE_QUEUE],
+      concurrency: env.materializeWorkerConcurrency,
+      lockDurationMs: env.materializeWorkerLockDurationMs,
     },
   })
 
@@ -115,10 +109,7 @@ async function main() {
     const shutdown = async () => {
       process.off("SIGINT", shutdown)
       process.off("SIGTERM", shutdown)
-      await Promise.all([
-        autoAllocationEvents.close(),
-        autoAllocationWorker.close(),
-      ])
+      await Promise.all([materializeEvents.close(), materializeWorker.close()])
       resolve()
     }
 
@@ -131,6 +122,7 @@ main().catch((error) => {
   logStructuredEvent({
     level: "error",
     service: "worker",
+    environment: process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? "unknown",
     message: "Worker fatal startup error",
     action: "worker.fatal",
     error,

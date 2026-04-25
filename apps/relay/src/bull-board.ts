@@ -2,10 +2,9 @@ import type { Server } from "node:http"
 import { createBullBoard } from "@bull-board/api"
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter"
 import { ExpressAdapter } from "@bull-board/express"
-import type { AutoAllocateWorkOrderJobV1 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
-import type { Queue } from "bullmq"
 import express, { type Request, type Response, type NextFunction } from "express"
+import type { AnyTopicDispatcher } from "./dispatch/dispatchers.js"
 import type { RelayEnvironment } from "./env.js"
 
 function unauthorized(response: Response) {
@@ -37,10 +36,10 @@ function createBasicAuthMiddleware(username: string, password: string) {
 
 export async function startBullBoardServer({
   env,
-  autoAllocationQueue,
+  dispatchers,
 }: {
   env: RelayEnvironment
-  autoAllocationQueue: Queue<AutoAllocateWorkOrderJobV1>
+  dispatchers: AnyTopicDispatcher[]
 }) {
   if (!env.bullBoard.enabled) {
     return null
@@ -51,7 +50,7 @@ export async function startBullBoardServer({
   serverAdapter.setBasePath(env.bullBoard.basePath)
 
   createBullBoard({
-    queues: [new BullMQAdapter(autoAllocationQueue, { readOnlyMode: true })],
+    queues: dispatchers.map((d) => new BullMQAdapter(d.queue, { readOnlyMode: true })),
     serverAdapter,
   })
 
@@ -88,6 +87,7 @@ export async function startBullBoardServer({
       readOnlyMode: true,
       authEnabled: Boolean(env.bullBoard.username && env.bullBoard.password),
       localUrl: `http://localhost:${env.bullBoard.port}${env.bullBoard.basePath}`,
+      queues: dispatchers.map((d) => d.queue.name),
     },
   })
 
