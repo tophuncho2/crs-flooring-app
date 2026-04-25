@@ -1,1 +1,3 @@
-[This folder contains the truth of structure. Do not edit this folder, only use for reference on how something should be done.](docs/architecture/directories)
+Paste response in a new file in the root of docs/
+
+Paste headlines in the change.
