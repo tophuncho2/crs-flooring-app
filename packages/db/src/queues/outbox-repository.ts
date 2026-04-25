@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { db } from "../client.js"
+import { isP2002 } from "../shared/prisma-errors.js"
 
 type OutboxDbClient = Prisma.TransactionClient | typeof db
 
@@ -77,6 +78,11 @@ function toQueueOutboxEventRecord(event: {
   }
 }
 
+export type CreateQueueOutboxEventResult = {
+  event: QueueOutboxEventRecord
+  wasDuplicate: boolean
+}
+
 export async function createQueueOutboxEvent(
   input: {
     topic: string
@@ -87,21 +93,33 @@ export async function createQueueOutboxEvent(
     availableAt?: Date
   },
   client: OutboxDbClient = db,
-) {
-  const event = await client.queueOutboxEvent.create({
-    data: {
-      topic: input.topic,
-      aggregateType: input.aggregateType,
-      aggregateId: input.aggregateId,
-      idempotencyKey: input.idempotencyKey,
-      payloadJson: input.payloadJson,
-      status: "PENDING",
-      availableAt: input.availableAt ?? new Date(),
-    },
-    select: queueOutboxEventSelect,
-  })
-
-  return toQueueOutboxEventRecord(event)
+): Promise<CreateQueueOutboxEventResult> {
+  try {
+    const event = await client.queueOutboxEvent.create({
+      data: {
+        topic: input.topic,
+        aggregateType: input.aggregateType,
+        aggregateId: input.aggregateId,
+        idempotencyKey: input.idempotencyKey,
+        payloadJson: input.payloadJson,
+        status: "PENDING",
+        availableAt: input.availableAt ?? new Date(),
+      },
+      select: queueOutboxEventSelect,
+    })
+    return { event: toQueueOutboxEventRecord(event), wasDuplicate: false }
+  } catch (error) {
+    if (isP2002(error, "idempotencyKey")) {
+      const existing = await client.queueOutboxEvent.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+        select: queueOutboxEventSelect,
+      })
+      if (existing) {
+        return { event: toQueueOutboxEventRecord(existing), wasDuplicate: true }
+      }
+    }
+    throw error
+  }
 }
 
 export async function listClaimableQueueOutboxEvents(

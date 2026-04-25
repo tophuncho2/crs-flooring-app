@@ -1,10 +1,1 @@
-import { Prisma } from "@builders/db"
-
-export function isP2002(error: unknown, targetColumn?: string): boolean {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false
-  if (error.code !== "P2002") return false
-  if (!targetColumn) return true
-  const target = error.meta?.target
-  if (Array.isArray(target)) return target.includes(targetColumn)
-  return target === targetColumn
-}
+export { isP2002 } from "@builders/db"

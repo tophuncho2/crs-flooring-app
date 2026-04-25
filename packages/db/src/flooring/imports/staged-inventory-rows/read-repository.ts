@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client"
 import {
   buildFlooringProductDisplayName,
   formatFullLocationCode,
@@ -94,4 +95,33 @@ export async function getStagedInventoryById(
     select: stagedInventoryRowSelect,
   })
   return row ? normalizeStagedInventoryRow(row) : null
+}
+
+/**
+ * Worker-only read primitive for the materialize-import flow. Returns the raw
+ * `StagedInventoryRowPayload` (with the full join graph) instead of the
+ * normalized `StagedInventoryRecord` because the materialize use case needs
+ * unit abbreviations and `product.coveragePerUnit` that the normalizer
+ * flattens away.
+ *
+ * Filters by `status = QUEUED` so any row that drifted state (raced edit /
+ * delete / retry) is silently excluded — the caller compares the returned
+ * length to the requested id count and dead-letters on mismatch.
+ *
+ * Transaction-only — no `client = db` default. The materialize use case is
+ * always inside `withDatabaseTransaction`.
+ */
+export async function listStagedInventoryForMaterialization(
+  tx: Prisma.TransactionClient,
+  input: { importEntryId: string; ids: string[] },
+): Promise<StagedInventoryRowPayload[]> {
+  if (input.ids.length === 0) return []
+  return tx.flooringImportStagedInventoryRow.findMany({
+    where: {
+      id: { in: input.ids },
+      importEntryId: input.importEntryId,
+      status: "QUEUED",
+    },
+    select: stagedInventoryRowSelect,
+  })
 }
