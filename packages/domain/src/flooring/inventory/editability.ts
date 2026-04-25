@@ -19,6 +19,12 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "importEntryId",
   "productId",
   "categorySlug",
+  "stockUnitName",
+  "stockUnitAbbrev",
+  "itemCoverageUnitName",
+  "itemCoverageUnitAbbrev",
+  "sendUnitName",
+  "sendUnitAbbrev",
   "fifoReceivedAt",
 ] as const
 

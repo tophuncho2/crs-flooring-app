@@ -1,12 +1,16 @@
-export { CUT_LOG_STATUS_VALUES, type CutLogRow, type CutLogStatus } from "../cut-logs/types.js"
+export { CUT_LOG_STATUS_VALUES, type CutLogRow, type CutLogStatus } from "./cut-logs/types.js"
 
-import type { CutLogRow } from "../cut-logs/types.js"
+import type { CutLogRow } from "./cut-logs/types.js"
 
 /**
  * Read shape for a real-inventory row (post-alteration). `isImported` is gone
- * — staged rows own that flag now. Computed-at-read fields (`balance`,
- * `coverage`) are stamped by the data-layer normalizer via the pure functions
- * in `computed.ts`; list/record UIs never recompute on render.
+ * — staged rows own that flag now. Computed-at-read fields (`stockBalance`,
+ * `coverageBalance`) are stamped by the data-layer normalizer via the pure
+ * functions in `computed.ts`; list/record UIs never recompute on render.
+ *
+ * Unit fields (`stockUnit*`, `itemCoverageUnit*`, `sendUnit*`) are snapshots
+ * stamped at worker-create time — they survive any future change to the
+ * product's category and are immutable post-create.
  */
 export type InventoryRow = {
   id: string
@@ -19,8 +23,12 @@ export type InventoryRow = {
   categoryId: string
   categoryName: string
   categorySlug: string
-  stockUnit: string
-  sendUnit: string
+  stockUnitName: string
+  stockUnitAbbrev: string
+  itemCoverageUnitName: string
+  itemCoverageUnitAbbrev: string
+  sendUnitName: string
+  sendUnitAbbrev: string
   itemNumber: string
   dyeLot: string
   warehouseId: string
@@ -39,8 +47,8 @@ export type InventoryRow = {
   costPerUnit: string
   freightPerUnit: string
   coveragePerUnit: string
-  balance: string
-  coverage: string
+  stockBalance: string
+  coverageBalance: string
   isArchived: boolean
   notes: string
   fifoReceivedAt: string

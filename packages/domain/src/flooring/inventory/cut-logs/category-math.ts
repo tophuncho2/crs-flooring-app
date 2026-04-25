@@ -1,5 +1,5 @@
-import { convertStockToCoverage } from "../categories/conversions.js"
-import type { CategoryMeta } from "../categories/types.js"
+import { convertStockToCoverage } from "../../categories/conversions.js"
+import type { CategoryMeta } from "../../categories/types.js"
 
 export function computeCutCoverage(input: {
   cut: number

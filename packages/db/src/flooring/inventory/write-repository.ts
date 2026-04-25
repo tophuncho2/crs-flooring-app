@@ -6,17 +6,26 @@ import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 /**
  * Create input for a real inventory row. Every field is worker-owned — the
  * worker materializes staged rows into real inventory at import time, stamping
- * `costPerUnit` / `freightPerUnit` / `coveragePerUnit` / `categorySlug` as
- * needed and picking up the FIFO timestamp. User flows never call this
- * directly. `categorySlug` is a point-in-time snapshot of the product's
- * category slug (same pattern as `FlooringProduct.manufacturerName`); the
- * product-level `isProductCategoryChangeBlocked` rule prevents drift after
- * inventory exists.
+ * the snapshot columns (`categorySlug` + the 6 unit fields) and the per-unit
+ * cost / freight / coverage values, then picking up the FIFO timestamp. User
+ * flows never call this directly.
+ *
+ * The snapshot fields come from the linked product's category at materialize
+ * time and are immutable post-create; product-level locks
+ * (`isProductCategoryChangeBlocked`, `isProductCoveragePerUnitChangeBlocked`)
+ * keep the joined source consistent with the snapshot for the lifetime of
+ * the inventory row.
  */
 export type CreateInventoryRecordInput = {
   importEntryId: string | null
   productId: string
   categorySlug: string
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
+  itemCoverageUnitName: string | null
+  itemCoverageUnitAbbrev: string | null
+  sendUnitName: string | null
+  sendUnitAbbrev: string | null
   itemNumber: string
   dyeLot: string | null
   warehouseId: string
@@ -62,6 +71,12 @@ function buildCreateData(
     product: { connect: { id: input.productId } },
     warehouse: { connect: { id: input.warehouseId } },
     categorySlug: input.categorySlug,
+    stockUnitName: input.stockUnitName,
+    stockUnitAbbrev: input.stockUnitAbbrev,
+    itemCoverageUnitName: input.itemCoverageUnitName,
+    itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
+    sendUnitName: input.sendUnitName,
+    sendUnitAbbrev: input.sendUnitAbbrev,
     itemNumber: input.itemNumber,
     dyeLot: input.dyeLot,
     startingStock: input.startingStock,

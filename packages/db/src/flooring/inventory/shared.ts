@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client"
+import { cutLogRowSelect } from "./cut-logs/shared.js"
 
 export type InventoryDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -26,13 +27,17 @@ export const inventoryRowSelect = {
           id: true,
           slug: true,
           name: true,
-          stockUnit: { select: { name: true, abbreviation: true } },
-          sendUnit: { select: { name: true, abbreviation: true } },
         },
       },
     },
   },
   categorySlug: true,
+  stockUnitName: true,
+  stockUnitAbbrev: true,
+  itemCoverageUnitName: true,
+  itemCoverageUnitAbbrev: true,
+  sendUnitName: true,
+  sendUnitAbbrev: true,
   itemNumber: true,
   dyeLot: true,
   warehouseId: true,
@@ -62,23 +67,6 @@ export const inventoryRowSelect = {
   updatedAt: true,
 } as const satisfies Prisma.FlooringInventorySelect
 
-export const cutLogRowSelect = {
-  id: true,
-  inventoryId: true,
-  workOrderId: true,
-  workOrderItemId: true,
-  before: true,
-  cut: true,
-  after: true,
-  status: true,
-  cost: true,
-  freight: true,
-  isWaste: true,
-  notes: true,
-  createdAt: true,
-  updatedAt: true,
-} as const satisfies Prisma.FlooringCutLogSelect
-
 export const inventoryDetailSelect = {
   ...inventoryRowSelect,
   cutLogs: {
@@ -92,7 +80,4 @@ export type InventoryRowPayload = Prisma.FlooringInventoryGetPayload<{
 }>
 export type InventoryDetailPayload = Prisma.FlooringInventoryGetPayload<{
   select: typeof inventoryDetailSelect
-}>
-export type CutLogRowPayload = Prisma.FlooringCutLogGetPayload<{
-  select: typeof cutLogRowSelect
 }>

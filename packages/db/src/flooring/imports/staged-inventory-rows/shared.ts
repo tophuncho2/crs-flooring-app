@@ -18,12 +18,15 @@ export const stagedInventoryRowSelect = {
       name: true,
       style: true,
       color: true,
+      coveragePerUnit: true,
       category: {
         select: {
           id: true,
           slug: true,
           name: true,
           stockUnit: { select: { name: true, abbreviation: true } },
+          itemCoverageUnit: { select: { name: true, abbreviation: true } },
+          sendUnit: { select: { name: true, abbreviation: true } },
         },
       },
     },

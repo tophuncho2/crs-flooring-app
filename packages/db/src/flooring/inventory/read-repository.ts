@@ -1,6 +1,5 @@
 import {
   buildFlooringProductDisplayName,
-  computeCutCoverage,
   computeInventoryBalance,
   computeInventoryCoverage,
   formatFullLocationCode,
@@ -8,17 +7,15 @@ import {
   toInventoryFixedString,
 } from "@builders/domain"
 import type {
-  CutLogRow,
   InventoryDetail,
   InventoryFormOptions,
   InventoryRow,
 } from "@builders/domain"
 import { db } from "../../client.js"
+import { normalizeCutLogRow } from "./cut-logs/read-repository.js"
 import {
-  cutLogRowSelect,
   inventoryDetailSelect,
   inventoryRowSelect,
-  type CutLogRowPayload,
   type InventoryDbClient,
   type InventoryDetailPayload,
   type InventoryRowPayload,
@@ -26,7 +23,6 @@ import {
 
 export type InventoryRecord = InventoryRow
 export type InventoryDetailRecord = InventoryDetail
-export type InventoryCutLogRecord = CutLogRow
 
 export type InventoryListFilter = {
   importEntryId?: string
@@ -62,47 +58,12 @@ function buildLocationShortCode(location: InventoryRowPayload["location"]): stri
   return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
 }
 
-export type CutLogNormalizeContext = {
-  categorySlug: string | null
-  coveragePerUnit: number | null
-}
-
-export function normalizeCutLogRow(
-  row: CutLogRowPayload,
-  context: CutLogNormalizeContext,
-): InventoryCutLogRecord {
-  const status = row.status === "FINAL" ? "FINAL" : "PENDING"
-  const cutNumber = toNumber(row.cut)
-  const coverage = computeCutCoverage({
-    cut: cutNumber,
-    coveragePerUnit: context.coveragePerUnit,
-    category: { slug: context.categorySlug },
-  })
-  return {
-    id: row.id,
-    inventoryId: row.inventoryId,
-    workOrderId: row.workOrderId ?? null,
-    workOrderItemId: row.workOrderItemId ?? null,
-    before: row.before.toString(),
-    cut: row.cut.toString(),
-    after: row.after.toString(),
-    status,
-    isWaste: row.isWaste,
-    cost: toDecimalString(row.cost),
-    freight: toDecimalString(row.freight),
-    coverage: coverage === null ? "" : toInventoryFixedString(coverage),
-    notes: row.notes ?? "",
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }
-}
-
 /**
  * Normalize an inventory row into the domain read shape. Stamps the two
- * computed fields (`balance`, `coverage`) by calling the pure domain helpers
- * — single source of truth for the math. Per the data-package carve-out, this
- * is a data-layer normalizer reusing pure domain formatters/computations; it
- * MUST NOT call domain rules that throw.
+ * computed fields (`stockBalance`, `coverageBalance`) by calling the pure
+ * domain helpers — single source of truth for the math. Per the data-package
+ * carve-out, this is a data-layer normalizer reusing pure domain
+ * formatters/computations; it MUST NOT call domain rules that throw.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
   // Read the snapshot column, not the joined product.category.slug. The
@@ -141,8 +102,12 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     categoryId: payload.product.category.id,
     categoryName: payload.product.category.name,
     categorySlug,
-    stockUnit: payload.product.category.stockUnit?.name ?? "",
-    sendUnit: payload.product.category.sendUnit?.name ?? "",
+    stockUnitName: payload.stockUnitName ?? "",
+    stockUnitAbbrev: payload.stockUnitAbbrev ?? "",
+    itemCoverageUnitName: payload.itemCoverageUnitName ?? "",
+    itemCoverageUnitAbbrev: payload.itemCoverageUnitAbbrev ?? "",
+    sendUnitName: payload.sendUnitName ?? "",
+    sendUnitAbbrev: payload.sendUnitAbbrev ?? "",
     itemNumber: payload.itemNumber,
     dyeLot: payload.dyeLot ?? "",
     warehouseId: payload.warehouseId,
@@ -161,8 +126,8 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     costPerUnit: toDecimalString(payload.costPerUnit),
     freightPerUnit: toDecimalString(payload.freightPerUnit),
     coveragePerUnit: toDecimalString(payload.coveragePerUnit),
-    balance: toInventoryFixedString(balanceNum),
-    coverage: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
+    stockBalance: toInventoryFixedString(balanceNum),
+    coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
     isArchived: payload.isArchived,
     notes: payload.notes ?? "",
     fifoReceivedAt: payload.fifoReceivedAt.toISOString(),
@@ -174,13 +139,9 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
 export function normalizeInventoryDetail(
   payload: InventoryDetailPayload,
 ): InventoryDetailRecord {
-  const categorySlug = payload.categorySlug
-  const coveragePerUnit =
-    payload.coveragePerUnit === null ? null : toNumber(payload.coveragePerUnit)
-  const context: CutLogNormalizeContext = { categorySlug, coveragePerUnit }
   return {
     ...normalizeInventoryRow(payload),
-    cutLogs: payload.cutLogs.map((log) => normalizeCutLogRow(log, context)),
+    cutLogs: payload.cutLogs.map(normalizeCutLogRow),
   }
 }
 

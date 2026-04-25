@@ -1,4 +1,4 @@
-export const CUT_LOG_STATUS_VALUES = ["PENDING", "FINAL"] as const
+export const CUT_LOG_STATUS_VALUES = ["PENDING", "FINAL", "VOIDED"] as const
 export type CutLogStatus = (typeof CUT_LOG_STATUS_VALUES)[number]
 
 export type CutLogRow = {
@@ -9,11 +9,12 @@ export type CutLogRow = {
   before: string
   cut: string
   after: string
+  coverageCut: string
   status: CutLogStatus
   isWaste: boolean
+  void: boolean
   cost: string
   freight: string
-  coverage: string
   notes: string
   createdAt: string
   updatedAt: string
