@@ -1,14 +1,19 @@
+import type { FlooringStagedRowStatus } from "@prisma/client"
+
+// Re-exported so consumers don't have to reach into Prisma directly.
+export type { FlooringStagedRowStatus } from "@prisma/client"
+
 // Staged inventory row — read + form shapes. Each staged row belongs to exactly
-// one import (cascade delete at the schema level, though the domain predicate
-// `isImportDeleteBlocked` prevents that cascade from ever firing while staged
-// rows exist). Warehouse is required on the row (matches the import's warehouse).
-// `isImported` is the one-way latch the worker flips when it materializes the
-// row into a real `FlooringInventory` row.
+// one import (FK is RESTRICT post sweep-1 migration; the domain predicate
+// `isImportDeleteBlocked` is the user-facing gate). Warehouse is required on
+// the row (matches the import's warehouse). `status` is the canonical lifecycle
+// (DRAFT → QUEUED → IMPORTED) introduced in sweep 1; the legacy `isImported`
+// latch survives alongside it until the use-case sweep finishes the cutover.
 
 export type StagedInventoryRow = {
   id: string
   importEntryId: string
-  importNumber: string
+  importNumber: number
   productId: string
   productName: string
   categoryId: string
@@ -27,6 +32,7 @@ export type StagedInventoryRow = {
   rafter: string
   level: string
   startingStock: string
+  status: FlooringStagedRowStatus
   isImported: boolean
   cost: string
   freight: string

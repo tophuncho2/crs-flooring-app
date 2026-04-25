@@ -7,6 +7,11 @@ export type StagedInventoryDomainErrorCode =
   | "STAGED_NOT_IMPORTABLE_ZERO_STOCK"
   | "STAGED_NOT_IMPORTABLE_MISSING_PRODUCT"
   | "STAGED_NOT_IMPORTABLE_MISSING_WAREHOUSE"
+  // Status-aware codes — use cases throw these once the status enum is wired
+  // into the diff-save and import-batch flows (sweep 3).
+  | "STAGED_ROW_NOT_DRAFT"
+  | "STAGED_ROW_ALREADY_QUEUED"
+  | "STAGED_ROW_BATCH_INELIGIBLE"
 
 export class StagedInventoryDomainError extends Error {
   readonly code: StagedInventoryDomainErrorCode

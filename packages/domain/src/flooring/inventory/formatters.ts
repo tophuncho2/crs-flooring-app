@@ -34,3 +34,30 @@ export function formatFullLocationCode(input: FullLocationCodeInput): string {
 export function formatLocationRafterLevel(input: { rafter: number; level: number }): string {
   return `R${input.rafter}-L${input.level}`
 }
+
+/**
+ * Builds the canonical inventory-row label used in cut-log inventory dropdowns
+ * and similar pickers.
+ *
+ * Format: `{stockBalance} {stockUnitAbbrev} - {itemNumber|—} - {locationCode|—} - {dyeLot|—} - {inventoryNumber}`
+ *
+ * Empty `stockUnitAbbrev` collapses to no trailing space; nullable string
+ * fields fall back to an em-dash placeholder. Pure string formatting; no
+ * caller wires this in yet — sweep 2 will adopt it for the cut-log section.
+ */
+export function buildInventoryDropdownLabel(input: {
+  stockBalance: string
+  stockUnitAbbrev: string | null
+  itemNumber: string | null
+  locationCode: string | null
+  dyeLot: string | null
+  inventoryNumber: string
+}): string {
+  const PLACEHOLDER = "—"
+  const unit = input.stockUnitAbbrev ?? ""
+  const balanceWithUnit = unit.length > 0 ? `${input.stockBalance} ${unit}` : input.stockBalance
+  const itemNumber = input.itemNumber && input.itemNumber.length > 0 ? input.itemNumber : PLACEHOLDER
+  const locationCode = input.locationCode && input.locationCode.length > 0 ? input.locationCode : PLACEHOLDER
+  const dyeLot = input.dyeLot && input.dyeLot.length > 0 ? input.dyeLot : PLACEHOLDER
+  return `${balanceWithUnit} - ${itemNumber} - ${locationCode} - ${dyeLot} - ${input.inventoryNumber}`
+}

@@ -4,9 +4,11 @@ import type { CutLogRow } from "./cut-logs/types.js"
 
 /**
  * Read shape for a real-inventory row (post-alteration). `isImported` is gone
- * — staged rows own that flag now. Computed-at-read fields (`stockBalance`,
- * `coverageBalance`) are stamped by the data-layer normalizer via the pure
- * functions in `computed.ts`; list/record UIs never recompute on render.
+ * — staged rows own that flag now. `inventoryNumber` is the human-readable
+ * "INV-00001" identifier sequence-assigned by Postgres at create time (sweep-1
+ * migration). Computed-at-read fields (`stockBalance`, `coverageBalance`) are
+ * stamped by the data-layer normalizer via the pure functions in
+ * `computed.ts`; list/record UIs never recompute on render.
  *
  * Unit fields (`stockUnit*`, `itemCoverageUnit*`, `sendUnit*`) are snapshots
  * stamped at worker-create time — they survive any future change to the
@@ -14,6 +16,7 @@ import type { CutLogRow } from "./cut-logs/types.js"
  */
 export type InventoryRow = {
   id: string
+  inventoryNumber: string
   importEntryId: string
   importNumber: string
   importWarehouseId: string

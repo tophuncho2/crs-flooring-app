@@ -16,7 +16,7 @@ export type StagedImportBatchValidationIssue = {
 
 /**
  * Validates a batch of staged rows for import. The application use case
- * calls this BEFORE flipping any `isImported` latches and BEFORE writing the
+ * calls this BEFORE transitioning any rows to QUEUED and BEFORE writing the
  * outbox event — if the returned array is non-empty, no side effects fire.
  *
  * Pure: takes only the slice of each row needed to evaluate readiness; no
@@ -26,7 +26,7 @@ export function validateStagedImportBatch(
   rows: ReadonlyArray<
     Pick<
       StagedInventoryRow,
-      "id" | "isImported" | "productId" | "warehouseId" | "startingStock"
+      "id" | "status" | "isImported" | "productId" | "warehouseId" | "startingStock"
     >
   >,
 ): StagedImportBatchValidationIssue[] {
@@ -38,4 +38,19 @@ export function validateStagedImportBatch(
     }
   }
   return issues
+}
+
+/**
+ * Human-readable summary for a batch where at least one row failed readiness.
+ * Co-located with the validator that produces the issue list, matching the
+ * `build*Message` convention used by `delete-rules.ts` / `warehouse-rules.ts`.
+ */
+export function buildStagedImportBatchIneligibleMessage(
+  issues: ReadonlyArray<StagedImportBatchValidationIssue>,
+): string {
+  if (issues.length === 0) {
+    return "All staged rows are ready for import."
+  }
+  const count = issues.length
+  return `Cannot import: ${count} row${count === 1 ? "" : "s"} ${count === 1 ? "is" : "are"} not ready (see per-row reasons).`
 }

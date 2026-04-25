@@ -37,3 +37,18 @@ export function computeInventoryCoverage(input: {
   if (!Number.isFinite(perUnit) || perUnit <= 0) return null
   return input.balance * perUnit
 }
+
+/**
+ * Human-readable copy for the `INVENTORY_OVERSOLD` rejection — used by the
+ * cut-log save use case (sweep 2) when a requested cut would push the balance
+ * below zero. Co-located with the balance math so the message format and the
+ * formula stay in lock-step.
+ */
+export function buildInventoryOversoldMessage(input: {
+  requestedCut: string
+  availableBalance: string
+  stockUnitAbbrev: string | null
+}): string {
+  const unit = input.stockUnitAbbrev && input.stockUnitAbbrev.length > 0 ? ` ${input.stockUnitAbbrev}` : ""
+  return `Cannot cut ${input.requestedCut}${unit}: only ${input.availableBalance}${unit} available.`
+}

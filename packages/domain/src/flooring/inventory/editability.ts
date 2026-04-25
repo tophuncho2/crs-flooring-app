@@ -54,3 +54,25 @@ export function isInventoryFieldImmutable(field: string): field is InventoryImmu
 export function isInventoryFieldTransactional(field: string): field is InventoryTransactionalField {
   return (INVENTORY_TRANSACTIONAL_FIELDS as readonly string[]).includes(field)
 }
+
+import { categoryRequiresCoveragePerUnit } from "../categories/rules.js"
+
+/**
+ * True when the given category slug supports coverage-balance computation
+ * (i.e. the category has a coverage-per-unit concept). Thin delegation to
+ * `categoryRequiresCoveragePerUnit` so the inventory module exposes the
+ * coverage-support check under a domain-local name without duplicating the
+ * slug list — the four supported slugs live in `categories/rules.ts` as the
+ * keys of `CATEGORY_UNIT_RULES`.
+ */
+export function categorySupportsCoverageComputation(categorySlug: string): boolean {
+  return categoryRequiresCoveragePerUnit(categorySlug)
+}
+
+/**
+ * Human-readable copy for an attempt to edit a non-editable inventory field.
+ * Co-located with the predicate that gates the rejection.
+ */
+export function buildInventoryFieldNotEditableMessage(field: string): string {
+  return `Inventory field "${field}" is not user-editable.`
+}
