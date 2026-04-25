@@ -117,10 +117,14 @@ This sweep stands alone. It does not require any change in `apps/web/`. After it
 - Sweep 5 can ship the apps/web routes that call `saveStagedInventoryRowsUseCase` and `markStagedRowsForImportUseCase`.
 - A user clicking "send to import" in the UI will produce an outbox event, the relay enqueues, the worker materializes, and the UI can poll for completion.
 
-## Open questions
+## Decisions
 
-1. **Work-order auto-allocation**: confirmed for deletion in this sweep? My recommendation is yes — the use case is gone, the handler imports symbols that don't exist, and carrying scaffolding for an absent use case is noise. When work-order auto-allocation is rebuilt, it adopts the new pattern.
-2. **Concurrency default**: I picked `1` (matches the prior auto-allocation default). Materialize is fast (< 1s typical) and the use case opens a transaction with a parent FOR UPDATE, so `1` is safe and avoids lock contention. Higher concurrency only helps if multiple imports are queued simultaneously. Keep at 1?
-3. **Lock duration**: I picked 60s. Materialize should complete in seconds; 60s is generous headroom for slow Redis or DB.
-4. **Domain artifact placement**: extend the existing `import-batch-payload.ts` (my recommendation) vs. create a separate `packages/domain/src/queue/materialize-import-batch.ts`. The existing `queue/auto-allocate-work-order.ts` precedent suggests a separate folder, but that file is prehistoric and the imports payload file is the new pattern.
-5. **Test depth**: vitest unit tests with mocks vs. integration tests against a test Redis + test DB. I'd start with unit tests + manual smoke; integration tests are a follow-up.
+1. **Work-order auto-allocation deleted entirely.** Locked. Files: `apps/relay/src/dispatch/work-order-allocation-outbox-dispatcher.ts`, `apps/relay/src/dispatch/bullmq-job-id.ts`, `apps/relay/tests/work-order-allocation-outbox-dispatcher.test.ts`, `apps/worker/src/application/process-work-order-auto-allocation.ts`, `apps/worker/src/processors/process-work-order-auto-allocation.ts`, `apps/worker/tests/process-work-order-auto-allocation.test.ts`. The auto-allocate domain queue artifact at `packages/domain/src/queue/auto-allocate-work-order.ts` is also no longer referenced by anything in the relay/worker after this sweep — flag for cleanup but does not block 4c.
+
+## Open decisions (pending user confirmation)
+
+2. **Domain artifact placement**: recommend moving all materialize-batch contract artifacts (topic, payload schema, parser, queue name, job name) into a new file `packages/domain/src/queue/materialize-import-batch.ts`. Reason: the contract is consumed by three layers (use case, relay, worker) and is a transport concern, not a feature concern. The `queue/` directory becomes a natural registry as more topics get added. Cost: 1-line import path change in `mark-staged-rows-for-import.ts`. The existing `queue/auto-allocate-work-order.ts` is being deleted with #1, so the directory is effectively starting fresh.
+
+3. **Concurrency=1, lock duration=60s.** Concurrency=1 means the worker processes one materialize at a time. End-to-end pickup latency is dominated by `RELAY_POLL_INTERVAL_MS` (default 2s); the worker itself picks up sub-second from Redis pubsub. Lock duration is the "is this worker still alive?" timeout — 60s is generous safety headroom for sub-second materialize. Both can be tuned via env vars; defaults are conservative.
+
+4. **Test depth: unit tests + manual smoke this sweep.** Unit tests cover dispatcher state transitions and worker error classification with mocks; manual smoke verifies real Redis/BullMQ/Postgres wiring during dev. Integration tests against testcontainers (or similar) deferred to a dedicated test-infrastructure sweep — that's a separate decision about testing pattern, not specifically a materialize concern.
