@@ -2,7 +2,7 @@
  * Canonical split of cut-log columns by who's allowed to change them.
  * Mirrors the precedent set by `inventory/editability.ts`.
  *
- * The cut-log lifecycle is: PENDING → FINAL → VOIDED. Users can only edit a
+ * The cut-log lifecycle is: PENDING → FINAL → VOID. Users can only edit a
  * narrow slice of fields, and only on certain transitions. Workers (the FINAL
  * transition handler) and same-transaction recomputations own the rest.
  */
@@ -10,11 +10,6 @@
 // User-editable on PENDING save. Writing these triggers a transaction that
 // also recomputes coverageCut and updates inventory.totalCutSum.
 export const CUT_LOG_PENDING_USER_EDITABLE_FIELDS = ["cut", "notes"] as const
-
-// User-toggleable independently of status (PENDING→VOIDED, FINAL→VOIDED).
-// The transaction that flips this also runs buildVoidedCutLogPatch() to clear
-// every other field except `notes`.
-export const CUT_LOG_VOID_TOGGLE_FIELD = "void" as const
 
 // Computed inside the same transaction as a PENDING save (cut × inventory's
 // coveragePerUnit, gated on inventory.categorySlug). Recomputed by the worker

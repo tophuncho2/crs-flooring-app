@@ -1,16 +1,12 @@
 import { CUT_LOG_PENDING_USER_EDITABLE_FIELDS } from "./editability.js"
 import { CutLogDomainError } from "./errors.js"
-import { CUT_LOG_STATUS_VALUES, type CutLogRow, type CutLogStatus } from "./types.js"
+import type { CutLogRow, CutLogStatus } from "./types.js"
 
 const ARITHMETIC_TOLERANCE = 0.005
 
-export function isCutLogStatus(value: unknown): value is CutLogStatus {
-  return typeof value === "string" && (CUT_LOG_STATUS_VALUES as readonly string[]).includes(value)
-}
-
 export function formatCutLogStatus(status: CutLogStatus): "Pending Cut" | "Final Cut" | "Voided" {
   if (status === "FINAL") return "Final Cut"
-  if (status === "VOIDED") return "Voided"
+  if (status === "VOID") return "Voided"
   return "Pending Cut"
 }
 
@@ -39,12 +35,6 @@ export function assertBeforeCutAfterInvariant(input: {
   }
 }
 
-export function assertCanAddCutLog(inventory: { isImported: boolean }): void {
-  if (!inventory.isImported) {
-    throw new CutLogDomainError("CUT_LOG_INVENTORY_NOT_IMPORTED")
-  }
-}
-
 export function isCutLogMostRecent(
   cutLog: Pick<CutLogRow, "id" | "createdAt">,
   siblingsSameInventory: ReadonlyArray<Pick<CutLogRow, "id" | "createdAt">>,
@@ -66,22 +56,22 @@ export function assertCutLogDeleteAllowed(
 // --- Status transitions (user-initiated) ---
 
 /**
- * User-initiated transitions: PENDING→FINAL, PENDING→VOIDED, FINAL→VOIDED.
+ * User-initiated transitions: PENDING→FINAL, PENDING→VOID, FINAL→VOID.
  * Workers may make any transition during bulk operations; this rule applies
  * only to the user-driven path (single-row, one-at-a-time).
  */
 export type CutLogUserTransition =
   | { from: "PENDING"; to: "FINAL" }
-  | { from: "PENDING"; to: "VOIDED" }
-  | { from: "FINAL"; to: "VOIDED" }
+  | { from: "PENDING"; to: "VOID" }
+  | { from: "FINAL"; to: "VOID" }
 
 export function isCutLogUserTransitionAllowed(
   from: CutLogStatus,
   to: CutLogStatus,
 ): boolean {
   if (from === "PENDING" && to === "FINAL") return true
-  if (from === "PENDING" && to === "VOIDED") return true
-  if (from === "FINAL" && to === "VOIDED") return true
+  if (from === "PENDING" && to === "VOID") return true
+  if (from === "FINAL" && to === "VOID") return true
   return false
 }
 
@@ -133,7 +123,7 @@ export type VoidedCutLogPatch = {
   workOrderId: null
   workOrderItemId: null
   void: true
-  status: "VOIDED"
+  status: "VOID"
 }
 
 export function buildVoidedCutLogPatch(): VoidedCutLogPatch {
@@ -148,7 +138,7 @@ export function buildVoidedCutLogPatch(): VoidedCutLogPatch {
     workOrderId: null,
     workOrderItemId: null,
     void: true,
-    status: "VOIDED",
+    status: "VOID",
   }
 }
 
@@ -156,7 +146,7 @@ export function buildVoidedCutLogPatch(): VoidedCutLogPatch {
 
 /**
  * The `void` boolean and the `status` enum are correlated: void === true if
- * and only if status === "VOIDED". They're stored as two columns (boolean for
+ * and only if status === "VOID". They're stored as two columns (boolean for
  * filtering, string for state-machine clarity) but must agree.
  */
 export function assertCutLogVoidStatusConsistency(input: {
@@ -164,7 +154,7 @@ export function assertCutLogVoidStatusConsistency(input: {
   status: CutLogStatus
 }): void {
   const isVoid = input.void
-  const isVoidedStatus = input.status === "VOIDED"
+  const isVoidedStatus = input.status === "VOID"
   if (isVoid !== isVoidedStatus) {
     throw new CutLogDomainError("CUT_LOG_VOID_STATUS_MISMATCH", {
       void: input.void,

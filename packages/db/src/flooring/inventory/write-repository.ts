@@ -143,6 +143,12 @@ export async function updateInventoryRecord(
   return record
 }
 
+/**
+ * Adjusts the inventory row's totalCutSum atomically. Called by cut-log
+ * application use cases (a future sweep) inside the same transaction as the
+ * cut-log mutation. Currently has no callers; reserved for the cut-log
+ * application layer.
+ */
 export async function updateInventoryTotalCutSum(
   id: string,
   input: UpdateInventoryTotalCutSumInput,

@@ -1,4 +1,4 @@
-export { CUT_LOG_STATUS_VALUES, type CutLogRow, type CutLogStatus } from "./cut-logs/types.js"
+export { type CutLogRow, type CutLogStatus } from "./cut-logs/types.js"
 
 import type { CutLogRow } from "./cut-logs/types.js"
 

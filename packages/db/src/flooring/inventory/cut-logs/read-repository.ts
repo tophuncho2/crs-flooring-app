@@ -1,4 +1,4 @@
-import { isCutLogStatus, type CutLogRow, type CutLogStatus } from "@builders/domain"
+import { type CutLogRow, type CutLogStatus } from "@builders/domain"
 import { db } from "../../../client.js"
 import {
   cutLogRowSelect,
@@ -19,7 +19,7 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
  * schema sweep), so the normalizer reads it as a scalar — no per-row math.
  */
 export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
-  const status: CutLogStatus = isCutLogStatus(row.status) ? row.status : "PENDING"
+  const status: CutLogStatus = row.status
   return {
     id: row.id,
     inventoryId: row.inventoryId,

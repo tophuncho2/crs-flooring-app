@@ -1,14 +1,13 @@
 import type { Prisma } from "@prisma/client"
 import {
   assertCutLogLinkageSymmetry,
+  assertCutLogVoidStatusConsistency,
   buildVoidedCutLogPatch,
 } from "@builders/domain"
-import { db } from "../../../client.js"
 import {
   getCutLogById,
   type CutLogRecord,
 } from "./read-repository.js"
-import { type CutLogDbClient } from "./shared.js"
 
 /**
  * Create input for a cut log. Status always starts as `PENDING`. The
@@ -53,25 +52,25 @@ export type FinalizeCutLogRecordInput = {
   coverageCut: Prisma.Decimal | string | number | null
 }
 
-/**
- * Caller contract for every mutating primitive in this file:
- *  - The application use case opens a transaction via `withDatabaseTransaction`
- *    and locks the parent inventory row `FOR UPDATE` before invoking.
- *  - Any totalCutSum delta is applied via `updateInventoryTotalCutSum` (in
- *    inventory's write-repo) inside the same transaction.
- *  - Domain rules (linkage symmetry, status transition, pending-input gate,
- *    void-status consistency) are validated before the call.
- */
+// Every mutating primitive in this file requires a caller-managed transaction
+// (`tx: Prisma.TransactionClient` as the first argument). The application use
+// case opens the transaction, locks the parent inventory row `FOR UPDATE`,
+// validates domain invariants, applies the cut-log mutation via these
+// primitives, and adjusts `inventory.totalCutSum` in the same transaction.
 
 export async function createCutLogRecord(
+  tx: Prisma.TransactionClient,
   input: CreateCutLogRecordInput,
-  client: CutLogDbClient = db,
 ): Promise<CutLogRecord> {
   assertCutLogLinkageSymmetry({
     workOrderId: input.workOrderId,
     workOrderItemId: input.workOrderItemId,
   })
-  const row = await client.flooringCutLog.create({
+  assertCutLogVoidStatusConsistency({
+    status: "PENDING",
+    void: false,
+  })
+  const row = await tx.flooringCutLog.create({
     data: {
       inventory: { connect: { id: input.inventoryId } },
       cut: input.cut,
@@ -93,7 +92,7 @@ export async function createCutLogRecord(
     },
     select: { id: true },
   })
-  const record = await getCutLogById(row.id, client)
+  const record = await getCutLogById(row.id, tx)
   if (!record) {
     throw new Error("createCutLogRecord: record disappeared mid-transaction")
   }
@@ -111,19 +110,19 @@ function buildPendingUpdateData(
 }
 
 export async function updateCutLogPending(
+  tx: Prisma.TransactionClient,
   id: string,
   input: UpdateCutLogPendingInput,
-  client: CutLogDbClient = db,
 ): Promise<CutLogRecord> {
   const data = buildPendingUpdateData(input)
   if (Object.keys(data).length > 0) {
-    await client.flooringCutLog.update({
+    await tx.flooringCutLog.update({
       where: { id },
       data,
       select: { id: true },
     })
   }
-  const record = await getCutLogById(id, client)
+  const record = await getCutLogById(id, tx)
   if (!record) {
     throw new Error(`updateCutLogPending: cut log ${id} not found after update`)
   }
@@ -131,11 +130,15 @@ export async function updateCutLogPending(
 }
 
 export async function voidCutLogRecord(
+  tx: Prisma.TransactionClient,
   id: string,
-  client: CutLogDbClient = db,
 ): Promise<CutLogRecord> {
   const patch = buildVoidedCutLogPatch()
-  await client.flooringCutLog.update({
+  assertCutLogVoidStatusConsistency({
+    status: patch.status,
+    void: patch.void,
+  })
+  await tx.flooringCutLog.update({
     where: { id },
     data: {
       cut: patch.cut,
@@ -152,7 +155,7 @@ export async function voidCutLogRecord(
     },
     select: { id: true },
   })
-  const record = await getCutLogById(id, client)
+  const record = await getCutLogById(id, tx)
   if (!record) {
     throw new Error(`voidCutLogRecord: cut log ${id} not found after void`)
   }
@@ -160,11 +163,11 @@ export async function voidCutLogRecord(
 }
 
 export async function finalizeCutLogRecord(
+  tx: Prisma.TransactionClient,
   id: string,
   input: FinalizeCutLogRecordInput,
-  client: CutLogDbClient = db,
 ): Promise<CutLogRecord> {
-  await client.flooringCutLog.update({
+  await tx.flooringCutLog.update({
     where: { id },
     data: {
       before: input.before,
@@ -176,7 +179,7 @@ export async function finalizeCutLogRecord(
     },
     select: { id: true },
   })
-  const record = await getCutLogById(id, client)
+  const record = await getCutLogById(id, tx)
   if (!record) {
     throw new Error(`finalizeCutLogRecord: cut log ${id} not found after finalize`)
   }
@@ -184,8 +187,8 @@ export async function finalizeCutLogRecord(
 }
 
 export async function deleteCutLogRecordById(
+  tx: Prisma.TransactionClient,
   id: string,
-  client: CutLogDbClient = db,
 ): Promise<void> {
-  await client.flooringCutLog.delete({ where: { id } })
+  await tx.flooringCutLog.delete({ where: { id } })
 }
