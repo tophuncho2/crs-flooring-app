@@ -15,7 +15,7 @@ import {
 export type CreateStagedInventoryRecordInput = {
   importEntryId: string
   productId: string
-  itemNumber: string
+  itemNumber: string | null
   dyeLot: string | null
   warehouseId: string
   locationId: string | null
@@ -207,4 +207,73 @@ export async function applyStagedInventoryRowsDiff(
   const rows = await listStagedInventoryByImport(input.importEntryId, tx)
 
   return { rows, tempIdMap }
+}
+
+// --- Mark-for-import primitive ---
+
+/**
+ * Transactional primitive: flips a batch of staged rows from
+ * (status="DRAFT", isImported=false) to (status="QUEUED", isImported=true).
+ *
+ * Caller contract (application layer):
+ *  - Opens the transaction via `withDatabaseTransaction` and locks the parent
+ *    import row FOR UPDATE before invoking. Without that lock, concurrent
+ *    callers could each pre-read the same row as eligible and double-queue.
+ *  - Validated readiness via `validateStagedImportBatch` (domain) — every row
+ *    in `stagedRowIds` should already pass `getStagedRowImportabilityBlocker`.
+ *    The pre-read here is the data-layer's last-line defense, not a substitute
+ *    for the domain check.
+ *
+ * Result split:
+ *  - `markedRowIds`: rows that were eligible at pre-read AND received the
+ *    update.
+ *  - `skippedRowIds`: every input ID not in `markedRowIds` — includes rows in
+ *    a non-DRAFT state, rows already imported, rows belonging to a different
+ *    import, and rows that don't exist. The use case surfaces precise per-row
+ *    UI feedback from this list; it does not need to know which sub-reason
+ *    triggered the skip (the domain validator should have caught those first).
+ */
+export type MarkStagedRowsForImportInput = {
+  importEntryId: string
+  stagedRowIds: string[]
+}
+
+export type MarkStagedRowsForImportResult = {
+  markedRowIds: string[]
+  skippedRowIds: string[]
+}
+
+export async function markStagedRowsForImport(
+  tx: Prisma.TransactionClient,
+  input: MarkStagedRowsForImportInput,
+): Promise<MarkStagedRowsForImportResult> {
+  // Step 1 — pre-read eligible rows (within the transaction's lock scope).
+  const eligibleBefore = await tx.flooringImportStagedInventoryRow.findMany({
+    where: {
+      id: { in: input.stagedRowIds },
+      importEntryId: input.importEntryId,
+      status: "DRAFT",
+      isImported: false,
+    },
+    select: { id: true },
+  })
+  const eligibleIds = new Set(eligibleBefore.map((row) => row.id))
+
+  // Step 2 — conditional bulk update with the same WHERE clause.
+  if (eligibleIds.size > 0) {
+    await tx.flooringImportStagedInventoryRow.updateMany({
+      where: {
+        id: { in: Array.from(eligibleIds) },
+        importEntryId: input.importEntryId,
+        status: "DRAFT",
+        isImported: false,
+      },
+      data: { status: "QUEUED", isImported: true },
+    })
+  }
+
+  // Step 3 — derive split.
+  const markedRowIds = Array.from(eligibleIds)
+  const skippedRowIds = input.stagedRowIds.filter((id) => !eligibleIds.has(id))
+  return { markedRowIds, skippedRowIds }
 }

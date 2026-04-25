@@ -47,6 +47,7 @@ export const stagedInventoryRowSelect = {
   },
   startingStock: true,
   isImported: true,
+  status: true,
   cost: true,
   freight: true,
   notes: true,

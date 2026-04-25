@@ -89,6 +89,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
 
   return {
     id: payload.id,
+    inventoryNumber: payload.inventoryNumber,
     importEntryId: payload.importEntryId ?? "",
     importNumber: importEntry ? String(importEntry.importNumber) : "",
     importWarehouseId: importEntry?.warehouseId ?? "",
@@ -108,7 +109,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     itemCoverageUnitAbbrev: payload.itemCoverageUnitAbbrev ?? "",
     sendUnitName: payload.sendUnitName ?? "",
     sendUnitAbbrev: payload.sendUnitAbbrev ?? "",
-    itemNumber: payload.itemNumber,
+    itemNumber: payload.itemNumber ?? "",
     dyeLot: payload.dyeLot ?? "",
     warehouseId: payload.warehouseId,
     warehouseName: payload.warehouse.name,

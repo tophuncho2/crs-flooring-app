@@ -120,3 +120,30 @@ export async function countLiveInventoryByImportId(
 ): Promise<number> {
   return client.flooringInventory.count({ where: { importEntryId } })
 }
+
+/**
+ * Counts of staged + live inventory linked to an import. Field names match the
+ * domain `ImportLinkState` shape so the application layer can pass the result
+ * directly into `isImportDeleteBlocked` / `isImportWarehouseChangeBlocked`
+ * without remapping. Returns null if the import row does not exist (matches
+ * the `getInventoryDeleteState` precedent).
+ */
+export type ImportLinkStateRecord = {
+  stagedInventoryRowCount: number
+  liveInventoryRowCount: number
+}
+
+export async function getImportLinkState(
+  id: string,
+  client: ImportsDbClient = db,
+): Promise<ImportLinkStateRecord | null> {
+  const row = await client.flooringImportEntry.findUnique({
+    where: { id },
+    select: { _count: { select: { stagedInventoryRows: true, inventories: true } } },
+  })
+  if (!row) return null
+  return {
+    stagedInventoryRowCount: row._count.stagedInventoryRows,
+    liveInventoryRowCount: row._count.inventories,
+  }
+}

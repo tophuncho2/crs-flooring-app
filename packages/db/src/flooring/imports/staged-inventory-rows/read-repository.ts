@@ -40,7 +40,7 @@ export function normalizeStagedInventoryRow(
   return {
     id: row.id,
     importEntryId: row.importEntryId,
-    importNumber: String(row.importEntry.importNumber),
+    importNumber: row.importEntry.importNumber,
     productId: row.productId,
     productName: buildFlooringProductDisplayName({
       name: row.product.name,
@@ -51,7 +51,7 @@ export function normalizeStagedInventoryRow(
     categoryName: row.product.category.name,
     categorySlug: row.product.category.slug,
     stockUnit: row.product.category.stockUnit?.name ?? "",
-    itemNumber: row.itemNumber,
+    itemNumber: row.itemNumber ?? "",
     dyeLot: row.dyeLot ?? "",
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse.name,
@@ -63,6 +63,7 @@ export function normalizeStagedInventoryRow(
     rafter: location ? String(location.rafter) : "",
     level: location ? String(location.level) : "",
     startingStock: toDecimalString(row.startingStock),
+    status: row.status,
     isImported: row.isImported,
     cost: toDecimalString(row.cost),
     freight: toDecimalString(row.freight),

@@ -26,7 +26,7 @@ export type CreateInventoryRecordInput = {
   itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  itemNumber: string
+  itemNumber: string | null
   dyeLot: string | null
   warehouseId: string
   locationId: string | null
@@ -47,7 +47,7 @@ export type CreateInventoryRecordInput = {
  * fifoReceivedAt) are deliberately absent from this shape.
  */
 export type UpdateInventoryRecordInput = {
-  itemNumber?: string
+  itemNumber?: string | null
   dyeLot?: string | null
   warehouseId?: string
   locationId?: string | null
@@ -165,4 +165,108 @@ export async function deleteInventoryRecordById(
   client: InventoryDbClient = db,
 ): Promise<void> {
   await client.flooringInventory.delete({ where: { id } })
+}
+
+// --- Worker materialization primitive ---
+
+/**
+ * Transactional primitive: bulk-creates `flooring_inventory` rows from a set
+ * of QUEUED staged rows and atomically flips those staged rows to IMPORTED.
+ *
+ * Caller contract (application / worker):
+ *  - Caller pre-assigns a UUID `id` for every `inventoryRowsToCreate` entry
+ *    (mirrors `applyStagedInventoryRowsDiff`'s pre-assigned-id pattern;
+ *    necessary because Prisma's `createMany` does not return inserted IDs on
+ *    Postgres). Pre-assignment also lets the caller correlate inserts with
+ *    their source staged rows for the secondary `updateMany`.
+ *  - Caller computed every per-row field (categorySlug, unit snapshots,
+ *    cost/freight per-unit, fifoReceivedAt, etc.) — this primitive does no
+ *    field math. Coverage-rule branching belongs in the application layer
+ *    via `categorySupportsCoverageComputation`.
+ *  - Caller has already transitioned the source staged rows from DRAFT to
+ *    QUEUED via `markStagedRowsForImport`. The status-flip below targets
+ *    QUEUED → IMPORTED defensively (rows in any other state are skipped by
+ *    the WHERE clause).
+ *  - `inventoryNumber` is sequence-defaulted at the DB level. The primitive
+ *    re-reads the inserted rows to surface the assigned numbers — the worker
+ *    needs them for the outbox event that completes the import flow.
+ *
+ * Atomicity: insert + status-flip share the transaction. A partial application
+ * leaves the system inconsistent with no easy reconciliation, so `tx` is
+ * required (no `client = db` default).
+ */
+export type MaterializeStagedRowsToInventoryInput = {
+  importEntryId: string
+  inventoryRowsToCreate: Array<
+    CreateInventoryRecordInput & { id: string; sourceStagedRowId: string }
+  >
+}
+
+export type MaterializeStagedRowsToInventoryResult = {
+  created: Array<{ id: string; inventoryNumber: string }>
+  materializedStagedRowIds: string[]
+}
+
+export async function materializeStagedRowsToInventory(
+  tx: Prisma.TransactionClient,
+  input: MaterializeStagedRowsToInventoryInput,
+): Promise<MaterializeStagedRowsToInventoryResult> {
+  if (input.inventoryRowsToCreate.length === 0) {
+    return { created: [], materializedStagedRowIds: [] }
+  }
+
+  // Step 1 — bulk insert with pre-assigned ids. Prisma's createMany ignores
+  // relation-style nested writes, so we flatten to scalar fk columns directly.
+  const createData: Prisma.FlooringInventoryCreateManyInput[] = input.inventoryRowsToCreate.map(
+    (row) => ({
+      id: row.id,
+      importEntryId: row.importEntryId,
+      productId: row.productId,
+      categorySlug: row.categorySlug,
+      stockUnitName: row.stockUnitName,
+      stockUnitAbbrev: row.stockUnitAbbrev,
+      itemCoverageUnitName: row.itemCoverageUnitName,
+      itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
+      sendUnitName: row.sendUnitName,
+      sendUnitAbbrev: row.sendUnitAbbrev,
+      itemNumber: row.itemNumber,
+      dyeLot: row.dyeLot,
+      warehouseId: row.warehouseId,
+      locationId: row.locationId,
+      startingStock: row.startingStock,
+      cost: row.cost,
+      freight: row.freight,
+      costPerUnit: row.costPerUnit,
+      freightPerUnit: row.freightPerUnit,
+      coveragePerUnit: row.coveragePerUnit,
+      notes: row.notes,
+      fifoReceivedAt: row.fifoReceivedAt,
+    }),
+  )
+  await tx.flooringInventory.createMany({ data: createData, skipDuplicates: false })
+
+  // Step 2 — re-read the created rows to surface DB-assigned inventoryNumbers.
+  const createdIds = input.inventoryRowsToCreate.map((row) => row.id)
+  const createdRows = await tx.flooringInventory.findMany({
+    where: { id: { in: createdIds } },
+    select: { id: true, inventoryNumber: true },
+  })
+
+  // Step 3 — flip the source staged rows to IMPORTED. WHERE narrows to QUEUED
+  // so any row that drifted state is left alone (caller error, surfaces as a
+  // skipped row in the result).
+  const sourceStagedRowIds = input.inventoryRowsToCreate.map((row) => row.sourceStagedRowId)
+  await tx.flooringImportStagedInventoryRow.updateMany({
+    where: {
+      id: { in: sourceStagedRowIds },
+      importEntryId: input.importEntryId,
+      status: "QUEUED",
+    },
+    data: { status: "IMPORTED" },
+  })
+
+  return {
+    created: createdRows.map((row) => ({ id: row.id, inventoryNumber: row.inventoryNumber })),
+    materializedStagedRowIds: sourceStagedRowIds,
+  }
 }
