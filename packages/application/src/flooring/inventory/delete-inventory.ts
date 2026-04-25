@@ -1,6 +1,6 @@
 import {
   Prisma,
-  deleteInventoryById,
+  deleteInventoryRecordById,
   getInventoryDeleteState,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -35,7 +35,7 @@ export async function deleteInventoryUseCase(
       })
     }
 
-    await deleteInventoryById(id, c)
+    await deleteInventoryRecordById(id, c)
     return { ok: true }
   })
 }

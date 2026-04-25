@@ -2,13 +2,11 @@ import {
   Prisma,
   getImportById,
   getWarehouseById,
-  updateImport,
+  updateImportRecord,
   withDatabaseTransaction,
-  type UpdateImportInput as DbUpdateImportInput,
+  type UpdateImportRecordInput as DbUpdateImportInput,
 } from "@builders/db"
 import {
-  isImportStatus,
-  isImportTransportType,
   validateImportPrimaryForm,
   type ImportPrimaryForm,
 } from "@builders/domain"
@@ -24,10 +22,9 @@ function toPrimaryForm(input: UpdateImportInput, current: ImportPrimaryForm): Im
   return {
     orderNumber: input.orderNumber ?? current.orderNumber,
     tag: input.tag ?? current.tag,
-    transportType: input.transportType ?? current.transportType,
-    status: input.status ?? current.status,
     notes: input.notes ?? current.notes,
     warehouseId: input.warehouseId ?? current.warehouseId,
+    manufacturerId: input.manufacturerId ?? current.manufacturerId,
   }
 }
 
@@ -51,10 +48,9 @@ export async function updateImportUseCase(
     const merged = toPrimaryForm(input, {
       orderNumber: current.orderNumber,
       tag: current.tag,
-      transportType: current.transportType,
-      status: current.status,
       notes: current.notes,
       warehouseId: current.warehouseId,
+      manufacturerId: current.manufacturerId,
     })
 
     const issues = validateImportPrimaryForm(merged)
@@ -84,17 +80,14 @@ export async function updateImportUseCase(
     const dbInput: DbUpdateImportInput = {}
     if (input.orderNumber !== undefined) dbInput.orderNumber = emptyToNull(input.orderNumber)
     if (input.tag !== undefined) dbInput.tag = emptyToNull(input.tag)
-    if (input.transportType !== undefined && isImportTransportType(input.transportType)) {
-      dbInput.transportType = input.transportType
-    }
-    if (input.status !== undefined && isImportStatus(input.status)) {
-      dbInput.status = input.status
-    }
     if (input.notes !== undefined) dbInput.notes = emptyToNull(input.notes)
     if (input.warehouseId !== undefined) {
-      dbInput.warehouseId = input.warehouseId.trim().length === 0 ? null : input.warehouseId
+      dbInput.warehouseId = input.warehouseId
+    }
+    if (input.manufacturerId !== undefined) {
+      dbInput.manufacturerId = emptyToNull(input.manufacturerId)
     }
 
-    return updateImport(id, dbInput, c)
+    return updateImportRecord(id, dbInput, c)
   })
 }

@@ -2,16 +2,14 @@ import {
   Prisma,
   getInventoryById,
   getLocationById,
-  getProductById,
   getWarehouseById,
-  updateInventory,
+  updateInventoryRecord,
   withDatabaseTransaction,
-  type UpdateInventoryInput as DbUpdateInventoryInput,
+  type UpdateInventoryRecordInput as DbUpdateInventoryInput,
 } from "@builders/db"
 import {
-  describeInventoryValidationIssues,
-  isImportedReversal,
-  validateInventoryInput,
+  describeInventoryFormValidationIssues,
+  validateInventoryForm,
 } from "@builders/domain"
 import { InventoryExecutionError } from "./errors.js"
 import type { InventoryResult, UpdateInventoryInput } from "./types.js"
@@ -38,65 +36,9 @@ export async function updateInventoryUseCase(
       })
     }
 
-    if (!current.isImported) {
-      throw new InventoryExecutionError({
-        code: "INVENTORY_PENDING_IMPORT",
-        message:
-          "Inventory row is pending import. Edits are only allowed once the row is marked Final from the imports record view.",
-        status: 400,
-      })
-    }
-
-    if (isImportedReversal(current, input)) {
-      throw new InventoryExecutionError({
-        code: "IMPORTED_REVERSAL_NOT_ALLOWED",
-        message: "Inventory row is already imported and cannot return to pending.",
-        status: 400,
-        field: "isImported",
-      })
-    }
-
-    const merged = {
-      productId: input.productId ?? current.productId,
-      itemNumber: input.itemNumber ?? current.itemNumber,
-      warehouseId: input.warehouseId ?? current.warehouseId,
-      locationId: input.locationId ?? current.locationId,
-      stockCount: input.stockCount ?? current.stockCount,
-    }
-
-    const mergedWarehouseId = merged.warehouseId.trim()
-    const mergedLocationId = merged.locationId.trim() || null
-
-    const issues = validateInventoryInput(
-      {
-        productId: merged.productId,
-        itemNumber: merged.itemNumber,
-        warehouseId: mergedWarehouseId || null,
-        locationId: mergedLocationId,
-        stockCount: merged.stockCount,
-      },
-      null,
-    )
-    if (issues.length > 0) {
-      throw new InventoryExecutionError({
-        code: "INVENTORY_VALIDATION_FAILED",
-        message: describeInventoryValidationIssues(issues),
-        status: 400,
-        payload: { issues },
-      })
-    }
-
-    if (input.productId !== undefined && input.productId !== current.productId) {
-      const product = await getProductById(input.productId, c)
-      if (!product) {
-        throw new InventoryExecutionError({
-          code: "INVENTORY_PRODUCT_NOT_FOUND",
-          message: "Selected product does not exist.",
-          status: 404,
-          field: "productId",
-        })
-      }
-    }
+    const mergedWarehouseId = (input.warehouseId ?? current.warehouseId).trim()
+    const rawMergedLocationId = input.locationId ?? current.locationId
+    const mergedLocationId = rawMergedLocationId.trim() || null
 
     const warehouseChanged =
       input.warehouseId !== undefined && input.warehouseId !== current.warehouseId
@@ -112,10 +54,10 @@ export async function updateInventoryUseCase(
       }
     }
 
-    let resolvedLocationWarehouseId: string | null = null
+    let resolvedLocation: { id: string; warehouseId: string } | null = null
     const locationChanged =
       input.locationId !== undefined && (input.locationId ?? "") !== current.locationId
-    if (locationChanged && mergedLocationId) {
+    if (mergedLocationId && (locationChanged || warehouseChanged)) {
       const location = await getLocationById(mergedLocationId, c)
       if (!location) {
         throw new InventoryExecutionError({
@@ -125,40 +67,39 @@ export async function updateInventoryUseCase(
           field: "locationId",
         })
       }
-      resolvedLocationWarehouseId = location.warehouseId
-      if (mergedWarehouseId && location.warehouseId !== mergedWarehouseId) {
-        throw new InventoryExecutionError({
-          code: "INVENTORY_LOCATION_WAREHOUSE_MISMATCH",
-          message: "Selected location does not belong to the chosen warehouse.",
-          status: 400,
-          field: "locationId",
-        })
-      }
+      resolvedLocation = { id: location.id, warehouseId: location.warehouseId }
+    }
+
+    const issues = validateInventoryForm(
+      { warehouseId: mergedWarehouseId, locationId: mergedLocationId },
+      resolvedLocation,
+    )
+    if (issues.length > 0) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_VALIDATION_FAILED",
+        message: describeInventoryFormValidationIssues(issues),
+        status: 400,
+        payload: { issues },
+      })
     }
 
     const dbInput: DbUpdateInventoryInput = {}
-    if (input.itemNumber !== undefined) dbInput.itemNumber = input.itemNumber.trim()
+    if (input.itemNumber !== undefined) dbInput.itemNumber = emptyToNull(input.itemNumber)
     if (input.dyeLot !== undefined) dbInput.dyeLot = emptyToNull(input.dyeLot)
-    if (input.stockCount !== undefined) dbInput.stockCount = input.stockCount.trim()
-    // NOTE: cost and freight are intentionally NOT forwarded from this use case.
-    // They are write-once-at-import fields, editable only through the imports
-    // inventory-rows diff while `isImported = false`. Once imported, the values
-    // must remain stable for accounting snapshots. See
-    // `isInventoryCostLocked` in @builders/domain.
     if (input.notes !== undefined) dbInput.notes = emptyToNull(input.notes)
-    if (input.isImported !== undefined) dbInput.isImported = input.isImported
+    if (input.isArchived !== undefined) dbInput.isArchived = input.isArchived
     if (input.warehouseId !== undefined) {
-      dbInput.warehouseId = mergedWarehouseId || null
+      dbInput.warehouseId = mergedWarehouseId
     }
     if (input.locationId !== undefined) {
       dbInput.locationId = mergedLocationId
       // Source-of-truth rule: if location changed and caller didn't also send a
       // warehouseId, re-stamp warehouseId from the resolved location.
-      if (locationChanged && mergedLocationId && !warehouseChanged) {
-        dbInput.warehouseId = resolvedLocationWarehouseId
+      if (locationChanged && resolvedLocation && !warehouseChanged) {
+        dbInput.warehouseId = resolvedLocation.warehouseId
       }
     }
 
-    return updateInventory(id, dbInput, c)
+    return updateInventoryRecord(id, dbInput, c)
   })
 }

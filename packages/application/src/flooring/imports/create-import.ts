@@ -1,6 +1,6 @@
 import {
   Prisma,
-  createImport,
+  createImportRecord,
   getWarehouseById,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -42,14 +42,13 @@ export async function createImportUseCase(
       })
     }
 
-    return createImport(
+    return createImportRecord(
       {
         orderNumber: emptyToNull(input.orderNumber),
         tag: emptyToNull(input.tag),
-        transportType: input.transportType,
-        status: input.status,
         notes: emptyToNull(input.notes),
         warehouseId: input.warehouseId,
+        manufacturerId: emptyToNull(input.manufacturerId),
       },
       c,
     )

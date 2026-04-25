@@ -1,7 +1,7 @@
 import {
   Prisma,
-  deleteImportById,
-  getImportDeleteState,
+  deleteImportRecordById,
+  getImportLinkState,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -17,7 +17,7 @@ export async function deleteImportUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const state = await getImportDeleteState(id, c)
+    const state = await getImportLinkState(id, c)
     if (!state) {
       throw new ImportExecutionError({
         code: "IMPORT_NOT_FOUND",
@@ -34,7 +34,7 @@ export async function deleteImportUseCase(
       })
     }
 
-    await deleteImportById(id, c)
+    await deleteImportRecordById(id, c)
 
     return { ok: true }
   })
