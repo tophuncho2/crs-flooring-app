@@ -72,10 +72,10 @@ Captured here for continuity; executed in a follow-on migration, not this one.
 
 ## `FlooringCutLog`
 
-- [ ] Add `void` boolean column
-- [ ] Add `coverageCut` column
+- [x] Add `void` boolean column
+- [x] Add `coverageCut` column
 
 ## `FlooringWorkOrderItem`
 
-- [ ] Add `assignedCost` column
-- [ ] Add `assignedQuantity` column
+- [x] Add `assignedCost` column
+- [x] Add `assignedQuantity` column
