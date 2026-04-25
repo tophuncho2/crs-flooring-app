@@ -1,5 +1,5 @@
-import { getImportById } from "@builders/db"
-import { saveImportInventoryRowsUseCase } from "@builders/application"
+import { getImportById, getImportDetailById } from "@builders/db"
+import { ImportExecutionError, saveStagedInventoryRowsUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -9,7 +9,7 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateInventoryRowsDiffBody } from "../../../_validators"
+import { validateStagedInventoryRowsDiffBody } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -19,10 +19,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
-      scope: "imports.inventory-rows.section.replace",
+      scope: "imports.staged-inventory-rows.section.replace",
       limit: 50,
       windowMs: 10 * 60 * 1000,
-      route: "/api/imports/[id]/inventory-rows/section",
+      route: "/api/imports/[id]/staged-inventory-rows/section",
     },
   })
   if (access instanceof Response) return access
@@ -30,13 +30,17 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const { input: diff, mutation } = parseMutationEnvelope(body, validateInventoryRowsDiffBody, {
+    const { input: diff, mutation } = parseMutationEnvelope(body, validateStagedInventoryRowsDiffBody, {
       requireExpectedUpdatedAt: true,
     })
 
     const currentSnapshot = await getImportById(id)
     if (!currentSnapshot) {
-      return routeError(access, new Error("Import not found"))
+      throw new ImportExecutionError({
+        code: "IMPORT_NOT_FOUND",
+        message: "Import not found.",
+        status: 404,
+      })
     }
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
@@ -46,7 +50,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "imports.inventory-rows.section.replace",
+      scope: "imports.staged-inventory-rows.section.replace",
       request,
       access,
       mutation,
@@ -54,21 +58,22 @@ export async function PATCH(request: Request, context: RouteContext) {
     })
     if (receipt.replay) return receipt.replay
 
-    const { importEntry, tempIdMap } = await withMutationTelemetry(
+    const result = await withMutationTelemetry(
       access,
       {
-        message: "Import inventory rows saved",
-        action: "imports.inventory-rows.section.replace",
-        route: "/api/imports/[id]/inventory-rows/section",
+        message: "Import staged inventory rows saved",
+        action: "imports.staged-inventory-rows.section.replace",
+        route: "/api/imports/[id]/staged-inventory-rows/section",
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => saveImportInventoryRowsUseCase(id, diff),
+      () => saveStagedInventoryRowsUseCase(id, diff),
     )
 
-    const responseBody = { import: importEntry, tempIdMap }
+    const detail = await getImportDetailById(id)
+    const responseBody = { import: detail, tempIdMap: result.tempIdMap }
     await finalizeMutationReceipt({
-      scope: "imports.inventory-rows.section.replace",
+      scope: "imports.staged-inventory-rows.section.replace",
       access,
       mutation,
       responseStatus: 200,

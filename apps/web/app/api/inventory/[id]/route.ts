@@ -1,5 +1,5 @@
 import { getInventoryById, getInventoryDetailById } from "@builders/db"
-import { deleteInventoryUseCase } from "@builders/application"
+import { InventoryExecutionError, deleteInventoryUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -52,7 +52,11 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     const currentSnapshot = await getInventoryById(id)
     if (!currentSnapshot) {
-      return routeError(access, new Error("Inventory row not found"))
+      throw new InventoryExecutionError({
+        code: "INVENTORY_NOT_FOUND",
+        message: "Inventory row not found.",
+        status: 404,
+      })
     }
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,

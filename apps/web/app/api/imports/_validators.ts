@@ -1,11 +1,11 @@
-import { ImportExecutionError, InventoryExecutionError } from "@builders/application"
+import { ImportExecutionError, StagedInventoryExecutionError } from "@builders/application"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
 import type {
-  InventoryRowDraft,
-  InventoryRowDelete,
-  InventoryRowsDiff,
-  InventoryRowUpdate,
-  InventoryRowUpdatePatch,
+  StagedInventoryRowDelete,
+  StagedInventoryRowDraft,
+  StagedInventoryRowUpdate,
+  StagedInventoryRowUpdatePatch,
+  StagedInventoryRowsDiff,
 } from "@builders/domain"
 
 function requireString(value: unknown, field: string): string {
@@ -37,10 +37,9 @@ export function validateCreateImportInput(body: Record<string, unknown>): Create
   return {
     orderNumber: optionalString(body.orderNumber, "orderNumber"),
     tag: optionalString(body.tag, "tag"),
-    transportType: requireString(body.transportType, "transportType"),
-    status: requireString(body.status, "status"),
     notes: optionalString(body.notes, "notes"),
-    warehouseId: optionalString(body.warehouseId, "warehouseId"),
+    warehouseId: requireString(body.warehouseId, "warehouseId"),
+    manufacturerId: optionalString(body.manufacturerId, "manufacturerId"),
   }
 }
 
@@ -48,147 +47,133 @@ export function validateUpdateImportInput(body: Record<string, unknown>): Update
   const input: UpdateImportInput = {}
   if (body.orderNumber !== undefined) input.orderNumber = optionalString(body.orderNumber, "orderNumber")
   if (body.tag !== undefined) input.tag = optionalString(body.tag, "tag")
-  if (body.transportType !== undefined) input.transportType = requireString(body.transportType, "transportType")
-  if (body.status !== undefined) input.status = requireString(body.status, "status")
   if (body.notes !== undefined) input.notes = optionalString(body.notes, "notes")
-  if (body.warehouseId !== undefined) input.warehouseId = optionalString(body.warehouseId, "warehouseId")
+  if (body.warehouseId !== undefined) input.warehouseId = requireString(body.warehouseId, "warehouseId")
+  if (body.manufacturerId !== undefined) input.manufacturerId = optionalString(body.manufacturerId, "manufacturerId")
   return input
 }
 
-// --- Inventory rows diff body shaper ---
+// --- Staged inventory rows diff body shaper ---
 
-function requireInventoryString(value: unknown, field: string): string {
-  if (typeof value !== "string") {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_DIFF_VALIDATION_FAILED",
-      message: `${field} must be a string`,
-      status: 400,
-      field,
-    })
-  }
-  return value
+function failStagedDiff(message: string, field?: string): never {
+  throw new StagedInventoryExecutionError({
+    code: "STAGED_DIFF_VALIDATION_FAILED",
+    message,
+    status: 400,
+    ...(field ? { field } : {}),
+  })
 }
 
-function nullableString(value: unknown, field: string): string | null {
+function requireStagedString(value: unknown, path: string): string {
+  if (typeof value !== "string") failStagedDiff(`${path} must be a string`, path)
+  return value as string
+}
+
+function nullableStagedString(value: unknown, path: string): string | null {
   if (value === null || value === undefined) return null
-  if (typeof value !== "string") {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_DIFF_VALIDATION_FAILED",
-      message: `${field} must be a string or null`,
-      status: 400,
-      field,
-    })
-  }
-  return value
+  if (typeof value !== "string") failStagedDiff(`${path} must be a string or null`, path)
+  return value as string
 }
 
-function requireObject(value: unknown, field: string): Record<string, unknown> {
+function requireStagedObject(value: unknown, path: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_DIFF_VALIDATION_FAILED",
-      message: `${field} must be an object`,
-      status: 400,
-      field,
-    })
+    failStagedDiff(`${path} must be an object`, path)
   }
   return value as Record<string, unknown>
 }
 
-function requireArray(value: unknown, field: string): unknown[] {
-  if (!Array.isArray(value)) {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_DIFF_VALIDATION_FAILED",
-      message: `${field} must be an array`,
-      status: 400,
-      field,
-    })
-  }
-  return value
+function requireStagedArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) failStagedDiff(`${path} must be an array`, path)
+  return value as unknown[]
 }
 
-function optionalDiffBoolean(value: unknown, field: string): boolean | undefined {
-  if (value === undefined) return undefined
-  if (typeof value !== "boolean") {
-    throw new InventoryExecutionError({
-      code: "INVENTORY_DIFF_VALIDATION_FAILED",
-      message: `${field} must be true or false`,
-      status: 400,
-      field,
-    })
+function shapeStagedDraft(raw: unknown, idx: number): StagedInventoryRowDraft {
+  const row = requireStagedObject(raw, `added[${idx}]`)
+  return {
+    tempId: requireStagedString(row.tempId, `added[${idx}].tempId`),
+    productId: requireStagedString(row.productId, `added[${idx}].productId`),
+    itemNumber: requireStagedString(row.itemNumber, `added[${idx}].itemNumber`),
+    dyeLot: nullableStagedString(row.dyeLot, `added[${idx}].dyeLot`),
+    warehouseId: requireStagedString(row.warehouseId, `added[${idx}].warehouseId`),
+    locationId: nullableStagedString(row.locationId, `added[${idx}].locationId`),
+    startingStock: requireStagedString(row.startingStock, `added[${idx}].startingStock`),
+    cost: nullableStagedString(row.cost, `added[${idx}].cost`),
+    freight: nullableStagedString(row.freight, `added[${idx}].freight`),
+    notes: nullableStagedString(row.notes, `added[${idx}].notes`),
   }
-  return value
 }
 
-function shapeDraft(raw: unknown, idx: number): InventoryRowDraft {
-  const row = requireObject(raw, `added[${idx}]`)
-  const draft: InventoryRowDraft = {
-    tempId: requireInventoryString(row.tempId, `added[${idx}].tempId`),
-    productId: requireInventoryString(row.productId, `added[${idx}].productId`),
-    itemNumber: requireInventoryString(row.itemNumber, `added[${idx}].itemNumber`),
-    dyeLot: nullableString(row.dyeLot, `added[${idx}].dyeLot`),
-    warehouseId: nullableString(row.warehouseId, `added[${idx}].warehouseId`),
-    locationId: nullableString(row.locationId, `added[${idx}].locationId`),
-    stockCount: requireInventoryString(row.stockCount, `added[${idx}].stockCount`),
-    cost: nullableString(row.cost, `added[${idx}].cost`),
-    freight: nullableString(row.freight, `added[${idx}].freight`),
-    notes: nullableString(row.notes, `added[${idx}].notes`),
-  }
-  const isImported = optionalDiffBoolean(row.isImported, `added[${idx}].isImported`)
-  if (isImported !== undefined) draft.isImported = isImported
-  return draft
-}
-
-function shapePatch(raw: unknown, idx: number): InventoryRowUpdatePatch {
-  const patch = requireObject(raw, `modified[${idx}].patch`)
-  const result: InventoryRowUpdatePatch = {}
-  if (patch.productId !== undefined) result.productId = requireInventoryString(patch.productId, `modified[${idx}].patch.productId`)
-  if (patch.itemNumber !== undefined) result.itemNumber = requireInventoryString(patch.itemNumber, `modified[${idx}].patch.itemNumber`)
-  if (patch.dyeLot !== undefined) result.dyeLot = nullableString(patch.dyeLot, `modified[${idx}].patch.dyeLot`)
-  if (patch.warehouseId !== undefined) result.warehouseId = nullableString(patch.warehouseId, `modified[${idx}].patch.warehouseId`)
-  if (patch.locationId !== undefined) result.locationId = nullableString(patch.locationId, `modified[${idx}].patch.locationId`)
-  if (patch.stockCount !== undefined) result.stockCount = requireInventoryString(patch.stockCount, `modified[${idx}].patch.stockCount`)
-  if (patch.cost !== undefined) result.cost = nullableString(patch.cost, `modified[${idx}].patch.cost`)
-  if (patch.freight !== undefined) result.freight = nullableString(patch.freight, `modified[${idx}].patch.freight`)
-  if (patch.notes !== undefined) result.notes = nullableString(patch.notes, `modified[${idx}].patch.notes`)
-  if (patch.isImported !== undefined) {
-    const parsed = optionalDiffBoolean(patch.isImported, `modified[${idx}].patch.isImported`)
-    if (parsed !== undefined) result.isImported = parsed
-  }
+function shapeStagedPatch(raw: unknown, idx: number): StagedInventoryRowUpdatePatch {
+  const patch = requireStagedObject(raw, `modified[${idx}].patch`)
+  const result: StagedInventoryRowUpdatePatch = {}
+  if (patch.productId !== undefined) result.productId = requireStagedString(patch.productId, `modified[${idx}].patch.productId`)
+  if (patch.itemNumber !== undefined) result.itemNumber = requireStagedString(patch.itemNumber, `modified[${idx}].patch.itemNumber`)
+  if (patch.dyeLot !== undefined) result.dyeLot = nullableStagedString(patch.dyeLot, `modified[${idx}].patch.dyeLot`)
+  if (patch.warehouseId !== undefined) result.warehouseId = requireStagedString(patch.warehouseId, `modified[${idx}].patch.warehouseId`)
+  if (patch.locationId !== undefined) result.locationId = nullableStagedString(patch.locationId, `modified[${idx}].patch.locationId`)
+  if (patch.startingStock !== undefined) result.startingStock = requireStagedString(patch.startingStock, `modified[${idx}].patch.startingStock`)
+  if (patch.cost !== undefined) result.cost = nullableStagedString(patch.cost, `modified[${idx}].patch.cost`)
+  if (patch.freight !== undefined) result.freight = nullableStagedString(patch.freight, `modified[${idx}].patch.freight`)
+  if (patch.notes !== undefined) result.notes = nullableStagedString(patch.notes, `modified[${idx}].patch.notes`)
   return result
 }
 
-function shapeUpdate(raw: unknown, idx: number): InventoryRowUpdate {
-  const row = requireObject(raw, `modified[${idx}]`)
+function shapeStagedUpdate(raw: unknown, idx: number): StagedInventoryRowUpdate {
+  const row = requireStagedObject(raw, `modified[${idx}]`)
   return {
-    id: requireInventoryString(row.id, `modified[${idx}].id`),
-    expectedUpdatedAt: requireInventoryString(row.expectedUpdatedAt, `modified[${idx}].expectedUpdatedAt`),
-    patch: shapePatch(row.patch, idx),
+    id: requireStagedString(row.id, `modified[${idx}].id`),
+    expectedUpdatedAt: requireStagedString(row.expectedUpdatedAt, `modified[${idx}].expectedUpdatedAt`),
+    patch: shapeStagedPatch(row.patch, idx),
   }
 }
 
-function shapeDelete(raw: unknown, idx: number): InventoryRowDelete {
-  const row = requireObject(raw, `deleted[${idx}]`)
+function shapeStagedDelete(raw: unknown, idx: number): StagedInventoryRowDelete {
+  const row = requireStagedObject(raw, `deleted[${idx}]`)
   return {
-    id: requireInventoryString(row.id, `deleted[${idx}].id`),
-    expectedUpdatedAt: requireInventoryString(row.expectedUpdatedAt, `deleted[${idx}].expectedUpdatedAt`),
+    id: requireStagedString(row.id, `deleted[${idx}].id`),
+    expectedUpdatedAt: requireStagedString(row.expectedUpdatedAt, `deleted[${idx}].expectedUpdatedAt`),
   }
 }
 
 /**
- * Shapes the raw JSON body into an InventoryRowsDiff (domain type).
+ * Shapes the raw JSON body into a `StagedInventoryRowsDiff` (domain type).
  *
  * Body-shape validation only — no business rules. The domain's
- * `validateInventoryRowsDiff` (called by `saveImportInventoryRowsUseCase`) handles
- * duplicates, warehouse mismatch, unknown product/location, and delete-blocking.
+ * `validateStagedInventoryRowsDiff` (called by `saveStagedInventoryRowsUseCase`)
+ * handles warehouse mismatch, unknown product/location, and locked-row guards.
  */
-export function validateInventoryRowsDiffBody(body: Record<string, unknown>): InventoryRowsDiff {
-  const diffBody = requireObject(body.diff, "diff")
-  const added = requireArray(diffBody.added, "diff.added")
-  const modified = requireArray(diffBody.modified, "diff.modified")
-  const deleted = requireArray(diffBody.deleted, "diff.deleted")
+export function validateStagedInventoryRowsDiffBody(body: Record<string, unknown>): StagedInventoryRowsDiff {
+  const diffBody = requireStagedObject(body.diff, "diff")
+  const added = requireStagedArray(diffBody.added, "diff.added")
+  const modified = requireStagedArray(diffBody.modified, "diff.modified")
+  const deleted = requireStagedArray(diffBody.deleted, "diff.deleted")
   return {
-    added: added.map((entry, idx) => shapeDraft(entry, idx)),
-    modified: modified.map((entry, idx) => shapeUpdate(entry, idx)),
-    deleted: deleted.map((entry, idx) => shapeDelete(entry, idx)),
+    added: added.map((entry, idx) => shapeStagedDraft(entry, idx)),
+    modified: modified.map((entry, idx) => shapeStagedUpdate(entry, idx)),
+    deleted: deleted.map((entry, idx) => shapeStagedDelete(entry, idx)),
   }
+}
+
+// --- Mark-for-import body shaper ---
+
+function failMarkForImport(message: string, field?: string): never {
+  throw new StagedInventoryExecutionError({
+    code: "STAGED_VALIDATION_FAILED",
+    message,
+    status: 400,
+    ...(field ? { field } : {}),
+  })
+}
+
+export function validateMarkForImportBody(body: Record<string, unknown>): { stagedRowIds: string[] } {
+  const raw = body.stagedRowIds
+  if (!Array.isArray(raw)) failMarkForImport("stagedRowIds must be an array", "stagedRowIds")
+  if (raw.length === 0) failMarkForImport("stagedRowIds must not be empty", "stagedRowIds")
+  const stagedRowIds = raw.map((value, idx) => {
+    if (typeof value !== "string" || value.trim() === "") {
+      failMarkForImport(`stagedRowIds[${idx}] must be a non-empty string`, `stagedRowIds[${idx}]`)
+    }
+    return value as string
+  })
+  return { stagedRowIds }
 }

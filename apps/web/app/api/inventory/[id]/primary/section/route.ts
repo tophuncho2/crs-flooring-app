@@ -1,5 +1,5 @@
 import { getInventoryById, getInventoryDetailById } from "@builders/db"
-import { updateInventoryUseCase } from "@builders/application"
+import { InventoryExecutionError, updateInventoryUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -36,7 +36,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const currentSnapshot = await getInventoryById(id)
     if (!currentSnapshot) {
-      return routeError(access, new Error("Inventory row not found"))
+      throw new InventoryExecutionError({
+        code: "INVENTORY_NOT_FOUND",
+        message: "Inventory row not found.",
+        status: 404,
+      })
     }
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,

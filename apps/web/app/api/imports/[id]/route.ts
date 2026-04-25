@@ -1,5 +1,5 @@
 import { getImportDetailById } from "@builders/db"
-import { deleteImportUseCase } from "@builders/application"
+import { ImportExecutionError, deleteImportUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -52,7 +52,11 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     const currentSnapshot = await getImportDetailById(id)
     if (!currentSnapshot) {
-      return routeError(access, new Error("Import not found"))
+      throw new ImportExecutionError({
+        code: "IMPORT_NOT_FOUND",
+        message: "Import not found.",
+        status: 404,
+      })
     }
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,

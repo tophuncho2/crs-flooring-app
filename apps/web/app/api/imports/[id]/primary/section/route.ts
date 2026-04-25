@@ -1,5 +1,5 @@
 import { getImportById } from "@builders/db"
-import { updateImportUseCase } from "@builders/application"
+import { ImportExecutionError, updateImportUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -36,7 +36,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const currentSnapshot = await getImportById(id)
     if (!currentSnapshot) {
-      return routeError(access, new Error("Import not found"))
+      throw new ImportExecutionError({
+        code: "IMPORT_NOT_FOUND",
+        message: "Import not found.",
+        status: 404,
+      })
     }
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
