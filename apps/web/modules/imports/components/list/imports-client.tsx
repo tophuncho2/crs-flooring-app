@@ -11,10 +11,6 @@ import { useConfiguredTableState } from "@/modules/shared/engines/list-view/cont
 import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
-  formatImportStatus,
-  formatImportTransportType as formatTransportType,
-} from "@builders/domain"
-import {
   type ImportRow,
   useImportsListController,
 } from "@/modules/imports/controllers/use-imports-list-controller"
@@ -80,11 +76,12 @@ export default function ImportsClient({
     fields: [
       { key: "importNumber", label: "Import #", getValue: (row) => `IMP-${String(row.importNumber).padStart(4, "0")}`, groupable: false },
       { key: "tag", label: "Tag", getValue: (row) => row.tag, groupable: false },
-      { key: "transport", label: "Transport", getValue: (row) => formatTransportType(row.transportType), groupable: true },
-      { key: "status", label: "Status", getValue: (row) => formatImportStatus(row.status), groupable: true },
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName, groupable: true },
+      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName, groupable: true },
+      { key: "percent", label: "Percent", getValue: (row) => row.percent, groupable: false },
+      { key: "stagedRows", label: "Staged", getValue: (row) => String(row.stagedInventoryRowsCount), groupable: false },
+      { key: "liveRows", label: "Live", getValue: (row) => String(row.liveInventoryRowsCount), groupable: false },
       { key: "created", label: "Created", getValue: (row) => row.createdAt, groupable: false },
-      { key: "items", label: "Items", getValue: (row) => String(row.itemsCount), groupable: false },
     ],
     sortField: (row) => String(row.importNumber),
     sortFieldKey: "importNumber",

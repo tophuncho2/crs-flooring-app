@@ -11,38 +11,21 @@ import {
 } from "@/modules/shared/engines/record-view"
 import {
   EMPTY_IMPORT_PRIMARY_FORM,
-  type ImportDetail as ImportRow,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import type { WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
-
-const EMPTY_IMPORT_ROW: ImportRow = {
-  id: "new",
-  importNumber: 0,
-  orderNumber: "",
-  tag: "",
-  transportType: EMPTY_IMPORT_PRIMARY_FORM.transportType,
-  status: EMPTY_IMPORT_PRIMARY_FORM.status,
-  notes: "",
-  warehouseId: "",
-  warehouseName: "",
-  itemsCount: 0,
-  totalCost: 0,
-  totalCostLabel: "$0.00",
-  createdAt: "",
-  updatedAt: "",
-  inventories: [],
-}
 
 function ImportCreatePanel({
   page,
   backHref,
   warehouseOptions,
+  manufacturerOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
   warehouseOptions: WarehouseOption[]
+  manufacturerOptions: ManufacturerOption[]
 }) {
   const controller = useSingleSectionCreateController<ImportPrimaryForm>({
     page,
@@ -65,9 +48,9 @@ function ImportCreatePanel({
         savingLabel="Creating Import..."
       >
         <ImportPrimaryFieldsSection
-          entry={EMPTY_IMPORT_ROW}
           draft={controller.primarySection.localValue}
           warehouseOptions={warehouseOptions}
+          manufacturerOptions={manufacturerOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -85,9 +68,11 @@ function ImportCreatePanel({
 export function ImportCreateClient({
   backHref,
   warehouseOptions,
+  manufacturerOptions,
 }: {
   backHref: string
   warehouseOptions: WarehouseOption[]
+  manufacturerOptions: ManufacturerOption[]
 }) {
   return (
     <RecordCreateClientScaffold
@@ -95,7 +80,14 @@ export function ImportCreateClient({
       backHref={backHref}
       dirtyMessage="You have unsaved import changes. Leave this form without saving?"
     >
-      {(page) => <ImportCreatePanel page={page} backHref={backHref} warehouseOptions={warehouseOptions} />}
+      {(page) => (
+        <ImportCreatePanel
+          page={page}
+          backHref={backHref}
+          warehouseOptions={warehouseOptions}
+          manufacturerOptions={manufacturerOptions}
+        />
+      )}
     </RecordCreateClientScaffold>
   )
 }

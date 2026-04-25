@@ -1,12 +1,11 @@
 import {
   validateImportPrimaryForm as domainValidateImportPrimaryForm,
   type ImportDetail,
-  type ImportInventoryRow,
   type ImportPrimaryForm,
-  type ImportRow,
+  type StagedInventoryRow,
 } from "@builders/domain"
 
-// Record-view files pass `entry` with inventories attached — use ImportDetail shape.
+// Record-view files pass `entry` with id pointers — use ImportDetail shape.
 export type ImportRecordEntry = ImportDetail
 
 export type ProductOption = {
@@ -26,6 +25,11 @@ export type WarehouseOption = {
   name: string
 }
 
+export type ManufacturerOption = {
+  id: string
+  label: string
+}
+
 export type LocationOption = {
   id: string
   warehouseId: string
@@ -34,17 +38,16 @@ export type LocationOption = {
   label: string
 }
 
-export type ImportInventoryRowDraft = {
+export type ImportStagedRowDraft = {
   clientId: string
   productId: string
   itemNumber: string
-  stockCount: string
+  startingStock: string
   locationId: string
   dyeLot: string
   cost: string
   freight: string
   notes: string
-  isImported: boolean
   /**
    * Client-only helper: scopes the product dropdown to products matching this
    * category. `null` = show all products. Not persisted — never appears in the
@@ -54,31 +57,30 @@ export type ImportInventoryRowDraft = {
   categoryFilterId: string | null
 }
 
-export function createImportInventoryRowDraft(item?: ImportInventoryRow): ImportInventoryRowDraft {
+export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportStagedRowDraft {
   return {
     clientId: item?.id ?? crypto.randomUUID(),
     productId: item?.productId ?? "",
     itemNumber: item?.itemNumber ?? "",
-    stockCount: item?.stockCount ?? "",
+    startingStock: item?.startingStock ?? "",
     locationId: item?.locationId ?? "",
     dyeLot: item?.dyeLot ?? "",
     cost: item?.cost ?? "",
     freight: item?.freight ?? "",
     notes: item?.notes ?? "",
-    isImported: item?.isImported ?? false,
     categoryFilterId: null,
   }
 }
 
-export function toImportInventoryDrafts(record: ImportRow & { inventories: ImportInventoryRow[] }) {
-  return record.inventories.map((item) => createImportInventoryRowDraft(item))
+export function toImportStagedRowDrafts(rows: StagedInventoryRow[]): ImportStagedRowDraft[] {
+  return rows.map((row) => createImportStagedRowDraft(row))
 }
 
 export function applyDefaultLocationToImportRow(
-  item: ImportInventoryRowDraft,
+  item: ImportStagedRowDraft,
   warehouseId: string,
   locationOptions: LocationOption[],
-) {
+): ImportStagedRowDraft {
   const warehouseLocations = warehouseId
     ? locationOptions.filter((location) => location.warehouseId === warehouseId)
     : []
@@ -99,40 +101,16 @@ export function validateImportPrimaryForm(input: ImportPrimaryForm): string {
   return issues.length > 0 ? issues[0].message : ""
 }
 
-export function validateImportInventoryDrafts(items: ImportInventoryRowDraft[]) {
+export function validateImportStagedRowDrafts(items: ImportStagedRowDraft[]) {
   for (const [index, item] of items.entries()) {
     if (!item.productId.trim()) {
       return `Row ${index + 1}: product is required.`
     }
 
-    if (!item.stockCount.trim()) {
-      return `Row ${index + 1}: stock is required.`
+    if (!item.startingStock.trim()) {
+      return `Row ${index + 1}: starting stock is required.`
     }
   }
 
   return ""
-}
-
-export function buildImportMutationPayload(
-  primary: ImportPrimaryForm,
-  items: ImportInventoryRowDraft[],
-) {
-  return {
-    orderNumber: primary.orderNumber,
-    tag: primary.tag,
-    transportType: primary.transportType,
-    status: primary.status,
-    notes: primary.notes,
-    warehouseId: primary.warehouseId,
-    items: items.map((item) => ({
-      productId: item.productId,
-      itemNumber: item.itemNumber,
-      stockCount: item.stockCount,
-      locationId: item.locationId || null,
-      dyeLot: item.dyeLot,
-      cost: item.cost,
-      freight: item.freight,
-      notes: item.notes,
-    })),
-  }
 }

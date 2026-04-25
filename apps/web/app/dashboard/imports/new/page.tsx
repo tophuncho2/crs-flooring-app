@@ -20,6 +20,7 @@ export default async function ImportCreatePage({
       <ImportCreateClient
         backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/imports")}
         warehouseOptions={options.warehouseOptions}
+        manufacturerOptions={options.manufacturerOptions}
       />
     )
   } catch (error) {

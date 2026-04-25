@@ -6,102 +6,105 @@ import {
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
 import type {
-  ImportDetail as ImportRow,
-  InventoryRowDraft,
-  InventoryRowDelete,
-  InventoryRowUpdate,
-  InventoryRowUpdatePatch,
-  InventoryRowsDiff,
+  ImportDetail,
+  StagedInventoryRow,
+  StagedInventoryRowDraft,
+  StagedInventoryRowDelete,
+  StagedInventoryRowUpdate,
+  StagedInventoryRowUpdatePatch,
+  StagedInventoryRowsDiff,
 } from "@builders/domain"
 import {
   applyDefaultLocationToImportRow,
-  createImportInventoryRowDraft,
-  toImportInventoryDrafts,
-  validateImportInventoryDrafts,
-  type ImportInventoryRowDraft,
+  createImportStagedRowDraft,
+  toImportStagedRowDrafts,
+  validateImportStagedRowDrafts,
+  type ImportStagedRowDraft,
   type LocationOption,
 } from "./drafts"
-import { updateImportInventoryRowsRequest } from "../data/mutations"
+import { updateImportStagedInventoryRowsRequest } from "../data/mutations"
 
 function createDraftRow(locationOptions: LocationOption[], warehouseId: string) {
   return applyDefaultLocationToImportRow(
     {
-      ...createImportInventoryRowDraft(),
-      clientId: createLocalRecordRowId("import-inventory-row"),
+      ...createImportStagedRowDraft(),
+      clientId: createLocalRecordRowId("import-staged-row"),
     },
     warehouseId,
     locationOptions,
   )
 }
 
-function isLocalDraftRow(row: ImportInventoryRowDraft) {
+function isLocalDraftRow(row: ImportStagedRowDraft) {
   return row.clientId.startsWith("local:")
 }
 
-function createRowsRevisionKey(record: ImportRow) {
-  return `${record.updatedAt}:${record.inventories.length}`
+function createRowsRevisionKey(record: ImportDetail, rows: StagedInventoryRow[]) {
+  return `${record.updatedAt}:${rows.length}`
 }
 
-function toDraftPayload(row: ImportInventoryRowDraft): InventoryRowDraft {
+function toDraftPayload(
+  row: ImportStagedRowDraft,
+  importWarehouseId: string,
+): StagedInventoryRowDraft {
   return {
     tempId: row.clientId,
     productId: row.productId,
     itemNumber: row.itemNumber,
     dyeLot: row.dyeLot || null,
-    // warehouseId flows from the import's warehouseId via the use case's
-    // source-of-truth stamping. The domain shape accepts null here; use case
-    // re-resolves from the location's warehouseId at write time.
-    warehouseId: null,
+    // Validator requires warehouseId on each draft. The use case re-resolves
+    // from the location's warehouseId at write time; the parent import's
+    // warehouseId is the canonical scope.
+    warehouseId: importWarehouseId,
     locationId: row.locationId || null,
-    stockCount: row.stockCount,
+    startingStock: row.startingStock,
     cost: row.cost || null,
     freight: row.freight || null,
     notes: row.notes || null,
-    isImported: row.isImported,
   }
 }
 
 function toUpdatePatch(
-  row: ImportInventoryRowDraft,
-  existing: ImportRow["inventories"][number],
-): InventoryRowUpdatePatch {
-  const patch: InventoryRowUpdatePatch = {}
+  row: ImportStagedRowDraft,
+  existing: StagedInventoryRow,
+): StagedInventoryRowUpdatePatch {
+  const patch: StagedInventoryRowUpdatePatch = {}
   if (row.productId !== existing.productId) patch.productId = row.productId
   if (row.itemNumber !== existing.itemNumber) patch.itemNumber = row.itemNumber
   if ((row.dyeLot || null) !== (existing.dyeLot || null)) patch.dyeLot = row.dyeLot || null
   if ((row.locationId || null) !== (existing.locationId || null)) {
     patch.locationId = row.locationId || null
   }
-  if (row.stockCount !== existing.stockCount) patch.stockCount = row.stockCount
+  if (row.startingStock !== existing.startingStock) patch.startingStock = row.startingStock
   if ((row.cost || null) !== (existing.cost || null)) patch.cost = row.cost || null
   if ((row.freight || null) !== (existing.freight || null)) patch.freight = row.freight || null
   if ((row.notes || null) !== (existing.notes || null)) patch.notes = row.notes || null
-  if (row.isImported !== existing.isImported) patch.isImported = row.isImported
   return patch
 }
 
-function buildInventoryRowsDiff(
-  localRows: ImportInventoryRowDraft[],
-  serverRows: ImportRow["inventories"],
-): InventoryRowsDiff {
+function buildStagedInventoryRowsDiff(
+  localRows: ImportStagedRowDraft[],
+  serverRows: StagedInventoryRow[],
+  importWarehouseId: string,
+): StagedInventoryRowsDiff {
   const serverById = new Map(serverRows.map((row) => [row.id, row]))
   const localServerIds = new Set(
     localRows.filter((row) => !isLocalDraftRow(row)).map((row) => row.clientId),
   )
 
-  const added: InventoryRowDraft[] = []
-  const modified: InventoryRowUpdate[] = []
-  const deleted: InventoryRowDelete[] = []
+  const added: StagedInventoryRowDraft[] = []
+  const modified: StagedInventoryRowUpdate[] = []
+  const deleted: StagedInventoryRowDelete[] = []
 
   for (const row of localRows) {
     if (isLocalDraftRow(row)) {
-      added.push(toDraftPayload(row))
+      added.push(toDraftPayload(row, importWarehouseId))
       continue
     }
     const existing = serverById.get(row.clientId)
     if (!existing) {
       // Drift (client references a server id that no longer exists) — treat as add.
-      added.push(toDraftPayload(row))
+      added.push(toDraftPayload(row, importWarehouseId))
       continue
     }
     const patch = toUpdatePatch(row, existing)
@@ -126,39 +129,32 @@ function buildInventoryRowsDiff(
   return { added, modified, deleted }
 }
 
-function reconcileTempIds(
-  localRows: ImportInventoryRowDraft[],
-  tempIdMap: Record<string, string>,
-): ImportInventoryRowDraft[] {
-  return localRows.map((row) => {
-    if (!isLocalDraftRow(row)) return row
-    const realId = tempIdMap[row.clientId]
-    return realId ? { ...row, clientId: realId } : row
-  })
-}
-
-export function useImportInventoryRowsSection({
+export function useImportStagedInventoryRowsSection({
   record,
+  stagedRows,
   locationOptions,
   publishRecord,
+  publishStagedRows,
 }: {
-  record: ImportRow
+  record: ImportDetail
+  stagedRows: StagedInventoryRow[]
   locationOptions: LocationOption[]
-  publishRecord: (record: ImportRow) => void
+  publishRecord: (record: ImportDetail) => void
+  publishStagedRows: (rows: StagedInventoryRow[]) => void
 }) {
-  const section = useRecordScopedSectionController<ImportRow, ImportInventoryRowDraft[]>({
+  const section = useRecordScopedSectionController<StagedInventoryRow[], ImportStagedRowDraft[]>({
     recordId: record.id,
-    sectionKey: "inventory-rows",
-    serverValue: record,
-    serverRevisionKey: createRowsRevisionKey(record),
-    createLocalValue: toImportInventoryDrafts,
+    sectionKey: "staged-inventory-rows",
+    serverValue: stagedRows,
+    serverRevisionKey: createRowsRevisionKey(record, stagedRows),
+    createLocalValue: toImportStagedRowDrafts,
     persistDraft: false,
     policy: {
       addRowPlacement: "top",
       childRows: "none",
     },
-    onSave: async (localValue, currentRecord) => {
-      const validationError = validateImportInventoryDrafts(localValue)
+    onSave: async (localValue, currentServerRows) => {
+      const validationError = validateImportStagedRowDrafts(localValue)
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",
@@ -167,27 +163,30 @@ export function useImportInventoryRowsSection({
         })
       }
 
-      const diff = buildInventoryRowsDiff(localValue, currentRecord.inventories)
+      const diff = buildStagedInventoryRowsDiff(
+        localValue,
+        currentServerRows,
+        record.warehouseId,
+      )
       if (diff.added.length === 0 && diff.modified.length === 0 && diff.deleted.length === 0) {
         return {
-          serverValue: currentRecord,
-          serverRevisionKey: createRowsRevisionKey(currentRecord),
+          serverValue: currentServerRows,
+          serverRevisionKey: createRowsRevisionKey(record, currentServerRows),
           noticeMessage: "No changes to save",
         }
       }
 
-      const response = await updateImportInventoryRowsRequest(
-        currentRecord.id,
+      const response = await updateImportStagedInventoryRowsRequest(
+        record.id,
         diff,
-        currentRecord.updatedAt,
+        record.updatedAt,
       )
       publishRecord(response.import)
+      publishStagedRows(response.stagedRows)
 
-      const reconciledLocal = reconcileTempIds(localValue, response.tempIdMap)
       return {
-        serverValue: response.import,
-        serverRevisionKey: createRowsRevisionKey(response.import),
-        localValue: reconciledLocal,
+        serverValue: response.stagedRows,
+        serverRevisionKey: createRowsRevisionKey(response.import, response.stagedRows),
         noticeMessage: "Import inventory rows saved",
       }
     },
@@ -212,10 +211,7 @@ export function useImportInventoryRowsSection({
 
   function setRowField(
     index: number,
-    field: Exclude<
-      keyof Omit<ImportInventoryRowDraft, "clientId">,
-      "isImported" | "categoryFilterId"
-    >,
+    field: Exclude<keyof Omit<ImportStagedRowDraft, "clientId">, "categoryFilterId">,
     value: string,
   ) {
     section.setLocalValue((previous) =>
@@ -223,15 +219,6 @@ export function useImportInventoryRowsSection({
         if (rowIndex !== index) return row
         return { ...row, [field]: value }
       }),
-    )
-    if (section.error) {
-      section.setError(null)
-    }
-  }
-
-  function setRowImportStatus(index: number, isImported: boolean) {
-    section.setLocalValue((previous) =>
-      previous.map((row, rowIndex) => (rowIndex === index ? { ...row, isImported } : row)),
     )
     if (section.error) {
       section.setError(null)
@@ -267,7 +254,6 @@ export function useImportInventoryRowsSection({
     addRow,
     removeRow,
     setRowField,
-    setRowImportStatus,
     setRowCategoryFilter,
     handleWarehouseChange,
   }

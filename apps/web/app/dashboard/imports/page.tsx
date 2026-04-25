@@ -19,7 +19,7 @@ export default async function FlooringImportsPage({
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
     defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : true,
     defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["warehouse"],
-    allowedGroupKeys: ["transport", "status", "warehouse"],
+    allowedGroupKeys: ["manufacturer", "warehouse"],
   })
   const result = await getImportsPageData(page, tableState)
 

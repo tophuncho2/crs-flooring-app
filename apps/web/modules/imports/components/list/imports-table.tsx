@@ -5,7 +5,6 @@ import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table
 import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
 import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
 import { formatStableDate } from "@builders/domain"
-import { StatusPill } from "@/modules/shared/engines/common/feedback/status-pill"
 import {
   ClickableTableRow,
   TableEmptyRow,
@@ -14,14 +13,6 @@ import {
 import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
 import type { ImportRow } from "@/modules/imports/controllers/use-imports-list-controller"
-import {
-  formatImportStatus,
-  formatImportTransportType as formatTransportType,
-} from "@builders/domain"
-import {
-  getImportStatusFieldClass,
-  getTransportTypeFieldClass,
-} from "@/modules/imports/components/formatters"
 
 export function ImportsTable({
   rows,
@@ -71,19 +62,20 @@ export function ImportsTable({
         </DashboardListRowCell>
       ),
       tag: (columnIndex) => <DashboardListRowCell key="tag" columnIndex={columnIndex}>{row.tag || "-"}</DashboardListRowCell>,
-      transport: (columnIndex) => (
-        <DashboardListRowCell key="transport" columnIndex={columnIndex}>
-          <StatusPill label={formatTransportType(row.transportType)} toneClassName={getTransportTypeFieldClass(row.transportType)} />
-        </DashboardListRowCell>
-      ),
-      status: (columnIndex) => (
-        <DashboardListRowCell key="status" columnIndex={columnIndex}>
-          <StatusPill label={formatImportStatus(row.status)} toneClassName={getImportStatusFieldClass(row.status)} />
-        </DashboardListRowCell>
-      ),
       warehouse: (columnIndex) => <DashboardListRowCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardListRowCell>,
+      manufacturer: (columnIndex) => (
+        <DashboardListRowCell key="manufacturer" columnIndex={columnIndex}>{row.manufacturerName || "-"}</DashboardListRowCell>
+      ),
+      percent: (columnIndex) => (
+        <DashboardListRowCell key="percent" columnIndex={columnIndex}>{row.percent ? `${row.percent}%` : "-"}</DashboardListRowCell>
+      ),
+      stagedRows: (columnIndex) => (
+        <DashboardListRowCell key="stagedRows" columnIndex={columnIndex}>{row.stagedInventoryRowsCount}</DashboardListRowCell>
+      ),
+      liveRows: (columnIndex) => (
+        <DashboardListRowCell key="liveRows" columnIndex={columnIndex}>{row.liveInventoryRowsCount}</DashboardListRowCell>
+      ),
       created: (columnIndex) => <DashboardListRowCell key="created" columnIndex={columnIndex}>{formatStableDate(row.createdAt)}</DashboardListRowCell>,
-      items: (columnIndex) => <DashboardListRowCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardListRowCell>,
     }
 
     return (

@@ -4,16 +4,19 @@ import {
   importRowSelect,
   isPrismaNotFoundError,
   listImportOptions,
+  listInventory,
+  listStagedInventoryByImport,
   normalizeImportRow,
   prisma,
   getImportDetailById,
   withPrismaConnectivityHandling,
   type ImportDetailRecord,
-  type ImportFormOptions,
   type ImportRecord,
+  type InventoryRecord,
   type PrismaDetailPageResult,
+  type StagedInventoryRecord,
 } from "@builders/db"
-import { buildFlooringProductDisplayName } from "@builders/domain"
+import { buildFlooringProductDisplayName, type ImportFormOptions } from "@builders/domain"
 import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 
@@ -33,6 +36,7 @@ function buildImportsSearchWhere(searchQuery: string): Prisma.FlooringImportEntr
       { tag: { contains: searchQuery, mode: "insensitive" } },
       { notes: { contains: searchQuery, mode: "insensitive" } },
       { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { manufacturer: { companyName: { contains: searchQuery, mode: "insensitive" } } },
     ],
   }
 }
@@ -43,9 +47,8 @@ function buildImportsOrderBy(tableState: ServerTableQueryState): Prisma.Flooring
   const fieldMap: Record<string, Prisma.FlooringImportEntryOrderByWithRelationInput> = {
     importNumber: { importNumber: direction },
     tag: { tag: direction },
-    transport: { transportType: direction },
-    status: { status: direction },
     warehouse: { warehouse: { name: direction } },
+    manufacturer: { manufacturer: { companyName: direction } },
     created: { createdAt: direction },
   }
 
@@ -100,7 +103,7 @@ export async function getImportsPageData(page: number, tableState: ServerTableQu
   )
 }
 
-export async function getImportFormOptions(): Promise<{
+export type ImportFormOptionSet = {
   productOptions: Array<{ id: string; label: string; stockUnit: string; categoryId: string }>
   warehouseOptions: Array<{ id: string; name: string }>
   locationOptions: Array<{
@@ -111,7 +114,10 @@ export async function getImportFormOptions(): Promise<{
     label: string
   }>
   categoryOptions: Array<{ id: string; label: string }>
-}> {
+  manufacturerOptions: Array<{ id: string; label: string }>
+}
+
+export async function getImportFormOptions(): Promise<ImportFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
     const options: ImportFormOptions = await listImportOptions()
     return {
@@ -130,21 +136,34 @@ export async function getImportFormOptions(): Promise<{
         label: location.shortCode,
       })),
       categoryOptions: options.categories.map((category) => ({ id: category.id, label: category.name })),
+      manufacturerOptions: options.manufacturers.map((manufacturer) => ({
+        id: manufacturer.id,
+        label: manufacturer.companyName,
+      })),
     }
   })
 }
 
-export async function getImportDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+export type ImportDetailPageData = {
   entry: ImportDetailRecord
-  productOptions: Awaited<ReturnType<typeof getImportFormOptions>>["productOptions"]
-  warehouseOptions: Awaited<ReturnType<typeof getImportFormOptions>>["warehouseOptions"]
-  locationOptions: Awaited<ReturnType<typeof getImportFormOptions>>["locationOptions"]
-  categoryOptions: Awaited<ReturnType<typeof getImportFormOptions>>["categoryOptions"]
-}>> {
+  stagedRows: StagedInventoryRecord[]
+  liveRows: InventoryRecord[]
+  productOptions: ImportFormOptionSet["productOptions"]
+  warehouseOptions: ImportFormOptionSet["warehouseOptions"]
+  locationOptions: ImportFormOptionSet["locationOptions"]
+  categoryOptions: ImportFormOptionSet["categoryOptions"]
+  manufacturerOptions: ImportFormOptionSet["manufacturerOptions"]
+}
+
+export async function getImportDetailPageData(
+  id: string,
+): Promise<PrismaDetailPageResult<ImportDetailPageData>> {
   try {
-    const [entry, options] = await Promise.all([
+    const [entry, options, stagedRows, liveRows] = await Promise.all([
       getImportDetailById(id),
       getImportFormOptions(),
+      listStagedInventoryByImport(id),
+      listInventory({ importEntryId: id }),
     ])
 
     if (!entry) {
@@ -155,10 +174,13 @@ export async function getImportDetailPageData(id: string): Promise<PrismaDetailP
       ok: true,
       data: {
         entry,
+        stagedRows,
+        liveRows,
         productOptions: options.productOptions,
         warehouseOptions: options.warehouseOptions,
         locationOptions: options.locationOptions,
         categoryOptions: options.categoryOptions,
+        manufacturerOptions: options.manufacturerOptions,
       },
     }
   } catch (error) {

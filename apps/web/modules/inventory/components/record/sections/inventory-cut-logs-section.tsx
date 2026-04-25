@@ -26,27 +26,24 @@ const INVENTORY_CUT_LOG_COLUMNS: RecordRowColumnSpec[] = [
  *
  * Save / draft editing / add-row controls are intentionally absent — the
  * parent-scoped save route (`/api/inventory/[id]/cut-logs/section`) and the
- * `saveInventoryCutLogsUseCase` both land in Sweep 3. The component + grid
- * primitives are present so the record view composes today; Sweep 3 extends
- * this file with editable drafts + save wiring.
+ * `saveInventoryCutLogsUseCase` both land in a future sweep. The component +
+ * grid primitives are present so the record view composes today.
  */
 export function InventoryCutLogsSection({
   cutLogs,
-  stockUnit,
-  totalCutBalance,
-  awaitingCutBalance,
-  isImported,
+  stockUnitAbbrev,
+  totalCutSum,
+  isArchived,
 }: {
   cutLogs: CutLogRow[]
-  stockUnit: string
-  totalCutBalance: string
-  awaitingCutBalance: string
-  isImported: boolean
+  stockUnitAbbrev: string
+  totalCutSum: string
+  isArchived: boolean
 }) {
   const hasRows = cutLogs.length > 0
-  const pendingEmptyState = isImported
-    ? "No cut logs recorded for this inventory row."
-    : "Cut logs unlock once this row is marked Final on the imports record view."
+  const emptyState = isArchived
+    ? "This inventory row is archived. No cut logs recorded."
+    : "No cut logs recorded for this inventory row."
 
   return (
     <RecordItemSection
@@ -54,8 +51,7 @@ export function InventoryCutLogsSection({
       bodyClassName="space-y-0"
       metrics={[
         { label: "Logs", value: String(cutLogs.length) },
-        { label: "Final Cuts", value: formatInventoryQuantity(totalCutBalance, stockUnit) },
-        { label: "Pending Cuts", value: formatInventoryQuantity(awaitingCutBalance, stockUnit) },
+        { label: "Total Cut", value: formatInventoryQuantity(totalCutSum, stockUnitAbbrev) },
       ]}
       capabilities={{
         editable: false,
@@ -67,12 +63,12 @@ export function InventoryCutLogsSection({
         supportsStatusColumn: true,
       }}
       isEmpty={!hasRows}
-      emptyState={pendingEmptyState}
+      emptyState={emptyState}
     >
       <RecordSectionGrid
         columns={INVENTORY_CUT_LOG_COLUMNS}
         isEmpty={!hasRows}
-        emptyState={pendingEmptyState}
+        emptyState={emptyState}
       >
         {cutLogs.map((cutLog, index) => {
           const statusResolution = resolveRecordRowStatus({})
@@ -85,17 +81,17 @@ export function InventoryCutLogsSection({
               </RecordItemCell>
               <RecordItemCell columnKey="cut" chrome="grid" showLabel={index === 0}>
                 <span className="text-sm font-medium text-[var(--foreground)]">
-                  {formatInventoryQuantity(cutLog.cut, stockUnit)}
+                  {formatInventoryQuantity(cutLog.cut, stockUnitAbbrev)}
                 </span>
               </RecordItemCell>
               <RecordItemCell columnKey="before" chrome="grid" showLabel={index === 0}>
                 <span className="text-sm text-[var(--foreground)]/80">
-                  {formatInventoryQuantity(cutLog.before, stockUnit)}
+                  {formatInventoryQuantity(cutLog.before, stockUnitAbbrev)}
                 </span>
               </RecordItemCell>
               <RecordItemCell columnKey="after" chrome="grid" showLabel={index === 0}>
                 <span className="text-sm text-[var(--foreground)]/80">
-                  {formatInventoryQuantity(cutLog.after, stockUnit)}
+                  {formatInventoryQuantity(cutLog.after, stockUnitAbbrev)}
                 </span>
               </RecordItemCell>
               <RecordItemCell columnKey="status" chrome="grid" showLabel={index === 0}>

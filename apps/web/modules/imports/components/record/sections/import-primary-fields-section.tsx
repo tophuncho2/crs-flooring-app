@@ -9,25 +9,19 @@ import {
   RecordPrimaryPane,
   RecordPrimarySection,
 } from "@/modules/shared/engines/record-view"
-import {
-  IMPORT_STATUS_OPTIONS,
-  IMPORT_TRANSPORT_TYPE_OPTIONS,
-  getImportStatusFieldClass,
-  getTransportTypeFieldClass,
-} from "../../formatters"
-import type { ImportDetail as ImportRow, ImportPrimaryForm } from "@builders/domain"
-import type { WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { ImportPrimaryForm } from "@builders/domain"
+import type { ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportPrimaryFieldsSection({
-  entry,
   draft,
   warehouseOptions,
+  manufacturerOptions,
   disabled,
   onFieldChange,
 }: {
-  entry: ImportRow
   draft: ImportPrimaryForm
   warehouseOptions: WarehouseOption[]
+  manufacturerOptions: ManufacturerOption[]
   disabled: boolean
   onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
 }) {
@@ -46,32 +40,17 @@ export function ImportPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Transport Type">
+            <RecordFormField label="Manufacturer">
               <select
-                value={draft.transportType}
-                onChange={(event) => onFieldChange("transportType", event.target.value)}
-                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} ${getTransportTypeFieldClass(draft.transportType)}`}
+                value={draft.manufacturerId}
+                onChange={(event) => onFieldChange("manufacturerId", event.target.value)}
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 disabled={disabled}
               >
-                {IMPORT_TRANSPORT_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Import Status">
-              <select
-                value={draft.status}
-                onChange={(event) => onFieldChange("status", event.target.value)}
-                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} ${getImportStatusFieldClass(draft.status)}`}
-                disabled={disabled}
-              >
-                {IMPORT_STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                <option value="">Select Manufacturer</option>
+                {manufacturerOptions.map((manufacturer) => (
+                  <option key={manufacturer.id} value={manufacturer.id}>
+                    {manufacturer.label}
                   </option>
                 ))}
               </select>
@@ -118,11 +97,6 @@ export function ImportPrimaryFieldsSection({
                 className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
                 disabled={disabled}
               />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="md">
-            <RecordFormField label="Total Cost">
-              <div className={RECORD_FIELD_CONTROL_CLASS_NAME}>{entry.totalCostLabel}</div>
             </RecordFormField>
           </RecordPrimaryFieldCell>
         </RecordPrimaryFieldsGrid>

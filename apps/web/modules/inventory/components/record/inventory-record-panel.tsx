@@ -32,7 +32,6 @@ export function InventoryRecordPanel({
     inventory,
     locationOptions,
   })
-  const isReadOnly = !inventory.isImported
 
   return (
     <RecordMultiSectionPanel
@@ -84,26 +83,18 @@ export function InventoryRecordPanel({
           render: () => (
             <InventoryCutLogsSection
               cutLogs={controller.record.cutLogs}
-              stockUnit={controller.record.stockUnit}
-              totalCutBalance={controller.record.totalCutBalance}
-              awaitingCutBalance={controller.record.awaitingCutBalance}
-              isImported={controller.record.isImported}
+              stockUnitAbbrev={controller.record.stockUnitAbbrev}
+              totalCutSum={controller.record.totalCutSum}
+              isArchived={controller.record.isArchived}
             />
           ),
         },
       ]}
-      footer={
-        isReadOnly
-          ? {
-              deleteLabel: "Delete Inventory",
-              deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
-            }
-          : {
-              deleteLabel: "Delete Inventory",
-              deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
-              onDelete: () => void controller.deleteRecord(),
-            }
-      }
+      footer={{
+        deleteLabel: "Delete Inventory",
+        deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
+        onDelete: () => void controller.deleteRecord(),
+      }}
     />
   )
 }

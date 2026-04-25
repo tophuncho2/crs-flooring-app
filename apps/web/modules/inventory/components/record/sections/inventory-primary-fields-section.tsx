@@ -39,16 +39,8 @@ export function InventoryPrimaryFieldsSection({
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
-  const isReadOnly = !inventory.isImported
-  const controlDisabled = disabled || isReadOnly
   return (
     <RecordPrimarySection>
-      {isReadOnly ? (
-        <div className="col-span-full rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          This inventory row is pending import. It becomes editable once marked
-          as <strong>Final</strong> on the imports record view.
-        </div>
-      ) : null}
       <RecordPrimaryPane variant="side" placement="left">
         <RecordPrimaryFieldsGrid variant="side">
           <RecordPrimaryFieldCell>
@@ -58,7 +50,7 @@ export function InventoryPrimaryFieldsSection({
                 value={draft.warehouseId}
                 onChange={(event) => onFieldChange("warehouseId", event.target.value)}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={controlDisabled}
+                disabled={disabled}
                 required
               >
                 <option value="">Select Warehouse</option>
@@ -80,31 +72,33 @@ export function InventoryPrimaryFieldsSection({
           <RecordPrimaryFieldCell>
             <RecordFormField label="Starting Balance">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.stockCount, inventory.stockUnit)}
+                {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
             <RecordFormField label="Cut Balance">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.totalCutBalance, inventory.stockUnit)}
+                {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Uncut Balance">
+            <RecordFormField label="Available">
               <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.uncutBalance, inventory.stockUnit)}
+                {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
               </RecordStaticFieldValue>
             </RecordFormField>
           </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Available Balance">
-              <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.availableBalance, inventory.stockUnit)}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
+          {inventory.coverageBalance ? (
+            <RecordPrimaryFieldCell>
+              <RecordFormField label="Coverage">
+                <RecordStaticFieldValue>
+                  {formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)}
+                </RecordStaticFieldValue>
+              </RecordFormField>
+            </RecordPrimaryFieldCell>
+          ) : null}
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>
 
@@ -130,7 +124,7 @@ export function InventoryPrimaryFieldsSection({
                 value={draft.locationId}
                 onChange={(event) => onFieldChange("locationId", event.target.value)}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={controlDisabled || !draft.warehouseId}
+                disabled={disabled || !draft.warehouseId}
               >
                 <option value="">
                   {draft.warehouseId ? "Select Location" : "Select warehouse first"}
@@ -149,7 +143,7 @@ export function InventoryPrimaryFieldsSection({
                 value={draft.itemNumber}
                 onChange={(event) => onFieldChange("itemNumber", event.target.value)}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={controlDisabled}
+                disabled={disabled}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -159,7 +153,7 @@ export function InventoryPrimaryFieldsSection({
                 value={draft.dyeLot}
                 onChange={(event) => onFieldChange("dyeLot", event.target.value)}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={controlDisabled}
+                disabled={disabled}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>
@@ -184,7 +178,7 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(event) => onFieldChange("notes", event.target.value)}
                 rows={2}
                 className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
-                disabled={controlDisabled}
+                disabled={disabled}
               />
             </RecordFormField>
           </RecordPrimaryFieldCell>

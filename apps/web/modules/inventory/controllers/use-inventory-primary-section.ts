@@ -9,9 +9,9 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import {
-  describeInventoryValidationIssues,
+  describeInventoryFormValidationIssues,
   toInventoryForm,
-  validateInventoryInput,
+  validateInventoryForm,
   type InventoryDetail,
   type InventoryForm,
   type InventoryLocationOption,
@@ -36,20 +36,22 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      const issues = validateInventoryInput(
+      const selectedLocationLookup = localValue.locationId
+        ? locationOptions.find((location) => location.id === localValue.locationId) ?? null
+        : null
+      const issues = validateInventoryForm(
         {
-          productId: localValue.productId,
-          itemNumber: localValue.itemNumber,
-          warehouseId: localValue.warehouseId || null,
+          warehouseId: localValue.warehouseId,
           locationId: localValue.locationId || null,
-          stockCount: localValue.stockCount,
         },
-        null,
+        selectedLocationLookup
+          ? { id: selectedLocationLookup.id, warehouseId: selectedLocationLookup.warehouseId }
+          : null,
       )
       if (issues.length > 0) {
         throw createRecordSectionError({
           kind: "validation",
-          message: describeInventoryValidationIssues(issues),
+          message: describeInventoryFormValidationIssues(issues),
           retryable: true,
         })
       }

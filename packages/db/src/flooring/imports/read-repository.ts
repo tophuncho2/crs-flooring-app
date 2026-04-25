@@ -1,4 +1,9 @@
-import type { ImportDetail, ImportRow } from "@builders/domain"
+import {
+  buildFlooringProductDisplayName,
+  formatFullLocationCode,
+  formatLocationRafterLevel,
+} from "@builders/domain"
+import type { ImportDetail, ImportFormOptions, ImportRow } from "@builders/domain"
 import { db } from "../../client.js"
 import {
   importDetailSelect,
@@ -145,5 +150,96 @@ export async function getImportLinkState(
   return {
     stagedInventoryRowCount: row._count.stagedInventoryRows,
     liveInventoryRowCount: row._count.inventories,
+  }
+}
+
+/**
+ * Composes the option set the imports record + create views need: products,
+ * warehouses, locations, categories, manufacturers. Mirrors
+ * `listInventoryOptions` so the modules/data/queries.ts wrapper stays thin.
+ *
+ * Manufacturers are joined via the import header (one per import). Products,
+ * categories, and locations stay flat across the system.
+ */
+export async function listImportOptions(
+  client: ImportsDbClient = db,
+): Promise<ImportFormOptions> {
+  const [products, warehouses, locations, categories, manufacturers] = await Promise.all([
+    client.flooringProduct.findMany({
+      select: {
+        id: true,
+        name: true,
+        style: true,
+        color: true,
+        categoryId: true,
+        coveragePerUnit: true,
+        category: {
+          select: {
+            slug: true,
+            stockUnit: { select: { name: true } },
+            sendUnit: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { name: "asc" },
+    }),
+    client.flooringWarehouse.findMany({
+      select: { id: true, name: true, number: true },
+      orderBy: { number: "asc" },
+    }),
+    client.flooringLocation.findMany({
+      select: {
+        id: true,
+        warehouseId: true,
+        rafter: true,
+        level: true,
+        section: { select: { number: true } },
+        warehouse: { select: { name: true, number: true } },
+      },
+      orderBy: [{ warehouse: { name: "asc" } }, { rafter: "asc" }, { level: "asc" }],
+    }),
+    client.flooringCategory.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    client.flooringManufacturer.findMany({
+      select: { id: true, companyName: true },
+      orderBy: { companyName: "asc" },
+    }),
+  ])
+
+  return {
+    products: products.map((row) => ({
+      id: row.id,
+      name: row.name,
+      label: buildFlooringProductDisplayName({
+        name: row.name,
+        style: row.style,
+        color: row.color,
+      }),
+      style: row.style,
+      color: row.color,
+      categoryId: row.categoryId,
+      categorySlug: row.category.slug,
+      stockUnit: row.category.stockUnit?.name ?? "",
+      sendUnit: row.category.sendUnit?.name ?? "",
+      coveragePerUnit: toDecimalString(row.coveragePerUnit),
+    })),
+    warehouses,
+    locations: locations.map((row) => ({
+      id: row.id,
+      warehouseId: row.warehouseId,
+      locationCode: formatFullLocationCode({
+        warehouseNumber: row.warehouse.number,
+        sectionNumber: row.section.number,
+        rafter: row.rafter,
+        level: row.level,
+      }),
+      shortCode: formatLocationRafterLevel({ rafter: row.rafter, level: row.level }),
+      sectionNumber: row.section.number,
+      warehouseName: row.warehouse.name,
+    })),
+    categories,
+    manufacturers,
   }
 }

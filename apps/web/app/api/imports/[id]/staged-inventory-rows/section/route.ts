@@ -1,4 +1,4 @@
-import { getImportById, getImportDetailById } from "@builders/db"
+import { getImportById, getImportDetailById, listStagedInventoryByImport } from "@builders/db"
 import { ImportExecutionError, saveStagedInventoryRowsUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -70,8 +70,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       () => saveStagedInventoryRowsUseCase(id, diff),
     )
 
-    const detail = await getImportDetailById(id)
-    const responseBody = { import: detail, tempIdMap: result.tempIdMap }
+    // Compose the parent detail + fresh staged-row contents so the controller
+    // can reconcile in one round-trip. ImportDetail only carries {id} pointers
+    // for staged rows now — the section route is the natural place to re-read
+    // the full row payloads after the diff applies.
+    const [detail, stagedRows] = await Promise.all([
+      getImportDetailById(id),
+      listStagedInventoryByImport(id),
+    ])
+    const responseBody = { import: detail, stagedRows, tempIdMap: result.tempIdMap }
     await finalizeMutationReceipt({
       scope: "imports.staged-inventory-rows.section.replace",
       access,

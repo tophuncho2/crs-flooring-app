@@ -1,31 +1,35 @@
 "use client"
 
-import { useEffect } from "react"
+import { useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import { ImportInventoryRowsSection } from "./sections/import-inventory-rows-section"
+import { ImportStagedInventoryRowsSection } from "./sections/import-staged-inventory-rows-section"
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
-import { useImportInventoryRowsSection } from "@/modules/imports/controllers/use-import-inventory-rows-section"
+import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
-import type { ImportDetail as ImportRow } from "@builders/domain"
-import type { CategoryOption, LocationOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
+import type { CategoryOption, LocationOption, ManufacturerOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,
   entry,
+  initialStagedRows,
   productOptions,
   warehouseOptions,
+  manufacturerOptions,
   locationOptions,
   categoryOptions,
 }: {
   page: RecordDetailClientScaffoldContext
-  entry: ImportRow
+  entry: ImportDetail
+  initialStagedRows: StagedInventoryRow[]
   productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
+  manufacturerOptions: ManufacturerOption[]
   locationOptions: LocationOption[]
   categoryOptions: CategoryOption[]
 }) {
@@ -33,10 +37,16 @@ export function ImportRecordPanel({
     page,
     entry,
   })
-  const inventoryRowsSection = useImportInventoryRowsSection({
+  // The parent ImportDetail no longer carries inline staged rows — only id
+  // pointers. Track the current full row list locally; the staged-rows
+  // controller refreshes it via publishStagedRows after each save.
+  const [stagedRows, setStagedRows] = useState(initialStagedRows)
+  const stagedRowsSection = useImportStagedInventoryRowsSection({
     record: controller.record,
+    stagedRows,
     locationOptions,
     publishRecord: controller.publishRecord,
+    publishStagedRows: setStagedRows,
   })
 
   return (
@@ -66,9 +76,9 @@ export function ImportRecordPanel({
               showHeader={false}
             >
               <ImportPrimaryFieldsSection
-                entry={controller.record}
                 draft={controller.primarySection.localValue}
                 warehouseOptions={warehouseOptions}
+                manufacturerOptions={manufacturerOptions}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({
@@ -76,7 +86,7 @@ export function ImportRecordPanel({
                     [field]: value,
                   }))
                   if (field === "warehouseId") {
-                    inventoryRowsSection.handleWarehouseChange(value)
+                    stagedRowsSection.handleWarehouseChange(value)
                   }
                 }}
               />
@@ -84,20 +94,20 @@ export function ImportRecordPanel({
           ),
         },
         {
-          key: "inventory-rows",
+          key: "staged-inventory-rows",
           type: "item",
           order: 10,
-          dirtyLabel: "inventory rows",
-          controller: inventoryRowsSection,
+          dirtyLabel: "staged inventory rows",
+          controller: stagedRowsSection,
           render: () => (
-            <ImportInventoryRowsSection
+            <ImportStagedInventoryRowsSection
               subHeader={{
-                isDirty: inventoryRowsSection.isDirty,
-                isSaving: inventoryRowsSection.isSaving,
-                hasConflict: inventoryRowsSection.hasConflict,
-                error: inventoryRowsSection.error,
-                onSave: () => void inventoryRowsSection.save(),
-                onDiscard: () => inventoryRowsSection.discard(),
+                isDirty: stagedRowsSection.isDirty,
+                isSaving: stagedRowsSection.isSaving,
+                hasConflict: stagedRowsSection.hasConflict,
+                error: stagedRowsSection.error,
+                onSave: () => void stagedRowsSection.save(),
+                onDiscard: () => stagedRowsSection.discard(),
                 saveLabel: "Save Rows",
                 savingLabel: "Saving Rows...",
                 actions: [
@@ -105,23 +115,23 @@ export function ImportRecordPanel({
                     key: "add-row",
                     kind: "add-row",
                     label: "Add Row",
-                    onClick: inventoryRowsSection.addRow,
-                    disabled: inventoryRowsSection.isSaving,
+                    onClick: stagedRowsSection.addRow,
+                    disabled: stagedRowsSection.isSaving,
                   },
                 ],
               }}
-              rows={inventoryRowsSection.localValue}
+              drafts={stagedRowsSection.localValue}
+              serverRows={stagedRows}
               warehouseId={controller.record.warehouseId}
               productOptions={productOptions}
               warehouseOptions={warehouseOptions}
               locationOptions={locationOptions}
               categoryOptions={categoryOptions}
-              noticeMessage={inventoryRowsSection.noticeMessage}
-              noticeError={inventoryRowsSection.noticeError}
-              onRowFieldChange={inventoryRowsSection.setRowField}
-              onRowImportStatusChange={inventoryRowsSection.setRowImportStatus}
-              onRowCategoryFilterChange={inventoryRowsSection.setRowCategoryFilter}
-              onRemoveRow={inventoryRowsSection.removeRow}
+              noticeMessage={stagedRowsSection.noticeMessage}
+              noticeError={stagedRowsSection.noticeError}
+              onRowFieldChange={stagedRowsSection.setRowField}
+              onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
+              onRemoveRow={stagedRowsSection.removeRow}
             />
           ),
         },

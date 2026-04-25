@@ -51,6 +51,11 @@ export function InventoryTable({
 }) {
   function renderRow(row: InventoryRow) {
     const cells: Record<string, (columnIndex: number) => ReactNode> = {
+      inventoryNumber: (columnIndex) => (
+        <DashboardListRowCell key="inventoryNumber" columnIndex={columnIndex} className="font-medium">
+          {row.inventoryNumber}
+        </DashboardListRowCell>
+      ),
       importNumber: (columnIndex) => (
         <DashboardListRowCell key="importNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
           {formatInventoryImportNumber(row.importNumber)}
@@ -66,29 +71,24 @@ export function InventoryTable({
           {row.itemNumber}
         </DashboardListRowCell>
       ),
-      stockCount: (columnIndex) => (
-        <DashboardListRowCell key="stockCount" columnIndex={columnIndex}>
-          {formatInventoryQuantity(row.stockCount, row.stockUnit)}
+      startingStock: (columnIndex) => (
+        <DashboardListRowCell key="startingStock" columnIndex={columnIndex}>
+          {formatInventoryQuantity(row.startingStock, row.stockUnitAbbrev)}
         </DashboardListRowCell>
       ),
-      totalCutBalance: (columnIndex) => (
-        <DashboardListRowCell key="totalCutBalance" columnIndex={columnIndex}>
-          {formatInventoryQuantity(row.totalCutBalance, row.stockUnit)}
+      totalCutSum: (columnIndex) => (
+        <DashboardListRowCell key="totalCutSum" columnIndex={columnIndex}>
+          {formatInventoryQuantity(row.totalCutSum, row.stockUnitAbbrev)}
         </DashboardListRowCell>
       ),
-      awaitingCutBalance: (columnIndex) => (
-        <DashboardListRowCell key="awaitingCutBalance" columnIndex={columnIndex}>
-          {formatInventoryQuantity(row.awaitingCutBalance, row.stockUnit)}
+      stockBalance: (columnIndex) => (
+        <DashboardListRowCell key="stockBalance" columnIndex={columnIndex} className="font-semibold">
+          {formatInventoryQuantity(row.stockBalance, row.stockUnitAbbrev)}
         </DashboardListRowCell>
       ),
-      availableBalance: (columnIndex) => (
-        <DashboardListRowCell key="availableBalance" columnIndex={columnIndex} className="font-semibold">
-          {formatInventoryQuantity(row.availableBalance, row.stockUnit)}
-        </DashboardListRowCell>
-      ),
-      uncutBalance: (columnIndex) => (
-        <DashboardListRowCell key="uncutBalance" columnIndex={columnIndex} className="font-semibold">
-          {formatInventoryQuantity(row.uncutBalance, row.stockUnit)}
+      coverageBalance: (columnIndex) => (
+        <DashboardListRowCell key="coverageBalance" columnIndex={columnIndex}>
+          {row.coverageBalance ? formatInventoryQuantity(row.coverageBalance, row.itemCoverageUnitAbbrev) : "-"}
         </DashboardListRowCell>
       ),
       section: (columnIndex) => (
