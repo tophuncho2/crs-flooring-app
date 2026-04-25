@@ -53,6 +53,27 @@ The outbox event's state mutation and the staged-row flip share a transaction, s
 
 Inventory rows are immutable historical records. Once materialized, the row carries the unit names, costs, and coverage **as they were at the time of import**. Future product changes can't retroactively alter inventory.
 
+## The worker's exact materialize map (user-confirmed)
+
+**Copied verbatim from the staged row:**
+`importEntryId`, `productId`, `itemNumber`, `dyeLot`, `warehouseId`, `locationId`, `startingStock`, `cost`, `freight`, `notes`.
+
+**Derived/looked up at materialize time and snapshotted onto the inventory row:**
+- `costPerUnit`, `freightPerUnit` — via `computeCostPerUnit` / `computeFreightPerUnit` (domain).
+- `categorySlug` — from `product.category`.
+- All six unit fields — `stockUnitName/Abbrev`, `itemCoverageUnitName/Abbrev`, `sendUnitName/Abbrev` — from `product.category`.
+- **`coveragePerUnit` — from the product itself, but only the 4 special categories accept and require it.** Other categories get null. This is the load-bearing snapshot — coverage balance is computed from it forever after.
+- `fifoReceivedAt` — single shared timestamp for the batch.
+
+**Editable on the inventory row post-materialization (the only six fields):**
+`itemNumber`, `dyeLot`, `warehouseId`, `locationId`, `isArchived`, `notes`.
+
+**Computed at read time on every inventory row:**
+- `stockBalance = max(startingStock - totalCutSum, 0)` — `computeInventoryBalance`.
+- `coverageBalance = stockBalance × coveragePerUnit` — `computeInventoryCoverage`, null for non-coverage categories.
+
+`totalCutSum` is produced by cut logs (out of scope here, but the formula is shared).
+
 ## What was removed
 
 `FlooringImportEntry.transportType` and `.status` were dropped. The "what state is this import in?" question is now answered by counting staged rows by status (`getImportLinkState`), not by a field on the import. `createInventoryUseCase` and `saveImportInventoryRowsUseCase` were both deleted — there is no user-facing inventory-create path. The inventory error union got pruned to 6 codes that match what the surviving use cases actually throw.
