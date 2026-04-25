@@ -27,6 +27,7 @@
     "db:seed": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma db seed",
     "db:studio": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma studio",
     "guard:prisma": "node scripts/guard-prisma.js",
+    "postinstall": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma generate",
     "build": "npm run db:generate && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:backfill:product-names": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-product-names.js",
