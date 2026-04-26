@@ -1,81 +1,45 @@
 # Alteration Sweep — Schema Changes Checklist
 
-Split in two sections. **Migrating now** (top) lists the deltas that ship in the `imports_staged_inventory_alteration` migration. **Deferred** (bottom) lists changes intentionally held back for a later sweep. "Before" shapes live in [mocks.md](./mocks.md) (Migrating-now section shows the post-migration state; Deferred section shows the pre-alteration state).
-
 ---
 
-# Migrating now
+# Next alteration — cut logs finalize / void worker model
 
-## `FlooringImportEntry`
-
-- [x] Add `percent` column (Decimal(5,2) default 0 — worker updates atomically)
-- [x] Drop `status` column
-- [x] Drop `transportType` column
-- [x] Add nullable `manufacturerId` FK (optional on save) + `manufacturer FlooringManufacturer?` relation, `onDelete: SetNull`
-- [x] Change `warehouseId` from nullable to required `String` + `onDelete: Restrict`
-- [x] Add `stagedInventoryRows FlooringImportStagedInventoryRow[]` inverse relation
-- [x] Add `@@index([manufacturerId])`
-- [ ] No `cost` column on this model (per spec — excluded)
-
-## `FlooringInventory`
-
-- [x] Rename `stockCount` → `startingStock`
-- [x] Add `totalCutSum` Decimal(12,2) default 0 (maintained in cut-log transactions — deferred sweep wires that)
-- [x] Add `costPerUnit` Decimal(10,2)? column
-- [x] Add `freightPerUnit` Decimal(10,2)? column
-- [x] Add `coveragePerUnit` Decimal(10,2)? column (worker copies from linked product's `coveragePerUnit` at import time when the product's category requires it — per the four-slug rule)
-- [x] Add `isArchived` Boolean default false + `@@index([isArchived])`
-- [x] Drop `isImported` boolean
-- [x] Change `warehouseId` from nullable to required `String` + `onDelete: Restrict`
-- [x] Keep `fifoReceivedAt` as-is (business-side "received date")
-- [ ] No relation to `FlooringImportStagedInventoryRow` — staged → real is a one-way worker handoff
-
-## `FlooringImportStagedInventoryRow` — NEW
-
-- [x] Create the model with:
-  - [x] `id` String @id @default(uuid())
-  - [x] `importEntryId` String (required) + `importEntry` relation with `onDelete: Cascade`
-  - [x] `productId` String + `product` relation with `onDelete: Restrict`
-  - [x] `itemNumber` String
-  - [x] `dyeLot` String?
-  - [x] `warehouseId` String (required) + `warehouse` relation with `onDelete: Restrict`
-  - [x] `locationId` String? + `location` relation with `onDelete: SetNull`
-  - [x] `startingStock` Decimal @db.Decimal(12, 2)
-  - [x] `isImported` Boolean default false (worker flips this)
-  - [x] `cost` Decimal? @db.Decimal(10, 2)
-  - [x] `freight` Decimal? @db.Decimal(10, 2)
-  - [x] `notes` String?
-  - [x] `createdAt` / `updatedAt`
-  - [x] Indexes: `importEntryId`, `productId`, `warehouseId`, `locationId`, composite `(importEntryId, isImported)`
-  - [x] `@@map("flooring_import_staged_inventory_row")`
-- [ ] No `costPerUnit` / `freightPerUnit` (worker computes those at import time when writing the real inventory row)
-- [ ] No `fifoReceivedAt` (staged rows have no FIFO position)
-- [ ] No cut-log relation
-
-## `FlooringWarehouse`
-
-- [x] Add `stagedInventoryRows FlooringImportStagedInventoryRow[]` inverse relation
-
-## `FlooringLocation`
-
-- [x] Add `stagedInventoryRows FlooringImportStagedInventoryRow[]` inverse relation
-
-## `FlooringManufacturer`
-
-- [x] Add `imports FlooringImportEntry[]` inverse relation (required back-relation now that `FlooringImportEntry.manufacturerId` exists)
-
----
-
-# Deferred
-
-Captured here for continuity; executed in a follow-on migration, not this one.
+Aligns `FlooringCutLog` with the staged-inventory worker pattern: `isFinal`
+becomes the durable business fact ("has this been finalized?"), `status`
+becomes the worker-pipeline tracker ("where is this in the job pipeline?").
+See `docs/cut-logs-finalize-and-void-intent.md` for the full intent.
 
 ## `FlooringCutLog`
 
-- [x] Add `void` boolean column
-- [x] Add `coverageCut` column
+- [ ] Add `isFinal Boolean @default(false)` — durable business fact,
+  independent of worker lifecycle
+- [ ] Repurpose `FlooringCutLogStatus` enum to drive the worker job
+  lifecycle (mirror the shape of `FlooringStagedRowStatus`)
+  - [ ] Decide exact value set (DRAFT / QUEUED / FINALIZED-equivalent + how
+    void interacts) — open question in intent doc
+  - [ ] Migrate existing rows: any current `PENDING` → new "draft"
+    equivalent; any current `FINAL` → new "finalized" equivalent +
+    `isFinal = true`; any current `VOID` → preserve via `void` boolean
+- [ ] Keep `void Boolean` as-is (existing void marker — voids erase the
+  cut/coverageCut/cost fields, this stays the marker bit)
+- [ ] Re-evaluate existing status-bearing indexes after the enum repurpose:
+  - [ ] `@@index([workOrderItemId, status])`
+  - [ ] `@@index([inventoryId, status])`
+- [ ] Add `@@index([inventoryId, isFinal])` to support pending-vs-finalized
+  queries scoped to an inventory
+- [ ] Add a selection-pattern index that mirrors staged-inv's
+  `@@index([status, isImported])` — likely `@@index([status, isFinal])`
 
-## `FlooringWorkOrderItem`
+## `FlooringInventory`
 
-- [x] Add `assignedCost` column
-- [x] Add `assignedQuantity` column
+- [ ] No schema change — `totalCutSum` already exists; the alteration only
+  changes *who writes it* (now exclusively the cut-log workers, under the
+  per-inventory row lock described in the intent doc)
+
+## Open / TBD before migration
+
+- [ ] Final `FlooringCutLogStatus` value set (carry forward from intent doc
+  open question)
+- [ ] Whether voiding a finalized cut log routes through the worker
+  (single-writer rule on `totalCutSum`) or runs inline — affects whether
+  `status` needs a void-in-flight value
