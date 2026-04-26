@@ -24,6 +24,7 @@ import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import {
   CheckboxCell,
+  DropdownCell,
   RowActionButton,
   SelectCell,
   TextCell,
@@ -41,6 +42,7 @@ type CutLogFixture = GridRow & {
   cutNumber: number
   cutAmount: string
   workOrderId: string | null
+  materialItemId: string | null
   cutBy: string
   notes: string
   status: CutLogStatus
@@ -52,6 +54,25 @@ const WORK_ORDERS = [
   { value: "wo-1003", label: "WO-1003 · Patel hallway" },
   { value: "wo-1004", label: "WO-1004 · Brookhurst office" },
 ]
+
+// Mock material-item allocations — each work order has 1-2 line items the cut
+// can be applied against. Real wiring will fetch these scoped to the selected
+// work order's allocations.
+const MATERIAL_ITEMS_BY_WORK_ORDER: Record<string, Array<{ id: string; label: string }>> = {
+  "wo-1001": [
+    { id: "mi-1001-a", label: "Living room · 28.00 bx" },
+    { id: "mi-1001-b", label: "Hallway · 12.00 bx" },
+  ],
+  "wo-1002": [{ id: "mi-1002-a", label: "Master bath floor · 18.00 bx" }],
+  "wo-1003": [
+    { id: "mi-1003-a", label: "Hall main · 22.00 bx" },
+    { id: "mi-1003-b", label: "Hall closet · 4.00 bx" },
+  ],
+  "wo-1004": [
+    { id: "mi-1004-a", label: "Office bay · 40.00 bx" },
+    { id: "mi-1004-b", label: "Office closet · 6.00 bx" },
+  ],
+}
 
 const CUTTERS = [
   { value: "alex", label: "Alex (warehouse)" },
@@ -65,6 +86,7 @@ const INITIAL_CUT_LOGS: CutLogFixture[] = [
     cutNumber: 1,
     cutAmount: "12.50",
     workOrderId: "wo-1001",
+    materialItemId: "mi-1001-a",
     cutBy: "alex",
     notes: "First cut from this lot",
     status: "FINALIZED",
@@ -74,6 +96,7 @@ const INITIAL_CUT_LOGS: CutLogFixture[] = [
     cutNumber: 2,
     cutAmount: "8.00",
     workOrderId: "wo-1002",
+    materialItemId: "mi-1002-a",
     cutBy: "jordan",
     notes: "",
     status: "FINALIZED",
@@ -83,6 +106,7 @@ const INITIAL_CUT_LOGS: CutLogFixture[] = [
     cutNumber: 3,
     cutAmount: "5.25",
     workOrderId: "wo-1001",
+    materialItemId: "mi-1001-b",
     cutBy: "sam",
     notes: "Cut undersize — voided per Mercer change order",
     status: "VOIDED",
@@ -92,6 +116,7 @@ const INITIAL_CUT_LOGS: CutLogFixture[] = [
     cutNumber: 4,
     cutAmount: "15.00",
     workOrderId: "wo-1003",
+    materialItemId: "mi-1003-a",
     cutBy: "jordan",
     notes: "",
     status: "DRAFT",
@@ -101,6 +126,7 @@ const INITIAL_CUT_LOGS: CutLogFixture[] = [
     cutNumber: 5,
     cutAmount: "",
     workOrderId: null,
+    materialItemId: null,
     cutBy: "",
     notes: "",
     status: "DRAFT",
@@ -115,6 +141,7 @@ const CUT_LOGS_LAYOUT: GridLayout<CutLogFixture> = {
     { key: "cutNumber", label: "Cut #", kind: "number", minWidth: 80, grow: 0, align: "end" },
     { key: "cutAmount", label: "Cut Amount", kind: "quantity", minWidth: 140, grow: 0, align: "center" },
     { key: "workOrder", label: "Work Order", minWidth: 240, grow: 1 },
+    { key: "materialItem", label: "Material Item", minWidth: 220, grow: 1 },
     { key: "cutBy", label: "Cut By", minWidth: 180, grow: 0 },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
@@ -144,7 +171,13 @@ function isRowEditable(row: CutLogFixture) {
 }
 
 function isEligibleForFinalize(row: CutLogFixture) {
-  return row.status === "DRAFT" && row.cutAmount !== "" && row.workOrderId !== null && row.cutBy !== ""
+  return (
+    row.status === "DRAFT" &&
+    row.cutAmount !== "" &&
+    row.workOrderId !== null &&
+    row.materialItemId !== null &&
+    row.cutBy !== ""
+  )
 }
 
 function nextCutNumber(rows: CutLogFixture[]) {
@@ -203,6 +236,7 @@ export default function InventoryRecordCutLogsSmokePage() {
         cutNumber: nextCutNumber(prev),
         cutAmount: "",
         workOrderId: null,
+        materialItemId: null,
         cutBy: "",
         notes: "",
         status: "DRAFT",
@@ -346,7 +380,7 @@ export default function InventoryRecordCutLogsSmokePage() {
           error={
             noticeError ??
             (selectedIds.size > 0 && eligibleSelectedIds.length === 0
-              ? "None of the selected rows are eligible to finalize. Drafts must have a cut amount, work order, and cutter assigned."
+              ? "None of the selected rows are eligible to finalize. Drafts must have a cut amount, work order, material item, and cutter assigned."
               : undefined)
           }
         />
@@ -375,12 +409,32 @@ export default function InventoryRecordCutLogsSmokePage() {
                   <SelectCell
                     editable={editable}
                     value={row.workOrderId ?? ""}
-                    onChange={(next) => updateRow(row.id, { workOrderId: next || null })}
+                    onChange={(next) =>
+                      updateRow(row.id, {
+                        workOrderId: next || null,
+                        // Clear material item when work order changes — material
+                        // items are scoped to a single work order's allocations.
+                        materialItemId: null,
+                      })
+                    }
                     options={WORK_ORDERS}
                     placeholder="Select work order"
                     ariaLabel={`Cut #${row.cutNumber} work order`}
                   />
                 )
+              case "materialItem": {
+                const items = row.workOrderId ? MATERIAL_ITEMS_BY_WORK_ORDER[row.workOrderId] ?? [] : []
+                return (
+                  <DropdownCell
+                    editable={editable && row.workOrderId !== null}
+                    value={row.materialItemId}
+                    onChange={(next) => updateRow(row.id, { materialItemId: next })}
+                    options={items}
+                    placeholder={row.workOrderId ? "Select material item" : "Select work order first"}
+                    ariaLabel={`Cut #${row.cutNumber} material item`}
+                  />
+                )
+              }
               case "cutBy":
                 return (
                   <SelectCell
