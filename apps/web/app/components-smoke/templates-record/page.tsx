@@ -61,20 +61,30 @@ const WAREHOUSES = [
   { value: "wh-2", label: "Holcomb" },
 ]
 
-const PRODUCT_OPTIONS = [
-  { id: "prd-1", label: "Vinyl Plank — XL Cyrus Grayton" },
-  { id: "prd-2", label: "Vinyl Plank — Coastal Oak" },
-  { id: "prd-3", label: "LVT Tile — Slate Grey" },
-  { id: "prd-4", label: "Carpet — Berber Beige" },
-  { id: "prd-5", label: "Hardwood — White Oak Smoked" },
-  { id: "prd-6", label: "Carpet Pad — 8lb rebond" },
-  { id: "prd-7", label: "Underlayment — 3mm cork" },
-  { id: "prd-8", label: "Trim — White 1/4 round" },
+const CATEGORIES = [
+  { id: "cat-vinyl", label: "Vinyl" },
+  { id: "cat-tile", label: "Tile / LVT" },
+  { id: "cat-carpet", label: "Carpet" },
+  { id: "cat-hardwood", label: "Hardwood" },
+  { id: "cat-underlayment", label: "Underlayment / pad" },
+  { id: "cat-trim", label: "Trim / accessory" },
+]
+
+const PRODUCT_OPTIONS: ReadonlyArray<{ id: string; label: string; categoryId: string }> = [
+  { id: "prd-1", label: "Vinyl Plank — XL Cyrus Grayton", categoryId: "cat-vinyl" },
+  { id: "prd-2", label: "Vinyl Plank — Coastal Oak", categoryId: "cat-vinyl" },
+  { id: "prd-3", label: "LVT Tile — Slate Grey", categoryId: "cat-tile" },
+  { id: "prd-4", label: "Carpet — Berber Beige", categoryId: "cat-carpet" },
+  { id: "prd-5", label: "Hardwood — White Oak Smoked", categoryId: "cat-hardwood" },
+  { id: "prd-6", label: "Carpet Pad — 8lb rebond", categoryId: "cat-underlayment" },
+  { id: "prd-7", label: "Underlayment — 3mm cork", categoryId: "cat-underlayment" },
+  { id: "prd-8", label: "Trim — White 1/4 round", categoryId: "cat-trim" },
 ]
 
 // ---------- Material item fixture ------------------------------------------
 
 type MaterialItemFixture = GridRow & {
+  categoryFilterId: string | null
   productId: string
   quantity: string
   unitPrice: string
@@ -84,6 +94,7 @@ type MaterialItemFixture = GridRow & {
 const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
   {
     id: "mi-1",
+    categoryFilterId: null,
     productId: "prd-1",
     quantity: "28.00",
     unitPrice: "55.00",
@@ -91,6 +102,7 @@ const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
   },
   {
     id: "mi-2",
+    categoryFilterId: "cat-underlayment",
     productId: "prd-7",
     quantity: "28.00",
     unitPrice: "1.20",
@@ -98,6 +110,7 @@ const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
   },
   {
     id: "mi-3",
+    categoryFilterId: "cat-carpet",
     productId: "prd-4",
     quantity: "32.00",
     unitPrice: "11.00",
@@ -105,6 +118,7 @@ const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
   },
   {
     id: "mi-4",
+    categoryFilterId: "cat-underlayment",
     productId: "prd-6",
     quantity: "32.00",
     unitPrice: "0.85",
@@ -112,6 +126,7 @@ const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
   },
   {
     id: "mi-5",
+    categoryFilterId: "cat-trim",
     productId: "prd-8",
     quantity: "120.00",
     unitPrice: "0.65",
@@ -119,6 +134,7 @@ const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
   },
   {
     id: "mi-6",
+    categoryFilterId: null,
     productId: "",
     quantity: "",
     unitPrice: "",
@@ -130,6 +146,7 @@ const INITIAL_MATERIAL_ITEMS: MaterialItemFixture[] = [
 
 const MATERIAL_ITEMS_LAYOUT: GridLayout<MaterialItemFixture> = {
   dataColumns: [
+    { key: "categoryFilter", label: "Category", minWidth: 160, grow: 0 },
     { key: "product", label: "Product", minWidth: 260, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
     { key: "unitPrice", label: "Unit Price", kind: "currency", minWidth: 120, grow: 0, align: "end" },
@@ -220,6 +237,7 @@ export default function TemplatesRecordSmokePage() {
       ...prev,
       {
         id: `mi-${Date.now()}`,
+        categoryFilterId: null,
         productId: "",
         quantity: "",
         unitPrice: "",
@@ -469,17 +487,39 @@ export default function TemplatesRecordSmokePage() {
           empty={<GridEmpty>No material items yet.</GridEmpty>}
           renderCell={(column, row) => {
             switch (column.key) {
-              case "product":
+              case "categoryFilter":
+                return (
+                  <DropdownCell
+                    editable={!isItemsSaving}
+                    value={row.categoryFilterId}
+                    onChange={(next) => updateItem(row.id, { categoryFilterId: next })}
+                    options={CATEGORIES}
+                    allowClear
+                    placeholder="All categories"
+                    ariaLabel="Material item category filter"
+                  />
+                )
+              case "product": {
+                // Filter products by the row's category. Always include the
+                // currently-selected product even if it falls outside the filter
+                // (mirrors the imports staged-rows category→product cascade).
+                const visibleProducts = row.categoryFilterId
+                  ? PRODUCT_OPTIONS.filter(
+                      (product) =>
+                        product.categoryId === row.categoryFilterId || product.id === row.productId,
+                    )
+                  : PRODUCT_OPTIONS
                 return (
                   <DropdownCell
                     editable={!isItemsSaving}
                     value={row.productId || null}
                     onChange={(next) => updateItem(row.id, { productId: next ?? "" })}
-                    options={PRODUCT_OPTIONS}
+                    options={visibleProducts.map(({ id, label }) => ({ id, label }))}
                     placeholder="Select product"
                     ariaLabel="Material item product"
                   />
                 )
+              }
               case "quantity":
                 return (
                   <NumberCell
