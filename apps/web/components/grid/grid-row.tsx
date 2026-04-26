@@ -42,6 +42,14 @@ export type GridRowProps<TRow extends GridRow> = {
    * leading or trailing controls — without it those cells render empty.
    */
   renderControl?: (control: GridControlColumn, row: TRow) => ReactNode
+  /**
+   * Optional row-level click handler. When set, the row renders as an
+   * interactive element (`role="button"`, keyboard-activatable via Enter /
+   * Space, hover + focus styling).
+   */
+  onClick?: () => void
+  /** Aria-label for the row when `onClick` is set. */
+  ariaLabel?: string
   className?: string
 }
 
@@ -52,16 +60,36 @@ export function GridBodyRow<TRow extends GridRow>({
   templateColumns,
   renderCell,
   renderControl,
+  onClick,
+  ariaLabel,
   className,
 }: GridRowProps<TRow>) {
   const tone = row.tone ?? "default"
+  const interactive = Boolean(onClick)
 
   return (
     <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? ariaLabel : undefined}
+      onClick={onClick}
+      onKeyDown={
+        interactive
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault()
+                onClick?.()
+              }
+            }
+          : undefined
+      }
       style={{ gridTemplateColumns: templateColumns }}
       className={joinClassNames(
         "grid border-b border-[var(--panel-border)]",
         ROW_TONE_CLASS_NAME[tone],
+        interactive
+          ? "cursor-pointer transition hover:bg-sky-500/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40"
+          : undefined,
         className,
       )}
     >

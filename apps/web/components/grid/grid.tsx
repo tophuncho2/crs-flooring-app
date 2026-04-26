@@ -34,6 +34,14 @@ export type GridProps<TRow extends GridRow> = {
   renderCell?: (column: GridColumn<TRow>, row: TRow) => ReactNode
   /** Renderer for control-column cells (selection checkbox, expand toggle, etc.). */
   renderControl?: (control: GridControlColumn, row: TRow) => ReactNode
+  /**
+   * Optional per-row click handler. When set, each default-rendered row
+   * becomes interactive (`role="button"`, Enter / Space keyboard activation,
+   * hover + focus styling). Ignored when `renderRow` is provided.
+   */
+  onRowClick?: (row: TRow) => void
+  /** Aria-label provider for interactive rows; recommended when `onRowClick` is set. */
+  getRowAriaLabel?: (row: TRow) => string
   className?: string
 }
 
@@ -58,6 +66,8 @@ export function Grid<TRow extends GridRow>({
   renderRow,
   renderCell,
   renderControl,
+  onRowClick,
+  getRowAriaLabel,
   className,
 }: GridProps<TRow>) {
   const resolvedScroll = resolveScrollContract(scroll)
@@ -92,6 +102,8 @@ export function Grid<TRow extends GridRow>({
                     templateColumns={templateColumns}
                     renderCell={renderCell}
                     renderControl={renderControl}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    ariaLabel={getRowAriaLabel?.(row)}
                   />
                 ),
               )}

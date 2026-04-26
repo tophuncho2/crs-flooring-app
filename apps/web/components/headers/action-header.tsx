@@ -25,6 +25,12 @@ export type ActionHeaderProps = {
   status?: HeaderStatus
   actions?: ReadonlyArray<HeaderAction>
   /**
+   * Optional positive notice surface (info / success). Pass a string for the
+   * default styled message block, or a fully-rendered ReactNode for custom
+   * presentation. Renders above `error` so both can coexist.
+   */
+  message?: ReactNode
+  /**
    * Optional error surface. Pass a string for the default styled error block,
    * or pass a fully-rendered ReactNode for custom presentation.
    */
@@ -38,7 +44,7 @@ export type ActionHeaderProps = {
  * decoupled from the engine's section tokens and without a baked-in surface
  * wrapper (consumer composes the surrounding panel).
  */
-export function ActionHeader({ title, summary, status, actions, error, className }: ActionHeaderProps) {
+export function ActionHeader({ title, summary, status, actions, message, error, className }: ActionHeaderProps) {
   return (
     <div
       className={joinClassNames(
@@ -60,6 +66,15 @@ export function ActionHeader({ title, summary, status, actions, error, className
         ) : null}
         {summary ? (
           <div className="text-sm text-[var(--foreground)]/75">{summary}</div>
+        ) : null}
+        {message ? (
+          typeof message === "string" ? (
+            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+              {message}
+            </div>
+          ) : (
+            message
+          )
         ) : null}
         {error ? (
           typeof error === "string" ? (
