@@ -101,25 +101,6 @@ export function ImportRecordPanel({
           controller: stagedRowsSection,
           render: () => (
             <ImportStagedInventoryRowsSection
-              subHeader={{
-                isDirty: stagedRowsSection.isDirty,
-                isSaving: stagedRowsSection.isSaving,
-                hasConflict: stagedRowsSection.hasConflict,
-                error: stagedRowsSection.error,
-                onSave: () => void stagedRowsSection.save(),
-                onDiscard: () => stagedRowsSection.discard(),
-                saveLabel: "Save Rows",
-                savingLabel: "Saving Rows...",
-                actions: [
-                  {
-                    key: "add-row",
-                    kind: "add-row",
-                    label: "Add Row",
-                    onClick: stagedRowsSection.addRow,
-                    disabled: stagedRowsSection.isSaving,
-                  },
-                ],
-              }}
               drafts={stagedRowsSection.localValue}
               serverRows={stagedRows}
               warehouseId={controller.record.warehouseId}
@@ -127,11 +108,24 @@ export function ImportRecordPanel({
               warehouseOptions={warehouseOptions}
               locationOptions={locationOptions}
               categoryOptions={categoryOptions}
+              isDirty={stagedRowsSection.isDirty}
+              isSaving={stagedRowsSection.isSaving}
+              hasConflict={stagedRowsSection.hasConflict}
+              sectionError={stagedRowsSection.error?.message ?? null}
               noticeMessage={stagedRowsSection.noticeMessage}
               noticeError={stagedRowsSection.noticeError}
+              selectedIds={stagedRowsSection.selectedIds}
+              eligibleSelectedIds={stagedRowsSection.eligibleSelectedIds}
+              isMarking={stagedRowsSection.isMarking}
+              markError={stagedRowsSection.markError}
+              onSave={() => void stagedRowsSection.save()}
+              onDiscard={() => stagedRowsSection.discard()}
+              onAddRow={stagedRowsSection.addRow}
               onRowFieldChange={stagedRowsSection.setRowField}
               onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
               onRemoveRow={stagedRowsSection.removeRow}
+              onToggleSelection={stagedRowsSection.toggleSelection}
+              onMarkForImport={() => void stagedRowsSection.markForImport()}
             />
           ),
         },

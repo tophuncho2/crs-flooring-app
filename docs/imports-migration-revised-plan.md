@@ -105,16 +105,17 @@ Drop all `from "@/modules/shared/engines/record-view"` imports from this file. S
 
 File: [`import-staged-inventory-rows-section.ts`](apps/web/modules/imports/components/record/sections/import-staged-inventory-rows-section.tsx) + [`use-import-staged-inventory-rows-section.ts`](apps/web/modules/imports/controllers/use-import-staged-inventory-rows-section.ts).
 
-### 4a. Pre-flight (do at the start of Phase 4, not Phase 1)
+### 4a. Pre-flight — COMPLETE
 
-One pass through the worker pipeline to confirm `flooring.imports.materialize` flows end-to-end. If any link is missing, the controller wiring still ships but the mutation route returns 501 / placeholder until the worker lands. Don't extend scope into the worker domain inside this sweep.
+Audit ran 2026-04-25; full report at [docs/imports-migration-phase-4a-audit.md](imports-migration-phase-4a-audit.md). Every pipeline link is shipped:
 
-Verify each link exists; flag missing ones:
-- **Producer use case:** `markStagedRowsForImportUseCase` (or similar) — flips DRAFT → QUEUED + writes `flooring.imports.materialize` outbox event with deterministic idempotency key in one transaction.
-- **Consumer use case:** `materializeImportedStagedRowsUseCase` — copies 10 verbatim fields + 6 derived fields per the snapshot rule (project memory).
-- **Topic registry:** `flooring.imports.materialize` registered in the relay/worker topic registry (otherwise events go to EXHAUSTED).
-- **Worker handler:** the bridge from relay event → consumer use case.
-- **Outbox infra:** table model + dispatcher loop exist.
+- **Producer:** `markStagedRowsForImportUseCase` at [packages/application/src/flooring/imports/staged-inventory-rows/mark-staged-rows-for-import.ts](../packages/application/src/flooring/imports/staged-inventory-rows/mark-staged-rows-for-import.ts) — atomic flip + outbox write, idempotency key `import-materialize:{id}:{sortedRowIds}`.
+- **Consumer:** `materializeImportedStagedRowsUseCase` at [packages/application/src/flooring/imports/staged-inventory-rows/materialize-imported-rows.ts](../packages/application/src/flooring/imports/staged-inventory-rows/materialize-imported-rows.ts) — full verbatim + derived snapshot copy.
+- **Topic registry:** [apps/relay/src/dispatch/dispatchers.ts](../apps/relay/src/dispatch/dispatchers.ts) — `flooring.imports.materialize` registered.
+- **Worker handler:** [apps/worker/src/processors/materialize-import-batch.ts](../apps/worker/src/processors/materialize-import-batch.ts) — `StagedInventoryExecutionError` → `UnrecoverableError`.
+- **Outbox infra:** [packages/db/src/queues/outbox-repository.ts](../packages/db/src/queues/outbox-repository.ts) — full lifecycle (`PENDING / PROCESSING / DISPATCHED / EXHAUSTED`).
+- **API route:** **already exists** at `POST /api/imports/[id]/staged-inventory-rows/mark-for-import` — full mutation lifecycle, returns 202 with `{ batch: { markedRowIds, outboxEventId, wasDuplicate } }`. **No new route needed in this sweep.**
+- **Client helper:** `markStagedRowsForImportRequest(importId, stagedRowIds)` already exported from [apps/web/modules/imports/data/mutations.ts](../apps/web/modules/imports/data/mutations.ts).
 
 ### 4b. Presentation (UI swap)
 
@@ -152,20 +153,14 @@ Extend `useImportStagedInventoryRowsSection` with:
 - `selectedIds: Set<string>`
 - `toggleSelection(id: string): void`
 - `clearSelection(): void`
-- `eligibleSelectedIds: string[]` — derived: `row.status === 'DRAFT' && row.productId && row.startingStock > 0`
-- `markForImport(): Promise<void>` — calls the new mutation; on success, clears selection and refetches.
+- `eligibleSelectedIds: string[]` — derived: `row.status === 'DRAFT' && row.productId && row.startingStock`
+- `markForImport(): Promise<void>` — calls `markStagedRowsForImportRequest` from `data/mutations.ts`. On success, clears selection and asks the parent to refetch staged rows + record (so QUEUED status flows back).
 
-Add to [`apps/web/modules/imports/data/mutations.ts`](apps/web/modules/imports/data/mutations.ts):
-- `queueImportStagedRowsRequest(importId, ids, expectedUpdatedAt)` — uses existing `withMutationMeta` / `requestJson` from `engines/common/transport`.
+The mutation helper already exists; no new export. Phase 4d is dropped.
 
-### 4d. Mutation route
+### 4d. ~~Mutation route~~ — already shipped (skipped)
 
-`apps/web/app/api/imports/[id]/staged-inventory-rows/queue/route.ts` POST handler:
-- Validates ids + `expectedUpdatedAt`.
-- Calls the producer use case (name confirmed in 4a).
-- On success returns updated rows + new `expectedUpdatedAt`.
-
-If 4a flagged the worker pipeline as incomplete, this route returns `501 Not Implemented` with a clear message; controller surface still ships so the UI is ready when the worker lands.
+The `POST /api/imports/[id]/staged-inventory-rows/mark-for-import` route is in tree and verified by Phase 4a. Bypass this section.
 
 ### 4e. Wire `Run Import`
 
