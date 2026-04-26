@@ -447,10 +447,18 @@ function SmokeNav() {
   return (
     <nav className="flex flex-wrap gap-3 text-sm">
       <Link href="/components-smoke" className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]">
-        ← Inventory record (cut logs)
+        ← Inventory record
       </Link>
       <span className="text-[var(--foreground)]/45">·</span>
       <span className="font-medium text-[var(--foreground)]">Inventory list</span>
+      <span className="text-[var(--foreground)]/45">·</span>
+      <Link href="/components-smoke/templates-list" className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]">
+        Templates list
+      </Link>
+      <span className="text-[var(--foreground)]/45">·</span>
+      <Link href="/components-smoke/templates-record" className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]">
+        Templates record →
+      </Link>
     </nav>
   )
 }

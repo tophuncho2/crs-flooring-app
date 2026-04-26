@@ -297,7 +297,21 @@ export default function InventoryRecordCutLogsSmokePage() {
           href="/components-smoke/inventory-list"
           className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]"
         >
-          Inventory list →
+          Inventory list
+        </Link>
+        <span className="text-[var(--foreground)]/45">·</span>
+        <Link
+          href="/components-smoke/templates-list"
+          className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]"
+        >
+          Templates list
+        </Link>
+        <span className="text-[var(--foreground)]/45">·</span>
+        <Link
+          href="/components-smoke/templates-record"
+          className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]"
+        >
+          Templates record →
         </Link>
       </nav>
 
