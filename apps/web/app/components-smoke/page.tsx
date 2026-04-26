@@ -1,13 +1,18 @@
 "use client"
 
-// Throwaway smoke page for the apps/web/components/ tree. Renders every
-// primitive against fixture data so we can eyeball CSS Grid templates,
-// dropdown popovers, cell tone classes, and FieldSection layout before
-// migrating any module onto the new components.
+// Primitive catalog — kitchen-sink smoke page rendering every primitive in
+// `apps/web/components/` against fixture data. Use this for primitive-level
+// visual checks (cell tones, dropdown popovers, badge styles, etc).
 //
-// DELETE THIS FILE BEFORE MERGING THE NEXT MIGRATION SWEEP:
+// For module-level rehearsals (mirrors of the actual screens we're about to
+// migrate), see the sibling routes:
+//   - /components-smoke/imports-list    — mirror of /dashboard/imports
+//   - /components-smoke/imports-record  — mirror of /dashboard/imports/[id]
+//
+// DELETE BEFORE MERGING THE NEXT MIGRATION SWEEP:
 //   rm -rf apps/web/app/components-smoke
 
+import Link from "next/link"
 import { Fragment, useState } from "react"
 
 // grid/
@@ -213,14 +218,31 @@ export default function ComponentsSmokePage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 p-8">
-      <header className="space-y-1">
+      <header className="space-y-3">
         <h1 className="text-2xl font-bold text-[var(--foreground)]">
-          components/ smoke page
+          components/ primitive catalog
         </h1>
         <p className="text-sm text-[var(--foreground)]/65">
-          Throwaway visual check for every primitive. Delete this page before merging the next
-          migration sweep.
+          Kitchen-sink visual check for every primitive. Module-level rehearsal pages live below.
+          Delete the whole `components-smoke/` route before merging the next migration sweep.
         </p>
+        <nav className="flex flex-wrap gap-3 text-sm">
+          <span className="text-[var(--foreground)] font-medium">Primitive catalog</span>
+          <span className="text-[var(--foreground)]/45">·</span>
+          <Link
+            href="/components-smoke/imports-list"
+            className="text-blue-500 hover:underline"
+          >
+            Imports list →
+          </Link>
+          <span className="text-[var(--foreground)]/45">·</span>
+          <Link
+            href="/components-smoke/imports-record"
+            className="text-blue-500 hover:underline"
+          >
+            Imports record →
+          </Link>
+        </nav>
       </header>
 
       {/* ---------------- Field Section ---------------- */}
