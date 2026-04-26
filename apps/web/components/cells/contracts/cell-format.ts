@@ -51,3 +51,28 @@ export function parseDecimal(input: string): number | null {
   const numeric = Number(trimmed)
   return Number.isFinite(numeric) ? numeric : null
 }
+
+/**
+ * Sanitize free-form numeric input so it contains only digits and at most one
+ * decimal point with at most `maxDecimals` digits after it. Used by every
+ * editable number-style cell to keep currency / quantity / per-unit fields
+ * canonical at the input layer. Pass `maxDecimals = 0` for integer-only.
+ *
+ * Examples (with default `maxDecimals = 2`):
+ *   "120.00fvf" → "120.00"
+ *   "20.000.vd" → "20.00"
+ *   "1.234"     → "1.23"
+ *   "abc"       → ""
+ *   "."         → "."   (allow mid-typing)
+ */
+export function sanitizeDecimal(input: string, maxDecimals = 2): string {
+  if (maxDecimals <= 0) {
+    return input.replace(/[^\d]/g, "")
+  }
+  const cleaned = input.replace(/[^\d.]/g, "")
+  const firstDot = cleaned.indexOf(".")
+  if (firstDot < 0) return cleaned
+  const head = cleaned.slice(0, firstDot + 1)
+  const tail = cleaned.slice(firstDot + 1).replace(/\./g, "").slice(0, maxDecimals)
+  return head + tail
+}

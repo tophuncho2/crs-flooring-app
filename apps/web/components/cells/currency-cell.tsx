@@ -31,6 +31,8 @@ export function CurrencyCell(props: CurrencyCellProps) {
         ariaLabel={props.ariaLabel}
         className={props.className}
         placeholder={props.placeholder ?? "0.00"}
+        prefix={props.currencyPrefix ?? "$"}
+        maxDecimals={props.decimals ?? 2}
       />
     )
   }

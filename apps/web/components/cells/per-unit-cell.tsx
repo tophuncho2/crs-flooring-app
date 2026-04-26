@@ -33,6 +33,8 @@ export function PerUnitCell(props: PerUnitCellProps) {
           ariaLabel={props.ariaLabel}
           className={props.className}
           placeholder={props.placeholder ?? "0.00"}
+          prefix={props.currencyPrefix ?? "$"}
+          maxDecimals={props.decimals ?? 2}
         />
         <span className="text-xs text-[var(--foreground)]/60">
           / {props.unit || "unit"}
