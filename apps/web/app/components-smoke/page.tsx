@@ -33,6 +33,7 @@ import {
   UnitCell,
 } from "@/components/cells"
 import { StatusBadge } from "@/components/badges"
+import { ConfirmDialog } from "@/components/dialogs"
 import { ActionHeader, SectionHeader } from "@/components/headers"
 
 // ---------- Cut log fixture types ------------------------------------------
@@ -197,6 +198,9 @@ export default function InventoryRecordCutLogsSmokePage() {
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null)
   const [noticeError, setNoticeError] = useState<string | null>(null)
+  // Cut id pending void confirmation. `null` → dialog closed.
+  const [voidPendingId, setVoidPendingId] = useState<string | null>(null)
+  const voidPendingRow = voidPendingId ? rows.find((r) => r.id === voidPendingId) ?? null : null
 
   const isDirty = JSON.stringify(rows) !== JSON.stringify(savedSnapshot)
   const eligibleSelectedIds = Array.from(selectedIds).filter((id) => {
@@ -529,7 +533,7 @@ export default function InventoryRecordCutLogsSmokePage() {
                         : "Only finalized cuts can be voided"
                   }
                   {...(canVoid ? { editable: true } : { editable: false, reason: "locked" })}
-                  onClick={() => voidRow(row.id)}
+                  onClick={() => setVoidPendingId(row.id)}
                 />
               )
             }
@@ -541,9 +545,32 @@ export default function InventoryRecordCutLogsSmokePage() {
           <strong>Cut log lifecycle:</strong> DRAFT (editable, deletable, selectable) → FINALIZED
           (locked, voidable) → VOIDED (terminal, read-only). The trailing <em>void</em> column uses
           the generic <code>RowActionButton</code> primitive — staged-inventory rows could adopt the
-          same column without any new components.
+          same column without any new components. Clicking <em>Void</em> opens a{" "}
+          <code>ConfirmDialog</code>; the void only runs after the user confirms.
         </div>
       </div>
+
+      <ConfirmDialog
+        open={voidPendingRow !== null}
+        title="Void this cut?"
+        message={
+          voidPendingRow ? (
+            <>
+              Cut <strong>#{voidPendingRow.cutNumber}</strong> ({voidPendingRow.cutAmount} bx) will be
+              marked <strong>VOIDED</strong>. Voided cuts are read-only and cannot be edited, deleted, or
+              voided again. This action cannot be undone.
+            </>
+          ) : null
+        }
+        confirmLabel="Void cut"
+        cancelLabel="Keep finalized"
+        tone="warning"
+        onCancel={() => setVoidPendingId(null)}
+        onConfirm={() => {
+          if (voidPendingId) voidRow(voidPendingId)
+          setVoidPendingId(null)
+        }}
+      />
     </div>
   )
 }
