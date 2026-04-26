@@ -255,79 +255,95 @@ export default function TemplatesListSmokePage() {
             ascendingLabel="A-Z"
             descendingLabel="Z-A"
           />
+          <label className="flex items-center gap-1 text-xs text-[var(--foreground)]/65">
+            <span className="uppercase tracking-[0.04em]">Group by</span>
+            <select
+              value={groupKey}
+              onChange={(event) => setGroupKey(event.target.value as GroupableKey | "")}
+              className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-xs text-[var(--foreground)] outline-none transition focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
+            >
+              <option value="">(none)</option>
+              {GROUPABLE_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {GROUPABLE_LABELS[key]}
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="text-xs text-[var(--foreground)]/55">
             {sortedRows.length} of {TEMPLATES.length} templates
           </span>
         </div>
 
-        {/* Column visibility toggles — smoke-only affordance demonstrating the
-            visibleColumns → dataColumns dynamic mapping. The live list drives
-            this from server-saved table preferences. */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-2">
-          <span className="text-xs uppercase text-[var(--foreground)]/55">Columns</span>
-          {ALL_COLUMN_KEYS.map((key) => {
-            const active = !hiddenColumnKeys.has(key)
-            return (
+        {groupKey ? (
+          <GroupTree<TemplateRowFixture>
+            groups={groupTree}
+            renderRow={(row) => (
               <button
-                key={key}
                 type="button"
-                onClick={() => toggleColumn(key)}
-                className={[
-                  "rounded-full border px-2 py-0.5 text-xs transition",
-                  active
-                    ? "border-sky-500/45 bg-sky-500/10 text-sky-700"
-                    : "border-[var(--panel-border)] bg-[var(--panel-background)] text-[var(--foreground)]/55",
-                ].join(" ")}
+                onClick={() => alert(`Open template ${row.templateNumber}`)}
+                aria-label={`Open template ${row.templateNumber}`}
+                className="flex w-full items-center gap-4 border-b border-[var(--panel-border)] px-4 py-2 text-left text-sm transition hover:bg-[var(--panel-border)]/10"
               >
-                {TEMPLATES_LIST_COLUMNS_BY_KEY[key].label}
+                <span className="w-[7rem] shrink-0 font-medium text-blue-500">
+                  {row.templateNumber}
+                </span>
+                <span className="w-[7rem] shrink-0 text-[var(--foreground)]/75">{row.unitType}</span>
+                <span className="min-w-0 flex-1 truncate">{row.description}</span>
+                <span className="hidden w-[10rem] shrink-0 truncate text-[var(--foreground)]/65 sm:inline">
+                  {row.warehouseName}
+                </span>
+                <span className="w-[3rem] shrink-0 text-right tabular-nums text-[var(--foreground)]/65">
+                  {row.itemsCount}
+                </span>
               </button>
-            )
-          })}
-        </div>
-
-        <Grid<TemplateRowFixture>
-          rows={sortedRows}
-          layout={layout}
-          empty={<GridEmpty>No templates found.</GridEmpty>}
-          onRowClick={(row) => alert(`Open template ${row.templateNumber}`)}
-          getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
-          renderCell={(column, row) => {
-            switch (column.key) {
-              case "templateNumber":
-                return <span className="font-medium text-blue-500">{row.templateNumber}</span>
-              case "unitType":
-                return row.unitType || "-"
-              case "property":
-                return row.propertyName || "-"
-              case "managementCompany":
-                return row.managementCompanyName || "-"
-              case "jobType":
-                return row.jobTypeName || "-"
-              case "warehouse":
-                return row.warehouseName || "-"
-              case "description":
-                return row.description || "-"
-              case "items":
-                return <span className="tabular-nums">{row.itemsCount}</span>
-              default:
-                return "-"
-            }
-          }}
-          footerSlot={
-            <PaginateControls
-              page={page}
-              pageSize={25}
-              totalItems={sortedRows.length}
-              totalPages={Math.max(1, Math.ceil(sortedRows.length / 25))}
-              hasPreviousPage={page > 1}
-              hasNextPage={page < Math.max(1, Math.ceil(sortedRows.length / 25))}
-              onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
-              onNextPage={() =>
-                setPage((p) => Math.min(Math.max(1, Math.ceil(sortedRows.length / 25)), p + 1))
+            )}
+          />
+        ) : (
+          <Grid<TemplateRowFixture>
+            rows={sortedRows}
+            layout={layout}
+            empty={<GridEmpty>No templates found.</GridEmpty>}
+            onRowClick={(row) => alert(`Open template ${row.templateNumber}`)}
+            getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
+            renderCell={(column, row) => {
+              switch (column.key) {
+                case "templateNumber":
+                  return <span className="font-medium text-blue-500">{row.templateNumber}</span>
+                case "unitType":
+                  return row.unitType || "-"
+                case "property":
+                  return row.propertyName || "-"
+                case "managementCompany":
+                  return row.managementCompanyName || "-"
+                case "jobType":
+                  return row.jobTypeName || "-"
+                case "warehouse":
+                  return row.warehouseName || "-"
+                case "description":
+                  return row.description || "-"
+                case "items":
+                  return <span className="tabular-nums">{row.itemsCount}</span>
+                default:
+                  return "-"
               }
-            />
-          }
-        />
+            }}
+            footerSlot={
+              <PaginateControls
+                page={page}
+                pageSize={25}
+                totalItems={sortedRows.length}
+                totalPages={Math.max(1, Math.ceil(sortedRows.length / 25))}
+                hasPreviousPage={page > 1}
+                hasNextPage={page < Math.max(1, Math.ceil(sortedRows.length / 25))}
+                onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
+                onNextPage={() =>
+                  setPage((p) => Math.min(Math.max(1, Math.ceil(sortedRows.length / 25)), p + 1))
+                }
+              />
+            }
+          />
+        )}
       </div>
     </div>
   )
