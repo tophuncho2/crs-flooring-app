@@ -1,17 +1,18 @@
 // Mock of Prisma models from packages/db/prisma/schema.prisma
-// Scope: FlooringInventory, FlooringCutLog, FlooringWorkOrder, FlooringWorkOrderItem,
-//        FlooringTemplate, FlooringTemplateItem
+// Scope: FlooringInventory, FlooringCutLog, FlooringWorkOrderItem,
+//        FlooringImportStagedInventoryRow
 // (plus the enums referenced by these models)
-
-enum FlooringVacancyStatus {
-  VACANT
-  OCCUPIED
-}
 
 enum FlooringCutLogStatus {
   PENDING
   FINAL
   VOID
+}
+
+enum FlooringStagedRowStatus {
+  DRAFT
+  QUEUED
+  IMPORTED
 }
 
 model FlooringInventory {
@@ -87,51 +88,6 @@ model FlooringCutLog {
   @@map("flooring_cut_log")
 }
 
-model FlooringWorkOrder {
-  id                   String                     @id @default(uuid())
-  workOrderNumber      String                     @unique @default(dbgenerated("('WO-'::text || lpad((nextval('flooring_work_order_number_seq'::regclass))::text, 5, '0'::text))")) @map("work_order_number")
-  propertyId           String
-  property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  templateId           String?
-  template             FlooringTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  managementCompanyId  String?
-  managementCompany    FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
-  jobTypeId            String?
-  jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
-  warehouseId          String?
-  warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  isComplete           Boolean                    @default(false) @map("is_complete")
-  vacancy              FlooringVacancyStatus?
-  scheduledFor         DateTime?                  @db.Date
-  unitNumber           String?
-  unitType             String?
-  customAddress        String?
-  description          String?
-  instructions         String?
-  propertyInstructions String?
-  notes                String?
-  templateSyncedAt     DateTime?
-  templateSyncMode     String?
-  templateSnapshotHash String?
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
-  items                FlooringWorkOrderItem[]
-  analytics            FlooringAnalytics?
-  cutLogs              FlooringCutLog[]
-
-  @@index([workOrderNumber])
-  @@index([isComplete])
-  @@index([propertyId])
-  @@index([templateId])
-  @@index([managementCompanyId])
-  @@index([jobTypeId])
-  @@index([warehouseId])
-  @@index([scheduledFor])
-  @@index([createdAt])
-  @@index([updatedAt])
-  @@map("flooring_work_order")
-}
-
 model FlooringWorkOrderItem {
   id                   String            @id @default(uuid())
   workOrderId          String
@@ -155,51 +111,33 @@ model FlooringWorkOrderItem {
   @@map("flooring_work_order_item")
 }
 
-model FlooringTemplate {
-  id                   String                     @id @default(uuid())
-  templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || lpad((nextval('flooring_template_number_seq'::regclass))::text, 5, '0'::text))")) @map("template_number")
-  propertyId           String
-  property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  managementCompanyId  String?
-  managementCompany    FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
-  jobTypeId            String?
-  jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
-  warehouseId          String?
-  warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  unitType             String
-  description          String?
-  instructions         String?
-  propertyInstructions String?
-  templateNotes        String?
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
-  items                FlooringTemplateItem[]
-  workOrders           FlooringWorkOrder[]
+model FlooringImportStagedInventoryRow {
+  id            String                  @id @default(uuid())
+  importEntryId String
+  importEntry   FlooringImportEntry     @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
+  productId     String
+  product       FlooringProduct         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  itemNumber    String?
+  dyeLot        String?
+  warehouseId   String
+  warehouse     FlooringWarehouse       @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  locationId    String?
+  location      FlooringLocation?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  startingStock Decimal                 @db.Decimal(12, 2)
+  isImported    Boolean                 @default(false)
+  status        FlooringStagedRowStatus @default(DRAFT)
+  cost          Decimal?                @db.Decimal(10, 2)
+  freight       Decimal?                @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
-  @@index([templateNumber])
-  @@index([propertyId])
-  @@index([managementCompanyId])
-  @@index([jobTypeId])
-  @@index([warehouseId])
-  @@index([unitType])
-  @@index([createdAt])
-  @@index([updatedAt])
-  @@map("flooring_template")
-}
-
-model FlooringTemplateItem {
-  id         String           @id @default(uuid())
-  templateId String
-  template   FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  productId  String
-  product    FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  quantity   Decimal          @db.Decimal(10, 2)
-  unitPrice  Decimal          @db.Decimal(10, 2)
-  notes      String?
-  createdAt  DateTime         @default(now())
-
-  @@index([templateId])
-  @@index([templateId, createdAt])
+  @@index([importEntryId])
   @@index([productId])
-  @@map("flooring_template_item")
+  @@index([warehouseId])
+  @@index([locationId])
+  @@index([importEntryId, isImported])
+  @@index([importEntryId, status])
+  @@index([status, isImported])
+  @@map("flooring_import_staged_inventory_row")
 }
