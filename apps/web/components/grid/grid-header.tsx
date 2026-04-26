@@ -1,6 +1,7 @@
 "use client"
 
-import type { GridColumn } from "./contracts/grid-column"
+import type { GridLayout } from "./contracts/grid-layout"
+import type { GridRow } from "./contracts/grid-row"
 import type { ResolvedScrollContract } from "./contracts/grid-scroll"
 
 const ALIGN_CLASS_NAME = {
@@ -13,43 +14,55 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
-function toCssLength(value: number | string): string {
-  return typeof value === "number" ? `${value / 16}rem` : value
-}
-
-export type GridHeaderProps<TRow> = {
-  columns: ReadonlyArray<GridColumn<TRow>>
+export type GridHeaderProps<TRow extends GridRow> = {
+  layout: GridLayout<TRow>
   scroll: ResolvedScrollContract
+  /** Pre-computed `grid-template-columns` value shared with the body rows. */
+  templateColumns: string
   className?: string
 }
 
 /**
- * Header row for the universal Grid. No-wrap headers by default; sticky-top
- * if the resolved scroll contract requests it. Uses CSS flex with per-column
- * minWidth + grow to mirror the body row layout.
+ * Header row for the universal Grid. CSS Grid layout — uses the same
+ * `grid-template-columns` template the body rows use so column edges align.
+ * Renders leading control headers, data column labels, and trailing control
+ * headers in template order.
  */
-export function GridHeader<TRow>({ columns, scroll, className }: GridHeaderProps<TRow>) {
+export function GridHeader<TRow extends GridRow>({
+  layout,
+  scroll,
+  templateColumns,
+  className,
+}: GridHeaderProps<TRow>) {
   return (
     <div
+      style={{ gridTemplateColumns: templateColumns }}
       className={joinClassNames(
-        "flex border-b border-[var(--panel-border)] bg-[var(--panel-border)]/10",
+        "grid border-b border-[var(--panel-border)] bg-[var(--panel-border)]/10",
         scroll.headerSticky ? "sticky top-0 z-10" : undefined,
         className,
       )}
     >
-      {columns.map((column) => {
-        const minWidth = toCssLength(column.minWidth)
-        const preferredWidth = column.preferredWidth ? toCssLength(column.preferredWidth) : minWidth
-        const grow = column.grow ?? 0
+      {layout.leadingControls?.map((control) => {
+        const align = control.align ?? "center"
+        return (
+          <div
+            key={control.key}
+            className={joinClassNames(
+              "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
+              ALIGN_CLASS_NAME[align],
+              scroll.noWrapHeaders ? "whitespace-nowrap" : undefined,
+            )}
+          >
+            {control.label ?? ""}
+          </div>
+        )
+      })}
+      {layout.dataColumns.map((column) => {
         const align = column.align ?? "start"
         return (
           <div
             key={column.key}
-            style={{
-              flexGrow: grow,
-              flexBasis: preferredWidth,
-              minWidth,
-            }}
             className={joinClassNames(
               "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
               ALIGN_CLASS_NAME[align],
@@ -57,6 +70,21 @@ export function GridHeader<TRow>({ columns, scroll, className }: GridHeaderProps
             )}
           >
             {column.label}
+          </div>
+        )
+      })}
+      {layout.trailingControls?.map((control) => {
+        const align = control.align ?? "center"
+        return (
+          <div
+            key={control.key}
+            className={joinClassNames(
+              "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
+              ALIGN_CLASS_NAME[align],
+              scroll.noWrapHeaders ? "whitespace-nowrap" : undefined,
+            )}
+          >
+            {control.label ?? ""}
           </div>
         )
       })}

@@ -1,7 +1,9 @@
 "use client"
 
-import { useRef, type ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import type { GridColumn } from "./contracts/grid-column"
+import type { GridControlColumn } from "./contracts/grid-control-column"
+import type { GridLayout } from "./contracts/grid-layout"
 import type { GridRow } from "./contracts/grid-row"
 import type { ScrollContract } from "./contracts/grid-scroll"
 import { resolveScrollContract } from "./contracts/grid-scroll"
@@ -9,6 +11,7 @@ import type { GridFeatures } from "./contracts/grid-features"
 import { GridEmpty } from "./grid-empty"
 import { GridHeader } from "./grid-header"
 import { GridBodyRow } from "./grid-row"
+import { buildGridTemplateColumns } from "./internals/build-grid-template"
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -16,7 +19,8 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 
 export type GridProps<TRow extends GridRow> = {
   rows: ReadonlyArray<TRow>
-  columns: ReadonlyArray<GridColumn<TRow>>
+  /** Canonical layout: data columns + optional leading/trailing control columns. */
+  layout: GridLayout<TRow>
   scroll?: ScrollContract
   features?: GridFeatures
   empty?: ReactNode
@@ -26,26 +30,26 @@ export type GridProps<TRow extends GridRow> = {
   footerSlot?: ReactNode
   /** Override the default per-row renderer. */
   renderRow?: (row: TRow) => ReactNode
-  /** Override the default per-cell renderer (used when `renderRow` is not set). */
+  /** Override the default per-data-cell renderer (used when `renderRow` is not set). */
   renderCell?: (column: GridColumn<TRow>, row: TRow) => ReactNode
+  /** Renderer for control-column cells (selection checkbox, expand toggle, etc.). */
+  renderControl?: (control: GridControlColumn, row: TRow) => ReactNode
   className?: string
 }
 
 /**
  * Universal grid shell. Subsumes the role of both list-view tables and
- * record-view sub-grids. Feature-agnostic: search / sort / group / paginate
- * are opt-in; the grid does not import any feature module — consumers
- * compose feature controls via `headerSlot` / `footerSlot`.
+ * record-view sub-grids. CSS Grid layout — header + body rows share the same
+ * `grid-template-columns` template so column edges align across the whole
+ * grid even when row contents vary in height.
  *
- * The `features` prop is currently informational; the grid records its
- * presence for future internals (group rendering, sort key application) but
- * the consumer is responsible for delivering already-sorted, already-grouped,
- * already-paginated `rows`. Subsequent sweeps will fold internal handling
- * behind the same prop surface.
+ * Feature-agnostic: search / sort / group / paginate are opt-in; the grid
+ * does not import any feature module — consumers compose feature controls
+ * via `headerSlot` / `footerSlot`.
  */
 export function Grid<TRow extends GridRow>({
   rows,
-  columns,
+  layout,
   scroll,
   features: _features,
   empty,
@@ -53,10 +57,11 @@ export function Grid<TRow extends GridRow>({
   footerSlot,
   renderRow,
   renderCell,
+  renderControl,
   className,
 }: GridProps<TRow>) {
   const resolvedScroll = resolveScrollContract(scroll)
-  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const templateColumns = useMemo(() => buildGridTemplateColumns(layout), [layout])
 
   return (
     <div
@@ -71,9 +76,9 @@ export function Grid<TRow extends GridRow>({
       {rows.length === 0 ? (
         empty ?? <GridEmpty />
       ) : (
-        <div ref={scrollRef} className="overflow-x-auto overscroll-x-contain">
+        <div className="overflow-x-auto overscroll-x-contain">
           <div className="w-max min-w-full">
-            <GridHeader columns={columns} scroll={resolvedScroll} />
+            <GridHeader layout={layout} scroll={resolvedScroll} templateColumns={templateColumns} />
             <div>
               {rows.map((row) =>
                 renderRow ? (
@@ -82,9 +87,11 @@ export function Grid<TRow extends GridRow>({
                   <GridBodyRow
                     key={row.id}
                     row={row}
-                    columns={columns}
+                    layout={layout}
                     scroll={resolvedScroll}
+                    templateColumns={templateColumns}
                     renderCell={renderCell}
+                    renderControl={renderControl}
                   />
                 ),
               )}

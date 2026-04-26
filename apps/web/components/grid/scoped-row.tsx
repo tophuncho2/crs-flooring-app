@@ -1,11 +1,11 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import type { GridColumn } from "./contracts/grid-column"
 import type { GridControlColumn } from "./contracts/grid-control-column"
 import type { GridLayout } from "./contracts/grid-layout"
 import type { GridRow, GridRowTone } from "./contracts/grid-row"
-import type { ResolvedScrollContract } from "./contracts/grid-scroll"
+import { buildGridTemplateColumns } from "./internals/build-grid-template"
 
 const ALIGN_CLASS_NAME = {
   start: "justify-start text-left",
@@ -15,9 +15,9 @@ const ALIGN_CLASS_NAME = {
 
 const ROW_TONE_CLASS_NAME: Record<GridRowTone, string> = {
   default: "bg-[var(--panel-background)]",
-  muted: "bg-[var(--panel-border)]/10",
-  success: "bg-emerald-500/[0.06]",
-  warning: "bg-amber-500/[0.06]",
+  muted: "bg-[var(--panel-border)]/15",
+  success: "bg-emerald-500/[0.08]",
+  warning: "bg-amber-500/[0.08]",
   error: "bg-rose-500/[0.06]",
 }
 
@@ -25,36 +25,48 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
-export type GridRowProps<TRow extends GridRow> = {
-  row: TRow
-  layout: GridLayout<TRow>
-  scroll: ResolvedScrollContract
-  /** Pre-computed `grid-template-columns` value shared with the header. */
-  templateColumns: string
-  /**
-   * Optional override for data-cell rendering. Default delegates to
-   * `column.render(row)`; if no `render` is set, renders the row's value at
-   * `column.key` as plain text.
-   */
-  renderCell?: (column: GridColumn<TRow>, row: TRow) => ReactNode
-  /**
-   * Renderer for control-column cells. Required when the layout has any
-   * leading or trailing controls — without it those cells render empty.
-   */
-  renderControl?: (control: GridControlColumn, row: TRow) => ReactNode
+export type ScopedRowProps<TChild extends GridRow> = {
+  /** The child row to render. */
+  row: TChild
+  /** Child layout — distinct from the parent grid's layout. */
+  layout: GridLayout<TChild>
+  /** Visual tint for the child row. Default `"muted"` so children read as nested. */
+  tone?: GridRowTone
+  /** Override the default per-data-cell renderer. */
+  renderCell?: (column: GridColumn<TChild>, row: TChild) => ReactNode
+  /** Renderer for control-column cells. */
+  renderControl?: (control: GridControlColumn, row: TChild) => ReactNode
   className?: string
 }
 
-export function GridBodyRow<TRow extends GridRow>({
+/**
+ * Child-scoped row primitive. Renders one child row using its own
+ * `GridLayout<TChild>` — the child's column shape can differ entirely from
+ * the parent grid's columns.
+ *
+ * Consumers render parent rows via `Grid` and interleave `ScopedRow` blocks
+ * inside the parent grid via `<Fragment>`. The grid contract does not require
+ * children to share the parent's column shape.
+ *
+ * Pattern (warehouse precedent):
+ *   <Grid layout={parentLayout} renderRow={(parent) => (
+ *     <Fragment>
+ *       <GridBodyRow row={parent} ... />
+ *       {parent.expanded && parent.children.map((child) => (
+ *         <ScopedRow row={child} layout={childLayout} key={child.id} />
+ *       ))}
+ *     </Fragment>
+ *   )} />
+ */
+export function ScopedRow<TChild extends GridRow>({
   row,
   layout,
-  scroll,
-  templateColumns,
+  tone = "muted",
   renderCell,
   renderControl,
   className,
-}: GridRowProps<TRow>) {
-  const tone = row.tone ?? "default"
+}: ScopedRowProps<TChild>) {
+  const templateColumns = useMemo(() => buildGridTemplateColumns(layout), [layout])
 
   return (
     <div
@@ -87,7 +99,6 @@ export function GridBodyRow<TRow extends GridRow>({
             className={joinClassNames(
               "flex items-center px-3 py-2 text-sm text-[var(--foreground)]",
               ALIGN_CLASS_NAME[align],
-              scroll.growToFitText ? undefined : "truncate",
             )}
           >
             {renderCell
