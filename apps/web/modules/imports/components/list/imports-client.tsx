@@ -1,14 +1,9 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
-import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
-import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
-import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
+import { SectionHeader } from "@/components/headers"
+import { SearchControl } from "@/components/features/search"
+import { SortToggle } from "@/components/features/sort"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import {
   type ImportRow,
@@ -43,23 +38,15 @@ export default function ImportsClient({
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
-  const {
-    imports,
-    message,
-    pageError,
-    openCreate,
-    openImport,
-  } = useImportsListController({
+  const { imports, message, pageError, openCreate, openImport } = useImportsListController({
     initialImports,
   })
 
   const {
     searchQuery,
     isAscendingSort,
-    isGroupingEnabled,
     filteredRows: filteredImports,
     sortedRows: sortedImports,
-    groupedRowTree,
     page,
     pageSize,
     totalPages,
@@ -67,7 +54,6 @@ export default function ImportsClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    visibleColumns: visibleImportColumns,
     onSearchQueryChange,
     onToggleSort,
   } = useConfiguredTableState({
@@ -94,67 +80,62 @@ export default function ImportsClient({
     disableClientPagination: true,
     initialPreferences: initialTablePreferences,
   })
+
   return (
-    <>
-      <DashboardListPageScaffold
-        title={<DashboardCardTitle>Imports</DashboardCardTitle>}
-        controls={
-          <DashboardListPageControls
-            count={filteredImports.length}
-            searchQuery={searchQuery}
-            onSearchQueryChange={onSearchQueryChange}
-            searchPlaceholder="Search import # or tag"
-            isAscendingSort={isAscendingSort}
-            onToggleSort={onToggleSort}
-            ascendingSortLabel="1-9"
-            descendingSortLabel="9-1"
-            primaryAction={
-              <button
-                type="button"
-                onClick={() => openCreate()}
-                className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
-              >
-                <Plus size={16} />
-                Import
-              </button>
-            }
-          />
-        }
-        notices={<FormStatusNotices message={message} error={pageError} />}
-        table={
-          <ImportsTable
-            rows={sortedImports}
-            groupedRows={groupedRowTree as GroupedRowTree<ImportRow>[]}
-            isGroupingEnabled={isGroupingEnabled}
-            visibleColumnKeys={visibleImportColumns.map((column) => column.key)}
-            visibleColumns={visibleImportColumns.map((column) => ({ key: column.key, label: column.label }))}
-            pagination={pagination}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredImports.length}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-            onOpenImport={openImport}
-          />
-        }
-        pagination={
-          <TablePaginationControls
-            page={pagination?.page ?? page}
-            totalPages={pagination?.totalPages ?? totalPages}
-            pageSize={pagination?.pageSize ?? pageSize}
-            totalItems={pagination?.totalItems ?? filteredImports.length}
-            hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-            hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-            onPreviousPage={pagination ? undefined : goToPreviousPage}
-            onNextPage={pagination ? undefined : goToNextPage}
-            previousPageHref={pagination?.previousPageHref}
-            nextPageHref={pagination?.nextPageHref}
-          />
-        }
+    <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+      <SectionHeader
+        title="Imports"
+        actions={[{ key: "new", label: "+ Import", onClick: () => openCreate(), kind: "primary" }]}
       />
-    </>
+
+      {message || pageError ? (
+        <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+          {message ? (
+            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+              {message}
+            </div>
+          ) : null}
+          {pageError ? (
+            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+              {pageError}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
+        <div className="min-w-[16rem] flex-1">
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search import # or tag"
+          />
+        </div>
+        <SortToggle
+          sortKey="importNumber"
+          direction={isAscendingSort ? "asc" : "desc"}
+          onChange={() => onToggleSort()}
+          ascendingLabel="1-9"
+          descendingLabel="9-1"
+        />
+        <span className="text-xs text-[var(--foreground)]/55">
+          {filteredImports.length} of {imports.length} imports
+        </span>
+      </div>
+
+      <ImportsTable
+        rows={sortedImports}
+        pagination={pagination}
+        page={page}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalItems={filteredImports.length}
+        hasPreviousPage={hasPreviousPage}
+        hasNextPage={hasNextPage}
+        onPreviousPage={goToPreviousPage}
+        onNextPage={goToNextPage}
+        onOpenImport={openImport}
+      />
+    </div>
   )
 }
