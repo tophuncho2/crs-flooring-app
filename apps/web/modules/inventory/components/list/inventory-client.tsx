@@ -1,12 +1,9 @@
 "use client"
 
-import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
-import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
-import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
+import { SectionHeader } from "@/components/headers"
+import { SearchControl } from "@/components/features/search"
+import { SortToggle } from "@/components/features/sort"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { InventoryRow } from "@builders/domain"
 import { useInventoryListController } from "../../controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
@@ -23,10 +20,8 @@ export default function InventoryClient({
   const {
     searchQuery,
     isAscendingSort,
-    isGroupingEnabled,
     filteredRows,
     sortedRows,
-    groupedRowTree,
     page,
     pageSize,
     totalPages,
@@ -65,27 +60,47 @@ export default function InventoryClient({
   })
 
   return (
-    <DashboardListPageScaffold
-      title={<DashboardCardTitle>Inventory</DashboardCardTitle>}
-      controls={
-        <DashboardListPageControls
-          count={filteredRows.length}
-          searchQuery={searchQuery}
-          onSearchQueryChange={onSearchQueryChange}
-          searchPlaceholder="Search product, item #, import, section, or location"
-          isAscendingSort={isAscendingSort}
-          onToggleSort={onToggleSort}
-          ascendingSortLabel="A-Z"
-          descendingSortLabel="Z-A"
-        />
-      }
-      notices={<FormStatusNotices message={notices.message} error={notices.error} />}
-      table={
+    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <SectionHeader title="Inventory" />
+
+        {notices.message || notices.error ? (
+          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+            {notices.message ? (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+                {notices.message}
+              </div>
+            ) : null}
+            {notices.error ? (
+              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                {notices.error}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="min-w-[16rem] flex-1">
+            <SearchControl
+              query={searchQuery}
+              onQueryChange={onSearchQueryChange}
+              placeholder="Search product, item #, import, section, or location"
+            />
+          </div>
+          <SortToggle
+            sortKey="itemNumber"
+            direction={isAscendingSort ? "asc" : "desc"}
+            onChange={() => onToggleSort()}
+            ascendingLabel="A-Z"
+            descendingLabel="Z-A"
+          />
+          <span className="text-xs text-[var(--foreground)]/55">
+            {filteredRows.length} of {rows.length} inventory rows
+          </span>
+        </div>
+
         <InventoryTable
           rows={sortedRows}
-          groupedRows={groupedRowTree as GroupedRowTree<InventoryRow>[]}
-          isGroupingEnabled={isGroupingEnabled}
-          visibleColumnKeys={visibleColumns.map((column) => column.key)}
           visibleColumns={visibleColumns.map((column) => ({ key: column.key, label: column.label }))}
           page={page}
           totalPages={totalPages}
@@ -97,19 +112,7 @@ export default function InventoryClient({
           onNextPage={goToNextPage}
           onOpenInventory={openInventory}
         />
-      }
-      pagination={
-        <TablePaginationControls
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={filteredRows.length}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
-        />
-      }
-    />
+      </div>
+    </div>
   )
 }

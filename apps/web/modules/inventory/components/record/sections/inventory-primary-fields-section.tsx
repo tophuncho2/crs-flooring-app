@@ -1,16 +1,8 @@
 "use client"
 
-import {
-  RECORD_CURRENCY_PREFIX,
-  RECORD_FIELD_CONTROL_CLASS_NAME,
-  RECORD_TEXTAREA_CONTROL_CLASS_NAME,
-  RecordFormField,
-  RecordPrimaryFieldCell,
-  RecordPrimaryFieldsGrid,
-  RecordPrimaryPane,
-  RecordPrimarySection,
-  RecordStaticFieldValue,
-} from "@/modules/shared/engines/record-view"
+import { CellAt } from "@/components/layout-grid"
+import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
+import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
 import {
   formatInventoryImportNumber,
   formatInventoryQuantity,
@@ -19,8 +11,6 @@ import {
   type InventoryRow,
   type InventoryWarehouseOption,
 } from "@builders/domain"
-
-const READONLY_FIELD_CLASS_NAME = `${RECORD_FIELD_CONTROL_CLASS_NAME} cursor-default`
 
 export function InventoryPrimaryFieldsSection({
   inventory,
@@ -39,151 +29,120 @@ export function InventoryPrimaryFieldsSection({
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
-  return (
-    <RecordPrimarySection>
-      <RecordPrimaryPane variant="side" placement="left">
-        <RecordPrimaryFieldsGrid variant="side">
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Warehouse">
-              <select
-                aria-label="Warehouse"
-                value={draft.warehouseId}
-                onChange={(event) => onFieldChange("warehouseId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-                required
-              >
-                <option value="">Select Warehouse</option>
-                {warehouseOptions.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Full Location">
-              <RecordStaticFieldValue>
-                {selectedLocation?.locationCode || "-"}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Starting Balance">
-              <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Cut Balance">
-              <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Available">
-              <RecordStaticFieldValue>
-                {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          {inventory.coverageBalance ? (
-            <RecordPrimaryFieldCell>
-              <RecordFormField label="Coverage">
-                <RecordStaticFieldValue>
-                  {formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)}
-                </RecordStaticFieldValue>
-              </RecordFormField>
-            </RecordPrimaryFieldCell>
-          ) : null}
-        </RecordPrimaryFieldsGrid>
-      </RecordPrimaryPane>
+  const editable = !disabled
+  const locationPlaceholder = draft.warehouseId ? "Select Location" : "Select warehouse first"
 
-      <RecordPrimaryPane variant="main" placement="right">
-        <RecordPrimaryFieldsGrid>
-          <RecordPrimaryFieldCell size="md">
-            <RecordFormField label="Product">
-              <input value={inventory.productName} readOnly className={READONLY_FIELD_CLASS_NAME} />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Import #">
-              <input
-                value={formatInventoryImportNumber(inventory.importNumber)}
-                readOnly
-                className={READONLY_FIELD_CLASS_NAME}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Location">
-              <select
-                value={draft.locationId}
-                onChange={(event) => onFieldChange("locationId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled || !draft.warehouseId}
-              >
-                <option value="">
-                  {draft.warehouseId ? "Select Location" : "Select warehouse first"}
-                </option>
-                {locationOptions.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.shortCode}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Item #">
-              <input
-                value={draft.itemNumber}
-                onChange={(event) => onFieldChange("itemNumber", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Lot">
-              <input
-                value={draft.dyeLot}
-                onChange={(event) => onFieldChange("dyeLot", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Cost">
-              <RecordStaticFieldValue>
-                {inventory.cost ? `${RECORD_CURRENCY_PREFIX}${inventory.cost}` : "-"}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Freight">
-              <RecordStaticFieldValue>
-                {inventory.freight ? `${RECORD_CURRENCY_PREFIX}${inventory.freight}` : "-"}
-              </RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="lg">
-            <RecordFormField label="Notes">
-              <textarea
-                value={draft.notes}
-                onChange={(event) => onFieldChange("notes", event.target.value)}
-                rows={2}
-                className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-        </RecordPrimaryFieldsGrid>
-      </RecordPrimaryPane>
-    </RecordPrimarySection>
+  return (
+    <FieldSection>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Product">
+          <TextCell editable={false} value={inventory.productName} />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="Import #">
+          <TextCell editable={false} value={formatInventoryImportNumber(inventory.importNumber)} />
+        </FormField>
+      </CellAt>
+      <CellAt col={7} colSpan={2}>
+        <FormField label="Item #">
+          <TextCell
+            editable={editable}
+            value={draft.itemNumber}
+            onChange={(value) => onFieldChange("itemNumber", value)}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} colSpan={2}>
+        <FormField label="Warehouse" required>
+          <SelectCell
+            editable={editable}
+            value={draft.warehouseId}
+            onChange={(value) => onFieldChange("warehouseId", value)}
+            options={warehouseOptions.map((warehouse) => ({ value: warehouse.id, label: warehouse.name }))}
+            placeholder="Select Warehouse"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={3} colSpan={2}>
+        <FormField label="Location">
+          <SelectCell
+            editable={editable && Boolean(draft.warehouseId)}
+            value={draft.locationId}
+            onChange={(value) => onFieldChange("locationId", value)}
+            options={locationOptions.map((location) => ({ value: location.id, label: location.shortCode }))}
+            placeholder={locationPlaceholder}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="Full Location">
+          <StaticFieldValue>{selectedLocation?.locationCode || "-"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={7} colSpan={2}>
+        <FormField label="Lot">
+          <TextCell
+            editable={editable}
+            value={draft.dyeLot}
+            onChange={(value) => onFieldChange("dyeLot", value)}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} colSpan={2}>
+        <FormField label="Starting Balance">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={3} colSpan={2}>
+        <FormField label="Cut Balance">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="Available">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      {inventory.coverageBalance ? (
+        <CellAt col={7} colSpan={2}>
+          <FormField label="Coverage">
+            <StaticFieldValue>
+              {formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)}
+            </StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
+
+      <CellAt col={1} colSpan={2}>
+        <FormField label="Cost">
+          <StaticFieldValue>{inventory.cost ? `$${inventory.cost}` : "-"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={3} colSpan={2}>
+        <FormField label="Freight">
+          <StaticFieldValue>{inventory.freight ? `$${inventory.freight}` : "-"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Notes">
+          <TextareaCell
+            editable={editable}
+            value={draft.notes}
+            onChange={(value) => onFieldChange("notes", value)}
+            rows={2}
+          />
+        </FormField>
+      </CellAt>
+    </FieldSection>
   )
 }
