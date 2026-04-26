@@ -201,28 +201,53 @@ packages/domain/src/queue/
 
 Plus the sweep-2 work updates `packages/domain/src/flooring/inventory/cut-logs/finalize-payload.ts` → DELETED (content moved to queue/ folder).
 
-## Open questions for sweep 2
+## Resolved (settled before sweep 2 implementation)
 
-- **Pending-save mode** — diff-save (one batch job per flushed diff) vs single-edit-save (one job per edit)? Affects whether `diff/` folder is needed and what the pending-save payload shape looks like. Carried forward from intent doc.
-- i think the save for pending rows should still use diffs and temp id's because it needs to handle new rows added, edits, deletes. unless for some reason diffs are unecessary and theres a better method then call it out.
-- then finalizing rows uses the select multiple rows only on clean slate and then clean finalize rows to enquue that worker. and the worker that handles pending rows is triggered from the cananicol save button.
+All open questions from this audit have been resolved. Sweep 2 plan
+written at `~/.claude/plans/take-a-look-at-functional-falcon.md` and
+approved 2026-04-26. See "Resolved decisions" section there for the
+full list.
 
-- **`finalCutSequence` allocator location** — is it a domain-pure pure function (e.g. `nextFinalCutSequence(currentMax: number | null): number`) called by the worker after the worker's locked `MAX(...)` query? Or is allocation pure-DB? Sweep 1 plan suggested a pure helper in domain — confirm.
-- there definetly needs to be a function so that workers can number final cuts in order that they happen for a single inventories item. 
-- There also definetly needs to be functions that is used in each use case for how the inventory cut sum is re-calculated. 
+Quick summary of resolutions:
 
-- **User-visible `QUEUED` UI label** — what should `formatCutLogStatus("QUEUED")` return? "Queued"? "Processing"? "Worker active"? Affects the UI in sweep 8 but the label lives in domain.
-- is this refering to the actual enum or just a status that shows in the ui not a real column? explain
-
-- **`assertCutLogUserTransition` retention** — kept or deleted? Recommended: delete, since users no longer touch `status` post-sweep-1.
-- delete if its not a part of what were doing now. this is the full sweep for cut logs domain
-
-- **`isCutLogMostRecent` + `assertCutLogDeleteAllowed` retention** — under "PENDING is freely editable + worker-only completes", does the most-recent constraint still apply? Probably not — pending rows can be deleted in any order; finalized rows can't be deleted at all.
-- yes, pending cut logs can be deleted in any order.
-- finalized rows can only be voided.
-
-- **Work-order-link CHECK constraint** — deferred from sweep 1 to here. Domain rule (`assertCutLogLinkageSymmetry`) already exists in `cut-log-rules.ts` — keep relying on it, OR add the DB CHECK in a small follow-up migration. User's call.
-- what is this for.
-
-Also i just want to confirm that we are scoped to the cut logs domain. the data layer is the next sweep. application use cases are after data layer. 
+- **Pending-save mode** — diff-save with `tempId`, mirrors staged-inv
+  `diff/{types,rules,identity}.ts` exactly. Triggered from canonical
+  save / discard / dirty-slate controller.
+- **Finalize** — clean-slate batch (UI gates the action when section
+  has dirty edits). Worker writes only `before`, `after`,
+  `finalCutSequence`, `status=FINAL`, `isFinal=true`.
+- **Void** — single-row, worker-driven, always one-at-a-time. Worker
+  writes `cut/coverageCut/cost/freight → null`, plus `void=true`,
+  `status=VOID`. Preserves `isFinal`, `finalCutSequence`,
+  `cutLogNumber`, `notes`, `isWaste`.
+- **`finalCutSequence` allocator** — pure helper
+  `nextFinalCutSequence(currentMax)` lives in domain
+  (`cut-logs/final-cut-sequence.ts`); worker calls after its locked
+  `MAX(finalCutSequence)` query.
+- **Total cut-sum recalculation** — pure helpers
+  `computeTotalCutSum(rows)` and
+  `assertCutSumWithinStartingStock(sum, startingStock)` in
+  `cut-logs/cut-sum-math.ts`. Single source of truth for the
+  invariant `totalCutSum ≤ startingStock`. Used by every code path
+  that mutates cuts.
+- **`QUEUED` UI label** — confirmed: this is a real Postgres enum
+  value (sweep 1 added it). The "label" question was about the UI
+  string `formatCutLogStatus("QUEUED")` returns — chosen as `"Queued"`.
+- **`assertCutLogUserTransition`** — DELETED. Users no longer write
+  `status` post-sweep-1; worker owns transitions.
+- **`isCutLogMostRecent`** — DELETED. Pending cut logs deletable in
+  any order; finalized rows deletable not at all (only voidable).
+- **`assertCutLogDeleteAllowed`** — REWRITTEN to wrap
+  `canDeleteCutLog` (= PENDING + `!isFinal` + `!void` + not QUEUED).
+- **Work-order-link CHECK constraint** — DEFERRED indefinitely.
+  Domain rule `assertCutLogLinkageSymmetry` is sufficient. The DB
+  CHECK question was just belt-and-suspenders ("would Postgres also
+  reject an asymmetric row, even if the domain rule was bypassed?").
+  Easy follow-up migration if hard DB enforcement is ever wanted.
+- **Links editable for life** — `workOrderId` / `workOrderItemId`
+  editable on PENDING, FINAL, VOID; blocked only while
+  `status === "QUEUED"`. Link edits flow through their own sync use
+  case (no worker); pending-save form does NOT carry links.
+- **Scope confirmed** — sweep 2 is cut-log domain only. Data layer
+  is sweep 3, application use cases sweep 4.
 
