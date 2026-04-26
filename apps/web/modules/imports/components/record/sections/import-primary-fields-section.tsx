@@ -1,14 +1,8 @@
 "use client"
 
-import {
-  RECORD_FIELD_CONTROL_CLASS_NAME,
-  RECORD_TEXTAREA_CONTROL_CLASS_NAME,
-  RecordFormField,
-  RecordPrimaryFieldCell,
-  RecordPrimaryFieldsGrid,
-  RecordPrimaryPane,
-  RecordPrimarySection,
-} from "@/modules/shared/engines/record-view"
+import { CellAt } from "@/components/layout-grid"
+import { FieldSection, FormField } from "@/components/fields"
+import { TextCell, TextareaCell, SelectCell, DropdownCell } from "@/components/cells"
 import type { ImportPrimaryForm } from "@builders/domain"
 import type { ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
@@ -25,82 +19,61 @@ export function ImportPrimaryFieldsSection({
   disabled: boolean
   onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
 }) {
-  return (
-    <RecordPrimarySection>
-      <RecordPrimaryPane variant="side" placement="left">
-        <RecordPrimaryFieldsGrid variant="side">
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Order Number">
-              <input
-                value={draft.orderNumber}
-                onChange={(event) => onFieldChange("orderNumber", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Manufacturer">
-              <select
-                value={draft.manufacturerId}
-                onChange={(event) => onFieldChange("manufacturerId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              >
-                <option value="">Select Manufacturer</option>
-                {manufacturerOptions.map((manufacturer) => (
-                  <option key={manufacturer.id} value={manufacturer.id}>
-                    {manufacturer.label}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-        </RecordPrimaryFieldsGrid>
-      </RecordPrimaryPane>
+  const editable = !disabled
 
-      <RecordPrimaryPane variant="main" placement="right">
-        <RecordPrimaryFieldsGrid>
-          <RecordPrimaryFieldCell size="md">
-            <RecordFormField label="Warehouse">
-              <select
-                value={draft.warehouseId}
-                onChange={(event) => onFieldChange("warehouseId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              >
-                <option value="">Select Warehouse</option>
-                {warehouseOptions.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </option>
-                ))}
-              </select>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="md">
-            <RecordFormField label="Tag">
-              <input
-                value={draft.tag}
-                onChange={(event) => onFieldChange("tag", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="lg">
-            <RecordFormField label="Notes">
-              <textarea
-                value={draft.notes}
-                onChange={(event) => onFieldChange("notes", event.target.value)}
-                rows={3}
-                className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-        </RecordPrimaryFieldsGrid>
-      </RecordPrimaryPane>
-    </RecordPrimarySection>
+  return (
+    <FieldSection>
+      <CellAt col={1} colSpan={2}>
+        <FormField label="Order Number">
+          <TextCell
+            editable={editable}
+            value={draft.orderNumber}
+            onChange={(value) => onFieldChange("orderNumber", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={3} colSpan={2}>
+        <FormField label="Tag">
+          <TextCell
+            editable={editable}
+            value={draft.tag}
+            onChange={(value) => onFieldChange("tag", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="Warehouse" required>
+          <SelectCell
+            editable={editable}
+            value={draft.warehouseId}
+            onChange={(value) => onFieldChange("warehouseId", value)}
+            options={warehouseOptions.map((warehouse) => ({ value: warehouse.id, label: warehouse.name }))}
+            placeholder="Select Warehouse"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={7} colSpan={2}>
+        <FormField label="Manufacturer">
+          <DropdownCell
+            editable={editable}
+            value={draft.manufacturerId || null}
+            onChange={(value) => onFieldChange("manufacturerId", value ?? "")}
+            options={manufacturerOptions}
+            allowClear
+            placeholder="Select Manufacturer"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Notes">
+          <TextareaCell
+            editable={editable}
+            value={draft.notes}
+            onChange={(value) => onFieldChange("notes", value)}
+            rows={3}
+          />
+        </FormField>
+      </CellAt>
+    </FieldSection>
   )
 }
