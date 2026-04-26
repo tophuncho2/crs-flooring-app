@@ -1,5 +1,6 @@
 // Mock of Prisma models from packages/db/prisma/schema.prisma
-// Scope: FlooringInventory, FlooringCutLog, FlooringWorkOrder, FlooringWorkOrderItem
+// Scope: FlooringInventory, FlooringCutLog, FlooringWorkOrder, FlooringWorkOrderItem,
+//        FlooringTemplate, FlooringTemplateItem
 // (plus the enums referenced by these models)
 
 enum FlooringVacancyStatus {
@@ -152,4 +153,53 @@ model FlooringWorkOrderItem {
   @@index([productId])
   @@index([sourceTemplateItemId])
   @@map("flooring_work_order_item")
+}
+
+model FlooringTemplate {
+  id                   String                     @id @default(uuid())
+  templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || lpad((nextval('flooring_template_number_seq'::regclass))::text, 5, '0'::text))")) @map("template_number")
+  propertyId           String
+  property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  managementCompanyId  String?
+  managementCompany    FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
+  jobTypeId            String?
+  jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
+  warehouseId          String?
+  warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  unitType             String
+  description          String?
+  instructions         String?
+  propertyInstructions String?
+  templateNotes        String?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  items                FlooringTemplateItem[]
+  workOrders           FlooringWorkOrder[]
+
+  @@index([templateNumber])
+  @@index([propertyId])
+  @@index([managementCompanyId])
+  @@index([jobTypeId])
+  @@index([warehouseId])
+  @@index([unitType])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@map("flooring_template")
+}
+
+model FlooringTemplateItem {
+  id         String           @id @default(uuid())
+  templateId String
+  template   FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  productId  String
+  product    FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity   Decimal          @db.Decimal(10, 2)
+  unitPrice  Decimal          @db.Decimal(10, 2)
+  notes      String?
+  createdAt  DateTime         @default(now())
+
+  @@index([templateId])
+  @@index([templateId, createdAt])
+  @@index([productId])
+  @@map("flooring_template_item")
 }
