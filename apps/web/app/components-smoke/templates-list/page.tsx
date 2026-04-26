@@ -19,6 +19,7 @@ import { Grid, GridEmpty, type GridColumn, type GridLayout, type GridRow } from 
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
 import { SortToggle } from "@/components/features/sort"
+import { GroupTree, type GroupNode } from "@/components/features/group"
 import { PaginateControls } from "@/components/features/paginate"
 
 // ---------- Fixture types (shape matches `TemplateListRow` from @builders/domain) ----------
@@ -139,13 +140,42 @@ const ALL_COLUMN_KEYS = [
   "items",
 ] as const
 
+// Columns the user can group by. Mirrors the live templates list's `groupable`
+// flags on `useConfiguredTableState` fields.
+const GROUPABLE_KEYS = ["property", "managementCompany", "jobType", "warehouse", "unitType"] as const
+
+type GroupableKey = (typeof GROUPABLE_KEYS)[number]
+
+const GROUPABLE_LABELS: Record<GroupableKey, string> = {
+  property: "Property",
+  managementCompany: "Management Company",
+  jobType: "Job Type",
+  warehouse: "Warehouse",
+  unitType: "Unit Type",
+}
+
+function groupValue(row: TemplateRowFixture, key: GroupableKey): string {
+  switch (key) {
+    case "property":
+      return row.propertyName || "—"
+    case "managementCompany":
+      return row.managementCompanyName || "(no management company)"
+    case "jobType":
+      return row.jobTypeName || "(no job type)"
+    case "warehouse":
+      return row.warehouseName || "—"
+    case "unitType":
+      return row.unitType || "—"
+  }
+}
+
 // ---------- Page -----------------------------------------------------------
 
 export default function TemplatesListSmokePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [page, setPage] = useState(1)
-  const [hiddenColumnKeys, setHiddenColumnKeys] = useState<Set<string>>(new Set())
+  const [groupKey, setGroupKey] = useState<GroupableKey | "">("")
 
   const filteredRows = useMemo(() => {
     if (!searchQuery) return TEMPLATES
@@ -171,21 +201,31 @@ export default function TemplatesListSmokePage() {
     )
   }, [filteredRows, sortDirection])
 
-  const visibleKeys = ALL_COLUMN_KEYS.filter((key) => !hiddenColumnKeys.has(key))
-  const dataColumns: GridColumn<TemplateRowFixture>[] = visibleKeys
+  const dataColumns: GridColumn<TemplateRowFixture>[] = ALL_COLUMN_KEYS
     .map((key) => TEMPLATES_LIST_COLUMNS_BY_KEY[key])
     .filter((col): col is GridColumn<TemplateRowFixture> => Boolean(col))
 
   const layout: GridLayout<TemplateRowFixture> = { dataColumns }
 
-  function toggleColumn(key: string) {
-    setHiddenColumnKeys((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
+  // Build the group tree when a group key is selected. Empty buckets are
+  // dropped; bucket label includes the row count for quick visual scan.
+  const groupTree = useMemo<GroupNode<TemplateRowFixture>[]>(() => {
+    if (!groupKey) return []
+    const buckets = new Map<string, TemplateRowFixture[]>()
+    for (const row of sortedRows) {
+      const value = groupValue(row, groupKey)
+      const list = buckets.get(value)
+      if (list) list.push(row)
+      else buckets.set(value, [row])
+    }
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label, rows]) => ({
+        key: `${groupKey}:${label}`,
+        label: `${label} (${rows.length})`,
+        rows,
+      }))
+  }, [sortedRows, groupKey])
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-8">
