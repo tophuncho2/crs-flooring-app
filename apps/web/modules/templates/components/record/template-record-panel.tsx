@@ -94,29 +94,17 @@ export function TemplateRecordPanel({
             <TemplateMaterialItemsSection
               items={materialItems.items}
               productOptions={productOptions}
-              onChangeField={materialItems.changeField}
-              onRemoveItem={materialItems.removeItem}
+              isDirty={materialItems.isDirty}
+              isSaving={materialItems.isSaving}
+              hasConflict={materialItems.hasConflict}
+              error={materialItems.error?.message ?? null}
               noticeMessage={materialItems.noticeMessage}
               noticeError={materialItems.noticeError}
-              subHeader={{
-                isDirty: materialItems.isDirty,
-                isSaving: materialItems.isSaving,
-                hasConflict: materialItems.hasConflict,
-                error: materialItems.error,
-                onSave: () => void materialItems.save(),
-                onDiscard: () => materialItems.discard(),
-                saveLabel: "Save Material Items",
-                savingLabel: "Saving Material Items...",
-                actions: [
-                  {
-                    key: "add-material-item",
-                    kind: "add-row",
-                    label: "Add Material Item",
-                    onClick: materialItems.addItem,
-                    disabled: materialItems.isSaving,
-                  },
-                ],
-              }}
+              onSave={() => void materialItems.save()}
+              onDiscard={() => materialItems.discard()}
+              onAddItem={materialItems.addItem}
+              onChangeField={materialItems.changeField}
+              onRemoveItem={materialItems.removeItem}
             />
           ),
         },

@@ -1,14 +1,9 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
-import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
-import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
-import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
+import { SectionHeader } from "@/components/headers"
+import { SearchControl } from "@/components/features/search"
+import { SortToggle } from "@/components/features/sort"
 import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
 import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
 import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import type { TemplateListRow } from "@builders/domain"
@@ -48,10 +43,8 @@ export default function TemplatesClient({
   const {
     searchQuery,
     isAscendingSort,
-    isGroupingEnabled,
     filteredRows,
     sortedRows,
-    groupedRowTree,
     page,
     pageSize,
     totalPages,
@@ -88,55 +81,73 @@ export default function TemplatesClient({
     disableClientPagination: true,
   })
 
+  const totalItems = pagination?.totalItems ?? filteredRows.length
+
   return (
-    <DashboardListPageScaffold
-      title={<DashboardCardTitle>Templates</DashboardCardTitle>}
-      controls={
-        <DashboardListPageControls
-          count={filteredRows.length}
-          searchQuery={searchQuery}
-          onSearchQueryChange={onSearchQueryChange}
-          searchPlaceholder="Search templates..."
-          isAscendingSort={isAscendingSort}
-          onToggleSort={onToggleSort}
-          primaryAction={
-            <button
-              type="button"
-              onClick={() => templateNavigation.openCreate()}
-              className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
-            >
-              <Plus size={16} />
-              Template
-            </button>
-          }
+    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <SectionHeader
+          title="Templates"
+          actions={[
+            {
+              key: "new",
+              label: "+ Template",
+              onClick: () => templateNavigation.openCreate(),
+              kind: "primary",
+            },
+          ]}
         />
-      }
-      notices={
-        <FormStatusNotices message={controller.notices.message} error={controller.notices.error} />
-      }
-      table={
+
+        {controller.notices.message || controller.notices.error ? (
+          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+            {controller.notices.message ? (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+                {controller.notices.message}
+              </div>
+            ) : null}
+            {controller.notices.error ? (
+              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                {controller.notices.error}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="min-w-[16rem] flex-1">
+            <SearchControl
+              query={searchQuery}
+              onQueryChange={onSearchQueryChange}
+              placeholder="Search templates..."
+            />
+          </div>
+          <SortToggle
+            sortKey="templateNumber"
+            direction={isAscendingSort ? "asc" : "desc"}
+            onChange={() => onToggleSort()}
+            ascendingLabel="A-Z"
+            descendingLabel="Z-A"
+          />
+          <span className="text-xs text-[var(--foreground)]/55">
+            {filteredRows.length} of {totalItems} templates
+          </span>
+        </div>
+
         <TemplatesTable
           rows={sortedRows}
-          visibleColumns={visibleColumns}
-          groupedRows={groupedRowTree as GroupedRowTree<TemplateListRow>[]}
-          isGroupingEnabled={isGroupingEnabled}
+          visibleColumns={visibleColumns.map((column) => ({ key: column.key, label: column.label }))}
+          pagination={pagination}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredRows.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
           onOpen={(row) => templateNavigation.openRecord(row.id)}
         />
-      }
-      pagination={
-        <TablePaginationControls
-          page={pagination?.page ?? page}
-          totalPages={pagination?.totalPages ?? totalPages}
-          pageSize={pagination?.pageSize ?? pageSize}
-          totalItems={pagination?.totalItems ?? filteredRows.length}
-          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-          onPreviousPage={pagination ? undefined : goToPreviousPage}
-          onNextPage={pagination ? undefined : goToNextPage}
-          previousPageHref={pagination?.previousPageHref}
-          nextPageHref={pagination?.nextPageHref}
-        />
-      }
-    />
+      </div>
+    </div>
   )
 }

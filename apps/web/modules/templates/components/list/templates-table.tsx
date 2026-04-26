@@ -1,83 +1,103 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
-import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
-import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import {
-  ClickableTableRow,
-  TableEmptyRow,
-} from "@/modules/shared/engines/list-view/table/table-shell"
-import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
+import { Grid, GridEmpty, type GridColumn, type GridLayout } from "@/components/grid"
+import { PaginateControls } from "@/components/features/paginate"
 import type { TemplateListRow } from "@builders/domain"
+
+const TEMPLATES_LIST_COLUMNS_BY_KEY: Record<string, GridColumn<TemplateListRow>> = {
+  templateNumber: { key: "templateNumber", label: "Template #", minWidth: 130, grow: 0 },
+  unitType: { key: "unitType", label: "Unit Type", minWidth: 130, grow: 0 },
+  property: { key: "property", label: "Property", minWidth: 200, grow: 1 },
+  managementCompany: { key: "managementCompany", label: "Management Company", minWidth: 200, grow: 1 },
+  jobType: { key: "jobType", label: "Job Type", minWidth: 160, grow: 0 },
+  warehouse: { key: "warehouse", label: "Warehouse", minWidth: 140, grow: 0 },
+  description: { key: "description", label: "Description", minWidth: 280, grow: 1.5 },
+  items: { key: "items", label: "Items", kind: "number", minWidth: 80, grow: 0, align: "end" },
+}
 
 export function TemplatesTable({
   rows,
   visibleColumns,
-  groupedRows,
-  isGroupingEnabled,
+  pagination,
+  page,
+  totalPages,
+  pageSize,
+  totalItems,
+  hasPreviousPage,
+  hasNextPage,
+  onPreviousPage,
+  onNextPage,
   onOpen,
 }: {
   rows: TemplateListRow[]
   visibleColumns: Array<{ key: string; label: string }>
-  groupedRows: GroupedRowTree<TemplateListRow>[]
-  isGroupingEnabled: boolean
+  pagination?: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+    previousPageHref: string
+    nextPageHref: string
+  }
+  page: number
+  totalPages: number
+  pageSize: number
+  totalItems: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  onPreviousPage: () => void
+  onNextPage: () => void
   onOpen: (row: TemplateListRow) => void
 }) {
-  function renderRow(row: TemplateListRow) {
-    const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      templateNumber: (columnIndex) => (
-        <DashboardListRowCell key="templateNumber" columnIndex={columnIndex} className="font-medium text-blue-500">
-          {row.templateNumber}
-        </DashboardListRowCell>
-      ),
-      unitType: (columnIndex) => (
-        <DashboardListRowCell key="unitType" columnIndex={columnIndex}>{row.unitType || "-"}</DashboardListRowCell>
-      ),
-      property: (columnIndex) => (
-        <DashboardListRowCell key="property" columnIndex={columnIndex}>{row.propertyName || "-"}</DashboardListRowCell>
-      ),
-      managementCompany: (columnIndex) => (
-        <DashboardListRowCell key="managementCompany" columnIndex={columnIndex}>
-          {row.managementCompanyName || "-"}
-        </DashboardListRowCell>
-      ),
-      jobType: (columnIndex) => (
-        <DashboardListRowCell key="jobType" columnIndex={columnIndex}>{row.jobTypeName || "-"}</DashboardListRowCell>
-      ),
-      warehouse: (columnIndex) => (
-        <DashboardListRowCell key="warehouse" columnIndex={columnIndex}>{row.warehouseName || "-"}</DashboardListRowCell>
-      ),
-      description: (columnIndex) => (
-        <DashboardListRowCell key="description" columnIndex={columnIndex}>{row.description || "-"}</DashboardListRowCell>
-      ),
-      items: (columnIndex) => (
-        <DashboardListRowCell key="items" columnIndex={columnIndex}>{row.itemsCount}</DashboardListRowCell>
-      ),
-    }
+  const dataColumns = visibleColumns
+    .map((column) => TEMPLATES_LIST_COLUMNS_BY_KEY[column.key])
+    .filter((column): column is GridColumn<TemplateListRow> => Boolean(column))
 
-    return (
-      <ClickableTableRow
-        key={row.id}
-        ariaLabel={`Open template ${row.templateNumber}`}
-        onClick={() => onOpen(row)}
-      >
-        {renderDashboardRowCells(visibleColumns, cells)}
-      </ClickableTableRow>
-    )
-  }
+  const layout: GridLayout<TemplateListRow> = { dataColumns }
 
   return (
-    <DashboardListPageTable minWidthClass="min-w-[1320px]" columns={visibleColumns}>
-      {isGroupingEnabled
-        ? renderGroupedTableRows({
-            groups: groupedRows,
-            colSpan: visibleColumns.length,
-            renderRow,
-          })
-        : rows.map((row) => renderRow(row))}
-      {rows.length === 0 ? <TableEmptyRow message="No templates found." colSpan={visibleColumns.length} /> : null}
-    </DashboardListPageTable>
+    <Grid<TemplateListRow>
+      rows={rows}
+      layout={layout}
+      empty={<GridEmpty>No templates found.</GridEmpty>}
+      onRowClick={(row) => onOpen(row)}
+      getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
+      renderCell={(column, row) => {
+        switch (column.key) {
+          case "templateNumber":
+            return <span className="font-medium text-blue-500">{row.templateNumber}</span>
+          case "unitType":
+            return row.unitType || "-"
+          case "property":
+            return row.propertyName || "-"
+          case "managementCompany":
+            return row.managementCompanyName || "-"
+          case "jobType":
+            return row.jobTypeName || "-"
+          case "warehouse":
+            return row.warehouseName || "-"
+          case "description":
+            return row.description || "-"
+          case "items":
+            return <span className="tabular-nums">{row.itemsCount}</span>
+          default:
+            return "-"
+        }
+      }}
+      footerSlot={
+        <PaginateControls
+          page={pagination?.page ?? page}
+          pageSize={pagination?.pageSize ?? pageSize}
+          totalItems={pagination?.totalItems ?? totalItems}
+          totalPages={pagination?.totalPages ?? totalPages}
+          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
+          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
+          onPreviousPage={pagination ? undefined : onPreviousPage}
+          onNextPage={pagination ? undefined : onNextPage}
+          previousPageHref={pagination?.previousPageHref}
+          nextPageHref={pagination?.nextPageHref}
+        />
+      }
+    />
   )
 }
