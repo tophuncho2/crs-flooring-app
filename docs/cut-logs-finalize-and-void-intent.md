@@ -126,3 +126,11 @@ locks queue any pending-edit jobs for the same inventory.
   time, to keep the pattern uniform with pending save and finalize.
 - UI strategy during the async lag on pending edits (optimistic update vs.
   visible pending indicator vs. blocking spinner).
+- Cut log → work order / work order item link rules. Settled so far:
+  both `workOrderId` and `workOrderItemId` must remain **editable** for the
+  life of the cut log (not write-once at creation). **Pending decision:**
+  whether a cut log is allowed to have only a `workOrderId` without a
+  `workOrderItemId` (or vice versa), or whether the two must always be
+  set/cleared together. Today's schema makes both nullable independently;
+  the alteration may tighten this with a domain rule, a DB check
+  constraint, or by collapsing them into a single linkage.
