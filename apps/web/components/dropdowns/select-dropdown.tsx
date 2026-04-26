@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import type { DropdownOption } from "./contracts/dropdown-option"
 
 const TRIGGER_BASE_CLASS_NAME =
@@ -47,6 +48,7 @@ export function SelectDropdown({
   const listboxId = useId()
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState<number>(-1)
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const listboxRef = useRef<HTMLDivElement | null>(null)
 
@@ -84,14 +86,33 @@ export function SelectDropdown({
   useEffect(() => {
     if (!open) return
     function onPointerDown(event: PointerEvent) {
-      if (!containerRef.current) return
-      if (!containerRef.current.contains(event.target as Node)) {
-        setOpen(false)
-        setActiveIndex(-1)
-      }
+      const target = event.target as Node
+      if (containerRef.current?.contains(target)) return
+      if (listboxRef.current?.contains(target)) return
+      setOpen(false)
+      setActiveIndex(-1)
     }
     document.addEventListener("pointerdown", onPointerDown)
     return () => document.removeEventListener("pointerdown", onPointerDown)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    function updateRect() {
+      const trigger = containerRef.current?.querySelector<HTMLButtonElement>(
+        "button[data-dropdown-trigger]",
+      )
+      if (trigger) setTriggerRect(trigger.getBoundingClientRect())
+    }
+    updateRect()
+    window.addEventListener("resize", updateRect)
+    // Capture-phase scroll listener catches scrolls inside any ancestor (the
+    // grid's `overflow-x-auto` wrapper, the page itself, modals, etc.).
+    window.addEventListener("scroll", updateRect, true)
+    return () => {
+      window.removeEventListener("resize", updateRect)
+      window.removeEventListener("scroll", updateRect, true)
+    }
   }, [open])
 
   useEffect(() => {
@@ -191,49 +212,63 @@ export function SelectDropdown({
           ▾
         </span>
       </button>
-      {open ? (
-        <div
-          ref={listboxRef}
-          id={listboxId}
-          role="listbox"
-          tabIndex={-1}
-          aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
-          onKeyDown={handleListKeyDown}
-          className="absolute left-0 right-0 top-full z-40 mt-1 max-h-56 overflow-y-auto rounded-md border border-sky-500/35 bg-[var(--panel-background)] shadow-lg focus:outline-none"
-        >
-          {keyedOptions.length === 0 ? (
-            <div className="px-2.5 py-1.5 text-sm text-[var(--foreground)]/60">No options</div>
-          ) : (
-            keyedOptions.map((option, index) => {
-              const isActive = index === activeIndex
-              const isSelected = option.id === value || (option.isClear && value === null)
-              return (
-                <div
-                  key={option.id}
-                  id={`${listboxId}-option-${index}`}
-                  role="option"
-                  aria-selected={isSelected}
-                  aria-disabled={option.disabled || undefined}
-                  data-option-index={index}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => !option.disabled && commitSelection(option.id)}
-                  className={joinClassNames(
-                    "cursor-pointer px-2.5 py-1.5 text-sm",
-                    isActive ? "bg-sky-500/20 text-[var(--foreground)]" : "text-[var(--foreground)]",
-                    option.isClear ? "italic text-[var(--foreground)]/70" : undefined,
-                    option.disabled ? "cursor-not-allowed opacity-50" : undefined,
-                  )}
-                >
-                  <div className="truncate">{option.label}</div>
-                  {option.hint ? (
-                    <div className="truncate text-[11px] text-[var(--foreground)]/55">{option.hint}</div>
-                  ) : null}
-                </div>
-              )
-            })
-          )}
-        </div>
-      ) : null}
+      {open && triggerRect && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={listboxRef}
+              id={listboxId}
+              role="listbox"
+              tabIndex={-1}
+              aria-activedescendant={
+                activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
+              }
+              onKeyDown={handleListKeyDown}
+              style={{
+                position: "fixed",
+                top: triggerRect.bottom + 4,
+                left: triggerRect.left,
+                width: triggerRect.width,
+                zIndex: 1000,
+              }}
+              className="max-h-56 overflow-y-auto rounded-md border border-sky-500/35 bg-[var(--panel-background)] shadow-lg focus:outline-none"
+            >
+              {keyedOptions.length === 0 ? (
+                <div className="px-2.5 py-1.5 text-sm text-[var(--foreground)]/60">No options</div>
+              ) : (
+                keyedOptions.map((option, index) => {
+                  const isActive = index === activeIndex
+                  const isSelected = option.id === value || (option.isClear && value === null)
+                  return (
+                    <div
+                      key={option.id}
+                      id={`${listboxId}-option-${index}`}
+                      role="option"
+                      aria-selected={isSelected}
+                      aria-disabled={option.disabled || undefined}
+                      data-option-index={index}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onClick={() => !option.disabled && commitSelection(option.id)}
+                      className={joinClassNames(
+                        "cursor-pointer px-2.5 py-1.5 text-sm",
+                        isActive ? "bg-sky-500/20 text-[var(--foreground)]" : "text-[var(--foreground)]",
+                        option.isClear ? "italic text-[var(--foreground)]/70" : undefined,
+                        option.disabled ? "cursor-not-allowed opacity-50" : undefined,
+                      )}
+                    >
+                      <div className="truncate">{option.label}</div>
+                      {option.hint ? (
+                        <div className="truncate text-[11px] text-[var(--foreground)]/55">
+                          {option.hint}
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }
