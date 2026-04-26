@@ -34,27 +34,25 @@ export function InventoryPrimaryFieldsSection({
 
   return (
     <FieldSection>
-      <CellAt col={1} colSpan={4}>
+      {/* Row 1: Product · Import # · Full Location */}
+      <CellAt col={1} row={1} colSpan={4}>
         <FormField label="Product">
           <TextCell editable={false} value={inventory.productName} />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={2}>
+      <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Import #">
           <TextCell editable={false} value={formatInventoryImportNumber(inventory.importNumber)} />
         </FormField>
       </CellAt>
-      <CellAt col={7} colSpan={2}>
-        <FormField label="Item #">
-          <TextCell
-            editable={editable}
-            value={draft.itemNumber}
-            onChange={(value) => onFieldChange("itemNumber", value)}
-          />
+      <CellAt col={7} row={1} colSpan={2}>
+        <FormField label="Full Location">
+          <StaticFieldValue>{selectedLocation?.locationCode || "-"}</StaticFieldValue>
         </FormField>
       </CellAt>
 
-      <CellAt col={1} colSpan={2}>
+      {/* Row 2: Warehouse · Location · Starting Balance · Cut Balance */}
+      <CellAt col={1} row={2} colSpan={2}>
         <FormField label="Warehouse" required>
           <SelectCell
             editable={editable}
@@ -65,7 +63,7 @@ export function InventoryPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={3} colSpan={2}>
+      <CellAt col={3} row={2} colSpan={2}>
         <FormField label="Location">
           <SelectCell
             editable={editable && Boolean(draft.warehouseId)}
@@ -76,12 +74,23 @@ export function InventoryPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={2}>
-        <FormField label="Full Location">
-          <StaticFieldValue>{selectedLocation?.locationCode || "-"}</StaticFieldValue>
+      <CellAt col={5} row={2} colSpan={2}>
+        <FormField label="Starting Balance">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={7} colSpan={2}>
+      <CellAt col={7} row={2} colSpan={2}>
+        <FormField label="Cut Balance">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+
+      {/* Row 3: Lot · Item # · Available · Coverage (conditional) */}
+      <CellAt col={1} row={3} colSpan={2}>
         <FormField label="Lot">
           <TextCell
             editable={editable}
@@ -90,22 +99,16 @@ export function InventoryPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-
-      <CellAt col={1} colSpan={2}>
-        <FormField label="Starting Balance">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
+      <CellAt col={3} row={3} colSpan={2}>
+        <FormField label="Item #">
+          <TextCell
+            editable={editable}
+            value={draft.itemNumber}
+            onChange={(value) => onFieldChange("itemNumber", value)}
+          />
         </FormField>
       </CellAt>
-      <CellAt col={3} colSpan={2}>
-        <FormField label="Cut Balance">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={2}>
+      <CellAt col={5} row={3} colSpan={2}>
         <FormField label="Available">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
@@ -113,7 +116,7 @@ export function InventoryPrimaryFieldsSection({
         </FormField>
       </CellAt>
       {inventory.coverageBalance ? (
-        <CellAt col={7} colSpan={2}>
+        <CellAt col={7} row={3} colSpan={2}>
           <FormField label="Coverage">
             <StaticFieldValue>
               {formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)}
@@ -122,18 +125,20 @@ export function InventoryPrimaryFieldsSection({
         </CellAt>
       ) : null}
 
-      <CellAt col={1} colSpan={2}>
+      {/* Row 4: Cost · Freight */}
+      <CellAt col={1} row={4} colSpan={2}>
         <FormField label="Cost">
           <StaticFieldValue>{inventory.cost ? `$${inventory.cost}` : "-"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={3} colSpan={2}>
+      <CellAt col={3} row={4} colSpan={2}>
         <FormField label="Freight">
           <StaticFieldValue>{inventory.freight ? `$${inventory.freight}` : "-"}</StaticFieldValue>
         </FormField>
       </CellAt>
 
-      <CellAt col={1} colSpan={8}>
+      {/* Row 5: Notes (full width) */}
+      <CellAt col={1} row={5} colSpan={8}>
         <FormField label="Notes">
           <TextareaCell
             editable={editable}
