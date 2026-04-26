@@ -227,7 +227,10 @@ export function SelectDropdown({
                 position: "fixed",
                 top: triggerRect.bottom + 4,
                 left: triggerRect.left,
-                width: triggerRect.width,
+                // The popup grows to fit its widest option (no fixed `width`),
+                // but never below the trigger width and never past the viewport.
+                minWidth: triggerRect.width,
+                maxWidth: `min(40rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
                 zIndex: 1000,
               }}
               className="max-h-56 overflow-y-auto rounded-md border border-sky-500/35 bg-[var(--panel-background)] shadow-lg focus:outline-none"
@@ -255,9 +258,9 @@ export function SelectDropdown({
                         option.disabled ? "cursor-not-allowed opacity-50" : undefined,
                       )}
                     >
-                      <div className="truncate">{option.label}</div>
+                      <div className="whitespace-nowrap">{option.label}</div>
                       {option.hint ? (
-                        <div className="truncate text-[11px] text-[var(--foreground)]/55">
+                        <div className="whitespace-nowrap text-[11px] text-[var(--foreground)]/55">
                           {option.hint}
                         </div>
                       ) : null}

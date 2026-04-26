@@ -27,7 +27,7 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
   leadingControls: [{ key: "select", kind: "selection", width: 40 }],
   dataColumns: [
     { key: "categoryFilter", label: "Filter", minWidth: 132, grow: 0 },
-    { key: "product", label: "Product", minWidth: 220, grow: 1.3 },
+    { key: "product", label: "Product", minWidth: 220, preferredWidth: 320, grow: 1.5 },
     { key: "itemNumber", label: "Item #", minWidth: 116, grow: 0 },
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
     { key: "location", label: "Location", minWidth: 196, grow: 0 },
