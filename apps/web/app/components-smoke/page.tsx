@@ -18,6 +18,7 @@
 // DELETE BEFORE MERGING THE NEXT MIGRATION SWEEP:
 //   rm -rf apps/web/app/components-smoke
 
+import Link from "next/link"
 import { useState } from "react"
 import { Grid, GridEmpty, type GridLayout, type GridRow } from "@/components/grid"
 import { CellAt } from "@/components/layout-grid"
@@ -289,6 +290,17 @@ export default function InventoryRecordCutLogsSmokePage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-8">
+      <nav className="flex flex-wrap gap-3 text-sm">
+        <span className="font-medium text-[var(--foreground)]">Inventory record (cut logs)</span>
+        <span className="text-[var(--foreground)]/45">·</span>
+        <Link
+          href="/components-smoke/inventory-list"
+          className="text-[var(--foreground)]/65 hover:text-[var(--foreground)]"
+        >
+          Inventory list →
+        </Link>
+      </nav>
+
       <header className="space-y-2">
         <h1 className="text-2xl font-bold text-[var(--foreground)]">
           Inventory record · cut logs smoke
