@@ -9,7 +9,13 @@
 
 import type { CellAlign } from "./grid-cell-kind"
 
-export type GridControlKind = "selection" | "expand" | "actions" | "open" | "status-indicator"
+export type GridControlKind =
+  | "selection"
+  | "expand"
+  | "actions"
+  | "open"
+  | "status-indicator"
+  | "void"
 
 export type GridControlColumn = {
   key: string

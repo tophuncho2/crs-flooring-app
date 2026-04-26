@@ -1,195 +1,175 @@
 "use client"
 
-// Primitive catalog — kitchen-sink smoke page rendering every primitive in
-// `apps/web/components/` against fixture data. Use this for primitive-level
-// visual checks (cell tones, dropdown popovers, badge styles, etc).
+// Smoke page mirroring the inventory record view (`/dashboard/inventory/[id]`)
+// with the focus on the cut logs section. Cut logs is the next module-level
+// migration target; this page rehearses the workflow on top of the new
+// `apps/web/components/` primitives before any real-module wiring lands.
 //
-// For module-level rehearsals (mirrors of the actual screens we're about to
-// migrate), see the sibling routes:
-//   - /components-smoke/imports-list    — mirror of /dashboard/imports
-//   - /components-smoke/imports-record  — mirror of /dashboard/imports/[id]
+// Cut logs reuses the same controller surface as the imports staged-inventory
+// rows section: add row · discard · save rows · selection-driven multi-row
+// action. The deviation from staged-rows is that the multi-row action is
+// "Finalize" instead of "Run Import", and finalized rows expose a separate
+// `void` trailing-control column. Once finalized, a row can no longer be
+// edited or deleted — it can only be voided.
+//
+// The void column lives behind a generic `RowActionButton` primitive so the
+// staged-inventory section could adopt it later without new components.
 //
 // DELETE BEFORE MERGING THE NEXT MIGRATION SWEEP:
 //   rm -rf apps/web/app/components-smoke
 
-import Link from "next/link"
-import { Fragment, useState } from "react"
-
-// grid/
-import {
-  Grid,
-  GridBodyRow,
-  ScopedRow,
-  type GridColumn,
-  type GridLayout,
-  type GridRow,
-} from "@/components/grid"
-
-// layout-grid/ + fields/
-import { LayoutGrid, CellAt } from "@/components/layout-grid"
+import { useState } from "react"
+import { Grid, GridEmpty, type GridLayout, type GridRow } from "@/components/grid"
+import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-
-// cells/
 import {
-  TextCell,
-  NumberCell,
-  CurrencyCell,
-  UnitCell,
-  PerUnitCell,
-  SelectCell,
-  DropdownCell,
-  StatusCell,
   CheckboxCell,
+  RowActionButton,
+  SelectCell,
+  TextCell,
+  TextareaCell,
+  UnitCell,
 } from "@/components/cells"
+import { StatusBadge } from "@/components/badges"
+import { ActionHeader, SectionHeader } from "@/components/headers"
 
-// dropdowns/
-import { SelectDropdown, SearchDropdown } from "@/components/dropdowns"
+// ---------- Cut log fixture types ------------------------------------------
 
-// badges/
-import { StatusBadge, TonePill } from "@/components/badges"
+type CutLogStatus = "DRAFT" | "FINALIZED" | "VOIDED"
 
-// headers/
-import { SectionHeader, ActionHeader } from "@/components/headers"
-
-// features/
-import { SearchControl } from "@/components/features/search"
-import { SortToggle } from "@/components/features/sort"
-import { GroupTree } from "@/components/features/group"
-import { PaginateControls } from "@/components/features/paginate"
-
-// ---------- Fixture data ---------------------------------------------------
-
-type ImportFixture = GridRow & {
-  id: string
-  importNumber: string
-  tag: string
-  warehouseName: string
-  manufacturerName: string
-  percent: string
-  stagedCount: number
-  liveCount: number
-  status: "DRAFT" | "QUEUED" | "IMPORTED"
+type CutLogFixture = GridRow & {
+  cutNumber: number
+  cutAmount: string
+  workOrderId: string | null
+  cutBy: string
+  notes: string
+  status: CutLogStatus
 }
 
-const IMPORT_FIXTURES: ImportFixture[] = [
+const WORK_ORDERS = [
+  { value: "wo-1001", label: "WO-1001 · Mercer kitchen" },
+  { value: "wo-1002", label: "WO-1002 · Holcomb master bath" },
+  { value: "wo-1003", label: "WO-1003 · Patel hallway" },
+  { value: "wo-1004", label: "WO-1004 · Brookhurst office" },
+]
+
+const CUTTERS = [
+  { value: "alex", label: "Alex (warehouse)" },
+  { value: "jordan", label: "Jordan (install crew)" },
+  { value: "sam", label: "Sam (install crew)" },
+]
+
+const INITIAL_CUT_LOGS: CutLogFixture[] = [
   {
-    id: "imp-1",
-    importNumber: "IMP-0001",
-    tag: "Spring 24",
-    warehouseName: "Warehouse 1",
-    manufacturerName: "Acme Flooring",
-    percent: "100",
-    stagedCount: 12,
-    liveCount: 12,
-    status: "IMPORTED",
+    id: "cut-1",
+    cutNumber: 1,
+    cutAmount: "12.50",
+    workOrderId: "wo-1001",
+    cutBy: "alex",
+    notes: "First cut from this lot",
+    status: "FINALIZED",
   },
   {
-    id: "imp-2",
-    importNumber: "IMP-0002",
-    tag: "Replenishment",
-    warehouseName: "Warehouse 2",
-    manufacturerName: "Mohawk",
-    percent: "37",
-    stagedCount: 8,
-    liveCount: 3,
-    status: "QUEUED",
-    tone: "warning",
+    id: "cut-2",
+    cutNumber: 2,
+    cutAmount: "8.00",
+    workOrderId: "wo-1002",
+    cutBy: "jordan",
+    notes: "",
+    status: "FINALIZED",
   },
   {
-    id: "imp-3",
-    importNumber: "IMP-0003",
-    tag: "",
-    warehouseName: "Warehouse 1",
-    manufacturerName: "Shaw",
-    percent: "0",
-    stagedCount: 4,
-    liveCount: 0,
+    id: "cut-3",
+    cutNumber: 3,
+    cutAmount: "5.25",
+    workOrderId: "wo-1001",
+    cutBy: "sam",
+    notes: "Cut undersize — voided per Mercer change order",
+    status: "VOIDED",
+  },
+  {
+    id: "cut-4",
+    cutNumber: 4,
+    cutAmount: "15.00",
+    workOrderId: "wo-1003",
+    cutBy: "jordan",
+    notes: "",
+    status: "DRAFT",
+  },
+  {
+    id: "cut-5",
+    cutNumber: 5,
+    cutAmount: "",
+    workOrderId: null,
+    cutBy: "",
+    notes: "",
     status: "DRAFT",
   },
 ]
 
-type SectionFixture = GridRow & { id: string; number: string; locationsCount: number }
-type LocationFixture = GridRow & { id: string; rafter: string; level: string; label: string }
+// ---------- Layout ---------------------------------------------------------
 
-const SECTION_FIXTURES: SectionFixture[] = [
-  { id: "sec-1", number: "Section 1", locationsCount: 2 },
-  { id: "sec-2", number: "Section 2", locationsCount: 1 },
-]
-
-const LOCATIONS_BY_SECTION: Record<string, LocationFixture[]> = {
-  "sec-1": [
-    { id: "loc-1", rafter: "1", level: "1", label: "R1-L1" },
-    { id: "loc-2", rafter: "1", level: "2", label: "R1-L2" },
-  ],
-  "sec-2": [{ id: "loc-3", rafter: "2", level: "1", label: "R2-L1" }],
-}
-
-// ---------- Layouts --------------------------------------------------------
-
-const IMPORTS_LAYOUT: GridLayout<ImportFixture> = {
+const CUT_LOGS_LAYOUT: GridLayout<CutLogFixture> = {
   leadingControls: [{ key: "select", kind: "selection", width: 40 }],
   dataColumns: [
-    { key: "importNumber", label: "Import #", minWidth: 120, grow: 0 },
-    { key: "tag", label: "Tag", minWidth: 140, grow: 1 },
-    { key: "warehouseName", label: "Warehouse", minWidth: 160, grow: 1 },
-    { key: "manufacturerName", label: "Manufacturer", minWidth: 160, grow: 1 },
-    { key: "percent", label: "Percent", kind: "number", minWidth: 100, grow: 0 },
-    { key: "stagedCount", label: "Staged", kind: "number", minWidth: 80, grow: 0 },
-    { key: "liveCount", label: "Live", kind: "number", minWidth: 80, grow: 0 },
-    { key: "status", label: "Status", kind: "status", minWidth: 120, grow: 0, align: "center" },
-  ],
-  trailingControls: [{ key: "actions", kind: "actions", width: 80 }],
-}
-
-const SECTIONS_LAYOUT: GridLayout<SectionFixture> = {
-  dataColumns: [
-    { key: "number", label: "Section", minWidth: 200, grow: 1 },
-    { key: "locationsCount", label: "Locations", kind: "number", minWidth: 120, grow: 0 },
+    { key: "cutNumber", label: "Cut #", kind: "number", minWidth: 80, grow: 0, align: "end" },
+    { key: "cutAmount", label: "Cut Amount", kind: "quantity", minWidth: 140, grow: 0, align: "center" },
+    { key: "workOrder", label: "Work Order", minWidth: 240, grow: 1 },
+    { key: "cutBy", label: "Cut By", minWidth: 180, grow: 0 },
+    { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
   trailingControls: [
-    { key: "expand", kind: "expand", width: 60 },
-    { key: "remove", kind: "actions", width: 60 },
+    { key: "status", kind: "status-indicator", width: 132 },
+    { key: "delete", kind: "actions", width: 72 },
+    { key: "void", kind: "void", width: 80 },
   ],
 }
 
-const LOCATIONS_LAYOUT: GridLayout<LocationFixture> = {
-  dataColumns: [
-    { key: "rafter", label: "Rafter", kind: "number", minWidth: 100, grow: 0 },
-    { key: "level", label: "Level", kind: "number", minWidth: 100, grow: 0 },
-    { key: "label", label: "Label", minWidth: 200, grow: 1 },
-  ],
-  trailingControls: [{ key: "remove", kind: "actions", width: 60 }],
+// ---------- Helpers --------------------------------------------------------
+
+function statusTone(status: CutLogStatus) {
+  switch (status) {
+    case "FINALIZED":
+      return "success" as const
+    case "VOIDED":
+      return "muted" as const
+    case "DRAFT":
+    default:
+      return "default" as const
+  }
 }
 
-// ---------- Section helper -------------------------------------------------
+function isRowEditable(row: CutLogFixture) {
+  return row.status === "DRAFT"
+}
 
-function SmokeSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <h2 className="border-b border-[var(--panel-border)] pb-2 text-lg font-semibold text-[var(--foreground)]">
-        {title}
-      </h2>
-      <div>{children}</div>
-    </section>
-  )
+function isEligibleForFinalize(row: CutLogFixture) {
+  return row.status === "DRAFT" && row.cutAmount !== "" && row.workOrderId !== null && row.cutBy !== ""
+}
+
+function nextCutNumber(rows: CutLogFixture[]) {
+  const max = rows.reduce((acc, row) => (row.cutNumber > acc ? row.cutNumber : acc), 0)
+  return max + 1
 }
 
 // ---------- Page -----------------------------------------------------------
 
-export default function ComponentsSmokePage() {
-  // Form state for FieldSection
-  const [orderNumber, setOrderNumber] = useState("PO-12345")
-  const [tag, setTag] = useState("Spring 24")
-  const [notes, setNotes] = useState("Held at the dock until Tuesday")
-  const [warehouseId, setWarehouseId] = useState("")
-  const [manufacturerId, setManufacturerId] = useState<string | null>(null)
-  const [stockingStock, setStockingStock] = useState("125.00")
-  const [unitPrice, setUnitPrice] = useState("12.50")
-  const [coverage, setCoverage] = useState("0.85")
-  const [archived, setArchived] = useState(false)
-
-  // Selection state for streaming Grid
+export default function InventoryRecordCutLogsSmokePage() {
+  // ----- Cut-logs section state (mirrors `useImportStagedInventoryRowsSection`)
+  const [rows, setRows] = useState(INITIAL_CUT_LOGS)
+  const [savedSnapshot, setSavedSnapshot] = useState(INITIAL_CUT_LOGS)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isSaving, setIsSaving] = useState(false)
+  const [isFinalizing, setIsFinalizing] = useState(false)
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null)
+  const [noticeError, setNoticeError] = useState<string | null>(null)
+
+  const isDirty = JSON.stringify(rows) !== JSON.stringify(savedSnapshot)
+  const eligibleSelectedIds = Array.from(selectedIds).filter((id) => {
+    const row = rows.find((r) => r.id === id)
+    return row ? isEligibleForFinalize(row) : false
+  })
+
   function toggleSelection(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -199,509 +179,291 @@ export default function ComponentsSmokePage() {
     })
   }
 
-  // Expand state for scoped rows
-  const [expandedSectionIds, setExpandedSectionIds] = useState<Set<string>>(new Set(["sec-1"]))
-  function toggleExpand(id: string) {
-    setExpandedSectionIds((prev) => {
+  function updateRow(id: string, patch: Partial<CutLogFixture>) {
+    setNoticeMessage(null)
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+  }
+
+  function removeRow(id: string) {
+    setNoticeMessage(null)
+    setRows((prev) => prev.filter((r) => r.id !== id))
+    setSelectedIds((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      next.delete(id)
       return next
     })
   }
 
-  // Feature controls
-  const [searchQuery, setSearchQuery] = useState("")
-  const [sortKey, setSortKey] = useState<string | null>("importNumber")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [page, setPage] = useState(1)
+  function addRow() {
+    setNoticeMessage(null)
+    setRows((prev) => [
+      ...prev,
+      {
+        id: `cut-${Date.now()}`,
+        cutNumber: nextCutNumber(prev),
+        cutAmount: "",
+        workOrderId: null,
+        cutBy: "",
+        notes: "",
+        status: "DRAFT",
+      },
+    ])
+  }
+
+  function discard() {
+    setRows(savedSnapshot)
+    setNoticeMessage(null)
+    setNoticeError(null)
+  }
+
+  function save() {
+    setIsSaving(true)
+    setNoticeError(null)
+    setTimeout(() => {
+      setSavedSnapshot(rows)
+      setIsSaving(false)
+      setNoticeMessage("Cut logs saved")
+    }, 350)
+  }
+
+  function finalizeSelected() {
+    if (eligibleSelectedIds.length === 0) return
+    setIsFinalizing(true)
+    setNoticeError(null)
+    setTimeout(() => {
+      const eligibleSet = new Set(eligibleSelectedIds)
+      const next = rows.map((row) =>
+        eligibleSet.has(row.id) ? { ...row, status: "FINALIZED" as const } : row,
+      )
+      setRows(next)
+      setSavedSnapshot(next)
+      setSelectedIds(new Set())
+      setIsFinalizing(false)
+      setNoticeMessage(`${eligibleSelectedIds.length} cut${eligibleSelectedIds.length === 1 ? "" : "s"} finalized`)
+    }, 350)
+  }
+
+  function voidRow(id: string) {
+    setNoticeError(null)
+    const next = rows.map((row) =>
+      row.id === id && row.status === "FINALIZED" ? { ...row, status: "VOIDED" as const } : row,
+    )
+    setRows(next)
+    setSavedSnapshot(next)
+    setNoticeMessage(`Cut #${rows.find((r) => r.id === id)?.cutNumber} voided`)
+  }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 p-8">
-      <header className="space-y-3">
+    <div className="mx-auto max-w-7xl space-y-6 p-8">
+      <header className="space-y-2">
         <h1 className="text-2xl font-bold text-[var(--foreground)]">
-          components/ primitive catalog
+          Inventory record · cut logs smoke
         </h1>
         <p className="text-sm text-[var(--foreground)]/65">
-          Kitchen-sink visual check for every primitive. Module-level rehearsal pages live below.
-          Delete the whole `components-smoke/` route before merging the next migration sweep.
+          Visual rehearsal of the cut logs section on top of the new{" "}
+          <code className="rounded bg-[var(--panel-border)]/30 px-1">apps/web/components/</code>{" "}
+          primitives. Same controller shape as the imports staged-inventory rows section, with two
+          additions: <strong>Finalize</strong> replaces Run Import, and finalized rows expose a
+          dedicated <strong>void</strong> column. Voided rows are read-only and cannot be deleted.
         </p>
-        <nav className="flex flex-wrap gap-3 text-sm">
-          <span className="text-[var(--foreground)] font-medium">Primitive catalog</span>
-          <span className="text-[var(--foreground)]/45">·</span>
-          <Link
-            href="/components-smoke/imports-list"
-            className="text-blue-500 hover:underline"
-          >
-            Imports list →
-          </Link>
-          <span className="text-[var(--foreground)]/45">·</span>
-          <Link
-            href="/components-smoke/imports-record"
-            className="text-blue-500 hover:underline"
-          >
-            Imports record →
-          </Link>
-        </nav>
       </header>
 
-      {/* ---------------- Field Section ---------------- */}
-      <SmokeSection title="FieldSection (8-col invisible LayoutGrid)">
-        <FieldSection>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Order Number">
-              <TextCell editable={true} value={orderNumber} onChange={setOrderNumber} />
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={2}>
-            <FormField label="Tag">
-              <TextCell editable={true} value={tag} onChange={setTag} />
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={2}>
-            <FormField label="Warehouse" required>
-              <SelectCell
-                editable={true}
-                value={warehouseId}
-                onChange={setWarehouseId}
-                options={[
-                  { value: "wh-1", label: "Warehouse 1" },
-                  { value: "wh-2", label: "Warehouse 2" },
-                ]}
-                placeholder="Select Warehouse"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={7} colSpan={2}>
-            <FormField label="Manufacturer" hint="Optional">
-              <DropdownCell
-                editable={true}
-                value={manufacturerId}
-                onChange={setManufacturerId}
-                options={[
-                  { id: "mfr-1", label: "Acme Flooring" },
-                  { id: "mfr-2", label: "Mohawk" },
-                  { id: "mfr-3", label: "Shaw" },
-                ]}
-                allowClear={true}
-                placeholder="Select Manufacturer"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Starting Stock">
-              <UnitCell editable={true} value={stockingStock} onChange={setStockingStock} unit="sqft" />
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={2}>
-            <FormField label="Unit Price">
-              <CurrencyCell editable={true} value={unitPrice} onChange={setUnitPrice} />
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={2}>
-            <FormField label="Coverage">
-              <PerUnitCell editable={true} value={coverage} onChange={setCoverage} unit="sqft" />
-            </FormField>
-          </CellAt>
-          <CellAt col={7} colSpan={2}>
-            <FormField label="Archived">
-              <CheckboxCell editable={true} value={archived} onChange={setArchived} />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={8}>
-            <FormField label="Notes" error={!notes ? "Notes are required" : undefined}>
-              <TextCell editable={true} value={notes} onChange={setNotes} />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={4}>
-            <FormField label="Static field (composed value)">
-              <StaticFieldValue tone="muted">
-                IMP-0001 · 12 / 12 rows imported
-              </StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={4}>
-            <FormField label="Status">
-              <StatusCell editable={false} value="IMPORTED" badgeTone="success" />
-            </FormField>
-          </CellAt>
-        </FieldSection>
-      </SmokeSection>
+      {/* ---------------- Primary section (minimal context) ---------------- */}
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <SectionHeader
+          title="Inventory · INV-2046"
+          subtitle="Mirror of /dashboard/inventory/[id] — primary kept minimal so the focus is below."
+        />
+        <div className="px-4 py-4">
+          <FieldSection>
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Product">
+                <TextCell editable={false} value="Vinyl Plank — XL Cyrus Grayton" />
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={2}>
+              <FormField label="Import #">
+                <TextCell editable={false} value="IMP-0007" />
+              </FormField>
+            </CellAt>
+            <CellAt col={7} row={1} colSpan={2}>
+              <FormField label="Available">
+                <StaticFieldValue tone="muted">42.50 bx</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        </div>
+      </div>
 
-      {/* ---------------- Cells (static) ---------------- */}
-      <SmokeSection title="Cells in static / read-only mode">
-        <FieldSection>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="TextCell">
-              <TextCell editable={false} value="Hello world" />
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={2}>
-            <FormField label="NumberCell">
-              <NumberCell editable={false} value="42.50" />
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={2}>
-            <FormField label="CurrencyCell">
-              <CurrencyCell editable={false} value="1234.50" />
-            </FormField>
-          </CellAt>
-          <CellAt col={7} colSpan={2}>
-            <FormField label="UnitCell">
-              <UnitCell editable={false} value="125.00" unit="sqft" />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="PerUnitCell">
-              <PerUnitCell editable={false} value="0.85" unit="sqft" />
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={2}>
-            <FormField label="SelectCell">
-              <SelectCell
-                editable={false}
-                value="wh-1"
-                onChange={() => {}}
-                options={[
-                  { value: "wh-1", label: "Warehouse 1" },
-                  { value: "wh-2", label: "Warehouse 2" },
-                ]}
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={2}>
-            <FormField label="DropdownCell">
-              <DropdownCell
-                editable={false}
-                value="mfr-1"
-                onChange={() => {}}
-                options={[
-                  { id: "mfr-1", label: "Acme Flooring" },
-                  { id: "mfr-2", label: "Mohawk" },
-                ]}
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={7} colSpan={2}>
-            <FormField label="CheckboxCell">
-              <CheckboxCell editable={false} value={true} />
-            </FormField>
-          </CellAt>
-        </FieldSection>
-      </SmokeSection>
+      {/* ---------------- Cut logs section ---------------- */}
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <ActionHeader
+          title="Cut Logs"
+          summary={
+            <span>
+              {rows.length} cut{rows.length === 1 ? "" : "s"}
+              {selectedIds.size > 0
+                ? ` · ${selectedIds.size} selected (${eligibleSelectedIds.length} eligible)`
+                : ""}
+            </span>
+          }
+          status={
+            eligibleSelectedIds.length > 0
+              ? { tone: "processing", label: "Ready to finalize", detail: "Finalized cuts are no longer editable" }
+              : undefined
+          }
+          actions={[
+            {
+              key: "add",
+              label: "+ Add Row",
+              onClick: addRow,
+              kind: "secondary",
+              disabled: isSaving || isFinalizing,
+            },
+            {
+              key: "discard",
+              label: "Discard",
+              onClick: discard,
+              kind: "secondary",
+              disabled: !isDirty || isSaving || isFinalizing,
+            },
+            {
+              key: "save",
+              label: isSaving ? "Saving Rows..." : "Save Rows",
+              onClick: save,
+              kind: "primary",
+              disabled: !isDirty || isSaving || isFinalizing,
+            },
+            {
+              key: "finalize",
+              label: isFinalizing ? "Finalizing..." : "Finalize",
+              onClick: finalizeSelected,
+              kind: "primary",
+              disabled: eligibleSelectedIds.length === 0 || isSaving || isFinalizing,
+            },
+          ]}
+          message={noticeMessage}
+          error={
+            noticeError ??
+            (selectedIds.size > 0 && eligibleSelectedIds.length === 0
+              ? "None of the selected rows are eligible to finalize. Drafts must have a cut amount, work order, and cutter assigned."
+              : undefined)
+          }
+        />
 
-      {/* ---------------- Streaming Grid ---------------- */}
-      <SmokeSection title="Grid (streaming rows + leading + trailing controls)">
-        <Grid<ImportFixture>
-          rows={IMPORT_FIXTURES}
-          layout={IMPORTS_LAYOUT}
+        <Grid<CutLogFixture>
+          rows={rows}
+          layout={CUT_LOGS_LAYOUT}
+          empty={<GridEmpty>No cut logs recorded yet.</GridEmpty>}
           renderCell={(column, row) => {
+            const editable = isRowEditable(row)
             switch (column.key) {
-              case "importNumber":
+              case "cutNumber":
+                return <span className="tabular-nums">{row.cutNumber}</span>
+              case "cutAmount":
                 return (
-                  <span className="font-medium text-blue-500">{row.importNumber}</span>
+                  <UnitCell
+                    editable={editable}
+                    value={row.cutAmount}
+                    onChange={(next) => updateRow(row.id, { cutAmount: next })}
+                    unit="bx"
+                    ariaLabel={`Cut #${row.cutNumber} amount`}
+                  />
                 )
-              case "status":
+              case "workOrder":
                 return (
-                  <StatusBadge
-                    tone={
-                      row.status === "IMPORTED"
-                        ? "success"
-                        : row.status === "QUEUED"
-                          ? "processing"
-                          : "default"
-                    }
-                  >
-                    {row.status}
-                  </StatusBadge>
+                  <SelectCell
+                    editable={editable}
+                    value={row.workOrderId ?? ""}
+                    onChange={(next) => updateRow(row.id, { workOrderId: next || null })}
+                    options={WORK_ORDERS}
+                    placeholder="Select work order"
+                    ariaLabel={`Cut #${row.cutNumber} work order`}
+                  />
                 )
-              case "percent":
-                return <span className="tabular-nums">{row.percent}%</span>
-              default: {
-                const value = (row as Record<string, unknown>)[column.key]
-                return value === null || value === undefined || value === ""
-                  ? "-"
-                  : String(value)
-              }
+              case "cutBy":
+                return (
+                  <SelectCell
+                    editable={editable}
+                    value={row.cutBy}
+                    onChange={(next) => updateRow(row.id, { cutBy: next })}
+                    options={CUTTERS}
+                    placeholder="Cut by…"
+                    ariaLabel={`Cut #${row.cutNumber} cut by`}
+                  />
+                )
+              case "notes":
+                return (
+                  <TextareaCell
+                    editable={editable}
+                    value={row.notes}
+                    onChange={(next) => updateRow(row.id, { notes: next })}
+                    rows={1}
+                    ariaLabel={`Cut #${row.cutNumber} notes`}
+                  />
+                )
+              default:
+                return null
             }
           }}
           renderControl={(control, row) => {
             if (control.kind === "selection") {
               return (
                 <CheckboxCell
-                  editable={true}
+                  editable={isRowEditable(row)}
                   value={selectedIds.has(row.id)}
                   onChange={() => toggleSelection(row.id)}
-                  ariaLabel={`Select ${row.importNumber}`}
+                  ariaLabel={`Select cut #${row.cutNumber}`}
                 />
               )
             }
+            if (control.kind === "status-indicator") {
+              return <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>
+            }
             if (control.kind === "actions") {
+              const canDelete = row.status === "DRAFT"
               return (
-                <button
-                  type="button"
-                  onClick={() => alert(`Delete ${row.importNumber}`)}
-                  className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700 hover:bg-rose-500/20"
-                >
-                  Delete
-                </button>
+                <RowActionButton
+                  label="✕"
+                  ariaLabel={`Delete cut #${row.cutNumber}`}
+                  tone="destructive"
+                  title={canDelete ? "Delete this draft" : "Only draft cuts can be deleted"}
+                  {...(canDelete ? { editable: true } : { editable: false, reason: "locked" })}
+                  onClick={() => removeRow(row.id)}
+                />
+              )
+            }
+            if (control.kind === "void") {
+              const canVoid = row.status === "FINALIZED"
+              const isVoided = row.status === "VOIDED"
+              return (
+                <RowActionButton
+                  label={isVoided ? "Voided" : "Void"}
+                  ariaLabel={`Void cut #${row.cutNumber}`}
+                  tone="warning"
+                  title={
+                    canVoid
+                      ? "Mark this finalized cut as voided"
+                      : isVoided
+                        ? "This cut is already voided"
+                        : "Only finalized cuts can be voided"
+                  }
+                  {...(canVoid ? { editable: true } : { editable: false, reason: "locked" })}
+                  onClick={() => voidRow(row.id)}
+                />
               )
             }
             return null
           }}
         />
-        <p className="mt-2 text-xs text-[var(--foreground)]/55">
-          Selected: {selectedIds.size === 0 ? "none" : Array.from(selectedIds).join(", ")}
-        </p>
-      </SmokeSection>
 
-      {/* ---------------- Scoped child rows ---------------- */}
-      <SmokeSection title="Grid + ScopedRow (warehouse sections-locations precedent)">
-        <Grid<SectionFixture>
-          rows={SECTION_FIXTURES}
-          layout={SECTIONS_LAYOUT}
-          renderRow={(section) => {
-            const isExpanded = expandedSectionIds.has(section.id)
-            const childRows = LOCATIONS_BY_SECTION[section.id] ?? []
-            return (
-              <Fragment>
-                <GridBodyRow
-                  row={section}
-                  layout={SECTIONS_LAYOUT}
-                  scroll={{
-                    noWrapHeaders: true,
-                    growToFitText: true,
-                    headerSticky: false,
-                    syncHorizontalScroll: true,
-                  }}
-                  templateColumns="minmax(12.5rem, 1fr) 7.5rem 3.75rem 3.75rem"
-                  renderControl={(control) => {
-                    if (control.kind === "expand") {
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => toggleExpand(section.id)}
-                          aria-expanded={isExpanded}
-                          className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1 text-xs"
-                        >
-                          {isExpanded ? "▾" : "▸"}
-                        </button>
-                      )
-                    }
-                    if (control.kind === "actions") {
-                      return (
-                        <button
-                          type="button"
-                          className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700"
-                        >
-                          ✕
-                        </button>
-                      )
-                    }
-                    return null
-                  }}
-                />
-                {isExpanded
-                  ? childRows.map((location) => (
-                      <ScopedRow<LocationFixture>
-                        key={location.id}
-                        row={location}
-                        layout={LOCATIONS_LAYOUT}
-                        renderControl={(control) =>
-                          control.kind === "actions" ? (
-                            <button
-                              type="button"
-                              className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700"
-                            >
-                              ✕
-                            </button>
-                          ) : null
-                        }
-                      />
-                    ))
-                  : null}
-              </Fragment>
-            )
-          }}
-        />
-      </SmokeSection>
-
-      {/* ---------------- LayoutGrid + chart-span placeholder ---------------- */}
-      <SmokeSection title="LayoutGrid (positioned cells, future chart-span shape)">
-        <LayoutGrid geometry={{ columns: 8, rows: 4, chrome: "visible", gap: "0.75rem" }}>
-          <CellAt col={1} colSpan={3} rowSpan={2}>
-            <div className="flex h-full min-h-[8rem] items-center justify-center rounded-md border border-dashed border-[var(--panel-border)] bg-[var(--panel-border)]/10 text-sm text-[var(--foreground)]/55">
-              Bar chart goes here
-              <br />
-              (col 1-3, row 1-2)
-            </div>
-          </CellAt>
-          <CellAt col={4} colSpan={5}>
-            <div className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 text-sm">
-              Top-right tile (col 4-8, row 1)
-            </div>
-          </CellAt>
-          <CellAt col={4} colSpan={2}>
-            <div className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 text-sm">
-              col 4-5
-            </div>
-          </CellAt>
-          <CellAt col={6} colSpan={3}>
-            <div className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 text-sm">
-              col 6-8
-            </div>
-          </CellAt>
-          <CellAt col={1} colSpan={8}>
-            <div className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] p-3 text-sm">
-              Full row (col 1-8, row 4)
-            </div>
-          </CellAt>
-        </LayoutGrid>
-      </SmokeSection>
-
-      {/* ---------------- Dropdowns ---------------- */}
-      <SmokeSection title="Dropdowns (standalone)">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="mb-2 text-sm font-medium">SelectDropdown</h3>
-            <SelectDropdown
-              value={manufacturerId}
-              onChange={setManufacturerId}
-              options={[
-                { id: "mfr-1", label: "Acme Flooring", hint: "Tile + LVP" },
-                { id: "mfr-2", label: "Mohawk", hint: "Carpet + LVP" },
-                { id: "mfr-3", label: "Shaw" },
-                { id: "mfr-4", label: "Disabled option", disabled: true },
-              ]}
-              allowClear
-              placeholder="Select…"
-              ariaLabel="Manufacturer"
-            />
-          </div>
-          <div>
-            <h3 className="mb-2 text-sm font-medium">SearchDropdown</h3>
-            <SearchDropdown
-              value={manufacturerId}
-              onChange={setManufacturerId}
-              options={[
-                { id: "mfr-1", label: "Acme Flooring" },
-                { id: "mfr-2", label: "Mohawk" },
-                { id: "mfr-3", label: "Shaw" },
-                { id: "mfr-4", label: "Tarkett" },
-              ]}
-              placeholder="Pick…"
-              ariaLabel="Manufacturer"
-            />
-          </div>
+        <div className="border-t border-[var(--panel-border)] px-4 py-3 text-xs text-[var(--foreground)]/55">
+          <strong>Cut log lifecycle:</strong> DRAFT (editable, deletable, selectable) → FINALIZED
+          (locked, voidable) → VOIDED (terminal, read-only). The trailing <em>void</em> column uses
+          the generic <code>RowActionButton</code> primitive — staged-inventory rows could adopt the
+          same column without any new components.
         </div>
-      </SmokeSection>
-
-      {/* ---------------- Badges ---------------- */}
-      <SmokeSection title="Badges (StatusBadge + TonePill in every tone)">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs uppercase text-[var(--foreground)]/60">StatusBadge</span>
-            <StatusBadge tone="default">Default</StatusBadge>
-            <StatusBadge tone="success">Success</StatusBadge>
-            <StatusBadge tone="warning">Warning</StatusBadge>
-            <StatusBadge tone="error">Error</StatusBadge>
-            <StatusBadge tone="processing">Processing</StatusBadge>
-            <StatusBadge tone="muted">Muted</StatusBadge>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs uppercase text-[var(--foreground)]/60">TonePill</span>
-            <TonePill tone="default">Default</TonePill>
-            <TonePill tone="success">Success</TonePill>
-            <TonePill tone="warning">Warning</TonePill>
-            <TonePill tone="error">Error</TonePill>
-            <TonePill tone="processing">Processing</TonePill>
-            <TonePill tone="muted">Muted</TonePill>
-          </div>
-        </div>
-      </SmokeSection>
-
-      {/* ---------------- Headers ---------------- */}
-      <SmokeSection title="Headers (SectionHeader + ActionHeader)">
-        <div className="space-y-4">
-          <div className="rounded-md border border-[var(--panel-border)]">
-            <SectionHeader
-              title="Inventory"
-              subtitle="Live inventory across all warehouses"
-              actions={[
-                { key: "filter", label: "Filter", onClick: () => {} },
-                { key: "new", label: "New Inventory", onClick: () => {}, kind: "primary" },
-              ]}
-            />
-            <div className="px-4 py-3 text-sm text-[var(--foreground)]/65">Section body…</div>
-          </div>
-          <div className="rounded-md border border-[var(--panel-border)]">
-            <ActionHeader
-              title="Mark for import"
-              summary={`${selectedIds.size} row${selectedIds.size === 1 ? "" : "s"} selected`}
-              status={{ tone: "processing", label: "Worker queued", detail: "Eta ~30s" }}
-              actions={[
-                { key: "cancel", label: "Cancel", onClick: () => {}, kind: "secondary" },
-                { key: "run", label: "Run Import", onClick: () => {}, kind: "primary" },
-              ]}
-              error={selectedIds.size === 0 ? "Select at least one row to continue" : undefined}
-            />
-            <div className="px-4 py-3 text-sm text-[var(--foreground)]/65">Section body…</div>
-          </div>
-        </div>
-      </SmokeSection>
-
-      {/* ---------------- Feature controls ---------------- */}
-      <SmokeSection title="Feature controls (search, sort, group, paginate)">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="mb-2 text-sm font-medium">SearchControl</h3>
-              <SearchControl
-                query={searchQuery}
-                onQueryChange={setSearchQuery}
-                placeholder="Search imports…"
-              />
-            </div>
-            <div>
-              <h3 className="mb-2 text-sm font-medium">SortToggle</h3>
-              <SortToggle
-                sortKey={sortKey}
-                direction={sortDirection}
-                onChange={({ direction }) => setSortDirection(direction)}
-                ascendingLabel="Oldest first"
-                descendingLabel="Newest first"
-              />
-            </div>
-          </div>
-          <div>
-            <h3 className="mb-2 text-sm font-medium">GroupTree</h3>
-            <GroupTree<ImportFixture>
-              groups={[
-                { key: "wh-1", label: "Warehouse 1", rows: IMPORT_FIXTURES.filter((r) => r.warehouseName === "Warehouse 1") },
-                { key: "wh-2", label: "Warehouse 2", rows: IMPORT_FIXTURES.filter((r) => r.warehouseName === "Warehouse 2") },
-              ]}
-              renderRow={(row) => (
-                <div className="px-4 py-2 text-sm">
-                  {row.importNumber} · {row.tag || "—"} · {row.manufacturerName}
-                </div>
-              )}
-            />
-          </div>
-          <div>
-            <h3 className="mb-2 text-sm font-medium">PaginateControls</h3>
-            <PaginateControls
-              page={page}
-              pageSize={25}
-              totalItems={140}
-              totalPages={6}
-              hasPreviousPage={page > 1}
-              hasNextPage={page < 6}
-              onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
-              onNextPage={() => setPage((p) => Math.min(6, p + 1))}
-            />
-          </div>
-        </div>
-      </SmokeSection>
+      </div>
     </div>
   )
 }
