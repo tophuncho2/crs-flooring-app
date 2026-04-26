@@ -82,60 +82,62 @@ export default function ImportsClient({
   })
 
   return (
-    <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <SectionHeader
-        title="Imports"
-        actions={[{ key: "new", label: "+ Import", onClick: () => openCreate(), kind: "primary" }]}
-      />
-
-      {message || pageError ? (
-        <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
-          {message ? (
-            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-              {message}
-            </div>
-          ) : null}
-          {pageError ? (
-            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-              {pageError}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-        <div className="min-w-[16rem] flex-1">
-          <SearchControl
-            query={searchQuery}
-            onQueryChange={onSearchQueryChange}
-            placeholder="Search import # or tag"
-          />
-        </div>
-        <SortToggle
-          sortKey="importNumber"
-          direction={isAscendingSort ? "asc" : "desc"}
-          onChange={() => onToggleSort()}
-          ascendingLabel="1-9"
-          descendingLabel="9-1"
+    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <SectionHeader
+          title="Imports"
+          actions={[{ key: "new", label: "+ Import", onClick: () => openCreate(), kind: "primary" }]}
         />
-        <span className="text-xs text-[var(--foreground)]/55">
-          {filteredImports.length} of {imports.length} imports
-        </span>
-      </div>
 
-      <ImportsTable
-        rows={sortedImports}
-        pagination={pagination}
-        page={page}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        totalItems={filteredImports.length}
-        hasPreviousPage={hasPreviousPage}
-        hasNextPage={hasNextPage}
-        onPreviousPage={goToPreviousPage}
-        onNextPage={goToNextPage}
-        onOpenImport={openImport}
-      />
+        {message || pageError ? (
+          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+            {message ? (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+                {message}
+              </div>
+            ) : null}
+            {pageError ? (
+              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                {pageError}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="min-w-[16rem] flex-1">
+            <SearchControl
+              query={searchQuery}
+              onQueryChange={onSearchQueryChange}
+              placeholder="Search import # or tag"
+            />
+          </div>
+          <SortToggle
+            sortKey="importNumber"
+            direction={isAscendingSort ? "asc" : "desc"}
+            onChange={() => onToggleSort()}
+            ascendingLabel="1-9"
+            descendingLabel="9-1"
+          />
+          <span className="text-xs text-[var(--foreground)]/55">
+            {filteredImports.length} of {imports.length} imports
+          </span>
+        </div>
+
+        <ImportsTable
+          rows={sortedImports}
+          pagination={pagination}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredImports.length}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+          onOpenImport={openImport}
+        />
+      </div>
     </div>
   )
 }
