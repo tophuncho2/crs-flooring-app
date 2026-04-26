@@ -76,6 +76,25 @@ fact, `status` is the job-state tracker.
   inventory + the single cut log being voided, erase the cut fields, adjust
   `totalCutSum`, commit.
 
+### Work order / material item link management (independent flow)
+
+Saving, editing, or removing a cut log's `workOrderId` and `workOrderItemId`
+is **its own flow**, independent of pending-edit, finalize, and void:
+
+- Likely gets its own controller add-on in the cut logs section (separate
+  from the controller that drives the pending-edit / finalize selection
+  surface), calling its own API route and its own use case.
+- Does **not** route through the worker / outbox / relay path. Link changes
+  do not touch `cut`, `coverageCut`, costs, or `totalCutSum`, so they have
+  nothing to coordinate with the per-inventory row lock and don't need the
+  single-writer guarantee.
+- Links must remain **editable for the life of the cut log** (PENDING and
+  finalized alike) — not write-once at creation.
+
+Keeping this isolated avoids dragging an unrelated mutation through the
+heavier cut-sum-mutation pipeline, and lets the UI reposition cut logs
+between work orders / material items without queueing a worker job.
+
 ### Concurrency model
 
 Every job (pending save batch, finalize run, *and* single-row void)
@@ -103,7 +122,9 @@ locks queue any pending-edit jobs for the same inventory.
 3. **Data layer** — repository surface for PENDING edits, finalize state
    transitions, void, and the parent-inventory cut sum maintenance.
 4. **Use cases** — add/edit/delete PENDING cut log, finalize selection
-   (writes outbox), void single cut log.
+   (writes outbox), void single cut log, *plus* a separate use case for
+   work order / material item link management (independent of the cut-sum
+   pipeline).
 5. **Relay / outbox / worker** — wire three worker jobs end to end
    (pending-save, finalize-cut-logs, void-cut-log), following the
    staged-inventory-row-import job as the reference shape.
@@ -111,8 +132,9 @@ locks queue any pending-edit jobs for the same inventory.
 7. **Cut logs section UI** — migrate components to the new primitives
    (whatever the staged-inv list/record migration introduced).
 8. **Controllers** — extend the cut logs section controllers to drive the
-   finalize selection flow (mirroring staged-inv import controller) and add
-   the per-row void action.
+   finalize selection flow (mirroring staged-inv import controller), add
+   the per-row void action, and add a separate controller add-on for the
+   work order / material item link management flow.
 
 ## Open questions to resolve along the way
 
@@ -126,11 +148,10 @@ locks queue any pending-edit jobs for the same inventory.
   time, to keep the pattern uniform with pending save and finalize.
 - UI strategy during the async lag on pending edits (optimistic update vs.
   visible pending indicator vs. blocking spinner).
-- Cut log → work order / work order item link rules. Settled so far:
-  both `workOrderId` and `workOrderItemId` must remain **editable** for the
-  life of the cut log (not write-once at creation). **Pending decision:**
-  whether a cut log is allowed to have only a `workOrderId` without a
-  `workOrderItemId` (or vice versa), or whether the two must always be
-  set/cleared together. Today's schema makes both nullable independently;
-  the alteration may tighten this with a domain rule, a DB check
-  constraint, or by collapsing them into a single linkage.
+- Cut log → work order / work order item link constraint. Whether a cut
+  log is allowed to have only a `workOrderId` without a `workOrderItemId`
+  (or vice versa), or whether the two must always be set/cleared together.
+  Today's schema makes both nullable independently; the alteration may
+  tighten this with a domain rule, a DB check constraint, or by collapsing
+  them into a single linkage. (The independent link-management flow is
+  settled — see runtime flow section above.)
