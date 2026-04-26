@@ -59,21 +59,27 @@ fact, `status` is the job-state tracker.
    inventory's cut sum accordingly. The worker is the only writer that
    completes a cut log into its final state.
 
-### Void (additive, one-at-a-time)
+### Void (worker-driven, one-at-a-time)
 
 - Voiding a cut log **erases** its `cut`, `coverageCut`, `cost`, `freight`,
   etc. (the cut log row stays as a void marker).
 - **Always** one cut log at a time — never a batch operation, regardless of
   whether the cut log is `PENDING` or already finalized. Same single-row
   control surface in both cases.
+- **Worker-driven** to keep the pattern uniform: every cut log mutation
+  (pending save, finalize, void) flows through the outbox/relay/worker
+  plumbing, every state change is visible via `status`, and retries +
+  observability are uniform across all three flows. A sync use case would
+  also be safe (the row lock is what enforces correctness, not the writer
+  identity), but uniformity won out.
 - Still flows through the locked-transaction pattern below: lock parent
   inventory + the single cut log being voided, erase the cut fields, adjust
   `totalCutSum`, commit.
 
 ### Concurrency model
 
-Every job (pending save batch *and* finalize run) executes in a single
-transaction that:
+Every job (pending save batch, finalize run, *and* single-row void)
+executes in a single transaction that:
 
 1. Locks the parent `FlooringInventory` row (`SELECT … FOR UPDATE`) — acts
    as a per-inventory mutex so pending and finalize never race on the same
@@ -98,8 +104,9 @@ locks queue any pending-edit jobs for the same inventory.
    transitions, void, and the parent-inventory cut sum maintenance.
 4. **Use cases** — add/edit/delete PENDING cut log, finalize selection
    (writes outbox), void single cut log.
-5. **Relay / outbox / worker** — wire the finalize-cut-logs job end to end,
-   following the staged-inventory-row-import job as the reference shape.
+5. **Relay / outbox / worker** — wire three worker jobs end to end
+   (pending-save, finalize-cut-logs, void-cut-log), following the
+   staged-inventory-row-import job as the reference shape.
 6. **API** — surface the new use cases.
 7. **Cut logs section UI** — migrate components to the new primitives
    (whatever the staged-inv list/record migration introduced).
@@ -114,9 +121,8 @@ locks queue any pending-edit jobs for the same inventory.
   flushed batch).
 - Exact `status` value set for the worker lifecycle (align names with
   whatever staged-inv uses so the worker plumbing is uniform).
-- Whether the void of a finalized cut log dispatches through the worker
-  (consistent with the single-writer rule for `totalCutSum`) or runs
-  inline. Cardinality is settled — always one at a time — but the dispatch
-  path needs a call.
+- ~~Whether the void of a finalized cut log dispatches through the worker
+  or runs inline.~~ **Resolved:** voids run through a worker job, one at a
+  time, to keep the pattern uniform with pending save and finalize.
 - UI strategy during the async lag on pending edits (optimistic update vs.
   visible pending indicator vs. blocking spinner).

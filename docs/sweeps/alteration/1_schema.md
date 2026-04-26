@@ -17,11 +17,9 @@ See `docs/cut-logs-finalize-and-void-intent.md` for the full intent.
   lifecycle (mirror the shape of `FlooringStagedRowStatus`)
   - [ ] Decide exact value set (DRAFT / QUEUED / FINALIZED-equivalent + how
     void interacts) — open question in intent doc
-  - [ ] Migrate existing rows: any current `PENDING` → new "draft"
-    equivalent; any current `FINAL` → new "finalized" equivalent +
-    `isFinal = true`; any current `VOID` → preserve via `void` boolean
+  - [x] No row backfill needed — `flooring_cut_log` table is empty
 - [ ] Keep `void Boolean` as-is (existing void marker — voids erase the
-  cut/coverageCut/cost fields, this stays the marker bit)
+  cut/coverageCut/cost/waste ect. fields, this stays the marker bit)
 - [ ] Re-evaluate existing status-bearing indexes after the enum repurpose:
   - [ ] `@@index([workOrderItemId, status])`
   - [ ] `@@index([inventoryId, status])`
@@ -39,7 +37,6 @@ See `docs/cut-logs-finalize-and-void-intent.md` for the full intent.
 ## Open / TBD before migration
 
 - [ ] Final `FlooringCutLogStatus` value set (carry forward from intent doc
-  open question)
-- [ ] Whether voiding a finalized cut log routes through the worker
-  (single-writer rule on `totalCutSum`) or runs inline — affects whether
-  `status` needs a void-in-flight value
+  open question) — must include a void-in-flight value, since voids are
+  worker-driven and need to be visible in `status` like pending and
+  finalize
