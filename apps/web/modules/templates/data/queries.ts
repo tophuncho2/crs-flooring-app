@@ -3,6 +3,7 @@ import {
   createPrismaPageLoadIssue,
   getTemplateById,
   isPrismaNotFoundError,
+  listCategories,
   listJobTypeOptions,
   listManagementCompanyOptions,
   listProductOptions,
@@ -38,12 +39,13 @@ async function loadTemplateDropdownOptions() {
 }
 
 async function loadTemplateDetailOptions() {
-  const [dropdowns, productOptions] = await Promise.all([
+  const [dropdowns, productOptions, categoryOptions] = await Promise.all([
     loadTemplateDropdownOptions(),
     listProductOptions(),
+    listCategories(),
   ])
 
-  return { ...dropdowns, productOptions }
+  return { ...dropdowns, productOptions, categoryOptions }
 }
 
 export async function getTemplateCreatePageOptions() {
@@ -57,6 +59,7 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
   jobTypeOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["jobTypeOptions"]
   warehouseOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["warehouseOptions"]
   productOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["productOptions"]
+  categoryOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["categoryOptions"]
 }>> {
   try {
     const [template, options] = await Promise.all([
@@ -73,6 +76,7 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
         jobTypeOptions: options.jobTypeOptions,
         warehouseOptions: options.warehouseOptions,
         productOptions: options.productOptions,
+        categoryOptions: options.categoryOptions,
       },
     }
   } catch (error) {

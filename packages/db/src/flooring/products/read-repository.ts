@@ -43,6 +43,7 @@ export type ProductDetailRecord = ProductRecord
 export type ProductOptionRecord = {
   id: string
   name: string
+  categoryId: string
 }
 
 export type ProductFormOptions = {
@@ -96,6 +97,7 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
   return {
     id: product.id,
     name: product.name || fallback,
+    categoryId: product.categoryId,
   }
 }
 

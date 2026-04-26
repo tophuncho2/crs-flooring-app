@@ -43,10 +43,13 @@ export const productRowSelect = {
 // don't force churn through every call site.
 export const productDetailSelect = productRowSelect
 
-// Skinny shape for picker dropdowns.
+// Skinny shape for picker dropdowns. Includes `categoryId` so consumers can
+// implement category-scoped product filtering in row pickers without an
+// additional query.
 export const productOptionSelect = {
   id: true,
   name: true,
+  categoryId: true,
   style: true,
   color: true,
 } as const

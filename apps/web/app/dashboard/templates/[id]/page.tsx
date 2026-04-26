@@ -44,6 +44,7 @@ export default async function TemplateDetailPage({
       jobTypeOptions={result.data.jobTypeOptions}
       warehouseOptions={result.data.warehouseOptions}
       productOptions={result.data.productOptions}
+      categoryOptions={result.data.categoryOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/templates")}
     />
   )

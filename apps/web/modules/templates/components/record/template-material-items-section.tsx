@@ -8,6 +8,7 @@ import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/
 
 const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
   dataColumns: [
+    { key: "categoryFilter", label: "Category", minWidth: 160, grow: 0 },
     { key: "product", label: "Product", minWidth: 260, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
     { key: "unitPrice", label: "Unit Price", kind: "currency", minWidth: 120, grow: 0, align: "end" },
@@ -16,11 +17,13 @@ const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
   trailingControls: [{ key: "remove", kind: "actions", width: 72 }],
 }
 
-export type MaterialItemProductOption = { id: string; name: string }
+export type MaterialItemProductOption = { id: string; name: string; categoryId: string }
+export type TemplateMaterialItemCategoryOption = { id: string; name: string }
 
 export function TemplateMaterialItemsSection({
   items,
   productOptions,
+  categoryOptions,
   isDirty,
   isSaving,
   hasConflict,
@@ -31,10 +34,12 @@ export function TemplateMaterialItemsSection({
   onDiscard,
   onAddItem,
   onChangeField,
+  onChangeCategoryFilter,
   onRemoveItem,
 }: {
   items: TemplateMaterialItemLocal[]
   productOptions: MaterialItemProductOption[]
+  categoryOptions: TemplateMaterialItemCategoryOption[]
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -45,10 +50,11 @@ export function TemplateMaterialItemsSection({
   onDiscard: () => void
   onAddItem: () => void
   onChangeField: (itemId: string, field: keyof TemplateMaterialItemLocal, value: string) => void
+  onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
   onRemoveItem: (itemId: string) => void
 }) {
   const editable = !isSaving
-  const productCellOptions = productOptions.map((option) => ({ id: option.id, label: option.name }))
+  const categoryCellOptions = categoryOptions.map((option) => ({ id: option.id, label: option.name }))
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -92,17 +98,38 @@ export function TemplateMaterialItemsSection({
         empty={<GridEmpty>No material items yet.</GridEmpty>}
         renderCell={(column, item) => {
           switch (column.key) {
-            case "product":
+            case "categoryFilter":
+              return (
+                <DropdownCell
+                  editable={editable}
+                  value={item.categoryFilterId}
+                  onChange={(next) => onChangeCategoryFilter(item.id, next)}
+                  options={categoryCellOptions}
+                  allowClear
+                  placeholder="All categories"
+                  ariaLabel="Material item category filter"
+                />
+              )
+            case "product": {
+              // Filter by category. Always include the currently-selected
+              // product so the user's pick survives a filter change. Mirrors
+              // imports staged-rows category→product cascade.
+              const visibleProducts = item.categoryFilterId
+                ? productOptions.filter(
+                    (p) => p.categoryId === item.categoryFilterId || p.id === item.productId,
+                  )
+                : productOptions
               return (
                 <DropdownCell
                   editable={editable}
                   value={item.productId || null}
                   onChange={(next) => onChangeField(item.id, "productId", next ?? "")}
-                  options={productCellOptions}
+                  options={visibleProducts.map((option) => ({ id: option.id, label: option.name }))}
                   placeholder="Select product"
                   ariaLabel="Material item product"
                 />
               )
+            }
             case "quantity":
               return (
                 <NumberCell

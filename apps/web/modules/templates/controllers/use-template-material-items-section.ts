@@ -21,6 +21,9 @@ export type TemplateMaterialItemLocal = {
   quantity: string
   unitPrice: string
   notes: string
+  // Client-only ergonomic for narrowing the row's product picker. NOT
+  // persisted to the server — excluded from the diff sent on save.
+  categoryFilterId: string | null
 }
 
 type TemplateMaterialItemsLocalState = {
@@ -34,6 +37,7 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
     quantity: row.quantity,
     unitPrice: row.unitPrice,
     notes: row.notes,
+    categoryFilterId: null,
   }
 }
 
@@ -158,6 +162,7 @@ export function useTemplateMaterialItemsSection({
           quantity: "",
           unitPrice: "",
           notes: "",
+          categoryFilterId: null,
         },
       ],
     }))
@@ -184,11 +189,25 @@ export function useTemplateMaterialItemsSection({
     if (section.error) section.setError(null)
   }
 
+  // Client-only ergonomic — does NOT mark the section dirty (excluded from
+  // the diff in `toDiffForm` / `itemsDiffer`). Mirrors imports staged-rows
+  // `setRowCategoryFilter`. Intentionally does not clear `productId`; the
+  // section's product picker preserves the current selection across filter
+  // changes so the user's pick survives.
+  function changeCategoryFilter(itemId: string, categoryId: string | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId ? { ...row, categoryFilterId: categoryId } : row,
+      ),
+    }))
+  }
+
   return {
     ...section,
     items: section.localValue.items,
     addItem,
     removeItem,
     changeField,
+    changeCategoryFilter,
   }
 }

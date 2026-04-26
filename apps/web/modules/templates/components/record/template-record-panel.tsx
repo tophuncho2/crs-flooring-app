@@ -16,6 +16,7 @@ import {
 import {
   TemplateMaterialItemsSection,
   type MaterialItemProductOption,
+  type TemplateMaterialItemCategoryOption,
 } from "./template-material-items-section"
 
 export function TemplateRecordPanel({
@@ -26,6 +27,7 @@ export function TemplateRecordPanel({
   jobTypeOptions,
   warehouseOptions,
   productOptions,
+  categoryOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
@@ -34,6 +36,7 @@ export function TemplateRecordPanel({
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   productOptions: MaterialItemProductOption[]
+  categoryOptions: TemplateMaterialItemCategoryOption[]
 }) {
   const primary = useTemplatePrimarySection({ page, template })
   const materialItems = useTemplateMaterialItemsSection({
@@ -94,6 +97,7 @@ export function TemplateRecordPanel({
             <TemplateMaterialItemsSection
               items={materialItems.items}
               productOptions={productOptions}
+              categoryOptions={categoryOptions}
               isDirty={materialItems.isDirty}
               isSaving={materialItems.isSaving}
               hasConflict={materialItems.hasConflict}
@@ -104,6 +108,7 @@ export function TemplateRecordPanel({
               onDiscard={() => materialItems.discard()}
               onAddItem={materialItems.addItem}
               onChangeField={materialItems.changeField}
+              onChangeCategoryFilter={materialItems.changeCategoryFilter}
               onRemoveItem={materialItems.removeItem}
             />
           ),
