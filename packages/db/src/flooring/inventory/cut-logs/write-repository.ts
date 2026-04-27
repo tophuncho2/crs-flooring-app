@@ -1,23 +1,28 @@
 import type { Prisma } from "@prisma/client"
 import {
-  assertCutLogLinkageSymmetry,
-  assertCutLogVoidStatusConsistency,
   buildVoidedCutLogPatch,
+  computeBeforeAfterForFinalize,
+  nextFinalCutSequence,
 } from "@builders/domain"
 import {
   getCutLogById,
+  getCutLogsForFinalize,
+  getMaxFinalCutSequenceForInventory,
   type CutLogRecord,
 } from "./read-repository.js"
 
 /**
  * Create input for a cut log. Status always starts as `PENDING`. The
- * worker-only fields (`before` / `after` / `cost` / `freight`) and the
- * `void` flag are not accepted on create — they're stamped later by the
- * FINAL transition or the void flow.
+ * worker-only fields (`before` / `after` / `cost` / `freight` /
+ * `finalCutSequence` / `isFinal`) and the `void` flag are not accepted on
+ * create — they're stamped later by the finalize / void workers.
  *
- * `coverageCut` is the per-row coverage snapshot. Caller (use case) computes
- * it via the domain helper `computeCutCoverage({ cut, coveragePerUnit,
- * category })` BEFORE invoking this primitive — keeps the math in one place.
+ * `coverageCut` is the per-row coverage snapshot. Caller (use case)
+ * computes it via the domain helper `computeCutCoverage({ cut,
+ * coveragePerUnit, category })` BEFORE invoking this primitive — keeps
+ * the math in one place. Caller is responsible for `assertCutLogLinkageSymmetry`
+ * (the data layer no longer imports throwing rules per
+ * `packages/db/CLAUDE.md` rule 1).
  */
 export type CreateCutLogRecordInput = {
   inventoryId: string
@@ -30,46 +35,46 @@ export type CreateCutLogRecordInput = {
 }
 
 /**
- * Pending-save patch — only the user-editable PENDING fields are accepted.
- * `coverageCut` is recomputed by the caller (use case) and passed in
- * alongside `cut` so this primitive stays a pure write.
+ * Pending-save patch — only the user-editable PENDING fields (per
+ * sweep-2 `CUT_LOG_PENDING_USER_EDITABLE_FIELDS`). `coverageCut` is
+ * recomputed by the caller and passed in alongside `cut`.
  */
 export type UpdateCutLogPendingInput = {
   cut?: Prisma.Decimal | string | number
   coverageCut?: Prisma.Decimal | string | number | null
+  cost?: Prisma.Decimal | string | number | null
+  freight?: Prisma.Decimal | string | number | null
+  isWaste?: boolean
   notes?: string | null
 }
 
 /**
- * Worker-only finalize input. Sets `status = FINAL` and stamps the five
- * computed fields atomically.
+ * Worker-only finalize input. Sets `status = FINAL`, `isFinal = true`, and
+ * stamps the worker-computed fields atomically. `finalCutSequence` is
+ * allocated by the worker via `nextFinalCutSequence(currentMax)` — see
+ * `finalizeCutLogBatch` below for the batch-aware caller.
  */
 export type FinalizeCutLogRecordInput = {
   before: Prisma.Decimal | string | number
   after: Prisma.Decimal | string | number
-  cost: Prisma.Decimal | string | number | null
-  freight: Prisma.Decimal | string | number | null
-  coverageCut: Prisma.Decimal | string | number | null
+  finalCutSequence: number
+  cost?: Prisma.Decimal | string | number | null
+  freight?: Prisma.Decimal | string | number | null
 }
 
-// Every mutating primitive in this file requires a caller-managed transaction
-// (`tx: Prisma.TransactionClient` as the first argument). The application use
-// case opens the transaction, locks the parent inventory row `FOR UPDATE`,
-// validates domain invariants, applies the cut-log mutation via these
-// primitives, and adjusts `inventory.totalCutSum` in the same transaction.
+// Every mutating primitive in this file requires a caller-managed
+// transaction (`tx: Prisma.TransactionClient` as the first argument). The
+// application use case opens the transaction, locks the parent inventory
+// row `FOR UPDATE`, validates domain invariants (using
+// `@builders/domain` validators / asserters — those CANNOT be imported
+// here per `packages/db/CLAUDE.md` rule 1), applies the cut-log mutation
+// via these primitives, and adjusts `inventory.totalCutSum` in the same
+// transaction via `updateInventoryTotalCutSum`.
 
 export async function createCutLogRecord(
   tx: Prisma.TransactionClient,
   input: CreateCutLogRecordInput,
 ): Promise<CutLogRecord> {
-  assertCutLogLinkageSymmetry({
-    workOrderId: input.workOrderId,
-    workOrderItemId: input.workOrderItemId,
-  })
-  assertCutLogVoidStatusConsistency({
-    status: "PENDING",
-    void: false,
-  })
   const row = await tx.flooringCutLog.create({
     data: {
       inventory: { connect: { id: input.inventoryId } },
@@ -78,6 +83,7 @@ export async function createCutLogRecord(
       before: 0,
       after: 0,
       status: "PENDING",
+      isFinal: false,
       cost: null,
       freight: null,
       isWaste: input.isWaste,
@@ -105,6 +111,9 @@ function buildPendingUpdateData(
   const data: Prisma.FlooringCutLogUpdateInput = {}
   if (input.cut !== undefined) data.cut = input.cut
   if (input.coverageCut !== undefined) data.coverageCut = input.coverageCut
+  if (input.cost !== undefined) data.cost = input.cost
+  if (input.freight !== undefined) data.freight = input.freight
+  if (input.isWaste !== undefined) data.isWaste = input.isWaste
   if (input.notes !== undefined) data.notes = input.notes
   return data
 }
@@ -129,29 +138,28 @@ export async function updateCutLogPending(
   return record
 }
 
+/**
+ * Apply the void patch to a single cut log. Per sweep 2, the patch erases
+ * `cut → "0"`, `coverageCut/cost/freight → null`, sets `void = true` and
+ * `status = "VOID"`. Preserves `before`, `after`, `isWaste`, `notes`,
+ * `cutLogNumber`, `isFinal`, `finalCutSequence`, `workOrderId`,
+ * `workOrderItemId` as historical record (links remain editable for the
+ * life of the row via the separate sync use case).
+ */
 export async function voidCutLogRecord(
   tx: Prisma.TransactionClient,
   id: string,
 ): Promise<CutLogRecord> {
   const patch = buildVoidedCutLogPatch()
-  assertCutLogVoidStatusConsistency({
-    status: patch.status,
-    void: patch.void,
-  })
   await tx.flooringCutLog.update({
     where: { id },
     data: {
       cut: patch.cut,
       coverageCut: patch.coverageCut,
-      before: patch.before,
-      after: patch.after,
       cost: patch.cost,
       freight: patch.freight,
-      isWaste: patch.isWaste,
       void: patch.void,
       status: patch.status,
-      workOrder: { disconnect: true },
-      workOrderItem: { disconnect: true },
     },
     select: { id: true },
   })
@@ -162,6 +170,12 @@ export async function voidCutLogRecord(
   return record
 }
 
+/**
+ * Single-row finalize stamp. Sets `status = FINAL`, `isFinal = true`, and
+ * the worker-computed fields. The batch-aware caller `finalizeCutLogBatch`
+ * loops over this primitive after pre-computing `before` / `after` /
+ * `finalCutSequence` per row.
+ */
 export async function finalizeCutLogRecord(
   tx: Prisma.TransactionClient,
   id: string,
@@ -172,10 +186,11 @@ export async function finalizeCutLogRecord(
     data: {
       before: input.before,
       after: input.after,
-      cost: input.cost,
-      freight: input.freight,
-      coverageCut: input.coverageCut,
+      finalCutSequence: input.finalCutSequence,
+      isFinal: true,
       status: "FINAL",
+      ...(input.cost !== undefined ? { cost: input.cost } : {}),
+      ...(input.freight !== undefined ? { freight: input.freight } : {}),
     },
     select: { id: true },
   })
@@ -191,4 +206,362 @@ export async function deleteCutLogRecordById(
   id: string,
 ): Promise<void> {
   await tx.flooringCutLog.delete({ where: { id } })
+}
+
+// ---------------------------------------------------------------------------
+// Producer-side mark-for-X primitives (mirror staged-inv `markStagedRowsForImport`)
+// ---------------------------------------------------------------------------
+
+/**
+ * Transactional primitive: flips a batch of cut logs from PENDING (with
+ * `isFinal=false && void=false`) to QUEUED so the finalize worker can
+ * pick them up.
+ *
+ * Caller contract (sweep-4 application use case):
+ *  - Opens the transaction via `withDatabaseTransaction` and locks the
+ *    parent inventory row FOR UPDATE before invoking. Without that lock,
+ *    concurrent callers could each pre-read the same row as eligible and
+ *    double-queue.
+ *  - Validated readiness via `validateCutLogFinalizeBatch` (domain) — every
+ *    row in `cutLogIds` should already pass `getCutLogFinalizabilityBlocker`.
+ *    The pre-read here is the data-layer's last-line defense, not a
+ *    substitute for the domain check.
+ *
+ * Result split:
+ *  - `markedRowIds`: rows that were eligible at pre-read AND received the
+ *    update.
+ *  - `skippedRowIds`: every input ID not in `markedRowIds` — includes rows
+ *    in non-PENDING status, finalized rows, voided rows, rows belonging to
+ *    a different inventory, and rows that don't exist.
+ */
+export type MarkCutLogsForFinalizeInput = {
+  inventoryId: string
+  cutLogIds: string[]
+}
+
+export type MarkCutLogsForFinalizeResult = {
+  markedRowIds: string[]
+  skippedRowIds: string[]
+}
+
+export async function markCutLogsForFinalize(
+  tx: Prisma.TransactionClient,
+  input: MarkCutLogsForFinalizeInput,
+): Promise<MarkCutLogsForFinalizeResult> {
+  if (input.cutLogIds.length === 0) {
+    return { markedRowIds: [], skippedRowIds: [] }
+  }
+  // Step 1 — pre-read eligible rows (within the transaction's lock scope).
+  const eligibleBefore = await tx.flooringCutLog.findMany({
+    where: {
+      id: { in: input.cutLogIds },
+      inventoryId: input.inventoryId,
+      status: "PENDING",
+      isFinal: false,
+      void: false,
+    },
+    select: { id: true },
+  })
+  const eligibleIds = new Set(eligibleBefore.map((row) => row.id))
+
+  // Step 2 — conditional bulk update with the same WHERE clause.
+  if (eligibleIds.size > 0) {
+    await tx.flooringCutLog.updateMany({
+      where: {
+        id: { in: Array.from(eligibleIds) },
+        inventoryId: input.inventoryId,
+        status: "PENDING",
+        isFinal: false,
+        void: false,
+      },
+      data: { status: "QUEUED" },
+    })
+  }
+
+  // Step 3 — derive split.
+  const markedRowIds = Array.from(eligibleIds)
+  const skippedRowIds = input.cutLogIds.filter((id) => !eligibleIds.has(id))
+  return { markedRowIds, skippedRowIds }
+}
+
+/**
+ * Single-row variant for void requests. Voids are always one-at-a-time
+ * per the intent doc. Eligibility: not voided, not currently QUEUED, AND
+ * (already finalized OR currently PENDING).
+ */
+export type MarkCutLogForVoidInput = {
+  inventoryId: string
+  cutLogId: string
+}
+
+export type MarkCutLogForVoidResult = {
+  marked: boolean
+}
+
+export async function markCutLogForVoid(
+  tx: Prisma.TransactionClient,
+  input: MarkCutLogForVoidInput,
+): Promise<MarkCutLogForVoidResult> {
+  // Pre-read eligibility in the lock.
+  const row = await tx.flooringCutLog.findFirst({
+    where: {
+      id: input.cutLogId,
+      inventoryId: input.inventoryId,
+      void: false,
+      status: { not: "QUEUED" },
+      OR: [{ isFinal: true }, { status: "PENDING" }],
+    },
+    select: { id: true },
+  })
+  if (!row) return { marked: false }
+
+  // Conditional update with the same WHERE clause.
+  const updated = await tx.flooringCutLog.updateMany({
+    where: {
+      id: input.cutLogId,
+      inventoryId: input.inventoryId,
+      void: false,
+      status: { not: "QUEUED" },
+      OR: [{ isFinal: true }, { status: "PENDING" }],
+    },
+    data: { status: "QUEUED" },
+  })
+  return { marked: updated.count > 0 }
+}
+
+// ---------------------------------------------------------------------------
+// Worker-side apply primitives
+// ---------------------------------------------------------------------------
+
+/**
+ * Diff-save primitive for the cut-logs section's pending-save flow.
+ *
+ * Caller contract (sweep-4 worker-side use case):
+ *  - Opens the transaction via `withDatabaseTransaction` and locks the
+ *    parent inventory row FOR UPDATE before invoking.
+ *  - Validated the diff via `validateCutLogsDiff` (domain) — form rules,
+ *    optimistic-lock matches, totalCutSum invariant, etc.
+ *  - Pre-assigned UUIDs to added drafts via the domain helper
+ *    `assignCutLogDiffIds` and passes them as `id` on each added entry.
+ *  - Pre-computed `coverageCut` for each added/modified row via the
+ *    domain helper `computeCutCoverage`.
+ *  - Will recompute `inventory.totalCutSum` after this primitive returns
+ *    via `computeTotalCutSum` + `updateInventoryTotalCutSum`.
+ *
+ * Execution order:
+ *  1. deleteMany(deleted.ids)
+ *  2. Build tempIdMap from added (pure, no round-trips)
+ *  3. createMany(added) using pre-assigned ids; status defaults to PENDING;
+ *     cutLogNumber is DB-generated via the sequence default
+ *  4. Per-row update for each modified entry (heterogeneous patches)
+ *  5. Reload post-state via listCutLogsByInventoryId(inventoryId, tx)
+ *  6. Return { rows, tempIdMap }
+ *
+ * Status of touched rows stays PENDING throughout — pending-save does not
+ * move rows out of PENDING; it just edits data. The outbox event is the
+ * in-flight marker.
+ */
+export type ApplyCutLogPendingSaveDiffInput = {
+  inventoryId: string
+  added: Array<{
+    id: string
+    tempId: string
+    cut: Prisma.Decimal | string | number
+    coverageCut: Prisma.Decimal | string | number | null
+    cost: Prisma.Decimal | string | number | null
+    freight: Prisma.Decimal | string | number | null
+    isWaste: boolean
+    notes: string | null
+  }>
+  modified: Array<{
+    id: string
+    patch: UpdateCutLogPendingInput
+  }>
+  deleted: Array<{ id: string }>
+}
+
+export type ApplyCutLogPendingSaveDiffResult = {
+  rows: CutLogRecord[]
+  tempIdMap: Record<string, string>
+}
+
+export async function applyCutLogPendingSaveDiff(
+  tx: Prisma.TransactionClient,
+  input: ApplyCutLogPendingSaveDiffInput,
+): Promise<ApplyCutLogPendingSaveDiffResult> {
+  // Step 1 — batch delete
+  if (input.deleted.length > 0) {
+    await tx.flooringCutLog.deleteMany({
+      where: {
+        id: { in: input.deleted.map((d) => d.id) },
+        inventoryId: input.inventoryId,
+      },
+    })
+  }
+
+  // Step 2 — tempIdMap from added (pure)
+  const tempIdMap: Record<string, string> = {}
+  for (const draft of input.added) {
+    tempIdMap[draft.tempId] = draft.id
+  }
+
+  // Step 3 — batch create with pre-assigned ids. status defaults to PENDING
+  // per schema; cutLogNumber is DB-generated via the sequence default;
+  // before/after default to 0 (worker-stamped at finalize time).
+  if (input.added.length > 0) {
+    await tx.flooringCutLog.createMany({
+      data: input.added.map((draft) => ({
+        id: draft.id,
+        inventoryId: input.inventoryId,
+        cut: draft.cut,
+        coverageCut: draft.coverageCut,
+        before: 0,
+        after: 0,
+        status: "PENDING",
+        isFinal: false,
+        cost: draft.cost,
+        freight: draft.freight,
+        isWaste: draft.isWaste,
+        void: false,
+        notes: draft.notes,
+      })),
+    })
+  }
+
+  // Step 4 — per-row updates (patches are heterogeneous)
+  for (const modification of input.modified) {
+    const data = buildPendingUpdateData(modification.patch)
+    if (Object.keys(data).length === 0) continue
+    await tx.flooringCutLog.update({
+      where: { id: modification.id },
+      data,
+    })
+  }
+
+  // Step 5 — reload post-state. Inline rather than calling
+  // listCutLogsByInventoryId so we don't re-import from read-repo (avoids
+  // accidental cycle).
+  const rows = await tx.flooringCutLog.findMany({
+    where: { inventoryId: input.inventoryId },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { id: true },
+  })
+  const refreshed: CutLogRecord[] = []
+  for (const slim of rows) {
+    const record = await getCutLogById(slim.id, tx)
+    if (record) refreshed.push(record)
+  }
+
+  return { rows: refreshed, tempIdMap }
+}
+
+/**
+ * Cross-entity batch finalize primitive. Lives in the cut-logs write-repo
+ * because it primarily writes to `flooring_cut_log`; the worker-side use
+ * case calls `updateInventoryTotalCutSum` separately AFTER this returns
+ * (totalCutSum is unchanged by finalize, so this primitive doesn't need
+ * to touch the inventory row — but the use case may still re-write it
+ * defensively if it has a fresh sum).
+ *
+ * Caller contract (sweep-4 worker-side use case):
+ *  - Opens the transaction via `withDatabaseTransaction` and locks the
+ *    parent inventory row FOR UPDATE before invoking.
+ *  - Validated readiness via `validateCutLogFinalizeBatch` (domain).
+ *
+ * Execution:
+ *  1. Read full records for the cut logs being finalized.
+ *  2. Read currentMax via `getMaxFinalCutSequenceForInventory`.
+ *  3. Sort the batch by createdAt ASC then id ASC (deterministic).
+ *  4. Loop in sorted order:
+ *     - Allocate next finalCutSequence via `nextFinalCutSequence(currentMax)`
+ *     - Compute before/after via `computeBeforeAfterForFinalize` using
+ *       `priorConsumed = priorConsumedFromExistingFinalCuts + runningConsumed`
+ *     - Stamp via `finalizeCutLogRecord`
+ *     - Update runningConsumed += row.cut, currentMax = seq
+ *  5. Return per-row sequence assignments for outbox / observability.
+ */
+export type FinalizeCutLogBatchInput = {
+  inventoryId: string
+  cutLogIds: string[]
+  /**
+   * The sum of `cut` values for already-finalized non-void cut logs on
+   * this inventory. The worker-side use case computes this via
+   * `computeTotalCutSum` over the pre-batch snapshot (subtracting any
+   * cuts in this batch since they're not yet finalized). Effectively the
+   * baseline `priorConsumed` before any row in this batch is processed.
+   */
+  priorConsumedFromExistingFinalCuts: string | number
+  /** Inventory's startingStock — used by computeBeforeAfterForFinalize. */
+  startingStock: string | number
+}
+
+export type FinalizeCutLogBatchResult = {
+  finalizedRowIds: string[]
+  finalCutSequenceByRowId: Record<string, number>
+}
+
+export async function finalizeCutLogBatch(
+  tx: Prisma.TransactionClient,
+  input: FinalizeCutLogBatchInput,
+): Promise<FinalizeCutLogBatchResult> {
+  if (input.cutLogIds.length === 0) {
+    return { finalizedRowIds: [], finalCutSequenceByRowId: {} }
+  }
+
+  // Step 1 — read full records for the rows being finalized.
+  const rows = await getCutLogsForFinalize(tx, {
+    inventoryId: input.inventoryId,
+    cutLogIds: input.cutLogIds,
+  })
+
+  // Step 2 — read currentMax under the lock.
+  let currentMax = await getMaxFinalCutSequenceForInventory(tx, input.inventoryId)
+
+  // Step 3 — deterministic sort (matches getCutLogsForFinalize's orderBy).
+  const sorted = [...rows].sort((a, b) => {
+    if (a.createdAt < b.createdAt) return -1
+    if (a.createdAt > b.createdAt) return 1
+    if (a.id < b.id) return -1
+    if (a.id > b.id) return 1
+    return 0
+  })
+
+  // Step 4 — loop and stamp.
+  let runningConsumed = 0
+  const finalCutSequenceByRowId: Record<string, number> = {}
+  const finalizedRowIds: string[] = []
+
+  for (const row of sorted) {
+    const seq = nextFinalCutSequence(currentMax)
+    const priorConsumed =
+      Number(input.priorConsumedFromExistingFinalCuts) + runningConsumed
+    const { before, after } = computeBeforeAfterForFinalize({
+      startingStock: input.startingStock,
+      priorConsumed,
+      cut: row.cut,
+    })
+    await finalizeCutLogRecord(tx, row.id, {
+      before,
+      after,
+      finalCutSequence: seq,
+    })
+    finalCutSequenceByRowId[row.id] = seq
+    finalizedRowIds.push(row.id)
+    runningConsumed += Number(row.cut)
+    currentMax = seq
+  }
+
+  return { finalizedRowIds, finalCutSequenceByRowId }
+}
+
+/**
+ * Worker-side void apply primitive. Thin wrapper over `voidCutLogRecord`
+ * — kept distinct so the application use case has a clear paired naming
+ * (`mark*` for the producer side, `apply*` for the worker side).
+ */
+export async function applyVoidToCutLog(
+  tx: Prisma.TransactionClient,
+  cutLogId: string,
+): Promise<CutLogRecord> {
+  return voidCutLogRecord(tx, cutLogId)
 }

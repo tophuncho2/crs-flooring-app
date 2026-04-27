@@ -4,6 +4,7 @@ export type CutLogDbClient = PrismaClient | Prisma.TransactionClient
 
 export const cutLogRowSelect = {
   id: true,
+  cutLogNumber: true,
   inventoryId: true,
   workOrderId: true,
   workOrderItemId: true,
@@ -12,6 +13,8 @@ export const cutLogRowSelect = {
   coverageCut: true,
   after: true,
   status: true,
+  isFinal: true,
+  finalCutSequence: true,
   cost: true,
   freight: true,
   isWaste: true,
