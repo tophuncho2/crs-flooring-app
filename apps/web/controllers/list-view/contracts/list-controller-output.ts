@@ -22,9 +22,13 @@ export type ListControllerOutput<TRow> = {
   goToPreviousPage: () => void
   goToNextPage: () => void
   goToPage: (next: number) => void
+  previousPageHref?: string
+  nextPageHref?: string
 
   isLoading: boolean
   isFetching: boolean
   error: unknown
   refetch: () => void
+
+  preferenceError: string
 }

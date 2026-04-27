@@ -1,12 +1,18 @@
 import type { ListGroup, ListInput, ListOutput, ListSort } from "@builders/application"
+import type { TablePreferencePayload } from "@builders/domain"
 
-export type ListControllerUrlSyncMode = "history" | "router" | "none"
+export type ListControllerUrlSyncMode = "history" | "router"
 
-type ListControllerInputBase<TFilters> = {
+type ListControllerPreferencesInput = {
+  tableKey?: string
+  initialTablePreferences?: TablePreferencePayload | null
+}
+
+type ListControllerInputBase<TFilters> = ListControllerPreferencesInput & {
   initialSearchQuery?: string
   initialSort?: ListSort
   initialFilters?: TFilters
-  initialGroupField?: string
+  initialGroupField?: string | null
   initialPage?: number
   pageSize?: number
   allowedSortFields?: readonly string[]
@@ -14,11 +20,21 @@ type ListControllerInputBase<TFilters> = {
   urlSyncMode?: ListControllerUrlSyncMode
 }
 
+export type ListControllerSsrPagination = {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+  previousPageHref?: string
+  nextPageHref?: string
+}
+
 export type ListControllerSsrInput<TRow, TFilters = Record<string, never>> = ListControllerInputBase<TFilters> & {
   mode: "ssr"
   initialRows: TRow[]
   initialTotal: number
   initialGroups?: ListGroup[]
+  pagination?: ListControllerSsrPagination
 }
 
 export type ListControllerFetchInput<TRow, TFilters = Record<string, never>> = ListControllerInputBase<TFilters> & {

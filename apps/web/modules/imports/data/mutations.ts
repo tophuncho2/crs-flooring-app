@@ -1,7 +1,7 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
+import { requestJson } from "@/transport/http"
+import { withMutationMeta } from "@/transport/mutation"
 import type { ImportRecord, ImportDetailRecord, StagedInventoryRecord } from "@builders/db"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
 import type { StagedInventoryRowsDiff } from "@builders/domain"

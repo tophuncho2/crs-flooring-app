@@ -3,8 +3,8 @@
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
 import { SortToggle } from "@/components/features/sort"
-import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
+import { useServerListController } from "@/controllers/list-view"
+import type { TablePreferencePayload } from "@builders/domain"
 import {
   type ImportRow,
   useImportsListController,
@@ -27,6 +27,9 @@ type ServerTableState = {
   groupByKeys: string[]
 }
 
+const IMPORTS_ALLOWED_GROUP_FIELDS = ["warehouse", "manufacturer"] as const
+const IMPORTS_ALLOWED_SORT_FIELDS = ["importNumber"] as const
+
 export default function ImportsClient({
   initialImports,
   initialTablePreferences,
@@ -38,15 +41,19 @@ export default function ImportsClient({
   tableState: ServerTableState
   pagination?: ServerPaginationState
 }) {
-  const { imports, message, pageError, openCreate, openImport } = useImportsListController({
+  const { message, pageError, openCreate, openImport } = useImportsListController({
     initialImports,
   })
 
+  const initialGroupField = tableState.isGroupingEnabled && tableState.groupByKeys.length > 0
+    ? tableState.groupByKeys[0]
+    : null
+
   const {
+    rows,
+    total,
     searchQuery,
-    isAscendingSort,
-    filteredRows: filteredImports,
-    sortedRows: sortedImports,
+    sort,
     page,
     pageSize,
     totalPages,
@@ -55,31 +62,22 @@ export default function ImportsClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
-    onToggleSort,
-  } = useConfiguredTableState({
-    rows: imports,
-    tableKey: "imports-main",
-    fields: [
-      { key: "importNumber", label: "Import #", getValue: (row) => `IMP-${String(row.importNumber).padStart(4, "0")}`, groupable: false },
-      { key: "tag", label: "Tag", getValue: (row) => row.tag, groupable: false },
-      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName, groupable: true },
-      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName, groupable: true },
-      { key: "percent", label: "Percent", getValue: (row) => row.percent, groupable: false },
-      { key: "stagedRows", label: "Staged", getValue: (row) => String(row.stagedInventoryRowsCount), groupable: false },
-      { key: "liveRows", label: "Live", getValue: (row) => String(row.liveInventoryRowsCount), groupable: false },
-      { key: "created", label: "Created", getValue: (row) => row.createdAt, groupable: false },
-    ],
-    sortField: (row) => String(row.importNumber),
-    sortFieldKey: "importNumber",
+    onToggleSortDirection,
+  } = useServerListController<ImportRow>({
+    mode: "ssr",
+    initialRows: initialImports,
+    initialTotal: pagination?.totalItems ?? initialImports.length,
     initialSearchQuery: tableState.searchQuery,
-    defaultGrouped: tableState.isGroupingEnabled,
-    defaultGroupKeys: tableState.groupByKeys,
-    defaultAscending: tableState.isAscendingSort,
-    disableClientFiltering: true,
-    disableClientSorting: true,
-    disableClientPagination: true,
-    initialPreferences: initialTablePreferences,
+    initialSort: { field: "importNumber", direction: tableState.isAscendingSort ? "asc" : "desc" },
+    initialGroupField,
+    pagination,
+    tableKey: "imports-main",
+    initialTablePreferences,
+    allowedSortFields: IMPORTS_ALLOWED_SORT_FIELDS,
+    allowedGroupFields: IMPORTS_ALLOWED_GROUP_FIELDS,
   })
+
+  const isAscendingSort = sort?.direction !== "desc"
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -115,22 +113,22 @@ export default function ImportsClient({
           <SortToggle
             sortKey="importNumber"
             direction={isAscendingSort ? "asc" : "desc"}
-            onChange={() => onToggleSort()}
+            onChange={() => onToggleSortDirection()}
             ascendingLabel="1-9"
             descendingLabel="9-1"
           />
           <span className="text-xs text-[var(--foreground)]/55">
-            {filteredImports.length} of {imports.length} imports
+            {rows.length} of {total} imports
           </span>
         </div>
 
         <ImportsTable
-          rows={sortedImports}
+          rows={rows}
           pagination={pagination}
           page={page}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalItems={filteredImports.length}
+          totalItems={total}
           hasPreviousPage={hasPreviousPage}
           hasNextPage={hasNextPage}
           onPreviousPage={goToPreviousPage}
