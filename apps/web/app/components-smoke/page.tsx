@@ -12,9 +12,19 @@ import {
   TextCell,
   TextareaCell,
 } from "@/components/cells"
-import { Grid, GridEmpty, type GridLayout, type GridRow } from "@/components/grid"
+import {
+  Grid,
+  GridEmpty,
+  ScopedRow,
+  type GridColumn,
+  type GridControlColumn,
+  type GridLayout,
+  type GridRow,
+} from "@/components/grid"
+import { ExpandToggle, ExpandableRow } from "@/components/grid/expandable-rows"
 import { RichDropdown } from "@/components/dropdowns/rich-dropdown"
 import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown"
+import { StatusBadge } from "@/components/badges"
 import { ActionHeader, SectionHeader } from "@/components/headers"
 
 const MANAGEMENT_COMPANIES = [
@@ -113,7 +123,10 @@ const INITIAL_MATERIAL_ITEMS: MaterialItem[] = [
 ]
 
 const MATERIAL_ITEMS_LAYOUT: GridLayout<MaterialItem> = {
-  leadingControls: [{ key: "select", kind: "selection", width: 40 }],
+  leadingControls: [
+    { key: "expand", kind: "expand", width: 40 },
+    { key: "select", kind: "selection", width: 40 },
+  ],
   dataColumns: [
     { key: "category", label: "Category", minWidth: 200, grow: 0 },
     { key: "product", label: "Product", minWidth: 260, preferredWidth: 320, grow: 1.5 },
@@ -123,6 +136,39 @@ const MATERIAL_ITEMS_LAYOUT: GridLayout<MaterialItem> = {
     { key: "notes", label: "Notes", minWidth: 220, grow: 1 },
   ],
   trailingControls: [{ key: "remove", kind: "actions", width: 72 }],
+}
+
+// ---------- Cut logs (child rows nested under each material item) ---------
+
+type CutLog = GridRow & {
+  cutNumber: number
+  cutAmount: string
+  cutBy: string
+  notes: string
+  status: "DRAFT" | "FINALIZED"
+}
+
+const INITIAL_CUT_LOGS_BY_ITEM: Record<string, CutLog[]> = {
+  "mi-1": [
+    { id: "cl-1", cutNumber: 1, cutAmount: "12.0 bx", cutBy: "Alex", notes: "Living room install", status: "FINALIZED" },
+    { id: "cl-2", cutNumber: 2, cutAmount: "8.5 bx", cutBy: "Sam", notes: "Kitchen install — partial", status: "DRAFT" },
+  ],
+  "mi-3": [
+    { id: "cl-3", cutNumber: 1, cutAmount: "16.0 sqyd", cutBy: "Sam", notes: "Bedroom 1", status: "FINALIZED" },
+    { id: "cl-4", cutNumber: 2, cutAmount: "14.0 sqyd", cutBy: "Alex", notes: "Bedroom 2", status: "DRAFT" },
+  ],
+}
+
+// Child layout — totally distinct from the parent's column shape. Cut logs
+// have their own keys, widths, and alignment.
+const CUT_LOG_LAYOUT: GridLayout<CutLog> = {
+  dataColumns: [
+    { key: "cutNumber", label: "Cut #", kind: "number", minWidth: 80, grow: 0, align: "center" },
+    { key: "cutAmount", label: "Amount", kind: "number", minWidth: 110, grow: 0, align: "end" },
+    { key: "cutBy", label: "Cut By", minWidth: 140, grow: 0 },
+    { key: "notes", label: "Notes", minWidth: 280, grow: 1 },
+    { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
+  ],
 }
 
 function lineCost(quantity: string, unitPrice: string): string {
@@ -190,6 +236,39 @@ export default function WorkOrderCellsSmokePage() {
     () => Array.from(selectedIds).filter((id) => savedItemIds.has(id)),
     [selectedIds, savedItemIds],
   )
+
+  // ---------- Cut logs (child rows) — mocked ------------------------------
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(() => new Set())
+  const [cutLogsByItem, setCutLogsByItem] = useState<Record<string, CutLog[]>>(INITIAL_CUT_LOGS_BY_ITEM)
+
+  function toggleExpanded(itemId: string) {
+    setExpandedItemIds((previous) => {
+      const next = new Set(previous)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
+  }
+
+  function addCutLog(itemId: string) {
+    setCutLogsByItem((previous) => {
+      const existing = previous[itemId] ?? []
+      return {
+        ...previous,
+        [itemId]: [
+          ...existing,
+          {
+            id: `cl-new-${Date.now()}`,
+            cutNumber: existing.length + 1,
+            cutAmount: "0.0",
+            cutBy: "—",
+            notes: "",
+            status: "DRAFT",
+          },
+        ],
+      }
+    })
+  }
 
   function clearSelection() {
     setSelectedIds(new Set())
@@ -272,8 +351,161 @@ export default function WorkOrderCellsSmokePage() {
 
   const itemsBusy = isItemsSaving || isBatchFiring
 
+  // ---------- Cell + control renderers (parent material items grid) -------
+  function renderMaterialCell(column: GridColumn<MaterialItem>, row: MaterialItem) {
+    const editable = !itemsBusy
+    switch (column.key) {
+      case "category":
+        return (
+          <RichDropdown
+            disabled={!editable}
+            value={row.categoryId}
+            onChange={(next) =>
+              updateItem(row.id, {
+                categoryId: next,
+                productId:
+                  next && row.productId
+                    ? PRODUCT_OPTIONS.find((product) => product.id === row.productId)?.categoryId === next
+                      ? row.productId
+                      : null
+                    : row.productId,
+              })
+            }
+            options={CATEGORY_OPTIONS}
+            placeholder="All categories"
+            searchPlaceholder="Search categories…"
+            clearLabel="All categories"
+            ariaLabel="Category filter"
+          />
+        )
+      case "product": {
+        const visibleProducts = row.categoryId
+          ? PRODUCT_OPTIONS.filter(
+              (product) => product.categoryId === row.categoryId || product.id === row.productId,
+            )
+          : PRODUCT_OPTIONS
+        return (
+          <RichDropdown
+            disabled={!editable}
+            value={row.productId}
+            onChange={(next) => updateItem(row.id, { productId: next })}
+            options={visibleProducts.map((product) => ({
+              id: product.id,
+              title: product.title,
+              subtitles: product.subtitles,
+            }))}
+            placeholder="Select product"
+            searchPlaceholder="Search products…"
+            ariaLabel="Product"
+          />
+        )
+      }
+      case "quantity":
+        return (
+          <NumberCell
+            editable={editable}
+            value={row.quantity}
+            onChange={(next) => updateItem(row.id, { quantity: next })}
+            ariaLabel="Quantity"
+          />
+        )
+      case "unitPrice":
+        return (
+          <CurrencyCell
+            editable={editable}
+            value={row.unitPrice}
+            onChange={(next) => updateItem(row.id, { unitPrice: next })}
+            ariaLabel="Unit price"
+          />
+        )
+      case "cost":
+        return (
+          <CurrencyCell
+            editable={false}
+            value={lineCost(row.quantity, row.unitPrice)}
+            ariaLabel="Line cost"
+          />
+        )
+      case "notes":
+        return (
+          <TextCell
+            editable={editable}
+            value={row.notes}
+            onChange={(next) => updateItem(row.id, { notes: next })}
+            ariaLabel="Notes"
+          />
+        )
+      default:
+        return null
+    }
+  }
+
+  function renderMaterialControl(control: GridControlColumn, row: MaterialItem) {
+    if (control.kind === "expand") {
+      const isExpanded = expandedItemIds.has(row.id)
+      const cutLogCount = cutLogsByItem[row.id]?.length ?? 0
+      return (
+        <ExpandToggle
+          expanded={isExpanded}
+          onToggle={() => toggleExpanded(row.id)}
+          ariaLabel={
+            isExpanded
+              ? `Hide cut logs for material item (${cutLogCount})`
+              : `Show cut logs for material item (${cutLogCount})`
+          }
+        />
+      )
+    }
+    if (control.kind === "selection") {
+      const isSavedRow = savedItemIds.has(row.id)
+      return (
+        <CheckboxCell
+          editable={isSavedRow && !itemsBusy}
+          value={selectedIds.has(row.id)}
+          onChange={() => toggleSelected(row.id)}
+          ariaLabel="Select material item"
+        />
+      )
+    }
+    if (control.kind === "actions") {
+      return (
+        <RowActionButton
+          label="✕"
+          ariaLabel="Remove material item"
+          tone="destructive"
+          title="Remove this material item"
+          editable={!itemsBusy}
+          onClick={() => removeItem(row.id)}
+        />
+      )
+    }
+    return null
+  }
+
+  // ---------- Cut log cell renderer (child rows) --------------------------
+  function renderCutLogCell(column: GridColumn<CutLog>, log: CutLog) {
+    switch (column.key) {
+      case "cutNumber":
+        return <span className="tabular-nums text-[var(--foreground)]/80">#{log.cutNumber}</span>
+      case "cutAmount":
+        return <span className="tabular-nums">{log.cutAmount}</span>
+      case "cutBy":
+        return log.cutBy
+      case "notes":
+        return log.notes || "—"
+      case "status":
+        return (
+          <StatusBadge tone={log.status === "FINALIZED" ? "success" : "default"}>
+            {log.status === "FINALIZED" ? "Finalized" : "Draft"}
+          </StatusBadge>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-8">
+    <div className="mx-auto min-h-screen max-w-7xl space-y-6 p-8 pb-48">
       {/* ============== Primary section ============== */}
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <SectionHeader
@@ -485,123 +717,42 @@ export default function WorkOrderCellsSmokePage() {
           rows={items}
           layout={MATERIAL_ITEMS_LAYOUT}
           empty={<GridEmpty>No material items yet.</GridEmpty>}
-          renderCell={(column, row) => {
-            const editable = !itemsBusy
-            switch (column.key) {
-              case "category":
-                return (
-                  <RichDropdown
-                    disabled={!editable}
-                    value={row.categoryId}
-                    onChange={(next) =>
-                      updateItem(row.id, {
-                        categoryId: next,
-                        // Clear the product when the category changes so the
-                        // cascade reads cleanly. Keeps the smoke faithful to
-                        // the staged-inv category→product behaviour.
-                        productId:
-                          next && row.productId
-                            ? PRODUCT_OPTIONS.find((product) => product.id === row.productId)?.categoryId === next
-                              ? row.productId
-                              : null
-                            : row.productId,
-                      })
-                    }
-                    options={CATEGORY_OPTIONS}
-                    placeholder="All categories"
-                    searchPlaceholder="Search categories…"
-                    clearLabel="All categories"
-                    ariaLabel="Category filter"
-                  />
-                )
-              case "product": {
-                // Filter by selected category, but always include the currently
-                // selected product even if it sits outside the filter.
-                const visibleProducts = row.categoryId
-                  ? PRODUCT_OPTIONS.filter(
-                      (product) => product.categoryId === row.categoryId || product.id === row.productId,
-                    )
-                  : PRODUCT_OPTIONS
-                return (
-                  <RichDropdown
-                    disabled={!editable}
-                    value={row.productId}
-                    onChange={(next) => updateItem(row.id, { productId: next })}
-                    options={visibleProducts.map((product) => ({
-                      id: product.id,
-                      title: product.title,
-                      subtitles: product.subtitles,
-                    }))}
-                    placeholder="Select product"
-                    searchPlaceholder="Search products…"
-                    ariaLabel="Product"
-                  />
-                )
-              }
-              case "quantity":
-                return (
-                  <NumberCell
-                    editable={editable}
-                    value={row.quantity}
-                    onChange={(next) => updateItem(row.id, { quantity: next })}
-                    ariaLabel="Quantity"
-                  />
-                )
-              case "unitPrice":
-                return (
-                  <CurrencyCell
-                    editable={editable}
-                    value={row.unitPrice}
-                    onChange={(next) => updateItem(row.id, { unitPrice: next })}
-                    ariaLabel="Unit price"
-                  />
-                )
-              case "cost":
-                return (
-                  <CurrencyCell
-                    editable={false}
-                    value={lineCost(row.quantity, row.unitPrice)}
-                    ariaLabel="Line cost"
-                  />
-                )
-              case "notes":
-                return (
-                  <TextCell
-                    editable={editable}
-                    value={row.notes}
-                    onChange={(next) => updateItem(row.id, { notes: next })}
-                    ariaLabel="Notes"
-                  />
-                )
-              default:
-                return null
-            }
-          }}
-          renderControl={(control, row) => {
-            if (control.kind === "selection") {
-              const isSavedRow = savedItemIds.has(row.id)
-              return (
-                <CheckboxCell
-                  editable={isSavedRow && !itemsBusy}
-                  value={selectedIds.has(row.id)}
-                  onChange={() => toggleSelected(row.id)}
-                  ariaLabel="Select material item"
-                />
-              )
-            }
-            if (control.kind === "actions") {
-              return (
-                <RowActionButton
-                  label="✕"
-                  ariaLabel="Remove material item"
-                  tone="destructive"
-                  title="Remove this material item"
-                  editable={!itemsBusy}
-                  onClick={() => removeItem(row.id)}
-                />
-              )
-            }
-            return null
+          renderRow={(row) => {
+            const isExpanded = expandedItemIds.has(row.id)
+            const itemCutLogs = cutLogsByItem[row.id] ?? []
+            return (
+              <ExpandableRow<MaterialItem>
+                parentRow={row}
+                parentLayout={MATERIAL_ITEMS_LAYOUT}
+                expanded={isExpanded}
+                renderParentCell={renderMaterialCell}
+                renderParentControl={renderMaterialControl}
+                emptyState="No cut logs for this material item yet."
+                footer={
+                  <div className="flex justify-end px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => addCutLog(row.id)}
+                      disabled={itemsBusy}
+                      className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:bg-[var(--panel-border)]/15 hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      + Add Cut Log
+                    </button>
+                  </div>
+                }
+              >
+                {isExpanded
+                  ? itemCutLogs.map((log) => (
+                      <ScopedRow<CutLog>
+                        key={log.id}
+                        row={log}
+                        layout={CUT_LOG_LAYOUT}
+                        renderCell={renderCutLogCell}
+                      />
+                    ))
+                  : null}
+              </ExpandableRow>
+            )
           }}
         />
       </div>
