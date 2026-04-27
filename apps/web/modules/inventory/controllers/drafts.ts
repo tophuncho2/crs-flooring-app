@@ -26,16 +26,16 @@ import {
 export type CutLogDraft = {
   clientId: string
   cut: string
-  cost: string
-  freight: string
+  cost: string | null
+  freight: string | null
   isWaste: boolean
   notes: string
 }
 
 const EMPTY_DRAFT: CutLogPendingForm = {
   cut: "",
-  cost: "",
-  freight: "",
+  cost: null,
+  freight: null,
   isWaste: false,
   notes: "",
 }
@@ -83,13 +83,13 @@ export function validateCutLogDrafts(drafts: ReadonlyArray<CutLogDraft>): string
     const cut = Number(cutRaw)
     if (!Number.isFinite(cut)) return "Cut value must be a number"
     if (cut <= 0) return "Cut value must be greater than zero"
-    const costRaw = draft.cost.trim()
+    const costRaw = (draft.cost ?? "").trim()
     if (costRaw !== "") {
       const cost = Number(costRaw)
       if (!Number.isFinite(cost)) return "Cost must be a number when provided"
       if (cost < 0) return "Cost cannot be negative"
     }
-    const freightRaw = draft.freight.trim()
+    const freightRaw = (draft.freight ?? "").trim()
     if (freightRaw !== "") {
       const freight = Number(freightRaw)
       if (!Number.isFinite(freight)) return "Freight must be a number when provided"

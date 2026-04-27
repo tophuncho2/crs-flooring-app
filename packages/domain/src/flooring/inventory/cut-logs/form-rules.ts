@@ -24,9 +24,9 @@ export type CutLogPendingFormIssue =
 
 /**
  * `cut` is required and must parse to a strictly positive number. `cost`
- * and `freight` are optional (empty string allowed); when supplied, must
- * parse to a non-negative number. `isWaste` and `notes` have no validation
- * here.
+ * and `freight` are nullable (null = absent) and, when supplied as a
+ * non-empty string, must parse to a non-negative number. `isWaste` and
+ * `notes` have no validation here.
  */
 export function validateCutLogPendingForm(
   input: CutLogPendingForm,
@@ -45,23 +45,23 @@ export function validateCutLogPendingForm(
     }
   }
 
-  const costRaw = input.cost.trim()
+  const costRaw = (input.cost ?? "").trim()
   if (costRaw.length > 0) {
     const cost = Number(costRaw)
     if (!Number.isFinite(cost)) {
-      issues.push({ code: "CUT_LOG_COST_INVALID", value: input.cost })
+      issues.push({ code: "CUT_LOG_COST_INVALID", value: costRaw })
     } else if (cost < 0) {
-      issues.push({ code: "CUT_LOG_COST_NEGATIVE", value: input.cost })
+      issues.push({ code: "CUT_LOG_COST_NEGATIVE", value: costRaw })
     }
   }
 
-  const freightRaw = input.freight.trim()
+  const freightRaw = (input.freight ?? "").trim()
   if (freightRaw.length > 0) {
     const freight = Number(freightRaw)
     if (!Number.isFinite(freight)) {
-      issues.push({ code: "CUT_LOG_FREIGHT_INVALID", value: input.freight })
+      issues.push({ code: "CUT_LOG_FREIGHT_INVALID", value: freightRaw })
     } else if (freight < 0) {
-      issues.push({ code: "CUT_LOG_FREIGHT_NEGATIVE", value: input.freight })
+      issues.push({ code: "CUT_LOG_FREIGHT_NEGATIVE", value: freightRaw })
     }
   }
 

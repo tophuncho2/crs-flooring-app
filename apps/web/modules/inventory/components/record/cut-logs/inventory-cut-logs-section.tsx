@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { Fragment } from "react"
 import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
-import { CheckboxCell, CurrencyCell, TextCell, UnitCell } from "@/components/cells"
+import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import {
   formatCutLogStatus,
@@ -26,8 +26,6 @@ const CUT_LOG_GRID_LAYOUT: GridLayout<GridDraftRow> = {
     { key: "cutLogNumber", label: "Cut #", minWidth: 132, grow: 0 },
     { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
     { key: "coverageCut", label: "Coverage", minWidth: 144, grow: 0, align: "center" },
-    { key: "cost", label: "Cost", kind: "currency", minWidth: 116, grow: 0, align: "end" },
-    { key: "freight", label: "Freight", kind: "currency", minWidth: 116, grow: 0, align: "end" },
     { key: "isWaste", label: "Waste", minWidth: 80, grow: 0, align: "center" },
     { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
     { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
@@ -239,24 +237,6 @@ export function InventoryCutLogsSection({
                   editable={false}
                   value={serverRow?.coverageCut ?? "(computed)"}
                   ariaLabel={`Row ${index + 1} coverage cut`}
-                />
-              )
-            case "cost":
-              return (
-                <CurrencyCell
-                  editable
-                  value={row.cost}
-                  onChange={(value) => onRowFieldChange(index, "cost", value)}
-                  ariaLabel={`Row ${index + 1} cost`}
-                />
-              )
-            case "freight":
-              return (
-                <CurrencyCell
-                  editable
-                  value={row.freight}
-                  onChange={(value) => onRowFieldChange(index, "freight", value)}
-                  ariaLabel={`Row ${index + 1} freight`}
                 />
               )
             case "isWaste":

@@ -41,6 +41,15 @@ export const PENDING_SAVE_CUT_LOG_JOB_NAME = "pending-save-batch" as const
 
 const isoTimestamp = z.string().datetime()
 
+// `cost` / `freight` ride as nullable decimal strings on the wire. The
+// preprocess collapses any empty/whitespace-only string to null so legacy
+// callers (or stale UI builds) that still send `""` end up writing the
+// `Decimal?` column as null instead of crashing Prisma's decimal parser.
+const decimalOrNull = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+  z.union([z.string().min(1), z.null()]),
+)
+
 const CutLogDraftPayload = z.object({
   // `id` is stamped by the producer use case (via `assignCutLogDiffIds`
   // calling `randomUUID()`) BEFORE the outbox event is written. Carrying
@@ -51,16 +60,16 @@ const CutLogDraftPayload = z.object({
   id: z.string().uuid(),
   tempId: z.string().min(1),
   cut: z.string(),
-  cost: z.string(),
-  freight: z.string(),
+  cost: decimalOrNull,
+  freight: decimalOrNull,
   isWaste: z.boolean(),
   notes: z.string(),
 })
 
 const CutLogPatchPayload = z.object({
   cut: z.string().optional(),
-  cost: z.string().optional(),
-  freight: z.string().optional(),
+  cost: decimalOrNull.optional(),
+  freight: decimalOrNull.optional(),
   isWaste: z.boolean().optional(),
   notes: z.string().optional(),
 })

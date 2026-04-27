@@ -157,8 +157,8 @@ function projectFormFromPatch(
 ): CutLogPendingForm {
   return {
     cut: patch.cut ?? existing.cut,
-    cost: patch.cost ?? "",
-    freight: patch.freight ?? "",
+    cost: patch.cost ?? null,
+    freight: patch.freight ?? null,
     isWaste: patch.isWaste ?? false,
     notes: patch.notes ?? "",
   }

@@ -48,18 +48,22 @@ export type CutLogRow = {
 // (`before` / `after` / `status` / `isFinal` / `finalCutSequence` / `void`)
 // AND link fields (`workOrderId` / `workOrderItemId`) — links flow through
 // their own sync use case per intent doc, not the pending-save worker.
+//
+// `cost` / `freight` are nullable: the cells are not editable inline in the
+// section UI today, and the underlying Prisma columns are `Decimal?`. An
+// absent value is null (not the empty string).
 export type CutLogPendingForm = {
   cut: string
-  cost: string
-  freight: string
+  cost: string | null
+  freight: string | null
   isWaste: boolean
   notes: string
 }
 
 export const EMPTY_CUT_LOG_PENDING_FORM: CutLogPendingForm = {
   cut: "",
-  cost: "",
-  freight: "",
+  cost: null,
+  freight: null,
   isWaste: false,
   notes: "",
 }
@@ -67,8 +71,8 @@ export const EMPTY_CUT_LOG_PENDING_FORM: CutLogPendingForm = {
 export function toCutLogPendingForm(row: CutLogRow): CutLogPendingForm {
   return {
     cut: row.cut,
-    cost: row.cost ?? "",
-    freight: row.freight ?? "",
+    cost: row.cost,
+    freight: row.freight,
     isWaste: row.isWaste,
     notes: row.notes,
   }
