@@ -209,6 +209,48 @@ export async function deleteCutLogRecordById(
   await tx.flooringCutLog.delete({ where: { id } })
 }
 
+/**
+ * Sync link-update primitive (cross-sweep extension landed in sweep 4
+ * alongside `updateCutLogLinksUseCase`). Per intent doc, the
+ * work-order / work-order-item linkage is its own flow that does NOT go
+ * through the worker pipeline — it doesn't touch `cut`, `coverageCut`,
+ * `cost`, `freight`, or `totalCutSum`, so there's no per-inventory
+ * `FOR UPDATE` lock to coordinate with.
+ *
+ * Input shape: both ids move together OR both are null.
+ * `assertCutLogLinkageSymmetry` enforces this in the use case BEFORE
+ * calling here (per `packages/db/CLAUDE.md` rule 1 — data layer doesn't
+ * import throwing rules). The data primitive trusts its input.
+ */
+export type UpdateCutLogLinksInput = {
+  workOrderId: string | null
+  workOrderItemId: string | null
+}
+
+export async function updateCutLogLinks(
+  tx: Prisma.TransactionClient,
+  id: string,
+  input: UpdateCutLogLinksInput,
+): Promise<CutLogRecord> {
+  await tx.flooringCutLog.update({
+    where: { id },
+    data: {
+      workOrder: input.workOrderId
+        ? { connect: { id: input.workOrderId } }
+        : { disconnect: true },
+      workOrderItem: input.workOrderItemId
+        ? { connect: { id: input.workOrderItemId } }
+        : { disconnect: true },
+    },
+    select: { id: true },
+  })
+  const record = await getCutLogById(id, tx)
+  if (!record) {
+    throw new Error(`updateCutLogLinks: cut log ${id} not found after update`)
+  }
+  return record
+}
+
 // ---------------------------------------------------------------------------
 // Producer-side mark-for-X primitives (mirror staged-inv `markStagedRowsForImport`)
 // ---------------------------------------------------------------------------

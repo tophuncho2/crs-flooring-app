@@ -23,6 +23,13 @@ import { z } from "zod"
  * can lock the parent row without an extra read — mirrors `importEntryId`
  * in `materialize-import-batch.ts`.
  *
+ * Added drafts carry BOTH `tempId` (UI-supplied opaque marker) and `id`
+ * (producer-stamped UUID). The producer calls `assignCutLogDiffIds` to
+ * generate `id` per draft before writing the outbox event so the
+ * worker's `createMany` is idempotent across retries. The producer also
+ * returns the `tempId → id` map to its caller so the UI can reconcile
+ * draft state.
+ *
  * Note: link fields (`workOrderId` / `workOrderItemId`) are NOT part of
  * this payload — link edits flow through their own sync use case (no
  * worker), per intent doc.
@@ -35,6 +42,13 @@ export const PENDING_SAVE_CUT_LOG_JOB_NAME = "pending-save-batch" as const
 const isoTimestamp = z.string().datetime()
 
 const CutLogDraftPayload = z.object({
+  // `id` is stamped by the producer use case (via `assignCutLogDiffIds`
+  // calling `randomUUID()`) BEFORE the outbox event is written. Carrying
+  // it in the payload makes the worker's `createMany` idempotent across
+  // retries — re-running the same payload writes rows with the same ids
+  // (Postgres unique-pk would catch a true second insert; in practice
+  // the worker also re-validates against drift first).
+  id: z.string().uuid(),
   tempId: z.string().min(1),
   cut: z.string(),
   cost: z.string(),
