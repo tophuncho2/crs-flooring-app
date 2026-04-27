@@ -8,6 +8,7 @@ import {
   getCutLogById,
   getCutLogsForFinalize,
   getMaxFinalCutSequenceForInventory,
+  listCutLogsByInventoryId,
   type CutLogRecord,
 } from "./read-repository.js"
 
@@ -438,21 +439,11 @@ export async function applyCutLogPendingSaveDiff(
     })
   }
 
-  // Step 5 — reload post-state. Inline rather than calling
-  // listCutLogsByInventoryId so we don't re-import from read-repo (avoids
-  // accidental cycle).
-  const rows = await tx.flooringCutLog.findMany({
-    where: { inventoryId: input.inventoryId },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { id: true },
-  })
-  const refreshed: CutLogRecord[] = []
-  for (const slim of rows) {
-    const record = await getCutLogById(slim.id, tx)
-    if (record) refreshed.push(record)
-  }
+  // Step 5 — reload post-state via the listing read primitive (single
+  // query). Mirrors `applyStagedInventoryRowsDiff` exactly.
+  const rows = await listCutLogsByInventoryId(input.inventoryId, tx)
 
-  return { rows: refreshed, tempIdMap }
+  return { rows, tempIdMap }
 }
 
 /**
@@ -471,7 +462,9 @@ export async function applyCutLogPendingSaveDiff(
  * Execution:
  *  1. Read full records for the cut logs being finalized.
  *  2. Read currentMax via `getMaxFinalCutSequenceForInventory`.
- *  3. Sort the batch by createdAt ASC then id ASC (deterministic).
+ *  3. Sort the batch by `cutLogNumber ASC` (deterministic; cutLogNumber
+ *     has a unique constraint so no tiebreaker is needed; user-facing
+ *     identifier order matches `finalCutSequence` allocation order).
  *  4. Loop in sorted order:
  *     - Allocate next finalCutSequence via `nextFinalCutSequence(currentMax)`
  *     - Compute before/after via `computeBeforeAfterForFinalize` using
@@ -517,12 +510,16 @@ export async function finalizeCutLogBatch(
   // Step 2 — read currentMax under the lock.
   let currentMax = await getMaxFinalCutSequenceForInventory(tx, input.inventoryId)
 
-  // Step 3 — deterministic sort (matches getCutLogsForFinalize's orderBy).
+  // Step 3 — deterministic sort by `cutLogNumber ASC` (single key — the
+  // column has a unique constraint). Matches `getCutLogsForFinalize`'s
+  // orderBy, so this in-memory sort is essentially a defensive re-sort
+  // (and will be a no-op when the rows arrive in cutLogNumber order).
+  // Sorting by the visible identifier means user-perceived order
+  // (rows 4, 7, 9 → seq N, N+1, N+2) aligns with the allocated
+  // `finalCutSequence` values.
   const sorted = [...rows].sort((a, b) => {
-    if (a.createdAt < b.createdAt) return -1
-    if (a.createdAt > b.createdAt) return 1
-    if (a.id < b.id) return -1
-    if (a.id > b.id) return 1
+    if (a.cutLogNumber < b.cutLogNumber) return -1
+    if (a.cutLogNumber > b.cutLogNumber) return 1
     return 0
   })
 

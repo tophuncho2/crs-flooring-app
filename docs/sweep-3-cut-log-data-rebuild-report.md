@@ -74,8 +74,33 @@ Same state as after sweep 2: cut-log half clean, staged-inv `staged-inventory-ro
 
 1. **Data layer is rule-1 strict.** No `validate*` / `assert*` / `is*Blocked` imports. The five domain imports are: `buildVoidedCutLogPatch`, `computeBeforeAfterForFinalize`, `nextFinalCutSequence` (functions); `CutLogParentContext`, `CutLogRow`, `CutLogStatus`, `DiffExistingCutLogRow` (types). All pure or type-level.
 2. **`finalizeCutLogBatch` is a cross-entity primitive lives in cut-logs/write-repo** (not in inventory's write-repo) since it primarily writes to `flooring_cut_log`. The companion `updateInventoryTotalCutSum` call is the use case's responsibility (totalCutSum is unchanged by finalize but the use case may still re-write defensively).
-3. **`applyCutLogPendingSaveDiff` reload pattern** uses per-row `getCutLogById` instead of bulk `listCutLogsByInventoryId` to avoid a circular import between read-repo and write-repo (read-repo would otherwise be imported by write-repo just for the listing function). Equivalent in correctness; slightly more round-trips.
-4. **`finalizeCutLogBatch` sort order** is `createdAt ASC, id ASC` — matches the orderBy in `getCutLogsForFinalize` so the in-memory iteration order equals the read order. Deterministic across runs.
+3. **`applyCutLogPendingSaveDiff` reload pattern** uses a single
+   `listCutLogsByInventoryId(inventoryId, tx)` call. Mirrors
+   `applyStagedInventoryRowsDiff` exactly. The earlier "accidental cycle"
+   concern was based on a false premise — the cut-log write-repo already
+   imports three other functions from the read-repo, so adding the
+   listing function is the same import direction. Reload collapses from
+   1 + N (findMany + N findUnique) down to 1 query.
+4. **`finalizeCutLogBatch` sort order** is `cutLogNumber ASC` (single key
+   — the column has a unique constraint, so no tiebreaker is needed).
+   `cutLogNumber` is the user-visible identifier (CUT-0000001 format),
+   so user-perceived selection order (rows 4, 7, 9 → seq N, N+1, N+2)
+   aligns with the allocated `finalCutSequence`. `getCutLogsForFinalize`
+   uses the same orderBy, so the in-memory re-sort is essentially
+   defensive (no-op when rows arrive in order). User explicitly picked
+   this over `createdAt ASC, id ASC` (createdAt can collide on bulk
+   `createMany`) and over a payload-supplied user-selected order
+   (overkill — adds a payload field for a UX nuance no one asked for,
+   and breaks the "deterministic from inputs" property).
+   - **Per-batch invariant the producer use case (sweep 4) must enforce
+     before writing the outbox event:** if any in-batch cut would push
+     the inventory's projected `totalCutSum` past `startingStock`, the
+     producer must reject. For finalize, the projection is current
+     `totalCutSum` (already counts pending non-void cuts), so the check
+     usually passes — but it's a free guard against a stale snapshot
+     and will catch any race that slipped past the diff validator. The
+     check itself reuses sweep-2's `assertCutSumWithinStartingStock`;
+     no data-layer change required for it.
 5. **`markCutLogForVoid` eligibility WHERE clause** matches `canVoidCutLog`'s domain logic verbatim: `void=false AND status≠"QUEUED" AND (isFinal=true OR status="PENDING")`. Defense-in-depth against the use case missing the validator call.
 6. **`createCutLogRecord` kept as a single-row primitive** even though pending-save uses bulk `applyCutLogPendingSaveDiff`. Useful for tests / future ad-hoc use cases. Same convention as staged-inv keeping `createStagedInventoryRecord` alongside `applyStagedInventoryRowsDiff`.
 
@@ -120,7 +145,19 @@ together:
 
 - **Domain (sweep 2):** all 9 cut-log files in `packages/domain/src/flooring/inventory/cut-logs/`, plus the 3 queue payloads in `packages/domain/src/queue/`. Plus the new `finalize-math.ts` from this sweep.
 - **Data (sweep 3):** the 4 cut-log files in `packages/db/src/flooring/inventory/cut-logs/`. Plus the unchanged `updateInventoryTotalCutSum` primitive in inventory's write-repo.
-- **Open questions to settle before sweep 4:**
-  - Does the `applyCutLogPendingSaveDiff` reload-by-id pattern feel right, or would you prefer breaking the circular import another way (e.g. a slim listing function in `shared.ts`)?
-  - Does the `finalizeCutLogBatch` sort order (`createdAt ASC, id ASC`) match the user-facing UX you want for `finalCutSequence` assignment? Alternatives: user-selected order from the UI (would require a sequence in the payload), or `cutLogNumber ASC` (effectively creation order via the global sequence).
-  - The `priorConsumedFromExistingFinalCuts` input on `finalizeCutLogBatch` — should the data primitive compute it itself (read finalized rows + sum) or stay as the use case's responsibility (use case feeds it in)? Current design: use case's responsibility, keeps the data primitive deterministic from inputs.
+- **Open questions resolved post-implementation (decisions baked into
+  the code):**
+  - **Q1 (reload pattern):** switched to single
+    `listCutLogsByInventoryId(inventoryId, tx)` call — mirrors
+    staged-inv exactly; no helper in `shared.ts` needed; the original
+    "accidental cycle" comment was a false premise.
+  - **Q2 (sort order):** switched to `cutLogNumber ASC` (single key,
+    user-aligned identifier order). Producer use case (sweep 4) must
+    additionally check `assertCutSumWithinStartingStock` before writing
+    the outbox event so the request is rejected pre-dispatch if it
+    would violate the invariant.
+  - **Q3 (`priorConsumedFromExistingFinalCuts` ownership):** stays with
+    the use case (current design). Keeps the data primitive
+    deterministic from plain inputs and avoids a duplicate aggregate
+    read — the use case already has the snapshot in memory for the
+    invariant check.

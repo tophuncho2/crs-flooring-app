@@ -195,6 +195,13 @@ export async function getCutLogForVoid(
  * Returns full normalized records for the cut logs being finalized — the
  * worker needs the full shape (`cut` value especially) to compute
  * `before` / `after` per row.
+ *
+ * Ordered by `cutLogNumber ASC`, the visible identifier the user sees in
+ * the UI. `cutLogNumber` is a global sequence with a unique constraint
+ * (per sweep 1), so this single-key sort is fully deterministic — no
+ * tiebreaker needed. The finalize worker's per-row sequence allocation
+ * follows the same order so that user-facing IDs and `finalCutSequence`
+ * land in lockstep.
  */
 export async function getCutLogsForFinalize(
   tx: Prisma.TransactionClient,
@@ -207,7 +214,7 @@ export async function getCutLogsForFinalize(
       inventoryId: input.inventoryId,
     },
     select: cutLogRowSelect,
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    orderBy: { cutLogNumber: "asc" },
   })
   return rows.map(normalizeCutLogRow)
 }
