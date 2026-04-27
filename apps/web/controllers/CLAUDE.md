@@ -1,7 +1,17 @@
-# `apps/web/controllers/` — Reserved
+# `apps/web/controllers/` — Shared React Hooks
 
-This directory is reserved for the controllers extraction sweep that follows the components extraction.
+Top-level controllers home for shared React state hooks. Sub-folders mirror the bucketing of `apps/web/components/`: each controller bucket consumes the matching component primitives.
 
-**Do not add files here without a sibling `apps/web/components/` extraction precedent.** The intent is for controllers to mirror the bucketed shape of `apps/web/components/` (e.g. `controllers/sections/`, `controllers/workflows/`, `controllers/primitives/`), each consuming the corresponding component primitives.
+## Established buckets
 
-For now, controllers continue to live under `apps/web/modules/<module>/controllers/` (per-module hooks) and `apps/web/modules/shared/engines/record-view/client/controllers/` (shared engine hooks).
+| Bucket | Mirrors components | Purpose |
+|---|---|---|
+| `list-view/` | `components/features/{search,sort,group,paginate}/` | Server-driven list-view controller — owns search/sort/filter/group/paginate state, supports SSR-array + React Query fetch modes. |
+| `dropdown-search/` | `components/dropdowns/search-dropdown.tsx` | Async-backed dropdown controller — debounced query + `keepPreviousData` over a module-supplied `searchFn`. |
+
+Future buckets follow the same rule: a folder here only exists if it mirrors a folder under `apps/web/components/`. Examples that may land later: `controllers/sections/`, `controllers/workflows/`, `controllers/primitives/`.
+
+## What stays out
+
+- Per-module hooks stay under `apps/web/modules/<module>/controllers/`.
+- Shared engine hooks (record-view client controllers) stay under `apps/web/modules/shared/engines/record-view/client/controllers/` until each module migrates off the engine.
