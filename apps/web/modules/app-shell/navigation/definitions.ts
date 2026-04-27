@@ -22,8 +22,6 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     href: "/dashboard/management-companies",
     requiredTool: "warehouse",
   },
-  { slug: "flooring-contacts", name: "Contacts", href: "/dashboard/contacts", requiredTool: "warehouse" },
-  { slug: "flooring-services", name: "Services", href: "/dashboard/services", requiredTool: "warehouse" },
   { slug: "flooring-templates", name: "Templates", href: "/dashboard/templates", requiredTool: TEMPLATES_TOOL_SLUG },
   { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/manufacturers", requiredTool: "products" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", requiredTool: "products" },

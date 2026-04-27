@@ -12,25 +12,21 @@ describe("record view feature alignment", () => {
   it("active detail and create routes point at engine-owned record clients", async () => {
     const routeFiles = [
       "apps/web/app/dashboard/categories/[id]/page.tsx",
-      "apps/web/app/dashboard/contacts/[id]/page.tsx",
       "apps/web/app/dashboard/imports/[id]/page.tsx",
       "apps/web/app/dashboard/inventory/[id]/page.tsx",
       "apps/web/app/dashboard/management-companies/[id]/page.tsx",
       "apps/web/app/dashboard/manufacturers/[id]/page.tsx",
       "apps/web/app/dashboard/products/[id]/page.tsx",
       "apps/web/app/dashboard/properties/[id]/page.tsx",
-      "apps/web/app/dashboard/services/[id]/page.tsx",
       "apps/web/app/dashboard/templates/[id]/page.tsx",
       "apps/web/app/dashboard/warehouse/[id]/page.tsx",
       "apps/web/app/dashboard/work-orders/[id]/page.tsx",
       "apps/web/app/dashboard/categories/new/page.tsx",
-      "apps/web/app/dashboard/contacts/new/page.tsx",
       "apps/web/app/dashboard/imports/new/page.tsx",
       "apps/web/app/dashboard/management-companies/new/page.tsx",
       "apps/web/app/dashboard/manufacturers/new/page.tsx",
       "apps/web/app/dashboard/products/new/page.tsx",
       "apps/web/app/dashboard/properties/new/page.tsx",
-      "apps/web/app/dashboard/services/new/page.tsx",
       "apps/web/app/dashboard/templates/new/page.tsx",
       "apps/web/app/dashboard/warehouse/new/page.tsx",
       "apps/web/app/dashboard/work-orders/new/page.tsx",
@@ -38,8 +34,6 @@ describe("record view feature alignment", () => {
 
     // Modules that have completed layer extraction use components/record/ instead of record/
     const extractedModuleRoutes = new Set([
-      "apps/web/app/dashboard/contacts/[id]/page.tsx",
-      "apps/web/app/dashboard/contacts/new/page.tsx",
       "apps/web/app/dashboard/manufacturers/[id]/page.tsx",
       "apps/web/app/dashboard/manufacturers/new/page.tsx",
     ])
@@ -107,13 +101,9 @@ describe("record view feature alignment", () => {
   it("keeps scoped single-section record and create panels on the engine-owned single-section runtime", async () => {
     const panelFiles = [
       "apps/web/modules/categories/record/panel/category-record-panel.tsx",
-      "apps/web/modules/contacts/components/record/contact-record-panel.tsx",
       "apps/web/modules/manufacturers/components/record/manufacturer-record-panel.tsx",
-      "apps/web/modules/services/record/panel/service-record-panel.tsx",
       "apps/web/modules/categories/record/create/category-create-client.tsx",
-      "apps/web/modules/contacts/components/record/contact-create-client.tsx",
       "apps/web/modules/manufacturers/components/record/manufacturer-create-client.tsx",
-      "apps/web/modules/services/record/create/service-create-client.tsx",
     ]
 
     for (const file of panelFiles) {
