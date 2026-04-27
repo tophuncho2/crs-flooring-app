@@ -3,6 +3,7 @@
 import type { UserToolRow } from "@/server/platform/tool-access"
 import NavDrawerButton from "./nav-drawer-button"
 import UserMenu from "./user-menu"
+import { TemplateSyncButton } from "@/modules/template-sync/components/template-sync-button"
 import { useFlooringNavigationState } from "../hooks/use-navigation-state"
 
 type HeaderControlsProps = {
@@ -38,6 +39,7 @@ export default function HeaderControls({
         />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
+        <TemplateSyncButton />
         <UserMenu
           email={email}
           role={role}
