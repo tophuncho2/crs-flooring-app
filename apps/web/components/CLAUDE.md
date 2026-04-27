@@ -16,7 +16,7 @@ Pure UI primitives. Modules and routes consume these; nothing in here knows abou
 
 ## Discipline rules
 
-1. **Every primitive lives under exactly one bucket.** Buckets: `grid/`, `layout-grid/`, `fields/`, `cells/`, `dropdowns/`, `dialogs/`, `badges/`, `headers/`, `features/`. Composites import down the dependency tree, never sideways: `cells/` may import `dropdowns/` and `badges/`; `fields/` may import `layout-grid/` and `cells/`; `dropdowns/` never imports `cells/`; `dialogs/` imports nothing from other buckets; `grid/` never imports any feature.
+1. **Every primitive lives under exactly one bucket.** Buckets: `grid/`, `layout-grid/`, `fields/`, `cells/`, `dropdowns/`, `dialogs/`, `nav/`, `badges/`, `headers/`, `features/`. Composites import down the dependency tree, never sideways: `cells/` may import `dropdowns/` and `badges/`; `fields/` may import `layout-grid/` and `cells/`; `dropdowns/` never imports `cells/`; `dialogs/` imports nothing from other buckets; `nav/` imports nothing from other buckets; `grid/` never imports any feature.
 
 2. **`contracts/` subfolders contain only types, type aliases, enums, and helper functions over those types.** No JSX. No React imports.
 
@@ -52,6 +52,7 @@ Pure UI primitives. Modules and routes consume these; nothing in here knows abou
 - **`cells/`** — cell renderers (text, number, currency, unit, per-unit, select, dropdown, status, checkbox). One file per kind. Every cell honors the editability contract; identical rendering across grid and field contexts.
 - **`dropdowns/`** — standalone dropdown primitives (`SelectDropdown`, `SearchDropdown`). Used by `cells/dropdown-cell.tsx` and by consumers that need a dropdown outside a grid cell.
 - **`dialogs/`** — modal overlay primitives (`ConfirmDialog`). Backdrop + centered card; consumers control `open` and supply `onConfirm` / `onCancel`. Use for destructive-action confirmations (void, delete) and any other "are you sure?" prompt that must interrupt the flow.
+- **`nav/`** — navigation overlay primitives (`SidePanel`). Backdrop + edge-anchored slide-in card; consumers control `open` and supply `onClose`. Use for nav drawers, feature side panels (template sync, filters), or any side-anchored overlay. Pure chrome — nav-item lists, drawer compositions, and feature wiring live in their consuming module, not here.
 - **`badges/`** — status pills + tone-coded indicators.
 - **`headers/`** — section headers, action headers (title + status surface + actions panel).
 - **`features/{search,sort,group,paginate}/`** — opt-in feature layers. Each ships a contract + a JSX control that consumers slot wherever they want.

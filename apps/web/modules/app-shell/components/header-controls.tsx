@@ -1,7 +1,7 @@
 "use client"
 
 import type { UserToolRow } from "@/server/platform/tool-access"
-import FlooringHeaderNav from "./header-nav"
+import NavDrawerButton from "./nav-drawer-button"
 import FlooringToolsMenu from "./tools-menu"
 import UserMenu from "./user-menu"
 import { useFlooringNavigationState } from "../hooks/use-navigation-state"
@@ -36,8 +36,8 @@ export default function HeaderControls({
 
   return (
     <div className="flex w-full max-w-full items-center justify-between gap-2 sm:gap-4">
-      <div className="min-w-0 flex-1">
-        <FlooringHeaderNav
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+        <NavDrawerButton
           canUseTools={canUseTools}
           hasAdminPanelAccess={hasAdminPanelAccess}
           orderedItems={navigation.orderedItems}
