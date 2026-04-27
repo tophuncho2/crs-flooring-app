@@ -1,14 +1,16 @@
 import { z } from "zod"
 import {
   ImportExecutionError,
-  LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
-  LIST_IMPORTS_MAX_PAGE_SIZE,
-  LIST_IMPORTS_PAGE_SIZE,
   StagedInventoryExecutionError,
   type ImportsListFilters,
   type ListInput,
 } from "@builders/application"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
+import {
+  LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
+  LIST_IMPORTS_MAX_PAGE_SIZE,
+  LIST_IMPORTS_PAGE_SIZE,
+} from "@builders/domain"
 import type {
   StagedInventoryRowDelete,
   StagedInventoryRowDraft,
