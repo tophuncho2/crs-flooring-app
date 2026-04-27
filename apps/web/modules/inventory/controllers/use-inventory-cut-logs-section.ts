@@ -185,11 +185,19 @@ export function useInventoryCutLogsSection({
   cutLogs,
   publishRecord,
   publishCutLogs,
+  publishMarkedForFinalize,
 }: {
   record: InventoryDetailRecord
   cutLogs: CutLogRow[]
   publishRecord: (record: InventoryDetailRecord) => void
   publishCutLogs: (rows: CutLogRow[]) => void
+  /**
+   * Optimistic-flip callback for the finalize batch action. The
+   * controller only sees the pending slice of cut logs; the parent
+   * panel owns the full list and applies the status flip across both
+   * pending and historical rows. Receives the ids the worker accepted.
+   */
+  publishMarkedForFinalize: (markedIds: string[]) => void
 }) {
   const section = useRecordScopedSectionController<CutLogRow[], ClientCutLogDraft[]>({
     recordId: record.id,
@@ -203,7 +211,7 @@ export function useInventoryCutLogsSection({
       childRows: "none",
     },
     onSave: async (localValue, currentServerRows) => {
-      const validationError = validateCutLogDrafts(localValue, currentServerRows)
+      const validationError = validateCutLogDrafts(localValue)
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",
@@ -296,14 +304,9 @@ export function useInventoryCutLogsSection({
           ids,
           record.updatedAt,
         )
-        const markedSet = new Set(response.batch.markedRowIds)
-        publishCutLogs(
-          cutLogs.map((row) =>
-            markedSet.has(row.id) ? { ...row, status: "QUEUED" as const } : row,
-          ),
-        )
+        publishMarkedForFinalize(response.batch.markedRowIds)
       },
-      [record.id, record.updatedAt, cutLogs, publishCutLogs],
+      [record.id, record.updatedAt, publishMarkedForFinalize],
     ),
   })
 

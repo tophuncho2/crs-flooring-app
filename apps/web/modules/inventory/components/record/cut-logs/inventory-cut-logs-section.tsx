@@ -8,12 +8,9 @@ import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import {
   formatCutLogStatus,
   formatInventoryQuantity,
-  isCutLogPendingEditable,
   type CutLogRow,
   type FlooringCutLogStatus,
 } from "@builders/domain"
-import { VoidCutLogButton } from "@/components/cut-log-row-actions/void-cut-log-button"
-import { CutLogLinksEditor } from "@/components/cut-log-row-actions/cut-log-links-editor"
 import type { CutLogDraft } from "../../../controllers/drafts"
 
 type GridDraftRow = CutLogDraft & { id: string }
@@ -42,17 +39,8 @@ const CUT_LOG_GRID_LAYOUT: GridLayout<GridDraftRow> = {
   ],
 }
 
-function statusTone(status: FlooringCutLogStatus): "default" | "processing" | "success" | "warning" {
-  switch (status) {
-    case "QUEUED":
-      return "processing"
-    case "FINAL":
-      return "success"
-    case "VOID":
-      return "warning"
-    case "PENDING":
-      return "default"
-  }
+function statusTone(status: FlooringCutLogStatus): "default" | "processing" {
+  return status === "QUEUED" ? "processing" : "default"
 }
 
 function formatTimestamp(iso: string | undefined | null): string {
@@ -63,7 +51,6 @@ function formatTimestamp(iso: string | undefined | null): string {
 }
 
 export function InventoryCutLogsSection({
-  inventoryId,
   drafts,
   serverRows,
   stockUnitAbbrev,
@@ -86,9 +73,7 @@ export function InventoryCutLogsSection({
   onRemoveRow,
   onToggleSelection,
   onFinalizeSelected,
-  onRowOptimisticUpdate,
 }: {
-  inventoryId: string
   drafts: CutLogDraft[]
   serverRows: CutLogRow[]
   stockUnitAbbrev: string
@@ -115,16 +100,13 @@ export function InventoryCutLogsSection({
   onRemoveRow: (index: number) => void
   onToggleSelection: (id: string) => void
   onFinalizeSelected: () => void
-  /**
-   * Called by per-row widgets (void, links) after a successful sync /
-   * 202 to splice the updated row into local state. Same publish path
-   * the section's diff-save uses for optimistic updates.
-   */
-  onRowOptimisticUpdate: (updatedRow: CutLogRow) => void
 }) {
   const serverRowsById = new Map(serverRows.map((row) => [row.id, row]))
+  // Pending section receives only PENDING + QUEUED rows after the panel
+  // partition. Only PENDING rows are eligible for the finalize batch
+  // action; QUEUED rows are awaiting worker resolution.
   const editableServerIds = new Set(
-    serverRows.filter((row) => isCutLogPendingEditable(row)).map((row) => row.id),
+    serverRows.filter((row) => row.status === "PENDING").map((row) => row.id),
   )
 
   // One unified row stream: locally-added drafts + every server row
@@ -212,10 +194,10 @@ export function InventoryCutLogsSection({
           const index = findDraftIndex(row.clientId)
           const isLocal = isLocalDraft(row)
           const serverRow = isLocal ? null : serverRowsById.get(row.clientId) ?? null
-          // Locked = persisted server row that's not pending-editable
-          // (FINAL / VOID / QUEUED). Local drafts and PENDING server
-          // rows stay editable.
-          const locked = serverRow !== null && !isCutLogPendingEditable(serverRow)
+          // Pending section sees only PENDING + QUEUED. Locked cells
+          // belong to QUEUED rows awaiting worker resolution; PENDING
+          // and local drafts stay editable.
+          const locked = serverRow !== null && serverRow.status === "QUEUED"
           const editable = !locked
 
           switch (column.key) {
@@ -357,7 +339,7 @@ export function InventoryCutLogsSection({
           const isServerSaved = Boolean(serverRow)
           const status: FlooringCutLogStatus = serverRow?.status ?? "PENDING"
           const isEligibleForSelect = isServerSaved && editableServerIds.has(row.clientId)
-          const locked = serverRow !== null && !isCutLogPendingEditable(serverRow)
+          const locked = serverRow !== null && serverRow.status === "QUEUED"
 
           if (control.kind === "selection") {
             return (
@@ -376,31 +358,15 @@ export function InventoryCutLogsSection({
           }
           if (control.kind === "actions") {
             return (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onRemoveRow(index)}
-                  disabled={locked}
-                  aria-label={`Remove row ${index + 1}`}
-                  className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  ✕
-                </button>
-                {serverRow ? (
-                  <>
-                    <VoidCutLogButton
-                      row={serverRow}
-                      inventoryId={inventoryId}
-                      onSuccess={onRowOptimisticUpdate}
-                    />
-                    <CutLogLinksEditor
-                      row={serverRow}
-                      inventoryId={inventoryId}
-                      onSuccess={onRowOptimisticUpdate}
-                    />
-                  </>
-                ) : null}
-              </div>
+              <button
+                type="button"
+                onClick={() => onRemoveRow(index)}
+                disabled={locked}
+                aria-label={`Remove row ${index + 1}`}
+                className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ✕
+              </button>
             )
           }
           return null

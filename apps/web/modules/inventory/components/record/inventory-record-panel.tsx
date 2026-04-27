@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -18,6 +18,7 @@ import { useInventoryPrimarySection } from "../../controllers/use-inventory-prim
 import { useInventoryCutLogsSection } from "../../controllers/use-inventory-cut-logs-section"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
+import { InventoryHistoricalCutLogsSection } from "./sections/inventory-historical-cut-logs-section"
 
 export function InventoryRecordPanel({
   page,
@@ -37,16 +38,48 @@ export function InventoryRecordPanel({
   })
 
   // Local snapshot of cut-log rows so the cut-logs section's optimistic
-  // updates (diff save / finalize / per-row void / per-row link) can
-  // splice fresh rows in without round-tripping through the page
-  // loader. Seeded from the controller's record (which mirrors the page
-  // loader output) and updated by the section + per-row widgets via
-  // `publishCutLogs` / `onRowOptimisticUpdate`.
+  // diff-save can splice fresh rows in without round-tripping through
+  // the page loader. Seeded from the controller's record (which mirrors
+  // the page loader output) and updated by the pending section's
+  // diff-save (`publishCutLogs`) and the parent-owned merge callback
+  // for the finalize batch action.
   const [cutLogs, setCutLogs] = useState<CutLogRow[]>(controller.record.cutLogs)
+
+  // Pending section sees PENDING + QUEUED-from-PENDING (`!isFinal`).
+  // Historical section sees FINAL + VOID + QUEUED-from-FINAL (`isFinal`).
+  // QUEUED rows live in their origin section until the worker resolves
+  // them and a refresh reloads the new status.
+  const pendingCutLogs = useMemo(
+    () =>
+      cutLogs.filter(
+        (row) => row.status === "PENDING" || (row.status === "QUEUED" && !row.isFinal),
+      ),
+    [cutLogs],
+  )
+  const historicalCutLogs = useMemo(
+    () =>
+      cutLogs.filter(
+        (row) =>
+          row.status === "FINAL" ||
+          row.status === "VOID" ||
+          (row.status === "QUEUED" && row.isFinal),
+      ),
+    [cutLogs],
+  )
+
+  // Mark-for-finalize optimistic flip: the pending controller doesn't
+  // know about historical rows. The parent owns the merge by flipping
+  // status on the marked ids in-place against the full list.
+  const handleMarkedForFinalize = useCallback((markedIds: string[]) => {
+    const set = new Set(markedIds)
+    setCutLogs((previous) =>
+      previous.map((row) => (set.has(row.id) ? { ...row, status: "QUEUED" as const } : row)),
+    )
+  }, [])
 
   const cutLogsSection = useInventoryCutLogsSection({
     record: controller.record,
-    cutLogs,
+    cutLogs: pendingCutLogs,
     publishRecord: () => {
       // Cut-log mutations don't change the parent inventory record's
       // primary fields — `totalCutSum` updates async via the worker
@@ -55,6 +88,7 @@ export function InventoryRecordPanel({
       // controller's contract stays open for a future sweep.
     },
     publishCutLogs: setCutLogs,
+    publishMarkedForFinalize: handleMarkedForFinalize,
   })
 
   return (
@@ -108,9 +142,8 @@ export function InventoryRecordPanel({
           controller: cutLogsSection,
           render: () => (
             <InventoryCutLogsSection
-              inventoryId={controller.record.id}
               drafts={cutLogsSection.localValue}
-              serverRows={cutLogs}
+              serverRows={pendingCutLogs}
               stockUnitAbbrev={controller.record.stockUnitAbbrev ?? ""}
               coverageUnitAbbrev={controller.record.itemCoverageUnitAbbrev ?? ""}
               totalCutSum={controller.record.totalCutSum}
@@ -131,11 +164,18 @@ export function InventoryRecordPanel({
               onRemoveRow={cutLogsSection.removeRow}
               onToggleSelection={cutLogsSection.toggleSelection}
               onFinalizeSelected={() => void cutLogsSection.finalizeSelected()}
-              onRowOptimisticUpdate={(updatedRow) => {
-                setCutLogs((previous) =>
-                  previous.map((row) => (row.id === updatedRow.id ? updatedRow : row)),
-                )
-              }}
+            />
+          ),
+        },
+        {
+          key: "historical-cut-logs",
+          type: "item",
+          order: 20,
+          render: () => (
+            <InventoryHistoricalCutLogsSection
+              rows={historicalCutLogs}
+              stockUnitAbbrev={controller.record.stockUnitAbbrev ?? ""}
+              coverageUnitAbbrev={controller.record.itemCoverageUnitAbbrev ?? ""}
             />
           ),
         },
