@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -7,14 +8,16 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type {
+  CutLogRow,
   InventoryDetail,
   InventoryForm,
   InventoryLocationOption,
   InventoryWarehouseOption,
 } from "@builders/domain"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
+import { useInventoryCutLogsSection } from "../../controllers/use-inventory-cut-logs-section"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
-import { InventoryCutLogsSection } from "./sections/inventory-cut-logs-section"
+import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
 
 export function InventoryRecordPanel({
   page,
@@ -31,6 +34,27 @@ export function InventoryRecordPanel({
     page,
     inventory,
     locationOptions,
+  })
+
+  // Local snapshot of cut-log rows so the cut-logs section's optimistic
+  // updates (diff save / finalize / per-row void / per-row link) can
+  // splice fresh rows in without round-tripping through the page
+  // loader. Seeded from the controller's record (which mirrors the page
+  // loader output) and updated by the section + per-row widgets via
+  // `publishCutLogs` / `onRowOptimisticUpdate`.
+  const [cutLogs, setCutLogs] = useState<CutLogRow[]>(controller.record.cutLogs)
+
+  const cutLogsSection = useInventoryCutLogsSection({
+    record: controller.record,
+    cutLogs,
+    publishRecord: () => {
+      // Cut-log mutations don't change the parent inventory record's
+      // primary fields — `totalCutSum` updates async via the worker
+      // and is read off the controller's record snapshot on next load.
+      // Nothing to publish here today; placeholder lives so the section
+      // controller's contract stays open for a future sweep.
+    },
+    publishCutLogs: setCutLogs,
   })
 
   return (
@@ -80,12 +104,37 @@ export function InventoryRecordPanel({
           key: "cut-logs",
           type: "item",
           order: 10,
+          dirtyLabel: "cut logs",
+          controller: cutLogsSection,
           render: () => (
             <InventoryCutLogsSection
-              cutLogs={controller.record.cutLogs}
-              stockUnitAbbrev={controller.record.stockUnitAbbrev}
+              inventoryId={controller.record.id}
+              drafts={cutLogsSection.localValue}
+              serverRows={cutLogs}
+              stockUnitAbbrev={controller.record.stockUnitAbbrev ?? ""}
               totalCutSum={controller.record.totalCutSum}
-              isArchived={controller.record.isArchived}
+              isDirty={cutLogsSection.isDirty}
+              isSaving={cutLogsSection.isSaving}
+              hasConflict={cutLogsSection.hasConflict}
+              sectionError={cutLogsSection.error?.message ?? null}
+              noticeMessage={cutLogsSection.noticeMessage}
+              noticeError={cutLogsSection.noticeError}
+              selectedIds={cutLogsSection.selectedIds}
+              eligibleSelectedIds={cutLogsSection.eligibleSelectedIds}
+              isFinalizing={cutLogsSection.isFinalizing}
+              finalizeError={cutLogsSection.finalizeError}
+              onSave={() => void cutLogsSection.save()}
+              onDiscard={cutLogsSection.discard}
+              onAddRow={cutLogsSection.addRow}
+              onRowFieldChange={cutLogsSection.setRowField}
+              onRemoveRow={cutLogsSection.removeRow}
+              onToggleSelection={cutLogsSection.toggleSelection}
+              onFinalizeSelected={() => void cutLogsSection.finalizeSelected()}
+              onRowOptimisticUpdate={(updatedRow) => {
+                setCutLogs((previous) =>
+                  previous.map((row) => (row.id === updatedRow.id ? updatedRow : row)),
+                )
+              }}
             />
           ),
         },

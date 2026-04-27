@@ -1,0 +1,100 @@
+"use client"
+
+import {
+  type CutLogPendingForm,
+  type CutLogRow,
+  isCutLogPendingEditable as domainIsCutLogPendingEditable,
+} from "@builders/domain"
+
+/**
+ * Client-only draft shape for the cut-logs section. Each draft mirrors the
+ * domain `CutLogPendingForm` (the user-editable subset for PENDING rows)
+ * plus a `clientId` that doubles as the row key.
+ *
+ * `clientId` is either the server cut-log id (for rows that exist on the
+ * server) OR a `local:*` prefix (for locally-added rows the user hasn't
+ * saved yet — set by `createLocalRecordRowId`). The diff builder
+ * (`buildCutLogsDiff`) keys server-vs-local detection on the `local:`
+ * prefix, matching staged-inv's `isLocalDraftRow` convention.
+ *
+ * Drafts ONLY cover pending-editable rows. Read-only rows (FINAL, VOID,
+ * QUEUED) display directly from the serverRows array and are not subject
+ * to drift state. The diff builder filters server rows to the
+ * pending-editable subset before comparing — so a finalized row in the
+ * server snapshot won't be misidentified as "deleted from the diff."
+ */
+export type CutLogDraft = {
+  clientId: string
+  cut: string
+  cost: string
+  freight: string
+  isWaste: boolean
+  notes: string
+}
+
+const EMPTY_DRAFT: CutLogPendingForm = {
+  cut: "",
+  cost: "",
+  freight: "",
+  isWaste: false,
+  notes: "",
+}
+
+export function createCutLogDraft(row?: CutLogRow): CutLogDraft {
+  return {
+    clientId: row?.id ?? crypto.randomUUID(),
+    cut: row?.cut ?? EMPTY_DRAFT.cut,
+    cost: row?.cost ?? EMPTY_DRAFT.cost,
+    freight: row?.freight ?? EMPTY_DRAFT.freight,
+    isWaste: row?.isWaste ?? EMPTY_DRAFT.isWaste,
+    notes: row?.notes ?? EMPTY_DRAFT.notes,
+  }
+}
+
+/**
+ * Convert the server's full row list into the editable-draft subset.
+ * Filters down to pending-editable rows; read-only rows
+ * (FINAL / VOID / QUEUED) are not represented in the drafts array.
+ */
+export function toCutLogDrafts(rows: ReadonlyArray<CutLogRow>): CutLogDraft[] {
+  return rows
+    .filter((row) => domainIsCutLogPendingEditable(row))
+    .map((row) => createCutLogDraft(row))
+}
+
+/**
+ * Returns true for drafts whose `clientId` is a `local:*` placeholder —
+ * i.e., a row the user added locally that hasn't been persisted yet.
+ * Mirrors the `isLocalDraftRow` predicate in the staged-inv controller.
+ */
+export function isLocalCutLogDraft(draft: CutLogDraft): boolean {
+  return draft.clientId.startsWith("local:")
+}
+
+/**
+ * Per-row form-shape validation for the section's save flow. Returns the
+ * first validation error string (matching staged-inv's
+ * `validateImportStagedRowDrafts` signature) or null on pass.
+ */
+export function validateCutLogDrafts(drafts: ReadonlyArray<CutLogDraft>): string | null {
+  for (const draft of drafts) {
+    const cutRaw = draft.cut.trim()
+    if (cutRaw === "") return "Every cut log must have a cut value"
+    const cut = Number(cutRaw)
+    if (!Number.isFinite(cut)) return "Cut value must be a number"
+    if (cut <= 0) return "Cut value must be greater than zero"
+    const costRaw = draft.cost.trim()
+    if (costRaw !== "") {
+      const cost = Number(costRaw)
+      if (!Number.isFinite(cost)) return "Cost must be a number when provided"
+      if (cost < 0) return "Cost cannot be negative"
+    }
+    const freightRaw = draft.freight.trim()
+    if (freightRaw !== "") {
+      const freight = Number(freightRaw)
+      if (!Number.isFinite(freight)) return "Freight must be a number when provided"
+      if (freight < 0) return "Freight cannot be negative"
+    }
+  }
+  return null
+}

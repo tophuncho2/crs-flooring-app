@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback } from "react"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
+  useBatchSelectAction,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
 import type {
@@ -253,65 +254,33 @@ export function useImportStagedInventoryRowsSection({
     )
   }
 
-  // Selection state for the mark-for-import flow. Keys are server row ids
-  // (a.k.a. clientId on saved drafts). Locally-added drafts are not selectable
-  // — they have no server id and the worker only consumes persisted rows.
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [isMarking, setIsMarking] = useState(false)
-  const [markError, setMarkError] = useState<string | null>(null)
-
-  const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((previous) => {
-      const next = new Set(previous)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }, [])
-
-  const clearSelection = useCallback(() => {
-    setSelectedIds(new Set())
-  }, [])
-
-  // Eligibility = persisted server row that's still DRAFT and has product +
-  // starting stock. Mirrors the server's batch validator at the producer use
-  // case; the server is authoritative — this is just for the Run Import button
-  // gating.
-  const eligibleSelectedIds = useMemo(() => {
-    const serverRowsById = new Map(stagedRows.map((row) => [row.id, row]))
-    return Array.from(selectedIds).filter((id) => {
-      const row = serverRowsById.get(id)
-      if (!row) return false
+  // Mark-for-import batch action. Eligibility = persisted server row that's
+  // still DRAFT with a product + starting stock. The hook handles selection
+  // state, eligibility filtering, the firing lifecycle, and clears selection
+  // on success. Optimistic flip on success preserves unsaved edits in other
+  // rows (row count + parent.updatedAt unchanged → engine revisionKey stays
+  // stable).
+  const markForImport = useBatchSelectAction({
+    rows: stagedRows,
+    isEligible: (row) => {
       if (row.status !== "DRAFT") return false
       if (!row.productId) return false
       if (!row.startingStock) return false
       return true
-    })
-  }, [selectedIds, stagedRows])
-
-  const markForImport = useCallback(async () => {
-    if (eligibleSelectedIds.length === 0) return
-    setIsMarking(true)
-    setMarkError(null)
-    try {
-      const ids = [...eligibleSelectedIds]
-      const result = await markStagedRowsForImportRequest(record.id, ids)
-      const markedSet = new Set(result.batch.markedRowIds)
-      // Optimistic flip: row count and parent.updatedAt unchanged, so the
-      // engine controller's revisionKey stays stable and any other rows'
-      // unsaved edits are preserved.
-      publishStagedRows(
-        stagedRows.map((row) =>
-          markedSet.has(row.id) ? { ...row, status: "QUEUED" as const } : row,
-        ),
-      )
-      setSelectedIds(new Set())
-    } catch (error) {
-      setMarkError(error instanceof Error ? error.message : "Failed to queue rows for import")
-    } finally {
-      setIsMarking(false)
-    }
-  }, [eligibleSelectedIds, record.id, stagedRows, publishStagedRows])
+    },
+    performAction: useCallback(
+      async (ids) => {
+        const result = await markStagedRowsForImportRequest(record.id, ids)
+        const markedSet = new Set(result.batch.markedRowIds)
+        publishStagedRows(
+          stagedRows.map((row) =>
+            markedSet.has(row.id) ? { ...row, status: "QUEUED" as const } : row,
+          ),
+        )
+      },
+      [record.id, stagedRows, publishStagedRows],
+    ),
+  })
 
   return {
     ...section,
@@ -320,12 +289,12 @@ export function useImportStagedInventoryRowsSection({
     setRowField,
     setRowCategoryFilter,
     handleWarehouseChange,
-    selectedIds,
-    toggleSelection,
-    clearSelection,
-    eligibleSelectedIds,
-    isMarking,
-    markError,
-    markForImport,
+    selectedIds: markForImport.selectedIds,
+    toggleSelection: markForImport.toggleSelected,
+    clearSelection: markForImport.clearSelection,
+    eligibleSelectedIds: markForImport.eligibleSelectedIds,
+    isMarking: markForImport.isFiring,
+    markError: markForImport.error,
+    markForImport: markForImport.fire,
   }
 }
