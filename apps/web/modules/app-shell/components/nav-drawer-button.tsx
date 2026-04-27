@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
@@ -28,6 +28,22 @@ export default function NavDrawerButton({
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+
+  useEffect(() => {
+    function handleKey(event: KeyboardEvent) {
+      if (event.code !== "KeyQ" || !event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
+        return
+      }
+      const target = event.target as HTMLElement | null
+      if (target?.isContentEditable || target?.closest("input, textarea, select")) {
+        return
+      }
+      event.preventDefault()
+      setOpen((prev) => !prev)
+    }
+    document.addEventListener("keydown", handleKey)
+    return () => document.removeEventListener("keydown", handleKey)
+  }, [])
 
   if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasAdminPanelAccess)) {
     return null
