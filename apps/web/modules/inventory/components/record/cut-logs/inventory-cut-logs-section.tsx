@@ -5,6 +5,7 @@ import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import { CheckboxCell, CurrencyCell, TextCell, UnitCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { isLocalOnlyRecordRow } from "@/modules/shared/engines/record-view"
 import {
   formatCutLogStatus,
   formatInventoryQuantity,
@@ -122,10 +123,6 @@ export function InventoryCutLogsSection({
     return drafts.findIndex((draft) => draft.clientId === clientId)
   }
 
-  function isLocalDraft(row: GridDraftRow) {
-    return row.clientId.startsWith("local:")
-  }
-
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
       <ActionHeader
@@ -192,7 +189,7 @@ export function InventoryCutLogsSection({
         empty={<GridEmpty>No cut logs yet. Click Add Row to start.</GridEmpty>}
         renderCell={(column, row) => {
           const index = findDraftIndex(row.clientId)
-          const isLocal = isLocalDraft(row)
+          const isLocal = isLocalOnlyRecordRow(row.clientId)
           const serverRow = isLocal ? null : serverRowsById.get(row.clientId) ?? null
           // Pending section sees only PENDING + QUEUED. Locked cells
           // belong to QUEUED rows awaiting worker resolution; PENDING
@@ -334,7 +331,7 @@ export function InventoryCutLogsSection({
         }}
         renderControl={(control, row) => {
           const index = findDraftIndex(row.clientId)
-          const isLocal = isLocalDraft(row)
+          const isLocal = isLocalOnlyRecordRow(row.clientId)
           const serverRow = isLocal ? null : serverRowsById.get(row.clientId) ?? null
           const isServerSaved = Boolean(serverRow)
           const status: FlooringCutLogStatus = serverRow?.status ?? "PENDING"

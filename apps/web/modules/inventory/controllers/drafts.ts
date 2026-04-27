@@ -1,5 +1,6 @@
 "use client"
 
+import { isLocalOnlyRecordRow } from "@/modules/shared/engines/record-view"
 import {
   type CutLogPendingForm,
   type CutLogRow,
@@ -11,10 +12,10 @@ import {
  * plus a `clientId` that doubles as the row key.
  *
  * `clientId` is either the server cut-log id (for rows that exist on the
- * server) OR a `local:*` prefix (for locally-added rows the user hasn't
+ * server) OR a `temp:*` prefix (for locally-added rows the user hasn't
  * saved yet — set by `createLocalRecordRowId`). The diff builder
- * (`buildCutLogsDiff`) keys server-vs-local detection on the `local:`
- * prefix, matching staged-inv's `isLocalDraftRow` convention.
+ * (`buildCutLogsDiff`) keys server-vs-local detection on the `temp:`
+ * prefix via the canonical `isLocalOnlyRecordRow` helper.
  *
  * Drafts cover EVERY server row (PENDING, QUEUED, FINAL, VOID), plus any
  * locally-added unsaved rows. Locked rows (anything other than PENDING)
@@ -64,12 +65,13 @@ export function toCutLogDrafts(rows: ReadonlyArray<CutLogRow>): CutLogDraft[] {
 }
 
 /**
- * Returns true for drafts whose `clientId` is a `local:*` placeholder —
+ * Returns true for drafts whose `clientId` is a `temp:*` placeholder —
  * i.e., a row the user added locally that hasn't been persisted yet.
- * Mirrors the `isLocalDraftRow` predicate in the staged-inv controller.
+ * Delegates to the canonical `isLocalOnlyRecordRow` helper so this stays
+ * in lockstep with `createLocalRecordRowId`.
  */
 export function isLocalCutLogDraft(draft: CutLogDraft): boolean {
-  return draft.clientId.startsWith("local:")
+  return isLocalOnlyRecordRow(draft.clientId)
 }
 
 /**
