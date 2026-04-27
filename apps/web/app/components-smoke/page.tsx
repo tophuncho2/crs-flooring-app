@@ -1,17 +1,21 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import {
   CheckboxCell,
+  CurrencyCell,
+  NumberCell,
+  RowActionButton,
   SelectCell,
   TextCell,
   TextareaCell,
 } from "@/components/cells"
+import { Grid, GridEmpty, type GridLayout, type GridRow } from "@/components/grid"
 import { RichDropdown } from "@/components/dropdowns/rich-dropdown"
 import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown"
-import { SectionHeader } from "@/components/headers"
+import { ActionHeader, SectionHeader } from "@/components/headers"
 
 const MANAGEMENT_COMPANIES = [
   { value: "mc-1", label: "Bluepoint Management" },
@@ -64,7 +68,80 @@ const VACANCY_STATUSES = [
   { value: "OCCUPIED", label: "Occupied" },
 ]
 
+// ---------- Material items fixtures + layout ------------------------------
+
+const CATEGORY_OPTIONS = [
+  { id: "cat-vinyl", title: "Vinyl", subtitles: ["Plank · sheet · LVT"] },
+  { id: "cat-tile", title: "Tile / LVT", subtitles: ["Porcelain · ceramic · LVT"] },
+  { id: "cat-carpet", title: "Carpet", subtitles: ["Berber · plush · frieze"] },
+  { id: "cat-hardwood", title: "Hardwood", subtitles: ["Engineered · solid"] },
+  { id: "cat-underlayment", title: "Underlayment", subtitles: ["Pad · cork · foam"] },
+  { id: "cat-trim", title: "Trim & Accessory", subtitles: ["Quarter-round · transitions"] },
+]
+
+type ProductFixture = {
+  id: string
+  title: string
+  subtitles: string[]
+  categoryId: string
+}
+
+const PRODUCT_OPTIONS: ReadonlyArray<ProductFixture> = [
+  { id: "prd-1", title: "Vinyl Plank — XL Cyrus Grayton", subtitles: ["SKU 5001 · 28 sqft / box"], categoryId: "cat-vinyl" },
+  { id: "prd-2", title: "Vinyl Plank — Coastal Oak", subtitles: ["SKU 5002 · 24 sqft / box"], categoryId: "cat-vinyl" },
+  { id: "prd-3", title: "LVT Tile — Slate Grey", subtitles: ["SKU 6010 · 22 sqft / box"], categoryId: "cat-tile" },
+  { id: "prd-4", title: "Carpet — Berber Beige", subtitles: ["SKU 7001 · 12 ft wide"], categoryId: "cat-carpet" },
+  { id: "prd-5", title: "Hardwood — White Oak Smoked", subtitles: ["SKU 8004 · 5 in plank"], categoryId: "cat-hardwood" },
+  { id: "prd-6", title: "Carpet Pad — 8lb rebond", subtitles: ["SKU 7500 · 6 ft wide"], categoryId: "cat-underlayment" },
+  { id: "prd-7", title: "Underlayment — 3mm cork", subtitles: ["SKU 7600 · 4 ft × 50 ft roll"], categoryId: "cat-underlayment" },
+  { id: "prd-8", title: "Trim — White 1/4 round", subtitles: ["SKU 9001 · 8 ft pcs"], categoryId: "cat-trim" },
+]
+
+type MaterialItem = GridRow & {
+  categoryId: string | null
+  productId: string | null
+  quantity: string
+  unitPrice: string
+  notes: string
+}
+
+const INITIAL_MATERIAL_ITEMS: MaterialItem[] = [
+  { id: "mi-1", categoryId: "cat-vinyl", productId: "prd-1", quantity: "28", unitPrice: "55.00", notes: "Living room + kitchen" },
+  { id: "mi-2", categoryId: "cat-underlayment", productId: "prd-7", quantity: "28", unitPrice: "1.20", notes: "Sound underlay under vinyl plank" },
+  { id: "mi-3", categoryId: "cat-carpet", productId: "prd-4", quantity: "32", unitPrice: "11.00", notes: "Both bedrooms" },
+  { id: "mi-4", categoryId: "cat-trim", productId: "prd-8", quantity: "120", unitPrice: "0.65", notes: "Quarter round in linear feet" },
+]
+
+const MATERIAL_ITEMS_LAYOUT: GridLayout<MaterialItem> = {
+  leadingControls: [{ key: "select", kind: "selection", width: 40 }],
+  dataColumns: [
+    { key: "category", label: "Category", minWidth: 200, grow: 0 },
+    { key: "product", label: "Product", minWidth: 260, preferredWidth: 320, grow: 1.5 },
+    { key: "quantity", label: "Quantity", kind: "number", minWidth: 110, grow: 0, align: "end" },
+    { key: "unitPrice", label: "Unit Price", kind: "currency", minWidth: 120, grow: 0, align: "end" },
+    { key: "cost", label: "Cost", kind: "currency", minWidth: 130, grow: 0, align: "end" },
+    { key: "notes", label: "Notes", minWidth: 220, grow: 1 },
+  ],
+  trailingControls: [{ key: "remove", kind: "actions", width: 72 }],
+}
+
+function lineCost(quantity: string, unitPrice: string): string {
+  const q = parseFloat(quantity || "0")
+  const u = parseFloat(unitPrice || "0")
+  if (Number.isNaN(q) || Number.isNaN(u)) return ""
+  return (q * u).toFixed(2)
+}
+
+function grandCost(items: ReadonlyArray<MaterialItem>): string {
+  const total = items.reduce((acc, item) => {
+    const line = parseFloat(lineCost(item.quantity, item.unitPrice) || "0")
+    return acc + (Number.isNaN(line) ? 0 : line)
+  }, 0)
+  return total.toFixed(2)
+}
+
 export default function WorkOrderCellsSmokePage() {
+  // ---------- Primary section state ---------------------------------------
   const [workOrderNumber, setWorkOrderNumber] = useState("WO-1042")
   const [managementCompanyId, setManagementCompanyId] = useState("mc-1")
   const [propertyId, setPropertyId] = useState<string | null>("prop-1")
@@ -82,8 +159,122 @@ export default function WorkOrderCellsSmokePage() {
   const [propertyInstructions, setPropertyInstructions] = useState("Notify Bluepoint front desk before crew arrival. Use freight elevator only.")
   const [notes, setNotes] = useState("")
 
+  // ---------- Material items section controller (mocked) ------------------
+  // Mirrors the controller surface used by `useImportStagedInventoryRowsSection`:
+  // local working set + saved snapshot for diff/discard, isDirty derived,
+  // isSaving fake-async, notice/error message slot.
+  const [items, setItems] = useState<MaterialItem[]>(INITIAL_MATERIAL_ITEMS)
+  const [savedItemsSnapshot, setSavedItemsSnapshot] = useState<MaterialItem[]>(INITIAL_MATERIAL_ITEMS)
+  const [isItemsSaving, setIsItemsSaving] = useState(false)
+  const [itemsNotice, setItemsNotice] = useState<string | null>(null)
+  const [itemsError, setItemsError] = useState<string | null>(null)
+
+  const isItemsDirty = useMemo(
+    () => JSON.stringify(items) !== JSON.stringify(savedItemsSnapshot),
+    [items, savedItemsSnapshot],
+  )
+
+  // ---------- Batch select controller (mocked) ----------------------------
+  // Mirrors `useBatchSelectAction`: selectedIds Set, eligibleSelectedIds
+  // projection (only persisted rows are eligible — newly-added local drafts
+  // can't be batch-acted-on), isFiring lifecycle, fire() callback.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+  const [isBatchFiring, setIsBatchFiring] = useState(false)
+
+  const savedItemIds = useMemo(
+    () => new Set(savedItemsSnapshot.map((item) => item.id)),
+    [savedItemsSnapshot],
+  )
+
+  const eligibleSelectedIds = useMemo(
+    () => Array.from(selectedIds).filter((id) => savedItemIds.has(id)),
+    [selectedIds, savedItemIds],
+  )
+
+  function clearSelection() {
+    setSelectedIds(new Set())
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function updateItem(id: string, patch: Partial<MaterialItem>) {
+    setItemsNotice(null)
+    setItemsError(null)
+    setItems((previous) => previous.map((item) => (item.id === id ? { ...item, ...patch } : item)))
+  }
+
+  function addItem() {
+    setItemsNotice(null)
+    setItemsError(null)
+    setItems((previous) => [
+      ...previous,
+      {
+        id: `mi-new-${Date.now()}`,
+        categoryId: null,
+        productId: null,
+        quantity: "",
+        unitPrice: "",
+        notes: "",
+      },
+    ])
+  }
+
+  function removeItem(id: string) {
+    setItemsNotice(null)
+    setItemsError(null)
+    setItems((previous) => previous.filter((item) => item.id !== id))
+    setSelectedIds((previous) => {
+      if (!previous.has(id)) return previous
+      const next = new Set(previous)
+      next.delete(id)
+      return next
+    })
+  }
+
+  function discardItems() {
+    setItems(savedItemsSnapshot)
+    setItemsNotice(null)
+    setItemsError(null)
+    clearSelection()
+  }
+
+  function saveItems() {
+    setIsItemsSaving(true)
+    setItemsNotice(null)
+    setItemsError(null)
+    setTimeout(() => {
+      setSavedItemsSnapshot(items)
+      setIsItemsSaving(false)
+      setItemsNotice("Material items saved")
+    }, 350)
+  }
+
+  function fireBatchDelete() {
+    if (eligibleSelectedIds.length === 0) return
+    setIsBatchFiring(true)
+    setItemsError(null)
+    setTimeout(() => {
+      const idsToDelete = new Set(eligibleSelectedIds)
+      setItems((previous) => previous.filter((item) => !idsToDelete.has(item.id)))
+      setSavedItemsSnapshot((previous) => previous.filter((item) => !idsToDelete.has(item.id)))
+      clearSelection()
+      setIsBatchFiring(false)
+      setItemsNotice(`Deleted ${idsToDelete.size} item${idsToDelete.size === 1 ? "" : "s"}`)
+    }, 300)
+  }
+
+  const itemsBusy = isItemsSaving || isBatchFiring
+
   return (
-    <div className="mx-auto max-w-7xl space-y-4 p-8">
+    <div className="mx-auto max-w-7xl space-y-6 p-8">
+      {/* ============== Primary section ============== */}
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <SectionHeader
           title="Work Order Cells"
@@ -236,6 +427,183 @@ export default function WorkOrderCellsSmokePage() {
             </CellAt>
           </FieldSection>
         </div>
+      </div>
+
+      {/* ============== Material Items section ============== */}
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <ActionHeader
+          title="Material Items"
+          summary={
+            <span>
+              {items.length} item{items.length === 1 ? "" : "s"} · grand cost{" "}
+              <span className="font-medium tabular-nums">${grandCost(items)}</span>
+              {selectedIds.size > 0
+                ? ` · ${selectedIds.size} selected (${eligibleSelectedIds.length} eligible)`
+                : ""}
+            </span>
+          }
+          status={
+            isItemsDirty
+              ? { tone: "warning", label: "Unsaved changes" }
+              : { tone: "default", label: "Saved" }
+          }
+          actions={[
+            {
+              key: "add",
+              label: "Add Material Item",
+              onClick: addItem,
+              kind: "secondary",
+              disabled: itemsBusy,
+            },
+            {
+              key: "discard",
+              label: "Discard",
+              onClick: discardItems,
+              kind: "secondary",
+              disabled: !isItemsDirty || itemsBusy,
+            },
+            {
+              key: "save",
+              label: isItemsSaving ? "Saving Items..." : "Save Items",
+              onClick: saveItems,
+              kind: "primary",
+              disabled: !isItemsDirty || itemsBusy,
+            },
+            {
+              key: "delete-selected",
+              label: isBatchFiring ? "Deleting..." : "Delete Selected",
+              onClick: fireBatchDelete,
+              kind: "primary",
+              disabled: eligibleSelectedIds.length === 0 || itemsBusy,
+            },
+          ]}
+          message={itemsNotice}
+          error={itemsError}
+        />
+
+        <Grid<MaterialItem>
+          rows={items}
+          layout={MATERIAL_ITEMS_LAYOUT}
+          empty={<GridEmpty>No material items yet.</GridEmpty>}
+          renderCell={(column, row) => {
+            const editable = !itemsBusy
+            switch (column.key) {
+              case "category":
+                return (
+                  <RichDropdown
+                    disabled={!editable}
+                    value={row.categoryId}
+                    onChange={(next) =>
+                      updateItem(row.id, {
+                        categoryId: next,
+                        // Clear the product when the category changes so the
+                        // cascade reads cleanly. Keeps the smoke faithful to
+                        // the staged-inv category→product behaviour.
+                        productId:
+                          next && row.productId
+                            ? PRODUCT_OPTIONS.find((product) => product.id === row.productId)?.categoryId === next
+                              ? row.productId
+                              : null
+                            : row.productId,
+                      })
+                    }
+                    options={CATEGORY_OPTIONS}
+                    placeholder="All categories"
+                    searchPlaceholder="Search categories…"
+                    clearLabel="All categories"
+                    ariaLabel="Category filter"
+                  />
+                )
+              case "product": {
+                // Filter by selected category, but always include the currently
+                // selected product even if it sits outside the filter.
+                const visibleProducts = row.categoryId
+                  ? PRODUCT_OPTIONS.filter(
+                      (product) => product.categoryId === row.categoryId || product.id === row.productId,
+                    )
+                  : PRODUCT_OPTIONS
+                return (
+                  <RichDropdown
+                    disabled={!editable}
+                    value={row.productId}
+                    onChange={(next) => updateItem(row.id, { productId: next })}
+                    options={visibleProducts.map((product) => ({
+                      id: product.id,
+                      title: product.title,
+                      subtitles: product.subtitles,
+                    }))}
+                    placeholder="Select product"
+                    searchPlaceholder="Search products…"
+                    ariaLabel="Product"
+                  />
+                )
+              }
+              case "quantity":
+                return (
+                  <NumberCell
+                    editable={editable}
+                    value={row.quantity}
+                    onChange={(next) => updateItem(row.id, { quantity: next })}
+                    ariaLabel="Quantity"
+                  />
+                )
+              case "unitPrice":
+                return (
+                  <CurrencyCell
+                    editable={editable}
+                    value={row.unitPrice}
+                    onChange={(next) => updateItem(row.id, { unitPrice: next })}
+                    ariaLabel="Unit price"
+                  />
+                )
+              case "cost":
+                return (
+                  <CurrencyCell
+                    editable={false}
+                    value={lineCost(row.quantity, row.unitPrice)}
+                    ariaLabel="Line cost"
+                  />
+                )
+              case "notes":
+                return (
+                  <TextCell
+                    editable={editable}
+                    value={row.notes}
+                    onChange={(next) => updateItem(row.id, { notes: next })}
+                    ariaLabel="Notes"
+                  />
+                )
+              default:
+                return null
+            }
+          }}
+          renderControl={(control, row) => {
+            if (control.kind === "selection") {
+              const isSavedRow = savedItemIds.has(row.id)
+              return (
+                <CheckboxCell
+                  editable={isSavedRow && !itemsBusy}
+                  value={selectedIds.has(row.id)}
+                  onChange={() => toggleSelected(row.id)}
+                  ariaLabel="Select material item"
+                />
+              )
+            }
+            if (control.kind === "actions") {
+              return (
+                <RowActionButton
+                  label="✕"
+                  ariaLabel="Remove material item"
+                  tone="destructive"
+                  title="Remove this material item"
+                  editable={!itemsBusy}
+                  onClick={() => removeItem(row.id)}
+                />
+              )
+            }
+            return null
+          }}
+        />
       </div>
     </div>
   )
