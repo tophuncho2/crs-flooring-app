@@ -1,5 +1,4 @@
-import { listImports } from "@builders/db"
-import { createImportUseCase } from "@builders/application"
+import { createImportUseCase, listImportsUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -10,7 +9,7 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateCreateImportInput } from "./_validators"
+import { validateCreateImportInput, validateListImportsQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await authorizeWarehouseRoute(request)
@@ -20,7 +19,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, { imports: await listImports() })
+    const url = new URL(request.url)
+    const input = validateListImportsQuery(url.searchParams)
+    const result = await listImportsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

@@ -4,50 +4,35 @@ import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
 import { SortToggle } from "@/components/features/sort"
 import { useServerListController } from "@/controllers/list-view"
-import type { TablePreferencePayload } from "@builders/domain"
 import {
-  type ImportRow,
-  useImportsListController,
-} from "@/modules/imports/controllers/use-imports-list-controller"
+  LIST_IMPORTS_PAGE_SIZE,
+  type ImportsListFilters,
+} from "@builders/application"
+import type { ImportRow, TablePreferencePayload } from "@builders/domain"
+import {
+  IMPORTS_LIST_QUERY_KEY,
+  listImportsRequest,
+} from "@/modules/imports/data/list-imports-request"
+import { useImportsListController } from "@/modules/imports/controllers/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
-
-type ServerPaginationState = {
-  page: number
-  pageSize: number
-  totalItems: number
-  totalPages: number
-  previousPageHref: string
-  nextPageHref: string
-}
-
-type ServerTableState = {
-  searchQuery: string
-  isAscendingSort: boolean
-  isGroupingEnabled: boolean
-  groupByKeys: string[]
-}
 
 const IMPORTS_ALLOWED_GROUP_FIELDS = ["warehouse", "manufacturer"] as const
 const IMPORTS_ALLOWED_SORT_FIELDS = ["importNumber"] as const
 
 export default function ImportsClient({
-  initialImports,
   initialTablePreferences,
-  tableState,
-  pagination,
+  initialSearchQuery,
+  initialIsAscendingSort,
+  initialGroupField,
+  initialPage,
 }: {
-  initialImports: ImportRow[]
   initialTablePreferences?: TablePreferencePayload | null
-  tableState: ServerTableState
-  pagination?: ServerPaginationState
+  initialSearchQuery: string
+  initialIsAscendingSort: boolean
+  initialGroupField: string | null
+  initialPage: number
 }) {
-  const { message, pageError, openCreate, openImport } = useImportsListController({
-    initialImports,
-  })
-
-  const initialGroupField = tableState.isGroupingEnabled && tableState.groupByKeys.length > 0
-    ? tableState.groupByKeys[0]
-    : null
+  const { message, pageError, openCreate, openImport } = useImportsListController()
 
   const {
     rows,
@@ -63,14 +48,15 @@ export default function ImportsClient({
     goToNextPage,
     onSearchQueryChange,
     onToggleSortDirection,
-  } = useServerListController<ImportRow>({
-    mode: "ssr",
-    initialRows: initialImports,
-    initialTotal: pagination?.totalItems ?? initialImports.length,
-    initialSearchQuery: tableState.searchQuery,
-    initialSort: { field: "importNumber", direction: tableState.isAscendingSort ? "asc" : "desc" },
+  } = useServerListController<ImportRow, ImportsListFilters>({
+    mode: "fetch",
+    queryKey: [...IMPORTS_LIST_QUERY_KEY],
+    listFn: listImportsRequest,
+    initialSearchQuery,
+    initialSort: { field: "importNumber", direction: initialIsAscendingSort ? "asc" : "desc" },
     initialGroupField,
-    pagination,
+    initialPage,
+    pageSize: LIST_IMPORTS_PAGE_SIZE,
     tableKey: "imports-main",
     initialTablePreferences,
     allowedSortFields: IMPORTS_ALLOWED_SORT_FIELDS,
@@ -124,7 +110,6 @@ export default function ImportsClient({
 
         <ImportsTable
           rows={rows}
-          pagination={pagination}
           page={page}
           totalPages={totalPages}
           pageSize={pageSize}

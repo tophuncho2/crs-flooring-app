@@ -4,6 +4,7 @@ import {
   formatLocationRafterLevel,
 } from "@builders/domain"
 import type { ImportDetail, ImportFormOptions, ImportRow } from "@builders/domain"
+import type { Prisma } from "@prisma/client"
 import { db } from "../../client.js"
 import {
   importDetailSelect,
@@ -110,6 +111,86 @@ export async function countImports(
   client: ImportsDbClient = db,
 ): Promise<number> {
   return client.flooringImportEntry.count({ where: buildListWhere(filter) })
+}
+
+export type ImportListSortField = "importNumber"
+export type ImportListGroupField = "warehouse" | "manufacturer"
+
+export type ImportListViewOptions = {
+  search?: string
+  sort: { field: ImportListSortField; direction: "asc" | "desc" }
+  group: { field: ImportListGroupField } | null
+  skip: number
+  take: number
+}
+
+export type ImportListViewResult = {
+  rows: ImportRecord[]
+  total: number
+}
+
+function buildListViewWhere(search: string | undefined): Prisma.FlooringImportEntryWhereInput | undefined {
+  if (!search) return undefined
+
+  const numericImportNumber = Number(search)
+  const numericClauses: Prisma.FlooringImportEntryWhereInput[] =
+    Number.isFinite(numericImportNumber) && search.trim() !== ""
+      ? [{ importNumber: Math.floor(numericImportNumber) }]
+      : []
+
+  return {
+    OR: [
+      ...numericClauses,
+      { orderNumber: { contains: search, mode: "insensitive" } },
+      { tag: { contains: search, mode: "insensitive" } },
+      { notes: { contains: search, mode: "insensitive" } },
+      { warehouse: { name: { contains: search, mode: "insensitive" } } },
+      { manufacturer: { companyName: { contains: search, mode: "insensitive" } } },
+    ],
+  }
+}
+
+function buildListViewOrderBy(
+  sort: ImportListViewOptions["sort"],
+  group: ImportListViewOptions["group"],
+): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = sort.direction
+  const orderBy: Prisma.FlooringImportEntryOrderByWithRelationInput[] = []
+
+  if (group) {
+    if (group.field === "warehouse") {
+      orderBy.push({ warehouse: { name: direction } })
+    } else if (group.field === "manufacturer") {
+      orderBy.push({ manufacturer: { companyName: direction } })
+    }
+  }
+
+  orderBy.push({ importNumber: direction })
+  return orderBy
+}
+
+export async function listImportsForListView(
+  options: ImportListViewOptions,
+  client: ImportsDbClient = db,
+): Promise<ImportListViewResult> {
+  const where = buildListViewWhere(options.search)
+  const orderBy = buildListViewOrderBy(options.sort, options.group)
+
+  const [total, rows] = await Promise.all([
+    client.flooringImportEntry.count({ where }),
+    client.flooringImportEntry.findMany({
+      where,
+      orderBy,
+      skip: options.skip,
+      take: options.take,
+      select: importRowSelect,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeImportRow),
+  }
 }
 
 export async function countStagedInventoryByImportId(

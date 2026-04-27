@@ -1,4 +1,13 @@
-import { ImportExecutionError, StagedInventoryExecutionError } from "@builders/application"
+import { z } from "zod"
+import {
+  ImportExecutionError,
+  LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
+  LIST_IMPORTS_MAX_PAGE_SIZE,
+  LIST_IMPORTS_PAGE_SIZE,
+  StagedInventoryExecutionError,
+  type ImportsListFilters,
+  type ListInput,
+} from "@builders/application"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
 import type {
   StagedInventoryRowDelete,
@@ -163,6 +172,63 @@ function failMarkForImport(message: string, field?: string): never {
     status: 400,
     ...(field ? { field } : {}),
   })
+}
+
+// --- List query validator (Zod) ---
+
+const listImportsQuerySchema = z.object({
+  q: z.string().optional(),
+  sort: z.enum(["asc", "desc"]).default("asc"),
+  grouped: z.enum(["0", "1"]).optional(),
+  groups: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_IMPORTS_MAX_PAGE_SIZE)
+    .default(LIST_IMPORTS_PAGE_SIZE),
+})
+
+const ALLOWED_GROUP_SET = new Set<string>(LIST_IMPORTS_ALLOWED_GROUP_FIELDS)
+
+export function validateListImportsQuery(searchParams: URLSearchParams): ListInput<ImportsListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = listImportsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new ImportExecutionError({
+      code: "IMPORT_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid imports list query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const firstGroupKey =
+    parsed.grouped === "1"
+      ? parsed.groups
+          ?.split(",")
+          .map((part) => part.trim())
+          .filter(Boolean)[0]
+      : undefined
+  const groupField = firstGroupKey && ALLOWED_GROUP_SET.has(firstGroupKey) ? firstGroupKey : undefined
+
+  return {
+    search,
+    sort: { field: "importNumber", direction: parsed.sort },
+    group: groupField ? { field: groupField } : undefined,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
 }
 
 export function validateMarkForImportBody(body: Record<string, unknown>): { stagedRowIds: string[] } {

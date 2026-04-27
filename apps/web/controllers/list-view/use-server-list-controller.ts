@@ -1,10 +1,16 @@
 "use client"
 
+import { useQuery } from "@tanstack/react-query"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
-import type { ListSort } from "@builders/application"
+import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryState } from "nuqs"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { ListInput, ListSort } from "@builders/application"
 import type { TablePreferencePayload } from "@builders/domain"
-import type { ListControllerInput } from "./contracts/list-controller-input"
+import type {
+  ListControllerFetchInput,
+  ListControllerInput,
+  ListControllerSsrInput,
+} from "./contracts/list-controller-input"
 import type { ListControllerOutput } from "./contracts/list-controller-output"
 import { patchTablePreference } from "./table-preferences-client"
 
@@ -78,6 +84,29 @@ function queuePersistPreference({
   preferenceTimers.set(tableKey, nextTimer)
 }
 
+function buildPreferencePayload({
+  sortFieldKey,
+  isAscendingSort,
+  groupField,
+  basePrefs,
+}: {
+  sortFieldKey: string
+  isAscendingSort: boolean
+  groupField: string | null
+  basePrefs: TablePreferencePayload | null | undefined
+}): TablePreferencePayload {
+  return {
+    sort: { key: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" },
+    filters: basePrefs?.filters ?? {},
+    columnVisibility: basePrefs?.columnVisibility ?? {},
+    columnOrder: basePrefs?.columnOrder ?? [],
+    grouping: {
+      enabled: groupField !== null,
+      keys: groupField ? [groupField] : [],
+    },
+  }
+}
+
 function buildNextSearchParams(
   current: URLSearchParams,
   next: { searchQuery: string; isAscendingSort: boolean; groupField: string | null },
@@ -105,10 +134,14 @@ function buildNextSearchParams(
 export function useServerListController<TRow, TFilters = Record<string, never>>(
   input: ListControllerInput<TRow, TFilters>,
 ): ListControllerOutput<TRow> {
-  if (input.mode === "fetch") {
-    throw new Error("useServerListController: 'fetch' mode lands in PR 3")
-  }
+  return input.mode === "fetch"
+    ? useFetchListController<TRow, TFilters>(input)
+    : useSsrListController<TRow, TFilters>(input)
+}
 
+function useSsrListController<TRow, TFilters>(
+  input: ListControllerSsrInput<TRow, TFilters>,
+): ListControllerOutput<TRow> {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -161,16 +194,12 @@ export function useServerListController<TRow, TFilters = Record<string, never>>(
     (next: { isAscendingSort: boolean; groupField: string | null }) => {
       if (!tableKey || !sortFieldKey) return
 
-      const payload: TablePreferencePayload = {
-        sort: { key: sortFieldKey, direction: next.isAscendingSort ? "asc" : "desc" },
-        filters: initialTablePreferences?.filters ?? {},
-        columnVisibility: initialTablePreferences?.columnVisibility ?? {},
-        columnOrder: initialTablePreferences?.columnOrder ?? [],
-        grouping: {
-          enabled: next.groupField !== null,
-          keys: next.groupField ? [next.groupField] : [],
-        },
-      }
+      const payload = buildPreferencePayload({
+        sortFieldKey,
+        isAscendingSort: next.isAscendingSort,
+        groupField: next.groupField,
+        basePrefs: initialTablePreferences,
+      })
 
       queuePersistPreference({
         tableKey,
@@ -309,6 +338,232 @@ export function useServerListController<TRow, TFilters = Record<string, never>>(
     isFetching: false,
     error: null,
     refetch: () => {},
+
+    preferenceError,
+  }
+}
+
+function useFetchListController<TRow, TFilters>(
+  input: ListControllerFetchInput<TRow, TFilters>,
+): ListControllerOutput<TRow> {
+  const initialSearchQuery = input.initialSearchQuery ?? ""
+  const initialDirection = input.initialSort?.direction ?? "asc"
+  const initialGroupValue = input.initialGroupField ?? ""
+  const initialGroupedToggle: "0" | "1" = input.initialGroupField ? "1" : "0"
+  const initialPageValue = input.initialPage ?? 1
+  const sortFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
+  const allowedGroupFields = input.allowedGroupFields
+  const allowedSortFields = input.allowedSortFields
+  const tableKey = input.tableKey
+  const initialTablePreferences = input.initialTablePreferences ?? null
+  const declaredPageSize = input.pageSize ?? 50
+  const initialFilters = input.initialFilters
+  const consumerQueryKey = input.queryKey
+  const listFn = input.listFn
+  const initialData = input.initialData
+
+  const [searchUrlValue, setSearchUrlValue] = useQueryState(
+    "q",
+    parseAsString.withDefault(initialSearchQuery),
+  )
+  const [sortDirection, setSortDirection] = useQueryState(
+    "sort",
+    parseAsStringEnum<"asc" | "desc">(["asc", "desc"]).withDefault(initialDirection),
+  )
+  const [groupedToggle, setGroupedToggle] = useQueryState(
+    "grouped",
+    parseAsStringEnum<"0" | "1">(["0", "1"]).withDefault(initialGroupedToggle),
+  )
+  const [groupFieldValue, setGroupFieldValue] = useQueryState(
+    "groups",
+    parseAsString.withDefault(initialGroupValue),
+  )
+  const [pageValue, setPageValue] = useQueryState(
+    "page",
+    parseAsInteger.withDefault(initialPageValue),
+  )
+
+  const [searchInputValue, setSearchInputValue] = useState(searchUrlValue)
+  const [preferenceError, setPreferenceError] = useState("")
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setSearchInputValue(searchUrlValue)
+  }, [searchUrlValue])
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [])
+
+  const persistPreferences = useCallback(
+    (next: { isAscendingSort: boolean; groupField: string | null }) => {
+      if (!tableKey || !sortFieldKey) return
+
+      const payload = buildPreferencePayload({
+        sortFieldKey,
+        isAscendingSort: next.isAscendingSort,
+        groupField: next.groupField,
+        basePrefs: initialTablePreferences,
+      })
+
+      queuePersistPreference({
+        tableKey,
+        state: payload,
+        allowedSortKeys: allowedSortFields ? [...allowedSortFields] : [sortFieldKey],
+        allowedGroupKeys: allowedGroupFields ? [...allowedGroupFields] : undefined,
+        onError: setPreferenceError,
+      })
+    },
+    [allowedGroupFields, allowedSortFields, initialTablePreferences, sortFieldKey, tableKey],
+  )
+
+  const isGroupingEnabled = groupedToggle === "1"
+  const groupFieldNormalized: string | null = isGroupingEnabled && groupFieldValue ? groupFieldValue : null
+  const isAscendingSort = sortDirection !== "desc"
+
+  const listInput: ListInput<TFilters> = useMemo(
+    () => ({
+      search: searchUrlValue?.trim() ? searchUrlValue.trim() : undefined,
+      sort: sortFieldKey ? { field: sortFieldKey, direction: sortDirection } : undefined,
+      filters: initialFilters,
+      group: groupFieldNormalized ? { field: groupFieldNormalized } : undefined,
+      page: pageValue,
+      pageSize: declaredPageSize,
+    }),
+    [
+      declaredPageSize,
+      groupFieldNormalized,
+      initialFilters,
+      pageValue,
+      searchUrlValue,
+      sortDirection,
+      sortFieldKey,
+    ],
+  )
+
+  const queryKey = useMemo(() => [...consumerQueryKey, listInput], [consumerQueryKey, listInput])
+
+  const queryResult = useQuery({
+    queryKey,
+    queryFn: () => listFn(listInput),
+    initialData,
+    placeholderData: (previous) => previous,
+  })
+
+  const rows = queryResult.data?.rows ?? []
+  const total = queryResult.data?.total ?? 0
+  const groups = queryResult.data?.groups
+  const pageSize = listInput.pageSize
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const hasPreviousPage = pageValue > 1
+  const hasNextPage = pageValue < totalPages
+
+  const onSearchQueryChange = useCallback(
+    (next: string) => {
+      setSearchInputValue(next)
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = setTimeout(() => {
+        const trimmed = next.trim()
+        setSearchUrlValue(trimmed ? trimmed : null)
+        if (pageValue !== 1) setPageValue(1)
+      }, SEARCH_DEBOUNCE_MS)
+    },
+    [pageValue, setPageValue, setSearchUrlValue],
+  )
+
+  const onToggleSortDirection = useCallback(() => {
+    setPreferenceError("")
+    const nextDirection: "asc" | "desc" = sortDirection === "asc" ? "desc" : "asc"
+    setSortDirection(nextDirection)
+    if (pageValue !== 1) setPageValue(1)
+    persistPreferences({
+      isAscendingSort: nextDirection === "asc",
+      groupField: groupFieldNormalized,
+    })
+  }, [groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection, sortDirection])
+
+  const onSortChange = useCallback(
+    (next: ListSort | null) => {
+      if (!next) return
+      setPreferenceError("")
+      setSortDirection(next.direction)
+      if (pageValue !== 1) setPageValue(1)
+      persistPreferences({
+        isAscendingSort: next.direction === "asc",
+        groupField: groupFieldNormalized,
+      })
+    },
+    [groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection],
+  )
+
+  const onGroupFieldChange = useCallback(
+    (next: string | null) => {
+      setPreferenceError("")
+      if (next) {
+        setGroupedToggle("1")
+        setGroupFieldValue(next)
+      } else {
+        setGroupedToggle("0")
+        setGroupFieldValue(null)
+      }
+      if (pageValue !== 1) setPageValue(1)
+      persistPreferences({
+        isAscendingSort,
+        groupField: next ? next : null,
+      })
+    },
+    [isAscendingSort, pageValue, persistPreferences, setGroupFieldValue, setGroupedToggle, setPageValue],
+  )
+
+  const goToPage = useCallback(
+    (next: number) => {
+      const safe = Math.max(1, Math.floor(next))
+      setPageValue(safe === 1 ? null : safe)
+    },
+    [setPageValue],
+  )
+
+  const goToPreviousPage = useCallback(() => {
+    if (hasPreviousPage) goToPage(pageValue - 1)
+  }, [goToPage, hasPreviousPage, pageValue])
+
+  const goToNextPage = useCallback(() => {
+    if (hasNextPage) goToPage(pageValue + 1)
+  }, [goToPage, hasNextPage, pageValue])
+
+  return {
+    rows,
+    total,
+    groups,
+
+    searchQuery: searchInputValue,
+    sort: sortFieldKey ? { field: sortFieldKey, direction: sortDirection } : null,
+    groupField: groupFieldNormalized,
+    page: pageValue,
+    pageSize,
+    totalPages,
+
+    onSearchQueryChange,
+    onSortChange,
+    onToggleSortDirection,
+    onGroupFieldChange,
+
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
+    goToPage,
+    previousPageHref: undefined,
+    nextPageHref: undefined,
+
+    isLoading: queryResult.isLoading,
+    isFetching: queryResult.isFetching,
+    error: queryResult.error,
+    refetch: () => {
+      queryResult.refetch()
+    },
 
     preferenceError,
   }

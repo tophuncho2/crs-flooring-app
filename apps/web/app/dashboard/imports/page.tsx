@@ -1,9 +1,21 @@
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
+import { getResolvedUserTablePreference, listImportsUseCase } from "@builders/application"
+import type { TablePreferencePayload } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
 import ImportsClient from "@/modules/imports/components/list/imports-client"
-import { getImportsPageData } from "@/modules/imports/data/queries"
-import { getResolvedUserTablePreference } from "@builders/application"
+import {
+  IMPORTS_LIST_QUERY_KEY,
+  parseImportsListInputFromSearchParams,
+} from "@/modules/imports/data/list-imports-request"
+
+const IMPORTS_FALLBACK_PREFERENCES: TablePreferencePayload = {
+  sort: { key: "importNumber", direction: "asc" },
+  filters: {},
+  columnVisibility: {},
+  columnOrder: [],
+  grouping: { enabled: true, keys: ["warehouse"] },
+}
 
 export default async function FlooringImportsPage({
   searchParams,
@@ -11,42 +23,45 @@ export default async function FlooringImportsPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireToolAccess("warehouse")
+  const userPreferences = await getResolvedUserTablePreference(user.id, "imports-main")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "imports-main")
-  const page = parsePageParam(resolvedSearchParams?.page)
-  const tableState = parseServerTableQueryState({
-    searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : true,
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["warehouse"],
-    allowedGroupKeys: ["manufacturer", "warehouse"],
-  })
-  const result = await getImportsPageData(page, tableState)
 
-  if (!result.ok) {
+  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
+    ? userPreferences
+    : IMPORTS_FALLBACK_PREFERENCES
+
+  const initialInput = parseImportsListInputFromSearchParams(
+    resolvedSearchParams,
+    effectivePreferences,
+  )
+
+  const queryClient = new QueryClient()
+
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: [...IMPORTS_LIST_QUERY_KEY, initialInput],
+      queryFn: () => listImportsUseCase(initialInput),
+    })
+  } catch (error) {
     return (
       <DashboardErrorState
-        title={result.error.title}
-        message={result.error.message}
-        detail={result.error.detail}
-        errorCode={result.error.code}
+        title="Imports Unavailable"
+        message="The app could not load the imports list."
+        detail={error instanceof Error ? error.message : "Unknown error"}
+        errorCode="IMPORT_LIST_LOAD_FAILED"
       />
     )
   }
 
-  const pageData = result.data
-
   return (
-    <ImportsClient
-      key={`imports-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
-      initialImports={pageData.initialImports}
-      initialTablePreferences={initialTablePreferences}
-      tableState={pageData.tableState}
-      pagination={{
-        ...pageData.pagination,
-        previousPageHref: buildPageHrefWithSearchParams("/dashboard/imports", pageData.pagination.page - 1, resolvedSearchParams),
-        nextPageHref: buildPageHrefWithSearchParams("/dashboard/imports", pageData.pagination.page + 1, resolvedSearchParams),
-      }}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ImportsClient
+        initialTablePreferences={userPreferences}
+        initialSearchQuery={initialInput.search ?? ""}
+        initialIsAscendingSort={(initialInput.sort?.direction ?? "asc") === "asc"}
+        initialGroupField={initialInput.group?.field ?? null}
+        initialPage={initialInput.page}
+      />
+    </HydrationBoundary>
   )
 }

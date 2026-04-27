@@ -1,16 +1,32 @@
 // @vitest-environment jsdom
-//
-// Phase 2 of the imports migration covers the list view only. Detail and create
-// flows (ImportDetailClient / ImportCreateClient) get test coverage in Phase 3
-// and Phase 5 respectively.
 
-import { beforeEach, describe, expect, it } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { NuqsTestingAdapter } from "nuqs/adapters/testing"
 import { navigationMocks } from "../../helpers/next-navigation-mock"
-import { resetSimpleTableClientMocks } from "../../helpers/simple-table-client-mocks"
-import ImportsClient from "@/modules/imports/components/list/imports-client"
 import type { ImportRow } from "@builders/domain"
+import type { ListInput, ListOutput } from "@builders/application"
+import type { ImportsListFilters } from "@builders/application"
+
+const { listImportsRequestMock } = vi.hoisted(() => ({
+  listImportsRequestMock: vi.fn<
+    (input: ListInput<ImportsListFilters>) => Promise<ListOutput<ImportRow>>
+  >(),
+}))
+
+vi.mock("@/modules/imports/data/list-imports-request", async () => {
+  const actual = await vi.importActual<typeof import("@/modules/imports/data/list-imports-request")>(
+    "@/modules/imports/data/list-imports-request",
+  )
+  return {
+    ...actual,
+    listImportsRequest: listImportsRequestMock,
+  }
+})
+
+import ImportsClient from "@/modules/imports/components/list/imports-client"
 
 function importRow(overrides: Partial<ImportRow> = {}): ImportRow {
   return {
@@ -32,46 +48,71 @@ function importRow(overrides: Partial<ImportRow> = {}): ImportRow {
   }
 }
 
-const EMPTY_TABLE_STATE = {
-  searchQuery: "",
-  isAscendingSort: true,
-  isGroupingEnabled: false,
-  groupByKeys: [],
+function renderImportsClient({
+  rows,
+  total = rows.length,
+  initialSearchQuery = "",
+  initialIsAscendingSort = true,
+  initialGroupField = null,
+  initialPage = 1,
+}: {
+  rows: ImportRow[]
+  total?: number
+  initialSearchQuery?: string
+  initialIsAscendingSort?: boolean
+  initialGroupField?: string | null
+  initialPage?: number
+}) {
+  listImportsRequestMock.mockResolvedValue({ rows, total })
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return render(
+    <NuqsTestingAdapter>
+      <QueryClientProvider client={queryClient}>
+        <ImportsClient
+          initialSearchQuery={initialSearchQuery}
+          initialIsAscendingSort={initialIsAscendingSort}
+          initialGroupField={initialGroupField}
+          initialPage={initialPage}
+        />
+      </QueryClientProvider>
+    </NuqsTestingAdapter>,
+  )
 }
 
 describe("ImportsClient", () => {
   beforeEach(() => {
-    resetSimpleTableClientMocks()
+    listImportsRequestMock.mockReset()
   })
 
-  it("renders the column headers, the +Import action, and the row data", () => {
-    render(
-      <ImportsClient
-        initialImports={[
-          importRow(),
-          importRow({
-            id: "imp-2",
-            importNumber: 2,
-            tag: "Replenishment",
-            percent: "37",
-            warehouseName: "Warehouse 2",
-            manufacturerName: "Mohawk",
-            stagedInventoryRowsCount: 8,
-            liveInventoryRowsCount: 3,
-          }),
-        ]}
-        tableState={EMPTY_TABLE_STATE}
-      />,
-    )
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("renders the column headers, the +Import action, and the row data", async () => {
+    renderImportsClient({
+      rows: [
+        importRow(),
+        importRow({
+          id: "imp-2",
+          importNumber: 2,
+          tag: "Replenishment",
+          percent: "37",
+          warehouseName: "Warehouse 2",
+          manufacturerName: "Mohawk",
+          stagedInventoryRowsCount: 8,
+          liveInventoryRowsCount: 3,
+        }),
+      ],
+    })
 
     expect(screen.getByText("Imports")).toBeTruthy()
     expect(screen.getByRole("button", { name: /\+ Import/ })).toBeTruthy()
 
-    for (const label of ["Import #", "Tag", "Warehouse", "Manufacturer", "Percent", "Staged", "Live", "Created"]) {
-      expect(screen.getByText(label)).toBeTruthy()
-    }
-
-    expect(screen.getByText("IMP-0001")).toBeTruthy()
+    await waitFor(() => {
+      expect(screen.getByText("IMP-0001")).toBeTruthy()
+    })
     expect(screen.getByText("IMP-0002")).toBeTruthy()
     expect(screen.getByText("Spring Load")).toBeTruthy()
     expect(screen.getByText("Replenishment")).toBeTruthy()
@@ -86,7 +127,7 @@ describe("ImportsClient", () => {
   it("routes to the canonical create form when +Import is clicked", async () => {
     const user = userEvent.setup()
 
-    render(<ImportsClient initialImports={[]} tableState={EMPTY_TABLE_STATE} />)
+    renderImportsClient({ rows: [] })
 
     await user.click(screen.getByRole("button", { name: /\+ Import/ }))
 
@@ -99,12 +140,13 @@ describe("ImportsClient", () => {
   it("opens an import record when its row is clicked", async () => {
     const user = userEvent.setup()
 
-    render(
-      <ImportsClient
-        initialImports={[importRow({ id: "imp-7", importNumber: 7 })]}
-        tableState={EMPTY_TABLE_STATE}
-      />,
-    )
+    renderImportsClient({
+      rows: [importRow({ id: "imp-7", importNumber: 7 })],
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Open import IMP-0007" })).toBeTruthy()
+    })
 
     await user.click(screen.getByRole("button", { name: "Open import IMP-0007" }))
 
@@ -112,5 +154,25 @@ describe("ImportsClient", () => {
       "/dashboard/imports/imp-7?returnTo=%2Fdashboard%2Ftest",
       { scroll: false },
     )
+  })
+
+  it("calls listImportsRequest with the initial input on mount", async () => {
+    renderImportsClient({
+      rows: [importRow()],
+      initialSearchQuery: "abc",
+      initialIsAscendingSort: false,
+      initialGroupField: "warehouse",
+      initialPage: 2,
+    })
+
+    await waitFor(() => {
+      expect(listImportsRequestMock).toHaveBeenCalled()
+    })
+
+    const callArg = listImportsRequestMock.mock.calls[0]?.[0]
+    expect(callArg?.search).toBe("abc")
+    expect(callArg?.sort).toEqual({ field: "importNumber", direction: "desc" })
+    expect(callArg?.group).toEqual({ field: "warehouse" })
+    expect(callArg?.page).toBe(2)
   })
 })

@@ -1,15 +1,10 @@
 import {
-  Prisma,
   createPrismaPageLoadIssue,
-  importRowSelect,
   isPrismaNotFoundError,
   listImportOptions,
   listInventory,
   listStagedInventoryByImport,
-  normalizeImportRow,
-  prisma,
   getImportDetailById,
-  withPrismaConnectivityHandling,
   type ImportDetailRecord,
   type ImportRecord,
   type InventoryRecord,
@@ -17,91 +12,7 @@ import {
   type StagedInventoryRecord,
 } from "@builders/db"
 import { buildFlooringProductDisplayName, type ImportFormOptions } from "@builders/domain"
-import { appendUniqueOrderBy, createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-
-function buildImportsSearchWhere(searchQuery: string): Prisma.FlooringImportEntryWhereInput | undefined {
-  if (!searchQuery) return undefined
-
-  const numericImportNumber = Number(searchQuery)
-  const numericSearchClauses =
-    Number.isFinite(numericImportNumber) && searchQuery.trim() !== ""
-      ? [{ importNumber: Math.floor(numericImportNumber) }]
-      : []
-
-  return {
-    OR: [
-      ...numericSearchClauses,
-      { orderNumber: { contains: searchQuery, mode: "insensitive" } },
-      { tag: { contains: searchQuery, mode: "insensitive" } },
-      { notes: { contains: searchQuery, mode: "insensitive" } },
-      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { manufacturer: { companyName: { contains: searchQuery, mode: "insensitive" } } },
-    ],
-  }
-}
-
-function buildImportsOrderBy(tableState: ServerTableQueryState): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
-  const direction: Prisma.SortOrder = tableState.isAscendingSort ? "asc" : "desc"
-  const orderBy: Prisma.FlooringImportEntryOrderByWithRelationInput[] = []
-  const fieldMap: Record<string, Prisma.FlooringImportEntryOrderByWithRelationInput> = {
-    importNumber: { importNumber: direction },
-    tag: { tag: direction },
-    warehouse: { warehouse: { name: direction } },
-    manufacturer: { manufacturer: { companyName: direction } },
-    created: { createdAt: direction },
-  }
-
-  if (tableState.isGroupingEnabled) {
-    for (const groupKey of tableState.groupByKeys) {
-      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
-    }
-  }
-
-  appendUniqueOrderBy(orderBy, { importNumber: direction })
-
-  return orderBy
-}
-
-async function loadImportsPageData(page: number, tableState: ServerTableQueryState) {
-  const where = buildImportsSearchWhere(tableState.searchQuery)
-  const totalItems = await prisma.flooringImportEntry.count({ where })
-  const pagination = createServerPagination({ page, totalItems })
-  const entries = await prisma.flooringImportEntry.findMany({
-    select: importRowSelect,
-    where,
-    orderBy: buildImportsOrderBy(tableState),
-    skip: pagination.skip,
-    take: pagination.take,
-  })
-
-  return {
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      totalItems: pagination.totalItems,
-      totalPages: pagination.totalPages,
-    },
-    tableState,
-    initialImports: entries.map((entry) => normalizeImportRow(entry)),
-  }
-}
-
-export async function getImportsPageData(page: number, tableState: ServerTableQueryState) {
-  return withPrismaConnectivityHandling(() =>
-    withLoaderTiming(
-      {
-        loader: "flooring.imports.list",
-        details: {
-          page,
-          searchQuery: tableState.searchQuery,
-          groupCount: tableState.groupByKeys.length,
-        },
-      },
-      () => loadImportsPageData(page, tableState),
-    ),
-  )
-}
 
 export type ImportFormOptionSet = {
   productOptions: Array<{ id: string; label: string; stockUnit: string; categoryId: string }>
