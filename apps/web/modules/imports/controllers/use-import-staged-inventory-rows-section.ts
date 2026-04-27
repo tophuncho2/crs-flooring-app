@@ -140,12 +140,20 @@ export function useImportStagedInventoryRowsSection({
   locationOptions,
   publishRecord,
   publishStagedRows,
+  publishMarkedForImport,
 }: {
   record: ImportDetail
   stagedRows: StagedInventoryRow[]
   locationOptions: LocationOption[]
   publishRecord: (record: ImportDetail) => void
   publishStagedRows: (rows: StagedInventoryRow[]) => void
+  /**
+   * Optimistic-flip callback for the mark-for-import batch action. The
+   * controller only sees the pending slice of staged rows; the parent
+   * panel owns the full list and applies the status flip across both
+   * pending and historical rows. Receives the ids the worker accepted.
+   */
+  publishMarkedForImport: (markedIds: string[]) => void
 }) {
   const section = useRecordScopedSectionController<StagedInventoryRow[], ImportStagedRowDraft[]>({
     recordId: record.id,
@@ -271,14 +279,9 @@ export function useImportStagedInventoryRowsSection({
     performAction: useCallback(
       async (ids) => {
         const result = await markStagedRowsForImportRequest(record.id, ids)
-        const markedSet = new Set(result.batch.markedRowIds)
-        publishStagedRows(
-          stagedRows.map((row) =>
-            markedSet.has(row.id) ? { ...row, status: "QUEUED" as const } : row,
-          ),
-        )
+        publishMarkedForImport(result.batch.markedRowIds)
       },
-      [record.id, stagedRows, publishStagedRows],
+      [record.id, publishMarkedForImport],
     ),
   })
 

@@ -43,26 +43,11 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
 }
 
 function statusTone(status: FlooringStagedRowStatus | null) {
-  switch (status) {
-    case "QUEUED":
-      return "processing" as const
-    case "IMPORTED":
-      return "success" as const
-    default:
-      return "default" as const
-  }
+  return status === "QUEUED" ? ("processing" as const) : ("default" as const)
 }
 
 function statusLabel(status: FlooringStagedRowStatus | null): string {
-  if (status === null) return "Draft"
-  switch (status) {
-    case "DRAFT":
-      return "Draft"
-    case "QUEUED":
-      return "Queued"
-    case "IMPORTED":
-      return "Imported"
-  }
+  return status === "QUEUED" ? "Queued" : "Draft"
 }
 
 export function ImportStagedInventoryRowsSection({
@@ -142,8 +127,7 @@ export function ImportStagedInventoryRowsSection({
   }
 
   function isRowLocked(row: GridDraftRow) {
-    const serverStatus = serverRowsById.get(row.clientId)?.status ?? null
-    return serverStatus !== null && serverStatus !== "DRAFT"
+    return serverRowsById.get(row.clientId)?.status === "QUEUED"
   }
 
   return (

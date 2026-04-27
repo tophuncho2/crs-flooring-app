@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -8,6 +8,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { ImportStagedInventoryRowsSection } from "./sections/import-staged-inventory-rows-section"
+import { ImportImportedRowsSection } from "./imported-rows/import-imported-rows-section"
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
 import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
@@ -41,12 +42,32 @@ export function ImportRecordPanel({
   // pointers. Track the current full row list locally; the staged-rows
   // controller refreshes it via publishStagedRows after each save.
   const [stagedRows, setStagedRows] = useState(initialStagedRows)
+  // Pending section sees DRAFT + QUEUED only; IMPORTED rows live in the
+  // dedicated read-only "Imported Rows" section below.
+  const pendingRows = useMemo(
+    () => stagedRows.filter((row) => row.status !== "IMPORTED"),
+    [stagedRows],
+  )
+  const importedRows = useMemo(
+    () => stagedRows.filter((row) => row.status === "IMPORTED"),
+    [stagedRows],
+  )
+  // Mark-for-import optimistic flip: the pending controller doesn't know
+  // about IMPORTED rows. The parent owns the merge by flipping status on
+  // the marked ids in-place against the full list.
+  const handleMarkedForImport = useCallback((markedIds: string[]) => {
+    const set = new Set(markedIds)
+    setStagedRows((previous) =>
+      previous.map((row) => (set.has(row.id) ? { ...row, status: "QUEUED" as const } : row)),
+    )
+  }, [])
   const stagedRowsSection = useImportStagedInventoryRowsSection({
     record: controller.record,
-    stagedRows,
+    stagedRows: pendingRows,
     locationOptions,
     publishRecord: controller.publishRecord,
     publishStagedRows: setStagedRows,
+    publishMarkedForImport: handleMarkedForImport,
   })
 
   return (
@@ -102,7 +123,7 @@ export function ImportRecordPanel({
           render: () => (
             <ImportStagedInventoryRowsSection
               drafts={stagedRowsSection.localValue}
-              serverRows={stagedRows}
+              serverRows={pendingRows}
               warehouseId={controller.record.warehouseId}
               productOptions={productOptions}
               warehouseOptions={warehouseOptions}
@@ -128,6 +149,12 @@ export function ImportRecordPanel({
               onMarkForImport={() => void stagedRowsSection.markForImport()}
             />
           ),
+        },
+        {
+          key: "imported-rows",
+          type: "item",
+          order: 20,
+          render: () => <ImportImportedRowsSection rows={importedRows} />,
         },
       ]}
       footer={{
