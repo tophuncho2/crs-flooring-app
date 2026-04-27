@@ -34,6 +34,7 @@ async function main() {
       connection,
       concurrency: env.materializeWorkerConcurrency,
       lockDuration: env.materializeWorkerLockDurationMs,
+      autorun: false,
     },
   )
   const materializeEvents = new QueueEvents(IMPORT_MATERIALIZE_QUEUE, { connection })
@@ -109,6 +110,7 @@ async function main() {
       connection,
       concurrency: env.pendingSaveCutLogWorkerConcurrency,
       lockDuration: env.pendingSaveCutLogWorkerLockDurationMs,
+      autorun: false,
     },
   )
   const pendingSaveCutLogEvents = new QueueEvents(PENDING_SAVE_CUT_LOG_QUEUE, { connection })
@@ -185,6 +187,7 @@ async function main() {
       connection,
       concurrency: env.finalizeCutLogWorkerConcurrency,
       lockDuration: env.finalizeCutLogWorkerLockDurationMs,
+      autorun: false,
     },
   )
   const finalizeCutLogEvents = new QueueEvents(FINALIZE_CUT_LOG_QUEUE, { connection })
@@ -260,6 +263,7 @@ async function main() {
       connection,
       concurrency: env.voidCutLogWorkerConcurrency,
       lockDuration: env.voidCutLogWorkerLockDurationMs,
+      autorun: false,
     },
   )
   const voidCutLogEvents = new QueueEvents(VOID_CUT_LOG_QUEUE, { connection })
@@ -332,6 +336,21 @@ async function main() {
     voidCutLogWorker.waitUntilReady(),
     voidCutLogEvents.waitUntilReady(),
   ])
+
+  // Each Worker was constructed with `autorun: false` so it doesn't pull
+  // jobs until we explicitly call `.run()`. This eliminates the cold-start
+  // race where a job would arrive between the `new Worker(...)` call and
+  // the subsequent `.on(...)` listener attachment, causing the first
+  // job's `active`/`completed` lifecycle log lines to be silently
+  // dropped. By the time `run()` is called here, listeners are attached
+  // AND the connection is ready, so every job — including the first one
+  // — emits its full structured-log audit trail. The returned promises
+  // resolve when each worker is closed (during shutdown); we deliberately
+  // don't await them at the call site.
+  void materializeWorker.run()
+  void pendingSaveCutLogWorker.run()
+  void finalizeCutLogWorker.run()
+  void voidCutLogWorker.run()
 
   logStructuredEvent({
     service: env.serviceName,
