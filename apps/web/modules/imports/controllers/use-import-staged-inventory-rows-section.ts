@@ -4,6 +4,7 @@ import { useCallback } from "react"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
+  isLocalOnlyRecordRow,
   useBatchSelectAction,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
@@ -38,10 +39,6 @@ function createDraftRow(locationOptions: LocationOption[], warehouseId: string) 
     warehouseId,
     locationOptions,
   )
-}
-
-function isLocalDraftRow(row: ImportStagedRowDraft) {
-  return row.clientId.startsWith("local:")
 }
 
 function createRowsRevisionKey(record: ImportDetail, rows: StagedInventoryRow[]) {
@@ -94,7 +91,7 @@ function buildStagedInventoryRowsDiff(
 ): StagedInventoryRowsDiff {
   const serverById = new Map(serverRows.map((row) => [row.id, row]))
   const localServerIds = new Set(
-    localRows.filter((row) => !isLocalDraftRow(row)).map((row) => row.clientId),
+    localRows.filter((row) => !isLocalOnlyRecordRow(row.clientId)).map((row) => row.clientId),
   )
 
   const added: StagedInventoryRowDraft[] = []
@@ -102,7 +99,7 @@ function buildStagedInventoryRowsDiff(
   const deleted: StagedInventoryRowDelete[] = []
 
   for (const row of localRows) {
-    if (isLocalDraftRow(row)) {
+    if (isLocalOnlyRecordRow(row.clientId)) {
       added.push(toDraftPayload(row, importWarehouseId))
       continue
     }
