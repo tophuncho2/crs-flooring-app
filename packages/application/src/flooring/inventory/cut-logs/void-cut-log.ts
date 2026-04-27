@@ -9,9 +9,7 @@ import {
 } from "@builders/db"
 import {
   assertCutSumWithinStartingStock,
-  buildCutLogVoidNotAllowedMessage,
   computeTotalCutSum,
-  validateCutLogVoidRequest,
   type VoidCutLogPayload,
 } from "@builders/domain"
 import { CutLogExecutionError } from "./errors.js"
@@ -60,13 +58,17 @@ export async function voidCutLogUseCase(
       })
     }
 
-    const issue = validateCutLogVoidRequest(row)
-    if (issue !== null) {
+    // Drift check: the producer flipped the row to QUEUED, so the worker
+    // expects exactly that state. We do NOT re-run `validateCutLogVoidRequest`
+    // — that validator rejects QUEUED rows (it's shaped for the producer's
+    // pre-mark check). Mirrors the same shape as the finalize consumer.
+    if (row.status !== "QUEUED" || row.void) {
       throw new CutLogExecutionError({
-        code: "CUT_LOG_VOID_NOT_ALLOWED",
-        message: buildCutLogVoidNotAllowedMessage(issue.reason),
+        code: "CUT_LOG_PRECONDITION_FAILED",
+        message:
+          "Cut log drifted out of QUEUED state before void could apply. Re-mark and try again.",
         status: 409,
-        payload: { issue },
+        payload: { rowId: row.id, status: row.status, void: row.void },
       })
     }
 

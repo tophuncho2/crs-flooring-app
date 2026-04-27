@@ -107,13 +107,21 @@ export async function saveCutLogPendingDiffUseCase(
     const sortedAddedIds = addedWithIds.map((d) => d.id).sort()
     const sortedModifiedIds = input.diff.modified.map((m) => m.id).sort()
     const sortedDeletedIds = input.diff.deleted.map((d) => d.id).sort()
+    // BullMQ enforces "custom jobId with ':' must split into exactly 3
+    // parts" — so we keep the idempotency key to three colon-separated
+    // sections and use `,` / `-` / `_` inside the third section. The
+    // timestamp's native `:` / `.` separators are normalised away.
+    const normalizedTimestamp = requestedAt.replace(/[:.]/g, "-")
+    const dedupSegment = [
+      `a-${sortedAddedIds.join(",")}`,
+      `m-${sortedModifiedIds.join(",")}`,
+      `d-${sortedDeletedIds.join(",")}`,
+      `at-${normalizedTimestamp}`,
+    ].join("_")
     const idempotencyKey = [
       "cut-log-pending-save",
       input.inventoryId,
-      `a:${sortedAddedIds.join(",")}`,
-      `m:${sortedModifiedIds.join(",")}`,
-      `d:${sortedDeletedIds.join(",")}`,
-      requestedAt,
+      dedupSegment,
     ].join(":")
 
     const payload = PendingSaveCutLogBatchPayloadSchema.parse({

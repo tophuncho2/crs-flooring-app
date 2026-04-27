@@ -7,9 +7,7 @@ import {
   withDatabaseTransaction,
 } from "@builders/db"
 import {
-  buildCutLogFinalizeBatchIneligibleMessage,
   computeTotalCutSum,
-  validateCutLogFinalizeBatch,
   type FinalizeCutLogBatchPayload,
 } from "@builders/domain"
 import { CutLogExecutionError } from "./errors.js"
@@ -74,13 +72,24 @@ export async function finalizeCutLogsUseCase(
       })
     }
 
-    const issues = validateCutLogFinalizeBatch(requestedRows)
-    if (issues.length > 0) {
+    // Drift check: every row must still be in `QUEUED` state (the producer
+    // flipped them) and not already FINAL or void. We do NOT re-run
+    // `validateCutLogFinalizeBatch` here — that validator's
+    // `getCutLogFinalizabilityBlocker` rejects QUEUED rows because it's
+    // shaped for the producer's pre-mark check (where rows are still
+    // PENDING). Inlining the worker-side check here mirrors staged-inv's
+    // count-mismatch + status-filter pattern in
+    // `materializeImportedStagedRowsUseCase`.
+    const drifted = requestedRows.filter(
+      (row) => row.status !== "QUEUED" || row.isFinal || row.void,
+    )
+    if (drifted.length > 0) {
       throw new CutLogExecutionError({
-        code: "CUT_LOG_BATCH_INELIGIBLE",
-        message: buildCutLogFinalizeBatchIneligibleMessage(issues),
+        code: "CUT_LOG_PRECONDITION_FAILED",
+        message:
+          "Cut logs drifted out of QUEUED state before finalize could apply. Re-mark and try again.",
         status: 409,
-        payload: { issues },
+        payload: { driftedRowIds: drifted.map((r) => r.id) },
       })
     }
 
