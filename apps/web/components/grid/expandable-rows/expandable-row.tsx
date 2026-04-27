@@ -7,14 +7,58 @@ import type { GridLayout } from "../contracts/grid-layout"
 import type { GridRow } from "../contracts/grid-row"
 import { resolveScrollContract, type ScrollContract } from "../contracts/grid-scroll"
 import { GridBodyRow } from "../grid-row"
+import { GridHeader } from "../grid-header"
 import { buildGridTemplateColumns } from "../internals/build-grid-template"
 
-export type ExpandableRowProps<TParent extends GridRow> = {
-  /** Parent row data; rendered via the standard `GridBodyRow` internally. */
+// ---------- Accent tone palette -------------------------------------------
+// A handful of curated tones for the left rail + ambient bg tint. Default
+// "sky" reads as informational; consumers can shift the palette per parent
+// context (e.g. "rose" for a destructive grouping).
+
+type AccentTone = "sky" | "amber" | "emerald" | "rose" | "neutral"
+
+const ACCENT_RAIL_CLASS_NAME: Record<AccentTone, string> = {
+  sky: "bg-sky-400/55",
+  amber: "bg-amber-400/55",
+  emerald: "bg-emerald-400/55",
+  rose: "bg-rose-400/55",
+  neutral: "bg-[var(--panel-border)]/65",
+}
+const ACCENT_BG_CLASS_NAME: Record<AccentTone, string> = {
+  sky: "bg-sky-500/[0.025]",
+  amber: "bg-amber-500/[0.025]",
+  emerald: "bg-emerald-500/[0.025]",
+  rose: "bg-rose-500/[0.025]",
+  neutral: "bg-[var(--panel-border)]/[0.04]",
+}
+const ACCENT_LABEL_CLASS_NAME: Record<AccentTone, string> = {
+  sky: "text-sky-700/85",
+  amber: "text-amber-800/85",
+  emerald: "text-emerald-700/85",
+  rose: "text-rose-700/85",
+  neutral: "text-[var(--foreground)]/65",
+}
+const ACCENT_BADGE_CLASS_NAME: Record<AccentTone, string> = {
+  sky: "bg-sky-500/15 text-sky-700",
+  amber: "bg-amber-500/15 text-amber-800",
+  emerald: "bg-emerald-500/15 text-emerald-700",
+  rose: "bg-rose-500/15 text-rose-700",
+  neutral: "bg-[var(--panel-border)]/35 text-[var(--foreground)]/75",
+}
+
+function joinClassNames(...values: Array<string | false | null | undefined>): string {
+  return values.filter(Boolean).join(" ")
+}
+
+export type ExpandableRowProps<
+  TParent extends GridRow,
+  TChild extends GridRow = GridRow,
+> = {
+  /** Parent row data; rendered via `GridBodyRow` internally. */
   parentRow: TParent
   /** Layout for the parent row — typically the same layout the outer Grid uses. */
   parentLayout: GridLayout<TParent>
-  /** Optional scroll contract override; defaults to the grid default. */
+  /** Optional scroll contract override for the parent. */
   parentScroll?: ScrollContract
   /** Whether the children area is currently visible. */
   expanded: boolean
@@ -26,38 +70,68 @@ export type ExpandableRowProps<TParent extends GridRow> = {
   onParentClick?: () => void
   /** Aria-label for the parent row when interactive. */
   parentAriaLabel?: string
-  /**
-   * Child rows JSX — typically a list of `<ScopedRow>` elements. Rendered only
-   * when `expanded` is true; a falsy / empty children list falls back to
-   * `emptyState`.
-   */
+
+  /** Child rows JSX — typically a list of `<ScopedRow>` elements. */
   children?: ReactNode
+
+  /**
+   * Optional small uppercase label rendered above the children (e.g. "Cut
+   * Logs"). Adds an accent-coloured strip to clarify the relationship.
+   */
+  childGroupLabel?: string
+  /** Count badge shown next to `childGroupLabel`. */
+  childCount?: number
+  /**
+   * Layout describing the children's columns. When provided, an aligned
+   * `GridHeader` is rendered above the children rows so consumers see column
+   * names. Use the same layout the consumer hands to each `<ScopedRow>`.
+   */
+  childLayout?: GridLayout<TChild>
+  /** Scroll contract for the auto-rendered child header. */
+  childScroll?: ScrollContract
+  /** Suppresses the auto-rendered child header even when `childLayout` is set. */
+  hideChildHeader?: boolean
+
   /** Shown when expanded and no children are present. */
   emptyState?: ReactNode
   /** Shown after children when expanded — typically an "Add row" affordance. */
   footer?: ReactNode
-  /** Background tone applied to the children area. Default: subtle muted tint. */
-  childrenAreaClassName?: string
+
+  /** Accent tone for the left rail, ambient bg, label, and badge. Default: "sky". */
+  accentTone?: AccentTone
 }
 
 /**
- * Parent row + expandable children area, designed to drop into a `<Grid>` via
- * its `renderRow` prop. Replaces the verbose `<Fragment><GridBodyRow .../>...
- * children</Fragment>` pattern with a single component that:
+ * Parent row + an "ultra clean" expandable children area, designed to drop
+ * into a `<Grid>` via its `renderRow` prop.
  *
- *   1. Renders the parent row via `GridBodyRow` (computing `templateColumns`
- *      and resolving the scroll contract internally — no boilerplate at the
- *      call-site).
- *   2. When `expanded`, renders the child rows below the parent in a tinted
- *      panel that visually scopes them to their parent.
- *   3. Falls back to `emptyState` when expanded with no children present.
- *   4. Renders an optional `footer` slot below the children — typically holds
- *      an "Add row" affordance.
+ * Visual structure when expanded:
  *
- * The chevron toggle itself is a separate primitive (`ExpandToggle`) — drop it
- * into the parent's `expand` control column via `renderParentControl`.
+ *   [parent row]
+ *   ┌─ accent rail ── children area (subtle ambient tint) ──────────────┐
+ *   │ ▎ <CHILD GROUP LABEL>          [count]                            │
+ *   │ ▎ <child column header (optional)>                                │
+ *   │ ▎ <child rows — ScopedRow instances>                              │
+ *   │ ▎ <empty state (when no children)>                                │
+ *   │ ▎ <footer (e.g. "+ Add Row")>                                     │
+ *   └───────────────────────────────────────────────────────────────────┘
+ *
+ * - **Left accent rail** scopes the whole region to the parent above without
+ *   indenting child rows (rail is positioned absolutely, doesn't displace).
+ * - **Ambient tint** sits behind the children area; child rows render with
+ *   their own tone on top, producing a layered "card within bay" effect.
+ * - **Group label + count** are rendered in a tasteful header strip with the
+ *   accent tone, replacing the previous flat divider.
+ * - **Child column header** (opt-in via `childLayout`) lets children with a
+ *   different column shape than the parent declare their column names inline.
+ *
+ * The chevron toggle itself is the separate `ExpandToggle` primitive — drop
+ * it into the parent's `expand` control column via `renderParentControl`.
  */
-export function ExpandableRow<TParent extends GridRow>({
+export function ExpandableRow<
+  TParent extends GridRow,
+  TChild extends GridRow = GridRow,
+>({
   parentRow,
   parentLayout,
   parentScroll,
@@ -67,35 +141,51 @@ export function ExpandableRow<TParent extends GridRow>({
   onParentClick,
   parentAriaLabel,
   children,
+  childGroupLabel,
+  childCount,
+  childLayout,
+  childScroll,
+  hideChildHeader = false,
   emptyState,
   footer,
-  childrenAreaClassName,
-}: ExpandableRowProps<TParent>) {
-  const resolvedScroll = useMemo(
+  accentTone = "sky",
+}: ExpandableRowProps<TParent, TChild>) {
+  const resolvedParentScroll = useMemo(
     () => resolveScrollContract(parentScroll),
     [parentScroll],
   )
-  const templateColumns = useMemo(
+  const parentTemplateColumns = useMemo(
     () => buildGridTemplateColumns(parentLayout),
     [parentLayout],
   )
 
-  // Detect whether `children` actually contains anything renderable. An array
-  // with length 0 (e.g. `cutLogs.map(...)` over `[]`) and `null`/`undefined`
-  // both count as "no children" — fall back to `emptyState` in that case.
+  const resolvedChildScroll = useMemo(
+    () => resolveScrollContract(childScroll),
+    [childScroll],
+  )
+  const childTemplateColumns = useMemo(
+    () => (childLayout ? buildGridTemplateColumns(childLayout) : ""),
+    [childLayout],
+  )
+
+  // `children` is `ReactNode`, which can be: null/undefined, false (e.g. from
+  // `cond && <X />`), a single element, or an array (typical from `.map`).
+  // Treat empty arrays + falsy values as "no children" so `emptyState` shows.
   const hasChildren = useMemo(() => {
     if (children == null || children === false) return false
     if (Array.isArray(children)) return children.length > 0
     return true
   }, [children])
 
+  const showChildHeader = Boolean(childLayout) && !hideChildHeader && hasChildren
+
   return (
     <>
       <GridBodyRow
         row={parentRow}
         layout={parentLayout}
-        scroll={resolvedScroll}
-        templateColumns={templateColumns}
+        scroll={resolvedParentScroll}
+        templateColumns={parentTemplateColumns}
         renderCell={renderParentCell}
         renderControl={renderParentControl}
         onClick={onParentClick}
@@ -103,22 +193,63 @@ export function ExpandableRow<TParent extends GridRow>({
       />
       {expanded ? (
         <div
-          className={
-            childrenAreaClassName ??
-            "border-b border-[var(--panel-border)] bg-[var(--panel-border)]/[0.04]"
-          }
+          className={joinClassNames(
+            "relative border-b border-[var(--panel-border)]",
+            ACCENT_BG_CLASS_NAME[accentTone],
+          )}
         >
-          {hasChildren
-            ? children
-            : emptyState != null
-              ? (
-                <div className="px-4 py-6 text-center text-sm text-[var(--foreground)]/55">
-                  {emptyState}
-                </div>
-              )
-              : null}
+          {/* Left accent rail — purely visual, doesn't displace content. */}
+          <span
+            aria-hidden="true"
+            className={joinClassNames(
+              "pointer-events-none absolute inset-y-0 left-0 w-[3px]",
+              ACCENT_RAIL_CLASS_NAME[accentTone],
+            )}
+          />
+
+          {childGroupLabel ? (
+            <div className="flex items-center gap-2 border-b border-[var(--panel-border)]/45 bg-[var(--panel-background)]/50 px-4 py-2">
+              <span
+                className={joinClassNames(
+                  "text-[10px] font-semibold uppercase tracking-[0.08em]",
+                  ACCENT_LABEL_CLASS_NAME[accentTone],
+                )}
+              >
+                {childGroupLabel}
+              </span>
+              {childCount != null ? (
+                <span
+                  className={joinClassNames(
+                    "rounded-full px-1.5 py-[1px] text-[10px] font-semibold leading-none",
+                    ACCENT_BADGE_CLASS_NAME[accentTone],
+                  )}
+                >
+                  {childCount}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {showChildHeader && childLayout ? (
+            <GridHeader
+              layout={childLayout}
+              scroll={resolvedChildScroll}
+              templateColumns={childTemplateColumns}
+            />
+          ) : null}
+
+          {hasChildren ? (
+            children
+          ) : emptyState != null ? (
+            <div className="flex flex-col items-center gap-1 px-4 py-8 text-center text-sm text-[var(--foreground)]/55">
+              {emptyState}
+            </div>
+          ) : null}
+
           {footer ? (
-            <div className="border-t border-[var(--panel-border)]/60">{footer}</div>
+            <div className="border-t border-[var(--panel-border)]/45 bg-[var(--panel-background)]/40">
+              {footer}
+            </div>
           ) : null}
         </div>
       ) : null}

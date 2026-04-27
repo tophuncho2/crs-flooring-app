@@ -24,8 +24,9 @@ import {
 import { ExpandToggle, ExpandableRow } from "@/components/grid/expandable-rows"
 import { RichDropdown } from "@/components/dropdowns/rich-dropdown"
 import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown"
+import { ActionsPanel } from "@/components/dropdowns/actions-panel"
 import { StatusBadge } from "@/components/badges"
-import { ActionHeader, SectionHeader } from "@/components/headers"
+import { SectionHeader } from "@/components/headers"
 
 const MANAGEMENT_COMPANIES = [
   { value: "mc-1", label: "Bluepoint Management" },
@@ -94,17 +95,21 @@ type ProductFixture = {
   title: string
   subtitles: string[]
   categoryId: string
+  /** Coverage rate for cut logs (e.g. sqft/box, sqft/sqyd, ft/pc). */
+  coverageRate: number
+  /** Display unit for the coverage cut column (suffix). */
+  coverageUnit: string
 }
 
 const PRODUCT_OPTIONS: ReadonlyArray<ProductFixture> = [
-  { id: "prd-1", title: "Vinyl Plank — XL Cyrus Grayton", subtitles: ["SKU 5001 · 28 sqft / box"], categoryId: "cat-vinyl" },
-  { id: "prd-2", title: "Vinyl Plank — Coastal Oak", subtitles: ["SKU 5002 · 24 sqft / box"], categoryId: "cat-vinyl" },
-  { id: "prd-3", title: "LVT Tile — Slate Grey", subtitles: ["SKU 6010 · 22 sqft / box"], categoryId: "cat-tile" },
-  { id: "prd-4", title: "Carpet — Berber Beige", subtitles: ["SKU 7001 · 12 ft wide"], categoryId: "cat-carpet" },
-  { id: "prd-5", title: "Hardwood — White Oak Smoked", subtitles: ["SKU 8004 · 5 in plank"], categoryId: "cat-hardwood" },
-  { id: "prd-6", title: "Carpet Pad — 8lb rebond", subtitles: ["SKU 7500 · 6 ft wide"], categoryId: "cat-underlayment" },
-  { id: "prd-7", title: "Underlayment — 3mm cork", subtitles: ["SKU 7600 · 4 ft × 50 ft roll"], categoryId: "cat-underlayment" },
-  { id: "prd-8", title: "Trim — White 1/4 round", subtitles: ["SKU 9001 · 8 ft pcs"], categoryId: "cat-trim" },
+  { id: "prd-1", title: "Vinyl Plank — XL Cyrus Grayton", subtitles: ["SKU 5001 · 28 sqft / box"], categoryId: "cat-vinyl", coverageRate: 28, coverageUnit: "sqft" },
+  { id: "prd-2", title: "Vinyl Plank — Coastal Oak", subtitles: ["SKU 5002 · 24 sqft / box"], categoryId: "cat-vinyl", coverageRate: 24, coverageUnit: "sqft" },
+  { id: "prd-3", title: "LVT Tile — Slate Grey", subtitles: ["SKU 6010 · 22 sqft / box"], categoryId: "cat-tile", coverageRate: 22, coverageUnit: "sqft" },
+  { id: "prd-4", title: "Carpet — Berber Beige", subtitles: ["SKU 7001 · 12 ft wide"], categoryId: "cat-carpet", coverageRate: 9, coverageUnit: "sqft" },
+  { id: "prd-5", title: "Hardwood — White Oak Smoked", subtitles: ["SKU 8004 · 5 in plank"], categoryId: "cat-hardwood", coverageRate: 20, coverageUnit: "sqft" },
+  { id: "prd-6", title: "Carpet Pad — 8lb rebond", subtitles: ["SKU 7500 · 6 ft wide"], categoryId: "cat-underlayment", coverageRate: 1, coverageUnit: "sqyd" },
+  { id: "prd-7", title: "Underlayment — 3mm cork", subtitles: ["SKU 7600 · 4 ft × 50 ft roll"], categoryId: "cat-underlayment", coverageRate: 200, coverageUnit: "sqft" },
+  { id: "prd-8", title: "Trim — White 1/4 round", subtitles: ["SKU 9001 · 8 ft pcs"], categoryId: "cat-trim", coverageRate: 8, coverageUnit: "ft" },
 ]
 
 type MaterialItem = GridRow & {
@@ -139,37 +144,44 @@ const MATERIAL_ITEMS_LAYOUT: GridLayout<MaterialItem> = {
 }
 
 // ---------- Cut logs (child rows nested under each material item) ---------
+//
+// Cut logs follow the inventory-cut workflow: each row records how much stock
+// was cut from the parent material item. Editable: Cut, Waste, Notes.
+// Computed (display-only): Before, After, Coverage Cut.
+//   - Before  = parent quantity − Σ(cut + waste) of all earlier logs
+//   - After   = Before − Cut − Waste
+//   - Coverage Cut = Cut × product.coverageRate (e.g. sqft per box)
 
 type CutLog = GridRow & {
-  cutNumber: number
-  cutAmount: string
-  cutBy: string
+  cut: string
+  waste: string
   notes: string
-  status: "DRAFT" | "FINALIZED"
 }
 
 const INITIAL_CUT_LOGS_BY_ITEM: Record<string, CutLog[]> = {
   "mi-1": [
-    { id: "cl-1", cutNumber: 1, cutAmount: "12.0 bx", cutBy: "Alex", notes: "Living room install", status: "FINALIZED" },
-    { id: "cl-2", cutNumber: 2, cutAmount: "8.5 bx", cutBy: "Sam", notes: "Kitchen install — partial", status: "DRAFT" },
+    { id: "cl-1", cut: "12.0", waste: "0.5", notes: "Living room install" },
+    { id: "cl-2", cut: "8.5", waste: "0.5", notes: "Kitchen — partial" },
   ],
   "mi-3": [
-    { id: "cl-3", cutNumber: 1, cutAmount: "16.0 sqyd", cutBy: "Sam", notes: "Bedroom 1", status: "FINALIZED" },
-    { id: "cl-4", cutNumber: 2, cutAmount: "14.0 sqyd", cutBy: "Alex", notes: "Bedroom 2", status: "DRAFT" },
+    { id: "cl-3", cut: "16.0", waste: "1.0", notes: "Bedroom 1" },
+    { id: "cl-4", cut: "14.0", waste: "0.0", notes: "Bedroom 2" },
   ],
 }
 
-// Child layout — totally distinct from the parent's column shape. Cut logs
-// have their own keys, widths, and alignment.
 const CUT_LOG_LAYOUT: GridLayout<CutLog> = {
   dataColumns: [
-    { key: "cutNumber", label: "Cut #", kind: "number", minWidth: 80, grow: 0, align: "center" },
-    { key: "cutAmount", label: "Amount", kind: "number", minWidth: 110, grow: 0, align: "end" },
-    { key: "cutBy", label: "Cut By", minWidth: 140, grow: 0 },
+    { key: "before", label: "Before", kind: "number", minWidth: 100, grow: 0, align: "end" },
+    { key: "cut", label: "Cut", kind: "number", minWidth: 110, grow: 0, align: "end" },
+    { key: "waste", label: "Waste", kind: "number", minWidth: 110, grow: 0, align: "end" },
+    { key: "after", label: "After", kind: "number", minWidth: 100, grow: 0, align: "end" },
+    { key: "coverageCut", label: "Coverage Cut", kind: "number", minWidth: 140, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 280, grow: 1 },
-    { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
   ],
+  trailingControls: [{ key: "remove", kind: "actions", width: 56 }],
 }
+
+// ---------- Compute helpers -----------------------------------------------
 
 function lineCost(quantity: string, unitPrice: string): string {
   const q = parseFloat(quantity || "0")
@@ -185,6 +197,32 @@ function grandCost(items: ReadonlyArray<MaterialItem>): string {
   }, 0)
   return total.toFixed(2)
 }
+
+function safeNumber(value: string): number {
+  const parsed = parseFloat(value || "0")
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+function computeBeforeForLog(itemQuantity: string, logsBefore: ReadonlyArray<CutLog>): string {
+  const start = safeNumber(itemQuantity)
+  const used = logsBefore.reduce((acc, log) => acc + safeNumber(log.cut) + safeNumber(log.waste), 0)
+  return (start - used).toFixed(2)
+}
+
+function computeAfter(before: string, cut: string, waste: string): string {
+  return (safeNumber(before) - safeNumber(cut) - safeNumber(waste)).toFixed(2)
+}
+
+function computeCoverageCut(cut: string, coverageRate: number): string {
+  return (safeNumber(cut) * coverageRate).toFixed(2)
+}
+
+function getProductFixture(productId: string | null): ProductFixture | null {
+  if (!productId) return null
+  return PRODUCT_OPTIONS.find((product) => product.id === productId) ?? null
+}
+
+// ---------- Page component ------------------------------------------------
 
 export default function WorkOrderCellsSmokePage() {
   // ---------- Primary section state ---------------------------------------
@@ -206,9 +244,6 @@ export default function WorkOrderCellsSmokePage() {
   const [notes, setNotes] = useState("")
 
   // ---------- Material items section controller (mocked) ------------------
-  // Mirrors the controller surface used by `useImportStagedInventoryRowsSection`:
-  // local working set + saved snapshot for diff/discard, isDirty derived,
-  // isSaving fake-async, notice/error message slot.
   const [items, setItems] = useState<MaterialItem[]>(INITIAL_MATERIAL_ITEMS)
   const [savedItemsSnapshot, setSavedItemsSnapshot] = useState<MaterialItem[]>(INITIAL_MATERIAL_ITEMS)
   const [isItemsSaving, setIsItemsSaving] = useState(false)
@@ -221,9 +256,6 @@ export default function WorkOrderCellsSmokePage() {
   )
 
   // ---------- Batch select controller (mocked) ----------------------------
-  // Mirrors `useBatchSelectAction`: selectedIds Set, eligibleSelectedIds
-  // projection (only persisted rows are eligible — newly-added local drafts
-  // can't be batch-acted-on), isFiring lifecycle, fire() callback.
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [isBatchFiring, setIsBatchFiring] = useState(false)
 
@@ -250,6 +282,14 @@ export default function WorkOrderCellsSmokePage() {
     })
   }
 
+  function expandMany(itemIds: string[]) {
+    setExpandedItemIds((previous) => {
+      const next = new Set(previous)
+      for (const id of itemIds) next.add(id)
+      return next
+    })
+  }
+
   function addCutLog(itemId: string) {
     setCutLogsByItem((previous) => {
       const existing = previous[itemId] ?? []
@@ -257,19 +297,35 @@ export default function WorkOrderCellsSmokePage() {
         ...previous,
         [itemId]: [
           ...existing,
-          {
-            id: `cl-new-${Date.now()}`,
-            cutNumber: existing.length + 1,
-            cutAmount: "0.0",
-            cutBy: "—",
-            notes: "",
-            status: "DRAFT",
-          },
+          { id: `cl-new-${Date.now()}`, cut: "", waste: "", notes: "" },
         ],
       }
     })
   }
 
+  function updateCutLog(itemId: string, logId: string, patch: Partial<CutLog>) {
+    setCutLogsByItem((previous) => {
+      const existing = previous[itemId] ?? []
+      return {
+        ...previous,
+        [itemId]: existing.map((log) => (log.id === logId ? { ...log, ...patch } : log)),
+      }
+    })
+  }
+
+  function removeCutLog(itemId: string, logId: string) {
+    setCutLogsByItem((previous) => {
+      const existing = previous[itemId] ?? []
+      const next = existing.filter((log) => log.id !== logId)
+      if (next.length === 0) {
+        const { [itemId]: _removed, ...rest } = previous
+        return rest
+      }
+      return { ...previous, [itemId]: next }
+    })
+  }
+
+  // ---------- Material item handlers --------------------------------------
   function clearSelection() {
     setSelectedIds(new Set())
   }
@@ -349,9 +405,23 @@ export default function WorkOrderCellsSmokePage() {
     }, 300)
   }
 
-  const itemsBusy = isItemsSaving || isBatchFiring
+  function fireAssignCuts() {
+    if (eligibleSelectedIds.length === 0) return
+    const targetIds = [...eligibleSelectedIds]
+    expandMany(targetIds)
+    for (const id of targetIds) {
+      addCutLog(id)
+    }
+    clearSelection()
+    setItemsNotice(
+      `Drafted a cut log for ${targetIds.length} item${targetIds.length === 1 ? "" : "s"} — review the new rows below.`,
+    )
+  }
 
-  // ---------- Cell + control renderers (parent material items grid) -------
+  const itemsBusy = isItemsSaving || isBatchFiring
+  const noEligibleSelection = eligibleSelectedIds.length === 0
+
+  // ---------- Material cell + control renderers ---------------------------
   function renderMaterialCell(column: GridColumn<MaterialItem>, row: MaterialItem) {
     const editable = !itemsBusy
     switch (column.key) {
@@ -480,28 +550,6 @@ export default function WorkOrderCellsSmokePage() {
       )
     }
     return null
-  }
-
-  // ---------- Cut log cell renderer (child rows) --------------------------
-  function renderCutLogCell(column: GridColumn<CutLog>, log: CutLog) {
-    switch (column.key) {
-      case "cutNumber":
-        return <span className="tabular-nums text-[var(--foreground)]/80">#{log.cutNumber}</span>
-      case "cutAmount":
-        return <span className="tabular-nums">{log.cutAmount}</span>
-      case "cutBy":
-        return log.cutBy
-      case "notes":
-        return log.notes || "—"
-      case "status":
-        return (
-          <StatusBadge tone={log.status === "FINALIZED" ? "success" : "default"}>
-            {log.status === "FINALIZED" ? "Finalized" : "Draft"}
-          </StatusBadge>
-        )
-      default:
-        return null
-    }
   }
 
   return (
@@ -663,55 +711,99 @@ export default function WorkOrderCellsSmokePage() {
 
       {/* ============== Material Items section ============== */}
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <ActionHeader
-          title="Material Items"
-          summary={
-            <span>
+        {/* Custom header so the ActionsPanel sits inline with the other action
+            buttons. Mirrors the visual structure of `<ActionHeader>` but lets
+            us swap the bulk-action button for the panel trigger. */}
+        <div className="flex flex-col gap-3 border-b border-[var(--panel-border)] px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-2">
+            <div className="truncate text-base font-semibold text-[var(--foreground)]">Material Items</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge tone={isItemsDirty ? "warning" : "default"}>
+                {isItemsDirty ? "Unsaved changes" : "Saved"}
+              </StatusBadge>
+            </div>
+            <div className="text-sm text-[var(--foreground)]/75">
               {items.length} item{items.length === 1 ? "" : "s"} · grand cost{" "}
               <span className="font-medium tabular-nums">${grandCost(items)}</span>
-              {selectedIds.size > 0
-                ? ` · ${selectedIds.size} selected (${eligibleSelectedIds.length} eligible)`
-                : ""}
-            </span>
-          }
-          status={
-            isItemsDirty
-              ? { tone: "warning", label: "Unsaved changes" }
-              : { tone: "default", label: "Saved" }
-          }
-          actions={[
-            {
-              key: "add",
-              label: "Add Material Item",
-              onClick: addItem,
-              kind: "secondary",
-              disabled: itemsBusy,
-            },
-            {
-              key: "discard",
-              label: "Discard",
-              onClick: discardItems,
-              kind: "secondary",
-              disabled: !isItemsDirty || itemsBusy,
-            },
-            {
-              key: "save",
-              label: isItemsSaving ? "Saving Items..." : "Save Items",
-              onClick: saveItems,
-              kind: "primary",
-              disabled: !isItemsDirty || itemsBusy,
-            },
-            {
-              key: "delete-selected",
-              label: isBatchFiring ? "Deleting..." : "Delete Selected",
-              onClick: fireBatchDelete,
-              kind: "primary",
-              disabled: eligibleSelectedIds.length === 0 || itemsBusy,
-            },
-          ]}
-          message={itemsNotice}
-          error={itemsError}
-        />
+              {selectedIds.size > 0 ? (
+                <>
+                  {" · "}
+                  <span className="text-sky-700">
+                    {selectedIds.size} selected ({eligibleSelectedIds.length} eligible)
+                  </span>
+                </>
+              ) : null}
+            </div>
+            {itemsNotice ? (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+                {itemsNotice}
+              </div>
+            ) : null}
+            {itemsError ? (
+              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                {itemsError}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={addItem}
+              disabled={itemsBusy}
+              className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Add Material Item
+            </button>
+            <button
+              type="button"
+              onClick={discardItems}
+              disabled={!isItemsDirty || itemsBusy}
+              className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              onClick={saveItems}
+              disabled={!isItemsDirty || itemsBusy}
+              className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isItemsSaving ? "Saving Items..." : "Save Items"}
+            </button>
+            <ActionsPanel
+              triggerLabel="Bulk Actions"
+              triggerKind="primary"
+              panelTitle={
+                noEligibleSelection
+                  ? "Select rows to enable actions"
+                  : `Acting on ${eligibleSelectedIds.length} item${eligibleSelectedIds.length === 1 ? "" : "s"}`
+              }
+              disabled={itemsBusy}
+              ariaLabel="Bulk actions for selected material items"
+              actions={[
+                {
+                  key: "assign-cuts",
+                  label: "Assign Cuts",
+                  description:
+                    eligibleSelectedIds.length > 0
+                      ? `Draft a new cut log on each of the ${eligibleSelectedIds.length} selected item${eligibleSelectedIds.length === 1 ? "" : "s"}.`
+                      : "Drafts a new cut log on each selected item.",
+                  onClick: fireAssignCuts,
+                  disabled: noEligibleSelection || itemsBusy,
+                },
+                {
+                  key: "delete-selected",
+                  label: isBatchFiring ? "Deleting..." : "Delete Selected",
+                  description: "Permanently remove the selected items.",
+                  onClick: fireBatchDelete,
+                  disabled: noEligibleSelection || itemsBusy,
+                  destructive: true,
+                  group: "danger",
+                },
+              ]}
+            />
+          </div>
+        </div>
 
         <Grid<MaterialItem>
           rows={items}
@@ -720,21 +812,43 @@ export default function WorkOrderCellsSmokePage() {
           renderRow={(row) => {
             const isExpanded = expandedItemIds.has(row.id)
             const itemCutLogs = cutLogsByItem[row.id] ?? []
+            const product = getProductFixture(row.productId)
+            const coverageRate = product?.coverageRate ?? 0
+            const coverageUnit = product?.coverageUnit ?? ""
+
             return (
-              <ExpandableRow<MaterialItem>
+              <ExpandableRow<MaterialItem, CutLog>
                 parentRow={row}
                 parentLayout={MATERIAL_ITEMS_LAYOUT}
                 expanded={isExpanded}
                 renderParentCell={renderMaterialCell}
                 renderParentControl={renderMaterialControl}
-                emptyState="No cut logs for this material item yet."
+                childGroupLabel="Cut Logs"
+                childCount={itemCutLogs.length}
+                childLayout={CUT_LOG_LAYOUT}
+                accentTone="sky"
+                emptyState={
+                  <>
+                    <span className="text-[var(--foreground)]/60">
+                      No cut logs for this material item yet.
+                    </span>
+                    <span className="text-xs text-[var(--foreground)]/45">
+                      Use <span className="font-medium text-[var(--foreground)]/65">+ Add Cut Log</span> below to record the first cut.
+                    </span>
+                  </>
+                }
                 footer={
-                  <div className="flex justify-end px-4 py-3">
+                  <div className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-xs text-[var(--foreground)]/55">
+                      {coverageRate > 0
+                        ? `Coverage rate: ${coverageRate} ${coverageUnit} per unit`
+                        : "Set a product to compute coverage cuts."}
+                    </span>
                     <button
                       type="button"
                       onClick={() => addCutLog(row.id)}
                       disabled={itemsBusy}
-                      className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:bg-[var(--panel-border)]/15 hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       + Add Cut Log
                     </button>
@@ -742,14 +856,90 @@ export default function WorkOrderCellsSmokePage() {
                 }
               >
                 {isExpanded
-                  ? itemCutLogs.map((log) => (
-                      <ScopedRow<CutLog>
-                        key={log.id}
-                        row={log}
-                        layout={CUT_LOG_LAYOUT}
-                        renderCell={renderCutLogCell}
-                      />
-                    ))
+                  ? itemCutLogs.map((log, logIndex) => {
+                      const before = computeBeforeForLog(row.quantity, itemCutLogs.slice(0, logIndex))
+                      const after = computeAfter(before, log.cut, log.waste)
+                      const coverageCutValue = computeCoverageCut(log.cut, coverageRate)
+                      return (
+                        <ScopedRow<CutLog>
+                          key={log.id}
+                          row={log}
+                          layout={CUT_LOG_LAYOUT}
+                          tone="default"
+                          renderCell={(column, l) => {
+                            const editable = !itemsBusy
+                            switch (column.key) {
+                              case "before":
+                                return (
+                                  <span className="tabular-nums text-[var(--foreground)]/70">{before}</span>
+                                )
+                              case "cut":
+                                return (
+                                  <NumberCell
+                                    editable={editable}
+                                    value={l.cut}
+                                    onChange={(next) => updateCutLog(row.id, l.id, { cut: next })}
+                                    placeholder="0.00"
+                                    ariaLabel="Cut amount"
+                                  />
+                                )
+                              case "waste":
+                                return (
+                                  <NumberCell
+                                    editable={editable}
+                                    value={l.waste}
+                                    onChange={(next) => updateCutLog(row.id, l.id, { waste: next })}
+                                    placeholder="0.00"
+                                    ariaLabel="Waste amount"
+                                  />
+                                )
+                              case "after":
+                                return (
+                                  <span className="tabular-nums text-[var(--foreground)]/70">{after}</span>
+                                )
+                              case "coverageCut":
+                                return (
+                                  <span className="tabular-nums text-[var(--foreground)]/70">
+                                    {coverageCutValue}
+                                    {coverageUnit ? (
+                                      <span className="ml-1 text-[10px] uppercase tracking-[0.06em] text-[var(--foreground)]/45">
+                                        {coverageUnit}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                )
+                              case "notes":
+                                return (
+                                  <TextCell
+                                    editable={editable}
+                                    value={l.notes}
+                                    onChange={(next) => updateCutLog(row.id, l.id, { notes: next })}
+                                    placeholder="Cut notes…"
+                                    ariaLabel="Cut log notes"
+                                  />
+                                )
+                              default:
+                                return null
+                            }
+                          }}
+                          renderControl={(control, l) => {
+                            if (control.kind === "actions") {
+                              return (
+                                <RowActionButton
+                                  label="✕"
+                                  ariaLabel="Remove cut log"
+                                  tone="destructive"
+                                  title="Remove this cut log"
+                                  editable={!itemsBusy}
+                                  onClick={() => removeCutLog(row.id, l.id)}
+                                />
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                      )
+                    })
                   : null}
               </ExpandableRow>
             )
