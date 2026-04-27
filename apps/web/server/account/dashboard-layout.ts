@@ -8,8 +8,6 @@ export async function getDashboardLayoutUser(userId: string, db: DataAccessConte
       email: true,
       role: true,
       isVerified: true,
-      hiddenFlooringNavSlugs: true,
-      flooringNavOrderSlugs: true,
     },
   })
 }

@@ -6,10 +6,7 @@ import { getPrismaConnectivityIssue } from "@builders/db"
 import { hasSystemAccess } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
 import { getUserToolContext } from "@/server/platform/tool-access"
-import { FLOORING_NAV_SLUGS } from "@/modules/app-shell/navigation/definitions"
 import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
-
-const ALWAYS_VISIBLE_FLOORING_SLUGS = new Set(["flooring-services"])
 
 export const dynamic = "force-dynamic"
 
@@ -47,10 +44,6 @@ export default async function DashboardLayout({
   }
 
   const toolContext = getUserToolContext(user.role)
-  const initialVisibleFlooringSlugs = FLOORING_NAV_SLUGS.filter(
-    (slug) => ALWAYS_VISIBLE_FLOORING_SLUGS.has(slug) || !user.hiddenFlooringNavSlugs.includes(slug),
-  )
-  const initialOrderedFlooringSlugs = user.flooringNavOrderSlugs.length > 0 ? user.flooringNavOrderSlugs : FLOORING_NAV_SLUGS
 
   return (
     <div className="relative min-h-screen">
@@ -60,8 +53,6 @@ export default async function DashboardLayout({
           role={user.role}
           canUseTools={toolContext.canUseTools}
           tools={toolContext.tools}
-          initialVisibleFlooringSlugs={initialVisibleFlooringSlugs}
-          initialOrderedFlooringSlugs={initialOrderedFlooringSlugs}
         />
       </div>
 

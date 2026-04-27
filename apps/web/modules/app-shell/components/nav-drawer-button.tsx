@@ -16,7 +16,6 @@ type NavDrawerButtonProps = {
   canUseTools: boolean
   hasAdminPanelAccess: boolean
   orderedItems: FlooringNavItem[]
-  visibleSlugSet: Set<string>
   canOpenItem: (item: FlooringNavItem) => boolean
 }
 
@@ -24,7 +23,6 @@ export default function NavDrawerButton({
   canUseTools,
   hasAdminPanelAccess,
   orderedItems,
-  visibleSlugSet,
   canOpenItem,
 }: NavDrawerButtonProps) {
   const [open, setOpen] = useState(false)
@@ -34,8 +32,6 @@ export default function NavDrawerButton({
   if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasAdminPanelAccess)) {
     return null
   }
-
-  const visibleItems = orderedItems.filter((item) => visibleSlugSet.has(item.slug))
 
   function handleNavigate(href: string) {
     setOpen(false)
@@ -63,7 +59,7 @@ export default function NavDrawerButton({
 
       <SidePanel open={open} side="left" onClose={() => setOpen(false)} title="Navigation">
         <nav className="flex flex-col py-2">
-          {visibleItems.map((item) => {
+          {orderedItems.map((item) => {
             const canOpen = canOpenItem(item)
             const isActive = isActiveFlooringItem(pathname, item.href)
 

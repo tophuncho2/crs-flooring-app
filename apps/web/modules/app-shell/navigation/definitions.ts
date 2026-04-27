@@ -29,29 +29,6 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", requiredTool: "products" },
 ]
 
-export const FLOORING_NAV_SLUGS = FLOORING_NAV_ITEMS.map((item) => item.slug)
-
-export function orderFlooringNavItems(slugs: string[]) {
-  const itemMap = new Map(FLOORING_NAV_ITEMS.map((item) => [item.slug, item]))
-  const seen = new Set<string>()
-  const ordered = slugs
-    .map((slug) => {
-      const item = itemMap.get(slug)
-      if (!item || seen.has(slug)) return null
-      seen.add(slug)
-      return item
-    })
-    .filter((item): item is FlooringNavItem => Boolean(item))
-
-  for (const item of FLOORING_NAV_ITEMS) {
-    if (!seen.has(item.slug)) {
-      ordered.push(item)
-    }
-  }
-
-  return ordered
-}
-
 export function isFlooringRoute(pathname: string) {
   return pathname.startsWith("/dashboard")
 }

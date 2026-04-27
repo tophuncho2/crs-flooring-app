@@ -5,7 +5,6 @@ const {
   applyRoutePolicyMock,
   enforceMutationReceiptMock,
   finalizeMutationReceiptMock,
-  userUpdateMock,
   getTablePreferenceRecordMock,
   getLegacyTablePreferenceRecordMock,
   upsertTablePreferenceRecordMock,
@@ -14,7 +13,6 @@ const {
   applyRoutePolicyMock: vi.fn(),
   enforceMutationReceiptMock: vi.fn(),
   finalizeMutationReceiptMock: vi.fn(),
-  userUpdateMock: vi.fn(),
   getTablePreferenceRecordMock: vi.fn(),
   getLegacyTablePreferenceRecordMock: vi.fn(),
   upsertTablePreferenceRecordMock: vi.fn(),
@@ -39,16 +37,6 @@ vi.mock("@builders/db", async () => {
   const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
   return {
     ...actual,
-    prisma: {
-      user: {
-        update: userUpdateMock,
-      },
-    },
-    db: {
-      user: {
-        update: userUpdateMock,
-      },
-    },
     getTablePreferenceRecord: getTablePreferenceRecordMock,
     getLegacyTablePreferenceRecord: getLegacyTablePreferenceRecordMock,
     upsertTablePreferenceRecord: upsertTablePreferenceRecordMock,
@@ -56,7 +44,6 @@ vi.mock("@builders/db", async () => {
   }
 })
 
-const { PATCH: PATCH_FLOORING_NAV } = await import("@/app/api/account/flooring-nav/route")
 const { GET: GET_TABLE_PREFERENCE, PATCH: PATCH_TABLE_PREFERENCE } = await import(
   "@/app/api/account/table-preferences/[tableKey]/route"
 )
@@ -374,52 +361,4 @@ describe("account routes", () => {
     })
   })
 
-  it("PATCH /api/account/flooring-nav filters unknown slugs and returns the normalized preference", async () => {
-    userUpdateMock.mockResolvedValue({
-      hiddenFlooringNavSlugs: ["flooring-inventory"],
-      flooringNavOrderSlugs: ["products", "flooring-templates", "flooring-inventory"],
-    })
-
-    const response = await PATCH_FLOORING_NAV(
-      new Request("http://localhost/api/account/flooring-nav", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mutation: { idempotencyKey: "idem-4" },
-          visibleSlugs: ["products", "products", "bad"],
-          orderedSlugs: ["flooring-templates", "bad", "products"],
-        }),
-      }),
-    )
-    const payload = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(userUpdateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          flooringNavOrderSlugs: expect.arrayContaining(["flooring-templates", "products"]),
-        }),
-      }),
-    )
-    expect(payload).toEqual({
-      visibleSlugs: expect.arrayContaining(["products", "flooring-templates"]),
-      orderedSlugs: ["products", "flooring-templates", "flooring-inventory"],
-    })
-  })
-
-  it("returns shared auth responses unchanged", async () => {
-    applyRoutePolicyMock.mockResolvedValueOnce(Response.json({ error: "Unauthorized" }, { status: 401 }))
-
-    const response = await PATCH_FLOORING_NAV(
-      new Request("http://localhost/api/account/flooring-nav", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visibleSlugs: [], orderedSlugs: [] }),
-      }),
-    )
-    const payload = await response.json()
-
-    expect(response.status).toBe(401)
-    expect(payload.error).toBe("Unauthorized")
-  })
 })

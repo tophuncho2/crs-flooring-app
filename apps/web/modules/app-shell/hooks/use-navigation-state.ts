@@ -1,27 +1,19 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
 import type { UserToolRow } from "@/server/platform/tool-access"
-import { orderFlooringNavItems, type FlooringNavItem } from "@/modules/app-shell/navigation/definitions"
+import { FLOORING_NAV_ITEMS, type FlooringNavItem } from "@/modules/app-shell/navigation/definitions"
 
 export function useFlooringNavigationState({
   canUseTools,
   hasAdminPanelAccess,
   tools,
-  initialVisibleSlugs,
-  initialOrderedSlugs,
 }: {
   canUseTools: boolean
   hasAdminPanelAccess: boolean
   tools: UserToolRow[]
-  initialVisibleSlugs: string[]
-  initialOrderedSlugs: string[]
 }) {
-  const [visibleSlugs, setVisibleSlugs] = useState(initialVisibleSlugs)
-  const [orderedSlugs, setOrderedSlugs] = useState(initialOrderedSlugs)
-
-  const orderedItems = useMemo(() => orderFlooringNavItems(orderedSlugs), [orderedSlugs])
-  const visibleSlugSet = useMemo(() => new Set(visibleSlugs), [visibleSlugs])
+  const orderedItems = useMemo(() => FLOORING_NAV_ITEMS, [])
   const unlockedToolSlugs = useMemo(() => tools.filter((tool) => tool.isUnlocked).map((tool) => tool.slug), [tools])
   const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
   const canOpenItem = useCallback(
@@ -36,12 +28,7 @@ export function useFlooringNavigationState({
   )
 
   return {
-    visibleSlugs,
-    setVisibleSlugs,
-    orderedSlugs,
-    setOrderedSlugs,
     orderedItems,
-    visibleSlugSet,
     unlockedToolSlugs,
     unlockedToolSet,
     canOpenItem,
