@@ -10,6 +10,7 @@ import {
   TextareaCell,
 } from "@/components/cells"
 import { RichDropdown } from "@/components/dropdowns/rich-dropdown"
+import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown"
 import { SectionHeader } from "@/components/headers"
 
 const MANAGEMENT_COMPANIES = [
@@ -70,7 +71,7 @@ export default function WorkOrderCellsSmokePage() {
   const [templateId, setTemplateId] = useState("tpl-2")
   const [jobTypeId, setJobTypeId] = useState("jt-1")
   const [warehouseId, setWarehouseId] = useState("wh-1")
-  const [vacancyStatus, setVacancyStatus] = useState("VACANT")
+  const [vacancyStatus, setVacancyStatus] = useState<string | null>("VACANT")
   const [isComplete, setIsComplete] = useState(false)
   const [date, setDate] = useState("2026-04-27")
   const [unitNumber, setUnitNumber] = useState("204")
@@ -173,12 +174,13 @@ export default function WorkOrderCellsSmokePage() {
             </CellAt>
             <CellAt col={3} row={3} colSpan={2}>
               <FormField label="Vacancy Status">
-                <SelectCell
-                  editable
+                <SegmentedDropdown
                   value={vacancyStatus}
                   onChange={setVacancyStatus}
                   options={VACANCY_STATUSES}
-                  placeholder="Select vacancy"
+                  allowClear
+                  clearLabel="None"
+                  ariaLabel="Vacancy status"
                 />
               </FormField>
             </CellAt>
