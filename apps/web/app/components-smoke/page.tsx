@@ -9,6 +9,7 @@ import {
   TextCell,
   TextareaCell,
 } from "@/components/cells"
+import { RichDropdown } from "@/components/dropdowns/rich-dropdown"
 import { SectionHeader } from "@/components/headers"
 
 const MANAGEMENT_COMPANIES = [
@@ -18,10 +19,26 @@ const MANAGEMENT_COMPANIES = [
 ]
 
 const PROPERTIES = [
-  { value: "prop-1", label: "Mercer Apartments" },
-  { value: "prop-2", label: "Holcomb Lofts" },
-  { value: "prop-3", label: "Patel Row" },
-  { value: "prop-4", label: "Brookhurst Plaza" },
+  {
+    id: "prop-1",
+    title: "Mercer Apartments",
+    subtitles: ["1240 Mercer Ave · Springfield, IL"],
+  },
+  {
+    id: "prop-2",
+    title: "Holcomb Lofts",
+    subtitles: ["88 Holcomb St · Springfield, IL"],
+  },
+  {
+    id: "prop-3",
+    title: "Patel Row",
+    subtitles: ["402 Patel Row · Springfield, IL"],
+  },
+  {
+    id: "prop-4",
+    title: "Brookhurst Plaza",
+    subtitles: ["3110 Brookhurst Blvd · Springfield, IL"],
+  },
 ]
 
 const TEMPLATES = [
@@ -49,7 +66,7 @@ const VACANCY_STATUSES = [
 export default function WorkOrderCellsSmokePage() {
   const [workOrderNumber, setWorkOrderNumber] = useState("WO-1042")
   const [managementCompanyId, setManagementCompanyId] = useState("mc-1")
-  const [propertyId, setPropertyId] = useState("prop-1")
+  const [propertyId, setPropertyId] = useState<string | null>("prop-1")
   const [templateId, setTemplateId] = useState("tpl-2")
   const [jobTypeId, setJobTypeId] = useState("jt-1")
   const [warehouseId, setWarehouseId] = useState("wh-1")
@@ -109,12 +126,13 @@ export default function WorkOrderCellsSmokePage() {
             </CellAt>
             <CellAt col={3} row={2} colSpan={2}>
               <FormField label="Property">
-                <SelectCell
-                  editable
+                <RichDropdown
                   value={propertyId}
                   onChange={setPropertyId}
                   options={PROPERTIES}
                   placeholder="Select property"
+                  searchPlaceholder="Search properties…"
+                  ariaLabel="Property"
                 />
               </FormField>
             </CellAt>
