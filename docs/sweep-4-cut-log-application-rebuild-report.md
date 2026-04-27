@@ -101,8 +101,8 @@ Per-use-case behavior: see plan file `## Use case checklist` table.
 
 ## Out of scope (next sweeps)
 
-- **Sweep 5 (API routes):** `POST /api/inventory/[id]/cut-logs/...` for queue-pending-save, queue-finalize, queue-void; separate sync route for link edits. Routes will instantiate the use cases from this sweep and translate `CutLogExecutionError` to HTTP responses.
-- **Sweep 6 (relay + worker):** outbox topic registrations, three relay dispatchers (one per topic), three worker handlers (one per topic). Worker handlers will import the consumer use cases (#2, #4, #6) and call them with the parsed payload.
+- **Sweep 5 (relay + worker + outbox topic registration):** three relay dispatchers (one per topic), three worker handlers (one per topic). Worker handlers will import the consumer use cases (#2, #4, #6) and call them with the parsed payload. **(Order corrected from earlier docs — relay/worker has to land before routes so producers don't write outbox events with no dispatcher; otherwise every "Save / Finalize / Void" click sits in PENDING forever.)**
+- **Sweep 6 (API routes):** `POST /api/inventory/[id]/cut-logs/...` for queue-pending-save, queue-finalize, queue-void; separate sync route for link edits. Routes will instantiate the use cases from this sweep and translate `CutLogExecutionError` to HTTP responses.
 - **Sweep 7 (loaders):** inventory record-view loaders surfacing pending vs finalized splits.
 - **Sweep 8 (UI + controllers):** cut-logs section migration, selection state + finalize action, per-row void action, separate work-order-link controller.
 
@@ -117,6 +117,10 @@ application layer. Concrete things to review:
 - The fixed `CutLogDraftPayload` schema in `packages/domain/src/queue/pending-save-cut-log-batch.ts`.
 - The 10 error codes in `errors.ts` — does the taxonomy cover everything routes will need to map?
 - The idempotency-key scheme for pending-save (current: includes `requestedAt`; alternative would be a content hash for stricter dedup).
-- The `applyCutLogPendingDiffUseCase`'s `coverageCut: null` placeholder — sweep-4 doesn't recompute `coverageCut` because the domain helper for that (`computeCutCoverage`) needs `coveragePerUnit` + `categorySlug` from the parent inventory. Want me to thread those through, or is leaving `coverageCut` to be recomputed elsewhere fine?
+- ~~The `applyCutLogPendingDiffUseCase`'s `coverageCut: null` placeholder~~ **RESOLVED 2026-04-26 (post-sweep-4 follow-up patch).** Threaded `coveragePerUnit` + `categorySlug` through the parent context fetcher; the consumer now calls `computeCutCoverage` per row to snapshot `coverageCut` at write time. Patch touched: `CutLogParentContext` (domain `diff/types.ts`) + `getInventoryParentContextForCutLogs` (db `read-repository.ts`) + `applyCutLogPendingDiffUseCase` (added the `recomputeCoverageCut` helper + wired it on every added row and on modified rows when the patch changes `cut`). Verified: domain + db + application typechecks all clean.
 
-Once settled, sweep 5 (routes) is straightforward translation: parse body via `_validators.ts`, call use case, translate `CutLogExecutionError.status` to the response.
+Once settled, sweep 5 wires the relay + worker + outbox topic
+registration (no new business logic — it's plumbing the existing
+consumer use cases to BullMQ). Sweep 6 (routes) is then straightforward
+translation: parse body via `_validators.ts`, call producer use case,
+translate `CutLogExecutionError.status` to the response.

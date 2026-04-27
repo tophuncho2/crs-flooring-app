@@ -101,8 +101,8 @@ All 14 resolved decisions from the approved plan landed as written. Notable call
 
 - **Sweep 3 (data layer):** repository primitives — pending-save (locked diff apply + totalCutSum maintenance), finalize-apply (worker writes `before`/`after`/`finalCutSequence`/`status`/`isFinal` and consumes `nextFinalCutSequence`), void-apply (consumes `buildVoidedCutLogPatch`), batch fetchers, the `MAX(finalCutSequence)` lookup the worker uses. The pure helpers from this sweep (`cut-sum-math.ts`, `final-cut-sequence.ts`, `cut-log-rules.ts` patches) become the data layer's single source of truth.
 - **Sweep 4 (application):** three producer use cases (one per worker job) + three consumer use cases (worker-side wrappers around data + domain) + the separate sync link-edit use case.
-- **Sweep 5 (API routes):** `POST /api/inventory/[id]/cut-logs/...` for queue-pending-save, queue-finalize, queue-void; separate sync route for link edits.
-- **Sweep 6 (relay + worker):** outbox topic registrations, three relay dispatchers (one per topic), three worker handlers (one per topic). Topic / queue / job-name constants are already shipped in `packages/domain/src/queue/`.
+- **Sweep 5 (relay + worker + outbox topic registration):** three relay dispatchers (one per topic), three worker handlers (one per topic). Topic / queue / job-name constants are already shipped in `packages/domain/src/queue/`. **(Order corrected — relay/worker has to land before routes so producers don't write outbox events with no dispatcher.)**
+- **Sweep 6 (API routes):** `POST /api/inventory/[id]/cut-logs/...` for queue-pending-save, queue-finalize, queue-void; separate sync route for link edits.
 - **Sweep 7 (loaders):** inventory record-view loaders surfacing pending vs finalized splits + queued indicator + `finalCutSequence` ordering.
 - **Sweep 8 (UI + controllers):** cut-logs section migration, selection state + finalize action, per-row void action, separate work-order-link controller.
 - **Out-of-sweep cleanup:** `staged-inventory-rows/types.ts` Prisma import (apply the same string-literal-union fix). Adding the work-order-link DB CHECK constraint (deferred indefinitely).

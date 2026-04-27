@@ -8,13 +8,37 @@ import {
 } from "@builders/db"
 import {
   assertCutSumWithinStartingStock,
+  computeCutCoverage,
   computeTotalCutSum,
   describeCutLogDiffIssues,
   validateCutLogsDiff,
+  type CutLogParentContext,
   type PendingSaveCutLogBatchPayload,
 } from "@builders/domain"
 import { CutLogExecutionError } from "./errors.js"
 import type { ApplyCutLogPendingDiffResult } from "./types.js"
+
+/**
+ * Per-row coverageCut snapshot. Called for every added row and for any
+ * modified row whose patch includes a new `cut` value — `coverageCut` is
+ * derived (`cut × coveragePerUnit`, gated on category) and must follow
+ * any `cut` change in lockstep so the stored snapshot stays consistent.
+ *
+ * Returns the result as `string | null` to match the data primitive's
+ * input shape.
+ */
+function recomputeCoverageCut(
+  parent: CutLogParentContext,
+  cut: string | number,
+): string | null {
+  const result = computeCutCoverage({
+    cut: Number(cut),
+    coveragePerUnit:
+      parent.coveragePerUnit === null ? null : Number(parent.coveragePerUnit),
+    category: { slug: parent.categorySlug },
+  })
+  return result === null ? null : result.toString()
+}
 
 /**
  * Worker-side consumer for `flooring.cut-log.pending-save`.
@@ -81,22 +105,36 @@ export async function applyCutLogPendingDiffUseCase(
         id: draft.id,
         tempId: draft.tempId,
         cut: draft.cut,
-        coverageCut: null,
+        coverageCut: recomputeCoverageCut(parent, draft.cut),
         cost: draft.cost,
         freight: draft.freight,
         isWaste: draft.isWaste,
         notes: draft.notes,
       })),
-      modified: payload.diff.modified.map((m) => ({
-        id: m.id,
-        patch: {
+      modified: payload.diff.modified.map((m) => {
+        // Recompute `coverageCut` ONLY when the patch changes `cut`. If
+        // `cut` is absent, we leave `coverageCut` undefined so the data
+        // primitive's `buildPendingUpdateData` skips the column and the
+        // stored value persists unchanged.
+        const patch: {
+          cut?: string
+          coverageCut?: string | null
+          cost?: string | null
+          freight?: string | null
+          isWaste?: boolean
+          notes?: string | null
+        } = {
           cut: m.patch.cut,
           cost: m.patch.cost,
           freight: m.patch.freight,
           isWaste: m.patch.isWaste,
           notes: m.patch.notes,
-        },
-      })),
+        }
+        if (m.patch.cut !== undefined) {
+          patch.coverageCut = recomputeCoverageCut(parent, m.patch.cut)
+        }
+        return { id: m.id, patch }
+      }),
       deleted: payload.diff.deleted.map((d) => ({ id: d.id })),
     })
 

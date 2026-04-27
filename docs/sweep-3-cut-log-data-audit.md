@@ -143,7 +143,7 @@ packages/domain/src/flooring/inventory/cut-logs/
 ## Out of scope for sweep 3
 
 - Application use cases (sweep 4).
-- API routes (sweep 5).
-- Outbox topic registrations + relay dispatchers + worker handlers (sweep 6) — the cut-log workers consume the data primitives this sweep ships.
+- Outbox topic registrations + relay dispatchers + worker handlers (sweep 5 — order corrected; relay/worker has to land before routes so producers don't write outbox events with no dispatcher) — the cut-log workers consume the data primitives this sweep ships.
+- API routes (sweep 6).
 - Loaders, controllers, UI (sweep 7 / 8).
 - Fixing `staged-inventory-rows/types.ts` Prisma import (separate cleanup, unrelated to cut logs).

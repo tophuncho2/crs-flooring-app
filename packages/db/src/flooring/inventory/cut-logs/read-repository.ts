@@ -221,8 +221,12 @@ export async function getCutLogsForFinalize(
 
 /**
  * Returns the parent inventory context the diff validator
- * (`validateCutLogsDiff`) needs: starting stock + current totalCutSum.
- * Caller has already locked the inventory FOR UPDATE.
+ * (`validateCutLogsDiff`) AND the worker's `coverageCut` recompute path
+ * need: starting stock + current totalCutSum + coveragePerUnit +
+ * categorySlug. Caller has already locked the inventory FOR UPDATE.
+ *
+ * `coveragePerUnit` is `Decimal?` on the schema, surfaced as
+ * `string | null` here. `categorySlug` is non-nullable on the schema.
  */
 export async function getInventoryParentContextForCutLogs(
   tx: Prisma.TransactionClient,
@@ -234,6 +238,8 @@ export async function getInventoryParentContextForCutLogs(
       id: true,
       startingStock: true,
       totalCutSum: true,
+      coveragePerUnit: true,
+      categorySlug: true,
     },
   })
   if (!row) return null
@@ -241,6 +247,9 @@ export async function getInventoryParentContextForCutLogs(
     inventoryId: row.id,
     startingStock: row.startingStock.toString(),
     currentTotalCutSum: row.totalCutSum.toString(),
+    coveragePerUnit:
+      row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
+    categorySlug: row.categorySlug,
   }
 }
 

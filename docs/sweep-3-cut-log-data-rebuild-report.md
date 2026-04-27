@@ -124,8 +124,8 @@ Same state as after sweep 2: cut-log half clean, staged-inv `staged-inventory-ro
 ## Out of scope (next sweeps)
 
 - **Sweep 4 (application):** the use-case orchestration described above. Will compose this sweep's data primitives + sweep-2's domain validators inside `withDatabaseTransaction` + parent inventory FOR UPDATE.
-- **Sweep 5 (API routes):** `POST /api/inventory/[id]/cut-logs/...` for queue-pending-save, queue-finalize, queue-void; separate sync route for link edits.
-- **Sweep 6 (relay + worker):** outbox topic registrations, three relay dispatchers, three worker handlers.
+- **Sweep 5 (relay + worker + outbox topic registration):** three relay dispatchers, three worker handlers. **(Order corrected — relay/worker has to land before routes so producers don't write outbox events with no dispatcher.)**
+- **Sweep 6 (API routes):** `POST /api/inventory/[id]/cut-logs/...` for queue-pending-save, queue-finalize, queue-void; separate sync route for link edits.
 - **Sweep 7 (loaders):** inventory record-view loaders surfacing pending vs finalized splits + queued indicator + `finalCutSequence` ordering.
 - **Sweep 8 (UI + controllers):** cut-logs section migration, selection state + finalize action, per-row void action, separate work-order-link controller.
 - **Out-of-sweep cleanup:** `staged-inventory-rows/types.ts` Prisma import (apply same string-literal-union fix).

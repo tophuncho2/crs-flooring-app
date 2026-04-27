@@ -52,11 +52,20 @@ export type CutLogsDiff = {
  * `totalCutSum ≤ startingStock` invariant, so it needs the parent's
  * starting stock and current cut sum (which the data layer reads under the
  * per-inventory FOR UPDATE lock and hands to the validator).
+ *
+ * `coveragePerUnit` and `categorySlug` are also surfaced so the worker
+ * (consumer use case) can recompute `coverageCut` per row via
+ * `computeCutCoverage` whenever a `cut` value is being written. Storing
+ * the recomputed `coverageCut` snapshot ensures historical correctness:
+ * if the parent inventory's `coveragePerUnit` ever changes later, each
+ * cut log keeps its own snapshot from the moment of its last cut edit.
  */
 export type CutLogParentContext = {
   inventoryId: string
   startingStock: string
   currentTotalCutSum: string
+  coveragePerUnit: string | null
+  categorySlug: string
 }
 
 /**
