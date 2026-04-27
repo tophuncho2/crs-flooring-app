@@ -59,22 +59,6 @@ export async function listContacts(client: ContactDbClient = db): Promise<Contac
   return contacts.map(normalizeContactRow)
 }
 
-export async function listSalesRepContactOptions(client: ContactDbClient = db) {
-  const contacts = await client.flooringContact.findMany({
-    where: { type: "SALES_REP" },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-    },
-  })
-
-  return contacts.map((contact) => ({
-    id: contact.id,
-    name: contact.name,
-  }))
-}
-
 export async function getContactById(id: string, client: ContactDbClient = db): Promise<ContactRecord> {
   const contact = await client.flooringContact.findUniqueOrThrow({
     where: { id },

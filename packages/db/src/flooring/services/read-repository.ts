@@ -16,15 +16,6 @@ export type ServiceRecord = {
   updatedAt: string
 }
 
-export type ServiceOptionRecord = {
-  id: string
-  name: string
-  baseCost: string
-  unitId: string
-  unitName: string
-  notes: string
-}
-
 export type ServiceDeleteStateResult = { id: string } | null
 
 // --- Normalizers ---
@@ -50,23 +41,6 @@ export function normalizeServiceRow(service: {
   }
 }
 
-export function normalizeServiceOption(service: {
-  id: string
-  name: string
-  baseCost: { toString(): string }
-  notes?: string | null
-  unit: { id: string; name: string }
-}): ServiceOptionRecord {
-  return {
-    id: service.id,
-    name: service.name,
-    baseCost: service.baseCost.toString(),
-    unitId: service.unit.id,
-    unitName: service.unit.name,
-    notes: service.notes ?? "",
-  }
-}
-
 // --- Include helpers ---
 
 const serviceInclude = {
@@ -89,28 +63,6 @@ export async function listServices(
   })
 
   return services.map(normalizeServiceRow)
-}
-
-export async function listServiceOptions(
-  client: ServiceDbClient = db,
-): Promise<ServiceOptionRecord[]> {
-  const services = await client.flooringService.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      baseCost: true,
-      notes: true,
-      unit: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  })
-
-  return services.map(normalizeServiceOption)
 }
 
 export async function getServiceById(
