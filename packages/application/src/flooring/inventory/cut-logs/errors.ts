@@ -3,6 +3,11 @@ export type CutLogExecutionErrorCode =
   | "CUT_LOG_PARENT_NOT_FOUND"
   | "CUT_LOG_NOT_FOUND"
   // Validation failures (4xx)
+  // (`CUT_LOG_VALIDATION_FAILED` is the route-edge body-shape error;
+  // `CUT_LOG_DIFF_VALIDATION_FAILED` is reserved for diff-shape failures
+  // — both added in sweep 6 to mirror staged-inv's
+  // `STAGED_VALIDATION_FAILED` / `STAGED_DIFF_VALIDATION_FAILED` pair.)
+  | "CUT_LOG_VALIDATION_FAILED"
   | "CUT_LOG_DIFF_VALIDATION_FAILED"
   | "CUT_LOG_BATCH_INELIGIBLE"
   | "CUT_LOG_VOID_NOT_ALLOWED"
