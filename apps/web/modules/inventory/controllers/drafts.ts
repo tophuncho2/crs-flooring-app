@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  isCutLogPendingEditable,
   type CutLogPendingForm,
   type CutLogRow,
 } from "@builders/domain"
@@ -76,9 +77,27 @@ export function isLocalCutLogDraft(draft: CutLogDraft): boolean {
  * Per-row form-shape validation for the section's save flow. Returns the
  * first validation error string (matching staged-inv's
  * `validateImportStagedRowDrafts` signature) or null on pass.
+ *
+ * Drafts include every server row regardless of status, but only local
+ * additions and pending-editable server rows actually appear in the diff
+ * sent to the server. Locked rows (FINAL / VOID / QUEUED) ride along for
+ * visual purposes only — their values are never sent and must not be
+ * validated. VOID rows in particular store `cut = "0"` (per
+ * `voidCutLogRecord`'s erase patch), which would falsely fail the
+ * positive-cut check below if they weren't filtered out. Mirrors the
+ * filter `buildCutLogsDiff` already applies.
  */
-export function validateCutLogDrafts(drafts: ReadonlyArray<CutLogDraft>): string | null {
+export function validateCutLogDrafts(
+  drafts: ReadonlyArray<CutLogDraft>,
+  serverRows: ReadonlyArray<CutLogRow>,
+): string | null {
+  const editableServerIds = new Set(
+    serverRows.filter((row) => isCutLogPendingEditable(row)).map((row) => row.id),
+  )
   for (const draft of drafts) {
+    if (!isLocalCutLogDraft(draft) && !editableServerIds.has(draft.clientId)) {
+      continue
+    }
     const cutRaw = draft.cut.trim()
     if (cutRaw === "") return "Every cut log must have a cut value"
     const cut = Number(cutRaw)

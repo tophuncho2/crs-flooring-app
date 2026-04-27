@@ -203,7 +203,7 @@ export function useInventoryCutLogsSection({
       childRows: "none",
     },
     onSave: async (localValue, currentServerRows) => {
-      const validationError = validateCutLogDrafts(localValue)
+      const validationError = validateCutLogDrafts(localValue, currentServerRows)
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",
