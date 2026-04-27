@@ -3,7 +3,6 @@
 import {
   type CutLogPendingForm,
   type CutLogRow,
-  isCutLogPendingEditable as domainIsCutLogPendingEditable,
 } from "@builders/domain"
 
 /**
@@ -17,11 +16,14 @@ import {
  * (`buildCutLogsDiff`) keys server-vs-local detection on the `local:`
  * prefix, matching staged-inv's `isLocalDraftRow` convention.
  *
- * Drafts ONLY cover pending-editable rows. Read-only rows (FINAL, VOID,
- * QUEUED) display directly from the serverRows array and are not subject
- * to drift state. The diff builder filters server rows to the
- * pending-editable subset before comparing — so a finalized row in the
- * server snapshot won't be misidentified as "deleted from the diff."
+ * Drafts cover EVERY server row (PENDING, QUEUED, FINAL, VOID), plus any
+ * locally-added unsaved rows. Locked rows (anything other than PENDING)
+ * still ride in the drafts list so the section component can render them
+ * inside the same `Grid` with `editable={false}` cells — same column
+ * layout, same chrome, just non-editable. The diff builder skips drafts
+ * whose server row is locked so they never produce a modified or deleted
+ * entry. Mirrors the staged-inv pattern (see
+ * `apps/web/modules/imports/components/record/sections/import-staged-inventory-rows-section.tsx`).
  */
 export type CutLogDraft = {
   clientId: string
@@ -52,14 +54,13 @@ export function createCutLogDraft(row?: CutLogRow): CutLogDraft {
 }
 
 /**
- * Convert the server's full row list into the editable-draft subset.
- * Filters down to pending-editable rows; read-only rows
- * (FINAL / VOID / QUEUED) are not represented in the drafts array.
+ * Convert the server's full row list into drafts. Includes EVERY row
+ * regardless of status — locked rows ride along so they stay visible in
+ * the same grid; the section component flips per-cell editability via the
+ * row's server status.
  */
 export function toCutLogDrafts(rows: ReadonlyArray<CutLogRow>): CutLogDraft[] {
-  return rows
-    .filter((row) => domainIsCutLogPendingEditable(row))
-    .map((row) => createCutLogDraft(row))
+  return rows.map((row) => createCutLogDraft(row))
 }
 
 /**

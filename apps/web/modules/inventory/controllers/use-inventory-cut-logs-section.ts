@@ -68,9 +68,9 @@ function buildCutLogsDiff(
   localDrafts: ReadonlyArray<ClientCutLogDraft>,
   serverRows: ReadonlyArray<CutLogRow>,
 ): CutLogsDiff {
-  // Drafts mirror only pending-editable rows. Filter the server snapshot
-  // the same way before the deleted-row scan, otherwise a finalized row
-  // would be misread as "deleted from drafts."
+  // Drafts now ride alongside locked (FINAL / VOID / QUEUED) rows so the
+  // section grid can render them with `editable={false}` cells. Only the
+  // pending-editable subset is eligible for modify / delete diffs.
   const editableServerRows = serverRows.filter((row) => isCutLogPendingEditable(row))
   const editableServerById = new Map(editableServerRows.map((row) => [row.id, row]))
   const localServerIds = new Set(
@@ -90,10 +90,9 @@ function buildCutLogsDiff(
     }
     const existing = editableServerById.get(draft.clientId)
     if (!existing) {
-      // Drift — client references a server id that no longer exists or
-      // is no longer pending-editable. Treat as a fresh add; the server
-      // catches conflicts via its diff validator.
-      added.push(toAddedDraftPayload(draft))
+      // Either the row is locked (FINAL / VOID / QUEUED) and just along
+      // for the visual ride, or it drifted out of editable state since
+      // load — either way nothing to send for it.
       continue
     }
     const patch = toUpdatePatch(draft, existing)

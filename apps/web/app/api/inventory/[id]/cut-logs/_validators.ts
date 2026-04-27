@@ -70,8 +70,11 @@ function shapeAddedDraft(raw: unknown, idx: number): CutLogDraft {
   return {
     tempId: requireDiffString(row.tempId, `added[${idx}].tempId`),
     cut: requireDiffString(row.cut, `added[${idx}].cut`),
-    cost: requireDiffString(row.cost, `added[${idx}].cost`),
-    freight: requireDiffString(row.freight, `added[${idx}].freight`),
+    // cost / freight are nullable Decimal columns. UI sends null when the
+    // (read-only) cell is empty; the domain payload schema also coerces
+    // empty-string → null. Accept both shapes here.
+    cost: nullableDiffString(row.cost, `added[${idx}].cost`),
+    freight: nullableDiffString(row.freight, `added[${idx}].freight`),
     isWaste: requireDiffBoolean(row.isWaste, `added[${idx}].isWaste`),
     notes: requireDiffString(row.notes, `added[${idx}].notes`),
   }
@@ -81,8 +84,8 @@ function shapeModifiedPatch(raw: unknown, idx: number): CutLogPatch {
   const patch = requireDiffObject(raw, `modified[${idx}].patch`)
   const result: CutLogPatch = {}
   if (patch.cut !== undefined) result.cut = requireDiffString(patch.cut, `modified[${idx}].patch.cut`)
-  if (patch.cost !== undefined) result.cost = requireDiffString(patch.cost, `modified[${idx}].patch.cost`)
-  if (patch.freight !== undefined) result.freight = requireDiffString(patch.freight, `modified[${idx}].patch.freight`)
+  if (patch.cost !== undefined) result.cost = nullableDiffString(patch.cost, `modified[${idx}].patch.cost`)
+  if (patch.freight !== undefined) result.freight = nullableDiffString(patch.freight, `modified[${idx}].patch.freight`)
   if (patch.isWaste !== undefined) result.isWaste = requireDiffBoolean(patch.isWaste, `modified[${idx}].patch.isWaste`)
   if (patch.notes !== undefined) result.notes = requireDiffString(patch.notes, `modified[${idx}].patch.notes`)
   return result

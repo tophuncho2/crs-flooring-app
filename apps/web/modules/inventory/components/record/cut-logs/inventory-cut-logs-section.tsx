@@ -1,7 +1,6 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Fragment } from "react"
 import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import { CheckboxCell, CurrencyCell, TextCell, UnitCell } from "@/components/cells"
@@ -18,7 +17,6 @@ import { CutLogLinksEditor } from "@/components/cut-log-row-actions/cut-log-link
 import type { CutLogDraft } from "../../../controllers/drafts"
 
 type GridDraftRow = CutLogDraft & { id: string }
-type GridReadOnlyRow = CutLogRow & { id: string }
 
 const CUT_LOG_GRID_LAYOUT: GridLayout<GridDraftRow> = {
   leadingControls: [{ key: "select", kind: "selection", width: 40 }],
@@ -32,6 +30,10 @@ const CUT_LOG_GRID_LAYOUT: GridLayout<GridDraftRow> = {
     { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
     { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
     { key: "finalSeq", label: "Seq", minWidth: 64, grow: 0, align: "center" },
+    { key: "workOrder", label: "Work Order", minWidth: 140, grow: 0 },
+    { key: "workOrderItem", label: "Material Item", minWidth: 140, grow: 0 },
+    { key: "createdAt", label: "Created", minWidth: 156, grow: 0 },
+    { key: "updatedAt", label: "Updated", minWidth: 156, grow: 0 },
     { key: "notes", label: "Notes", minWidth: 220, grow: 1.2 },
   ],
   trailingControls: [
@@ -53,11 +55,19 @@ function statusTone(status: FlooringCutLogStatus): "default" | "processing" | "s
   }
 }
 
+function formatTimestamp(iso: string | undefined | null): string {
+  if (!iso) return "—"
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return "—"
+  return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+}
+
 export function InventoryCutLogsSection({
   inventoryId,
   drafts,
   serverRows,
   stockUnitAbbrev,
+  coverageUnitAbbrev,
   totalCutSum,
   isDirty,
   isSaving,
@@ -82,6 +92,7 @@ export function InventoryCutLogsSection({
   drafts: CutLogDraft[]
   serverRows: CutLogRow[]
   stockUnitAbbrev: string
+  coverageUnitAbbrev: string
   totalCutSum: string
   isDirty: boolean
   isSaving: boolean
@@ -116,19 +127,14 @@ export function InventoryCutLogsSection({
     serverRows.filter((row) => isCutLogPendingEditable(row)).map((row) => row.id),
   )
 
-  // Drafts cover only the editable subset. Read-only rows render after
-  // the draft section as a separate Fragment block.
-  const editableGridRows: GridDraftRow[] = drafts.map((draft) => ({
+  // One unified row stream: locally-added drafts + every server row
+  // (PENDING / QUEUED / FINAL / VOID). Per-cell editability is decided
+  // per row via `locked` derived from the server status. Mirrors the
+  // staged-inv pattern.
+  const gridRows: GridDraftRow[] = drafts.map((draft) => ({
     ...draft,
     id: draft.clientId,
   }))
-
-  // Read-only rows (FINAL, VOID, QUEUED) show after the editable block.
-  // Sort by cutLogNumber for stable user-perceived order.
-  const readOnlyServerRows: GridReadOnlyRow[] = serverRows
-    .filter((row) => !isCutLogPendingEditable(row))
-    .map((row) => ({ ...row, id: row.id }))
-    .sort((a, b) => (a.cutLogNumber < b.cutLogNumber ? -1 : 1))
 
   function findDraftIndex(clientId: string) {
     return drafts.findIndex((draft) => draft.clientId === clientId)
@@ -144,8 +150,8 @@ export function InventoryCutLogsSection({
         title="Cut Logs"
         summary={
           <span>
-            {drafts.length + readOnlyServerRows.length} log
-            {drafts.length + readOnlyServerRows.length === 1 ? "" : "s"} ·{" "}
+            {drafts.length} log
+            {drafts.length === 1 ? "" : "s"} ·{" "}
             {formatInventoryQuantity(totalCutSum, stockUnitAbbrev)} cut total
             {selectedIds.size > 0
               ? ` · ${selectedIds.size} selected (${eligibleSelectedIds.length} eligible)`
@@ -199,20 +205,18 @@ export function InventoryCutLogsSection({
       />
 
       <Grid<GridDraftRow>
-        rows={editableGridRows}
+        rows={gridRows}
         layout={CUT_LOG_GRID_LAYOUT}
-        empty={
-          readOnlyServerRows.length === 0 ? (
-            <GridEmpty>No cut logs yet. Click Add Row to start.</GridEmpty>
-          ) : null
-        }
+        empty={<GridEmpty>No cut logs yet. Click Add Row to start.</GridEmpty>}
         renderCell={(column, row) => {
           const index = findDraftIndex(row.clientId)
           const isLocal = isLocalDraft(row)
-          // For server-saved drafts, the existing row's read-only fields
-          // (cutLogNumber, before, after, coverageCut) come from the
-          // server snapshot; locally-added drafts show placeholders.
-          const serverRow = isLocal ? null : serverRowsById.get(row.clientId)
+          const serverRow = isLocal ? null : serverRowsById.get(row.clientId) ?? null
+          // Locked = persisted server row that's not pending-editable
+          // (FINAL / VOID / QUEUED). Local drafts and PENDING server
+          // rows stay editable.
+          const locked = serverRow !== null && !isCutLogPendingEditable(serverRow)
+          const editable = !locked
 
           switch (column.key) {
             case "cutLogNumber":
@@ -226,7 +230,7 @@ export function InventoryCutLogsSection({
             case "cut":
               return (
                 <UnitCell
-                  editable
+                  editable={editable}
                   value={row.cut}
                   onChange={(value) => onRowFieldChange(index, "cut", value)}
                   unit={stockUnitAbbrev}
@@ -235,13 +239,16 @@ export function InventoryCutLogsSection({
               )
             case "coverageCut":
               return (
-                <TextCell
+                <UnitCell
                   editable={false}
-                  value={serverRow?.coverageCut ?? "(computed)"}
+                  value={serverRow?.coverageCut ?? ""}
+                  unit={coverageUnitAbbrev}
                   ariaLabel={`Row ${index + 1} coverage cut`}
                 />
               )
             case "cost":
+              // cost / freight live on the row but are never edited
+              // inline — set elsewhere. Always read-only here.
               return (
                 <CurrencyCell
                   editable={false}
@@ -260,7 +267,7 @@ export function InventoryCutLogsSection({
             case "isWaste":
               return (
                 <CheckboxCell
-                  editable
+                  editable={editable}
                   value={row.isWaste}
                   onChange={(value) => onRowFieldChange(index, "isWaste", value)}
                   ariaLabel={`Row ${index + 1} is waste`}
@@ -294,10 +301,46 @@ export function InventoryCutLogsSection({
                   ariaLabel={`Row ${index + 1} final sequence`}
                 />
               )
+            case "workOrder":
+              // Placeholder display — work-order option loader + picker
+              // is a follow-up sweep. Today we surface the linked id (or
+              // a dash) so the column never shifts width based on link
+              // state.
+              return (
+                <TextCell
+                  editable={false}
+                  value={serverRow?.workOrderId ?? "—"}
+                  ariaLabel={`Row ${index + 1} work order`}
+                />
+              )
+            case "workOrderItem":
+              return (
+                <TextCell
+                  editable={false}
+                  value={serverRow?.workOrderItemId ?? "—"}
+                  ariaLabel={`Row ${index + 1} material item`}
+                />
+              )
+            case "createdAt":
+              return (
+                <TextCell
+                  editable={false}
+                  value={formatTimestamp(serverRow?.createdAt)}
+                  ariaLabel={`Row ${index + 1} created at`}
+                />
+              )
+            case "updatedAt":
+              return (
+                <TextCell
+                  editable={false}
+                  value={formatTimestamp(serverRow?.updatedAt)}
+                  ariaLabel={`Row ${index + 1} updated at`}
+                />
+              )
             case "notes":
               return (
                 <TextCell
-                  editable
+                  editable={editable}
                   value={row.notes}
                   onChange={(value) => onRowFieldChange(index, "notes", value)}
                   ariaLabel={`Row ${index + 1} notes`}
@@ -310,10 +353,11 @@ export function InventoryCutLogsSection({
         renderControl={(control, row) => {
           const index = findDraftIndex(row.clientId)
           const isLocal = isLocalDraft(row)
-          const serverRow = isLocal ? null : serverRowsById.get(row.clientId)
+          const serverRow = isLocal ? null : serverRowsById.get(row.clientId) ?? null
           const isServerSaved = Boolean(serverRow)
-          const status = serverRow?.status ?? "PENDING"
+          const status: FlooringCutLogStatus = serverRow?.status ?? "PENDING"
           const isEligibleForSelect = isServerSaved && editableServerIds.has(row.clientId)
+          const locked = serverRow !== null && !isCutLogPendingEditable(serverRow)
 
           if (control.kind === "selection") {
             return (
@@ -336,18 +380,14 @@ export function InventoryCutLogsSection({
                 <button
                   type="button"
                   onClick={() => onRemoveRow(index)}
-                  // Local drafts can be removed freely. Server-saved
-                  // pending rows are removed via the deleted-row path of
-                  // the diff save (still allowed). FINAL / VOID / QUEUED
-                  // rows aren't in `drafts` at all, so this button only
-                  // renders for editable rows.
+                  disabled={locked}
                   aria-label={`Remove row ${index + 1}`}
                   className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   ✕
                 </button>
                 {serverRow ? (
-                  <Fragment>
+                  <>
                     <VoidCutLogButton
                       row={serverRow}
                       inventoryId={inventoryId}
@@ -358,7 +398,7 @@ export function InventoryCutLogsSection({
                       inventoryId={inventoryId}
                       onSuccess={onRowOptimisticUpdate}
                     />
-                  </Fragment>
+                  </>
                 ) : null}
               </div>
             )
@@ -366,51 +406,6 @@ export function InventoryCutLogsSection({
           return null
         }}
       />
-
-      {readOnlyServerRows.length > 0 ? (
-        <div className="border-t border-[var(--panel-border)] bg-[var(--panel-background)]/50">
-          <div className="px-4 py-3 text-xs uppercase tracking-wide text-[var(--foreground)]/60">
-            Finalized / voided / in-flight ({readOnlyServerRows.length})
-          </div>
-          <ul className="divide-y divide-[var(--panel-border)]">
-            {readOnlyServerRows.map((row) => (
-              <li
-                key={row.id}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--foreground)]/85"
-              >
-                <span className="font-medium">{row.cutLogNumber}</span>
-                <span className="text-[var(--foreground)]/70">
-                  {formatInventoryQuantity(row.cut, stockUnitAbbrev)}
-                </span>
-                <span className="text-[var(--foreground)]/60">
-                  before {row.before} · after {row.after}
-                  {row.finalCutSequence != null ? ` · seq ${row.finalCutSequence}` : ""}
-                </span>
-                {row.notes ? (
-                  <span className="ml-2 truncate text-[var(--foreground)]/60">
-                    {row.notes}
-                  </span>
-                ) : null}
-                <div className="ml-auto flex items-center gap-2">
-                  <StatusBadge tone={statusTone(row.status)}>
-                    {formatCutLogStatus(row.status)}
-                  </StatusBadge>
-                  <VoidCutLogButton
-                    row={row}
-                    inventoryId={inventoryId}
-                    onSuccess={onRowOptimisticUpdate}
-                  />
-                  <CutLogLinksEditor
-                    row={row}
-                    inventoryId={inventoryId}
-                    onSuccess={onRowOptimisticUpdate}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </div>
   )
 }

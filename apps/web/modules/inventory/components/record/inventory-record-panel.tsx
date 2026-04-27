@@ -112,6 +112,7 @@ export function InventoryRecordPanel({
               drafts={cutLogsSection.localValue}
               serverRows={cutLogs}
               stockUnitAbbrev={controller.record.stockUnitAbbrev ?? ""}
+              coverageUnitAbbrev={controller.record.itemCoverageUnitAbbrev ?? ""}
               totalCutSum={controller.record.totalCutSum}
               isDirty={cutLogsSection.isDirty}
               isSaving={cutLogsSection.isSaving}
