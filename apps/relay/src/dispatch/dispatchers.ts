@@ -1,5 +1,8 @@
 import type { RedisConnectionConfig } from "@builders/lib"
+import { buildFinalizeCutLogDispatcher } from "./build-finalize-cut-log-dispatcher.js"
 import { buildMaterializeImportDispatcher } from "./build-materialize-import-dispatcher.js"
+import { buildPendingSaveCutLogDispatcher } from "./build-pending-save-cut-log-dispatcher.js"
+import { buildVoidCutLogDispatcher } from "./build-void-cut-log-dispatcher.js"
 import type { TopicDispatcher } from "./topic-dispatcher.js"
 
 /**
@@ -15,5 +18,10 @@ import type { TopicDispatcher } from "./topic-dispatcher.js"
 export type AnyTopicDispatcher = TopicDispatcher<any>
 
 export function buildDispatchers(connection: RedisConnectionConfig): AnyTopicDispatcher[] {
-  return [buildMaterializeImportDispatcher(connection)]
+  return [
+    buildMaterializeImportDispatcher(connection),
+    buildPendingSaveCutLogDispatcher(connection),
+    buildFinalizeCutLogDispatcher(connection),
+    buildVoidCutLogDispatcher(connection),
+  ]
 }
