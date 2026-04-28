@@ -48,7 +48,7 @@ Already applied via migration `20260428205306_work_order_status_and_files`.
 - **Sticky terminal:** `COMPLETED` / `FAILED` persist on the WO until the next job runs.
 - New `files FlooringWorkOrderFile[]` relation. `@@index([status])` added.
 - `templateSyncedAt`, `templateSyncMode`, `templateSnapshotHash` were already on the model (unreferenced) — wired during the template-sync UI flow in a later sweep.
-- `unitPrice` on `FlooringWorkOrderItem` stays in DB; stripped from use cases, UI, and data-layer selects in later layers.
+- ~~`unitPrice` on `FlooringWorkOrderItem` stays in DB; stripped from use cases, UI, and data-layer selects in later layers.~~ Superseded — see "Pricing cleanup + send-unit snapshots" below.
 
 ### `FlooringWorkOrderFile` (new)
 
@@ -76,7 +76,26 @@ model FlooringWorkOrderFile {
 
 ### Templates
 
-**No schema changes this sweep.** Template file gen dropped. `unitPrice` strip on `FlooringTemplateItem` happens above data layer later; column stays.
+Template file gen dropped from this sweep. See "Pricing cleanup + send-unit snapshots" below for the schema deltas that did land on `FlooringTemplateItem`.
+
+## Pricing cleanup + send-unit snapshots — landed on staging
+
+Applied via migration `20260428220000_drop_item_pricing_analytics_add_send_unit_snapshots`. Execution report: `a-branch/02-schema-pricing-cleanup-execution.md`.
+
+### `FlooringTemplateItem`
+- DROP `unitPrice`.
+- ADD `sendUnitName String?`, `sendUnitAbbrev String?` (snapshot fields, mirror `FlooringInventory`).
+
+### `FlooringWorkOrderItem`
+- DROP `unitPrice`, `assignedQuantity`, `assignedCost`.
+- ADD `sendUnitName String?`, `sendUnitAbbrev String?` (snapshot fields).
+
+### `FlooringAnalytics`
+- DROPPED — model + table + FK gone. No code references existed. Aggregates, if needed, will be derived on read in a later sweep.
+
+### Send-unit snapshot population
+
+`sendUnitName` / `sendUnitAbbrev` are **populated on each row when a product is saved** to the item table (template-item or work-order-item write). The values are read from the chosen `FlooringProduct` → category → send-unit chain at write time and snapshot onto the row, exactly the same pattern `FlooringInventory` uses today. Read paths consume the snapshot directly; they do not re-resolve the product on every read. Columns are nullable to permit pre-existing rows and edge cases where a product has no send unit configured.
 
 ## File-generation pipeline
 
