@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@builders/db": "file:../db",
-    "@builders/domain": "file:../domain"
+    "@builders/domain": "file:../domain",
+    "@builders/lib": "file:../lib",
+    "@builders/pdf": "file:../pdf"
   }
 }
