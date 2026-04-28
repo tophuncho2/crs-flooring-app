@@ -112,6 +112,158 @@ API POST /api/work-orders/[id]/files
 - File delivery: Railway bucket via `@builders/lib`. Direct-download rejected — couples worker completion to an active client connection.
 - PDF contents: WO main row + material items + cut logs grouped per material item.
 
+## Domain layer — locked rules for this sweep
+
+Audit: `a-branch/03-domain-audit.md`. Layer 2 of the sweep. The domain
+layer's job here is to (a) absorb the schema deltas (drop pricing, surface
+status + send-unit snapshots), (b) carve out a `material-items/` subdir under
+work-orders mirroring templates, and (c) own every business rule the
+application use cases will call.
+
+### Module boundaries
+
+```
+packages/domain/src/
+├── management/
+│   ├── properties/
+│   │   └── instructions-autofill.ts        ← NEW (shared by templates + WO)
+│   └── templates/
+│       ├── (existing files — pricing stripped, send-unit added)
+│       └── material-items/
+│           └── diff-rules.ts                ← promoted to a real diff validator
+└── flooring/
+    └── work-orders/
+        ├── (existing files — status + warehouse-required + sync snapshots added)
+        ├── lock-rules.ts                    ← NEW
+        ├── inventory-eligibility.ts         ← NEW
+        ├── material-items/                  ← NEW (mirrors templates/material-items)
+        │   ├── index.ts
+        │   ├── types.ts
+        │   ├── rules.ts
+        │   ├── normalizers.ts
+        │   └── diff-rules.ts
+        └── file-generation/                 ← NEW
+            ├── types.ts
+            └── build-work-order-pdf-html.ts
+```
+
+Plus one new outbox payload schema in `queue/`:
+
+```
+queue/generate-work-order-file.ts            ← NEW (topic + Zod payload)
+```
+
+### Required fields (locked)
+
+- **Templates** keep `propertyId` + `unitType` (no change — `unitType` is `String NOT NULL` in schema).
+- **Work orders** require `propertyId` + `warehouseId` only. Vacancy / job-type / management-company / template / unit-number / scheduled-for stay optional.
+- **Template material items** require `productId` + `quantity > 0`. Notes optional.
+- **Work-order material items** require `productId` + `quantity > 0`. Notes optional. `sourceTemplateItemId` is nullable and never user-edited.
+
+### Status (work orders only)
+
+`FlooringWorkOrderStatus = "IDLE" | "QUEUED" | "WORKING" | "COMPLETED" | "FAILED"` — exact mirror of the Prisma enum, defined as a string-literal union per the cut-logs precedent (no DB import). Surfaced on `WorkOrderListRow` + `WorkOrderDetail`. **Not** on `WorkOrderForm` — worker-controlled, never user-set. No status field on templates this sweep.
+
+### Send-unit snapshots
+
+Schema now has `sendUnitName?` + `sendUnitAbbrev?` on both `FlooringTemplateItem` and `FlooringWorkOrderItem`. Domain rules:
+
+- Stamped on every item write (create + update) via `buildSendUnitSnapshotFromProduct(product) → { sendUnitName, sendUnitAbbrev }` — pure projection from the product's category.
+- Read shape (`TemplateMaterialItemRow` / `WorkOrderMaterialItemRow`) carries them as `string` (defaulted to `""`).
+- Read in the UI as the unit label adjacent to `quantity` — no row-level computation.
+- Mirrors the existing `FlooringInventory` snapshot pattern; data layer never re-resolves the product on read.
+
+### Lock rules (work orders)
+
+Two predicates in `lock-rules.ts`:
+
+1. **Warehouse change blocked when cut logs exist.** Application primary-section save use case calls `assertWorkOrderWarehouseChangeAllowed({ currentWarehouseId, nextWarehouseId, hasLinkedCutLogs })`. If `currentWarehouseId !== nextWarehouseId && hasLinkedCutLogs`, throw with the warehouse-locked message. The data layer hands `hasLinkedCutLogs` after a `COUNT(*)` over `FlooringCutLog WHERE workOrderId = ? AND void = false`.
+2. **Delete blocked when cut logs exist.** `assertWorkOrderDeleteAllowed({ hasLinkedCutLogs })` — throws if any non-void cut log links the WO.
+
+Note: a WO's warehouse can flip freely **before** any cut log is created. Once the first cut log is saved, the warehouse field becomes effectively immutable. Surface this in UI copy via the message constants in `error-messages.ts`.
+
+### Property-instructions autofill
+
+Single shared helper in `management/properties/instructions-autofill.ts`:
+
+```ts
+applyPropertyInstructionsAutofill<T extends { propertyInstructions: string }>(
+  form: T,
+  property: { instructions: string | null },
+): T
+```
+
+- Called by both the template primary-section save use case and the WO primary-section save use case.
+- Overwrites `form.propertyInstructions` with `property.instructions ?? ""` whenever the property is being **linked or relinked** (the application use case decides when by comparing prior `propertyId` to the patch's `propertyId`).
+- Free-text edits to `propertyInstructions` while the property is unchanged are NOT overwritten — the application use case skips the helper on a same-property save.
+- Template-sync use case calls the same helper after copying the template into the WO (the autofill happens once, against the WO's chosen property).
+
+### Material items — diff-save (both modules)
+
+Both `templates/material-items/diff-rules.ts` and `work-orders/material-items/diff-rules.ts` expose:
+
+- `Draft` / `Update` / `Delete` / `Diff` types (mirror existing template shapes).
+- `*_USER_EDITABLE_FIELDS` const (e.g. `["productId", "quantity", "notes"]`).
+- `validate*MaterialItemsDiff(diff, resolution, parent?)` — pure validator returning typed issues; mirrors `validateCutLogsDiff`.
+  - Optimistic-lock per-row via `expectedUpdatedAt`.
+  - Per-row form validation (rejects unknown patch keys via the editable-fields list).
+  - **WO-side cross-row check:** if a row would be deleted but it still has linked cut logs, the diff fails — same lock principle as the WO-level delete rule, but per-line.
+
+The application save use cases shrink to: read existing rows under tx → call the diff validator → apply the writes via the data layer's bulk write repo → stamp send-unit snapshots on creates/updates.
+
+### Cut-log edits from the WO record view (separate from material-items diff)
+
+Per intent: the material-items section uses diff-save; the expandable cut-logs row uses **separate use cases** that mirror what the inventory record view already has.
+
+Locked decisions for this sweep:
+
+- The WO record view's cut-log section reuses the existing cut-log domain — `validateCutLogsDiff`, `validateCutLogFinalizeBatch`, `buildVoidedCutLogPatch`, `assertCutLogLinkageSymmetry`, all editability predicates. **No new cut-log rules needed.**
+- The cut-log link-edit use case (`updateLinks`) is **dropped from the inventory side** per the user's directive — the WO MI section is the only writer of `workOrderId` + `workOrderItemId` going forward. Whenever a cut log is saved against a WOMI from the WO record view, the application use case sets BOTH link fields atomically (symmetry already enforced by `assertCutLogLinkageSymmetry`).
+- The cut-log diff payload (`pending-save-cut-log-batch.ts`) is **per inventory**. The WO-MI save fans out one outbox event per inventory row touched in the diff — no new payload schema, no new worker. (Open Q4 in the audit; locked here.)
+- Finalize + void from the WO record view also reuse the existing per-inventory workers. Same fan-out for finalize batches.
+
+### Inventory eligibility for the WO-MI cut-log picker
+
+`isInventoryEligibleForWorkOrderItem(inventory, workOrder, workOrderItem) → boolean` — true iff:
+
+- `inventory.warehouseId === workOrder.warehouseId`
+- `inventory.productId === workOrderItem.productId`
+- `Number(inventory.startingStock) - Number(inventory.totalCutSum) > 0`
+
+Drives the "pick inventory" link in the expandable cut-logs row. Pure predicate; data layer pre-filters via the same conditions for the option list query.
+
+### File-generation HTML builder
+
+Lives at `flooring/work-orders/file-generation/build-work-order-pdf-html.ts`. Pure projection from a `WorkOrderFileGenerationInput` shape (defined alongside) — joined WO + items + cut logs grouped per WOMI. The data layer's `getWorkOrderForFileGeneration` returns this exact shape; the consumer use case (`generateWorkOrderFileUseCase`) calls the builder, then `@builders/pdf` renders HTML→PDF, then `@builders/lib` uploads.
+
+The builder owns layout, ordering, and any human formatting. No decimal math (the read shape already has formatted strings).
+
+### Outbox payload — `queue/generate-work-order-file.ts`
+
+```ts
+GENERATE_WORK_ORDER_FILE_TOPIC = "flooring.work-order.file-generation.requested"
+GENERATE_WORK_ORDER_FILE_QUEUE = "flooring-work-order-file-generation"
+GENERATE_WORK_ORDER_FILE_JOB_NAME = "generate-file"
+
+GenerateWorkOrderFilePayloadSchema = z.object({
+  version: z.literal("v1"),
+  topic: z.literal(GENERATE_WORK_ORDER_FILE_TOPIC),
+  workOrderId: z.string().uuid(),
+  fileId: z.string().uuid(),
+  requestedBy: z.object({ userId: z.string().uuid(), userEmail: z.string().email() }),
+  requestedAt: z.string().datetime(),
+})
+```
+
+Producer use case writes this; worker parses via `parseGenerateWorkOrderFilePayload`. Mirrors `void-cut-log.ts` shape exactly. Re-exported from the domain root barrel (`packages/domain/src/index.ts`).
+
+### Out of scope at the domain layer
+
+- `shared/line-totals.ts` (still references `unitPrice`) — only consumed by `record-summary.ts` / `record-expense-summary.ts`, neither of which is wired into templates/WO. Cleanup belongs to the sweep that owns those summary builders.
+- `templateSyncedAt` / `templateSyncMode` / `templateSnapshotHash` business meaning — surfaced as read-only snapshots on `WorkOrderDetail` this sweep; the sync **flow** that writes them (with hash computation, mode semantics) belongs to the template-sync UI sweep, not domain.
+- Status field on templates — file gen is dropped from templates this sweep, so no template status enum.
+- Auto-assign worker — out of scope; WO `status` enum already accommodates it for a future sweep.
+
 ## Application use cases (this sweep)
 
 All three live in `packages/application/src/flooring/work-orders/`. Naming + shape mirrors cut-log (`mark-cut-log-for-void.ts` / `void-cut-log.ts`).

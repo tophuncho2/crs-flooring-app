@@ -5,6 +5,7 @@
 [ ] Once approved, the plan is locked and a file for the execution sumnary is created. 
 [ ] After an execution file is created we will make updates to it and a 4th file for "cleanup" may be created to checklist what needs to change in the execution file.
 [ ] Paste headlines, error counts, and TL:DR in the chat, use charts / tables for visual display.
+[ ] Any open questions must be in your response
 
 [ ] This process will repeat per layer we scope to.
 [ ] Some layers may be executed in a bundle together especially if its a bug fix. Schema changes are always in a commit by itself.
