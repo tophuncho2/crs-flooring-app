@@ -37,11 +37,17 @@ export type ListControllerSsrInput<TRow, TFilters = Record<string, never>> = Lis
   pagination?: ListControllerSsrPagination
 }
 
+export type ListControllerFreshness = {
+  refetchIntervalMs?: number
+  staleTimeMs?: number
+}
+
 export type ListControllerFetchInput<TRow, TFilters = Record<string, never>> = ListControllerInputBase<TFilters> & {
   mode: "fetch"
   queryKey: readonly unknown[]
   listFn: (input: ListInput<TFilters>) => Promise<ListOutput<TRow>>
   initialData?: ListOutput<TRow>
+  freshness?: ListControllerFreshness
 }
 
 export type ListControllerInput<TRow, TFilters = Record<string, never>> =

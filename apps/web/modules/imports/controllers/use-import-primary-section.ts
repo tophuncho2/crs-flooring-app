@@ -11,7 +11,7 @@ import {
   type ImportPrimaryForm,
 } from "@builders/domain"
 import { validateImportPrimaryForm } from "./drafts"
-import { deleteImportRequest, updateImportRequest } from "@/modules/imports/data/mutations"
+import { useImportsListMutations } from "./use-imports-list-mutations"
 
 export function useImportPrimarySection({
   page,
@@ -20,6 +20,8 @@ export function useImportPrimarySection({
   page: RecordDetailClientScaffoldContext
   entry: ImportRow
 }) {
+  const { updateImport, deleteImport } = useImportsListMutations()
+
   return useSingleSectionRecordController<ImportRow, ImportPrimaryForm>({
     page,
     scope: "imports",
@@ -39,14 +41,18 @@ export function useImportPrimarySection({
         })
       }
 
-      const payload = await updateImportRequest(record.id, localValue, record.updatedAt)
+      const payload = await updateImport.mutateAsync({
+        id: record.id,
+        input: localValue,
+        revisionKey: record.updatedAt,
+      })
       return {
         serverValue: payload.import,
         noticeMessage: "Import saved",
       }
     },
     deleteRecord: async (record) => {
-      await deleteImportRequest(record.id, record.updatedAt)
+      await deleteImport.mutateAsync({ id: record.id, updatedAt: record.updatedAt })
     },
     deleteErrorMessage: "Failed to delete import",
   })

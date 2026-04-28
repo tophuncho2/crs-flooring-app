@@ -25,10 +25,7 @@ import {
   type ImportStagedRowDraft,
   type LocationOption,
 } from "./drafts"
-import {
-  markStagedRowsForImportRequest,
-  updateImportStagedInventoryRowsRequest,
-} from "../data/mutations"
+import { useImportsListMutations } from "./use-imports-list-mutations"
 
 function createDraftRow(locationOptions: LocationOption[], warehouseId: string) {
   return applyDefaultLocationToImportRow(
@@ -152,6 +149,8 @@ export function useImportStagedInventoryRowsSection({
    */
   publishMarkedForImport: (markedIds: string[]) => void
 }) {
+  const { updateStagedInventoryRows, markStagedRowsForImport } = useImportsListMutations()
+
   const section = useRecordScopedSectionController<StagedInventoryRow[], ImportStagedRowDraft[]>({
     recordId: record.id,
     sectionKey: "staged-inventory-rows",
@@ -186,11 +185,11 @@ export function useImportStagedInventoryRowsSection({
         }
       }
 
-      const response = await updateImportStagedInventoryRowsRequest(
-        record.id,
+      const response = await updateStagedInventoryRows.mutateAsync({
+        importId: record.id,
         diff,
-        record.updatedAt,
-      )
+        revisionKey: record.updatedAt,
+      })
       publishRecord(response.import)
       publishStagedRows(response.stagedRows)
 
@@ -275,10 +274,13 @@ export function useImportStagedInventoryRowsSection({
     },
     performAction: useCallback(
       async (ids) => {
-        const result = await markStagedRowsForImportRequest(record.id, ids)
+        const result = await markStagedRowsForImport.mutateAsync({
+          importId: record.id,
+          stagedRowIds: ids,
+        })
         publishMarkedForImport(result.batch.markedRowIds)
       },
-      [record.id, publishMarkedForImport],
+      [markStagedRowsForImport, record.id, publishMarkedForImport],
     ),
   })
 

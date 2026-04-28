@@ -3,6 +3,7 @@ export type {
   ListControllerSsrInput,
   ListControllerSsrPagination,
   ListControllerFetchInput,
+  ListControllerFreshness,
   ListControllerUrlSyncMode,
 } from "./contracts/list-controller-input"
 export type { ListControllerOutput } from "./contracts/list-controller-output"

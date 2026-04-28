@@ -4,6 +4,7 @@ import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
 import { SortToggle } from "@/components/features/sort"
 import { useServerListController } from "@/controllers/list-view"
+import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ImportsListFilters } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
@@ -62,6 +63,7 @@ export default function ImportsClient({
     initialTablePreferences,
     allowedSortFields: IMPORTS_ALLOWED_SORT_FIELDS,
     allowedGroupFields: IMPORTS_ALLOWED_GROUP_FIELDS,
+    freshness: LIST_FRESHNESS_STANDARD,
   })
 
   const isAscendingSort = sort?.direction !== "desc"

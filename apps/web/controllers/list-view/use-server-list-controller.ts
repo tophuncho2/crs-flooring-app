@@ -450,6 +450,8 @@ function useFetchListController<TRow, TFilters>(
     queryFn: () => listFn(listInput),
     initialData,
     placeholderData: (previous) => previous,
+    refetchInterval: input.freshness?.refetchIntervalMs,
+    staleTime: input.freshness?.staleTimeMs,
   })
 
   const rows = queryResult.data?.rows ?? []
