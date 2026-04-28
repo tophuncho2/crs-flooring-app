@@ -33,5 +33,5 @@
 
 [ ] Both templates and work orders need a sweep all the way through (minus schema)
 [ ] Cuts already have worker jobs initiated from the inventory record view, work order material items / cut logs section will have there own workers and use cases
-
+[ ] Reference inventory and imports to see how the layering is properly implemented when needing a reference.
 
