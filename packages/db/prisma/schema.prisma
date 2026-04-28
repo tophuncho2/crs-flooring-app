@@ -113,6 +113,14 @@ enum FlooringCutLogStatus {
   VOID
 }
 
+enum FlooringWorkOrderStatus {
+  IDLE
+  QUEUED
+  WORKING
+  COMPLETED
+  FAILED
+}
+
 model FlooringManagementCompany {
   id            String              @id @default(uuid())
   name          String              @unique
@@ -523,6 +531,7 @@ model FlooringWorkOrder {
   warehouseId          String?
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   isComplete           Boolean                    @default(false) @map("is_complete")
+  status               FlooringWorkOrderStatus    @default(IDLE)
   vacancy              FlooringVacancyStatus?
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?
@@ -540,9 +549,11 @@ model FlooringWorkOrder {
   items                FlooringWorkOrderItem[]
   analytics            FlooringAnalytics?
   cutLogs              FlooringCutLog[]
+  files                FlooringWorkOrderFile[]
 
   @@index([workOrderNumber])
   @@index([isComplete])
+  @@index([status])
   @@index([propertyId])
   @@index([templateId])
   @@index([managementCompanyId])
@@ -575,6 +586,22 @@ model FlooringWorkOrderItem {
   @@index([productId])
   @@index([sourceTemplateItemId])
   @@map("flooring_work_order_item")
+}
+
+model FlooringWorkOrderFile {
+  id           String                  @id @default(uuid())
+  workOrderId  String
+  workOrder    FlooringWorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  fileNumber   Int
+  status       FlooringWorkOrderStatus @default(QUEUED)
+  fileKey      String?
+  errorMessage String?
+  createdAt    DateTime                @default(now())
+  completedAt  DateTime?
+
+  @@unique([workOrderId, fileNumber])
+  @@index([workOrderId, createdAt])
+  @@map("flooring_work_order_file")
 }
 
 model QueueOutboxEvent {

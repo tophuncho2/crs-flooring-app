@@ -8,45 +8,86 @@ This branch is **schema-first**. Prisma is updated before any layer above it. Th
 
 ## Layer order (strict)
 
-1. **Schema (Prisma)** — add status enums + columns; do not delete `unitPrice` columns.
-2. **Domain** — pure types, normalizers, form rules, error messages updated for status + sync.
-3. **Data** — selects, read/write repositories, outbox repository helpers for the two new topics.
+1. **Schema (Prisma)** — add status enum + column on WO; add `FlooringWorkOrderFile` child table; do not delete `unitPrice` columns.
+2. **Domain** — pure types, normalizers, form rules, error messages updated for status + file rows + sync.
+3. **Data** — selects, read/write repositories, outbox repository helpers for WO file generation.
 4. *(pause for a pass-through review before application starts)*
-5. **Application** — use cases, including a brand-new `application/src/flooring/work-orders` (currently missing).
-6. **Relay outbox + Worker handlers** — file-generation dispatchers + processors for both modules; queues wired in `apps/worker/src/queues` + `apps/relay/src/dispatch`.
+5. **Application** — use cases including a brand-new `application/src/flooring/work-orders/`. Includes `createWorkOrderFile` + `deleteWorkOrderFile` (see below).
+6. **Relay outbox + Worker handlers** — file-generation dispatcher + processor for WO; queue wired in `apps/worker/src/queues` + `apps/relay/src/dispatch`. Auto-assign worker out of scope this sweep.
 7. **API** — sectional routes under `apps/web/app/api/work-orders/...` (currently missing entirely) and updates to `apps/web/app/api/templates/...`.
-8. **Module dirs (`apps/web/modules/...`)** — UI components, controllers, hooks, transport, query policies. Conform to `apps/web/modules/CLAUDE.md` shape (components/list, components/record/{section}, controllers/, data/queries.ts + data/mutations.ts).
+8. **Module dirs (`apps/web/modules/...`)** — UI components, controllers, hooks, transport, query policies. Conform to `apps/web/modules/CLAUDE.md` shape.
 
 API and module-dir order may swap during step 7–8; dashboard SSR loaders pull from `modules/{module}/data/queries.ts`, so the modules dir is the import surface.
 
 ## Schema changes (this sweep)
 
 ### Work orders (`FlooringWorkOrder`)
-- Add `status` enum column (new `FlooringWorkOrderStatus`).
-- Status drives the worker. Two future jobs:
-  - **(In scope, primary)** File generation — PDF of the WO row, its material items, and cut logs grouped per material item.
-  - **(Out of scope, may seed status now)** Cut-log assignment to material items. Cuts are assigned **manually** from the WO record-view material-items section. The status field can already cover this even though the worker for it isn't built here.
-- Status enum values (minimum): `QUEUED`, `WORKING`. Likely also `IDLE`/`READY` (default) and a terminal value (`COMPLETED` or `FAILED`) — final shape decided in audit follow-up.
-- `unitPrice` on `FlooringWorkOrderItem` **stays in DB**; stripped from use cases + UI.
-- `templateSyncedAt`, `templateSyncMode`, `templateSnapshotHash` are already on the WO model (currently unreferenced anywhere in code) — wired during the template-sync flow.
+
+- Add `status` enum column (new `FlooringWorkOrderStatus`), default `IDLE`.
+- Single shared status field covers both worker jobs (file generation, auto-assign). They cannot run concurrently, so one field is sufficient.
+- **Status enum values:** `IDLE`, `QUEUED`, `WORKING`, `COMPLETED`, `FAILED`.
+- **Sticky terminal:** `COMPLETED` / `FAILED` persist on the WO until the next job runs. The WO `status` is the at-a-glance indicator for "what's the worker doing right now."
+- `templateSyncedAt`, `templateSyncMode`, `templateSnapshotHash` are already on the WO model (unreferenced) — wired during the template-sync flow in a later sweep.
+- `unitPrice` on `FlooringWorkOrderItem` **stays in DB**; stripped from use cases, UI, **and the data-layer selects**.
+
+### `FlooringWorkOrderFile` — new child table
+
+History of every file-generation attempt for a WO. Replaces "single PDF column on WO" — the record view will render a grid of all generated files.
+
+```prisma
+model FlooringWorkOrderFile {
+  id             String   @id @default(cuid())
+  workOrderId    String
+  workOrder      FlooringWorkOrder @relation(fields: [workOrderId], references: [id])
+  fileNumber     Int      // per-WO ordinal: max(fileNumber) + 1 on create, never reused
+  status         FlooringWorkOrderStatus
+  fileKey        String?  // Railway bucket key, set on COMPLETED
+  errorMessage   String?  // set on FAILED
+  createdAt      DateTime @default(now())
+  completedAt    DateTime?
+
+  @@unique([workOrderId, fileNumber])
+  @@index([workOrderId, createdAt])
+}
+```
+
+- `fileNumber` is computed as `MAX(fileNumber) + 1` for the WO at insert time. Deletes leave gaps; numbers are **never reused** (avoids two PDFs ever sharing a number across the WO's lifetime).
+- The `@@unique([workOrderId, fileNumber])` constraint catches concurrent-insert collisions — second insert fails and retries with the new max.
+- A row is inserted at **`QUEUED`** time so failed runs still appear in the grid.
 
 ### Templates (`FlooringTemplate`)
-- Add `status` enum column (new `FlooringTemplateStatus`, same shape as WO).
-- Status drives the **template file generation** worker (PDF preview of the template).
-- `unitPrice` on `FlooringTemplateItem` stays in DB; stripped from use cases + UI.
+
+**No schema changes this sweep.** Template file generation is dropped (see worker section). `unitPrice` strip on `FlooringTemplateItem` happens above the data layer in later sweeps; the column stays.
 
 ## File-generation worker
 
-- Two topics, one per module: e.g. `flooring.work-order.file-generation.requested` and `flooring.template.file-generation.requested`.
+- One topic: `flooring.work-order.file-generation.requested`. Templates do not get a worker this sweep.
 - Same dispatcher pattern as cut-log/import: outbox row → relay → BullMQ → worker processor.
-- Status transitions: default → `QUEUED` (on enqueue) → `WORKING` (on lock) → terminal.
-- **Open question — file delivery:** two viable options:
-  1. **Direct download** — worker generates the PDF, returns it as a stream/blob to the user device (no bucket).
-  2. **Bucket** — write to the existing Railway-deployed bucket, return a signed URL.
-  
-  Bucket is more durable (lets the file be re-fetched after page reload, audited, retried), and the bucket already exists. Direct download is simpler but couples worker completion to an active client connection, which doesn't match the queued-job pattern. Recommendation: **bucket**, given it's already deployed. Confirm before schema lands so the WO/template rows can carry a `generatedFileUrl` / `generatedFileKey` column from the start.
+- **File delivery: Railway bucket** (already deployed, currently unused). Worker writes the PDF, sets `fileKey` on the child row. Client downloads via signed URL. Direct-download was the alternative — rejected because it couples worker completion to an active client connection.
+- Status transitions on the child row: insert at `QUEUED` → `WORKING` (on lock) → `COMPLETED` (`fileKey` + `completedAt`) or `FAILED` (`errorMessage`). WO `status` mirrors the child row's transitions so the WO list can color-code "running" rows.
+- **PDF contents:** the WO main row + its material items + cut logs grouped per material item. (Cut logs already migrated; read-only here.)
 
-## Template-sync flow (target)
+## Application use cases (this sweep)
+
+Two use cases land in `packages/application/src/flooring/work-orders/`.
+
+### `createWorkOrderFile({ workOrderId })`
+
+1. Compute `fileNumber = MAX(fileNumber) + 1` for the WO.
+2. Insert `FlooringWorkOrderFile` row with `status = QUEUED`, `fileNumber` set.
+3. Set WO `status = QUEUED`.
+4. Write outbox event `flooring.work-order.file-generation.requested` carrying `{ workOrderId, fileId }`.
+5. Relay → worker pipeline updates child row + WO `status` as it progresses through `WORKING` → `COMPLETED`/`FAILED`.
+
+### `deleteWorkOrderFile({ fileId })`
+
+**Synchronous, no worker.**
+1. Delete the bucket object at `fileKey`.
+2. Delete the child row.
+
+(If bucket deletes prove flaky in production, this can later be promoted to a worker job. Skipping for now to keep the surface small.)
+
+## Template-sync flow (target — UI sweep, not this branch)
 
 AppShell top-right button (`apps/web/modules/template-sync/components/template-sync-button.tsx`, currently shell-only) opens a side panel:
 
@@ -62,9 +103,11 @@ AppShell top-right button (`apps/web/modules/template-sync/components/template-s
 - No merging into `staging`. No pushing. No touching the staging branch. The other Claude instance handles that.
 - No work outside the WO + Template modules (cut logs already migrated; imports owned elsewhere).
 - No bulk fix of TS errors out-of-layer — errors heal in the layer that owns them.
+- **No template file-generation worker.** Dropped — only WO file gen lands this sweep.
+- **No auto-assign worker.** Out of scope; the WO `status` enum accommodates it for a future sweep.
 
 ## Deliverables in `a-branch/`
 
 - `intent.md` — this file.
-- `audit.md` — current state of WO + Template modules across all layers, including TS error baseline (or note on why baseline could not be captured).
+- `audit.md` — current state of WO + Template modules across all layers.
 - Subsequent files: per-layer execution reports, named to identify the layer (e.g. `01-schema.md`, `02-domain.md`).
