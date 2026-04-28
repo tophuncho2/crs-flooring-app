@@ -1,5 +1,3 @@
-"use client"
-
 import type { ImportsListFilters } from "@builders/application"
 import type { ListInput, ListOutput } from "@builders/application"
 import {
