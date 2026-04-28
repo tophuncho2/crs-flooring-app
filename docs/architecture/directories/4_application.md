@@ -46,9 +46,20 @@ Typical contents:
 
 ## Import rules
 
-- **May import**: `@builders/domain`, `@builders/db`, Prisma types.
+- **May import**: `@builders/domain`, `@builders/db`, `@builders/lib`, `@builders/pdf`, Prisma types.
 - **Must not import**: routes, pages, React code, `@/modules/...`.
-- Use cases should not import  other use cases 
+- Use cases should not import other use cases.
+
+### External system access via `@builders/lib` and `@builders/pdf`
+
+Use cases that need to talk to external systems (object storage, PDF rendering, redis, structured logs) call thin infra wrappers directly — there is no DI / port-and-adapter ceremony.
+
+- `@builders/lib` exposes SDK wrappers: bucket I/O (`uploadBucketObject`, `getBucketObject`, `bucketObjectExists`, `createBucketObjectPresignedUrl`), redis, structured logging, JSON request helpers. The bucket helpers take a `StorageEnvironment` snapshot — no implicit globals; the caller threads env through.
+- `@builders/pdf` exposes a single function `renderHtmlToPdf(html, options) → Uint8Array`. HTML is built upstream by domain message builders.
+
+Both packages are deliberately dumb — their CLAUDE.md files forbid business logic, conditionals on data shape, and domain knowledge. If a use case finds itself wanting to add such logic to one of these packages, that logic belongs in the use case (orchestration) or in domain (rules/builders) — never in the wrapper.
+
+Use cases that touch external systems should NOT wrap the external call inside a single database transaction (a bucket upload cannot roll back). Pattern: short transaction for the state transition that *initiates* the external call, then the external call, then a short transaction for the terminal state. See `generateWorkOrderFileUseCase` for the canonical example.
 
 ## Example
 
