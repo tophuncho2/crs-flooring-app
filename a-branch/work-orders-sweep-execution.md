@@ -13,9 +13,9 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
 | 7h — Worker/Relay | ✅ DONE | `d31a5c9f` |
 | 7i — API | ✅ DONE | `5912464d` |
-| 7j — Engine off-ramp | ✅ DONE | (bundled with 7k+7l) |
-| 7k — Module dir UI | ✅ DONE | (bundled with 7j+7l) |
-| 7l — Dashboard pages | ✅ DONE | (pending git commit, all 3 bundled) |
+| 7j — Engine off-ramp | ✅ DONE | `a67d3a55` (bundled) |
+| 7k — Module dir UI | ✅ DONE | `a67d3a55` (bundled) |
+| 7l — Dashboard pages | ✅ DONE | `a67d3a55` (bundled) |
 
 ---
 
@@ -371,7 +371,7 @@ Pre-flight inventory pass confirmed the canonical patterns to mirror:
 
 ---
 
-## 7j + 7k + 7l — UI migration (bundled, DONE, awaiting commit)
+## 7j + 7k + 7l — UI migration (bundled, DONE, committed `a67d3a55`)
 
 Three sub-sweeps folded per user direction. The existing non-canonical `apps/web/modules/work-orders/` tree (40+ engine imports across `record/panel/`, `record/detail/`, `record/create/`, `list/`, `controllers/`) was wiped and rebuilt on the imports-module canonical pattern.
 
