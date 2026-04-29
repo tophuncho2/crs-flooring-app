@@ -437,7 +437,6 @@ model FlooringTemplate {
   unitType             String
   description          String?
   instructions         String?
-  propertyInstructions String?
   templateNotes        String?
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
@@ -546,7 +545,6 @@ model FlooringWorkOrder {
   customAddress        String?
   description          String?
   instructions         String?
-  propertyInstructions String?
   notes                String?
   templateSyncedAt     DateTime?
   templateSyncMode     String?
