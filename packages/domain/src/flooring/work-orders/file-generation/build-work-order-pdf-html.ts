@@ -167,7 +167,7 @@ function renderMaterialItemRow(item: WorkOrderFileMaterialItemProjection): strin
   const quantityLabel = item.sendUnitAbbrev
     ? `${escapeHtml(item.quantity)} ${escapeHtml(item.sendUnitAbbrev)}`
     : escapeHtml(item.quantity)
-  const cutLogTable = renderCutLogTable(item.cutLogs)
+  const cutLogTable = renderCutLogTable(item)
   return `
 <tr>
   <td>${escapeOrEmpty(item.productName)}</td>
@@ -178,20 +178,35 @@ ${cutLogTable === "" ? "" : `<tr><td colspan="3">${cutLogTable}</td></tr>`}
 `.trim()
 }
 
-function renderCutLogTable(cutLogs: WorkOrderFileCutLogProjection[]): string {
-  if (cutLogs.length === 0) return ""
-  const rows = cutLogs.map((cl) => renderCutLogRow(cl)).join("\n")
+function renderCutLogTable(item: WorkOrderFileMaterialItemProjection): string {
+  if (item.cutLogs.length === 0) return ""
+  // Coverage column visibility is a per-WOMI choice driven by the product's
+  // item-coverage-unit snapshot. If the product/category has no coverage
+  // unit configured, the column is suppressed entirely (empty header + cells
+  // would just be visual noise).
+  const showCoverage = item.itemCoverageUnitAbbrev !== ""
+  const stockSuffix = item.stockUnitAbbrev
+  const coverageSuffix = item.itemCoverageUnitAbbrev
+  const rows = item.cutLogs
+    .map((cl) => renderCutLogRow(cl, { showCoverage, stockSuffix, coverageSuffix }))
+    .join("\n")
+  const coverageHeaderCell = showCoverage
+    ? `<th style="width: 12%;">Coverage Cut${coverageSuffix ? ` (${escapeHtml(coverageSuffix)})` : ""}</th>`
+    : ""
   return `
 <h3 style="margin: 0 0 4px 16px;">Cut Logs</h3>
 <table class="cut-log-table">
   <thead>
     <tr>
-      <th style="width: 18%;">Cut #</th>
-      <th style="width: 18%;">Inventory</th>
-      <th style="width: 12%;">Cut</th>
-      <th style="width: 8%;">Waste</th>
-      <th style="width: 12%;">Status</th>
-      <th style="width: 32%;">Notes</th>
+      <th style="width: 14%;">Cut #</th>
+      <th style="width: 16%;">Inventory</th>
+      <th style="width: 9%;">Before${stockSuffix ? ` (${escapeHtml(stockSuffix)})` : ""}</th>
+      <th style="width: 9%;">Cut${stockSuffix ? ` (${escapeHtml(stockSuffix)})` : ""}</th>
+      <th style="width: 9%;">After${stockSuffix ? ` (${escapeHtml(stockSuffix)})` : ""}</th>
+      ${coverageHeaderCell}
+      <th style="width: 7%;">Waste</th>
+      <th style="width: 10%;">Status</th>
+      <th>Notes</th>
     </tr>
   </thead>
   <tbody>
@@ -201,17 +216,28 @@ function renderCutLogTable(cutLogs: WorkOrderFileCutLogProjection[]): string {
 `.trim()
 }
 
-function renderCutLogRow(cl: WorkOrderFileCutLogProjection): string {
+function renderCutLogRow(
+  cl: WorkOrderFileCutLogProjection,
+  options: { showCoverage: boolean; stockSuffix: string; coverageSuffix: string },
+): string {
   const rowClass = statusToClass(cl.status)
-  const wasteCell = cl.isWaste ? "Yes" : ""
+  // Unicode checkbox glyphs print cleanly in Puppeteer-rendered PDFs and
+  // require no extra font assets.
+  const wasteCell = cl.isWaste ? "&#9745;" : "&#9744;"
   const inventoryCell =
     [cl.inventoryLotNumber, cl.inventoryDisplayName].filter(Boolean).join(" — ") || ""
+  const coverageCell = options.showCoverage
+    ? `<td>${cl.coverageCut === "" ? `<span class="empty-cell">—</span>` : escapeHtml(cl.coverageCut)}</td>`
+    : ""
   return `
 <tr class="${rowClass}">
   <td>${escapeOrEmpty(cl.cutLogNumber)}</td>
   <td>${escapeOrEmpty(inventoryCell)}</td>
+  <td>${escapeHtml(cl.before)}</td>
   <td>${escapeHtml(cl.cut)}</td>
-  <td>${wasteCell}</td>
+  <td>${escapeHtml(cl.after)}</td>
+  ${coverageCell}
+  <td style="text-align: center; font-size: 14px;">${wasteCell}</td>
   <td>${escapeHtml(cl.status)}</td>
   <td class="multiline">${escapeOrEmpty(cl.notes)}</td>
 </tr>

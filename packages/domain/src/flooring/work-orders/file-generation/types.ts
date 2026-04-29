@@ -14,7 +14,13 @@ export type WorkOrderFileCutLogProjection = {
   cutLogNumber: string
   status: "PENDING" | "QUEUED" | "FINAL" | "VOID"
   isFinal: boolean
+  before: string
   cut: string
+  after: string
+  // Empty string when the product/category has no coverage unit configured.
+  // The PDF builder hides the coverage column entirely when every cut log
+  // under a WOMI has no coverage value.
+  coverageCut: string
   isWaste: boolean
   notes: string
   inventoryLotNumber: string
@@ -26,8 +32,20 @@ export type WorkOrderFileMaterialItemProjection = {
   id: string
   productName: string
   quantity: string
+  // Send-unit snapshot from the product (suffix on the material item's
+  // quantity cell).
   sendUnitName: string
   sendUnitAbbrev: string
+  // Stock-unit snapshot from the product. Used to label the cut log's
+  // before / cut / after cells.
+  stockUnitName: string
+  stockUnitAbbrev: string
+  // Item-coverage-unit snapshot from the product. Empty string when the
+  // product's category does not configure one (most categories). Drives
+  // both the per-row coverage cell label and whether the column appears
+  // at all in the cut log sub-table.
+  itemCoverageUnitName: string
+  itemCoverageUnitAbbrev: string
   notes: string
   cutLogs: WorkOrderFileCutLogProjection[]
 }
