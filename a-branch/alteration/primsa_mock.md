@@ -1,6 +1,6 @@
 // Mock of Prisma models from packages/db/prisma/schema.prisma
-// Scope: FlooringInventory, FlooringCutLog, FlooringWorkOrderItem,
-//        FlooringImportStagedInventoryRow
+// Scope: FlooringProduct, FlooringInventory, FlooringCutLog,
+//        FlooringWorkOrderItem, FlooringImportStagedInventoryRow
 // (plus the enums referenced by these models)
 
 enum FlooringCutLogStatus {
@@ -13,6 +13,37 @@ enum FlooringStagedRowStatus {
   DRAFT
   QUEUED
   IMPORTED
+}
+
+model FlooringProduct {
+  id                               String                             @id @default(uuid())
+  name                             String                             @default("")
+  categoryId                       String
+  category                         FlooringCategory                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  manufacturerName                 String?                            @map("manufacturer")
+  manufacturerId                   String?
+  manufacturer                     FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
+  style                            String?
+  color                            String?
+  width                            String?
+  sheetSize                        String?
+  thickness                        String?
+  unitWeight                       String?
+  coveragePerUnit                  Decimal?                           @db.Decimal(12, 4)
+  cost                             Decimal?                           @db.Decimal(10, 2)
+  isPublic                         Boolean                            @default(false)
+  notes                            String?
+  subOrder                         String?
+  createdAt                        DateTime                           @default(now())
+  updatedAt                        DateTime                           @updatedAt
+  templateItems                    FlooringTemplateItem[]
+  workOrderItems                   FlooringWorkOrderItem[]
+  inventories                      FlooringInventory[]
+  FlooringImportStagedInventoryRow FlooringImportStagedInventoryRow[]
+
+  @@index([manufacturerId])
+  @@index([name])
+  @@map("flooring_product")
 }
 
 model FlooringInventory {
