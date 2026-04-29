@@ -121,6 +121,13 @@ enum FlooringWorkOrderStatus {
   FAILED
 }
 
+enum FlooringWorkOrderItemStatus {
+  IDLE
+  SAVING_CUTS
+  FINALIZING
+  FAILED
+}
+
 model FlooringManagementCompany {
   id            String              @id @default(uuid())
   name          String              @unique
@@ -570,18 +577,19 @@ model FlooringWorkOrder {
 }
 
 model FlooringWorkOrderItem {
-  id                   String            @id @default(uuid())
+  id                   String                      @id @default(uuid())
   workOrderId          String
-  workOrder            FlooringWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  workOrder            FlooringWorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   productId            String
-  product              FlooringProduct   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product              FlooringProduct             @relation(fields: [productId], references: [id], onDelete: Restrict)
   sourceTemplateItemId String?
-  quantity             Decimal           @db.Decimal(10, 2)
+  quantity             Decimal                     @db.Decimal(10, 2)
   sendUnitName         String?
   sendUnitAbbrev       String?
   notes                String?
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  status               FlooringWorkOrderItemStatus @default(IDLE)
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
   cutLogs              FlooringCutLog[]
 
   @@index([workOrderId])
