@@ -15,7 +15,6 @@ export function toTemplateForm(template: TemplateDetail): TemplateForm {
     unitType: template.unitType,
     description: template.description,
     instructions: template.instructions,
-    propertyInstructions: template.propertyInstructions,
     templateNotes: template.templateNotes,
   }
 }

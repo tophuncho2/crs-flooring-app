@@ -54,7 +54,6 @@ export function validateCreateTemplateInput(
     unitType: requireString(body.unitType, "unitType", failTemplate),
     description: optionalText(body.description),
     instructions: optionalText(body.instructions),
-    propertyInstructions: optionalText(body.propertyInstructions),
     templateNotes: optionalText(body.templateNotes),
   }
 }
@@ -71,7 +70,6 @@ export function validateUpdateTemplateInput(
   if ("unitType" in body) input.unitType = requireString(body.unitType, "unitType", failTemplate)
   if ("description" in body) input.description = optionalText(body.description)
   if ("instructions" in body) input.instructions = optionalText(body.instructions)
-  if ("propertyInstructions" in body) input.propertyInstructions = optionalText(body.propertyInstructions)
   if ("templateNotes" in body) input.templateNotes = optionalText(body.templateNotes)
 
   return input

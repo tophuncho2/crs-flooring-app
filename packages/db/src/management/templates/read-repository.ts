@@ -44,7 +44,6 @@ const templateListSelect = {
 const templateDetailSelect = {
   ...templateListSelect,
   instructions: true,
-  propertyInstructions: true,
   templateNotes: true,
   items: {
     select: {

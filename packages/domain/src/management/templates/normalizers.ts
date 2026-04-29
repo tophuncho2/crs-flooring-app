@@ -22,7 +22,6 @@ type TemplateListInput = {
 
 type TemplateDetailInput = TemplateListInput & {
   instructions: string | null
-  propertyInstructions: string | null
   templateNotes: string | null
   items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
 }
@@ -53,7 +52,6 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
   return {
     ...base,
     instructions: template.instructions ?? "",
-    propertyInstructions: template.propertyInstructions ?? "",
     templateNotes: template.templateNotes ?? "",
     items,
   }

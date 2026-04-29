@@ -12,7 +12,6 @@ export type CreateTemplateRecordInput = {
   unitType: string
   description?: string | null
   instructions?: string | null
-  propertyInstructions?: string | null
   templateNotes?: string | null
 }
 
@@ -32,7 +31,6 @@ const templateDetailSelect = {
   warehouseId: true,
   warehouse: { select: { name: true } },
   instructions: true,
-  propertyInstructions: true,
   templateNotes: true,
   _count: { select: { items: true } },
   createdAt: true,

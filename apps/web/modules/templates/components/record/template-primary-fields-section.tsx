@@ -110,20 +110,8 @@ export function TemplatePrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Row 4: Property Instructions (full width) */}
+      {/* Row 4: Template Notes (full width) */}
       <CellAt col={1} row={4} colSpan={8}>
-        <FormField label="Property Instructions">
-          <TextareaCell
-            editable={editable}
-            value={draft.propertyInstructions}
-            onChange={(value) => onFieldChange("propertyInstructions", value)}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Row 5: Template Notes (full width) */}
-      <CellAt col={1} row={5} colSpan={8}>
         <FormField label="Template Notes">
           <TextareaCell
             editable={editable}
