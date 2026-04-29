@@ -12,7 +12,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
 | 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
 | 7h — Worker/Relay | ✅ DONE | `d31a5c9f` |
-| 7i — API | ✅ DONE | (pending git commit) |
+| 7i — API | ✅ DONE | `5912464d` |
 | 7j — Engine off-ramp | ⏳ next | — |
 | 7k — Module dir UI | pending | — |
 | 7l — Dashboard pages | pending | — |
@@ -318,7 +318,7 @@ Pre-flight inventory pass confirmed the canonical patterns to mirror:
 
 ---
 
-## 7i — API routes (DONE, awaiting commit)
+## 7i — API routes (DONE, committed `5912464d`)
 
 13 new files under `apps/web/app/api/work-orders/`. Controllers, module dir, page loaders intentionally untouched per user direction (those land in 7j / 7k / 7l).
 
