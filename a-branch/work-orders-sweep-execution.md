@@ -7,7 +7,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7a — Schema (WOMI status enum) | ✅ DONE | `67045274` |
 | 7b — Domain (primary + MI subdir + cut-log payloads) | ✅ DONE | `1aaa6bab` |
 | 7c — Domain (file-gen) | ✅ DONE | `62a94e63`, amended `f42f1ee9` (PDF columns), `2b81ccb9` (inventory cell) |
-| 7d — Data | ✅ DONE | (pending git commit) |
+| 7d — Data | ✅ DONE | `ae9c8ea7` |
 | 7e — Application (primary) | pending | — |
 | 7f — Application (MI + cut-logs) | pending | — |
 | 7g — Application (file-gen) | pending | — |
@@ -89,7 +89,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 
 ---
 
-## 7d — Data layer (DONE, awaiting commit)
+## 7d — Data layer (DONE, committed `ae9c8ea7`)
 
 ### Pre-flight audit confirmed
 
