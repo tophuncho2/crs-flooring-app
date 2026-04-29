@@ -6,8 +6,8 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 |---|---|---|
 | 7a — Schema (WOMI status enum) | ✅ DONE | `67045274` |
 | 7b — Domain (primary + MI subdir + cut-log payloads) | ✅ DONE | `1aaa6bab` |
-| 7c — Domain (file-gen) | ⏳ next | — |
-| 7d — Data | pending | — |
+| 7c — Domain (file-gen) | ✅ DONE | (pending git commit) |
+| 7d — Data | ⏳ next | — |
 | 7e — Application (primary) | pending | — |
 | 7f — Application (MI + cut-logs) | pending | — |
 | 7g — Application (file-gen) | pending | — |
@@ -60,6 +60,30 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | `npm run build --workspace @builders/domain` | ✅ exit 0 |
 
 **Expected DB layer errors remaining (deferred to 7d rewrite):** 4 errors in `packages/db/src/flooring/work-orders/{read-repository,write-repository}.ts` — selects don't include the new fields the rewritten normalizers require. Will be cleared by 7d.
+
+**Open issues:** none.
+
+---
+
+## 7c — Domain file generation (DONE, awaiting commit)
+
+| Step | Result |
+|---|---|
+| New `flooring/work-orders/file-generation/types.ts` — `WorkOrderFileGenerationInput` joined input shape (WO row + property + WOMIs + cut logs grouped per WOMI) + `WorkOrderFileMaterialItemProjection` + `WorkOrderFileCutLogProjection` | ✅ |
+| New `flooring/work-orders/file-generation/build-work-order-pdf-html.ts` — pure projection from input → printable HTML; no I/O; inline-styled so the rendered PDF doesn't depend on external CSS; every dynamic value escapes via `escapeHtml` | ✅ |
+| New `flooring/work-orders/file-generation/index.ts` — re-exports | ✅ |
+| New queue payload `queue/generate-work-order-file.ts` — topic `flooring.work-order.file-generation.requested`; payload `{ version, topic, workOrderId, fileId, requestedBy, requestedAt }`; mirrors `void-cut-log.ts` shape | ✅ |
+| Update `flooring/work-orders/index.ts` — re-export `file-generation/` | ✅ |
+| Update `domain/src/index.ts` — re-export `queue/generate-work-order-file.js` | ✅ |
+| `npm run typecheck --workspace @builders/domain` | ✅ exit 0 |
+| `npm run build --workspace @builders/domain` | ✅ exit 0 |
+
+**Design notes:**
+
+- `WorkOrderFileGenerationInput` carries `customAddress`, joined `property.streetAddress/city/state/postalCode`, joined `property.instructions`. Builder uses `customAddress` if present, else falls back to formatted property address.
+- HTML body emits sections only when content exists (instructions, description, notes, cut-log sub-tables) so empty PDFs stay tight.
+- Cut log row uses CSS class per status (`cut-log-pending` / `cut-log-final` / `cut-log-void`) — voids render struck-through and grey.
+- Per locked decision #4: PDF is the snapshot. No JSONB or snapshot tables. Worker reads live joined data at render time via `getWorkOrderForFileGeneration` (to be authored in 7d).
 
 **Open issues:** none.
 
