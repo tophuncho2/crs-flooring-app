@@ -1,16 +1,19 @@
 import { db } from "../../client.js"
 import type { Prisma } from "@prisma/client"
 import {
+  formatFullLocationCode,
   normalizeWorkOrder,
   normalizeWorkOrderListRow,
   normalizeWorkOrderOption,
   type WorkOrderDetail,
+  type WorkOrderFileGenerationInput,
+  type WorkOrderFileMaterialItemProjection,
   type WorkOrderListRow,
   type WorkOrderOption,
 } from "@builders/domain"
 import {
   workOrderDetailSelect,
-  workOrderRowSelect,
+  workOrderListSelect,
   type WorkOrdersDbClient,
 } from "./shared.js"
 
@@ -68,6 +71,8 @@ function buildWorkOrdersOrderBy(
     scheduledFor: { scheduledFor: direction },
     unitNumber: { unitNumber: direction },
     unitType: { unitType: direction },
+    status: { status: direction },
+    isComplete: { isComplete: direction },
   }
 
   if (sort?.isGroupingEnabled) {
@@ -88,7 +93,7 @@ export async function listWorkOrders(
   const workOrders = await client.flooringWorkOrder.findMany({
     where: buildWorkOrdersWhere(args.searchQuery),
     orderBy: buildWorkOrdersOrderBy(args.sort),
-    select: workOrderRowSelect,
+    select: workOrderListSelect,
     ...(args.pagination ?? {}),
   })
 
@@ -109,6 +114,18 @@ export async function listWorkOrderOptions(
 export async function getWorkOrderById(
   id: string,
   client: WorkOrdersDbClient = db,
+): Promise<WorkOrderListRow> {
+  const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
+    where: { id },
+    select: workOrderListSelect,
+  })
+
+  return normalizeWorkOrderListRow(workOrder)
+}
+
+export async function getWorkOrderDetailById(
+  id: string,
+  client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderDetail> {
   const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
     where: { id },
@@ -125,4 +142,187 @@ export async function countWorkOrders(
   return client.flooringWorkOrder.count({
     where: buildWorkOrdersWhere(args.searchQuery),
   })
+}
+
+/**
+ * Counts non-void cut logs linked to this work order. Used by the
+ * application-layer warehouse-change-lock predicate
+ * (`assertWorkOrderWarehouseChangeAllowed`).
+ */
+export async function countWorkOrderCutLogs(
+  workOrderId: string,
+  client: WorkOrdersDbClient = db,
+): Promise<number> {
+  return client.flooringCutLog.count({
+    where: {
+      workOrderId,
+      void: false,
+    },
+  })
+}
+
+/**
+ * Joined read shape consumed by the file-generation worker. Returns the
+ * data already projected to `WorkOrderFileGenerationInput` so the worker
+ * can hand it straight to `buildWorkOrderPdfHtml` from the domain layer.
+ *
+ * Per CLAUDE.md data-layer carve-out: this function imports
+ * `formatFullLocationCode` from the domain layer for the inventory
+ * location-code derivation. The PDF artifact in the bucket IS the
+ * snapshot per locked decision; this read runs at worker time.
+ */
+export async function getWorkOrderForFileGeneration(
+  workOrderId: string,
+  options: { generatedAt: string },
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrderFileGenerationInput> {
+  const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
+    where: { id: workOrderId },
+    select: {
+      workOrderNumber: true,
+      isComplete: true,
+      status: true,
+      vacancy: true,
+      scheduledFor: true,
+      unitNumber: true,
+      unitType: true,
+      customAddress: true,
+      description: true,
+      instructions: true,
+      notes: true,
+      property: {
+        select: {
+          name: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          instructions: true,
+        },
+      },
+      managementCompany: { select: { name: true } },
+      warehouse: { select: { name: true } },
+      jobType: { select: { name: true } },
+      template: { select: { templateNumber: true } },
+      items: {
+        orderBy: { createdAt: "asc" as const },
+        select: {
+          id: true,
+          quantity: true,
+          sendUnitName: true,
+          sendUnitAbbrev: true,
+          notes: true,
+          product: {
+            select: {
+              name: true,
+              stockUnitName: true,
+              stockUnitAbbrev: true,
+              itemCoverageUnitName: true,
+              itemCoverageUnitAbbrev: true,
+            },
+          },
+          cutLogs: {
+            orderBy: [
+              { isFinal: "asc" as const },
+              { finalCutSequence: "asc" as const },
+              { createdAt: "asc" as const },
+            ],
+            select: {
+              id: true,
+              cutLogNumber: true,
+              status: true,
+              isFinal: true,
+              before: true,
+              cut: true,
+              after: true,
+              coverageCut: true,
+              isWaste: true,
+              notes: true,
+              finalCutSequence: true,
+              inventory: {
+                select: {
+                  inventoryNumber: true,
+                  itemNumber: true,
+                  dyeLot: true,
+                  location: {
+                    select: {
+                      rafter: true,
+                      level: true,
+                      section: { select: { number: true } },
+                      warehouse: { select: { number: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const materialItems: WorkOrderFileMaterialItemProjection[] = workOrder.items.map((item) => ({
+    id: item.id,
+    productName: item.product.name,
+    quantity: item.quantity.toString(),
+    sendUnitName: item.sendUnitName ?? "",
+    sendUnitAbbrev: item.sendUnitAbbrev ?? "",
+    stockUnitName: item.product.stockUnitName ?? "",
+    stockUnitAbbrev: item.product.stockUnitAbbrev ?? "",
+    itemCoverageUnitName: item.product.itemCoverageUnitName ?? "",
+    itemCoverageUnitAbbrev: item.product.itemCoverageUnitAbbrev ?? "",
+    notes: item.notes ?? "",
+    cutLogs: item.cutLogs.map((cl) => ({
+      id: cl.id,
+      cutLogNumber: cl.cutLogNumber,
+      status: cl.status,
+      isFinal: cl.isFinal,
+      before: cl.before.toString(),
+      cut: cl.cut.toString(),
+      after: cl.after.toString(),
+      coverageCut: cl.coverageCut === null ? "" : cl.coverageCut.toString(),
+      isWaste: cl.isWaste,
+      notes: cl.notes ?? "",
+      inventoryNumber: cl.inventory.inventoryNumber,
+      inventoryItemNumber: cl.inventory.itemNumber ?? "",
+      inventoryDyeLot: cl.inventory.dyeLot ?? "",
+      inventoryLocationCode: cl.inventory.location
+        ? formatFullLocationCode({
+            warehouseNumber: cl.inventory.location.warehouse.number,
+            sectionNumber: cl.inventory.location.section.number,
+            rafter: cl.inventory.location.rafter,
+            level: cl.inventory.location.level,
+          })
+        : "",
+      finalCutSequence: cl.finalCutSequence,
+    })),
+  }))
+
+  return {
+    workOrderNumber: workOrder.workOrderNumber,
+    isComplete: workOrder.isComplete,
+    status: workOrder.status,
+    scheduledFor: workOrder.scheduledFor === null ? "" : workOrder.scheduledFor.toISOString().slice(0, 10),
+    vacancy: workOrder.vacancy,
+    unitNumber: workOrder.unitNumber ?? "",
+    unitType: workOrder.unitType ?? "",
+    customAddress: workOrder.customAddress ?? "",
+    description: workOrder.description ?? "",
+    instructions: workOrder.instructions ?? "",
+    notes: workOrder.notes ?? "",
+    generatedAt: options.generatedAt,
+    property: {
+      name: workOrder.property.name,
+      streetAddress: workOrder.property.streetAddress ?? "",
+      city: workOrder.property.city ?? "",
+      state: workOrder.property.state ?? "",
+      postalCode: workOrder.property.postalCode ?? "",
+      instructions: workOrder.property.instructions ?? "",
+    },
+    managementCompanyName: workOrder.managementCompany?.name ?? "",
+    warehouseName: workOrder.warehouse?.name ?? "",
+    jobTypeName: workOrder.jobType?.name ?? "",
+    templateNumber: workOrder.template?.templateNumber ?? "",
+    materialItems,
+  }
 }

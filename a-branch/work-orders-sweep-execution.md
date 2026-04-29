@@ -6,8 +6,8 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 |---|---|---|
 | 7a — Schema (WOMI status enum) | ✅ DONE | `67045274` |
 | 7b — Domain (primary + MI subdir + cut-log payloads) | ✅ DONE | `1aaa6bab` |
-| 7c — Domain (file-gen) | ✅ DONE | `62a94e63` |
-| 7d — Data | ⏳ next | — |
+| 7c — Domain (file-gen) | ✅ DONE | `62a94e63`, amended `f42f1ee9` (PDF columns), `2b81ccb9` (inventory cell) |
+| 7d — Data | ✅ DONE | (pending git commit) |
 | 7e — Application (primary) | pending | — |
 | 7f — Application (MI + cut-logs) | pending | — |
 | 7g — Application (file-gen) | pending | — |
@@ -65,7 +65,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 
 ---
 
-## 7c — Domain file generation (DONE, awaiting commit)
+## 7c — Domain file generation (DONE, committed `62a94e63` + amendments)
 
 | Step | Result |
 |---|---|
@@ -83,7 +83,58 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 - `WorkOrderFileGenerationInput` carries `customAddress`, joined `property.streetAddress/city/state/postalCode`, joined `property.instructions`. Builder uses `customAddress` if present, else falls back to formatted property address.
 - HTML body emits sections only when content exists (instructions, description, notes, cut-log sub-tables) so empty PDFs stay tight.
 - Cut log row uses CSS class per status (`cut-log-pending` / `cut-log-final` / `cut-log-void`) — voids render struck-through and grey.
-- Per locked decision #4: PDF is the snapshot. No JSONB or snapshot tables. Worker reads live joined data at render time via `getWorkOrderForFileGeneration` (to be authored in 7d).
+- Per locked decision #4: PDF is the snapshot. No JSONB or snapshot tables. Worker reads live joined data at render time via `getWorkOrderForFileGeneration` (authored in 7d).
+
+**Open issues:** none.
+
+---
+
+## 7d — Data layer (DONE, awaiting commit)
+
+### Pre-flight audit confirmed
+
+- Zero external consumers of the existing WO data exports (verified via grep across `packages/` + `apps/`). Safe full rewrite.
+- Two dead `propertyInstructions` references in pre-rewrite `shared.ts:32` + `write-repository.ts:16/31/41`. Cleared by the rewrite.
+- Subdirs `material-items/`, `files/`, `cut-logs/` did not exist — clean slate.
+
+### Files rewritten (3)
+
+| File | Changes |
+|---|---|
+| `packages/db/src/flooring/work-orders/shared.ts` | Split `workOrderListSelect` (lightweight `property: { name }`) and `workOrderDetailSelect` (full property join with address + instructions). Both surface `status`, `description`, `scheduledFor`. Detail also pulls sync snapshot columns. Drops `propertyInstructions`. |
+| `read-repository.ts` | `listWorkOrders`, `listWorkOrderOptions`, `getWorkOrderById` (list shape — existence + lock context), `getWorkOrderDetailById` (full detail), `countWorkOrders`, `countWorkOrderCutLogs` (warehouse-change-lock predicate input), and the big one — `getWorkOrderForFileGeneration` projecting directly to `WorkOrderFileGenerationInput` with joined inventory location codes via `formatFullLocationCode`. |
+| `write-repository.ts` | `CreateWorkOrderRecordInput` omits `status` + sync snapshots (worker-controlled). `Update` is `Partial<Create>`. New `markWorkOrderStatus` for the file-gen lifecycle. |
+
+### Files created (8)
+
+| Path | Exports |
+|---|---|
+| `material-items/read-repository.ts` | `listWorkOrderMaterialItems`, `countCutLogsByWorkOrderItemIds`, `listEligibleInventoryForWorkOrderItem` (warehouse + product match + remaining stock > 0, formatted location code). |
+| `material-items/write-repository.ts` | `WriteWorkOrderMaterialItemInput`, CRUD record functions, `applyWorkOrderMaterialItemsDiff` — **nulls cut-log links (both columns) inside the TX before deleting any WOMI row** to keep `assertCutLogLinkageSymmetry` satisfied; `markWorkOrderItemStatus`. |
+| `material-items/index.ts` | Re-exports. |
+| `files/read-repository.ts` | `listWorkOrderFiles`, `getWorkOrderFileById`. |
+| `files/write-repository.ts` | `createWorkOrderFile` (max+1 fileNumber, status=QUEUED), `markWorkOrderFileWorking/Completed/Failed`, `deleteWorkOrderFile`. |
+| `files/index.ts` | Re-exports. |
+| `cut-logs/read-repository.ts` | `listCutLogsForWorkOrderItem`, `getInventoriesForCutLogDiff`, `getInventoriesForCutLogIds`, `listCutLogsForInventoryIds`. |
+| `cut-logs/write-repository.ts` | **`lockInventoriesForCutLogBatch`** (first multi-inventory locker in the codebase — sorts ascending, single `SELECT FOR UPDATE` over `id = ANY($1::uuid[])`), `applyWorkOrderItemCutLogPendingDiff` (stamps both link columns; computes per-inventory before/after under lock; cost+freight always null), `applyFinalizeWorkOrderCutLogBatch` (per-inventory `finalCutSequence` from max+1), `recomputeAndPersistTotalCutSums` (uses domain's pure `computeTotalCutSum`). |
+| `cut-logs/index.ts` | Re-exports. |
+| `flooring/work-orders/index.ts` | Re-exports the 3 new subdirs. |
+
+### Verification gates
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck --workspace @builders/db` | ✅ exit 0 |
+| `npm run build --workspace @builders/db` | ✅ exit 0 |
+| `npm run typecheck --workspace @builders/application` | ✅ exit 0 (no regressions; application doesn't reference WO yet — that's 7e/7f/7g) |
+
+### Notable design points
+
+1. **Multi-inventory locking**: `lockInventoriesForCutLogBatch` deduplicates + sorts the id set before the FOR UPDATE. Deterministic ordering eliminates deadlock risk between concurrent WOMI cut-log writes that touch overlapping inventories.
+2. **before/after computation**: For a pending diff that adds N drafts to inventory I, we read I's current `(startingStock, totalCutSum)` once inside the locked TX, then compute each draft's `before` = previous remaining and `after` = `before - cut`, threading the running remaining through the drafts in order. Application layer revalidates via `assertCutSumWithinStartingStock` after `recomputeAndPersistTotalCutSums` returns.
+3. **WOMI delete via section save unlinks cut logs**: `applyWorkOrderMaterialItemsDiff` runs `flooringCutLog.updateMany({ where: { workOrderItemId IN deletedIds }, data: { workOrderId: null, workOrderItemId: null } })` before the WOMI deleteMany, all in the same TX. Symmetry preserved.
+4. **`getWorkOrderForFileGeneration` returns the domain projection directly**: Keeps the file-gen worker's call shape minimal — read once, hand to `buildWorkOrderPdfHtml`. Data-layer carve-out for pure domain helpers (per CLAUDE.md) covers this — `formatFullLocationCode` is a pure formatter.
+5. **No application-layer business logic leaked into data**: All status flips are thin row updates. Transition validity (`assertWorkOrderItemStatusTransition`) is the application layer's call.
 
 **Open issues:** none.
 
