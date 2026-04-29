@@ -1,4 +1,10 @@
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 export type StorageEnvironment = {
@@ -109,6 +115,15 @@ export async function bucketObjectExists(env: StorageEnvironment, key: string) {
 
     throw error
   }
+}
+
+export async function deleteBucketObject(env: StorageEnvironment, key: string): Promise<void> {
+  await getStorageClient(env).send(
+    new DeleteObjectCommand({
+      Bucket: env.bucketName,
+      Key: key,
+    }),
+  )
 }
 
 export async function createBucketObjectPresignedUrl(

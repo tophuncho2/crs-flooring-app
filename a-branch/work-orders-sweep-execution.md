@@ -10,7 +10,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7d — Data | ✅ DONE | `ae9c8ea7` |
 | 7e — Application (primary) | ✅ DONE | `53d94132` |
 | 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
-| 7g — Application (file-gen) | pending | — |
+| 7g — Application (file-gen) | ✅ DONE | (pending git commit) |
 | 7h — Worker/Relay | pending | — |
 | 7i — API | pending | — |
 | 7j — Engine off-ramp | pending | — |
@@ -221,6 +221,48 @@ API + validators NOT touched (deferred to 7i). 16 application files added across
 6. **Void linkage validation** (Q2 from the 7f confirmation): `voidWorkOrderCutLogUseCase` accepts `{ workOrderId, cutLogId }` and rejects with `WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH` if the cut log's `workOrderId` differs from the input — before any DB write.
 
 `flooring/work-orders/index.ts` re-exports both new subdirs alongside the primary use cases.
+
+**Open issues:** none.
+
+---
+
+## 7g — Application file-gen producer + consumer (DONE, awaiting commit)
+
+### Library helper added (1 file modified)
+
+| File | Change |
+|---|---|
+| `packages/lib/src/storage.ts` | New `deleteBucketObject(env, key)` SDK wrapper. Imports `DeleteObjectCommand` from `@aws-sdk/client-s3`. Returns `Promise<void>`. Required by `deleteWorkOrderFileUseCase`. Per CLAUDE.md `lib` package rule — thin SDK wrapper only, no business logic. |
+
+### Files created (6)
+
+| File | Purpose |
+|---|---|
+| `application/.../files/errors.ts` | `WorkOrderFileExecutionError` + 4 codes (not-found, generation-failed, delete-failed, invalid-state). |
+| `files/types.ts` | Use-case input/output types. `GenerateWorkOrderFileInput` + `DeleteWorkOrderFileInput` accept `storageEnv: StorageEnvironment` (caller injects from `process.env`; application package never reads env directly per CLAUDE.md). |
+| `files/request-work-order-file.ts` | **Producer.** Single TX: verify WO exists → `createWorkOrderFile` (max+1 fileNumber, status QUEUED) → `markWorkOrderStatus(WO, QUEUED)` → `createQueueOutboxEvent` with idempotency key `wo-file-gen:${workOrderId}:${fileId}`. P2025 → 404. |
+| `files/generate-work-order-file.ts` | **Consumer.** Three phases: **TX1** locks the file row + asserts QUEUED + marks WORKING + marks WO WORKING. **IO** reads via `getWorkOrderForFileGeneration({ generatedAt })`, builds HTML via `buildWorkOrderPdfHtml`, renders PDF via `renderHtmlToPdf` (`@builders/pdf`), uploads via `uploadBucketObject` to key `work-orders/${workOrderId}/${fileId}.pdf`. **TX2** marks file COMPLETED + persists fileKey + marks WO COMPLETED. On any error in IO or TX2, runs a separate-TX `markFailedAfterRender` to flip both rows to FAILED, then throws `WorkOrderFileExecutionError(WORK_ORDER_FILE_GENERATION_FAILED, status 500)`. |
+| `files/delete-work-order-file.ts` | **Sync.** Read row outside TX → assert WO linkage → if `fileKey` non-null, call `deleteBucketObject` (lib SDK wrapper) → delete row in TX. P2025 on row delete is treated as no-op (already gone). Bucket delete failure surfaces as `WORK_ORDER_FILE_DELETE_FAILED`. |
+| `files/index.ts` | Re-exports. |
+
+`flooring/work-orders/index.ts` re-exports `files/`.
+
+### Verification gates
+
+| Gate | Result |
+|---|---|
+| `npm run build --workspace @builders/lib` | ✅ exit 0 |
+| `npm run typecheck --workspace @builders/application` | ✅ exit 0 |
+| `npm run build --workspace @builders/application` | ✅ exit 0 |
+
+### Notable design points
+
+1. **TX boundaries**: producer is single-TX. Consumer splits into TX1 (lock + WORKING) → IO (PDF render + upload, no DB lock held) → TX2 (COMPLETED). Critical for not holding a TX open during the puppeteer render which can take seconds.
+2. **Failure isolation**: `markFailedAfterRender` runs in a fresh TX so the FAILED state survives any rollback that triggered it. Mirrors the cut-log worker's `markWorkOrderItemFailedFromCutLogDiff` pattern.
+3. **Storage env injected**: application use cases accept `storageEnv: StorageEnvironment` as part of input rather than reading `process.env` themselves. The worker entrypoint (7h) and the API delete route (7i) load env at their own boundaries and pass it in.
+4. **Bucket key shape**: `work-orders/${workOrderId}/${fileId}.pdf` — predictable, scoped, easy to debug. Per-WO prefix groups all that WO's files together in the bucket.
+5. **Defensive QUEUED check in TX1**: if a duplicate outbox event fires after the original worker already started, the second worker sees status WORKING (or COMPLETED) and short-circuits with `WORK_ORDER_FILE_INVALID_STATE`. Idempotency belt-and-suspenders alongside the BullMQ `idempotencyKey`.
+6. **Sync delete**: bucket delete is OUTSIDE the database TX (Postgres can't lock S3). If the bucket delete succeeds but the row delete fails, retry is safe — bucket delete on a missing object is a no-op.
 
 **Open issues:** none.
 
