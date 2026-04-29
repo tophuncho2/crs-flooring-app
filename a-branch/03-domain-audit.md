@@ -165,12 +165,12 @@ returns this exact shape.
 
 | # | Question | Recommendation |
 |---|---|---|
-| Q1 | `ProductRowCategory.sendUnit` carries the full name (`"Square Feet"`) but not the abbreviation (`"sf"`). To stamp `sendUnitAbbrev` on items at write time, do we (a) extend `ProductRowCategory` with `sendUnitAbbrev`, or (b) read abbreviation directly from the `FlooringUnitOfMeasure` join in the data layer's product fetch? | (a) — already on `FlooringInventory` snapshot; consistent shape across modules. |
-| Q2 | `propertyInstructions` autofill helper — does it live in `management/properties/` (shared by templates + WO) or duplicated in each module? | Shared — `management/properties/instructions-autofill.ts`, exported from properties barrel. |
-| Q3 | Does the WO required-fields rule ("only `warehouseId` + `propertyId`") replace the template required-fields rule (`propertyId` + `unitType`) too, or do templates keep their own? | Templates keep `propertyId` + `unitType`. Templates have always required `unitType` and the data layer treats it as `String` (NOT NULL); changing that requires a schema delta. |
-| Q4 | WO-MI cut-log save flow: fan out to existing per-inventory payloads, or new WOMI-scoped payload? | Fan out to existing — see §"Open question Open Q4" above. |
-| Q5 | `validateTemplateMaterialItemsDiff` — promote to a domain-level diff validator now (mirror `validateCutLogsDiff`) or leave the procedural per-row check in the application layer? | Promote. Gives WO MI a clone target and shrinks the application use case. |
-| Q6 | Status field on the **template** row — out of scope this sweep (intent §"Template file gen dropped from this sweep")? Confirm. | Out of scope; no `status` on templates. |
+| Q1 | `ProductRowCategory.sendUnit` carries the full name (`"Square Feet"`) but not the abbreviation (`"sf"`). To stamp `sendUnitAbbrev` on items at write time, do we ----  extend `ProductRowCategory` with `sendUnitAbbrev`, 
+| Q2 | `propertyInstructions` autofill helper — lives in `management/properties/instructions-autofill.ts`, exported from properties barrel. 
+| Q3 | WO required-fields rule ("only `warehouseId` + `propertyId`") | Templates keep `propertyId` + `unitType`.
+| Q4 | WO-MI cut-log save flow: fan out to existing per-inventory payloads, or new WOMI-scoped payload? | Fan out to existing — see §"Open question Open Q4" above. | **Flag q4 as an pending answer** 
+| Q5 | `validateTemplateMaterialItemsDiff` — promote to a domain-level diff validator now (mirror `validateCutLogsDiff`) or leave the procedural per-row check in the application layer? | Promote. Gives WO MI a clone target and shrinks the application use case ** flag as pending answer**. |
+| Q6 | Status field on the **template** row — out of scope this sweep (intent §"Template file gen dropped from this sweep")? Confirm. | Out of scope; no `status` on templates. | ----- templates do not need a status, the sync to work orders will be synchronous. 
 
 ## Files this sweep will touch (preview)
 
