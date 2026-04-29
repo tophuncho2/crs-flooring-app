@@ -232,6 +232,12 @@ model FlooringProduct {
   isPublic                         Boolean                            @default(false)
   notes                            String?
   subOrder                         String?
+  sendUnitName                     String?
+  sendUnitAbbrev                   String?
+  stockUnitName                    String?
+  stockUnitAbbrev                  String?
+  itemCoverageUnitName             String?
+  itemCoverageUnitAbbrev           String?
   createdAt                        DateTime                           @default(now())
   updatedAt                        DateTime                           @updatedAt
   templateItems                    FlooringTemplateItem[]

@@ -1,16 +1,16 @@
 # 1 — Schema Alterations (per-model checklist)
 
-Current models snapshot: `a-branch/alteration/mock/current-models.md`. Status: **PENDING — not applied.**
+Current models snapshot: `a-branch/alteration/mock/current-models.md`. Status: **APPLIED** to Railway via migration `20260428230000_add_product_unit_snapshots` (deploy exit 0, drift exit 0).
 
 ## `FlooringProduct`
 
-- [ ] ADD `sendUnitName String?`
-- [ ] ADD `sendUnitAbbrev String?`
-- [ ] ADD `stockUnitName String?`
-- [ ] ADD `stockUnitAbbrev String?`
-- [ ] ADD `itemCoverageUnitName String?`
-- [ ] ADD `itemCoverageUnitAbbrev String?`
-- [ ] Backfill script `db:backfill:product-units` (mirror `db:backfill:product-names`)
+- [x] ADD `sendUnitName String?`
+- [x] ADD `sendUnitAbbrev String?`
+- [x] ADD `stockUnitName String?`
+- [x] ADD `stockUnitAbbrev String?`
+- [x] ADD `itemCoverageUnitName String?`
+- [x] ADD `itemCoverageUnitAbbrev String?`
+- [ ] Backfill script `db:backfill:product-units` (mirror `db:backfill:product-names`) — pending
 
 ## `FlooringWorkOrderItem`
 
