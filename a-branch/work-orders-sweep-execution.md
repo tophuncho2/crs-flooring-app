@@ -8,7 +8,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7b — Domain (primary + MI subdir + cut-log payloads) | ✅ DONE | `1aaa6bab` |
 | 7c — Domain (file-gen) | ✅ DONE | `62a94e63`, amended `f42f1ee9` (PDF columns), `2b81ccb9` (inventory cell) |
 | 7d — Data | ✅ DONE | `ae9c8ea7` |
-| 7e — Application (primary) | ✅ DONE | (pending git commit) |
+| 7e — Application (primary) | ✅ DONE | `53d94132` |
 | 7f — Application (MI + cut-logs) | pending | — |
 | 7g — Application (file-gen) | pending | — |
 | 7h — Worker/Relay | pending | — |
@@ -140,7 +140,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 
 ---
 
-## 7e — Application primary use cases (DONE, awaiting commit)
+## 7e — Application primary use cases (DONE, committed `53d94132`)
 
 Created the WO application directory at `packages/application/src/flooring/work-orders/`. API + validators are NOT touched in this layer per user direction; that's 7i.
 
