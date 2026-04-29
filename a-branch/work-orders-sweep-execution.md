@@ -5,8 +5,8 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | Sub-sweep | Status | Commit |
 |---|---|---|
 | 7a — Schema (WOMI status enum) | ✅ DONE | `67045274` |
-| 7b — Domain (primary + MI subdir + cut-log payloads) | ⏳ next | — |
-| 7c — Domain (file-gen) | pending | — |
+| 7b — Domain (primary + MI subdir + cut-log payloads) | ✅ DONE | `1aaa6bab` |
+| 7c — Domain (file-gen) | ⏳ next | — |
 | 7d — Data | pending | — |
 | 7e — Application (primary) | pending | — |
 | 7f — Application (MI + cut-logs) | pending | — |
@@ -40,7 +40,33 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 
 ---
 
+---
+
+## 7b — Domain primary + material-items + cut-log payloads (DONE, committed `1aaa6bab`)
+
+| Step | Result |
+|---|---|
+| Rewrite `types.ts` — surface `status`, sync snapshots, joined property fields on detail; drop `propertyInstructions` (live-derived); WorkOrderForm excludes status | ✅ |
+| Rewrite `normalizers.ts` — map joined property fields + sync snapshots | ✅ |
+| Rewrite `form-rules.ts` — require propertyId AND warehouseId | ✅ |
+| Update `error-messages.ts` — add warehouse-locked + cut-log-write-failed + file-gen-failed | ✅ |
+| New `errors.ts` — `WorkOrderDomainError` class + 4 error codes | ✅ |
+| New `lock-rules.ts` — `assertWorkOrderWarehouseChangeAllowed` throws `WORK_ORDER_WAREHOUSE_LOCKED` | ✅ |
+| New `material-items/{types,rules,normalizers,diff-rules,status-rules,index}.ts` (6 files) | ✅ |
+| New queue payload `save-work-order-item-pending-cut-log-diff.ts` (per-WOMI; cost+freight absent) | ✅ |
+| New queue payload `finalize-work-order-cut-log-batch.ts` (WO-scoped batch) | ✅ |
+| Update `index.ts` (WO + queue re-exports) | ✅ |
+| `npm run typecheck --workspace @builders/domain` | ✅ exit 0 |
+| `npm run build --workspace @builders/domain` | ✅ exit 0 |
+
+**Expected DB layer errors remaining (deferred to 7d rewrite):** 4 errors in `packages/db/src/flooring/work-orders/{read-repository,write-repository}.ts` — selects don't include the new fields the rewritten normalizers require. Will be cleared by 7d.
+
+**Open issues:** none.
+
+---
+
 ## Notes
 
 - Per CLAUDE.md: schema lands alone in its own commit; subsequent sub-sweeps may bundle related changes per layer.
 - Plan + this execution file live at `a-branch/` per project convention.
+- 7b's gate per the plan was domain typecheck only (data + application + web are deferred to their own sub-sweeps); the 4 DB errors above are the expected leftover surface.
