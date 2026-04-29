@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
-import { CurrencyCell, DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
+import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/use-template-material-items-section"
 
@@ -11,7 +11,6 @@ const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
     { key: "categoryFilter", label: "Category", minWidth: 160, grow: 0 },
     { key: "product", label: "Product", minWidth: 260, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
-    { key: "unitPrice", label: "Unit Price", kind: "currency", minWidth: 120, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
   trailingControls: [{ key: "remove", kind: "actions", width: 72 }],
@@ -138,16 +137,6 @@ export function TemplateMaterialItemsSection({
                   onChange={(next) => onChangeField(item.id, "quantity", next)}
                   placeholder="Quantity"
                   ariaLabel="Material item quantity"
-                />
-              )
-            case "unitPrice":
-              return (
-                <CurrencyCell
-                  editable={editable}
-                  value={item.unitPrice}
-                  onChange={(next) => onChangeField(item.id, "unitPrice", next)}
-                  placeholder="Unit price"
-                  ariaLabel="Material item unit price"
                 />
               )
             case "notes":

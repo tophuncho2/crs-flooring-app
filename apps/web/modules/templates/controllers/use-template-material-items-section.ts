@@ -19,7 +19,6 @@ export type TemplateMaterialItemLocal = {
   id: string
   productId: string
   quantity: string
-  unitPrice: string
   notes: string
   // Client-only ergonomic for narrowing the row's product picker. NOT
   // persisted to the server — excluded from the diff sent on save.
@@ -35,7 +34,6 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
     id: row.id,
     productId: row.productId,
     quantity: row.quantity,
-    unitPrice: row.unitPrice,
     notes: row.notes,
     categoryFilterId: null,
   }
@@ -47,7 +45,7 @@ function createLocalState(record: TemplateDetail): TemplateMaterialItemsLocalSta
 
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
-    record.items.map((row) => `${row.id}:${row.productId}:${row.quantity}:${row.unitPrice}:${row.notes}`),
+    record.items.map((row) => `${row.id}:${row.productId}:${row.quantity}:${row.notes}`),
   )
 }
 
@@ -63,7 +61,6 @@ function itemsDiffer(local: TemplateMaterialItemLocal, server: TemplateMaterialI
   return (
     local.productId !== server.productId ||
     local.quantity !== server.quantity ||
-    local.unitPrice !== server.unitPrice ||
     local.notes !== server.notes
   )
 }
@@ -72,7 +69,6 @@ function toDiffForm(local: TemplateMaterialItemLocal): TemplateMaterialItemForm 
   return {
     productId: local.productId,
     quantity: local.quantity,
-    unitPrice: local.unitPrice,
     notes: local.notes,
   }
 }
@@ -160,7 +156,6 @@ export function useTemplateMaterialItemsSection({
           id: createLocalRecordRowId("template-material-item"),
           productId: "",
           quantity: "",
-          unitPrice: "",
           notes: "",
           categoryFilterId: null,
         },

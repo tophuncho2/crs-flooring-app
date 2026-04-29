@@ -94,7 +94,6 @@ function validateMaterialItemForm(value: unknown, path: string): TemplateMateria
   return {
     productId: requireString(obj.productId, `${path}.productId`, failDiff),
     quantity: requireString(obj.quantity, `${path}.quantity`, failDiff),
-    unitPrice: requireString(obj.unitPrice, `${path}.unitPrice`, failDiff),
     notes: typeof obj.notes === "string" ? obj.notes : "",
   }
 }
