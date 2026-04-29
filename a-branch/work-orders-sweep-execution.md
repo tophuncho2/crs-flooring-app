@@ -9,7 +9,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7c — Domain (file-gen) | ✅ DONE | `62a94e63`, amended `f42f1ee9` (PDF columns), `2b81ccb9` (inventory cell) |
 | 7d — Data | ✅ DONE | `ae9c8ea7` |
 | 7e — Application (primary) | ✅ DONE | `53d94132` |
-| 7f — Application (MI + cut-logs) | pending | — |
+| 7f — Application (MI + cut-logs) | ✅ DONE | (pending git commit) |
 | 7g — Application (file-gen) | pending | — |
 | 7h — Worker/Relay | pending | — |
 | 7i — API | pending | — |
@@ -170,6 +170,57 @@ Created the WO application directory at `packages/application/src/flooring/work-
 2. **Transactions**: every use case wraps via `withDatabaseTransaction(...)`. The `client?` parameter allows callers (typically other use cases) to share an existing TX.
 3. **Domain rule routing**: `assertWorkOrderWarehouseChangeAllowed` is the only domain throw in the primary flow. Caught + rethrown as the application error. Validation strings imported from `@builders/domain` (single source of truth).
 4. **Delete is unblocked**: per the locked sweep decision, WO deletion no longer asserts a cut-log count; the schema's SetNull cascade is the unlink mechanism. Comment in the use case documents the chain.
+
+**Open issues:** none.
+
+---
+
+## 7f — Application MI + cut-log use cases (DONE, awaiting commit)
+
+API + validators NOT touched (deferred to 7i). 16 application files added across two subdirs.
+
+### `material-items/` subdir (7 files)
+
+| File | Purpose |
+|---|---|
+| `errors.ts` | `WorkOrderMaterialItemExecutionError` + 2 codes (validation, not-found). |
+| `types.ts` | UseCase input/output types + `tempIdMap` return shape on the section save. |
+| `create-work-order-material-item.ts` | Validate form → load product → `buildItemSendUnitSnapshotFromProduct` → write. WOMI starts at `IDLE` per data-layer default. |
+| `update-work-order-material-item.ts` | Same shape; re-snapshots when product changes. P2025 → 404. |
+| `delete-work-order-material-item.ts` | Thin call to data layer. The data write nulls cut-log links inside the TX before deleting (preserves `assertCutLogLinkageSymmetry`). Per locked decision #1, no domain throw to convert. |
+| `save-work-order-material-items-section.ts` | Mirrors the templates section-save: per-row form validation → distinct productIds batch fetch → snapshot stamping → `assignDraftIds` → `applyWorkOrderMaterialItemsDiff`. The data write also handles cut-log unlinks for any deleted rows. |
+| `index.ts` | Re-exports. |
+
+### `cut-logs/` subdir (8 files)
+
+| File | Purpose |
+|---|---|
+| `errors.ts` | `WorkOrderCutLogExecutionError` + 7 codes (validation, not-found, linkage-mismatch, status-transition, void-not-allowed, finalize-blocked, batch-failed). |
+| `types.ts` | Producer/consumer input + result types (incl. `RequestedBy`, `WorkOrderCutLogPendingDiff`). |
+| `save-work-order-item-pending-cut-log-diff.ts` | **Producer.** TX: fetch WOMI, assert WO linkage, transition WOMI → `SAVING_CUTS` via `assertWorkOrderItemStatusTransition`, stamp UUIDs via `assignDraftIds`, defensive `assertCutLogLinkageSymmetry` on the producer-stamped pair, write outbox event with idempotency key `wo-pcl-diff:${workOrderItemId}:${requestKey}`. |
+| `apply-work-order-item-pending-cut-log-diff.ts` | **Consumer.** TX: derive touched inventoryIds via `getInventoriesForCutLogDiff` → `lockInventoriesForCutLogBatch` → `applyWorkOrderItemCutLogPendingDiff` → `recomputeAndPersistTotalCutSums` → `assertCutSumWithinStartingStock` per inventory → mark WOMI `IDLE`. Plus `markWorkOrderItemFailedFromCutLogDiff` for the worker's catch path (fresh TX). |
+| `finalize-work-order-cut-log-batch.ts` | **Producer.** TX: fetch every selected cut log, reject if any row's `workOrderId` mismatches OR fails `getCutLogFinalizabilityBlocker` / `canFinalizeCutLog` predicates. Aggregate touched WOMIs, transition each to `FINALIZING`, write outbox event with key `wo-cl-finalize:${workOrderId}:${requestKey}`. |
+| `apply-finalize-work-order-cut-log-batch.ts` | **Consumer.** TX: derive inventoryIds via `getInventoriesForCutLogIds` → lock → defensive revalidate every row's finalize predicate under the lock → `applyFinalizeWorkOrderCutLogBatch` (per-inventory finalCutSequence stamp) → recompute totalCutSum + assert invariant per inventory → mark every touched WOMI `IDLE`. Plus `markWorkOrderItemsFailedFromFinalizeBatch`. |
+| `void-work-order-cut-log.ts` | **SYNC use case (no worker, no outbox).** TX: fetch row, assert WO linkage, single-inventory `SELECT ... FOR UPDATE` lock, assert `canVoidCutLog`, apply `buildVoidedCutLogPatch`, recompute totalCutSum + assert invariant. Returns `{ id, inventoryId }`. **No WOMI status change** per locked decision #1. |
+| `index.ts` | Re-exports. |
+
+### Verification gates
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck --workspace @builders/application` | ✅ exit 0 (after fixing 4 Decimal vs string mismatches by stringifying `cut` before passing to `canFinalizeCutLog` / `getCutLogFinalizabilityBlocker`) |
+| `npm run build --workspace @builders/application` | ✅ exit 0 |
+
+### Notable design points
+
+1. **TempIds vs real IDs**: tempId is a UI-state marker; real UUID is producer-stamped via `assignDraftIds` (the shared `packages/domain/src/shared/diff-identity.ts` helper). Pre-stamping makes the worker's `createMany` idempotent across retries — Postgres unique-pk catches duplicates.
+2. **Idempotency key shape**: `topic:aggregateId:requestKey` — exactly 3 colon-separated parts per BullMQ rule. `requestKey` is the client-generated UUID (locked decision #6).
+3. **Status transition routing**: producer handles `current → SAVING_CUTS / FINALIZING` via `assertWorkOrderItemStatusTransition`. The catch in 409 surfaces "material item is busy" to the UI. Consumer flips back to `IDLE` on success; worker's catch path flips to `FAILED` in a separate TX so the FAILED state survives the rollback.
+4. **Defensive predicate revalidation**: producer-time and consumer-time both re-check `canFinalizeCutLog` etc. The consumer's revalidation runs UNDER the multi-inventory lock — catches drift (e.g. a void landed between producer enqueue and worker pickup).
+5. **Linkage symmetry**: producer stamps both `workOrderId` and `workOrderItemId` on every draft; calls `assertCutLogLinkageSymmetry` defensively over the pair. The data-layer write writes both columns together. Worker has no opportunity to break symmetry.
+6. **Void linkage validation** (Q2 from the 7f confirmation): `voidWorkOrderCutLogUseCase` accepts `{ workOrderId, cutLogId }` and rejects with `WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH` if the cut log's `workOrderId` differs from the input — before any DB write.
+
+`flooring/work-orders/index.ts` re-exports both new subdirs alongside the primary use cases.
 
 **Open issues:** none.
 
