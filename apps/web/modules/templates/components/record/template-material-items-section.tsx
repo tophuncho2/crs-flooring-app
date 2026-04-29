@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
@@ -16,7 +16,15 @@ const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
   trailingControls: [{ key: "remove", kind: "actions", width: 72 }],
 }
 
-export type MaterialItemProductOption = { id: string; name: string; categoryId: string }
+export type MaterialItemProductOption = {
+  id: string
+  name: string
+  categoryId: string
+  // Send-unit snapshot from the product. Surfaced beside the quantity input so
+  // the user sees the unit (e.g., "sf") inline as soon as a product is picked.
+  sendUnitName: string
+  sendUnitAbbrev: string
+}
 export type TemplateMaterialItemCategoryOption = { id: string; name: string }
 
 export function TemplateMaterialItemsSection({
@@ -54,6 +62,14 @@ export function TemplateMaterialItemsSection({
 }) {
   const editable = !isSaving
   const categoryCellOptions = categoryOptions.map((option) => ({ id: option.id, label: option.name }))
+  // Lookup map for the quantity-cell unit suffix. Built once per render —
+  // cheap; productOptions is the warehouse-scoped picker list (~hundreds at
+  // most). Avoids an O(n*m) scan across the grid rows.
+  const productById = useMemo(() => {
+    const map = new Map<string, MaterialItemProductOption>()
+    for (const product of productOptions) map.set(product.id, product)
+    return map
+  }, [productOptions])
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -129,16 +145,25 @@ export function TemplateMaterialItemsSection({
                 />
               )
             }
-            case "quantity":
+            case "quantity": {
+              const unitAbbrev = productById.get(item.productId)?.sendUnitAbbrev ?? ""
               return (
-                <NumberCell
-                  editable={editable}
-                  value={item.quantity}
-                  onChange={(next) => onChangeField(item.id, "quantity", next)}
-                  placeholder="Quantity"
-                  ariaLabel="Material item quantity"
-                />
+                <div className="flex w-full items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <NumberCell
+                      editable={editable}
+                      value={item.quantity}
+                      onChange={(next) => onChangeField(item.id, "quantity", next)}
+                      placeholder="Quantity"
+                      ariaLabel="Material item quantity"
+                    />
+                  </div>
+                  <span className="shrink-0 text-[var(--foreground)]/60" aria-hidden="true">
+                    {unitAbbrev || "—"}
+                  </span>
+                </div>
               )
+            }
             case "notes":
               return (
                 <TextCell

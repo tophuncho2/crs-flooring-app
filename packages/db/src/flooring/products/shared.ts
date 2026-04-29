@@ -55,13 +55,16 @@ export const productDetailSelect = productRowSelect
 
 // Skinny shape for picker dropdowns. Includes `categoryId` so consumers can
 // implement category-scoped product filtering in row pickers without an
-// additional query.
+// additional query, plus the send-unit snapshot so material-item grids can
+// render the unit suffix beside the quantity input without a second fetch.
 export const productOptionSelect = {
   id: true,
   name: true,
   categoryId: true,
   style: true,
   color: true,
+  sendUnitName: true,
+  sendUnitAbbrev: true,
 } as const
 
 export type ProductRowPayload = Prisma.FlooringProductGetPayload<{ select: typeof productRowSelect }>

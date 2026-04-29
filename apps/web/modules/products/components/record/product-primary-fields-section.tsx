@@ -13,6 +13,11 @@ import {
 import { categoryRequiresCoveragePerUnit, type ProductCreateForm } from "@builders/domain"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
 
+function formatUnit(name: string | null | undefined, abbrev: string | null | undefined) {
+  if (!name) return "—"
+  return abbrev ? `${name} (${abbrev})` : name
+}
+
 export function ProductPrimaryFieldsSection({
   product,
   draft,
@@ -44,6 +49,20 @@ export function ProductPrimaryFieldsSection({
   }, [categoryOptions, categoryReadOnly, draft.categoryId, product.category.id])
   const coverageRequired = categoryRequiresCoveragePerUnit(selectedCategory?.slug)
 
+  // In record-view mode (categoryReadOnly), unit cells display the immutable
+  // snapshot stamped on the product row at create — accurate even if a UoM
+  // was renamed after the product was created. In create mode, derive live
+  // from the chosen category so the cells populate as soon as the user picks.
+  const sendUnitDisplay = categoryReadOnly
+    ? formatUnit(product.sendUnitName, product.sendUnitAbbrev)
+    : formatUnit(selectedCategory?.sendUnit, selectedCategory?.sendUnitAbbrev)
+  const stockUnitDisplay = categoryReadOnly
+    ? formatUnit(product.stockUnitName, product.stockUnitAbbrev)
+    : formatUnit(selectedCategory?.stockUnit, selectedCategory?.stockUnitAbbrev)
+  const itemCoverageUnitDisplay = categoryReadOnly
+    ? formatUnit(product.itemCoverageUnitName, product.itemCoverageUnitAbbrev)
+    : formatUnit(selectedCategory?.itemCoverageUnit, selectedCategory?.itemCoverageUnitAbbrev)
+
   return (
     <RecordPrimarySection>
       <RecordPrimaryPane variant="side" placement="left">
@@ -72,6 +91,36 @@ export function ProductPrimaryFieldsSection({
                   ))}
                 </select>
               )}
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
+            <RecordFormField label="Send Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {sendUnitDisplay}
+              </div>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
+            <RecordFormField label="Stock Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {stockUnitDisplay}
+              </div>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
+            <RecordFormField label="Item Coverage Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {itemCoverageUnitDisplay}
+              </div>
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
