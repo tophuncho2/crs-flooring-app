@@ -1,7 +1,6 @@
 import {
   Prisma,
   countInventoriesByProductId,
-  getCategoryById,
   getManufacturerById,
   getProductById,
   productNameExists,
@@ -12,11 +11,9 @@ import {
   ProductExecutionError,
   buildCategoryCoveragePerUnitNotAllowedMessage,
   buildCategoryCoveragePerUnitRequiredMessage,
-  buildProductCategoryChangeBlockedMessage,
   buildProductCoveragePerUnitChangeBlockedMessage,
   buildStoredFlooringProductName,
   categoryRequiresCoveragePerUnit,
-  isProductCategoryChangeBlocked,
   isProductCoveragePerUnitChangeBlocked,
   resolveProductManufacturerName,
 } from "@builders/domain"
@@ -40,47 +37,16 @@ export async function updateProductUseCase(
       })
     }
 
-    const nextCategoryId = input.categoryId ?? current.categoryId
+    // Category is immutable post-create — `UpdateProductInput` omits
+    // `categoryId` at the type level and the API PATCH validator rejects it on
+    // the wire. The category, its name, slug, and unit-of-measure snapshots
+    // stamped onto the product row at create time are all stable for this fetch.
+    const categoryName = current.category.name
+    const categorySlug = current.category.slug
+
     const nextStyle = "style" in input ? input.style : current.style || null
     const nextColor = "color" in input ? input.color : current.color || null
-    const categoryChanged = nextCategoryId !== current.categoryId
-    const nameAffected = categoryChanged || "style" in input || "color" in input
-
-    let categoryName = current.category.name
-    let categorySlug = current.category.slug
-    if (categoryChanged) {
-      // Lock: once any inventory references this product, the category is
-      // frozen. Inventory rows snapshot categorySlug at worker-create time
-      // and rely on it for coverage math — drift here would silently
-      // re-interpret historical rows.
-      const inventoryCount = await countInventoriesByProductId(id, c)
-      if (
-        isProductCategoryChangeBlocked(
-          { inventoryCount },
-          current.categoryId,
-          nextCategoryId,
-        )
-      ) {
-        throw new ProductExecutionError({
-          code: "PRODUCT_CATEGORY_LOCKED",
-          message: buildProductCategoryChangeBlockedMessage({ inventoryCount }),
-          status: 409,
-          field: "categoryId",
-        })
-      }
-
-      const category = await getCategoryById(nextCategoryId, c)
-      if (!category) {
-        throw new ProductExecutionError({
-          code: "PRODUCT_CATEGORY_NOT_FOUND",
-          message: "Selected category was not found",
-          status: 400,
-          field: "categoryId",
-        })
-      }
-      categoryName = category.name
-      categorySlug = category.slug
-    }
+    const nameAffected = "style" in input || "color" in input
 
     const nextCoverageIsEmpty =
       "coveragePerUnit" in input
@@ -150,7 +116,6 @@ export async function updateProductUseCase(
     }
 
     const patch: Parameters<typeof updateProduct>[1] = {}
-    if ("categoryId" in input) patch.categoryId = input.categoryId
     if ("manufacturerId" in input) patch.manufacturerId = input.manufacturerId
     if (manufacturerName !== undefined) patch.manufacturerName = manufacturerName
     if ("style" in input) patch.style = input.style
