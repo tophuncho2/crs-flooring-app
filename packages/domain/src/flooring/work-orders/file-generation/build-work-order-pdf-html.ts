@@ -224,8 +224,7 @@ function renderCutLogRow(
   // Unicode checkbox glyphs print cleanly in Puppeteer-rendered PDFs and
   // require no extra font assets.
   const wasteCell = cl.isWaste ? "&#9745;" : "&#9744;"
-  const inventoryCell =
-    [cl.inventoryLotNumber, cl.inventoryDisplayName].filter(Boolean).join(" — ") || ""
+  const inventoryCell = renderInventoryCell(cl)
   const coverageCell = options.showCoverage
     ? `<td>${cl.coverageCut === "" ? `<span class="empty-cell">—</span>` : escapeHtml(cl.coverageCut)}</td>`
     : ""
@@ -242,6 +241,31 @@ function renderCutLogRow(
   <td class="multiline">${escapeOrEmpty(cl.notes)}</td>
 </tr>
 `.trim()
+}
+
+function renderInventoryCell(cl: WorkOrderFileCutLogProjection): string {
+  // Inventory identity stack: inventory number first (always present),
+  // then item number / dye lot / location code on subsequent lines when
+  // available. Each line is suppressed individually when its source field
+  // is empty. Inline <div> blocks keep the column width-stable inside the
+  // 16% column.
+  const lines: string[] = []
+  if (cl.inventoryNumber) {
+    lines.push(`<div><strong>${escapeHtml(cl.inventoryNumber)}</strong></div>`)
+  }
+  if (cl.inventoryItemNumber) {
+    lines.push(`<div>Item: ${escapeHtml(cl.inventoryItemNumber)}</div>`)
+  }
+  if (cl.inventoryDyeLot) {
+    lines.push(`<div>Lot: ${escapeHtml(cl.inventoryDyeLot)}</div>`)
+  }
+  if (cl.inventoryLocationCode) {
+    lines.push(`<div>Loc: ${escapeHtml(cl.inventoryLocationCode)}</div>`)
+  }
+  if (lines.length === 0) {
+    return `<span class="empty-cell">—</span>`
+  }
+  return lines.join("")
 }
 
 function statusToClass(status: WorkOrderFileCutLogProjection["status"]): string {

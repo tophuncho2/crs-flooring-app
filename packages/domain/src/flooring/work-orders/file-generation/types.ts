@@ -23,8 +23,14 @@ export type WorkOrderFileCutLogProjection = {
   coverageCut: string
   isWaste: boolean
   notes: string
-  inventoryLotNumber: string
-  inventoryDisplayName: string
+  // Inventory identity columns. The data layer joins these from the cut
+  // log's parent inventory row. Empty strings for nullable schema columns;
+  // `inventoryLocationCode` is empty when the inventory is not linked to a
+  // location (data layer formats via `formatFullLocationCode` when present).
+  inventoryNumber: string
+  inventoryItemNumber: string
+  inventoryDyeLot: string
+  inventoryLocationCode: string
   finalCutSequence: number | null
 }
 
