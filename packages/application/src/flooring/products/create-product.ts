@@ -9,6 +9,7 @@ import {
 import {
   ProductExecutionError,
   buildCategoryCoveragePerUnitRequiredMessage,
+  buildProductUnitSnapshotsFromCategory,
   buildStoredFlooringProductName,
   categoryRequiresCoveragePerUnit,
   resolveProductManufacturerName,
@@ -74,6 +75,23 @@ export async function createProductUseCase(
       })
     }
 
+    // Stamp the unit-of-measure snapshot from the chosen category onto the
+    // product row. After this write, reads NEVER traverse `product → category
+    // → unit_of_measure` — the snapshot lives flat on `flooring_product`.
+    // Mirrors the inventory-side stamping pattern in
+    // packages/application/src/flooring/imports/staged-inventory-rows/materialize-imported-rows.ts.
+    const snapshot = buildProductUnitSnapshotsFromCategory({
+      sendUnit: category.sendUnitId
+        ? { name: category.sendUnit, abbreviation: category.sendUnitAbbrev }
+        : null,
+      stockUnit: category.stockUnitId
+        ? { name: category.stockUnit, abbreviation: category.stockUnitAbbrev }
+        : null,
+      itemCoverageUnit: category.itemCoverageUnitId
+        ? { name: category.itemCoverageUnit, abbreviation: category.itemCoverageUnitAbbrev }
+        : null,
+    })
+
     try {
       return await createProduct(
         {
@@ -89,6 +107,7 @@ export async function createProductUseCase(
           unitWeight: input.unitWeight,
           coveragePerUnit: input.coveragePerUnit,
           notes: input.notes,
+          ...snapshot,
         },
         c,
       )

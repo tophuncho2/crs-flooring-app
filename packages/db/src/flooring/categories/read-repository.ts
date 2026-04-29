@@ -6,14 +6,14 @@ type CategoryDbClient = PrismaClient | Prisma.TransactionClient
 // --- Unit include helpers ---
 
 const categoryUnitInclude = {
-  sendUnit: { select: { id: true, name: true } },
-  stockUnit: { select: { id: true, name: true } },
-  itemCoverageUnit: { select: { id: true, name: true } },
+  sendUnit: { select: { id: true, name: true, abbreviation: true } },
+  stockUnit: { select: { id: true, name: true, abbreviation: true } },
+  itemCoverageUnit: { select: { id: true, name: true, abbreviation: true } },
 } as const
 
 export const categoryInclude = categoryUnitInclude
 
-type UnitRef = { id: string; name: string } | null
+type UnitRef = { id: string; name: string; abbreviation: string } | null
 
 type CategoryUnitRefs = {
   sendUnit: UnitRef
@@ -29,6 +29,9 @@ function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
     sendUnit: category.sendUnit?.name ?? "",
     stockUnit: category.stockUnit?.name ?? "",
     itemCoverageUnit: category.itemCoverageUnit?.name ?? "",
+    sendUnitAbbrev: category.sendUnit?.abbreviation ?? "",
+    stockUnitAbbrev: category.stockUnit?.abbreviation ?? "",
+    itemCoverageUnitAbbrev: category.itemCoverageUnit?.abbreviation ?? "",
   }
 }
 
@@ -44,6 +47,9 @@ export type CategoryRecord = {
   sendUnit: string
   stockUnit: string
   itemCoverageUnit: string
+  sendUnitAbbrev: string
+  stockUnitAbbrev: string
+  itemCoverageUnitAbbrev: string
 }
 
 // --- Normalizers ---
