@@ -13,9 +13,9 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
 | 7h — Worker/Relay | ✅ DONE | `d31a5c9f` |
 | 7i — API | ✅ DONE | `5912464d` |
-| 7j — Engine off-ramp | ⏳ next | — |
-| 7k — Module dir UI | pending | — |
-| 7l — Dashboard pages | pending | — |
+| 7j — Engine off-ramp | ✅ DONE | (bundled with 7k+7l) |
+| 7k — Module dir UI | ✅ DONE | (bundled with 7j+7l) |
+| 7l — Dashboard pages | ✅ DONE | (pending git commit, all 3 bundled) |
 
 ---
 
@@ -368,3 +368,78 @@ Pre-flight inventory pass confirmed the canonical patterns to mirror:
 - 7b's gate per the plan was domain typecheck only (data + application + web are deferred to their own sub-sweeps); the 4 DB errors above are the expected leftover surface.
 - 7h required a small refactor in 7f's `markWorkOrderItemsFailedFromFinalizeBatch` to take cut-log IDs (the shape the worker has at catch time) rather than WOMI IDs. Bundled with the 7h commit since it has no other callers.
 - 7i did not touch controllers, module dir, or page loaders per user direction. The `WorkOrderCutLogPendingDiff` type alias surfaced in the validator is the same shape `apply-finalize-...` consumes at the worker layer — kept consistent end-to-end.
+
+---
+
+## 7j + 7k + 7l — UI migration (bundled, DONE, awaiting commit)
+
+Three sub-sweeps folded per user direction. The existing non-canonical `apps/web/modules/work-orders/` tree (40+ engine imports across `record/panel/`, `record/detail/`, `record/create/`, `list/`, `controllers/`) was wiped and rebuilt on the imports-module canonical pattern.
+
+### Plan reference
+
+[a-branch/work-orders-ui-migration-plan.md](work-orders-ui-migration-plan.md). Locked decisions:
+1. Mirror imports — `useSingleSectionRecordController` from `shared/engines/record-view` for primary section save/discard/dirty.
+2. Single ActionsPanel on MI section header with both "Save Pending Cuts" + "Finalize Selected Cuts" + selection-mode toggle.
+3. Per-row location filter inside each cut-log expandable row.
+4. List view: 12 columns (workOrderNumber, scheduledFor, warehouse, description, property, template, mgmt co, job type, vacancy, unit number, unit type, status badge). No isComplete column.
+
+### Files wiped (entire pre-existing tree, ~14 files)
+
+Removed `apps/web/modules/work-orders/{components/work-orders-client.tsx, list/, controllers/, record/}` — all engine-coupled, non-canonical. Replaced wholesale.
+
+### Files created (24 + 3 dashboard)
+
+**`data/`** (3 files):
+- `queries.ts` — `getWorkOrderFormOptions` (7-source `Promise.all`), `getWorkOrderDetailPageData(id)` returning `PrismaDetailPageResult<...>`, `getWorkOrderCreatePageData()`. Re-exports `WorkOrderFileRow` so UI files don't import `@builders/db` directly.
+- `mutations.ts` — 11 client HTTP helpers, all wrapping `withMutationMeta` from `@/transport/mutation`. Covers create, update primary, delete, MI section save, pending cut-log diff (202), finalize batch (202), void (sync), file request (202), file delete, file download URL, eligible inventory query.
+- `list-work-orders-request.ts` — `WORK_ORDERS_LIST_QUERY_KEY`, `parseWorkOrdersListInputFromSearchParams`, `listWorkOrdersRequest`. Uses `ListInput<...>` / `ListOutput<...>` from `@builders/application` for compatibility with `useServerListController`.
+
+**`controllers/`** (8 files):
+- `drafts.ts` — option types, validators (mirroring domain), `WorkOrderMaterialItemDraft` shape, `toUpdateWorkOrderInput(form)` to convert UI form (string-only) into the partial-update wire shape (vacancy `""` → null, scheduledFor string → `Date | null`).
+- `use-work-orders-list-controller.ts` — wraps `useRecordEntryNavigation` for navigation + the list mutations bundle.
+- `use-work-orders-list-mutations.ts` — react-query hooks for create / update / delete (invalidates list query key).
+- `use-work-order-primary-section.ts` — `useSingleSectionRecordController<WorkOrderDetail, WorkOrderForm>`. Per locked decision #1, mirrors imports primary-section pattern. Validates via `validateWorkOrderPrimaryForm`, converts via `toUpdateWorkOrderInput` before PATCH.
+- `use-work-order-material-items-section.ts` — `useRecordScopedSectionController<WorkOrderMaterialItemRow[], LocalState>` mirroring templates' MI section. Builds added/modified/deleted diff client-side; validates each row via `validateWorkOrderMaterialItemForm`; calls `saveWorkOrderMaterialItemsSectionRequest`.
+- `use-work-order-item-pending-cut-logs.ts` — per-WOMI controller using pure React state (`useState` for drafts/updates/deletes records, `useMutation` for save). Generates `requestKey` UUID per save. Per-row `locationFilterCode` lives in draft + update local state.
+- `use-work-order-cut-log-finalize.ts` — WO-scoped controller. `Set<cutLogId>` for selected rows, `isSelectionMode` toggle, `submit()` posts cutLogIds + requestKey to finalize route. Resets selection after submit.
+- `use-work-order-cut-log-void.ts` — sync void via `useMutation`; tracks `voidingId` for per-row UI feedback.
+- `use-work-order-files-section.ts` — local file list state, `requestFile()` (calls 202 producer + refresh), `deleteFile(id)` (sync), `openDownload(id)` (presigned URL → opens new tab), `refresh()`.
+
+**`components/list/`** (2 files):
+- `work-orders-table.tsx` — 12-column `Grid` layout per locked decision #4. `StatusBadge` for status column; `formatStableDate` for scheduledFor. Click row → navigate.
+- `work-orders-client.tsx` — `useServerListController` (fetch mode, `LIST_FRESHNESS_STANDARD`), `SearchControl`, `SortToggle`, paginated `WorkOrdersTable`. SectionHeader with "+ Work Order" action.
+
+**`components/record/`** (8 files):
+- `primary/work-order-primary-fields-section.tsx` — pure presentational; 11 grid rows of cells per locked decision #4 spec. Property + template + mgmt co + job type + warehouse selects, vacancy/scheduledFor/unitNumber/unitType, custom address, read-only `propertyAddress` block, read-only property instructions, description, instructions, notes. Uses `FormField` + `CellAt` + cell components (`TextCell`, `SelectCell`, `CheckboxCell`, `StatusCell`, `TextareaCell`, `StaticFieldValue`).
+- `material-items/work-order-material-items-section.tsx` — table with category filter dropdown (column 1), product picker (filtered by category), quantity, notes, status badge. Single `ActionsPanel` (per locked decision #2) with "Save Pending Cuts" / "Finalize Selected Cuts" / "Enter/Exit Finalize Mode" actions.
+- `material-items/work-order-cut-log-row.tsx` — expandable row content. Cut log table with editable cells for PENDING rows (cut, isWaste checkbox, notes, inventory dropdown, per-row location filter per locked decision #3). Per-row Void button on FINAL rows. New-draft rows include both location filter dropdown + inventory dropdown stacked vertically.
+- `files/work-order-files-section.tsx` — table with file # / status badge / created / completed / error / download + delete buttons. "Generate File" primary button.
+- `work-order-record-panel.tsx` — orchestrates 3 sections via `RecordMultiSectionPanel` from shared/engines (mirrors imports). Primary uses `RecordPrimarySectionInstance` with the controller's save/discard/conflict state.
+- `work-order-detail-client.tsx` — wraps `RecordDetailClientScaffold` + passes initial props into `WorkOrderRecordPanel`.
+- `work-order-create-client.tsx` — `RecordCreateClientScaffold` + `useSingleSectionCreateController`. Primary fields only; on submit calls `createWorkOrderRequest`, redirects to detail page.
+
+**`apps/web/app/dashboard/work-orders/`** (3 files):
+- `page.tsx` — list. `requireToolAccess("warehouse")` + `parseWorkOrdersListInputFromSearchParams` + `QueryClient` prefetch + `HydrationBoundary` wrapper.
+- `new/page.tsx` — create. Loads form options via `getWorkOrderCreatePageData()`, hands to `WorkOrderCreateClient`.
+- `[id]/page.tsx` — detail. Loads via `getWorkOrderDetailPageData(id)`, handles 404 + load-error states, hands to `WorkOrderDetailClient`.
+
+### Verification gates (all from the plan)
+
+| Gate | Command | Result |
+|---|---|---|
+| Engine grep — only allowed `record-view` + `engines/common/{record-entry,feedback,application/loader-timing}` | `grep -rn "@/modules/shared/engines"` across the WO module + dashboard | ✅ 11 imports across 9 files, all matching imports module's exact engine usage |
+| DB grep outside `data/` — strictly empty | `grep -rn "from \"@builders/db\""` excluding `/data/` | ✅ empty (was 4 — re-exported `WorkOrderFileRow` through `data/queries.ts`) |
+| WO + dashboard typecheck | `npm run typecheck @builders/web 2>&1 \| grep -E "^(modules/work-orders\|app/(dashboard\|api)/work-orders)"` | ✅ 0 errors |
+| Web typecheck overall — only pre-existing leftovers | `npm run typecheck @builders/web 2>&1 \| awk -F'/' '{print $1"/"$2}' \| sort \| uniq -c` | ✅ 5 `modules/shared`, 3 `app/api/admin`, 1 `modules/admin` — exactly the 9 unrelated leftovers documented in the plan |
+
+### Notable design points
+
+1. **Section controller hook strategy**: per locked decision #1, primary section uses `useSingleSectionRecordController` (mirrors imports). MI section uses `useRecordScopedSectionController` (mirrors templates). Both engine hooks live in `shared/engines/record-view`. The "engine off-ramp" wiped the heavyweight `RecordItemController`, `RecordAllocationController`, custom `record-multi-section-panel` wirings — but the lightweight section-controller hooks stay until a later sweep promotes them into `apps/web/controllers/`.
+2. **ActionsPanel single-panel design**: the MI section header's `ActionsPanel` always renders. Inside it: "Save Pending Cuts (this section)" (enabled when `section.isDirty`), plus mode-aware actions. When NOT in finalize mode → "Enter Finalize Mode". When in finalize mode → "Finalize N Selected" + "Cancel Finalize". Dynamic action list satisfies the locked decision while keeping the menu lean.
+3. **Per-row location filter**: each draft + each editable PENDING row carries `locationFilterCode` in its local state. The cut-log row component pre-filters the eligible-inventory dropdown options by that code. Switching locations doesn't clear the inventory selection — UX choice that mirrors imports' staged-rows category filter behavior.
+4. **WorkOrderFileRow re-export through `data/queries.ts`**: per `apps/web/modules/CLAUDE.md`, `@builders/db` imports stay inside `data/`. Controllers + UI components import the type via `@/modules/work-orders/data/queries`. Mirrors the discipline templates already follows.
+5. **List view**: minimal toolbars per user direction. `useServerListController` + `SearchControl` + `SortToggle` inline. No grouping (the WO list controller's `allowedGroupFields` array is empty). Future sweep can add filter UX without changing the controller hook.
+6. **Cut log expandable row**: pure markup using semantic HTML `<table>` rather than the `Grid` primitive — the cut-log table has dynamic column visibility (selection checkbox appears in finalize mode) and per-row inline edit modes that didn't fit the `Grid<TRow>` static-layout contract. Will graduate to `Grid` + `ScopedRow` in a follow-up if the static approach holds.
+7. **Build status**: web Next.js build still fails on the pre-existing `app/api/admin/users/[id]/route.ts` SessionUser mismatch — same error documented as a leftover from the templates-cleanup sweep. NOT from this sweep. Manual smoke testing in `npm run dev` is the gate the user runs once the admin issue is unblocked.
+
+**Open issues:** none from this sweep. Next.js build needs the unrelated admin SessionUser fix to go fully green.
