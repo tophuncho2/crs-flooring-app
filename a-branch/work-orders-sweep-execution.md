@@ -8,7 +8,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7b — Domain (primary + MI subdir + cut-log payloads) | ✅ DONE | `1aaa6bab` |
 | 7c — Domain (file-gen) | ✅ DONE | `62a94e63`, amended `f42f1ee9` (PDF columns), `2b81ccb9` (inventory cell) |
 | 7d — Data | ✅ DONE | `ae9c8ea7` |
-| 7e — Application (primary) | pending | — |
+| 7e — Application (primary) | ✅ DONE | (pending git commit) |
 | 7f — Application (MI + cut-logs) | pending | — |
 | 7g — Application (file-gen) | pending | — |
 | 7h — Worker/Relay | pending | — |
@@ -135,6 +135,41 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 3. **WOMI delete via section save unlinks cut logs**: `applyWorkOrderMaterialItemsDiff` runs `flooringCutLog.updateMany({ where: { workOrderItemId IN deletedIds }, data: { workOrderId: null, workOrderItemId: null } })` before the WOMI deleteMany, all in the same TX. Symmetry preserved.
 4. **`getWorkOrderForFileGeneration` returns the domain projection directly**: Keeps the file-gen worker's call shape minimal — read once, hand to `buildWorkOrderPdfHtml`. Data-layer carve-out for pure domain helpers (per CLAUDE.md) covers this — `formatFullLocationCode` is a pure formatter.
 5. **No application-layer business logic leaked into data**: All status flips are thin row updates. Transition validity (`assertWorkOrderItemStatusTransition`) is the application layer's call.
+
+**Open issues:** none.
+
+---
+
+## 7e — Application primary use cases (DONE, awaiting commit)
+
+Created the WO application directory at `packages/application/src/flooring/work-orders/`. API + validators are NOT touched in this layer per user direction; that's 7i.
+
+### Files created (6)
+
+| File | Purpose |
+|---|---|
+| `errors.ts` | `WorkOrderExecutionError` class + 6 codes (validation, not-found, warehouse-locked, item-status-transition, cut-log-write-failed, file-gen-failed). Mirrors `TemplateExecutionError`'s shape. |
+| `types.ts` | `CreateWorkOrderUseCaseInput = CreateWorkOrderRecordInput` (alias). `UpdateWorkOrderUseCaseInput = UpdateWorkOrderRecordInput`. `WorkOrderUseCaseResult = WorkOrderDetail`. |
+| `create-work-order.ts` | Opens TX, validates required fields (propertyId + warehouseId), delegates to `createWorkOrderRecord`. |
+| `update-work-order.ts` | Opens TX. Trims propertyId / warehouseId if patched. **Warehouse change lock**: if `input.warehouseId` is in patch, reads current via `getWorkOrderById`, calls `countWorkOrderCutLogs`, runs `assertWorkOrderWarehouseChangeAllowed`. Catches `WorkOrderDomainError("WORK_ORDER_WAREHOUSE_LOCKED")` and converts to `WorkOrderExecutionError` status 409. P2025 → 404. |
+| `delete-work-order.ts` | Opens TX, calls `deleteWorkOrderRecordById`. Schema cascade unlinks cut logs (WO `onDelete: Cascade` to WOMI; WOMI `onDelete: SetNull` to cut log; WO `onDelete: SetNull` to cut log) — both link columns end up null together so `assertCutLogLinkageSymmetry` is satisfied without app-side null updates. P2025 → 404. |
+| `index.ts` | Re-exports. |
+
+`packages/application/src/index.ts` adds the workspace re-export between warehouses and management-companies entries.
+
+### Verification gates
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck --workspace @builders/application` | ✅ exit 0 |
+| `npm run build --workspace @builders/application` | ✅ exit 0 |
+
+### Notable design points
+
+1. **No HTTP concerns**: zero Request/Response/status imports. Status codes are carried as numbers on `WorkOrderExecutionError.status` for the API layer (7i) to translate.
+2. **Transactions**: every use case wraps via `withDatabaseTransaction(...)`. The `client?` parameter allows callers (typically other use cases) to share an existing TX.
+3. **Domain rule routing**: `assertWorkOrderWarehouseChangeAllowed` is the only domain throw in the primary flow. Caught + rethrown as the application error. Validation strings imported from `@builders/domain` (single source of truth).
+4. **Delete is unblocked**: per the locked sweep decision, WO deletion no longer asserts a cut-log count; the schema's SetNull cascade is the unlink mechanism. Comment in the use case documents the chain.
 
 **Open issues:** none.
 
