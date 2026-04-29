@@ -1,3 +1,5 @@
+export type WorkOrderStatus = "IDLE" | "QUEUED" | "WORKING" | "COMPLETED" | "FAILED"
+
 export type WorkOrderListRow = {
   id: string
   workOrderNumber: string
@@ -14,18 +16,26 @@ export type WorkOrderListRow = {
   unitNumber: string
   unitType: string
   isComplete: boolean
+  status: WorkOrderStatus
   vacancy: "VACANT" | "OCCUPIED" | null
   scheduledFor: string
+  description: string
   createdAt: string
   updatedAt: string
 }
 
 export type WorkOrderDetail = WorkOrderListRow & {
   customAddress: string
-  description: string
-  instructions: string
+  propertyStreetAddress: string
+  propertyCity: string
+  propertyState: string
+  propertyPostalCode: string
   propertyInstructions: string
+  instructions: string
   notes: string
+  templateSyncedAt: string
+  templateSyncMode: string
+  templateSnapshotHash: string
 }
 
 export type WorkOrderOption = {
@@ -44,7 +54,6 @@ export type WorkOrderForm = {
   customAddress: string
   description: string
   instructions: string
-  propertyInstructions: string
   notes: string
   scheduledFor: string
   isComplete: boolean
@@ -62,7 +71,6 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   customAddress: "",
   description: "",
   instructions: "",
-  propertyInstructions: "",
   notes: "",
   scheduledFor: "",
   isComplete: false,

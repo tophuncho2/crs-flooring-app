@@ -1,4 +1,9 @@
-import type { WorkOrderDetail, WorkOrderListRow, WorkOrderOption } from "./types.js"
+import type {
+  WorkOrderDetail,
+  WorkOrderListRow,
+  WorkOrderOption,
+  WorkOrderStatus,
+} from "./types.js"
 
 type WorkOrderListInput = {
   id: string
@@ -16,18 +21,29 @@ type WorkOrderListInput = {
   unitNumber: string | null
   unitType: string | null
   isComplete: boolean
+  status: WorkOrderStatus
   vacancy: "VACANT" | "OCCUPIED" | null
   scheduledFor: Date | string | null
+  description: string | null
   createdAt: Date | string
   updatedAt: Date | string
 }
 
 type WorkOrderDetailInput = WorkOrderListInput & {
   customAddress: string | null
-  description: string | null
+  property: {
+    name: string
+    streetAddress: string | null
+    city: string | null
+    state: string | null
+    postalCode: string | null
+    instructions: string | null
+  }
   instructions: string | null
-  propertyInstructions: string | null
   notes: string | null
+  templateSyncedAt: Date | string | null
+  templateSyncMode: string | null
+  templateSnapshotHash: string | null
 }
 
 function toIsoDate(value: Date | string | null): string {
@@ -53,8 +69,10 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     unitNumber: workOrder.unitNumber ?? "",
     unitType: workOrder.unitType ?? "",
     isComplete: workOrder.isComplete,
+    status: workOrder.status,
     vacancy: workOrder.vacancy,
     scheduledFor: toIsoDate(workOrder.scheduledFor),
+    description: workOrder.description ?? "",
     createdAt: toIsoDate(workOrder.createdAt),
     updatedAt: toIsoDate(workOrder.updatedAt),
   }
@@ -65,10 +83,16 @@ export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDe
   return {
     ...base,
     customAddress: workOrder.customAddress ?? "",
-    description: workOrder.description ?? "",
+    propertyStreetAddress: workOrder.property.streetAddress ?? "",
+    propertyCity: workOrder.property.city ?? "",
+    propertyState: workOrder.property.state ?? "",
+    propertyPostalCode: workOrder.property.postalCode ?? "",
+    propertyInstructions: workOrder.property.instructions ?? "",
     instructions: workOrder.instructions ?? "",
-    propertyInstructions: workOrder.propertyInstructions ?? "",
     notes: workOrder.notes ?? "",
+    templateSyncedAt: toIsoDate(workOrder.templateSyncedAt),
+    templateSyncMode: workOrder.templateSyncMode ?? "",
+    templateSnapshotHash: workOrder.templateSnapshotHash ?? "",
   }
 }
 
