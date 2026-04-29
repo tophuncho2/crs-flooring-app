@@ -134,16 +134,32 @@ export async function applyFinalizeWorkOrderCutLogBatchUseCase(
 }
 
 /**
- * Worker processor's catch path — flips every touched WOMI to FAILED
- * in a fresh TX after the apply use case rolled back.
+ * Worker processor's catch path — resolves the WOMIs touched by the
+ * finalize batch (from the cut-log IDs in the payload) and flips every
+ * one to FAILED in a fresh TX after the apply use case rolled back.
+ *
+ * Takes cut-log IDs (not WOMI IDs) because that's what the worker has
+ * available from the payload at catch time. Internally derives the
+ * unique non-null `workOrderItemId` set, then writes each.
  */
 export async function markWorkOrderItemsFailedFromFinalizeBatch(
-  workOrderItemIds: string[],
+  cutLogIds: string[],
   client?: Prisma.TransactionClient,
 ): Promise<void> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
-    for (const id of workOrderItemIds) {
+    const rows = await c.flooringCutLog.findMany({
+      where: { id: { in: cutLogIds } },
+      select: { workOrderItemId: true },
+    })
+    const womiIds = Array.from(
+      new Set(
+        rows
+          .map((r) => r.workOrderItemId)
+          .filter((v): v is string => v !== null),
+      ),
+    )
+    for (const id of womiIds) {
       try {
         await markWorkOrderItemStatus(id, "FAILED", c)
       } catch {

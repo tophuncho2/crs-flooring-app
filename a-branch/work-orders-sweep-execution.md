@@ -11,8 +11,8 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7e — Application (primary) | ✅ DONE | `53d94132` |
 | 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
 | 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
-| 7h — Worker/Relay | pending | — |
-| 7i — API | pending | — |
+| 7h — Worker/Relay | ✅ DONE | (pending git commit) |
+| 7i — API | ⏳ next | — |
 | 7j — Engine off-ramp | pending | — |
 | 7k — Module dir UI | pending | — |
 | 7l — Dashboard pages | pending | — |
@@ -268,8 +268,59 @@ API + validators NOT touched (deferred to 7i). 16 application files added across
 
 ---
 
+## 7h — Worker / Relay / Queue registration (DONE, awaiting commit)
+
+Pre-flight inventory pass confirmed the canonical patterns to mirror:
+- Worker processors: `create<Name>Handler(deps?)` factory; catches application execution errors → `UnrecoverableError`; other errors propagate.
+- Relay dispatchers: `build<Name>Dispatcher(connection)` returning `TopicDispatcher<Payload>`; `buildJobId: (_payload, event) => event.idempotencyKey`.
+- Bootstrap: per-queue Worker + QueueEvents block with `active`/`completed`/`failed` listeners, `autorun: false` + deferred `.run()`.
+
+### Files created (6)
+
+| File | Purpose |
+|---|---|
+| `apps/worker/src/processors/save-work-order-item-pending-cut-log-diff.ts` | Pending-cut-log-diff processor. Calls `applyWorkOrderItemPendingCutLogDiffUseCase`; on any throw, calls `markWorkOrderItemFailedFromCutLogDiff(payload.workOrderItemId)` in a fresh TX before classifying — so WOMI ends at FAILED whether the error is unrecoverable or transient. |
+| `apps/worker/src/processors/finalize-work-order-cut-log-batch.ts` | Finalize-batch processor. Calls `applyFinalizeWorkOrderCutLogBatchUseCase`; on any throw, calls `markWorkOrderItemsFailedFromFinalizeBatch(payload.cutLogIds)` (helper resolves WOMIs from the cut-log IDs internally). |
+| `apps/worker/src/processors/work-order-file-generation.ts` | File-gen processor. Factory takes `{ storageEnv, dependencies? }` so the bootstrap injects the `StorageEnvironment` once. Calls `generateWorkOrderFileUseCase`; the use case handles its own FAILED markers (separate-TX `markFailedAfterRender`). |
+| `apps/relay/src/dispatch/build-save-work-order-item-pending-cut-log-dispatcher.ts` | Mirrors `build-finalize-cut-log-dispatcher.ts`. Topic `flooring.work-order-item.pending-cut-log.save` → queue `flooring-work-order-item-pending-cut-log-diff`. |
+| `apps/relay/src/dispatch/build-finalize-work-order-cut-log-dispatcher.ts` | Topic `flooring.work-order.cut-log.finalize` → queue `flooring-work-order-cut-log-finalize`. |
+| `apps/relay/src/dispatch/build-work-order-file-generation-dispatcher.ts` | Topic `flooring.work-order.file-generation.requested` → queue `flooring-work-order-file-generation`. |
+
+### Files modified (4)
+
+| File | Change |
+|---|---|
+| `apps/worker/src/env.ts` | Adds 6 concurrency/lock env vars (3 worker × 2 each). Adds 5 `AWS_*` env vars (optional at schema; required by `getWorkerStorageEnvironment` only when the file-gen worker registers). New `StorageEnvironment` import + `getWorkerStorageEnvironment(env)` helper that throws with a precise list of missing vars. File-gen worker uses 180_000 ms lock duration since PDF render + bucket upload take longer than the default 60 s. |
+| `apps/worker/src/bootstrap.ts` | Adds 3 new worker blocks (pending-diff, finalize-batch, file-gen) following the existing template: Worker + QueueEvents + active/completed/failed listeners. `autorun: false` on all 3; `.run()` deferred until after `waitUntilReady`. Storage env asserted at boot via `getWorkerStorageEnvironment(env)` so a missing AWS var fails fast on container start. Graceful shutdown updated to close the new 3 Workers + 3 QueueEvents. Ready log + queue list extended. |
+| `apps/relay/src/dispatch/dispatchers.ts` | Appends 3 new entries to `buildDispatchers(connection)`. |
+| `packages/application/src/flooring/work-orders/cut-logs/apply-finalize-work-order-cut-log-batch.ts` | Updated `markWorkOrderItemsFailedFromFinalizeBatch` to take `cutLogIds: string[]` (was `workOrderItemIds`) and resolve the unique non-null WOMI set internally. The worker processor only has cut-log IDs at catch time; this matches that shape. |
+
+### Verification gates
+
+| Gate | Result |
+|---|---|
+| `npm run build --workspace @builders/lib` | ✅ exit 0 |
+| `npm run build --workspace @builders/application` | ✅ exit 0 |
+| `npm run typecheck --workspace @builders/relay` | ✅ exit 0 |
+| `npm run typecheck --workspace @builders/worker` | ✅ exit 0 |
+| `npm run build --workspace @builders/relay` | ✅ exit 0 |
+| `npm run build --workspace @builders/worker` | ✅ exit 0 |
+
+### Notable design points
+
+1. **Idempotency keys propagate cleanly.** Producer writes `wo-pcl-diff:${workOrderItemId}:${requestKey}` (etc.) into the outbox `idempotencyKey` field. Dispatcher copies that into BullMQ `jobId`. Duplicate fires collapse via the BullMQ unique-jobId check + the outbox unique constraint at the DB layer.
+2. **Failure marker placement.** Pending-diff and finalize processors call the application-layer fresh-TX failure markers BEFORE classifying the error. File-gen processor delegates to the use case (which already handles `markFailedAfterRender` internally). Two paths, same outcome: row never sits at SAVING_CUTS / FINALIZING / WORKING after a failed job.
+3. **Storage env injected at handler-factory time** for the file-gen worker. Application package never reads `process.env`. Worker bootstrap reads env once, projects to `StorageEnvironment`, hands to factory. Mirrors the shape used elsewhere in the codebase for SDK env wiring.
+4. **`autorun: false` + deferred `.run()`** on every Worker — eliminates the cold-start race where the first job's lifecycle log lines could be dropped before listeners attach.
+5. **PDF render lock duration is 3× longer.** Default lock is 60 s; PDF render via puppeteer + bucket upload can hit ~30 s on cold start. 180 s gives headroom without leaking the lock indefinitely.
+
+**Open issues:** none.
+
+---
+
 ## Notes
 
 - Per CLAUDE.md: schema lands alone in its own commit; subsequent sub-sweeps may bundle related changes per layer.
 - Plan + this execution file live at `a-branch/` per project convention.
 - 7b's gate per the plan was domain typecheck only (data + application + web are deferred to their own sub-sweeps); the 4 DB errors above are the expected leftover surface.
+- 7h required a small refactor in 7f's `markWorkOrderItemsFailedFromFinalizeBatch` to take cut-log IDs (the shape the worker has at catch time) rather than WOMI IDs. Bundled with the 7h commit since it has no other callers.
