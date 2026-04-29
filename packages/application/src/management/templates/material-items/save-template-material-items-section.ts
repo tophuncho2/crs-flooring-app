@@ -1,6 +1,16 @@
 import { randomUUID } from "node:crypto"
-import { Prisma, applyTemplateMaterialItemsDiff, withDatabaseTransaction } from "@builders/db"
-import { assignDraftIds, validateTemplateMaterialItemForm } from "@builders/domain"
+import {
+  Prisma,
+  applyTemplateMaterialItemsDiff,
+  getProductById,
+  withDatabaseTransaction,
+} from "@builders/db"
+import {
+  assignDraftIds,
+  buildItemSendUnitSnapshotFromProduct,
+  validateTemplateMaterialItemForm,
+  type ItemSendUnitSnapshot,
+} from "@builders/domain"
 import { TemplateMaterialItemExecutionError } from "./errors.js"
 import type {
   SaveTemplateMaterialItemsSectionUseCaseInput,
@@ -38,6 +48,36 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       }
     }
 
+    // Batch-fetch every distinct product touched by the diff (added + modified).
+    // Each entry needs the product's send-unit snapshot stamped on its row at
+    // write time. One query per distinct product — bounded by the number of
+    // unique products in this user's save action (typically small).
+    const distinctProductIds = Array.from(
+      new Set([
+        ...input.diff.added.map((d) => d.form.productId),
+        ...input.diff.modified.map((m) => m.form.productId),
+      ]),
+    )
+    const products = await Promise.all(
+      distinctProductIds.map(async (productId) => ({
+        productId,
+        product: await getProductById(productId, c),
+      })),
+    )
+    const snapshotByProductId = new Map<string, ItemSendUnitSnapshot>()
+    for (const entry of products) {
+      if (!entry.product) {
+        throw new TemplateMaterialItemExecutionError({
+          code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+          message: "Selected product was not found",
+          status: 400,
+          field: "productId",
+          payload: { productId: entry.productId },
+        })
+      }
+      snapshotByProductId.set(entry.productId, buildItemSendUnitSnapshotFromProduct(entry.product))
+    }
+
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
     return applyTemplateMaterialItemsDiff(c, {
@@ -45,11 +85,11 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,
-        form: draft.form,
+        input: { ...draft.form, ...snapshotByProductId.get(draft.form.productId)! },
       })),
       modified: input.diff.modified.map((update) => ({
         id: update.id,
-        form: update.form,
+        input: { ...update.form, ...snapshotByProductId.get(update.form.productId)! },
       })),
       deleted: input.diff.deleted.map((d) => ({ id: d.id })),
     })

@@ -1,5 +1,13 @@
-import { Prisma, createTemplateMaterialItemRecord, withDatabaseTransaction } from "@builders/db"
-import { validateTemplateMaterialItemForm } from "@builders/domain"
+import {
+  Prisma,
+  createTemplateMaterialItemRecord,
+  getProductById,
+  withDatabaseTransaction,
+} from "@builders/db"
+import {
+  buildItemSendUnitSnapshotFromProduct,
+  validateTemplateMaterialItemForm,
+} from "@builders/domain"
 import { TemplateMaterialItemExecutionError } from "./errors.js"
 import type {
   CreateTemplateMaterialItemUseCaseInput,
@@ -22,6 +30,22 @@ export async function createTemplateMaterialItemUseCase(
       })
     }
 
-    return createTemplateMaterialItemRecord(input.templateId, input.form, c)
+    const product = await getProductById(input.form.productId, c)
+    if (!product) {
+      throw new TemplateMaterialItemExecutionError({
+        code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+        message: "Selected product was not found",
+        status: 400,
+        field: "productId",
+      })
+    }
+
+    const snapshot = buildItemSendUnitSnapshotFromProduct(product)
+
+    return createTemplateMaterialItemRecord(
+      input.templateId,
+      { ...input.form, ...snapshot },
+      c,
+    )
   })
 }

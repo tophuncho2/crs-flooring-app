@@ -1,5 +1,11 @@
-import { Prisma, updateTemplateMaterialItemRecord, withDatabaseTransaction } from "@builders/db"
 import {
+  Prisma,
+  getProductById,
+  updateTemplateMaterialItemRecord,
+  withDatabaseTransaction,
+} from "@builders/db"
+import {
+  buildItemSendUnitSnapshotFromProduct,
   TEMPLATE_MATERIAL_ITEM_NOT_FOUND_MESSAGE,
   validateTemplateMaterialItemForm,
 } from "@builders/domain"
@@ -25,8 +31,24 @@ export async function updateTemplateMaterialItemUseCase(
       })
     }
 
+    const product = await getProductById(input.form.productId, c)
+    if (!product) {
+      throw new TemplateMaterialItemExecutionError({
+        code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+        message: "Selected product was not found",
+        status: 400,
+        field: "productId",
+      })
+    }
+
+    const snapshot = buildItemSendUnitSnapshotFromProduct(product)
+
     try {
-      return await updateTemplateMaterialItemRecord(input.id, input.form, c)
+      return await updateTemplateMaterialItemRecord(
+        input.id,
+        { ...input.form, ...snapshot },
+        c,
+      )
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new TemplateMaterialItemExecutionError({
