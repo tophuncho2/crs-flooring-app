@@ -10,7 +10,7 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateProductInput } from "./_validators"
+import { validateCreateProductInput } from "./_validators"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateProductInput)
+    const { input, mutation } = parseMutationEnvelope(body, validateCreateProductInput)
 
     const receipt = await enforceMutationReceipt({
       scope: "products.create",

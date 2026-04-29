@@ -1,7 +1,6 @@
 import { db } from "../../client.js"
 import {
   listCategories,
-  normalizeCategoryRow,
   type CategoryRecord,
 } from "../categories/read-repository.js"
 import {
@@ -18,6 +17,15 @@ import {
 
 // --- Record types ---
 
+export type ProductRecordCategory = {
+  id: string
+  slug: string
+  name: string
+  sendUnitId: string
+  stockUnitId: string
+  itemCoverageUnitId: string
+}
+
 export type ProductRecord = {
   id: string
   name: string
@@ -31,11 +39,18 @@ export type ProductRecord = {
   thickness: string
   unitWeight: string
   coveragePerUnit: string
+  sendUnitName: string
+  sendUnitAbbrev: string
+  stockUnitName: string
+  stockUnitAbbrev: string
+  itemCoverageUnitName: string
+  itemCoverageUnitAbbrev: string
+  // Backward-compat alias — same value as `itemCoverageUnitName`.
   coverageUnit: string
   notes: string
   createdAt: string
   updatedAt: string
-  category: CategoryRecord
+  category: ProductRecordCategory
 }
 
 export type ProductDetailRecord = ProductRecord
@@ -63,6 +78,7 @@ export type ProductDeleteStateResult = {
 // --- Normalizers ---
 
 export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
+  const itemCoverageUnitName = product.itemCoverageUnitName ?? ""
   return {
     id: product.id,
     name: product.name,
@@ -80,11 +96,24 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     thickness: product.thickness ?? "",
     unitWeight: product.unitWeight ?? "",
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
-    coverageUnit: product.category.itemCoverageUnit?.name ?? "",
+    sendUnitName: product.sendUnitName ?? "",
+    sendUnitAbbrev: product.sendUnitAbbrev ?? "",
+    stockUnitName: product.stockUnitName ?? "",
+    stockUnitAbbrev: product.stockUnitAbbrev ?? "",
+    itemCoverageUnitName,
+    itemCoverageUnitAbbrev: product.itemCoverageUnitAbbrev ?? "",
+    coverageUnit: itemCoverageUnitName,
     notes: product.notes ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
-    category: normalizeCategoryRow(product.category),
+    category: {
+      id: product.category.id,
+      slug: product.category.slug,
+      name: product.category.name,
+      sendUnitId: product.category.sendUnitId ?? "",
+      stockUnitId: product.category.stockUnitId ?? "",
+      itemCoverageUnitId: product.category.itemCoverageUnitId ?? "",
+    },
   }
 }
 

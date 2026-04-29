@@ -10,6 +10,12 @@ import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
 // - `manufacturerName` is the resolved display name from the selected manufacturer row
 // Keeping the data layer free of name-building and FK-lookup logic maintains the
 // "persistence only" rule for packages/db.
+//
+// The six unit-of-measure snapshot fields (sendUnit/stockUnit/itemCoverageUnit
+// × Name/Abbrev) are pre-computed by the application use case via
+// `buildProductUnitSnapshotsFromCategory` from `@builders/domain` and passed in
+// at create time. They're immutable post-create — `UpdateProductInput` omits
+// them.
 
 export type CreateProductInput = {
   name: string
@@ -24,9 +30,28 @@ export type CreateProductInput = {
   unitWeight: string | null
   coveragePerUnit: Prisma.Decimal | null
   notes: string | null
+  sendUnitName: string | null
+  sendUnitAbbrev: string | null
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
+  itemCoverageUnitName: string | null
+  itemCoverageUnitAbbrev: string | null
 }
 
-export type UpdateProductInput = Partial<CreateProductInput>
+// `categoryId` and the six unit-snapshot fields are immutable post-create —
+// removed from the update shape at the type level so call sites can't pass
+// them. The tightened `isProductCategoryChangeBlocked` predicate in
+// @builders/domain catches anything that bypasses the type system.
+type ImmutableProductFields =
+  | "categoryId"
+  | "sendUnitName"
+  | "sendUnitAbbrev"
+  | "stockUnitName"
+  | "stockUnitAbbrev"
+  | "itemCoverageUnitName"
+  | "itemCoverageUnitAbbrev"
+
+export type UpdateProductInput = Partial<Omit<CreateProductInput, ImmutableProductFields>>
 
 // --- Writes ---
 
@@ -48,6 +73,12 @@ export async function createProduct(
       unitWeight: input.unitWeight,
       coveragePerUnit: input.coveragePerUnit,
       notes: input.notes,
+      sendUnitName: input.sendUnitName,
+      sendUnitAbbrev: input.sendUnitAbbrev,
+      stockUnitName: input.stockUnitName,
+      stockUnitAbbrev: input.stockUnitAbbrev,
+      itemCoverageUnitName: input.itemCoverageUnitName,
+      itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
     },
     select: productRowSelect,
   })
@@ -61,7 +92,6 @@ export async function updateProduct(
 ): Promise<ProductRecord> {
   const data: Prisma.FlooringProductUncheckedUpdateInput = {}
   if (input.name !== undefined) data.name = input.name
-  if (input.categoryId !== undefined) data.categoryId = input.categoryId
   if (input.manufacturerId !== undefined) data.manufacturerId = input.manufacturerId
   if (input.manufacturerName !== undefined) data.manufacturerName = input.manufacturerName
   if (input.style !== undefined) data.style = input.style

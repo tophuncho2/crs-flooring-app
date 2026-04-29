@@ -11,9 +11,6 @@ export type ProductRowCategory = {
   sendUnitId: string
   stockUnitId: string
   itemCoverageUnitId: string
-  sendUnit: string
-  stockUnit: string
-  itemCoverageUnit: string
 }
 
 export type ProductRow = {
@@ -29,6 +26,17 @@ export type ProductRow = {
   thickness: string
   unitWeight: string
   coveragePerUnit: string
+  // Send / stock / item-coverage unit name + abbreviation snapshots, stamped onto
+  // the product row at write time from the chosen category. Reads never join
+  // through `category → unit_of_measure`. Empty string when the category does
+  // not have the corresponding unit configured.
+  sendUnitName: string
+  sendUnitAbbrev: string
+  stockUnitName: string
+  stockUnitAbbrev: string
+  itemCoverageUnitName: string
+  itemCoverageUnitAbbrev: string
+  // Backward-compat alias for `itemCoverageUnitName`. Future cleanup target.
   coverageUnit: string
   notes: string
   createdAt: string
@@ -36,7 +44,8 @@ export type ProductRow = {
   category: ProductRowCategory
 }
 
-export type ProductForm = {
+// Create form — accepts categoryId. Used by the create-product flow.
+export type ProductCreateForm = {
   categoryId: string
   manufacturerId: string
   style: string
@@ -49,7 +58,11 @@ export type ProductForm = {
   notes: string
 }
 
-export const EMPTY_PRODUCT_FORM: ProductForm = {
+// Update form — categoryId is omitted. Category is immutable post-create
+// (enforced by type, validator, and `isProductCategoryChangeBlocked`).
+export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId">
+
+export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   categoryId: "",
   manufacturerId: "",
   style: "",
@@ -62,9 +75,8 @@ export const EMPTY_PRODUCT_FORM: ProductForm = {
   notes: "",
 }
 
-export function toProductForm(row: ProductRow): ProductForm {
+export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
   return {
-    categoryId: row.categoryId,
     manufacturerId: row.manufacturerId,
     style: row.style,
     color: row.color,

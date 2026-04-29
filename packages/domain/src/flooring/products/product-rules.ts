@@ -108,32 +108,31 @@ export function buildProductCoveragePerUnitChangeBlockedMessage(
 }
 
 /**
- * A product's category is snapshotted onto every inventory row (as the row's
- * `categorySlug`) at worker-create time. Changing the product's category
- * after inventory exists would drift the product's classification from all
- * the snapshots on its inventory rows — a semantic mismatch between the
- * joined display fields (categoryId/categoryName) and the point-in-time slug
- * used by the cuts-math (computeInventoryCoverage). Rule: once any inventory
- * row references this product, the category is locked.
+ * Category is immutable post-create — full stop, regardless of whether any
+ * inventory exists yet. The product's category drives the unit-of-measure
+ * snapshot stamped on the product row (sendUnit/stockUnit/itemCoverageUnit
+ * Name + Abbrev), and downstream snapshots on inventory rows
+ * (`inventory.categorySlug`) and material item rows (`*.sendUnitName` etc).
+ * Allowing the category to change post-create would drift every snapshot.
  *
- * Returns true when the caller is attempting to change the category AND
- * there are inventory rows. Returns false when no inventory exists OR the
- * id isn't actually changing. Both ids are compared trimmed so whitespace
- * noise doesn't trigger a false positive.
+ * Returns true when the caller is attempting to change the category, false
+ * otherwise. Both ids are compared trimmed so whitespace noise doesn't
+ * trigger a false positive.
+ *
+ * Defense in depth: `ProductUpdateForm` no longer carries `categoryId` and
+ * the API PATCH validator rejects the field. This rule fires only when
+ * something bypasses the type system (e.g., a future test using the data
+ * client directly, or a malformed call from another use case).
  */
 export function isProductCategoryChangeBlocked(
-  state: ProductInventoryLinkState,
   currentCategoryId: string,
   nextCategoryId: string,
 ): boolean {
-  if (state.inventoryCount <= 0) return false
   return currentCategoryId.trim() !== nextCategoryId.trim()
 }
 
-export function buildProductCategoryChangeBlockedMessage(
-  state: ProductInventoryLinkState,
-): string {
-  return `Category cannot change while ${state.inventoryCount} inventory row${state.inventoryCount === 1 ? "" : "s"} reference this product. Archive or remove the inventory rows before changing category.`
+export function buildProductCategoryChangeBlockedMessage(): string {
+  return `Category cannot change after a product is created.`
 }
 
 /**

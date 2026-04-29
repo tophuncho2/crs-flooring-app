@@ -1,11 +1,13 @@
 import type { Prisma, PrismaClient } from "@prisma/client"
-import { categoryInclude } from "../categories/read-repository.js"
 
 export type ProductsDbClient = PrismaClient | Prisma.TransactionClient
 
 // Select shape for the standard product listing / detail reads.
-// Includes category (with unit measures, via the canonical categoryInclude)
-// and manufacturer (for the display-name fallback chain handled in normalizers).
+//
+// Pulls the unit-of-measure name + abbreviation snapshots directly off the
+// product row (sweep that landed migration `20260428230000_add_product_unit_snapshots`).
+// The category projection no longer joins through `category → unit_of_measure`
+// — it carries IDs only. Reads are flat, single-table for the unit data.
 export const productRowSelect = {
   id: true,
   name: true,
@@ -19,6 +21,12 @@ export const productRowSelect = {
   thickness: true,
   unitWeight: true,
   coveragePerUnit: true,
+  sendUnitName: true,
+  sendUnitAbbrev: true,
+  stockUnitName: true,
+  stockUnitAbbrev: true,
+  itemCoverageUnitName: true,
+  itemCoverageUnitAbbrev: true,
   notes: true,
   createdAt: true,
   updatedAt: true,
@@ -27,7 +35,9 @@ export const productRowSelect = {
       id: true,
       slug: true,
       name: true,
-      ...categoryInclude,
+      sendUnitId: true,
+      stockUnitId: true,
+      itemCoverageUnitId: true,
     },
   },
   manufacturer: {

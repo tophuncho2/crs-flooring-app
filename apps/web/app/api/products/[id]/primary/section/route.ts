@@ -1,7 +1,7 @@
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { ProductExecutionError, updateProductUseCase } from "@builders/application"
 import { getProductById } from "@builders/db"
-import { validateProductInput } from "../../../_validators"
+import { validateUpdateProductInput } from "../../../_validators"
 import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -34,7 +34,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateProductInput, {
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateProductInput, {
       requireExpectedUpdatedAt: true,
     })
     const currentSnapshot = await getProductById(id)
