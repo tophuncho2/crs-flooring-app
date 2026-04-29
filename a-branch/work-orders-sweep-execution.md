@@ -4,7 +4,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 
 | Sub-sweep | Status | Commit |
 |---|---|---|
-| 7a — Schema (WOMI status enum) | ✅ DONE | (pending git commit) |
+| 7a — Schema (WOMI status enum) | ✅ DONE | `67045274` |
 | 7b — Domain (primary + MI subdir + cut-log payloads) | ⏳ next | — |
 | 7c — Domain (file-gen) | pending | — |
 | 7d — Data | pending | — |
@@ -19,7 +19,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 
 ---
 
-## 7a — Schema (DONE, awaiting commit)
+## 7a — Schema (DONE, committed `67045274`)
 
 | Step | Result |
 |---|---|
