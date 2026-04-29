@@ -58,6 +58,7 @@ export function ProductRecordPanel({
                 categoryOptions={categoryOptions}
                 manufacturerOptions={manufacturerOptions}
                 disabled={controller.primarySection.isSaving}
+                categoryReadOnly
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({
                     ...previous,

@@ -10,27 +10,38 @@ import {
   RecordPrimaryPane,
   RecordPrimarySection,
 } from "@/modules/shared/engines/record-view"
-import { categoryRequiresCoveragePerUnit, type ProductForm } from "@builders/domain"
+import { categoryRequiresCoveragePerUnit, type ProductCreateForm } from "@builders/domain"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
 
 export function ProductPrimaryFieldsSection({
+  product,
   draft,
   categoryOptions,
   manufacturerOptions,
   disabled,
+  categoryReadOnly = false,
   onFieldChange,
 }: {
   product: ProductRecord
-  draft: ProductForm
+  draft: ProductCreateForm
   categoryOptions: CategoryRecord[]
   manufacturerOptions: ManufacturerRecord[]
   disabled: boolean
-  onFieldChange: (field: keyof ProductForm, value: string) => void
+  // When true, render the category cell as a static text display sourced from
+  // `product.category`. Use on the record view — category is immutable
+  // post-create and the lock is enforced at the type system, validator, and
+  // domain-rule layers; the UI mirrors that here.
+  categoryReadOnly?: boolean
+  onFieldChange: (field: keyof ProductCreateForm, value: string) => void
 }) {
-  const selectedCategory = useMemo(
-    () => categoryOptions.find((category) => category.id === draft.categoryId) ?? null,
-    [categoryOptions, draft.categoryId],
-  )
+  const selectedCategory = useMemo(() => {
+    if (categoryReadOnly) {
+      return (
+        categoryOptions.find((category) => category.id === product.category.id) ?? null
+      )
+    }
+    return categoryOptions.find((category) => category.id === draft.categoryId) ?? null
+  }, [categoryOptions, categoryReadOnly, draft.categoryId, product.category.id])
   const coverageRequired = categoryRequiresCoveragePerUnit(selectedCategory?.slug)
 
   return (
@@ -39,19 +50,28 @@ export function ProductPrimaryFieldsSection({
         <RecordPrimaryFieldsGrid variant="side">
           <RecordPrimaryFieldCell>
             <RecordFormField label="Category">
-              <select
-                value={draft.categoryId}
-                onChange={(event) => onFieldChange("categoryId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              >
-                <option value="">Select a category</option>
-                {categoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              {categoryReadOnly ? (
+                <div
+                  className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                  aria-readonly="true"
+                >
+                  {product.category.name || "—"}
+                </div>
+              ) : (
+                <select
+                  value={draft.categoryId}
+                  onChange={(event) => onFieldChange("categoryId", event.target.value)}
+                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
+                  disabled={disabled}
+                >
+                  <option value="">Select a category</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>

@@ -20,10 +20,23 @@ export type ProductRequestInput = {
   notes: string
 }
 
-function toRequestBody(input: ProductRequestInput): Record<string, unknown> {
+function toCreateRequestBody(input: ProductRequestInput): Record<string, unknown> {
   return {
     ...input,
     coveragePerUnit: input.coveragePerUnit.trim(),
+  }
+}
+
+// Strips `categoryId` before sending. Category is immutable post-create — the
+// PATCH validator rejects the field with 400 (PRODUCT_CATEGORY_LOCKED). The
+// record-view section displays category as readonly but the controller's local
+// form value still carries categoryId for shape parity with the create flow,
+// so we drop it here at the wire boundary.
+function toUpdateRequestBody(input: ProductRequestInput): Record<string, unknown> {
+  const { categoryId: _categoryId, ...rest } = input
+  return {
+    ...rest,
+    coveragePerUnit: rest.coveragePerUnit.trim(),
   }
 }
 
@@ -31,7 +44,7 @@ export async function createProductRequest(input: ProductRequestInput) {
   return requestJson<{ product: ProductRecord }>("/api/products", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta(toRequestBody(input))),
+    body: JSON.stringify(withMutationMeta(toCreateRequestBody(input))),
   })
 }
 
@@ -43,7 +56,7 @@ export async function updateProductRequest(
   return requestJson<{ product: ProductRecord }>(`/api/products/${id}/primary/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta(toRequestBody(input), revisionKey)),
+    body: JSON.stringify(withMutationMeta(toUpdateRequestBody(input), revisionKey)),
   })
 }
 

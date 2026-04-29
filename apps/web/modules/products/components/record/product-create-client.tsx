@@ -9,7 +9,11 @@ import {
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
 } from "@/modules/shared/engines/record-view"
-import { EMPTY_PRODUCT_FORM, validateProductPrimaryForm, type ProductForm } from "@builders/domain"
+import {
+  EMPTY_PRODUCT_CREATE_FORM,
+  validateProductPrimaryForm,
+  type ProductCreateForm,
+} from "@builders/domain"
 import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
 import { createProductRequest } from "@/modules/products/data/mutations"
 import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
@@ -27,6 +31,12 @@ const EMPTY_PRODUCT: ProductRecord = {
   thickness: "",
   unitWeight: "",
   coveragePerUnit: "",
+  sendUnitName: "",
+  sendUnitAbbrev: "",
+  stockUnitName: "",
+  stockUnitAbbrev: "",
+  itemCoverageUnitName: "",
+  itemCoverageUnitAbbrev: "",
   coverageUnit: "",
   notes: "",
   createdAt: "",
@@ -38,9 +48,6 @@ const EMPTY_PRODUCT: ProductRecord = {
     sendUnitId: "",
     stockUnitId: "",
     itemCoverageUnitId: "",
-    sendUnit: "",
-    stockUnit: "",
-    itemCoverageUnit: "",
   },
 }
 
@@ -55,9 +62,9 @@ function ProductCreatePanel({
   categoryOptions: CategoryRecord[]
   manufacturerOptions: ManufacturerRecord[]
 }) {
-  const controller = useSingleSectionCreateController<ProductForm>({
+  const controller = useSingleSectionCreateController<ProductCreateForm>({
     page,
-    createInitialValue: () => ({ ...EMPTY_PRODUCT_FORM }),
+    createInitialValue: () => ({ ...EMPTY_PRODUCT_CREATE_FORM }),
     createRecord: async (localValue) => {
       const validationError = validateProductPrimaryForm(localValue)
       if (validationError) {
