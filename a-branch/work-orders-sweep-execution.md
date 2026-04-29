@@ -11,7 +11,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7e — Application (primary) | ✅ DONE | `53d94132` |
 | 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
 | 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
-| 7h — Worker/Relay | ✅ DONE | (pending git commit) |
+| 7h — Worker/Relay | ✅ DONE | `d31a5c9f` |
 | 7i — API | ⏳ next | — |
 | 7j — Engine off-ramp | pending | — |
 | 7k — Module dir UI | pending | — |
@@ -268,7 +268,7 @@ API + validators NOT touched (deferred to 7i). 16 application files added across
 
 ---
 
-## 7h — Worker / Relay / Queue registration (DONE, awaiting commit)
+## 7h — Worker / Relay / Queue registration (DONE, committed `d31a5c9f`)
 
 Pre-flight inventory pass confirmed the canonical patterns to mirror:
 - Worker processors: `create<Name>Handler(deps?)` factory; catches application execution errors → `UnrecoverableError`; other errors propagate.
