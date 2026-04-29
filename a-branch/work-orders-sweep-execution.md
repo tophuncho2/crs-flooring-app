@@ -10,7 +10,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7d — Data | ✅ DONE | `ae9c8ea7` |
 | 7e — Application (primary) | ✅ DONE | `53d94132` |
 | 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
-| 7g — Application (file-gen) | ✅ DONE | (pending git commit) |
+| 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
 | 7h — Worker/Relay | pending | — |
 | 7i — API | pending | — |
 | 7j — Engine off-ramp | pending | — |
@@ -226,7 +226,7 @@ API + validators NOT touched (deferred to 7i). 16 application files added across
 
 ---
 
-## 7g — Application file-gen producer + consumer (DONE, awaiting commit)
+## 7g — Application file-gen producer + consumer (DONE, committed `1baa6181`)
 
 ### Library helper added (1 file modified)
 
