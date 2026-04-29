@@ -9,7 +9,7 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7c — Domain (file-gen) | ✅ DONE | `62a94e63`, amended `f42f1ee9` (PDF columns), `2b81ccb9` (inventory cell) |
 | 7d — Data | ✅ DONE | `ae9c8ea7` |
 | 7e — Application (primary) | ✅ DONE | `53d94132` |
-| 7f — Application (MI + cut-logs) | ✅ DONE | (pending git commit) |
+| 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
 | 7g — Application (file-gen) | pending | — |
 | 7h — Worker/Relay | pending | — |
 | 7i — API | pending | — |
@@ -175,7 +175,7 @@ Created the WO application directory at `packages/application/src/flooring/work-
 
 ---
 
-## 7f — Application MI + cut-log use cases (DONE, awaiting commit)
+## 7f — Application MI + cut-log use cases (DONE, committed `aa277835`)
 
 API + validators NOT touched (deferred to 7i). 16 application files added across two subdirs.
 
