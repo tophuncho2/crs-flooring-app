@@ -10,7 +10,7 @@ Current models snapshot: `a-branch/alteration/mock/current-models.md`. Status: *
 - [x] ADD `stockUnitAbbrev String?`
 - [x] ADD `itemCoverageUnitName String?`
 - [x] ADD `itemCoverageUnitAbbrev String?`
-- [ ] Backfill script `db:backfill:product-units` (mirror `db:backfill:product-names`) — pending
+- [x] ~~Backfill script~~ — N/A. User truncated `flooring_product`, `flooring_inventory`, `flooring_import_staged_inventory_row`, `flooring_template_item`, `flooring_work_order_item`. No historical rows to backfill; new product writes stamp the snapshot natively.
 
 ## `FlooringWorkOrderItem`
 
