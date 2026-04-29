@@ -60,16 +60,16 @@ templates/
 |---|---|---|---|
 | `unitPrice` in row/form/normalizer/rules/error | present | removed | see references table above |
 | Send-unit snapshot on row | absent | `sendUnitName: string`, `sendUnitAbbrev: string` (default `""`) | mirror `InventoryRow` shape; nullable in DB but normalize to `""` for UI symmetry |
-| Send-unit snapshot stamping | absent | helper `buildSendUnitSnapshotFromProduct(product) → { sendUnitName, sendUnitAbbrev }` lives next to the form rules | pure projection from `ProductRowCategory.sendUnit` (full name) + (we currently don't carry abbrev on `ProductRowCategory` — see Open Q1) |
-| `propertyInstructions` autofill | absent | helper `applyPropertyInstructionsAutofill(form, property) → form` that overwrites `propertyInstructions` with the property's value on link/relink, leaving subsequent free edits untouched | called by primary-section save use case + by template-sync use case |
-| Required-fields contract | only `propertyId` + `unitType` | confirm with user whether the **work-order** required-only-fields rule (warehouse + property) replaces this for templates too, or whether templates keep their existing form-rules contract | Open Q3 |
+| Send-unit snapshot stamping | absent | helper `buildSendUnitSnapshotFromProduct(product) → { sendUnitName, sendUnitAbbrev }` lives next to the form rules | pure projection from `ProductRowCategory.sendUnit` + new `ProductRowCategory.sendUnitAbbrev` (added per locked decision §"Decisions resolved") |
+| `propertyInstructions` autofill | absent | shared helper `applyPropertyInstructionsAutofill(form, property) → form` in `management/properties/instructions-autofill.ts` (consumed by both templates and WO) — overwrites `propertyInstructions` on property link/relink, leaving subsequent free edits untouched | called by primary-section save use case + by template-sync use case |
+| Required-fields contract | only `propertyId` + `unitType` | **kept as-is** — templates keep `propertyId` + `unitType` (the WO `warehouse + property` rule does NOT propagate to templates). | locked |
 | Diff validator for material items | rules + diff types only — no `validateTemplateMaterialItemsDiff` (no `expectedUpdatedAt`, no projection) | mirror `validateCutLogsDiff` shape: project post-diff form, validate per-row, optimistic-lock per row | Application's existing `save-template-material-items-section.ts` currently re-validates per row procedurally; a domain-level diff validator gives WO MI a single pattern to clone |
 | Editability partition | none | `TEMPLATE_MATERIAL_ITEM_USER_EDITABLE_FIELDS` const (e.g. `["productId", "quantity", "notes"]`) | parallel to `CUT_LOG_PENDING_USER_EDITABLE_FIELDS`; lets the diff validator reject unknown patch keys |
 
 ### Things that DO NOT need to change
 
-- `delete-rules.ts` (`isTemplateDeleteBlocked → false`) — schema cascades + WO `templateId` SetNull cover everything; templates remain freely deletable.
-- Outer `form-rules.ts` (the `propertyId`/`unitType` validator) — only required-field changes if the WO-style rule extends to templates (Open Q3).
+- `delete-rules.ts` (`isTemplateDeleteBlocked → false`) — **confirmed**. Templates can be deleted at any time. Effects: `FlooringTemplateItem` rows cascade-delete with the template; linked `FlooringWorkOrder.templateId` rows survive (SetNull). No upstream blocker, no UI prompt, no special handling for "template has material items."
+- Outer `form-rules.ts` (the `propertyId`/`unitType` validator) — **confirmed kept**. Templates keep their own required-fields rule.
 - `TemplateOption` shape — already minimal.
 
 ## `flooring/work-orders/` — file-by-file
@@ -94,9 +94,9 @@ work-orders/
 | Warehouse-change lock | absent | `assertWorkOrderWarehouseChangeAllowed(input: { currentWarehouseId, nextWarehouseId, hasLinkedCutLogs }) → throws` (or `getWorkOrderWarehouseChangeBlocker → reason \| null`) | predicate the application use case calls before applying a primary-section patch |
 | Delete-blocked rule | always returns `false` | `isWorkOrderDeleteBlocked({ hasLinkedCutLogs }) → boolean` + `assertWorkOrderDeleteAllowed(...)` throw variant | mirror staged-inv pattern; reason code constant for surfacing UI message |
 | `templateSyncedAt` / `templateSyncMode` / `templateSnapshotHash` | not in row/detail | add as snapshot fields on `WorkOrderDetail`; not on form | exposed read-only so UI can show "synced N days ago" without a separate query |
-| `propertyInstructions` autofill | not handled | shared helper consumed by primary-section save + by template-sync use case (same helper as templates) | Open Q2: probably belongs in a **shared** location consumed by both modules — propose `management/properties/instructions-autofill.ts` |
-| Send-unit snapshot stamping | not handled | same helper as templates (or shared) — see `material-items/` row |
-| Cut-log linkage symmetry | partial — existing `assertCutLogLinkageSymmetry` in cut-logs domain | extend the **WO** side: when material items get cut logs assigned, the cut log row gets BOTH `workOrderId` and `workOrderItemId` set — already enforced by `assertCutLogLinkageSymmetry` | ✅ no new code; just confirm the WO MI cut-log save use case calls it |
+| `propertyInstructions` autofill | not handled | shared helper `management/properties/instructions-autofill.ts` consumed by both templates and WO primary-section save use cases (and by template-sync) | locked |
+| Send-unit snapshot stamping | not handled | shared `buildSendUnitSnapshotFromProduct` (same helper as templates) | locked |
+| Cut-log linkage symmetry | enforced by existing `assertCutLogLinkageSymmetry` in cut-logs domain | **confirmed hard rule** — every cut log linked to a WO must carry BOTH `workOrderId` AND `workOrderItemId`. Never just one. Symmetry is asymmetric-rejection: orphan-WO and orphan-WOMI both throw. WO-MI cut-log save use case must call it on every write. | ✅ no new domain code; application use case must invoke. Drop the `updateLinks` use case on the inventory-side cut-log section per intent — WOMI is the sole writer of these two columns going forward. |
 | Inventory-pick scope predicate | absent | `isInventoryEligibleForWorkOrderItem(inventory, workOrder) → boolean` — same warehouse, same product, `stockBalance > 0` | drives the expandable cut-logs row's "pick inventory" link; see intent §"Material-items expandable row" |
 
 ### Things that DO NOT need to change
@@ -121,7 +121,7 @@ New for this sweep:
 |---|---|---|
 | `queue/generate-work-order-file.ts` | `flooring.work-order.file-generation.requested` | `{ version: "v1", topic, workOrderId, fileId, requestedBy, requestedAt }`. Ships `parseGenerateWorkOrderFilePayload`. Constants: `GENERATE_WORK_ORDER_FILE_TOPIC`, `…_QUEUE`, `…_JOB_NAME`. Mirror `void-cut-log.ts` shape. |
 
-**Open question (Open Q4) — WO-MI cut-log save flow.** Per intent: "another
+**⚠ Pending — Q4: WO-MI cut-log save flow.** Per intent: "another
 set will be built around the work order material items section." Two options:
 
 1. **Reuse existing per-inventory payloads** — the WO-MI save use case fans
@@ -161,16 +161,25 @@ no DB types.
 The data layer's `getWorkOrderForFileGeneration` (sweep 4 / data layer)
 returns this exact shape.
 
-## Open questions for the user
+## Decisions resolved
+
+These are now locked into the body of this audit and into `intent.md`. They were carried as open questions in the first draft; user confirmed in this thread.
+
+| # | Decision |
+|---|---|
+| Q1 | **Add `sendUnitAbbrev` to `ProductRowCategory`** (parallel to existing `sendUnit` full name). Domain types + product normalizer change. Data layer's product fetch joins the abbrev once at the source. WO-MI + template-MI normalizers project from the same product shape — no extra joins per item. |
+| Q2 | **`propertyInstructions` autofill helper lives in `management/properties/instructions-autofill.ts`**, exported from the properties barrel. Single helper consumed by templates + WO primary-section save use cases AND by template-sync. |
+| Q3 | **Templates keep `propertyId` + `unitType` required.** WO required-fields rule (`propertyId` + `warehouseId` only) does NOT propagate. |
+| Q5 | **Promote `validateTemplateMaterialItemsDiff` to a domain-level diff validator now** (mirror `validateCutLogsDiff`). Application's `save-template-material-items-section.ts` shrinks. WO-MI clones the same shape. |
+| Q6 | **No status field on templates.** Template→WO sync is synchronous (no worker job, no PDF generation on templates this sweep). |
+| Cut-log link symmetry | **Hard rule confirmed** — every cut log carries BOTH `workOrderId` + `workOrderItemId` or NEITHER. `assertCutLogLinkageSymmetry` already enforces this; WO-MI cut-log save use case calls it on every write. The inventory-side `updateLinks` use case is dropped — WOMI section is the sole writer of these two columns. |
+| Template delete | **Always allowed.** No domain blocker. Cascade drops material items; linked WOs survive (templateId → null). No special handling for "template has material items." |
+
+## Open questions still pending
 
 | # | Question | Recommendation |
 |---|---|---|
-| Q1 | `ProductRowCategory.sendUnit` carries the full name (`"Square Feet"`) but not the abbreviation (`"sf"`). To stamp `sendUnitAbbrev` on items at write time, do we ----  extend `ProductRowCategory` with `sendUnitAbbrev`, 
-| Q2 | `propertyInstructions` autofill helper — lives in `management/properties/instructions-autofill.ts`, exported from properties barrel. 
-| Q3 | WO required-fields rule ("only `warehouseId` + `propertyId`") | Templates keep `propertyId` + `unitType`.
-| Q4 | WO-MI cut-log save flow: fan out to existing per-inventory payloads, or new WOMI-scoped payload? | Fan out to existing — see §"Open question Open Q4" above. | **Flag q4 as an pending answer** 
-| Q5 | `validateTemplateMaterialItemsDiff` — promote to a domain-level diff validator now (mirror `validateCutLogsDiff`) or leave the procedural per-row check in the application layer? | Promote. Gives WO MI a clone target and shrinks the application use case ** flag as pending answer**. |
-| Q6 | Status field on the **template** row — out of scope this sweep (intent §"Template file gen dropped from this sweep")? Confirm. | Out of scope; no `status` on templates. | ----- templates do not need a status, the sync to work orders will be synchronous. 
+| **Q4** | WO-MI cut-log save flow: fan out to existing per-inventory payloads, or new WOMI-scoped payload? | Fan out to existing — see §"Pending — Q4" above. |
 
 ## Files this sweep will touch (preview)
 
@@ -220,5 +229,6 @@ returns this exact shape.
 | Pricing references to strip from domain | 9 lines across 3 files |
 | New files to create | 12 (1 shared + 1 lock-rules + 5 WO MI + 1 inventory-eligibility + 2 file-generation + 1 queue payload + 1 templates diff-rules promotion is in-place edit not new file) |
 | Files to modify | 10 |
-| Open questions for user | 6 |
+| Decisions resolved this round | 7 (Q1, Q2, Q3, Q5, Q6, cut-log symmetry, template delete) |
+| Open questions still pending | 1 (Q4 — WO-MI cut-log payload shape) |
 | TypeScript baseline | not captured (worktree has no `node_modules` and `guard:prisma` blocks `npm run typecheck` on out-of-scope import) — will surface per-file as the layer is touched |
