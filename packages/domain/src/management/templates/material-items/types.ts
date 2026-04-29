@@ -3,6 +3,10 @@ export type TemplateMaterialItemRow = {
   productId: string
   productName: string
   quantity: string
+  // Send-unit snapshot stamped at item write from the chosen product. Empty
+  // string when the product's category has no send unit configured.
+  sendUnitName: string
+  sendUnitAbbrev: string
   notes: string
   createdAt: string
 }
