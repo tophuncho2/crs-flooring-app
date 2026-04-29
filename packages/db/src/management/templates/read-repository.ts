@@ -52,7 +52,6 @@ const templateDetailSelect = {
       productId: true,
       product: { select: { name: true } },
       quantity: true,
-      unitPrice: true,
       notes: true,
       createdAt: true,
     },

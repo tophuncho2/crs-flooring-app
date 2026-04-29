@@ -14,7 +14,6 @@ const templateMaterialItemSelect = {
   productId: true,
   product: { select: { name: true } },
   quantity: true,
-  unitPrice: true,
   notes: true,
   createdAt: true,
 } as const
@@ -33,7 +32,6 @@ export async function createTemplateMaterialItemRecord(
       templateId,
       productId: input.productId,
       quantity: toDecimal(input.quantity),
-      unitPrice: toDecimal(input.unitPrice),
       notes: input.notes ? input.notes : null,
     },
     select: templateMaterialItemSelect,
@@ -52,7 +50,6 @@ export async function updateTemplateMaterialItemRecord(
     data: {
       productId: input.productId,
       quantity: toDecimal(input.quantity),
-      unitPrice: toDecimal(input.unitPrice),
       notes: input.notes ? input.notes : null,
     },
     select: templateMaterialItemSelect,
@@ -102,7 +99,6 @@ export async function applyTemplateMaterialItemsDiff(
         templateId: input.templateId,
         productId: draft.form.productId,
         quantity: toDecimal(draft.form.quantity),
-        unitPrice: toDecimal(draft.form.unitPrice),
         notes: draft.form.notes ? draft.form.notes : null,
       })),
     })
@@ -114,7 +110,6 @@ export async function applyTemplateMaterialItemsDiff(
       data: {
         productId: update.form.productId,
         quantity: toDecimal(update.form.quantity),
-        unitPrice: toDecimal(update.form.unitPrice),
         notes: update.form.notes ? update.form.notes : null,
       },
     })

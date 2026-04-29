@@ -5,7 +5,6 @@ type TemplateMaterialItemInput = {
   productId: string
   product: { name: string }
   quantity: { toString(): string }
-  unitPrice: { toString(): string }
   notes: string | null
   createdAt: Date | string
 }
@@ -16,7 +15,6 @@ export function normalizeTemplateMaterialItem(item: TemplateMaterialItemInput): 
     productId: item.productId,
     productName: item.product.name,
     quantity: item.quantity.toString(),
-    unitPrice: item.unitPrice.toString(),
     notes: item.notes ?? "",
     createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
   }

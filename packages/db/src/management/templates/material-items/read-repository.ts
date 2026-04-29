@@ -9,7 +9,6 @@ const templateMaterialItemSelect = {
   productId: true,
   product: { select: { name: true } },
   quantity: true,
-  unitPrice: true,
   notes: true,
   createdAt: true,
 } as const
