@@ -12,8 +12,8 @@ Plan: [work-orders-sweep-plan.md](work-orders-sweep-plan.md) — locked.
 | 7f — Application (MI + cut-logs) | ✅ DONE | `aa277835` |
 | 7g — Application (file-gen) | ✅ DONE | `1baa6181` |
 | 7h — Worker/Relay | ✅ DONE | `d31a5c9f` |
-| 7i — API | ⏳ next | — |
-| 7j — Engine off-ramp | pending | — |
+| 7i — API | ✅ DONE | (pending git commit) |
+| 7j — Engine off-ramp | ⏳ next | — |
 | 7k — Module dir UI | pending | — |
 | 7l — Dashboard pages | pending | — |
 
@@ -318,9 +318,53 @@ Pre-flight inventory pass confirmed the canonical patterns to mirror:
 
 ---
 
+## 7i — API routes (DONE, awaiting commit)
+
+13 new files under `apps/web/app/api/work-orders/`. Controllers, module dir, page loaders intentionally untouched per user direction (those land in 7j / 7k / 7l).
+
+### Files created
+
+| Path | Methods | Calls / notes |
+|---|---|---|
+| `_validators.ts` | — | 5 validators: `validateCreateWorkOrderInput`, `validateUpdateWorkOrderInput` (Update is partial; omits `status` + sync snapshots), `validateWorkOrderMaterialItemsDiffInput`, `validateWorkOrderItemPendingCutLogDiffInput`, `validateFinalizeWorkOrderCutLogBatchInput`. Three `fail*` functions cover the 3 execution-error classes (WO / MaterialItem / CutLog). |
+| `route.ts` | GET, POST | List via `listWorkOrders`. Create via `createWorkOrderUseCase` → 201 with `{ workOrder }`. |
+| `[id]/route.ts` | GET, DELETE | Detail via `getWorkOrderDetailById`. Delete via `deleteWorkOrderUseCase` with `assertExpectedUpdatedAt` guard. |
+| `[id]/primary/section/route.ts` | PATCH | `updateWorkOrderUseCase` with `assertExpectedUpdatedAt`. Returns updated detail. |
+| `[id]/material-items/section/route.ts` | PATCH | `saveWorkOrderMaterialItemsSectionUseCase`. Returns `{ workOrder, tempIdMap }` after re-reading detail. |
+| `[id]/material-items/[itemId]/pending-cut-logs/section/route.ts` | PATCH | **Producer.** `saveWorkOrderItemPendingCutLogDiffUseCase` → 202 with `{ batch }`. No parent-level `expectedUpdatedAt`; per-row optimistic locks live inside the diff. |
+| `[id]/material-items/[itemId]/eligible-inventory/route.ts` | GET | `listEligibleInventoryForWorkOrderItem` for the cut-log expandable row's inventory dropdown. |
+| `[id]/cut-logs/finalize/route.ts` | POST | **Producer.** `finalizeWorkOrderCutLogBatchUseCase` → 202 with `{ batch }`. WO-scoped; selection may span multiple WOMIs. |
+| `[id]/cut-logs/[cutLogId]/route.ts` | DELETE | **Sync.** `voidWorkOrderCutLogUseCase` → 200 with `{ cutLog }`. Mutation lifecycle wraps the sync call. |
+| `[id]/files/route.ts` | GET, POST | List via `listWorkOrderFiles`. POST is **producer** — `requestWorkOrderFileUseCase` → 202 with `{ file }`. |
+| `[id]/files/[fileId]/route.ts` | DELETE | **Sync.** `deleteWorkOrderFileUseCase` (loads `getStorageEnvironment()` at the route, passes into use case). |
+| `[id]/files/[fileId]/download/route.ts` | GET | Returns presigned URL via `createBucketObjectPresignedUrl`. Asserts WO linkage + status COMPLETED before signing. |
+| `options/route.ts` | GET | Aggregates `listPropertyOptions`, `listWarehouseOptions`, `listJobTypeOptions`, `listManagementCompanyOptions`, `listTemplateOptions`, `listProductOptions`, `listCategories` in a single `Promise.all`. |
+
+### Verification gates
+
+| Gate | Result |
+|---|---|
+| Typecheck filtered to new WO API surface (`grep -E "^app/api/work-orders"`) | ✅ 0 errors |
+| Web typecheck overall | Pre-existing leftovers only: 48 in `modules/work-orders/*` (cleared by 7j), 5 in `modules/shared/engines`, 3 in `app/api/admin`, 1 in `modules/admin`. None from 7i. |
+
+### Notable design points
+
+1. **Mutation lifecycle uniform across all mutations**: every POST/PATCH/DELETE route follows `applyRoutePolicy` (with `capability + toolSlug + rateLimit`) → `parseMutationEnvelope` → `enforceMutationReceipt` → `withMutationTelemetry(useCase)` → `finalizeMutationReceipt` → `routeJson`. Per app/CLAUDE.md.
+2. **Query routes uniform across all GETs**: `applyRoutePolicy` → `enforceQueryRateLimit` → read repo call → `routeJson`.
+3. **Producer routes return 202 Accepted**: pending-diff, finalize-batch, file-request all return 202 because the actual writes happen asynchronously in the worker. Sync routes (void, file-delete, primary/MI section) return 200.
+4. **`assertExpectedUpdatedAt` guards** the primary section + delete routes (the snapshots come from `getWorkOrderDetailById`). Pending-diff + finalize routes do NOT use the parent-level lock — per-row optimistic locks live inside the diff entries (`expectedUpdatedAt` per modified/deleted row), revalidated by the worker under the multi-inventory FOR UPDATE lock.
+5. **Storage env loaded at the route boundary**: file-delete + download routes call `getStorageEnvironment()` from `@/server/platform/env` and pass the `StorageEnvironment` into the use case / `createBucketObjectPresignedUrl`. Application package never reads `process.env`.
+6. **`requestKey` is required** in pending-diff + finalize bodies (validators throw 400 if missing). It's the client-generated UUID that becomes the outbox idempotency key, per locked decision #6.
+7. **Error mapping is automatic**: `WorkOrderExecutionError`, `WorkOrderMaterialItemExecutionError`, `WorkOrderCutLogExecutionError`, `WorkOrderFileExecutionError` all carry `status` + `code` + optional `field`/`payload`. The shared `routeError` helper picks them up via `normalizePrismaError` — no per-route catch-and-map code.
+
+**Open issues:** none.
+
+---
+
 ## Notes
 
 - Per CLAUDE.md: schema lands alone in its own commit; subsequent sub-sweeps may bundle related changes per layer.
 - Plan + this execution file live at `a-branch/` per project convention.
 - 7b's gate per the plan was domain typecheck only (data + application + web are deferred to their own sub-sweeps); the 4 DB errors above are the expected leftover surface.
 - 7h required a small refactor in 7f's `markWorkOrderItemsFailedFromFinalizeBatch` to take cut-log IDs (the shape the worker has at catch time) rather than WOMI IDs. Bundled with the 7h commit since it has no other callers.
+- 7i did not touch controllers, module dir, or page loaders per user direction. The `WorkOrderCutLogPendingDiff` type alias surfaced in the validator is the same shape `apply-finalize-...` consumes at the worker layer — kept consistent end-to-end.
