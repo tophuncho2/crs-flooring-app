@@ -11,7 +11,10 @@ import type {
   ListControllerInput,
   ListControllerSsrInput,
 } from "./contracts/list-controller-input"
-import type { ListControllerOutput } from "./contracts/list-controller-output"
+import type {
+  ListControllerOutput,
+  ListFilterValueMap,
+} from "./contracts/list-controller-output"
 import { patchTablePreference } from "./table-preferences-client"
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -88,16 +91,18 @@ function buildPreferencePayload({
   sortFieldKey,
   isAscendingSort,
   groupField,
+  filters,
   basePrefs,
 }: {
   sortFieldKey: string
   isAscendingSort: boolean
   groupField: string | null
+  filters: ListFilterValueMap
   basePrefs: TablePreferencePayload | null | undefined
 }): TablePreferencePayload {
   return {
     sort: { key: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" },
-    filters: basePrefs?.filters ?? {},
+    filters: { ...(basePrefs?.filters ?? {}), ...filters },
     columnVisibility: basePrefs?.columnVisibility ?? {},
     columnOrder: basePrefs?.columnOrder ?? [],
     grouping: {
@@ -107,9 +112,57 @@ function buildPreferencePayload({
   }
 }
 
+function readFiltersFromSearchParams(
+  searchParams: URLSearchParams | null,
+  filterableFields: readonly string[] | undefined,
+  initialFilters: ListFilterValueMap,
+): ListFilterValueMap {
+  if (!filterableFields || filterableFields.length === 0) {
+    return {}
+  }
+
+  const result: ListFilterValueMap = {}
+  for (const key of filterableFields) {
+    const fromUrl = searchParams ? searchParams.getAll(key) : []
+    if (fromUrl.length > 0) {
+      result[key] = [...fromUrl]
+      continue
+    }
+    if (initialFilters[key]?.length) {
+      result[key] = [...initialFilters[key]]
+      continue
+    }
+    result[key] = []
+  }
+  return result
+}
+
+function writeFiltersToSearchParams(
+  current: URLSearchParams,
+  filterableFields: readonly string[] | undefined,
+  filters: ListFilterValueMap,
+): URLSearchParams {
+  const next = new URLSearchParams(current)
+  if (!filterableFields) return next
+
+  for (const key of filterableFields) {
+    next.delete(key)
+    const values = filters[key]
+    if (!values?.length) continue
+    for (const value of values) next.append(key, value)
+  }
+  return next
+}
+
 function buildNextSearchParams(
   current: URLSearchParams,
-  next: { searchQuery: string; isAscendingSort: boolean; groupField: string | null },
+  next: {
+    searchQuery: string
+    isAscendingSort: boolean
+    groupField: string | null
+    filters: ListFilterValueMap
+    filterableFields: readonly string[] | undefined
+  },
 ): URLSearchParams {
   const params = new URLSearchParams(current)
   params.delete("page")
@@ -128,7 +181,29 @@ function buildNextSearchParams(
     params.delete("groups")
   }
 
-  return params
+  return writeFiltersToSearchParams(params, next.filterableFields, next.filters)
+}
+
+function asTypedFilters<TFilters>(filters: ListFilterValueMap): TFilters {
+  return filters as unknown as TFilters
+}
+
+function normalizeInitialFilters<TFilters>(
+  initial: TFilters | undefined,
+  filterableFields: readonly string[] | undefined,
+): ListFilterValueMap {
+  if (!filterableFields || filterableFields.length === 0) return {}
+  const map = (initial ?? {}) as Record<string, unknown>
+  const result: ListFilterValueMap = {}
+  for (const key of filterableFields) {
+    const value = map[key]
+    if (Array.isArray(value)) {
+      result[key] = value.filter((entry): entry is string => typeof entry === "string")
+    } else {
+      result[key] = []
+    }
+  }
+  return result
 }
 
 export function useServerListController<TRow, TFilters = Record<string, never>>(
@@ -152,13 +227,19 @@ function useSsrListController<TRow, TFilters>(
   const sortFieldKey = initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
   const allowedGroupFields = input.allowedGroupFields
   const allowedSortFields = input.allowedSortFields
+  const filterableFields = input.filterableFields
   const tableKey = input.tableKey
   const initialTablePreferences = input.initialTablePreferences ?? null
   const urlSyncMode = input.urlSyncMode ?? "history"
+  const initialFiltersMap = useMemo(
+    () => normalizeInitialFilters(input.initialFilters, filterableFields),
+    [filterableFields, input.initialFilters],
+  )
 
   const [searchQuery, setSearchQuery] = useState(input.initialSearchQuery ?? "")
   const [isAscendingSort, setIsAscendingSort] = useState(initialIsAscendingSort)
   const [groupField, setGroupField] = useState<string | null>(initialGroupField)
+  const [filters, setFilters] = useState<ListFilterValueMap>(initialFiltersMap)
   const [preferenceError, setPreferenceError] = useState("")
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -172,9 +253,17 @@ function useSsrListController<TRow, TFilters>(
   }, [searchParams])
 
   const writeUrl = useCallback(
-    (next: { searchQuery: string; isAscendingSort: boolean; groupField: string | null }) => {
+    (next: {
+      searchQuery: string
+      isAscendingSort: boolean
+      groupField: string | null
+      filters: ListFilterValueMap
+    }) => {
       if (!pathname) return
-      const params = buildNextSearchParams(getCurrentParams(), next)
+      const params = buildNextSearchParams(getCurrentParams(), {
+        ...next,
+        filterableFields,
+      })
       const qs = params.toString()
       const href = qs ? `${pathname}?${qs}` : pathname
 
@@ -187,17 +276,22 @@ function useSsrListController<TRow, TFilters>(
         window.history.replaceState(window.history.state, "", href)
       }
     },
-    [getCurrentParams, pathname, router, urlSyncMode],
+    [filterableFields, getCurrentParams, pathname, router, urlSyncMode],
   )
 
   const persistPreferences = useCallback(
-    (next: { isAscendingSort: boolean; groupField: string | null }) => {
+    (next: {
+      isAscendingSort: boolean
+      groupField: string | null
+      filters: ListFilterValueMap
+    }) => {
       if (!tableKey || !sortFieldKey) return
 
       const payload = buildPreferencePayload({
         sortFieldKey,
         isAscendingSort: next.isAscendingSort,
         groupField: next.groupField,
+        filters: next.filters,
         basePrefs: initialTablePreferences,
       })
 
@@ -217,14 +311,14 @@ function useSsrListController<TRow, TFilters>(
 
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => {
-      writeUrl({ searchQuery, isAscendingSort, groupField })
+      writeUrl({ searchQuery, isAscendingSort, groupField, filters })
       lastSyncedSearchQueryRef.current = searchQuery
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
-  }, [searchQuery, isAscendingSort, groupField, writeUrl])
+  }, [searchQuery, isAscendingSort, groupField, filters, writeUrl])
 
   useEffect(() => {
     return () => {
@@ -240,11 +334,11 @@ function useSsrListController<TRow, TFilters>(
     setPreferenceError("")
     setIsAscendingSort((prev) => {
       const next = !prev
-      writeUrl({ searchQuery, isAscendingSort: next, groupField })
-      persistPreferences({ isAscendingSort: next, groupField })
+      writeUrl({ searchQuery, isAscendingSort: next, groupField, filters })
+      persistPreferences({ isAscendingSort: next, groupField, filters })
       return next
     })
-  }, [groupField, persistPreferences, searchQuery, writeUrl])
+  }, [filters, groupField, persistPreferences, searchQuery, writeUrl])
 
   const onSortChange = useCallback(
     (next: ListSort | null) => {
@@ -252,21 +346,44 @@ function useSsrListController<TRow, TFilters>(
       setPreferenceError("")
       const nextAsc = next.direction === "asc"
       setIsAscendingSort(nextAsc)
-      writeUrl({ searchQuery, isAscendingSort: nextAsc, groupField })
-      persistPreferences({ isAscendingSort: nextAsc, groupField })
+      writeUrl({ searchQuery, isAscendingSort: nextAsc, groupField, filters })
+      persistPreferences({ isAscendingSort: nextAsc, groupField, filters })
     },
-    [groupField, persistPreferences, searchQuery, writeUrl],
+    [filters, groupField, persistPreferences, searchQuery, writeUrl],
   )
 
   const onGroupFieldChange = useCallback(
     (next: string | null) => {
       setPreferenceError("")
       setGroupField(next)
-      writeUrl({ searchQuery, isAscendingSort, groupField: next })
-      persistPreferences({ isAscendingSort, groupField: next })
+      writeUrl({ searchQuery, isAscendingSort, groupField: next, filters })
+      persistPreferences({ isAscendingSort, groupField: next, filters })
     },
-    [isAscendingSort, persistPreferences, searchQuery, writeUrl],
+    [filters, isAscendingSort, persistPreferences, searchQuery, writeUrl],
   )
+
+  const onFilterChange = useCallback(
+    (key: string, values: string[]) => {
+      setPreferenceError("")
+      setFilters((prev) => {
+        const next: ListFilterValueMap = { ...prev, [key]: [...values] }
+        writeUrl({ searchQuery, isAscendingSort, groupField, filters: next })
+        persistPreferences({ isAscendingSort, groupField, filters: next })
+        return next
+      })
+    },
+    [groupField, isAscendingSort, persistPreferences, searchQuery, writeUrl],
+  )
+
+  const onClearAllFilters = useCallback(() => {
+    if (!filterableFields || filterableFields.length === 0) return
+    setPreferenceError("")
+    const next: ListFilterValueMap = {}
+    for (const key of filterableFields) next[key] = []
+    setFilters(next)
+    writeUrl({ searchQuery, isAscendingSort, groupField, filters: next })
+    persistPreferences({ isAscendingSort, groupField, filters: next })
+  }, [filterableFields, groupField, isAscendingSort, persistPreferences, searchQuery, writeUrl])
 
   const pagination = input.pagination
   const initialPage = input.initialPage ?? 1
@@ -317,6 +434,7 @@ function useSsrListController<TRow, TFilters>(
     searchQuery,
     sort: sortFieldKey ? { field: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" } : null,
     groupField,
+    filters,
     page,
     pageSize,
     totalPages,
@@ -325,6 +443,8 @@ function useSsrListController<TRow, TFilters>(
     onSortChange,
     onToggleSortDirection,
     onGroupFieldChange,
+    onFilterChange,
+    onClearAllFilters,
 
     hasPreviousPage,
     hasNextPage,
@@ -346,6 +466,8 @@ function useSsrListController<TRow, TFilters>(
 function useFetchListController<TRow, TFilters>(
   input: ListControllerFetchInput<TRow, TFilters>,
 ): ListControllerOutput<TRow> {
+  const searchParams = useSearchParams()
+
   const initialSearchQuery = input.initialSearchQuery ?? ""
   const initialDirection = input.initialSort?.direction ?? "asc"
   const initialGroupValue = input.initialGroupField ?? ""
@@ -354,13 +476,17 @@ function useFetchListController<TRow, TFilters>(
   const sortFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
   const allowedGroupFields = input.allowedGroupFields
   const allowedSortFields = input.allowedSortFields
+  const filterableFields = input.filterableFields
   const tableKey = input.tableKey
   const initialTablePreferences = input.initialTablePreferences ?? null
   const declaredPageSize = input.pageSize ?? 50
-  const initialFilters = input.initialFilters
   const consumerQueryKey = input.queryKey
   const listFn = input.listFn
   const initialData = input.initialData
+  const initialFiltersMap = useMemo(
+    () => normalizeInitialFilters(input.initialFilters, filterableFields),
+    [filterableFields, input.initialFilters],
+  )
 
   const [searchUrlValue, setSearchUrlValue] = useQueryState(
     "q",
@@ -383,6 +509,9 @@ function useFetchListController<TRow, TFilters>(
     parseAsInteger.withDefault(initialPageValue),
   )
 
+  const [filters, setFilters] = useState<ListFilterValueMap>(() =>
+    readFiltersFromSearchParams(searchParams, filterableFields, initialFiltersMap),
+  )
   const [searchInputValue, setSearchInputValue] = useState(searchUrlValue)
   const [preferenceError, setPreferenceError] = useState("")
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -397,14 +526,33 @@ function useFetchListController<TRow, TFilters>(
     }
   }, [])
 
+  const writeFiltersUrl = useCallback(
+    (nextFilters: ListFilterValueMap) => {
+      if (!filterableFields || filterableFields.length === 0) return
+      if (typeof window === "undefined") return
+      const current = new URLSearchParams(window.location.search)
+      const next = writeFiltersToSearchParams(current, filterableFields, nextFilters)
+      next.delete("page")
+      const qs = next.toString()
+      const href = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+      window.history.replaceState(window.history.state, "", href)
+    },
+    [filterableFields],
+  )
+
   const persistPreferences = useCallback(
-    (next: { isAscendingSort: boolean; groupField: string | null }) => {
+    (next: {
+      isAscendingSort: boolean
+      groupField: string | null
+      filters: ListFilterValueMap
+    }) => {
       if (!tableKey || !sortFieldKey) return
 
       const payload = buildPreferencePayload({
         sortFieldKey,
         isAscendingSort: next.isAscendingSort,
         groupField: next.groupField,
+        filters: next.filters,
         basePrefs: initialTablePreferences,
       })
 
@@ -427,15 +575,15 @@ function useFetchListController<TRow, TFilters>(
     () => ({
       search: searchUrlValue?.trim() ? searchUrlValue.trim() : undefined,
       sort: sortFieldKey ? { field: sortFieldKey, direction: sortDirection } : undefined,
-      filters: initialFilters,
+      filters: asTypedFilters<TFilters>(filters),
       group: groupFieldNormalized ? { field: groupFieldNormalized } : undefined,
       page: pageValue,
       pageSize: declaredPageSize,
     }),
     [
       declaredPageSize,
+      filters,
       groupFieldNormalized,
-      initialFilters,
       pageValue,
       searchUrlValue,
       sortDirection,
@@ -483,8 +631,9 @@ function useFetchListController<TRow, TFilters>(
     persistPreferences({
       isAscendingSort: nextDirection === "asc",
       groupField: groupFieldNormalized,
+      filters,
     })
-  }, [groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection, sortDirection])
+  }, [filters, groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection, sortDirection])
 
   const onSortChange = useCallback(
     (next: ListSort | null) => {
@@ -495,9 +644,10 @@ function useFetchListController<TRow, TFilters>(
       persistPreferences({
         isAscendingSort: next.direction === "asc",
         groupField: groupFieldNormalized,
+        filters,
       })
     },
-    [groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection],
+    [filters, groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection],
   )
 
   const onGroupFieldChange = useCallback(
@@ -514,10 +664,61 @@ function useFetchListController<TRow, TFilters>(
       persistPreferences({
         isAscendingSort,
         groupField: next ? next : null,
+        filters,
       })
     },
-    [isAscendingSort, pageValue, persistPreferences, setGroupFieldValue, setGroupedToggle, setPageValue],
+    [filters, isAscendingSort, pageValue, persistPreferences, setGroupFieldValue, setGroupedToggle, setPageValue],
   )
+
+  const onFilterChange = useCallback(
+    (key: string, values: string[]) => {
+      setPreferenceError("")
+      setFilters((prev) => {
+        const next: ListFilterValueMap = { ...prev, [key]: [...values] }
+        writeFiltersUrl(next)
+        persistPreferences({
+          isAscendingSort,
+          groupField: groupFieldNormalized,
+          filters: next,
+        })
+        return next
+      })
+      if (pageValue !== 1) setPageValue(1)
+    },
+    [
+      groupFieldNormalized,
+      isAscendingSort,
+      pageValue,
+      persistPreferences,
+      setPageValue,
+      writeFiltersUrl,
+    ],
+  )
+
+  const onClearAllFilters = useCallback(() => {
+    if (!filterableFields || filterableFields.length === 0) return
+    setPreferenceError("")
+    setFilters(() => {
+      const next: ListFilterValueMap = {}
+      for (const key of filterableFields) next[key] = []
+      writeFiltersUrl(next)
+      persistPreferences({
+        isAscendingSort,
+        groupField: groupFieldNormalized,
+        filters: next,
+      })
+      return next
+    })
+    if (pageValue !== 1) setPageValue(1)
+  }, [
+    filterableFields,
+    groupFieldNormalized,
+    isAscendingSort,
+    pageValue,
+    persistPreferences,
+    setPageValue,
+    writeFiltersUrl,
+  ])
 
   const goToPage = useCallback(
     (next: number) => {
@@ -543,6 +744,7 @@ function useFetchListController<TRow, TFilters>(
     searchQuery: searchInputValue,
     sort: sortFieldKey ? { field: sortFieldKey, direction: sortDirection } : null,
     groupField: groupFieldNormalized,
+    filters,
     page: pageValue,
     pageSize,
     totalPages,
@@ -551,6 +753,8 @@ function useFetchListController<TRow, TFilters>(
     onSortChange,
     onToggleSortDirection,
     onGroupFieldChange,
+    onFilterChange,
+    onClearAllFilters,
 
     hasPreviousPage,
     hasNextPage,

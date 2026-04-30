@@ -17,6 +17,13 @@ type ListControllerInputBase<TFilters> = ListControllerPreferencesInput & {
   pageSize?: number
   allowedSortFields?: readonly string[]
   allowedGroupFields?: readonly string[]
+  /**
+   * Declared filter keys for this list. Each key becomes a multi-value
+   * URL query param (`?key=val1&key=val2`). The controller manages state
+   * for these keys; consumers slot the canonical FilterControl UI to
+   * collect values.
+   */
+  filterableFields?: readonly string[]
   urlSyncMode?: ListControllerUrlSyncMode
 }
 

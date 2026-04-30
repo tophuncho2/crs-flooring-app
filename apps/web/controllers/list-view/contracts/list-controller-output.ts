@@ -1,5 +1,7 @@
 import type { ListGroup, ListSort } from "@builders/application"
 
+export type ListFilterValueMap = Record<string, string[]>
+
 export type ListControllerOutput<TRow> = {
   rows: TRow[]
   total: number
@@ -8,6 +10,7 @@ export type ListControllerOutput<TRow> = {
   searchQuery: string
   sort: ListSort | null
   groupField: string | null
+  filters: ListFilterValueMap
   page: number
   pageSize: number
   totalPages: number
@@ -16,6 +19,8 @@ export type ListControllerOutput<TRow> = {
   onSortChange: (next: ListSort | null) => void
   onToggleSortDirection: () => void
   onGroupFieldChange: (next: string | null) => void
+  onFilterChange: (key: string, values: string[]) => void
+  onClearAllFilters: () => void
 
   hasPreviousPage: boolean
   hasNextPage: boolean

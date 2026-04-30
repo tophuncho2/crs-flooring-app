@@ -17,9 +17,19 @@ export type TemplatesListSort = {
   isGroupingEnabled: boolean
 }
 
+/**
+ * Multi-value filter map keyed by domain field. Empty values arrays
+ * are ignored. Concrete dimensions will be wired into
+ * `buildTemplatesWhere` alongside the canonical filter UI wiring in
+ * the templates sweep — for now, this is a foundation pass-through
+ * that the application/use-case layer already pipes.
+ */
+export type TemplatesListFilterMap = Record<string, string[]>
+
 export type TemplatesListArgs = {
   searchQuery?: string
   sort?: TemplatesListSort
+  filters?: TemplatesListFilterMap
   pagination?: { skip: number; take: number }
 }
 
@@ -72,6 +82,8 @@ const templateDetailSelect = {
 
 function buildTemplatesWhere(
   searchQuery: string | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- pass-through; concrete filter dimensions wired in templates sweep
+  _filters: TemplatesListFilterMap | undefined,
 ): Prisma.FlooringTemplateWhereInput | undefined {
   if (!searchQuery) return undefined
 
@@ -125,7 +137,7 @@ export async function listTemplates(
   client: TemplatesDbClient = db,
 ): Promise<TemplateListRow[]> {
   const templates = await client.flooringTemplate.findMany({
-    where: buildTemplatesWhere(args.searchQuery),
+    where: buildTemplatesWhere(args.searchQuery, args.filters),
     orderBy: buildTemplatesOrderBy(args.sort),
     select: templateListSelect,
     ...(args.pagination ?? {}),
@@ -158,10 +170,10 @@ export async function getTemplateById(
 }
 
 export async function countTemplates(
-  args: { searchQuery?: string },
+  args: { searchQuery?: string; filters?: TemplatesListFilterMap },
   client: TemplatesDbClient = db,
 ): Promise<number> {
   return client.flooringTemplate.count({
-    where: buildTemplatesWhere(args.searchQuery),
+    where: buildTemplatesWhere(args.searchQuery, args.filters),
   })
 }

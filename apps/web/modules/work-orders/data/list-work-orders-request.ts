@@ -1,12 +1,21 @@
+import type { WorkOrdersListFilters } from "@builders/application"
 import type { ListInput, ListOutput } from "@builders/application"
 import type { WorkOrderListRow } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
-export type WorkOrdersListInput = ListInput<Record<string, never>>
+export type WorkOrdersListInput = ListInput<WorkOrdersListFilters>
 
 export const WORK_ORDERS_LIST_QUERY_KEY = ["work-orders", "list"] as const
 
 export const WORK_ORDERS_LIST_PAGE_SIZE = 50
+
+/**
+ * Filterable field keys recognised by the work-orders list. Concrete
+ * dimensions land alongside the canonical filter UI wiring in the
+ * work-orders sweep — until then the array is empty and the foundation
+ * URL serialization below has nothing to read/write.
+ */
+export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [] as const satisfies readonly string[]
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -14,6 +23,27 @@ function readSearchParam(
 ): string | undefined {
   const raw = searchParams?.[key]
   return Array.isArray(raw) ? raw[0] : raw
+}
+
+function readMultiSearchParam(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+  key: string,
+): string[] {
+  const raw = searchParams?.[key]
+  if (Array.isArray(raw)) return raw.filter((value): value is string => typeof value === "string")
+  if (typeof raw === "string") return [raw]
+  return []
+}
+
+function readFiltersFromSearchParams(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+): WorkOrdersListFilters {
+  const result: Record<string, string[]> = {}
+  for (const key of WORK_ORDERS_LIST_FILTERABLE_FIELDS) {
+    const values = readMultiSearchParam(searchParams, key)
+    if (values.length > 0) result[key] = values
+  }
+  return result as WorkOrdersListFilters
 }
 
 export function parseWorkOrdersListInputFromSearchParams(
@@ -27,6 +57,7 @@ export function parseWorkOrdersListInputFromSearchParams(
   return {
     search: search || undefined,
     sort: { field: "workOrderNumber", direction },
+    filters: readFiltersFromSearchParams(searchParams),
     page,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
   }
@@ -38,6 +69,13 @@ function buildSearchString(input: WorkOrdersListInput): string {
   if (input.sort) params.set("sort", input.sort.direction)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
+  if (input.filters) {
+    const filters = input.filters as Record<string, string[] | undefined>
+    for (const key of WORK_ORDERS_LIST_FILTERABLE_FIELDS) {
+      const values = filters[key] ?? []
+      for (const value of values) params.append(key, value)
+    }
+  }
   return params.toString()
 }
 

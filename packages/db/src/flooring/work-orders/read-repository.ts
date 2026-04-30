@@ -23,14 +23,27 @@ export type WorkOrdersListSort = {
   isGroupingEnabled: boolean
 }
 
+/**
+ * Multi-value filter map keyed by domain field. Empty values arrays
+ * are ignored. Concrete dimensions (status, warehouse, jobType, etc.)
+ * will be wired into `buildWorkOrdersWhere` alongside the canonical
+ * filter UI wiring in the work-orders sweep — for now, this is a
+ * foundation pass-through that the application/use-case layer
+ * already pipes.
+ */
+export type WorkOrdersListFilterMap = Record<string, string[]>
+
 export type WorkOrdersListArgs = {
   searchQuery?: string
   sort?: WorkOrdersListSort
+  filters?: WorkOrdersListFilterMap
   pagination?: { skip: number; take: number }
 }
 
 function buildWorkOrdersWhere(
   searchQuery: string | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- pass-through; concrete filter dimensions wired in WO sweep
+  _filters: WorkOrdersListFilterMap | undefined,
 ): Prisma.FlooringWorkOrderWhereInput | undefined {
   if (!searchQuery) return undefined
 
@@ -91,7 +104,7 @@ export async function listWorkOrders(
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderListRow[]> {
   const workOrders = await client.flooringWorkOrder.findMany({
-    where: buildWorkOrdersWhere(args.searchQuery),
+    where: buildWorkOrdersWhere(args.searchQuery, args.filters),
     orderBy: buildWorkOrdersOrderBy(args.sort),
     select: workOrderListSelect,
     ...(args.pagination ?? {}),
@@ -136,11 +149,11 @@ export async function getWorkOrderDetailById(
 }
 
 export async function countWorkOrders(
-  args: { searchQuery?: string },
+  args: { searchQuery?: string; filters?: WorkOrdersListFilterMap },
   client: WorkOrdersDbClient = db,
 ): Promise<number> {
   return client.flooringWorkOrder.count({
-    where: buildWorkOrdersWhere(args.searchQuery),
+    where: buildWorkOrdersWhere(args.searchQuery, args.filters),
   })
 }
 
