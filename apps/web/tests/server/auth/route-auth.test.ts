@@ -65,7 +65,7 @@ describe("authorizeRouteAccess", () => {
     isToolUnlockedMock.mockResolvedValue(true)
 
     const result = await authorizeRouteAccess(new Request("http://localhost/test"), {
-      capability: "users.manage",
+      capability: "system.access",
       toolSlug: "products",
     })
 

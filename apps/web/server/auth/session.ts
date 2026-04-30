@@ -1,7 +1,7 @@
 import type { Role } from "@builders/db"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { canBypassVerification, hasSystemAccess } from "@/server/auth/access-control"
+import { hasSystemAccess } from "@/server/auth/access-control"
 import { getAuthOptions } from "@/server/auth/auth-options"
 import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-access"
 
@@ -39,7 +39,7 @@ export async function requireSessionUser(): Promise<SessionUser> {
     redirect("/login")
   }
 
-  if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+  if (!user.isVerified) {
     redirect("/login?restricted=1")
   }
 

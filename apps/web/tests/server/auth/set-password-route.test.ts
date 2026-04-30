@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { GovernanceExecutionError } from "@builders/application"
+import { AuthExecutionError } from "@builders/application"
 
 const {
   setUserPasswordUseCaseMock,
@@ -87,8 +87,8 @@ describe("POST /api/auth/set-password", () => {
   it("returns 409 when password already set", async () => {
     consumeRateLimitMock.mockResolvedValue({ allowed: true })
     setUserPasswordUseCaseMock.mockRejectedValue(
-      new GovernanceExecutionError({
-        code: "GOVERNANCE_PASSWORD_ALREADY_SET",
+      new AuthExecutionError({
+        code: "AUTH_PASSWORD_ALREADY_SET",
         message: "Password has already been set for this account",
         status: 409,
       }),
@@ -104,8 +104,8 @@ describe("POST /api/auth/set-password", () => {
   it("returns 404 when user not found", async () => {
     consumeRateLimitMock.mockResolvedValue({ allowed: true })
     setUserPasswordUseCaseMock.mockRejectedValue(
-      new GovernanceExecutionError({
-        code: "GOVERNANCE_USER_NOT_FOUND",
+      new AuthExecutionError({
+        code: "AUTH_USER_NOT_FOUND",
         message: "Unable to set password for this account",
         status: 404,
       }),

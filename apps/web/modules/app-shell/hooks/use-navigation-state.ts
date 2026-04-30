@@ -6,11 +6,9 @@ import { FLOORING_NAV_ITEMS, type FlooringNavItem } from "@/modules/app-shell/na
 
 export function useFlooringNavigationState({
   canUseTools,
-  hasAdminPanelAccess,
   tools,
 }: {
   canUseTools: boolean
-  hasAdminPanelAccess: boolean
   tools: UserToolRow[]
 }) {
   const orderedItems = useMemo(() => FLOORING_NAV_ITEMS, [])
@@ -18,13 +16,9 @@ export function useFlooringNavigationState({
   const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
   const canOpenItem = useCallback(
     (item: FlooringNavItem) => {
-      if (item.builderOnly) {
-        return hasAdminPanelAccess
-      }
-
       return canUseTools || (item.requiredTool ? unlockedToolSet.has(item.requiredTool) : false)
     },
-    [canUseTools, hasAdminPanelAccess, unlockedToolSet],
+    [canUseTools, unlockedToolSet],
   )
 
   return {

@@ -1,5 +1,5 @@
 export * from "./account/index.js"
-export * from "./admin/index.js"
+export * from "./auth/index.js"
 export * from "./list-view/index.js"
 export * from "./flooring/contacts/index.js"
 export * from "./flooring/imports/index.js"

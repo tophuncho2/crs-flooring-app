@@ -2,7 +2,7 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import { prisma, type Role } from "@builders/db"
-import { canBypassVerification, hasSystemAccess } from "@/server/auth/access-control"
+import { hasSystemAccess } from "@/server/auth/access-control"
 import { getAuthEnvironment } from "@/server/platform/env"
 import { logEvent } from "@/server/platform/logger"
 import { consumeRateLimit } from "@/server/platform/rate-limit"
@@ -110,7 +110,7 @@ export function getAuthOptions(): NextAuthOptions {
             throw new Error("INVALID_CREDENTIALS")
           }
 
-          if (!canBypassVerification(user.email, user.role) && !user.isVerified) {
+          if (!user.isVerified) {
             logEvent({
               level: "warn",
               message: "Login attempt failed because the account is pending approval",

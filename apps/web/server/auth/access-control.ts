@@ -2,9 +2,6 @@ import type { Role } from "@builders/db"
 
 export const CAPABILITIES = [
   "system.access",
-  "governance.access",
-  "adminPanel.access",
-  "users.manage",
   "tool.admin",
   "workOrders.read",
   "workOrders.write",
@@ -18,9 +15,6 @@ export type Capability = (typeof CAPABILITIES)[number]
 const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
   OWNER: new Set<Capability>([
     "system.access",
-    "governance.access",
-    "adminPanel.access",
-    "users.manage",
     "tool.admin",
     "workOrders.read",
     "workOrders.write",
@@ -30,9 +24,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
   ]),
   ADMIN: new Set<Capability>([
     "system.access",
-    "governance.access",
-    "adminPanel.access",
-    "users.manage",
     "workOrders.read",
     "workOrders.write",
     "workOrders.delete",
@@ -63,26 +54,10 @@ export function isAdmin(role: Role): boolean {
   return role === "ADMIN"
 }
 
-export function hasGovernanceAccess(role: Role): boolean {
-  return hasCapability(role, "governance.access")
-}
-
 export function hasSystemAccess(role: Role): boolean {
   return hasCapability(role, "system.access")
 }
 
 export function hasCapability(role: Role, capability: Capability): boolean {
   return ROLE_CAPABILITIES[role].has(capability)
-}
-
-export function canAccessAdminPanel(_email: string, role: Role): boolean {
-  return hasCapability(role, "adminPanel.access")
-}
-
-export function canBypassVerification(_email: string, role: Role): boolean {
-  return hasGovernanceAccess(role)
-}
-
-export function canManageUsers(_email: string, role: Role): boolean {
-  return hasCapability(role, "users.manage")
 }

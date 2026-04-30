@@ -14,14 +14,12 @@ import {
 
 type NavDrawerButtonProps = {
   canUseTools: boolean
-  hasAdminPanelAccess: boolean
   orderedItems: FlooringNavItem[]
   canOpenItem: (item: FlooringNavItem) => boolean
 }
 
 export default function NavDrawerButton({
   canUseTools,
-  hasAdminPanelAccess,
   orderedItems,
   canOpenItem,
 }: NavDrawerButtonProps) {
@@ -45,7 +43,7 @@ export default function NavDrawerButton({
     return () => document.removeEventListener("keydown", handleKey)
   }, [])
 
-  if (!pathname || !isFlooringRoute(pathname) || (!canUseTools && !hasAdminPanelAccess)) {
+  if (!pathname || !isFlooringRoute(pathname) || !canUseTools) {
     return null
   }
 

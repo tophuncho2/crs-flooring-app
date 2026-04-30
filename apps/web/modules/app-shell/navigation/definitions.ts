@@ -6,7 +6,6 @@ export type FlooringNavItem = {
   name: string
   href: string
   requiredTool?: ToolSlug
-  builderOnly?: boolean
 }
 
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [

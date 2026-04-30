@@ -21,10 +21,8 @@ export default function HeaderControls({
   canUseTools,
   tools,
 }: HeaderControlsProps) {
-  const hasAdminPanelAccess = role === "ADMIN" || role === "OWNER"
   const navigation = useFlooringNavigationState({
     canUseTools,
-    hasAdminPanelAccess,
     tools,
   })
 
@@ -33,7 +31,6 @@ export default function HeaderControls({
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         <NavDrawerButton
           canUseTools={canUseTools}
-          hasAdminPanelAccess={hasAdminPanelAccess}
           orderedItems={navigation.orderedItems}
           canOpenItem={navigation.canOpenItem}
         />

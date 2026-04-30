@@ -1,4 +1,75 @@
-# Plan — Admin Panel Hardscope (TS errors + engine off-ramp)
+# Plan — Admin Panel Removal (LOCKED 2026-04-29)
+
+> **Status:** LOCKED. Execution log lives at [admin-panel-hardscope-execution.md](admin-panel-hardscope-execution.md).
+>
+> **Scope flipped from "fix and migrate" to "remove entirely"** during plan iteration — user direction: terminal-only user creation via existing `db:upsert-owner` + `db:promote-admin` scripts is sufficient; admin web UI never re-introduced.
+>
+> Earlier "migrate off engine" body retained below as historical context, but the live scope is the removal section that follows it.
+
+---
+
+## Locked decisions (final)
+
+| # | Decision |
+|---|---|
+| 1 | **Delete admin web UI + dashboard pages + API routes + nav button + admin test files** in their entirety. |
+| 2 | **Relocate** `setUserPasswordUseCase` + `findUserByEmail` + `setUserPassword` (the only live consumers of `packages/{application,db}/src/admin/`) into new `packages/{application,db}/src/auth/` directories. **Delete the rest of the admin packages.** Domain admin/ goes entirely. |
+| 3 | **No new CLI script.** `db:upsert-owner` + `db:promote-admin` cover the user's needs. `setUserPasswordUseCase` + `/api/auth/set-password` flow stays alive in case terminal-created users need to set their own first-login password. |
+| 4 | **No schema migration.** `User.updatedAt` is moot once admin record-view is gone. |
+| 5 | **No `apps/web/hooks/` directory created in this sweep.** Admin removal touches no hooks. Project memory updated to seed the next engine-collapse sweep with that directory in mind. |
+| 6 | **`hasAdminPanelAccess` plumbing across the app shell is removed.** `builderOnly` nav-item flag is also pruned (no current consumers). `canBypassVerification` is removed — terminal upserts already set `isVerified=true`, so the bypass is dead. |
+
+## Removal surface (locked)
+
+| Surface | Action |
+|---|---|
+| `apps/web/modules/admin/` (13 files) | DELETE entire tree |
+| `apps/web/app/dashboard/admin/` (3 pages) | DELETE entire tree |
+| `apps/web/app/api/admin/` (2 route files) | DELETE entire tree |
+| `apps/web/tests/server/auth/admin-users-routes.test.ts` | DELETE |
+| `apps/web/modules/app-shell/components/user-menu.tsx` Admin Panel button + `hasAdminPanelAccess` flag | REMOVE |
+| `apps/web/modules/app-shell/components/header-controls.tsx` `hasAdminPanelAccess` computation + prop | REMOVE |
+| `apps/web/modules/app-shell/components/nav-drawer-button.tsx` `hasAdminPanelAccess` prop + gate | REMOVE |
+| `apps/web/modules/app-shell/hooks/use-navigation-state.ts` `hasAdminPanelAccess` parameter + `builderOnly` branch | REMOVE |
+| `apps/web/modules/app-shell/navigation/definitions.ts` `builderOnly?: boolean` field on `FlooringNavItem` | REMOVE (no current consumers) |
+| `apps/web/server/auth/access-control.ts` capabilities `governance.access`, `adminPanel.access`, `users.manage` | REMOVE from CAPABILITIES tuple + role sets |
+| `apps/web/server/auth/access-control.ts` helpers `canAccessAdminPanel`, `canManageUsers`, `hasGovernanceAccess`, `canBypassVerification` | DELETE |
+| `apps/web/server/auth/auth-options.ts` `canBypassVerification` call (line 113) | REPLACE with plain `if (!user.isVerified)` |
+| `apps/web/server/auth/session.ts` `canBypassVerification` call (line 42) | REPLACE with plain `if (!user.isVerified)` |
+| `packages/application/src/admin/{set-user-password,errors}.ts` | RELOCATE → `packages/application/src/auth/` (rename `GovernanceExecutionError` → `AuthExecutionError`; trim error codes to the 2 actually used: `USER_NOT_FOUND`, `PASSWORD_ALREADY_SET`) |
+| `packages/application/src/admin/{create,update,delete,get,list}-managed-user.ts`, `mappers.ts`, `types.ts`, `index.ts` | DELETE |
+| `packages/db/src/admin/{read-repository.ts portion: findUserByEmail, write-repository.ts portion: setUserPassword}` | RELOCATE → `packages/db/src/auth/` |
+| `packages/db/src/admin/{shared.ts: managedUserSelect/normalizeManagedUserRow/ManagedUserRecord, read-repository.ts: findManagedUsers/findManagedUserById, write-repository.ts: createManagedUser/updateManagedUser/deleteManagedUser, index.ts}` | DELETE |
+| `packages/domain/src/admin/{governance-rules,mappers,types,index}.ts` | DELETE entire directory |
+| `packages/{application,db,domain}/src/index.ts` | UPDATE — drop `./admin/index.js` re-exports; add `./auth/index.js` re-exports for application + db |
+| `apps/web/tests/server/auth/set-password-route.test.ts` | UPDATE — `GovernanceExecutionError` import → `AuthExecutionError` |
+| `apps/web/tests/server/auth/admin-recovery.test.ts` | KEEP unchanged (script stays) |
+
+## Verification gates
+
+| Gate | Expected |
+|---|---|
+| `npm run build --workspace @builders/domain` | exit 0 |
+| `npm run build --workspace @builders/db` | exit 0 |
+| `npm run build --workspace @builders/application` | exit 0 |
+| `npm run typecheck --workspace @builders/web` | **5 errors** — only pre-existing engine `panel/` leftovers. `app/api/admin` and `modules/admin` buckets disappear. |
+| `npm run build --workspace @builders/web` (Next.js) | exit 0 — first time since WO sweep |
+| `grep -rn "@/modules/admin\|/dashboard/admin\|/api/admin\|hasAdminPanelAccess\|canAccessAdminPanel\|canManageUsers\|hasGovernanceAccess\|canBypassVerification\|GovernanceExecutionError\|ManagedUserWithPermissions\|@builders/application/admin\|@builders/db/admin\|@builders/domain/admin" apps packages --include="*.ts" --include="*.tsx"` (excluding `dist/`, `.next/`, `node_modules/`) | 0 matches |
+
+## Out of scope
+
+| Item | Why |
+|---|---|
+| New `db:upsert-user` script | Existing `db:upsert-owner` + `db:promote-admin` cover the user's needs per stated direction |
+| Renaming `db:promote-admin` → something more general | Script keeps working; cosmetic rename can wait |
+| Creating `apps/web/hooks/` directory | Admin removal touches no hooks. Future engine-collapse sweep will land it. |
+| Engine `panel/` `../client/...` import errors (5 pre-existing leftovers) | Pre-existing engine internals, unrelated. Engine-cleanup sweep. |
+
+---
+
+## Historical scope (pre-amendment) — kept for context only
+
+> The plan body below was drafted under the original "fix TS errors + migrate off engine" scope. Superseded by the removal scope above. Kept for record-keeping and so the execution log can reference what was originally proposed.
 
 ## Context
 

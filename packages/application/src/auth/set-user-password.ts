@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt"
 import { findUserByEmail, setUserPassword, withDatabaseTransaction } from "@builders/db"
-import { GovernanceExecutionError } from "./errors.js"
+import { AuthExecutionError } from "./errors.js"
 
 const BCRYPT_ROUNDS = 10
 
@@ -13,16 +13,16 @@ export async function setUserPasswordUseCase(input: {
   const user = await findUserByEmail(email)
 
   if (!user) {
-    throw new GovernanceExecutionError({
-      code: "GOVERNANCE_USER_NOT_FOUND",
+    throw new AuthExecutionError({
+      code: "AUTH_USER_NOT_FOUND",
       message: "Unable to set password for this account",
       status: 404,
     })
   }
 
   if (user.password !== null) {
-    throw new GovernanceExecutionError({
-      code: "GOVERNANCE_PASSWORD_ALREADY_SET",
+    throw new AuthExecutionError({
+      code: "AUTH_PASSWORD_ALREADY_SET",
       message: "Password has already been set for this account",
       status: 409,
     })

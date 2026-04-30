@@ -1,6 +1,6 @@
 "use client"
 
-import type { RecordPageSummary } from "../client/use-record-page-controller"
+import type { RecordPageSummary } from "../client/controllers/use-record-page-controller"
 import type { RecordPanelRendererProps } from "./record-panel-renderer"
 import { RecordPanelRenderer } from "./record-panel-renderer"
 
