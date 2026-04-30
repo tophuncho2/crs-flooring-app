@@ -1,7 +1,7 @@
 ## Important
 
-[ ] After doing an audit, paste the report to the root of a-branch
-[ ] Plan files get added to the root of a-branch and each plan made will be updated unil approve / executed. 
+[ ] After doing an audit, paste the report to the root of sessions/
+[ ] Plan files get added to the root of sessions/ and each plan made will be updated unil approve / executed. 
 [ ] Once approved, the plan is locked and a file for the execution sumnary is created. 
 [ ] After an execution file is created we will make updates to it and a 4th file for "cleanup" may be created to checklist what needs to change in the execution file.
 [ ] Paste headlines, error counts, and TL:DR in the chat, use charts / tables for visual display.
