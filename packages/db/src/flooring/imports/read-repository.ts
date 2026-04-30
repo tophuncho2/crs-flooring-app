@@ -34,7 +34,6 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
     importNumber: row.importNumber,
     orderNumber: row.orderNumber ?? "",
     tag: row.tag ?? "",
-    percent: toDecimalString(row.percent),
     notes: row.notes ?? "",
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse?.name ?? "",

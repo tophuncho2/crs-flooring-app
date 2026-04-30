@@ -1,13 +1,12 @@
 // Imports domain — read + form shapes for the post-alteration schema.
 // No status / transportType concepts (dropped in the imports_staged_inventory_alteration
-// migration). Percent is a worker-maintained Decimal(5,2). Manufacturer is optional.
+// migration). Manufacturer is optional.
 
 export type ImportRow = {
   id: string
   importNumber: number
   orderNumber: string
   tag: string
-  percent: string
   notes: string
   warehouseId: string
   warehouseName: string

@@ -18,9 +18,7 @@ export type CreateImportRecordInput = {
 
 /**
  * Update input — partial of the user-editable subset. Mirrors
- * `IMPORT_USER_EDITABLE_FIELDS` in the domain. The worker-owned `percent`
- * column has its own dedicated primitive (`updateImportPercent`) so this
- * input can never be a user-facing escape hatch for it.
+ * `IMPORT_USER_EDITABLE_FIELDS` in the domain.
  */
 export type UpdateImportRecordInput = Partial<CreateImportRecordInput>
 
@@ -73,33 +71,6 @@ export async function updateImportRecord(
 
   const record = await getImportById(id, client)
   if (!record) throw new Error(`updateImportRecord: import ${id} not found after update`)
-  return record
-}
-
-/**
- * Worker-only primitive — atomically updates the import's `percent` column.
- * Called by the worker after each staged-row materialization batch advances
- * the live-vs-staged ratio. Never reachable from user-facing routes; the
- * domain `IMPORT_WORKER_FIELDS` list documents the contract.
- */
-export type UpdateImportPercentInput = {
-  percent: Prisma.Decimal | string | number
-}
-
-export async function updateImportPercent(
-  id: string,
-  input: UpdateImportPercentInput,
-  client: ImportsDbClient = db,
-): Promise<ImportRecord> {
-  await client.flooringImportEntry.update({
-    where: { id },
-    data: { percent: input.percent },
-    select: { id: true },
-  })
-  const record = await getImportById(id, client)
-  if (!record) {
-    throw new Error(`updateImportPercent: import ${id} not found after update`)
-  }
   return record
 }
 
