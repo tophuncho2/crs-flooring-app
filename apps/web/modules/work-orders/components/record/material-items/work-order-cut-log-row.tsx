@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   type PendingCutLogRow,
   useWorkOrderItemPendingCutLogs,
@@ -16,7 +16,7 @@ import {
   RowActionButton,
   TextCell,
 } from "@/components/cells"
-import { Grid, GridEmpty, ScopedRow, type GridLayout } from "@/components/grid"
+import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import type { GridRow } from "@/components/grid/contracts/grid-row"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
@@ -30,13 +30,11 @@ type EligibleInventory = {
   locationCode: string
 }
 
-type CutLogServerGridRow = GridRow & {
-  serverRow: PendingCutLogRow
-}
-
-type CutLogDraftGridRow = GridRow & {
-  clientId: string
-}
+type CutLogGridRow = GridRow &
+  (
+    | { kind: "draft"; clientId: string }
+    | { kind: "server"; serverRow: PendingCutLogRow }
+  )
 
 function statusTone(status: PendingCutLogRow["status"]): BadgeTone {
   switch (status) {
@@ -53,31 +51,7 @@ function statusTone(status: PendingCutLogRow["status"]): BadgeTone {
   }
 }
 
-function buildServerLayout(showSelection: boolean): GridLayout<CutLogServerGridRow> {
-  const leadingControls = showSelection
-    ? [{ key: "select", kind: "selection" as const, width: 40 }]
-    : undefined
-  return {
-    leadingControls,
-    dataColumns: [
-      { key: "cutLogNumber", label: "Cut #", minWidth: 70, grow: 0 },
-      { key: "inventory", label: "Inventory", minWidth: 140, grow: 1 },
-      { key: "before", label: "Before", kind: "number", minWidth: 70, grow: 0, align: "end" },
-      { key: "cut", label: "Cut", kind: "number", minWidth: 80, grow: 0, align: "end" },
-      { key: "after", label: "After", kind: "number", minWidth: 70, grow: 0, align: "end" },
-      { key: "coverage", label: "Coverage", kind: "number", minWidth: 80, grow: 0, align: "end" },
-      { key: "status", label: "Status", kind: "status", minWidth: 100, grow: 0, align: "center" },
-      { key: "finalCutSequence", label: "Final #", kind: "number", minWidth: 70, grow: 0, align: "end" },
-      { key: "isWaste", label: "Waste", minWidth: 60, grow: 0, align: "center" },
-      { key: "notes", label: "Notes", minWidth: 160, grow: 1 },
-      { key: "created", label: "Created", minWidth: 90, grow: 0 },
-      { key: "updated", label: "Updated", minWidth: 90, grow: 0 },
-    ],
-    trailingControls: [{ key: "actions", kind: "actions", width: 72 }],
-  }
-}
-
-function buildDraftLayout(showSelection: boolean): GridLayout<CutLogDraftGridRow> {
+function buildLayout(showSelection: boolean): GridLayout<CutLogGridRow> {
   const leadingControls = showSelection
     ? [{ key: "select", kind: "selection" as const, width: 40 }]
     : undefined
@@ -145,8 +119,7 @@ export function WorkOrderCutLogRow({
   }, [workOrderId, workOrderItemId])
 
   const showSelection = finalizeController.isSelectionMode
-  const serverLayout = useMemo(() => buildServerLayout(showSelection), [showSelection])
-  const draftLayout = useMemo(() => buildDraftLayout(showSelection), [showSelection])
+  const layout = useMemo(() => buildLayout(showSelection), [showSelection])
 
   const distinctLocationCodes = useMemo(
     () =>
@@ -170,49 +143,39 @@ export function WorkOrderCutLogRow({
     return eligibleInventory.filter((inv) => inv.locationCode === locationCode)
   }
 
-  const serverGridRows: CutLogServerGridRow[] = useMemo(
-    () => serverRows.map((row) => ({ id: row.id, serverRow: row })),
-    [serverRows],
-  )
-  const draftGridRows: CutLogDraftGridRow[] = useMemo(
-    () => pending.drafts.map((d) => ({ id: d.clientId, clientId: d.clientId })),
-    [pending.drafts],
-  )
+  const gridRows: CutLogGridRow[] = useMemo(() => {
+    const drafts: CutLogGridRow[] = pending.drafts.map((d) => ({
+      id: d.clientId,
+      kind: "draft" as const,
+      clientId: d.clientId,
+    }))
+    const server: CutLogGridRow[] = serverRows.map((row) => ({
+      id: row.id,
+      kind: "server" as const,
+      serverRow: row,
+    }))
+    return [...drafts, ...server]
+  }, [pending.drafts, serverRows])
 
-  function renderServerCell(
-    column: { key: string },
-    gridRow: CutLogServerGridRow,
-  ) {
-    const row = gridRow.serverRow
+  function renderServerCell(column: { key: string }, row: PendingCutLogRow) {
     const isPending = row.status === "PENDING"
     const update = pending.updates[row.id]
     const isDeleted = !!pending.deletes[row.id]
     const editableCell = isPending && !isDeleted
+    const decoration = isDeleted ? "line-through opacity-60" : ""
 
     switch (column.key) {
       case "cutLogNumber":
-        return (
-          <span className={isDeleted ? "line-through opacity-60" : ""}>
-            {row.cutLogNumber}
-          </span>
-        )
+        return <span className={decoration}>{row.cutLogNumber}</span>
       case "inventory": {
         const inv = inventoryById.get(row.inventoryId)
         const label = inv
           ? `${inv.inventoryNumber}${inv.locationCode ? ` · ${inv.locationCode}` : ""}`
           : row.inventoryId
-        return (
-          <span className={`truncate ${isDeleted ? "line-through opacity-60" : ""}`}>
-            {label}
-          </span>
-        )
+        return <span className={`truncate ${decoration}`}>{label}</span>
       }
       case "before":
-        return (
-          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
-            {row.before}
-          </span>
-        )
+        return <span className={`tabular-nums ${decoration}`}>{row.before}</span>
       case "cut":
         if (editableCell) {
           return (
@@ -224,29 +187,19 @@ export function WorkOrderCutLogRow({
             />
           )
         }
-        return (
-          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
-            {row.cut}
-          </span>
-        )
+        return <span className={`tabular-nums ${decoration}`}>{row.cut}</span>
       case "after":
-        return (
-          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
-            {row.after}
-          </span>
-        )
+        return <span className={`tabular-nums ${decoration}`}>{row.after}</span>
       case "coverage":
         return (
-          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
+          <span className={`tabular-nums ${decoration}`}>
             {row.coverageCut || "—"}
           </span>
         )
       case "status":
         return <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>
       case "finalCutSequence":
-        return (
-          <span className="tabular-nums">{row.finalCutSequence ?? "—"}</span>
-        )
+        return <span className="tabular-nums">{row.finalCutSequence ?? "—"}</span>
       case "isWaste":
         if (editableCell) {
           return (
@@ -259,11 +212,7 @@ export function WorkOrderCutLogRow({
           )
         }
         return (
-          <CheckboxCell
-            editable={false}
-            value={row.isWaste}
-            ariaLabel="Cut log waste flag"
-          />
+          <CheckboxCell editable={false} value={row.isWaste} ariaLabel="Cut log waste flag" />
         )
       case "notes":
         if (editableCell) {
@@ -277,11 +226,7 @@ export function WorkOrderCutLogRow({
             />
           )
         }
-        return (
-          <span className={`truncate ${isDeleted ? "line-through opacity-60" : ""}`}>
-            {row.notes || "—"}
-          </span>
-        )
+        return <span className={`truncate ${decoration}`}>{row.notes || "—"}</span>
       case "created":
       case "updated":
         return <span className="text-[var(--foreground)]/55">—</span>
@@ -290,69 +235,8 @@ export function WorkOrderCutLogRow({
     }
   }
 
-  function renderServerControl(
-    control: { key: string; kind: string },
-    gridRow: CutLogServerGridRow,
-  ) {
-    const row = gridRow.serverRow
-    const isPending = row.status === "PENDING"
-    const isFinal = row.status === "FINAL"
-    const isDeleted = !!pending.deletes[row.id]
-
-    if (control.kind === "selection") {
-      if (!isPending) return null
-      return (
-        <input
-          type="checkbox"
-          checked={finalizeController.selectedIds.has(row.id)}
-          onChange={(e) => finalizeController.setSelected(row.id, e.target.checked)}
-          aria-label={`Select cut ${row.cutLogNumber}`}
-          className="h-4 w-4 cursor-pointer rounded border-[var(--panel-border)] text-sky-600 focus:ring-1 focus:ring-sky-500/40"
-        />
-      )
-    }
-    if (control.kind === "actions") {
-      if (isPending && !isDeleted) {
-        return (
-          <RowActionButton
-            label="Remove"
-            ariaLabel={`Remove cut ${row.cutLogNumber}`}
-            tone="destructive"
-            editable={true}
-            onClick={() => pending.deleteServerRow(row)}
-          />
-        )
-      }
-      if (isPending && isDeleted) {
-        return (
-          <RowActionButton
-            label="Undo"
-            ariaLabel={`Undo remove cut ${row.cutLogNumber}`}
-            tone="neutral"
-            editable={true}
-            onClick={() => pending.undoDelete(row.id)}
-          />
-        )
-      }
-      if (isFinal) {
-        const isVoidingThisRow = voider.isVoiding && voider.voidingId === row.id
-        return (
-          <RowActionButton
-            label={isVoidingThisRow ? "Voiding…" : "Void"}
-            ariaLabel={`Void cut ${row.cutLogNumber}`}
-            tone="destructive"
-            editable={!isVoidingThisRow}
-            onClick={() => void voider.voidCutLog(row.id)}
-          />
-        )
-      }
-      return null
-    }
-    return null
-  }
-
-  function renderDraftCell(column: { key: string }, gridRow: CutLogDraftGridRow) {
-    const draft = pending.drafts.find((d) => d.clientId === gridRow.clientId)
+  function renderDraftCell(column: { key: string }, clientId: string) {
+    const draft = pending.drafts.find((d) => d.clientId === clientId)
     if (!draft) return null
     const filtered = inventoriesForLocation(draft.locationFilterCode)
     const inventoryOptions = filtered.map((inv) => ({
@@ -434,23 +318,78 @@ export function WorkOrderCutLogRow({
     }
   }
 
-  function renderDraftControl(
-    control: { key: string; kind: string },
-    gridRow: CutLogDraftGridRow,
-  ) {
+  function renderCell(column: { key: string }, row: CutLogGridRow) {
+    if (row.kind === "draft") return renderDraftCell(column, row.clientId)
+    return renderServerCell(column, row.serverRow)
+  }
+
+  function renderControl(control: { key: string; kind: string }, row: CutLogGridRow) {
     if (control.kind === "selection") {
-      return null
-    }
-    if (control.kind === "actions") {
+      if (row.kind === "draft") return null
+      const serverRow = row.serverRow
+      if (serverRow.status !== "PENDING") return null
       return (
-        <RowActionButton
-          label="Remove"
-          ariaLabel="Remove draft cut"
-          tone="destructive"
-          editable={true}
-          onClick={() => pending.removeDraft(gridRow.clientId)}
+        <input
+          type="checkbox"
+          checked={finalizeController.selectedIds.has(serverRow.id)}
+          onChange={(e) => finalizeController.setSelected(serverRow.id, e.target.checked)}
+          aria-label={`Select cut ${serverRow.cutLogNumber}`}
+          className="h-4 w-4 cursor-pointer rounded border-[var(--panel-border)] text-sky-600 focus:ring-1 focus:ring-sky-500/40"
         />
       )
+    }
+    if (control.kind === "actions") {
+      if (row.kind === "draft") {
+        return (
+          <RowActionButton
+            label="Remove"
+            ariaLabel="Remove draft cut"
+            tone="destructive"
+            editable={true}
+            onClick={() => pending.removeDraft(row.clientId)}
+          />
+        )
+      }
+      const serverRow = row.serverRow
+      const isPending = serverRow.status === "PENDING"
+      const isFinal = serverRow.status === "FINAL"
+      const isDeleted = !!pending.deletes[serverRow.id]
+
+      if (isPending && !isDeleted) {
+        return (
+          <RowActionButton
+            label="Remove"
+            ariaLabel={`Remove cut ${serverRow.cutLogNumber}`}
+            tone="destructive"
+            editable={true}
+            onClick={() => pending.deleteServerRow(serverRow)}
+          />
+        )
+      }
+      if (isPending && isDeleted) {
+        return (
+          <RowActionButton
+            label="Undo"
+            ariaLabel={`Undo remove cut ${serverRow.cutLogNumber}`}
+            tone="neutral"
+            editable={true}
+            onClick={() => pending.undoDelete(serverRow.id)}
+          />
+        )
+      }
+      if (isFinal) {
+        const isVoidingThisRow = voider.isVoiding && voider.voidingId === serverRow.id
+        return (
+          <RowActionButton
+            label={isVoidingThisRow ? "Voiding…" : "Void"}
+            ariaLabel={`Void cut ${serverRow.cutLogNumber}`}
+            tone="destructive"
+            editable={!isVoidingThisRow}
+            onClick={() => void voider.voidCutLog(serverRow.id)}
+          />
+        )
+      }
+      return null
     }
     return null
   }
@@ -472,34 +411,13 @@ export function WorkOrderCutLogRow({
         </div>
       ) : null}
 
-      <Grid<CutLogServerGridRow>
-        rows={serverGridRows}
-        layout={serverLayout}
+      <Grid<CutLogGridRow>
+        rows={gridRows}
+        layout={layout}
         empty={<GridEmpty>No cut logs yet.</GridEmpty>}
-        renderCell={renderServerCell}
-        renderControl={renderServerControl}
+        renderCell={renderCell}
+        renderControl={renderControl}
       />
-
-      {draftGridRows.length > 0 ? (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/[0.04]">
-          <div className="border-b border-emerald-500/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-700/85">
-            New Drafts
-          </div>
-          <div>
-            {draftGridRows.map((draftRow) => (
-              <Fragment key={draftRow.id}>
-                <ScopedRow<CutLogDraftGridRow>
-                  row={draftRow}
-                  layout={draftLayout}
-                  tone="success"
-                  renderCell={renderDraftCell}
-                  renderControl={renderDraftControl}
-                />
-              </Fragment>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       <div className="flex items-center justify-between text-xs">
         <button

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
@@ -108,6 +109,7 @@ export function useWorkOrderMaterialItemsSection({
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
 }) {
+  const router = useRouter()
   const section = useRecordScopedSectionController<WorkOrderMaterialItemRow[], LocalState>({
     recordId: workOrder.id,
     sectionKey: "material-items",
@@ -141,11 +143,13 @@ export function useWorkOrderMaterialItemsSection({
       // updated material items via the read shape). Publish both for the
       // parent panel state to reconcile.
       publishWorkOrder(nextWorkOrder)
-      // The detail response does not include items in WorkOrderDetail
-      // directly; the panel re-fetches via getWorkOrderDetailById on
-      // refresh. For now we let the section hold local state until the
-      // next page-level refresh.
       void publishMaterialItems
+      // The save response carries the WO detail but not the materialItems
+      // payload; router.refresh() re-runs the SSR loader so the panel
+      // re-seeds initialMaterialItems and the controller reconciles via
+      // serverRevisionKey change. Tracked under 2d as a candidate for
+      // a cleaner "save returns items" route extension.
+      router.refresh()
       return {
         serverValue: currentRows,
         serverRevisionKey: createItemsRevisionKey(currentRows),

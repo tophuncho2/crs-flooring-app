@@ -1,10 +1,10 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
+import { listWorkOrdersUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import WorkOrdersClient from "@/modules/work-orders/components/list/work-orders-client"
 import {
   WORK_ORDERS_LIST_QUERY_KEY,
-  listWorkOrdersRequest,
   parseWorkOrdersListInputFromSearchParams,
 } from "@/modules/work-orders/data/list-work-orders-request"
 
@@ -22,7 +22,7 @@ export default async function FlooringWorkOrdersPage({
   try {
     await queryClient.prefetchQuery({
       queryKey: [...WORK_ORDERS_LIST_QUERY_KEY, initialInput],
-      queryFn: () => listWorkOrdersRequest(initialInput),
+      queryFn: () => listWorkOrdersUseCase(initialInput),
     })
   } catch (error) {
     return (
