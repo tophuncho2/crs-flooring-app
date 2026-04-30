@@ -71,26 +71,49 @@ export function WorkOrderPrimaryFieldsSection({
           <TextCell editable={false} value={workOrderNumber} onChange={() => undefined} />
         </FormField>
       </CellAt>
-      <CellAt col={3} row={1} colSpan={3}>
-        <FormField label="Property">
+      <CellAt col={3} row={1} colSpan={2}>
+        <FormField label="Warehouse">
           <SelectCell
             editable={editable}
-            value={draft.propertyId}
-            options={propertySelectOptions}
-            placeholder="Select property"
-            onChange={(value) => onFieldChange("propertyId", value)}
+            value={draft.warehouseId}
+            options={warehouseSelectOptions}
+            placeholder="Select warehouse"
+            onChange={(value) => onFieldChange("warehouseId", value)}
           />
         </FormField>
       </CellAt>
-      <CellAt col={6} row={1} colSpan={3}>
-        <FormField label="Template">
+      <CellAt col={5} row={1} colSpan={1}>
+        <FormField label="Job Type">
           <SelectCell
             editable={editable}
-            value={draft.templateId}
-            options={templateSelectOptions}
+            value={draft.jobTypeId}
+            options={jobTypeSelectOptions}
             placeholder="—"
-            onChange={(value) => onFieldChange("templateId", value)}
+            onChange={(value) => onFieldChange("jobTypeId", value)}
           />
+        </FormField>
+      </CellAt>
+      <CellAt col={6} row={1} colSpan={1}>
+        <FormField label="Scheduled For">
+          <DateCell
+            editable={editable}
+            value={draft.scheduledFor}
+            onChange={(value) => onFieldChange("scheduledFor", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={7} row={1} colSpan={1}>
+        <FormField label="Complete">
+          <CheckboxCell
+            editable={editable}
+            value={draft.isComplete}
+            onChange={(value) => onFieldChange("isComplete", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={8} row={1} colSpan={1}>
+        <FormField label="Status">
+          <StatusCell editable={false} value={status} onChange={() => undefined} />
         </FormField>
       </CellAt>
 
@@ -106,43 +129,29 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={4} row={2} colSpan={2}>
-        <FormField label="Job Type">
+        <FormField label="Property">
           <SelectCell
             editable={editable}
-            value={draft.jobTypeId}
-            options={jobTypeSelectOptions}
-            placeholder="—"
-            onChange={(value) => onFieldChange("jobTypeId", value)}
+            value={draft.propertyId}
+            options={propertySelectOptions}
+            placeholder="Select property"
+            onChange={(value) => onFieldChange("propertyId", value)}
           />
         </FormField>
       </CellAt>
       <CellAt col={6} row={2} colSpan={3}>
-        <FormField label="Warehouse">
+        <FormField label="Template">
           <SelectCell
             editable={editable}
-            value={draft.warehouseId}
-            options={warehouseSelectOptions}
-            placeholder="Select warehouse"
-            onChange={(value) => onFieldChange("warehouseId", value)}
+            value={draft.templateId}
+            options={templateSelectOptions}
+            placeholder="—"
+            onChange={(value) => onFieldChange("templateId", value)}
           />
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={3} colSpan={2}>
-        <FormField label="Complete">
-          <CheckboxCell
-            editable={editable}
-            value={draft.isComplete}
-            onChange={(value) => onFieldChange("isComplete", value)}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={3} colSpan={2}>
-        <FormField label="Status">
-          <StatusCell editable={false} value={status} onChange={() => undefined} />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={3} colSpan={2}>
+      <CellAt col={1} row={3} colSpan={3}>
         <FormField label="Vacancy">
           <SelectCell
             editable={editable}
@@ -153,17 +162,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={7} row={3} colSpan={2}>
-        <FormField label="Scheduled For">
-          <DateCell
-            editable={editable}
-            value={draft.scheduledFor}
-            onChange={(value) => onFieldChange("scheduledFor", value)}
-          />
-        </FormField>
-      </CellAt>
-
-      <CellAt col={1} row={4} colSpan={3}>
+      <CellAt col={4} row={3} colSpan={2}>
         <FormField label="Unit Number">
           <TextCell
             editable={editable}
@@ -172,7 +171,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={4} row={4} colSpan={3}>
+      <CellAt col={6} row={3} colSpan={3}>
         <FormField label="Unit Type">
           <TextCell
             editable={editable}
@@ -182,7 +181,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={5} colSpan={8}>
+      <CellAt col={1} row={4} colSpan={8}>
         <FormField label="Custom Address (overrides property address on PDF)">
           <TextareaCell
             editable={editable}
@@ -193,9 +192,9 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <PropertyJoinedReadOnlyCells property={selectedProperty} startRow={6} />
+      <PropertyJoinedReadOnlyCells property={selectedProperty} startRow={5} />
 
-      <CellAt col={1} row={8} colSpan={8}>
+      <CellAt col={1} row={7} colSpan={8}>
         <FormField label="Description">
           <TextareaCell
             editable={editable}
@@ -206,7 +205,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={9} colSpan={8}>
+      <CellAt col={1} row={8} colSpan={8}>
         <FormField label="Instructions">
           <TextareaCell
             editable={editable}
@@ -217,7 +216,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={10} colSpan={8}>
+      <CellAt col={1} row={9} colSpan={8}>
         <FormField label="Notes">
           <TextareaCell
             editable={editable}
