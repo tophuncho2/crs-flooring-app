@@ -4,13 +4,13 @@ import { listCutLogsForInventoryIds } from "./read-repository.js"
 
 /**
  * Multi-inventory deterministic FOR UPDATE locker. Sorts the inventory
- * id set ascending, then takes a single `SELECT ... FOR UPDATE` over the
- * sorted id array. Deterministic ordering avoids deadlocks when two
+ * id set ascending, then acquires a single-row `FOR UPDATE` lock per id
+ * in that order. Deterministic ordering avoids deadlocks when two
  * concurrent WO-side cut-log batches touch overlapping inventories.
  *
- * First multi-inventory locker in the codebase. Single-inventory cut-log
- * workers (inventory-side `pending-save`, `finalize`, `void`) use the
- * single-id variant elsewhere.
+ * Uses the same single-id `Prisma.sql` pattern as every other locker in
+ * the codebase (inventory-side `pending-save`, `finalize`, `void`,
+ * `flooring_import_entry`, `flooring_work_order_file`).
  */
 export async function lockInventoriesForCutLogBatch(
   tx: Prisma.TransactionClient,
@@ -18,9 +18,11 @@ export async function lockInventoriesForCutLogBatch(
 ): Promise<void> {
   if (inventoryIds.length === 0) return
   const unique = Array.from(new Set(inventoryIds)).sort()
-  await tx.$queryRaw(
-    Prisma.sql`SELECT "id" FROM "flooring_inventory" WHERE "id" = ANY(${unique}::uuid[]) ORDER BY "id" FOR UPDATE`,
-  )
+  for (const id of unique) {
+    await tx.$queryRaw(
+      Prisma.sql`SELECT "id" FROM "flooring_inventory" WHERE "id" = ${id} FOR UPDATE`,
+    )
+  }
 }
 
 export type WorkOrderCutLogPendingDraftInput = {
