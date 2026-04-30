@@ -4,9 +4,7 @@ export * from "./scaffolds/record-detail-client-scaffold"
 
 // controllers
 export * from "./controllers/use-batch-select-action"
-export * from "./controllers/use-record-allocation-controller"
 export * from "./controllers/use-record-detail-controller"
-export * from "./controllers/use-record-item-controller"
 export * from "./controllers/use-record-page-controller"
 export * from "./controllers/use-record-scoped-section-controller"
 export * from "./controllers/use-record-section-controller"
