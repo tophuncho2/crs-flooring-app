@@ -7,7 +7,11 @@ import type {
   UpdateWorkOrderUseCaseInput,
   WorkOrderCutLogPendingDiff,
 } from "@builders/application"
-import type { WorkOrderDetail, WorkOrderMaterialItemsDiff } from "@builders/domain"
+import type {
+  WorkOrderDetail,
+  WorkOrderMaterialItemRow,
+  WorkOrderMaterialItemsDiff,
+} from "@builders/domain"
 import type { WorkOrderFileRow } from "@builders/db"
 
 export async function createWorkOrderRequest(input: CreateWorkOrderUseCaseInput) {
@@ -46,7 +50,11 @@ export async function saveWorkOrderMaterialItemsSectionRequest(
   diff: WorkOrderMaterialItemsDiff,
   revisionKey: string,
 ) {
-  return requestJson<{ workOrder: WorkOrderDetail; tempIdMap: Record<string, string> }>(
+  return requestJson<{
+    workOrder: WorkOrderDetail
+    materialItems: WorkOrderMaterialItemRow[]
+    tempIdMap: Record<string, string>
+  }>(
     `/api/work-orders/${workOrderId}/material-items/section`,
     {
       method: "PATCH",

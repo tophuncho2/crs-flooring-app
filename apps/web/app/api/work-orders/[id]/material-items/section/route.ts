@@ -1,5 +1,5 @@
 import { saveWorkOrderMaterialItemsSectionUseCase } from "@builders/application"
-import { getWorkOrderDetailById } from "@builders/db"
+import { getWorkOrderDetailById, listWorkOrderMaterialItems } from "@builders/db"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -69,9 +69,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       () => saveWorkOrderMaterialItemsSectionUseCase({ workOrderId: id, diff }),
     )
 
-    const detail = await getWorkOrderDetailById(id)
+    const [detail, materialItems] = await Promise.all([
+      getWorkOrderDetailById(id),
+      listWorkOrderMaterialItems(id),
+    ])
     const responseBody = {
       workOrder: detail,
+      materialItems,
       tempIdMap: result.tempIdMap,
     }
     await finalizeMutationReceipt({
