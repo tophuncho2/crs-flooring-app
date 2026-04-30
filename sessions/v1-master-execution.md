@@ -23,13 +23,15 @@ Legend: ⬜ Not started · 🟡 In progress · ✅ Shipped · ❌ Blocked
 
 ## Pre-flight: open questions
 
-| # | Question | Status |
+All resolved 2026-04-30. Plan locked.
+
+| # | Question | Resolution |
 |---|---|---|
-| §A | Sweep 4a — dead-code aggressiveness | ⏳ Awaiting confirmation |
-| §B | Sweep 4c — selection-mode UX (drop the toggle?) | ✅ Resolved 2026-04-30 — drop the toggle, always-visible-when-clean |
-| §C | Sweep 5 — PDF content gaps | ⏳ Awaiting confirmation |
-| §D | Sweep 4c — `use-work-order-cut-log-finalize.ts` disposition | ⏳ Awaiting confirmation |
-| §E | Sweep 4a — `void-cut-log.ts` worker disposition | ⏳ Awaiting confirmation |
+| §A | Sweep 4a — dead-code aggressiveness | ✅ Delete inventory-side use cases whose only consumers were the deleted routes. Keep `apply-cut-log-pending-diff.ts` (WOMI workers still call it for parent-inventory `totalCutSum`). |
+| §B | Sweep 4c — selection-mode UX (drop the toggle?) | ✅ Drop the toggle. Checkboxes always-visible-when-clean, disabled-when-dirty. Matches imports. |
+| §C | Sweep 5 — PDF content gaps | ✅ Ship `generate-work-order-file.ts` untouched. Sweep 5 only wires UI; no PDF content changes. Iterate post-V1 if real gaps surface. |
+| §D | Sweep 4c — `use-work-order-cut-log-finalize.ts` disposition | ✅ Delete after WOMI adopts shared `useGatedBatchSelect`. Only consumer is the WOMI flow being migrated. |
+| §E | Sweep 4a — `void-cut-log.ts` worker disposition | ✅ Delete the worker + outbox event type + processor. Confirmed by reading `void-work-order-cut-log.ts`: synchronous use case handles row lock (`FOR UPDATE`), patch (clears fields + sets VOID), `recomputeAndPersistTotalCutSums`, invariant check — all in one tx. |
 
 ---
 

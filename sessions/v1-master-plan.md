@@ -1,6 +1,6 @@
 # V1 Master Plan — Sweeps 4-6 (cut-log handover, files, Railway env)
 
-**Branch:** `staging` · **Drafted:** 2026-04-30 · **Status:** Awaiting confirmation
+**Branch:** `staging` · **Drafted:** 2026-04-30 · **Status:** ✅ Locked 2026-04-30 — all open questions resolved
 
 ---
 
@@ -194,16 +194,13 @@ Audit which worker tuning vars are environment-driven, fill any gaps (TTL, inter
 
 ---
 
-## Resolved decisions
+## Resolved decisions (all open questions closed 2026-04-30 — plan locked)
 
-- **§B — Sweep 4c selection-mode UX (2026-04-30):** Drop the explicit "Enter Selection Mode" toggle. Checkboxes always visible on PENDING rows when section is clean, disabled when section is dirty. Matches imports' pattern. State diagram in Sweep 4c above.
-
-## Open questions (need answers before execution)
-
-1. **§A — Sweep 4a dead-code aggressiveness:** delete the inventory-side use cases under `packages/application/src/flooring/inventory/cut-logs/` whose only consumers were deleted routes? **Recommendation: delete.**
-2. **§C — Sweep 5 PDF content gaps:** ship `generate-work-order-file.ts` as scaffolded? **Recommendation: yes; iterate post-V1.**
-3. **§D — Sweep 4c bespoke `use-work-order-cut-log-finalize.ts`:** delete after WOMI adopts the shared hook? **Recommendation: delete; only consumer is WOMI flow which is being migrated.**
-4. **§E — Sweep 4a `void-cut-log.ts` worker disposition:** the WOMI void path is synchronous (no worker). The dedicated `void-cut-log.ts` worker was inventory-side only. **Recommendation: delete the worker. Confirm WOMI flow is purely synchronous before deleting the outbox event type + processor.**
+- **§A — Sweep 4a dead-code aggressiveness:** Delete inventory-side use cases under `packages/application/src/flooring/inventory/cut-logs/` whose only consumers were deleted routes. **Keep `apply-cut-log-pending-diff.ts`** — WOMI workers still call it for the parent-inventory `totalCutSum` updater.
+- **§B — Sweep 4c selection-mode UX:** Drop the explicit "Enter Selection Mode" toggle. Checkboxes always visible on PENDING rows when section is clean, disabled when section is dirty. Matches imports' pattern. State diagram in Sweep 4c above.
+- **§C — Sweep 5 PDF content:** Ship `generate-work-order-file.ts` untouched. Sweep 5 only wires the UI section + Generate/Open/Delete buttons against the existing use case. **No PDF content changes** — iterate post-V1 if real gaps surface. Sweep 5 is gated on Sweep 4d completing.
+- **§D — Sweep 4c bespoke `use-work-order-cut-log-finalize.ts`:** Delete after WOMI adopts the shared `useGatedBatchSelect` hook. Only consumer is the WOMI flow being migrated.
+- **§E — Sweep 4a `void-cut-log.ts` worker disposition:** Delete the worker + outbox event type + processor. The WOMI synchronous void use case (`voidWorkOrderCutLogUseCase`) handles row lock (`SELECT ... FOR UPDATE` on parent inventory), patch application (`buildVoidedCutLogPatch` clears `cut`/`coverageCut`/`cost`/`freight` + sets `void=true`, `status=VOID`), `recomputeAndPersistTotalCutSums`, and `assertCutSumWithinStartingStock` invariant check — all under a single `withDatabaseTransaction`. Verified at `packages/application/src/flooring/work-orders/cut-logs/void-work-order-cut-log.ts:30-101`.
 
 ---
 
