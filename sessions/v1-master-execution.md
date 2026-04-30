@@ -12,7 +12,7 @@ This file is updated after each sweep (and per sub-step within Sweep 4) ships. S
 |---|---|---|---|---|
 | 4a | Decommission inventory-side cut-log routes + workers | 🟡 Code shipped, awaiting commit | 2026-04-30 | _(pending)_ |
 | 4b | Inventory cut-logs section → read-only viewer | 🟡 Code shipped, awaiting commit | 2026-04-30 | _(pending)_ |
-| 4c | WOMI cut-log UI redesign + adopt shared batch-select | ⬜ Not started | — | — |
+| 4c | WOMI cut-log UI redesign + adopt shared batch-select | 🟡 Code shipped, awaiting commit | 2026-04-30 | _(pending)_ |
 | 4d | Verify domain invariant + dev-server smoke | ⬜ Not started | — | — |
 | 5 | WO Files section UI (Phase 2c) | ⬜ Not started | — | — |
 | 6 | Service variables → Railway | ⬜ Not started | — | — |
@@ -215,14 +215,127 @@ post-V1 engine teardown territory.
 
 ## Sweep 4c — WOMI cut-log UI redesign + adopt shared batch-select
 
-_Not started._
+**Date:** 2026-04-30 · **Status:** 🟡 Code shipped, awaiting commit · **Typecheck:** ✅ Full chain green
 
-### Adoption plan (pre-execution sketch)
-- Replace `useWorkOrderCutLogFinalize` with `useGatedBatchSelect` (consumed in `use-work-order-material-items-section.ts`)
-- Section header: `Save Pending Cut Logs` (descriptor action) + `SelectAllButton` (`extraActions` slot) + `Finalize Selected (N)` (descriptor action, gated on `eligibleSelectedIds.length > 0`)
-- Per-row Void button on cut-log rows + `ConfirmDialog`
-- Cell editability: `!locked && !isSelectionActive` (mirrors imports section pattern)
-- Action button gating mirrors imports: `disabled || isSelectionActive` on Save Pending / Discard / Add Row
+### Pre-execution audit findings (resolved before code)
+
+Plan said "expose section-level dirty flag" on `useWorkOrderItemPendingCutLogs` — but that hook was instantiated **per row** inside each expanded WOMI's `WorkOrderCutLogRow`. State was private to each row component. To support a section-header `Save Pending Cuts` button + cross-WOMI dirty aggregation, state had to be lifted up to the section.
+
+User confirmed four architectural decisions before execution:
+
+1. Lift cut-log state to section level (single hook, Map keyed by WOMI id)
+2. **One** section-header `Save Pending Cuts` button (per-WOMI Save/Discard buttons removed; cleaner UI, single trigger)
+3. Reuse the existing `apps/web/components/dialogs/ConfirmDialog` primitive; build a generic `apps/web/components/features/confirm-action/ConfirmActionButton` wrapper instead of cluttering the WO module
+4. Single commit covering all 4c surfaces
+
+User also added an explicit lock requirement: void button should be locked when pending-save or finalize is in flight for that section. Threaded through as section-wide signals.
+
+### New primitive
+
+[apps/web/components/features/confirm-action/confirm-action-button.tsx](../apps/web/components/features/confirm-action/confirm-action-button.tsx) — composes `RowActionButton` (cells/) + `ConfirmDialog` (dialogs/) with internal `open` + `isFiring` state. Async `onConfirm` keeps the dialog open while the action is in flight; closes on resolve, stays open on reject (consumer surfaces the error elsewhere). Generic — any per-row destructive action (Void, Delete, etc.) can adopt it. Mirrors the `features/select-batch/SelectAllButton` precedent (composite primitive built on lower-level pieces). Plus barrel index.
+
+### Files created (3)
+
+1. [apps/web/components/features/confirm-action/confirm-action-button.tsx](../apps/web/components/features/confirm-action/confirm-action-button.tsx)
+2. [apps/web/components/features/confirm-action/index.ts](../apps/web/components/features/confirm-action/index.ts) — barrel
+3. [apps/web/modules/work-orders/controllers/use-work-order-cut-log-section-state.ts](../apps/web/modules/work-orders/controllers/use-work-order-cut-log-section-state.ts) — section-level state hook. Owns `Record<workOrderItemId, { drafts, updates, deletes }>`. Per-WOMI accessors (`getStateForWomi`, `addDraft`, `updateDraft`, `editServerRow`, etc. — first arg is always `womiId`). Section-wide save mutation does `Promise.all` across dirty WOMIs. Cleanup logic removes empty entries from the map so `Object.keys(stateByWomi)` is exactly the dirty set.
+
+### Files deleted (1)
+
+1. `apps/web/modules/work-orders/controllers/use-work-order-cut-log-finalize.ts` — bespoke selection-mode hook replaced by `useGatedBatchSelect`. Per resolved Open Q §D.
+
+### Files edited (3)
+
+1. [apps/web/modules/work-orders/components/record/material-items/work-order-material-items-section.tsx](../apps/web/modules/work-orders/components/record/material-items/work-order-material-items-section.tsx) — major refactor:
+   - Bespoke header div replaced with canonical [`ActionHeader`](../apps/web/components/headers/action-header.tsx) + `extraActions` slot for `SelectAllButton` (matches imports' pattern)
+   - Six descriptor actions on the header: Add MI, Discard MI, Save MI, Discard Pending Cuts, Save Pending Cuts, Finalize Selected (N)
+   - `useGatedBatchSelect` replaces `useWorkOrderCutLogFinalize`. Eligible rows = flat `Object.values(cutLogsByWorkOrderItemId).flat()` filtered by `status === "PENDING"`
+   - `useWorkOrderCutLogVoid` instantiated once at section level and threaded down to every cut-log row
+   - Section-wide lock signal (`sectionBusy` = isSelectionActive || isSavingPendingCuts || isFinalizingInFlight || section.isSaving) drives MI-cell editability + WOMI-row remove button gating
+   - Old `ActionsPanel` "Cut Log Actions" dropdown deleted (held the bespoke "Enter Finalize Mode" toggle)
+
+2. [apps/web/modules/work-orders/components/record/material-items/work-order-cut-log-row.tsx](../apps/web/modules/work-orders/components/record/material-items/work-order-cut-log-row.tsx) — restructured to consume props from section:
+   - No more `useWorkOrderItemPendingCutLogs` (state lives at section)
+   - No more `useWorkOrderCutLogVoid` (also lifted)
+   - Per-row Save Pending Cuts / Discard buttons removed. Add Pending Cut button stays (per-WOMI affordance is required for adding to a specific WOMI)
+   - Always-visible-when-clean checkboxes (drops the toggle): every PENDING server row gets a `CheckboxCell` gated by `canToggleSelection`
+   - Section-wide cell-edit lock via `sectionBusy` prop (`isSelectionActive || isSavingPendingCuts || isFinalizingInFlight`) — pending edits + waste flag + notes all lock during these states
+   - Per-row Void uses `ConfirmActionButton`. `editable={!sectionBusy && !voider.isVoiding}` — void blocks during save / finalize / selection-active for the whole section (user request); per-row blocks already-in-flight voids
+
+3. [apps/web/modules/work-orders/controllers/use-work-order-item-pending-cut-logs.ts](../apps/web/modules/work-orders/controllers/use-work-order-item-pending-cut-logs.ts) — stripped from a 207-line hook + type to a type-only file (28 lines). `PendingCutLogRow` type retained to keep existing imports across the WO module resolving. File name is now historical; comment notes a post-V1 rename/relocation pass.
+
+### Side effects worth noting
+
+- **Collapsing a WOMI no longer destroys unsaved cut-log drafts.** State lives at the section level (Map indexed by `workOrderItemId`); collapse just hides the row, expand re-renders against the same state. This is a UX improvement, not a regression. Edits persist across expand/collapse for the duration of the session.
+- **Action header now uses canonical `ActionHeader` primitive** instead of the bespoke header div. Brings the WOMI section visually in line with imports + other sections that use ActionHeader. No consumer-facing changes besides layout polish.
+- **MI Save / Discard / Add Material Item buttons all disable when `isSelectionActive`.** Same lock model as imports — the user is either selecting or editing, never both.
+
+### Verification
+
+- ✅ `npm run typecheck` — full chain green (guard:prisma + 7 workspaces). One ts2322 hit on first pass: `voider.voidCutLog` returns `Promise<{cutLog}>` but `ConfirmActionButton.onConfirm` wants `Promise<void>`; wrapped in an async closure that discards the return value.
+- ⏳ Dev-server smoke deferred to Sweep 4d (the next commit). Smoke plan from the master plan still applies.
+
+### Out-of-scope cleanup (deferred)
+
+- `apps/web/modules/work-orders/controllers/use-work-order-item-pending-cut-logs.ts` is now misnamed (type-only file, no `use*` hook). Rename / relocate post-V1.
+- The `PendingCutLogRow` UI projection type duplicates `@builders/domain`'s `CutLogRow` with field omissions. Could be derived (`Pick<CutLogRow, ...>`) post-V1.
+- The `useWorkOrderCutLogVoid` hook is small enough to inline into the new section-state hook in a future cleanup. Keeping separate for V1 to minimize churn.
+
+### Suggested commit message
+
+```
+work-orders: WOMI cut-log section adopts shared batch-select + state lift (sweep 4c)
+
+Cut-log dirty state lives at the section level so a single Save Pending
+Cuts header button can fire saves across every dirty WOMI in one click,
+and the always-visible-when-clean finalize checkboxes can gate cleanly on
+section-wide dirty/busy signals.
+
+Architecture
+- New apps/web/modules/work-orders/controllers/use-work-order-cut-log-section-state.ts:
+  Owns Record<workOrderItemId, { drafts, updates, deletes }>. Per-WOMI
+  accessors (first arg is always womiId). Section-wide save mutation does
+  Promise.all across dirty WOMIs. Empty entries auto-pruned so the dirty
+  set is exactly Object.keys(stateByWomi).
+- New apps/web/components/features/confirm-action/ — generic
+  ConfirmActionButton primitive composing RowActionButton + ConfirmDialog
+  with internal open + isFiring state. Async onConfirm keeps the dialog
+  open while the action is in flight. Reusable for any destructive row
+  action; mirrors the features/select-batch composite-primitive pattern.
+
+Section UI
+- WorkOrderMaterialItemsSection: bespoke header div replaced with the
+  canonical ActionHeader. Six descriptor actions: Add MI, Discard MI,
+  Save MI, Discard Pending Cuts, Save Pending Cuts, Finalize Selected.
+  SelectAllButton in the extraActions slot. Bespoke
+  useWorkOrderCutLogFinalize replaced with useGatedBatchSelect over the
+  flattened cut-log array. Old ActionsPanel "Cut Log Actions" dropdown
+  removed.
+- WorkOrderCutLogRow: no longer instantiates its own controller; consumes
+  cut-log state via props from the section. Per-row Save Pending Cuts /
+  Discard removed (one section-level pair replaces them). Always-visible
+  checkboxes on PENDING rows gated by canToggleSelection (drops the
+  Enter Finalize Mode toggle). Per-row Void uses ConfirmActionButton.
+- useWorkOrderItemPendingCutLogs.ts: stripped to a type-only export
+  (PendingCutLogRow). File is now misnamed; rename / relocate post-V1.
+
+Section-wide lock signals
+- Cell edit lock + draft Add / Remove all gate on `sectionBusy`
+  (isSelectionActive || isSavingPendingCuts || isFinalizingInFlight ||
+  section.isSaving). Mirrors imports.
+- Void button (per the user's added requirement): editable only when not
+  sectionBusy and not already voiding another row. Section-wide scope
+  matches the user's mental model — one click of Save Pending Cuts puts
+  the whole section in saving state, locking every row's destructive
+  actions until the producer routes return 202.
+
+Side effect: collapsing a WOMI no longer destroys its unsaved cut-log
+drafts. State lives at the section now, so collapse just hides the UI.
+This is a UX improvement, not a regression.
+
+Typecheck: full chain green.
+```
+
 
 ---
 
