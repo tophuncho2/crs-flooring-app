@@ -103,9 +103,6 @@ export function ManagementCompanyPrimaryFieldsSection({
               className={RECORD_FIELD_CONTROL_CLASS_NAME}
             />
           </RecordFormField>
-          <RecordFormField label="Linked Properties">
-            <RecordStaticFieldValue>{company.properties.length}</RecordStaticFieldValue>
-          </RecordFormField>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>
     </RecordPrimarySection>

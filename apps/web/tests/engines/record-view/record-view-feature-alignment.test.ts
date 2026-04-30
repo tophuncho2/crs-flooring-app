@@ -124,8 +124,6 @@ describe("record view feature alignment", () => {
       "apps/web/modules/templates/record/panel/sections/template-sales-reps-section.tsx",
       "apps/web/modules/products/record/panel/sections/product-inventory-rows-section.tsx",
       "apps/web/modules/imports/record/panel/sections/import-inventory-rows-section.tsx",
-      "apps/web/modules/management-companies/record/panel/sections/management-company-properties-section.tsx",
-      "apps/web/modules/properties/record/panel/sections/property-templates-section.tsx",
       "apps/web/modules/inventory/record/panel/sections/inventory-cut-logs-section.tsx",
       "apps/web/modules/warehouse/record/panel/sections/warehouse-sections-section.tsx",
     ]

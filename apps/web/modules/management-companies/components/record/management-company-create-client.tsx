@@ -24,7 +24,6 @@ const EMPTY_MANAGEMENT_COMPANY: ManagementCompanyDetail = {
   phone: "",
   email: "",
   fullAddress: "",
-  properties: [],
 }
 
 const EMPTY_MANAGEMENT_COMPANY_FORM: ManagementCompanyForm = {

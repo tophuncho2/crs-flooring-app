@@ -3,13 +3,6 @@ export type PropertyManagementCompany = {
   name: string
 }
 
-export type PropertyTemplateRow = {
-  id: string
-  unitType: string
-  warehouseName: string
-  itemsCount: number
-}
-
 export type PropertyDetailRecord = {
   id: string
   updatedAt: string
@@ -23,7 +16,6 @@ export type PropertyDetailRecord = {
   instructions: string
   fullAddress: string
   managementCompany: PropertyManagementCompany | null
-  templates: PropertyTemplateRow[]
 }
 
 export type PropertyListRow = {

@@ -1,17 +1,14 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { normalizeAddressState } from "@builders/domain"
 import { useManagementCompanyPrimarySection } from "@/modules/management-companies/controllers/use-management-company-primary-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./management-company-primary-fields-section"
-import { ManagementCompanyPropertiesSection } from "./management-company-properties-section"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 
 export function ManagementCompanyRecordPanel({
@@ -25,35 +22,6 @@ export function ManagementCompanyRecordPanel({
     page,
     company,
   })
-  const propertyNavigation = useRecordEntryNavigation("/dashboard/properties")
-  const templateNavigation = useRecordEntryNavigation("/dashboard/templates")
-  const [expandedPropertyIds, setExpandedPropertyIds] = useState<string[]>([])
-  const [loadingPropertyId, setLoadingPropertyId] = useState<string | null>(null)
-  const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
-
-  const navigateToDetail = useCallback(
-    (id: string, setLoadingId: (value: string | null) => void, openRecord: (recordId: string) => void) => {
-      page.confirmNavigation(() => {
-        setLoadingId(id)
-        openRecord(id)
-      })
-    },
-    [page],
-  )
-
-  const handleOpenProperty = useCallback(
-    (propertyId: string) => {
-      navigateToDetail(propertyId, setLoadingPropertyId, propertyNavigation.openRecord)
-    },
-    [navigateToDetail, propertyNavigation.openRecord],
-  )
-
-  const handleOpenTemplate = useCallback(
-    (templateId: string) => {
-      navigateToDetail(templateId, setLoadingTemplateId, templateNavigation.openRecord)
-    },
-    [navigateToDetail, templateNavigation.openRecord],
-  )
 
   return (
     <RecordMultiSectionPanel
@@ -93,50 +61,6 @@ export function ManagementCompanyRecordPanel({
                 }}
               />
             </RecordPrimarySectionInstance>
-          ),
-        },
-        {
-          key: "properties",
-          type: "item",
-          order: 10,
-          render: () => (
-            <ManagementCompanyPropertiesSection
-              subHeader={{
-                isDirty: false,
-                isSaving: false,
-                hasConflict: false,
-                canManage: false,
-                showStatus: false,
-                actions: [
-                  {
-                    key: "add-property",
-                    kind: "route-add",
-                    label: "Add Property",
-                    tone: "primary",
-                    onClick: () => {
-                      page.confirmNavigation(() => {
-                        propertyNavigation.openCreate({
-                          managementCompanyId: controller.record.id,
-                        })
-                      })
-                    },
-                  },
-                ],
-              }}
-              properties={controller.record.properties}
-              expandedPropertyIds={expandedPropertyIds}
-              loadingPropertyId={loadingPropertyId}
-              loadingTemplateId={loadingTemplateId}
-              onTogglePropertyTemplates={(propertyId) => {
-                setExpandedPropertyIds((previous) =>
-                  previous.includes(propertyId)
-                    ? previous.filter((id) => id !== propertyId)
-                    : [...previous, propertyId],
-                )
-              }}
-              onOpenProperty={handleOpenProperty}
-              onOpenTemplate={handleOpenTemplate}
-            />
           ),
         },
       ]}

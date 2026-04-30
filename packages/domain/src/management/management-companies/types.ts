@@ -1,18 +1,3 @@
-export type ManagementCompanyTemplateRow = {
-  id: string
-  unitType: string
-  warehouseName: string
-  itemsCount: number
-}
-
-export type ManagementCompanyPropertyRow = {
-  id: string
-  name: string
-  fullAddress: string
-  templates: ManagementCompanyTemplateRow[]
-  templateCount: number
-}
-
 export type ManagementCompanyDetail = {
   id: string
   updatedAt: string
@@ -24,7 +9,6 @@ export type ManagementCompanyDetail = {
   phone: string
   email: string
   fullAddress: string
-  properties: ManagementCompanyPropertyRow[]
 }
 
 export type ManagementCompanyListRow = {

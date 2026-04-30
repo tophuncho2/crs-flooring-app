@@ -26,7 +26,6 @@ const EMPTY_PROPERTY: PropertyDetailRecord = {
   instructions: "",
   fullAddress: "",
   managementCompany: null,
-  templates: [],
 }
 
 function createDefaultPropertyForm(managementCompanyId: string): PropertyPrimaryForm {

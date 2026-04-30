@@ -21,7 +21,3 @@ export function validatePropertyPrimaryForm(input: PropertyPrimaryForm) {
 
   return ""
 }
-
-export function createPropertyTemplatesRevisionKey(property: PropertyDetailRecord) {
-  return property.templates.map((template) => `${template.id}:${template.itemsCount}`).join("|")
-}

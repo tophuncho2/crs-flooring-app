@@ -60,15 +60,6 @@ const propertyDetailSelect = {
   managementCompany: {
     select: { id: true, name: true },
   },
-  templates: {
-    select: {
-      id: true,
-      unitType: true,
-      warehouse: { select: { name: true } },
-      _count: { select: { items: true } },
-    },
-    orderBy: { createdAt: "desc" as const },
-  },
 } as const
 
 const propertyOptionSelect = {

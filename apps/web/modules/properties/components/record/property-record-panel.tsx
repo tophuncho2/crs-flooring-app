@@ -1,17 +1,14 @@
 "use client"
 
-import { useCallback, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { normalizeAddressState } from "@builders/domain"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/use-property-primary-section"
 import { PropertyPrimaryFieldsSection } from "./property-primary-fields-section"
-import { PropertyTemplatesSection } from "./property-templates-section"
 import type { PropertyDetailRecord, PropertyPrimaryForm } from "@builders/domain"
 
 export function PropertyRecordPanel({
@@ -27,18 +24,6 @@ export function PropertyRecordPanel({
     page,
     property,
   })
-  const templateNavigation = useRecordEntryNavigation("/dashboard/templates")
-  const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
-
-  const handleOpenTemplate = useCallback(
-    (templateId: string) => {
-      page.confirmNavigation(() => {
-        setLoadingTemplateId(templateId)
-        templateNavigation.openRecord(templateId)
-      })
-    },
-    [page, templateNavigation],
-  )
 
   return (
     <RecordMultiSectionPanel
@@ -79,40 +64,6 @@ export function PropertyRecordPanel({
                 }}
               />
             </RecordPrimarySectionInstance>
-          ),
-        },
-        {
-          key: "templates",
-          type: "item",
-          order: 10,
-          render: () => (
-            <PropertyTemplatesSection
-              subHeader={{
-                isDirty: false,
-                isSaving: false,
-                hasConflict: false,
-                canManage: false,
-                showStatus: false,
-                actions: [
-                  {
-                    key: "add-template",
-                    kind: "route-add",
-                    label: "Add Template",
-                    tone: "primary",
-                    onClick: () => {
-                      page.confirmNavigation(() => {
-                        templateNavigation.openCreate({
-                          propertyId: controller.record.id,
-                        })
-                      })
-                    },
-                  },
-                ],
-              }}
-              templates={controller.record.templates}
-              loadingTemplateId={loadingTemplateId}
-              onOpenTemplate={handleOpenTemplate}
-            />
           ),
         },
       ]}

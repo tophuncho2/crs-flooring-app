@@ -26,26 +26,6 @@ const managementCompanyDetailSelect = {
   postalCode: true,
   phone: true,
   email: true,
-  properties: {
-    select: {
-      id: true,
-      name: true,
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      templates: {
-        select: {
-          id: true,
-          unitType: true,
-          warehouse: { select: { name: true } },
-          _count: { select: { items: true } },
-        },
-        orderBy: { createdAt: "desc" as const },
-      },
-    },
-    orderBy: { name: "asc" as const },
-  },
 } as const
 
 export async function createManagementCompanyRecord(

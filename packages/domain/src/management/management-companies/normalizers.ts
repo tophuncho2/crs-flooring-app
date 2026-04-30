@@ -15,20 +15,6 @@ type ManagementCompanyDetailInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
-  properties: Array<{
-    id: string
-    name: string
-    streetAddress: string | null
-    city: string | null
-    state: string | null
-    postalCode: string | null
-    templates: Array<{
-      id: string
-      unitType: string
-      warehouse: { name: string } | null
-      _count: { items: number }
-    }>
-  }>
 }
 
 type ManagementCompanyListRowInput = {
@@ -60,18 +46,6 @@ export function normalizeManagementCompany(company: ManagementCompanyDetailInput
     phone: company.phone ?? "",
     email: company.email ?? "",
     fullAddress: buildAddressLine(company),
-    properties: company.properties.map((property) => ({
-      id: property.id,
-      name: property.name,
-      fullAddress: buildAddressLine(property),
-      templateCount: property.templates.length,
-      templates: property.templates.map((template) => ({
-        id: template.id,
-        unitType: template.unitType,
-        warehouseName: template.warehouse?.name ?? "",
-        itemsCount: template._count.items,
-      })),
-    })),
   }
 }
 

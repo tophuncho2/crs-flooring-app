@@ -13,12 +13,6 @@ type PropertyDetailInput = {
   email: string | null
   instructions: string | null
   managementCompany: { id: string; name: string } | null
-  templates: Array<{
-    id: string
-    unitType: string
-    warehouse: { name: string } | null
-    _count: { items: number }
-  }>
 }
 
 type PropertyListRowInput = {
@@ -64,12 +58,6 @@ export function normalizeProperty(property: PropertyDetailInput): PropertyDetail
     instructions: property.instructions ?? "",
     fullAddress: buildAddressLine(property),
     managementCompany: property.managementCompany,
-    templates: property.templates.map((template) => ({
-      id: template.id,
-      unitType: template.unitType,
-      warehouseName: template.warehouse?.name ?? "",
-      itemsCount: template._count.items,
-    })),
   }
 }
 
