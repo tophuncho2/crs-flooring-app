@@ -1,8 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { RecordDetailClientScaffoldContext } from "../client/record-detail-client-scaffold"
-import type { RecordNotices } from "../client/use-record-notices"
+import type { RecordDetailClientScaffoldContext } from "../client/scaffolds/record-detail-client-scaffold"
+import type { RecordNotices } from "../client/hooks/use-record-notices"
 import type { RecordSectionCapabilities, RecordSectionType } from "../sections/structure/record-section-capabilities"
 import type { RecordSectionMetricValue } from "../sections/metrics/record-section-metric"
 import type { RecordSectionSubHeaderProps } from "../sections/structure/record-section-sub-header"
