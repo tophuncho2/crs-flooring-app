@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Fragment, useEffect, useMemo, useState } from "react"
 import {
   type PendingCutLogRow,
   useWorkOrderItemPendingCutLogs,
@@ -9,6 +9,16 @@ import { useWorkOrderCutLogVoid } from "@/modules/work-orders/controllers/use-wo
 import type { useWorkOrderCutLogFinalize } from "@/modules/work-orders/controllers/use-work-order-cut-log-finalize"
 import { listEligibleInventoryRequest } from "@/modules/work-orders/data/mutations"
 import { StatusBadge } from "@/components/badges"
+import {
+  CheckboxCell,
+  DropdownCell,
+  NumberCell,
+  RowActionButton,
+  TextCell,
+} from "@/components/cells"
+import { Grid, GridEmpty, ScopedRow, type GridLayout } from "@/components/grid"
+import type { GridRow } from "@/components/grid/contracts/grid-row"
+import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
 type EligibleInventory = {
   id: string
@@ -20,7 +30,15 @@ type EligibleInventory = {
   locationCode: string
 }
 
-function statusTone(status: PendingCutLogRow["status"]) {
+type CutLogServerGridRow = GridRow & {
+  serverRow: PendingCutLogRow
+}
+
+type CutLogDraftGridRow = GridRow & {
+  clientId: string
+}
+
+function statusTone(status: PendingCutLogRow["status"]): BadgeTone {
   switch (status) {
     case "FINAL":
       return "success"
@@ -35,19 +53,54 @@ function statusTone(status: PendingCutLogRow["status"]) {
   }
 }
 
-/**
- * Expandable row inside a WOMI in the material-items section.
- *
- * Shows the cut-log table with editable cells for PENDING rows
- * (cut, isWaste, notes, inventory dropdown) plus a per-row location
- * filter that narrows the inventory dropdown to a chosen location.
- *
- * Coordinates with the parent ActionsPanel via:
- * - `pendingController` (this WOMI's pending diff state)
- * - `finalizeController` (WO-scoped batch select; renders a checkbox
- *   on PENDING rows when in selection mode)
- * - `voidController` (sync void on FINAL rows)
- */
+function buildServerLayout(showSelection: boolean): GridLayout<CutLogServerGridRow> {
+  const leadingControls = showSelection
+    ? [{ key: "select", kind: "selection" as const, width: 40 }]
+    : undefined
+  return {
+    leadingControls,
+    dataColumns: [
+      { key: "cutLogNumber", label: "Cut #", minWidth: 70, grow: 0 },
+      { key: "inventory", label: "Inventory", minWidth: 140, grow: 1 },
+      { key: "before", label: "Before", kind: "number", minWidth: 70, grow: 0, align: "end" },
+      { key: "cut", label: "Cut", kind: "number", minWidth: 80, grow: 0, align: "end" },
+      { key: "after", label: "After", kind: "number", minWidth: 70, grow: 0, align: "end" },
+      { key: "coverage", label: "Coverage", kind: "number", minWidth: 80, grow: 0, align: "end" },
+      { key: "status", label: "Status", kind: "status", minWidth: 100, grow: 0, align: "center" },
+      { key: "finalCutSequence", label: "Final #", kind: "number", minWidth: 70, grow: 0, align: "end" },
+      { key: "isWaste", label: "Waste", minWidth: 60, grow: 0, align: "center" },
+      { key: "notes", label: "Notes", minWidth: 160, grow: 1 },
+      { key: "created", label: "Created", minWidth: 90, grow: 0 },
+      { key: "updated", label: "Updated", minWidth: 90, grow: 0 },
+    ],
+    trailingControls: [{ key: "actions", kind: "actions", width: 72 }],
+  }
+}
+
+function buildDraftLayout(showSelection: boolean): GridLayout<CutLogDraftGridRow> {
+  const leadingControls = showSelection
+    ? [{ key: "select", kind: "selection" as const, width: 40 }]
+    : undefined
+  return {
+    leadingControls,
+    dataColumns: [
+      { key: "cutLogNumber", label: "Cut #", minWidth: 70, grow: 0 },
+      { key: "inventory", label: "Inventory", minWidth: 220, grow: 1.5 },
+      { key: "before", label: "Before", kind: "number", minWidth: 70, grow: 0, align: "end" },
+      { key: "cut", label: "Cut", kind: "number", minWidth: 80, grow: 0, align: "end" },
+      { key: "after", label: "After", kind: "number", minWidth: 70, grow: 0, align: "end" },
+      { key: "coverage", label: "Coverage", kind: "number", minWidth: 80, grow: 0, align: "end" },
+      { key: "status", label: "Status", kind: "status", minWidth: 100, grow: 0, align: "center" },
+      { key: "finalCutSequence", label: "Final #", kind: "number", minWidth: 70, grow: 0, align: "end" },
+      { key: "isWaste", label: "Waste", minWidth: 60, grow: 0, align: "center" },
+      { key: "notes", label: "Notes", minWidth: 160, grow: 1 },
+      { key: "created", label: "Created", minWidth: 90, grow: 0 },
+      { key: "updated", label: "Updated", minWidth: 90, grow: 0 },
+    ],
+    trailingControls: [{ key: "actions", kind: "actions", width: 72 }],
+  }
+}
+
 export function WorkOrderCutLogRow({
   workOrderId,
   workOrderItemId,
@@ -91,17 +144,316 @@ export function WorkOrderCutLogRow({
     }
   }, [workOrderId, workOrderItemId])
 
-  // Per-row location filter narrows the inventory dropdown to one
-  // location code; the row's locationFilterCode lives in the local
-  // draft / update state.
+  const showSelection = finalizeController.isSelectionMode
+  const serverLayout = useMemo(() => buildServerLayout(showSelection), [showSelection])
+  const draftLayout = useMemo(() => buildDraftLayout(showSelection), [showSelection])
+
+  const distinctLocationCodes = useMemo(
+    () =>
+      Array.from(
+        new Set(eligibleInventory.map((i) => i.locationCode).filter(Boolean)),
+      ).sort(),
+    [eligibleInventory],
+  )
+  const locationOptions = useMemo(
+    () => distinctLocationCodes.map((code) => ({ id: code, label: code })),
+    [distinctLocationCodes],
+  )
+  const inventoryById = useMemo(() => {
+    const map = new Map<string, EligibleInventory>()
+    for (const inv of eligibleInventory) map.set(inv.id, inv)
+    return map
+  }, [eligibleInventory])
+
   function inventoriesForLocation(locationCode: string): EligibleInventory[] {
     if (!locationCode) return eligibleInventory
     return eligibleInventory.filter((inv) => inv.locationCode === locationCode)
   }
 
-  const distinctLocationCodes = Array.from(
-    new Set(eligibleInventory.map((i) => i.locationCode).filter(Boolean)),
-  ).sort()
+  const serverGridRows: CutLogServerGridRow[] = useMemo(
+    () => serverRows.map((row) => ({ id: row.id, serverRow: row })),
+    [serverRows],
+  )
+  const draftGridRows: CutLogDraftGridRow[] = useMemo(
+    () => pending.drafts.map((d) => ({ id: d.clientId, clientId: d.clientId })),
+    [pending.drafts],
+  )
+
+  function renderServerCell(
+    column: { key: string },
+    gridRow: CutLogServerGridRow,
+  ) {
+    const row = gridRow.serverRow
+    const isPending = row.status === "PENDING"
+    const update = pending.updates[row.id]
+    const isDeleted = !!pending.deletes[row.id]
+    const editableCell = isPending && !isDeleted
+
+    switch (column.key) {
+      case "cutLogNumber":
+        return (
+          <span className={isDeleted ? "line-through opacity-60" : ""}>
+            {row.cutLogNumber}
+          </span>
+        )
+      case "inventory": {
+        const inv = inventoryById.get(row.inventoryId)
+        const label = inv
+          ? `${inv.inventoryNumber}${inv.locationCode ? ` · ${inv.locationCode}` : ""}`
+          : row.inventoryId
+        return (
+          <span className={`truncate ${isDeleted ? "line-through opacity-60" : ""}`}>
+            {label}
+          </span>
+        )
+      }
+      case "before":
+        return (
+          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
+            {row.before}
+          </span>
+        )
+      case "cut":
+        if (editableCell) {
+          return (
+            <NumberCell
+              editable={true}
+              value={update?.cut ?? row.cut}
+              onChange={(next) => pending.editServerRow(row, { cut: next })}
+              ariaLabel="Cut amount"
+            />
+          )
+        }
+        return (
+          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
+            {row.cut}
+          </span>
+        )
+      case "after":
+        return (
+          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
+            {row.after}
+          </span>
+        )
+      case "coverage":
+        return (
+          <span className={`tabular-nums ${isDeleted ? "line-through opacity-60" : ""}`}>
+            {row.coverageCut || "—"}
+          </span>
+        )
+      case "status":
+        return <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>
+      case "finalCutSequence":
+        return (
+          <span className="tabular-nums">{row.finalCutSequence ?? "—"}</span>
+        )
+      case "isWaste":
+        if (editableCell) {
+          return (
+            <CheckboxCell
+              editable={true}
+              value={update?.isWaste ?? row.isWaste}
+              onChange={(next) => pending.editServerRow(row, { isWaste: next })}
+              ariaLabel="Cut log waste flag"
+            />
+          )
+        }
+        return (
+          <CheckboxCell
+            editable={false}
+            value={row.isWaste}
+            ariaLabel="Cut log waste flag"
+          />
+        )
+      case "notes":
+        if (editableCell) {
+          return (
+            <TextCell
+              editable={true}
+              value={update?.notes ?? row.notes}
+              onChange={(next) => pending.editServerRow(row, { notes: next })}
+              placeholder="Notes"
+              ariaLabel="Cut log notes"
+            />
+          )
+        }
+        return (
+          <span className={`truncate ${isDeleted ? "line-through opacity-60" : ""}`}>
+            {row.notes || "—"}
+          </span>
+        )
+      case "created":
+      case "updated":
+        return <span className="text-[var(--foreground)]/55">—</span>
+      default:
+        return null
+    }
+  }
+
+  function renderServerControl(
+    control: { key: string; kind: string },
+    gridRow: CutLogServerGridRow,
+  ) {
+    const row = gridRow.serverRow
+    const isPending = row.status === "PENDING"
+    const isFinal = row.status === "FINAL"
+    const isDeleted = !!pending.deletes[row.id]
+
+    if (control.kind === "selection") {
+      if (!isPending) return null
+      return (
+        <input
+          type="checkbox"
+          checked={finalizeController.selectedIds.has(row.id)}
+          onChange={(e) => finalizeController.setSelected(row.id, e.target.checked)}
+          aria-label={`Select cut ${row.cutLogNumber}`}
+          className="h-4 w-4 cursor-pointer rounded border-[var(--panel-border)] text-sky-600 focus:ring-1 focus:ring-sky-500/40"
+        />
+      )
+    }
+    if (control.kind === "actions") {
+      if (isPending && !isDeleted) {
+        return (
+          <RowActionButton
+            label="Remove"
+            ariaLabel={`Remove cut ${row.cutLogNumber}`}
+            tone="destructive"
+            editable={true}
+            onClick={() => pending.deleteServerRow(row)}
+          />
+        )
+      }
+      if (isPending && isDeleted) {
+        return (
+          <RowActionButton
+            label="Undo"
+            ariaLabel={`Undo remove cut ${row.cutLogNumber}`}
+            tone="neutral"
+            editable={true}
+            onClick={() => pending.undoDelete(row.id)}
+          />
+        )
+      }
+      if (isFinal) {
+        const isVoidingThisRow = voider.isVoiding && voider.voidingId === row.id
+        return (
+          <RowActionButton
+            label={isVoidingThisRow ? "Voiding…" : "Void"}
+            ariaLabel={`Void cut ${row.cutLogNumber}`}
+            tone="destructive"
+            editable={!isVoidingThisRow}
+            onClick={() => void voider.voidCutLog(row.id)}
+          />
+        )
+      }
+      return null
+    }
+    return null
+  }
+
+  function renderDraftCell(column: { key: string }, gridRow: CutLogDraftGridRow) {
+    const draft = pending.drafts.find((d) => d.clientId === gridRow.clientId)
+    if (!draft) return null
+    const filtered = inventoriesForLocation(draft.locationFilterCode)
+    const inventoryOptions = filtered.map((inv) => ({
+      id: inv.id,
+      label: `${inv.inventoryNumber} · ${inv.remainingStock} ${inv.stockUnitAbbrev}${inv.locationCode ? ` · ${inv.locationCode}` : ""}`,
+    }))
+
+    switch (column.key) {
+      case "cutLogNumber":
+        return <span className="italic text-[var(--foreground)]/55">new</span>
+      case "inventory":
+        return (
+          <div className="flex w-full flex-col gap-1">
+            <DropdownCell
+              editable={true}
+              value={draft.locationFilterCode || null}
+              onChange={(next) =>
+                pending.updateDraft(draft.clientId, { locationFilterCode: next ?? "" })
+              }
+              options={locationOptions}
+              allowClear
+              placeholder="All locations"
+              ariaLabel="Cut log location filter"
+            />
+            <DropdownCell
+              editable={true}
+              value={draft.inventoryId || null}
+              onChange={(next) =>
+                pending.updateDraft(draft.clientId, { inventoryId: next ?? "" })
+              }
+              options={inventoryOptions}
+              placeholder={loadingInventory ? "Loading…" : "Pick inventory"}
+              ariaLabel="Cut log inventory"
+            />
+          </div>
+        )
+      case "before":
+        return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
+      case "cut":
+        return (
+          <NumberCell
+            editable={true}
+            value={draft.cut}
+            onChange={(next) => pending.updateDraft(draft.clientId, { cut: next })}
+            ariaLabel="Cut amount"
+          />
+        )
+      case "after":
+      case "coverage":
+        return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
+      case "status":
+        return <StatusBadge tone="warning">DRAFT</StatusBadge>
+      case "finalCutSequence":
+        return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
+      case "isWaste":
+        return (
+          <CheckboxCell
+            editable={true}
+            value={draft.isWaste}
+            onChange={(next) => pending.updateDraft(draft.clientId, { isWaste: next })}
+            ariaLabel="Cut log waste flag"
+          />
+        )
+      case "notes":
+        return (
+          <TextCell
+            editable={true}
+            value={draft.notes}
+            onChange={(next) => pending.updateDraft(draft.clientId, { notes: next })}
+            placeholder="Notes"
+            ariaLabel="Cut log notes"
+          />
+        )
+      case "created":
+      case "updated":
+        return <span className="text-[var(--foreground)]/55">—</span>
+      default:
+        return null
+    }
+  }
+
+  function renderDraftControl(
+    control: { key: string; kind: string },
+    gridRow: CutLogDraftGridRow,
+  ) {
+    if (control.kind === "selection") {
+      return null
+    }
+    if (control.kind === "actions") {
+      return (
+        <RowActionButton
+          label="Remove"
+          ariaLabel="Remove draft cut"
+          tone="destructive"
+          editable={true}
+          onClick={() => pending.removeDraft(gridRow.clientId)}
+        />
+      )
+    }
+    return null
+  }
 
   return (
     <div className="space-y-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
@@ -120,216 +472,34 @@ export function WorkOrderCutLogRow({
         </div>
       ) : null}
 
-      {/* Server rows */}
-      <table className="w-full border-collapse text-xs">
-        <thead>
-          <tr className="border-b border-[var(--panel-border)]">
-            {finalizeController.isSelectionMode ? <th className="w-8"></th> : null}
-            <th className="px-2 py-1 text-left">Cut #</th>
-            <th className="px-2 py-1 text-left">Inventory</th>
-            <th className="px-2 py-1 text-right">Before</th>
-            <th className="px-2 py-1 text-right">Cut</th>
-            <th className="px-2 py-1 text-right">After</th>
-            <th className="px-2 py-1 text-right">Coverage</th>
-            <th className="px-2 py-1 text-center">Status</th>
-            <th className="px-2 py-1 text-right">Final #</th>
-            <th className="px-2 py-1 text-center">Waste</th>
-            <th className="px-2 py-1 text-left">Notes</th>
-            <th className="px-2 py-1 text-left">Created</th>
-            <th className="px-2 py-1 text-left">Updated</th>
-            <th className="w-16 px-2 py-1 text-right"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {serverRows.map((row) => {
-            const isPending = row.status === "PENDING"
-            const isFinal = row.status === "FINAL"
-            const update = pending.updates[row.id]
-            const isDeleted = !!pending.deletes[row.id]
-            const cellBg = isDeleted ? "bg-rose-500/5 line-through opacity-60" : ""
-            return (
-              <tr key={row.id} className={`border-b border-[var(--panel-border)]/40 ${cellBg}`}>
-                {finalizeController.isSelectionMode ? (
-                  <td className="px-2 py-1">
-                    {isPending ? (
-                      <input
-                        type="checkbox"
-                        checked={finalizeController.selectedIds.has(row.id)}
-                        onChange={(e) =>
-                          finalizeController.setSelected(row.id, e.target.checked)
-                        }
-                      />
-                    ) : null}
-                  </td>
-                ) : null}
-                <td className="px-2 py-1">{row.cutLogNumber}</td>
-                <td className="px-2 py-1">{row.inventoryId}</td>
-                <td className="px-2 py-1 text-right tabular-nums">{row.before}</td>
-                <td className="px-2 py-1 text-right tabular-nums">
-                  {isPending && !isDeleted ? (
-                    <input
-                      className="w-16 rounded border border-[var(--panel-border)] px-1 text-right"
-                      value={update?.cut ?? row.cut}
-                      onChange={(e) => pending.editServerRow(row, { cut: e.target.value })}
-                    />
-                  ) : (
-                    row.cut
-                  )}
-                </td>
-                <td className="px-2 py-1 text-right tabular-nums">{row.after}</td>
-                <td className="px-2 py-1 text-right tabular-nums">{row.coverageCut || "—"}</td>
-                <td className="px-2 py-1 text-center">
-                  <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>
-                </td>
-                <td className="px-2 py-1 text-right tabular-nums">
-                  {row.finalCutSequence ?? "—"}
-                </td>
-                <td className="px-2 py-1 text-center">
-                  {isPending && !isDeleted ? (
-                    <input
-                      type="checkbox"
-                      checked={update?.isWaste ?? row.isWaste}
-                      onChange={(e) =>
-                        pending.editServerRow(row, { isWaste: e.target.checked })
-                      }
-                    />
-                  ) : row.isWaste ? (
-                    "☑"
-                  ) : (
-                    "☐"
-                  )}
-                </td>
-                <td className="px-2 py-1">
-                  {isPending && !isDeleted ? (
-                    <input
-                      className="w-32 rounded border border-[var(--panel-border)] px-1"
-                      value={update?.notes ?? row.notes}
-                      onChange={(e) => pending.editServerRow(row, { notes: e.target.value })}
-                    />
-                  ) : (
-                    row.notes || "—"
-                  )}
-                </td>
-                <td className="px-2 py-1">—</td>
-                <td className="px-2 py-1">—</td>
-                <td className="px-2 py-1 text-right">
-                  {isPending && !isDeleted ? (
-                    <button
-                      type="button"
-                      className="text-rose-600 hover:underline"
-                      onClick={() => pending.deleteServerRow(row)}
-                    >
-                      Remove
-                    </button>
-                  ) : isPending && isDeleted ? (
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:underline"
-                      onClick={() => pending.undoDelete(row.id)}
-                    >
-                      Undo
-                    </button>
-                  ) : isFinal ? (
-                    <button
-                      type="button"
-                      className="text-rose-600 hover:underline disabled:opacity-50"
-                      disabled={voider.isVoiding && voider.voidingId === row.id}
-                      onClick={() => void voider.voidCutLog(row.id)}
-                    >
-                      Void
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            )
-          })}
+      <Grid<CutLogServerGridRow>
+        rows={serverGridRows}
+        layout={serverLayout}
+        empty={<GridEmpty>No cut logs yet.</GridEmpty>}
+        renderCell={renderServerCell}
+        renderControl={renderServerControl}
+      />
 
-          {/* Draft rows (newly added, not yet saved) */}
-          {pending.drafts.map((draft) => {
-            const filtered = inventoriesForLocation(draft.locationFilterCode)
-            return (
-              <tr key={draft.clientId} className="border-b border-[var(--panel-border)]/40 bg-emerald-500/5">
-                {finalizeController.isSelectionMode ? <td></td> : null}
-                <td className="px-2 py-1 italic text-[var(--foreground)]/55">new</td>
-                <td className="px-2 py-1">
-                  <div className="flex flex-col gap-1">
-                    <select
-                      className="rounded border border-[var(--panel-border)] px-1 text-xs"
-                      value={draft.locationFilterCode}
-                      onChange={(e) =>
-                        pending.updateDraft(draft.clientId, { locationFilterCode: e.target.value })
-                      }
-                    >
-                      <option value="">All locations</option>
-                      {distinctLocationCodes.map((code) => (
-                        <option key={code} value={code}>
-                          {code}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="rounded border border-[var(--panel-border)] px-1 text-xs"
-                      value={draft.inventoryId}
-                      onChange={(e) =>
-                        pending.updateDraft(draft.clientId, { inventoryId: e.target.value })
-                      }
-                    >
-                      <option value="">{loadingInventory ? "Loading…" : "Pick inventory"}</option>
-                      {filtered.map((inv) => (
-                        <option key={inv.id} value={inv.id}>
-                          {inv.inventoryNumber} · {inv.remainingStock} {inv.stockUnitAbbrev}
-                          {inv.locationCode ? ` · ${inv.locationCode}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </td>
-                <td className="px-2 py-1 text-right">—</td>
-                <td className="px-2 py-1 text-right">
-                  <input
-                    className="w-16 rounded border border-[var(--panel-border)] px-1 text-right"
-                    value={draft.cut}
-                    onChange={(e) => pending.updateDraft(draft.clientId, { cut: e.target.value })}
-                  />
-                </td>
-                <td className="px-2 py-1 text-right">—</td>
-                <td className="px-2 py-1 text-right">—</td>
-                <td className="px-2 py-1 text-center">
-                  <StatusBadge tone="warning">DRAFT</StatusBadge>
-                </td>
-                <td className="px-2 py-1 text-right">—</td>
-                <td className="px-2 py-1 text-center">
-                  <input
-                    type="checkbox"
-                    checked={draft.isWaste}
-                    onChange={(e) =>
-                      pending.updateDraft(draft.clientId, { isWaste: e.target.checked })
-                    }
-                  />
-                </td>
-                <td className="px-2 py-1">
-                  <input
-                    className="w-32 rounded border border-[var(--panel-border)] px-1"
-                    value={draft.notes}
-                    onChange={(e) => pending.updateDraft(draft.clientId, { notes: e.target.value })}
-                  />
-                </td>
-                <td className="px-2 py-1">—</td>
-                <td className="px-2 py-1">—</td>
-                <td className="px-2 py-1 text-right">
-                  <button
-                    type="button"
-                    className="text-rose-600 hover:underline"
-                    onClick={() => pending.removeDraft(draft.clientId)}
-                  >
-                    Remove
-                  </button>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+      {draftGridRows.length > 0 ? (
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/[0.04]">
+          <div className="border-b border-emerald-500/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-700/85">
+            New Drafts
+          </div>
+          <div>
+            {draftGridRows.map((draftRow) => (
+              <Fragment key={draftRow.id}>
+                <ScopedRow<CutLogDraftGridRow>
+                  row={draftRow}
+                  layout={draftLayout}
+                  tone="success"
+                  renderCell={renderDraftCell}
+                  renderControl={renderDraftControl}
+                />
+              </Fragment>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex items-center justify-between text-xs">
         <button
@@ -339,14 +509,9 @@ export function WorkOrderCutLogRow({
         >
           + Add Pending Cut
         </button>
-        {voider.error ? (
-          <span className="text-rose-700">{voider.error}</span>
-        ) : null}
+        {voider.error ? <span className="text-rose-700">{voider.error}</span> : null}
       </div>
 
-      {/* Expose pending controller's save/discard via a slim row of controls.
-          The "Save Pending Cuts" action in the section ActionsPanel calls
-          this controller's save() — these inline buttons are a backup. */}
       {pending.isDirty ? (
         <div className="flex items-center justify-end gap-2">
           <button
