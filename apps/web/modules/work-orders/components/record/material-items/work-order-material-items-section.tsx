@@ -204,7 +204,7 @@ export function WorkOrderMaterialItemsSection({
     return null
   }
 
-  const sectionError = section.error ? section.error.message : null
+  const sectionError = section.error ? section.error.message : section.noticeError || null
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -216,6 +216,11 @@ export function WorkOrderMaterialItemsSection({
           <div className="text-sm text-[var(--foreground)]/75">
             {section.items.length} item{section.items.length === 1 ? "" : "s"}
           </div>
+          {section.noticeMessage ? (
+            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+              {section.noticeMessage}
+            </div>
+          ) : null}
           {sectionError ? (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
               {sectionError}

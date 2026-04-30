@@ -10,3 +10,21 @@ Imports, Inventory, Staged Inventory, Cut logs,
 [ ] Decompose controllers in inventory cut logs section
 [ ] Decompose workers triggered from inventory cut log section
 [ ] Harden the workers triggered from WOMI section
+
+
+
+Modules, Properties - Templates
+[ ] Migrate off of modules/shared
+[ ] Enable server side list view search, filtering, grouping. 
+
+Management Companies
+[ ] Migrate off of modules/shared
+[ ] Enable server side list view search
+
+Manufacturers
+[ ] Migrate off of modules/shared
+[ ] Enable server side list view search
+
+Products
+[ ] Migrate off of modules/shared
+[ ] Enable server side list view search, filtering, grouping. 
