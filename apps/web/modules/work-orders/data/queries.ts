@@ -3,6 +3,7 @@ import {
   getWorkOrderDetailById,
   isPrismaNotFoundError,
   listCategories,
+  listCutLogsForWorkOrderItemIds,
   listJobTypeOptions,
   listManagementCompanyOptions,
   listProductOptions,
@@ -14,7 +15,12 @@ import {
   type PrismaDetailPageResult,
   type WorkOrderFileRow,
 } from "@builders/db"
-import type { WorkOrderDetail, WorkOrderMaterialItemRow } from "@builders/domain"
+import {
+  normalizeWorkOrderItemPendingCutLogRow,
+  type WorkOrderDetail,
+  type WorkOrderItemPendingCutLogRow,
+  type WorkOrderMaterialItemRow,
+} from "@builders/domain"
 import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 
 // Re-export Prisma payload types so module UI files don't have to
@@ -98,6 +104,7 @@ export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet>
 export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
+  cutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]>
   files: WorkOrderFileRow[]
   options: WorkOrderFormOptionSet
 }
@@ -117,9 +124,19 @@ export async function getWorkOrderDetailPageData(
       return { ok: false, notFound: true }
     }
 
+    const cutLogRows = await listCutLogsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
+    const cutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]> = {}
+    for (const mi of materialItems) cutLogsByWorkOrderItemId[mi.id] = []
+    for (const row of cutLogRows) {
+      if (row.workOrderItemId === null) continue
+      const bucket = cutLogsByWorkOrderItemId[row.workOrderItemId]
+      if (bucket === undefined) continue
+      bucket.push(normalizeWorkOrderItemPendingCutLogRow(row))
+    }
+
     return {
       ok: true,
-      data: { workOrder, materialItems, files, options },
+      data: { workOrder, materialItems, cutLogsByWorkOrderItemId, files, options },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

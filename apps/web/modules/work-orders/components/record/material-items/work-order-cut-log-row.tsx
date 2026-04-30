@@ -1,9 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import type {
-  PendingCutLogRow,
-} from "@/modules/work-orders/controllers/use-work-order-item-pending-cut-logs"
+import type { WorkOrderItemPendingCutLogRow as PendingCutLogRow } from "@builders/domain"
 import type { WorkOrderCutLogSectionState } from "@/modules/work-orders/controllers/use-work-order-cut-log-section-state"
 import type { useWorkOrderCutLogVoid } from "@/modules/work-orders/controllers/use-work-order-cut-log-void"
 import { listEligibleInventoryRequest } from "@/modules/work-orders/data/mutations"

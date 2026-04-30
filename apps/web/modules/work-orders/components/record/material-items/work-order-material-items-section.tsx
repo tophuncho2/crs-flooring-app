@@ -24,7 +24,7 @@ import {
 } from "@/modules/work-orders/controllers/use-work-order-material-items-section"
 import { finalizeWorkOrderCutLogBatchRequest } from "@/modules/work-orders/data/mutations"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
-import type { PendingCutLogRow } from "@/modules/work-orders/controllers/use-work-order-item-pending-cut-logs"
+import type { WorkOrderItemPendingCutLogRow as PendingCutLogRow } from "@builders/domain"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {

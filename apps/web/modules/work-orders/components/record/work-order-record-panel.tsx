@@ -5,35 +5,36 @@ import { RecordMultiSectionPanel } from "@/components/panels/record-multi-sectio
 import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
-import type { WorkOrderDetail, WorkOrderMaterialItemRow } from "@builders/domain"
+import type {
+  WorkOrderDetail,
+  WorkOrderItemPendingCutLogRow,
+  WorkOrderMaterialItemRow,
+} from "@builders/domain"
 import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/use-work-order-primary-section"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderFilesSection } from "./files/work-order-files-section"
-import type { PendingCutLogRow } from "@/modules/work-orders/controllers/use-work-order-item-pending-cut-logs"
 
 export function WorkOrderRecordPanel({
   page,
   entry,
   initialMaterialItems,
+  initialCutLogsByWorkOrderItemId,
   initialFiles,
   options,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
+  initialCutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]>
   initialFiles: WorkOrderFileRow[]
   options: WorkOrderFormOptionSet
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
 
-  // Cut logs grouped by WOMI for the expandable rows. Empty here on
-  // initial load — the cut-log expandable row controller fetches its
-  // own state on expand. This map exists so the section can
-  // disambiguate per-WOMI server rows when needed.
-  const cutLogsByWorkOrderItemId: Record<string, PendingCutLogRow[]> = {}
+  const cutLogsByWorkOrderItemId = initialCutLogsByWorkOrderItemId
 
   return (
     <RecordMultiSectionPanel

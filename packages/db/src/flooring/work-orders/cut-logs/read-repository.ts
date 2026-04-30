@@ -43,6 +43,28 @@ export async function listCutLogsForWorkOrderItem(
 }
 
 /**
+ * Bulk variant of `listCutLogsForWorkOrderItem` — returns the flat row
+ * set across many WOMI ids in one query, ordered identically. The SSR
+ * loader for the WO record page calls this once and groups client-side
+ * so every expandable cut-log row hydrates from initial data.
+ */
+export async function listCutLogsForWorkOrderItemIds(
+  workOrderItemIds: string[],
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrderCutLogRowPayload[]> {
+  if (workOrderItemIds.length === 0) return []
+  return client.flooringCutLog.findMany({
+    where: { workOrderItemId: { in: workOrderItemIds } },
+    select: workOrderCutLogSelect,
+    orderBy: [
+      { isFinal: "asc" },
+      { finalCutSequence: "asc" },
+      { createdAt: "asc" },
+    ],
+  })
+}
+
+/**
  * Returns the union of inventory ids touched by a pending-cut-log diff:
  *  - Every draft's `inventoryId` (drafts target the inventory directly).
  *  - The `inventoryId` of every existing cut log referenced by an update
