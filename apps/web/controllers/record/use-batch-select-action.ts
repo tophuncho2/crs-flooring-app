@@ -6,8 +6,8 @@ import { useCallback, useMemo, useState } from "react"
  * Generic batch-select-then-fire-action hook.
  *
  * Extracted from the inline pattern that staged-inv's
- * `useImportStagedInventoryRowsSection` (mark-for-import) and the
- * cut-logs `useInventoryCutLogsSection` (finalize-selected) both want.
+ * `useImportStagedInventoryRowsSection` (mark-for-import) wants. Wrapped
+ * by `useGatedBatchSelect` for sections that need dirty-aware gating.
  *
  * Owns the selection `Set<string>` keyed by row id, an `eligibleSelectedIds`
  * projection (filtered via the caller's `isEligible` predicate), and the

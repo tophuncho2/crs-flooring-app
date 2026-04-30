@@ -11,7 +11,7 @@ This file is updated after each sweep (and per sub-step within Sweep 4) ships. S
 | # | Sweep | Status | Date | Commit(s) |
 |---|---|---|---|---|
 | 4a | Decommission inventory-side cut-log routes + workers | 🟡 Code shipped, awaiting commit | 2026-04-30 | _(pending)_ |
-| 4b | Inventory cut-logs section → read-only viewer | ⬜ Not started | — | — |
+| 4b | Inventory cut-logs section → read-only viewer | 🟡 Code shipped, awaiting commit | 2026-04-30 | _(pending)_ |
 | 4c | WOMI cut-log UI redesign + adopt shared batch-select | ⬜ Not started | — | — |
 | 4d | Verify domain invariant + dev-server smoke | ⬜ Not started | — | — |
 | 5 | WO Files section UI (Phase 2c) | ⬜ Not started | — | — |
@@ -150,7 +150,66 @@ scope. Tracked for post-V1 cleanup.
 
 ## Sweep 4b — Inventory cut-logs section → read-only viewer
 
-_Not started._
+**Date:** 2026-04-30 · **Status:** 🟡 Code shipped, awaiting commit · **Typecheck:** ✅ Full chain green
+
+### Audit summary
+
+Straightforward — all 5 in-scope files are isolated to the inventory module. Engine `cut-log-contracts.ts` (`EditableCutLog`, engine `CutLogDraft`) under `apps/web/modules/shared/engines/record-view/contracts/` has zero consumers but is out of scope per CLAUDE.md modules/shared rule.
+
+### Files deleted (2)
+
+1. [apps/web/modules/inventory/controllers/use-inventory-cut-logs-section.ts](../apps/web/modules/inventory/controllers/use-inventory-cut-logs-section.ts) — the entire mutation controller. Display-only sections don't need controllers (per plan).
+2. [apps/web/modules/inventory/controllers/drafts.ts](../apps/web/modules/inventory/controllers/drafts.ts) — `CutLogDraft` type, `createCutLogDraft`, `toCutLogDrafts`, `isLocalCutLogDraft`, `validateCutLogDrafts`. The whole file's purpose was draft-shape + diff-validation for the deleted save flow.
+
+### Files edited (4)
+
+1. [apps/web/modules/inventory/components/record/cut-logs/inventory-cut-logs-section.tsx](../apps/web/modules/inventory/components/record/cut-logs/inventory-cut-logs-section.tsx) — rewritten as a read-only viewer. Props collapsed from 17 (drafts/serverRows/dirty/saving/conflict/notice/selection/finalize/handlers/...) to 4 (`rows`, `stockUnitAbbrev`, `coverageUnitAbbrev`, `totalCutSum`). Removed `ActionHeader` actions array, leading `selection` control, trailing `actions` control, all editable cells, `findDraftIndex`, `editableServerIds`, the draft-vs-server merge logic. Status indicator + summary header retained.
+2. [apps/web/modules/inventory/data/mutations.ts](../apps/web/modules/inventory/data/mutations.ts) — removed `saveCutLogPendingDiffRequest` + `markCutLogsForFinalizeRequest` functions and their response types (~67 lines). Removed `CutLogsDiff` import. Kept `updateInventoryRequest` + `deleteInventoryRequest`.
+3. [apps/web/modules/inventory/components/record/inventory-record-panel.tsx](../apps/web/modules/inventory/components/record/inventory-record-panel.tsx) — removed `useState<CutLogRow[]>` (no client-side mutation = no optimistic state needed; cut logs read straight from `controller.record.cutLogs`), removed `handleMarkedForFinalize`, removed `useInventoryCutLogsSection` import + usage, removed all 14 props passed to the section component (now just 4). The panel still partitions cut logs into pending vs. historical via the same `useMemo` filters.
+4. [apps/web/controllers/record/use-batch-select-action.ts](../apps/web/controllers/record/use-batch-select-action.ts) — updated docstring (line 8-10) which named the deleted `useInventoryCutLogsSection` as a consumer; now points to staged-inv only and mentions the `useGatedBatchSelect` wrapper.
+
+### Verification
+
+- ✅ `npm run typecheck` — full chain green (guard:prisma + 7 workspaces)
+- Cleared `.next/` before run; second pass green on first try (no stale-cache issues this round since no API routes were deleted in 4b)
+- ⏳ Dev-server smoke deferred to 4d
+
+### Out-of-scope (deferred)
+
+- Engine-side `apps/web/modules/shared/engines/record-view/contracts/cut-log-contracts.ts` — zero external consumers, but per CLAUDE.md modules/shared rule we don't delete from there until consumers prove dead. Engine teardown is a separate post-V1 sweep.
+- Domain `validateCutLogsDiff` + `CutLogPendingForm` types — still consumed by WOMI flow (not removed).
+
+### Suggested commit message
+
+```
+inventory: cut-logs section becomes a read-only viewer (sweep 4b)
+
+Inventory record view's cut-log section follows 4a's API decommission —
+mutation surface lives only under WO record view. Inventory shows what
+cut logs exist on each row, partitioned the same way the editable
+surface used to (pending vs. final/voided), but every cell + control is
+read-only.
+
+- Delete use-inventory-cut-logs-section.ts (mutation controller dead
+  after the routes shipped in 4a)
+- Delete inventory's drafts.ts (CutLogDraft + diff-validation helpers
+  consumed only by the deleted controller)
+- Rewrite inventory-cut-logs-section.tsx as a 4-prop read-only viewer
+  (rows, stockUnitAbbrev, coverageUnitAbbrev, totalCutSum)
+- Strip cut-log mutation requests from inventory data/mutations.ts
+  (saveCutLogPendingDiffRequest, markCutLogsForFinalizeRequest, their
+  response types, and the CutLogsDiff import)
+- Simplify inventory-record-panel.tsx: drop optimistic CutLogRow state,
+  drop the finalize-merge handler, drop the controller wiring; cut
+  logs come straight off controller.record.cutLogs
+- Update use-batch-select-action.ts docstring that named the deleted
+  useInventoryCutLogsSection by name
+
+Typecheck: full chain green. Engine cut-log-contracts.ts has zero
+external consumers but stays per modules/shared rule (CLAUDE.md);
+post-V1 engine teardown territory.
+```
+
 
 ---
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -8,14 +8,12 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type {
-  CutLogRow,
   InventoryDetail,
   InventoryForm,
   InventoryLocationOption,
   InventoryWarehouseOption,
 } from "@builders/domain"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
-import { useInventoryCutLogsSection } from "../../controllers/use-inventory-cut-logs-section"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
 import { InventoryHistoricalCutLogsSection } from "./sections/inventory-historical-cut-logs-section"
@@ -37,18 +35,13 @@ export function InventoryRecordPanel({
     locationOptions,
   })
 
-  // Local snapshot of cut-log rows so the cut-logs section's optimistic
-  // diff-save can splice fresh rows in without round-tripping through
-  // the page loader. Seeded from the controller's record (which mirrors
-  // the page loader output) and updated by the pending section's
-  // diff-save (`publishCutLogs`) and the parent-owned merge callback
-  // for the finalize batch action.
-  const [cutLogs, setCutLogs] = useState<CutLogRow[]>(controller.record.cutLogs)
-
-  // Pending section sees PENDING + QUEUED-from-PENDING (`!isFinal`).
-  // Historical section sees FINAL + VOID + QUEUED-from-FINAL (`isFinal`).
-  // QUEUED rows live in their origin section until the worker resolves
-  // them and a refresh reloads the new status.
+  // Cut-log mutations live exclusively under the WO record view (per
+  // sweep 4a/4b). Inventory record view shows the cut logs read-only,
+  // partitioned the same way the editable surface used to:
+  //   - Pending section: PENDING + QUEUED-from-PENDING (`!isFinal`)
+  //   - Historical section: FINAL + VOID + QUEUED-from-FINAL (`isFinal`)
+  // Cut logs come straight off the SSR-loaded record snapshot.
+  const cutLogs = controller.record.cutLogs
   const pendingCutLogs = useMemo(
     () =>
       cutLogs.filter(
@@ -66,30 +59,6 @@ export function InventoryRecordPanel({
       ),
     [cutLogs],
   )
-
-  // Mark-for-finalize optimistic flip: the pending controller doesn't
-  // know about historical rows. The parent owns the merge by flipping
-  // status on the marked ids in-place against the full list.
-  const handleMarkedForFinalize = useCallback((markedIds: string[]) => {
-    const set = new Set(markedIds)
-    setCutLogs((previous) =>
-      previous.map((row) => (set.has(row.id) ? { ...row, status: "QUEUED" as const } : row)),
-    )
-  }, [])
-
-  const cutLogsSection = useInventoryCutLogsSection({
-    record: controller.record,
-    cutLogs: pendingCutLogs,
-    publishRecord: () => {
-      // Cut-log mutations don't change the parent inventory record's
-      // primary fields — `totalCutSum` updates async via the worker
-      // and is read off the controller's record snapshot on next load.
-      // Nothing to publish here today; placeholder lives so the section
-      // controller's contract stays open for a future sweep.
-    },
-    publishCutLogs: setCutLogs,
-    publishMarkedForFinalize: handleMarkedForFinalize,
-  })
 
   return (
     <RecordMultiSectionPanel
@@ -138,32 +107,12 @@ export function InventoryRecordPanel({
           key: "cut-logs",
           type: "item",
           order: 10,
-          dirtyLabel: "cut logs",
-          controller: cutLogsSection,
           render: () => (
             <InventoryCutLogsSection
-              drafts={cutLogsSection.localValue}
-              serverRows={pendingCutLogs}
+              rows={pendingCutLogs}
               stockUnitAbbrev={controller.record.stockUnitAbbrev ?? ""}
               coverageUnitAbbrev={controller.record.itemCoverageUnitAbbrev ?? ""}
               totalCutSum={controller.record.totalCutSum}
-              isDirty={cutLogsSection.isDirty}
-              isSaving={cutLogsSection.isSaving}
-              hasConflict={cutLogsSection.hasConflict}
-              sectionError={cutLogsSection.error?.message ?? null}
-              noticeMessage={cutLogsSection.noticeMessage}
-              noticeError={cutLogsSection.noticeError}
-              selectedIds={cutLogsSection.selectedIds}
-              eligibleSelectedIds={cutLogsSection.eligibleSelectedIds}
-              isFinalizing={cutLogsSection.isFinalizing}
-              finalizeError={cutLogsSection.finalizeError}
-              onSave={() => void cutLogsSection.save()}
-              onDiscard={cutLogsSection.discard}
-              onAddRow={cutLogsSection.addRow}
-              onRowFieldChange={cutLogsSection.setRowField}
-              onRemoveRow={cutLogsSection.removeRow}
-              onToggleSelection={cutLogsSection.toggleSelection}
-              onFinalizeSelected={() => void cutLogsSection.finalizeSelected()}
             />
           ),
         },
