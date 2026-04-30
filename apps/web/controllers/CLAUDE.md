@@ -8,10 +8,11 @@ Top-level controllers home for shared React state hooks. Sub-folders mirror the 
 |---|---|---|
 | `list-view/` | `components/features/{search,sort,group,paginate}/` | Server-driven list-view controller — owns search/sort/filter/group/paginate state, supports SSR-array + React Query fetch modes. |
 | `dropdown-search/` | `components/dropdowns/search-dropdown.tsx` | Async-backed dropdown controller — debounced query + `keepPreviousData` over a module-supplied `searchFn`. |
+| `record/` | `components/sections/`, `components/panels/`, `scaffolds/` | Record-view section + page controllers — save/discard/dirty lifecycle, draft persistence, conflict handling, record-cache, batch-select actions. `utils/` subfolder holds pure helpers (draft keys, row-id generation, detail cache, confirm-action helpers) consumed by the controllers. |
 
-Future buckets follow the same rule: a folder here only exists if it mirrors a folder under `apps/web/components/`. Examples that may land later: `controllers/sections/`, `controllers/workflows/`, `controllers/primitives/`.
+Future buckets follow the same rule: a folder here only exists if it mirrors a folder under `apps/web/components/` (or `apps/web/scaffolds/`).
 
 ## What stays out
 
 - Per-module hooks stay under `apps/web/modules/<module>/controllers/`.
-- Shared engine hooks (record-view client controllers) stay under `apps/web/modules/shared/engines/record-view/client/controllers/` until each module migrates off the engine.
+- Lifecycle / cross-cutting hooks (notices, dirty-state, close-guard, workflow polling) live under `apps/web/hooks/record/` — those are not feature-state controllers. The split: `controllers/` owns state for a feature; `hooks/` is lifecycle plumbing + cross-cutting utilities.
