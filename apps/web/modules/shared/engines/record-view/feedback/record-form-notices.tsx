@@ -1,3 +1,1 @@
-"use client"
-
-export { FormStatusNotices as RecordFormNotices } from "@/modules/shared/engines/common/feedback/notices"
+export * from "@/components/feedback/notices/record-form-notices"
