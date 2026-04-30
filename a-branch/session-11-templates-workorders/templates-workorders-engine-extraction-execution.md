@@ -17,7 +17,7 @@
 | Sub | Description | Status | Notes |
 |---|---|---|---|
 | 1a | `engines/common/application/` → `apps/web/server/telemetry/` (+ shims) | ✅ | 4 files moved (loader-timing, mutation-telemetry, run-use-case, with-transaction). Engine files converted to one-line re-export shims. 49 consumers untouched. `npm run typecheck` green. |
-| 1b | Verify `@/transport/*` engine shims still in place (no work) | ⬜ | |
+| 1b | Verify `@/transport/*` engine shims still in place (no work) | ⚠️✅ | Plan said "no work" but engine transport files were **duplicates** of canonical, not shims. Converted all three (`http.ts`, `mutation.ts`, `client-errors.ts`) to one-line re-exports pointing at `@/transport/*`. 13 module consumers + 2 engine internal references untouched. typecheck green. Phase 4a deletion now mechanical. |
 | 1c | `engines/common/record-entry/` → `apps/web/hooks/navigation/` | ⬜ | |
 | 1c | `engines/record-view/client/hooks/` → `apps/web/hooks/record/` | ⬜ | |
 | 1c | `engines/common/feedback/{confirm-delete,notices,feedback-states}` → respective canonical dirs | ⬜ | |

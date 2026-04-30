@@ -1,1 +1,1 @@
-export { RequestJsonError, requestJson } from "@builders/lib"
+export { RequestJsonError, requestJson } from "@/transport/http"
