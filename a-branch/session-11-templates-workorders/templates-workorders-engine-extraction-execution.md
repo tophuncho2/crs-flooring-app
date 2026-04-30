@@ -50,10 +50,91 @@
 | 2a | **Verify save now refreshes section** (original bug) | ⬜ | acceptance gate |
 | 2b | Path swaps: scaffolds, panels, sections, feedback, primary-fields | ⬜ | |
 | 2b | Path swaps: hooks/navigation, hooks/record, server/telemetry, dialogs/confirm-delete, transport | ⬜ | |
-| 2c | Add Files section (third section in WO record view) | ⬜ | bucket-stored; uses `RecordItemSection` |
-| 2c | Wire app-shell template-sync icon (create WO from template) | ⬜ | top-right; canonical use-case path |
+| 2c | Files section UI integration (third section on WO record view) | ⬜ | **Scope reduced 2026-04-30:** integrate the existing `apps/web/modules/work-orders/components/record/files/` into the canonical record-view layout (uses canonical `RecordItemSection` after 2b path swaps). Wire it as a sibling section to primary + material-items. **Defer:** new file-generation API routes and use-case extensions — existing `[id]/files/` route + `delete-work-order-file` / `generate-work-order-file` / `request-work-order-file` use cases stay as-is; no scope expansion in 2c. |
+| 2c | ⏸ Wire app-shell template-sync icon (create WO from template) | ⏸ | **Deferred to a follow-up sweep** (per 2026-04-30). Tracked as a separate piece of work after Phase 2 lands. |
 
 **Phase 2 acceptance check:** ⬜ `rg "modules/shared/engines" apps/web/modules/work-orders` returns zero · ⬜ end-to-end smoke (see plan §Verification §Phase 2)
+
+---
+
+## 2d — Out of scope / deferred for this sweep
+
+Things touched-by or adjacent-to Phase 2's WO surface that we are explicitly **not fixing or extending** in this sweep. Each gets its own follow-up.
+
+| Item | Why deferred | Where it lives |
+|---|---|---|
+| App-shell template-sync icon (create WO from template) | UI wiring + cross-module use-case orchestration. Per 2026-04-30 scope decision, not bundled with the engine sweep. | `apps/web/app/(shell)/` (top-right icon area), `packages/application/src/flooring/work-orders/create-work-order.ts` (existing) |
+| File generation API routes & use case extensions | Existing routes (`[id]/files/route.ts`, `[id]/files/[fileId]/route.ts`) and use cases (`generate-work-order-file`, `request-work-order-file`, `delete-work-order-file`) stay as-is. Phase 2c only touches the section UI integration into the canonical layout. New file-gen capabilities deferred. | `apps/web/app/api/work-orders/[id]/files/`, `packages/application/src/flooring/work-orders/files/` |
+| Worker errors (file-gen apply path) | Known broken state. Worker apply paths for file-generation requests currently error. Out of scope for the engine-extraction sweep — worker code lives in `apps/worker/` and is not in this sweep's surface. | `apps/worker/src/` |
+| Relay errors | Same — relay-side errors during the file-gen / cut-log lifecycle. Touching relay would expand scope into a different layer. | `apps/relay/src/` |
+| Engine API routes still living under engine paths | API route handlers (e.g. `apps/web/app/api/work-orders/route.ts`) still import from `@/modules/shared/engines/common/application/mutation-telemetry`, etc. Path swaps for routes happen in 2b, but if errors surface in routes during Phase 2 we patch in place; route-handler architecture (use-case wiring vs direct repo calls) stays as-is unless explicitly required for the MI rebuild. | `apps/web/app/api/work-orders/**` |
+
+**Note:** During 2a/2b/2c execution, if errors surface in API routes, worker, or relay that block the WO record view from working end-to-end, we **fix them in place** to unblock the sweep — but do not expand the sweep into rewriting those layers. The discipline: ship UI + controllers + hooks on canonical patterns; leave server-execution errors as fix-in-place patches; track follow-ups here.
+
+---
+
+## 2e — Inventory cut-log section strip-down (separate follow-up sweep)
+
+Inventory's record view has a fully-featured cut-log section that duplicates the lifecycle WO is taking ownership of. Once Phase 2's WO MI rebuild lands (with the per-MI expandable cut-log row holding the canonical pending/finalize/void controllers), inventory's cut-log section needs to be reduced to a **read-only viewer** of cut logs cut from each inventory roll. The mutation surface moves entirely under WO.
+
+This is **out of scope for Phase 2 itself** but tracked here so the cleanup is unambiguous when it gets sweep'd.
+
+### What gets stripped from inventory
+
+**Controller** ([apps/web/modules/inventory/controllers/use-inventory-cut-logs-section.ts](apps/web/modules/inventory/controllers/use-inventory-cut-logs-section.ts) — currently ~330 lines)
+
+Remove:
+- `useRecordScopedSectionController` block — the whole save/discard/dirty machinery.
+- `buildCutLogsDiff`, `applyDiffOptimistically`, `toAddedDraftPayload`, `toUpdatePatch`, `createDraftRow`, `validateCutLogDrafts` integration.
+- `useBatchSelectAction` for finalize.
+- `addRow`, `removeRow`, `setRowField`.
+- `selectedIds`, `toggleSelection`, `clearSelection`, `eligibleSelectedIds`, `isFinalizing`, `finalizeError`, `clearFinalizeError`, `finalizeSelected`.
+- `markCutLogsForFinalizeRequest` and `saveCutLogPendingDiffRequest` calls.
+- All `publishCutLogs` / `publishMarkedForFinalize` logic.
+
+Keep:
+- A thin reader hook that exposes the current `cutLogs: CutLogRow[]` projection for read-only rendering.
+
+**Drafts file** ([apps/web/modules/inventory/controllers/drafts.ts](apps/web/modules/inventory/controllers/drafts.ts))
+- **Delete entirely.** The `CutLogDraft` type, `createCutLogDraft`, `toCutLogDrafts`, `isLocalCutLogDraft`, `validateCutLogDrafts` all exist solely for the inventory-side mutation flow.
+
+**Application use cases** (`packages/application/src/flooring/inventory/cut-logs/`)
+- `apply-cut-log-pending-diff.ts` — DELETE (worker-side apply for inventory's diff path)
+- `finalize-cut-logs.ts` — DELETE
+- `mark-cut-log-for-void.ts` — DELETE
+- `mark-cut-logs-for-finalize.ts` — DELETE
+- `save-cut-log-pending-diff.ts` — DELETE
+- `update-cut-log-links.ts` — KEEP only if cut-log link maintenance still has an inventory-side trigger; otherwise DELETE
+- `void-cut-log.ts` — DELETE
+- `errors.ts` / `types.ts` / `index.ts` — prune to only the symbols still referenced after the deletions above
+
+**API routes** (`apps/web/app/api/inventory/[id]/cut-logs/`)
+- `finalize/route.ts` — DELETE
+- `void/route.ts` — DELETE
+- `links/route.ts` — DELETE (or keep if `update-cut-log-links` survives)
+- `section/route.ts` — REDUCE to GET-only (read for the inventory section view) or DELETE if the data already comes via `getInventoryDetailById`
+- `_validators.ts` — prune
+
+**Module data layer** ([apps/web/modules/inventory/data/mutations.ts](apps/web/modules/inventory/data/mutations.ts))
+- Remove `markCutLogsForFinalizeRequest`, `saveCutLogPendingDiffRequest`, and any other cut-log mutation HTTP wrappers. Inventory mutations file should be limited to inventory-row CRUD only.
+
+**Components** (`apps/web/modules/inventory/components/record/cut-logs/`)
+- Reduce from an editable section grid to a read-only grid: drop add/remove/finalize chrome; keep the row layout + cell rendering with `editable={false}` everywhere.
+- The columns showing `workOrderId` / `workOrderItemId` become click-throughs to the WO that owns the cut.
+
+### What gets kept (the new minimal contract)
+
+Inventory cut-log section becomes a **window** into the cut-log lifecycle owned by WO. Each row shows:
+- Cut log number + status (PENDING/QUEUED/FINAL/VOID)
+- Cut amount, before, after, coverage
+- Link to the owning work order (read-only navigation)
+- Created/updated timestamps
+
+No add, no edit, no delete, no batch finalize, no void from this section. All of that lives on the WO MI section's expandable cut-log row.
+
+### Why this is a separate sweep
+
+Inventory's strip-down depends on WO MI's rebuild being complete and tested. Doing them together would mix two unrelated migrations and make the WO acceptance gate ambiguous. Order: land Phase 2 (WO sweep), verify WO MI cut-log lifecycle works end-to-end, **then** strip inventory in its own commit/PR.
 
 ---
 
