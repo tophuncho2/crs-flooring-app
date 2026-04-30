@@ -1,29 +1,20 @@
 import { getDatabaseEnvironment } from "@builders/db"
 import {
-  FINALIZE_CUT_LOG_QUEUE,
   FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
   GENERATE_WORK_ORDER_FILE_QUEUE,
   IMPORT_MATERIALIZE_QUEUE,
-  PENDING_SAVE_CUT_LOG_QUEUE,
   SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_QUEUE,
-  VOID_CUT_LOG_QUEUE,
-  type FinalizeCutLogBatchPayload,
   type FinalizeWorkOrderCutLogBatchPayload,
   type GenerateWorkOrderFilePayload,
   type ImportMaterializeBatchPayload,
-  type PendingSaveCutLogBatchPayload,
   type SaveWorkOrderItemPendingCutLogDiffPayload,
-  type VoidCutLogPayload,
 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
 import { QueueEvents, Worker } from "bullmq"
 import { getWorkerEnvironment, getWorkerStorageEnvironment } from "./env.js"
-import { createFinalizeCutLogBatchHandler } from "./processors/finalize-cut-log-batch.js"
 import { createFinalizeWorkOrderCutLogBatchHandler } from "./processors/finalize-work-order-cut-log-batch.js"
 import { createMaterializeImportBatchHandler } from "./processors/materialize-import-batch.js"
-import { createPendingSaveCutLogBatchHandler } from "./processors/pending-save-cut-log-batch.js"
 import { createSaveWorkOrderItemPendingCutLogDiffHandler } from "./processors/save-work-order-item-pending-cut-log-diff.js"
-import { createVoidCutLogHandler } from "./processors/void-cut-log.js"
 import { createWorkOrderFileGenerationHandler } from "./processors/work-order-file-generation.js"
 import { createQueueConnection } from "./queues/connection.js"
 
@@ -102,230 +93,6 @@ async function main() {
         ? {
             importEntryId: job.data.importEntryId,
             stagedRowCount: job.data.stagedRowIds.length,
-          }
-        : undefined,
-      error,
-    })
-  })
-
-  // ---------------------------------------------------------------------------
-  // Cut-log pending-save (sweep 5)
-  // ---------------------------------------------------------------------------
-  const pendingSaveCutLogHandler = createPendingSaveCutLogBatchHandler()
-  const pendingSaveCutLogWorker = new Worker<PendingSaveCutLogBatchPayload>(
-    PENDING_SAVE_CUT_LOG_QUEUE,
-    async (job) => pendingSaveCutLogHandler(job),
-    {
-      connection,
-      concurrency: env.pendingSaveCutLogWorkerConcurrency,
-      lockDuration: env.pendingSaveCutLogWorkerLockDurationMs,
-      autorun: false,
-    },
-  )
-  const pendingSaveCutLogEvents = new QueueEvents(PENDING_SAVE_CUT_LOG_QUEUE, { connection })
-
-  pendingSaveCutLogWorker.on("active", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Pending-save cut log batch job active",
-      action: "worker.cut_logs.pending_save.active",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "PROCESSING",
-      details: {
-        inventoryId: job.data.inventoryId,
-        addedCount: job.data.diff.added.length,
-        modifiedCount: job.data.diff.modified.length,
-        deletedCount: job.data.diff.deleted.length,
-      },
-    })
-  })
-
-  pendingSaveCutLogWorker.on("completed", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Pending-save cut log batch job completed",
-      action: "worker.cut_logs.pending_save.completed",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "COMPLETED",
-      details: {
-        inventoryId: job.data.inventoryId,
-        addedCount: job.data.diff.added.length,
-        modifiedCount: job.data.diff.modified.length,
-        deletedCount: job.data.diff.deleted.length,
-      },
-    })
-  })
-
-  pendingSaveCutLogWorker.on("failed", (job, error) => {
-    logStructuredEvent({
-      level: "error",
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Pending-save cut log batch job failed",
-      action: "worker.cut_logs.pending_save.failed",
-      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
-      queueJobId: typeof job?.id === "string" ? job.id : undefined,
-      attempt: job?.attemptsStarted,
-      status: "FAILED",
-      details: job
-        ? {
-            inventoryId: job.data.inventoryId,
-            addedCount: job.data.diff.added.length,
-            modifiedCount: job.data.diff.modified.length,
-            deletedCount: job.data.diff.deleted.length,
-          }
-        : undefined,
-      error,
-    })
-  })
-
-  // ---------------------------------------------------------------------------
-  // Cut-log finalize (sweep 5)
-  // ---------------------------------------------------------------------------
-  const finalizeCutLogHandler = createFinalizeCutLogBatchHandler()
-  const finalizeCutLogWorker = new Worker<FinalizeCutLogBatchPayload>(
-    FINALIZE_CUT_LOG_QUEUE,
-    async (job) => finalizeCutLogHandler(job),
-    {
-      connection,
-      concurrency: env.finalizeCutLogWorkerConcurrency,
-      lockDuration: env.finalizeCutLogWorkerLockDurationMs,
-      autorun: false,
-    },
-  )
-  const finalizeCutLogEvents = new QueueEvents(FINALIZE_CUT_LOG_QUEUE, { connection })
-
-  finalizeCutLogWorker.on("active", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Finalize cut log batch job active",
-      action: "worker.cut_logs.finalize.active",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "PROCESSING",
-      details: {
-        inventoryId: job.data.inventoryId,
-        cutLogCount: job.data.cutLogIds.length,
-      },
-    })
-  })
-
-  finalizeCutLogWorker.on("completed", (job, result) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Finalize cut log batch job completed",
-      action: "worker.cut_logs.finalize.completed",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "COMPLETED",
-      details: {
-        inventoryId: job.data.inventoryId,
-        cutLogCount: job.data.cutLogIds.length,
-        finalizedCount:
-          result && typeof result === "object" && "finalizedRowIds" in result &&
-          Array.isArray((result as { finalizedRowIds: unknown[] }).finalizedRowIds)
-            ? (result as { finalizedRowIds: unknown[] }).finalizedRowIds.length
-            : undefined,
-      },
-    })
-  })
-
-  finalizeCutLogWorker.on("failed", (job, error) => {
-    logStructuredEvent({
-      level: "error",
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Finalize cut log batch job failed",
-      action: "worker.cut_logs.finalize.failed",
-      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
-      queueJobId: typeof job?.id === "string" ? job.id : undefined,
-      attempt: job?.attemptsStarted,
-      status: "FAILED",
-      details: job
-        ? {
-            inventoryId: job.data.inventoryId,
-            cutLogCount: job.data.cutLogIds.length,
-          }
-        : undefined,
-      error,
-    })
-  })
-
-  // ---------------------------------------------------------------------------
-  // Cut-log void (sweep 5)
-  // ---------------------------------------------------------------------------
-  const voidCutLogHandler = createVoidCutLogHandler()
-  const voidCutLogWorker = new Worker<VoidCutLogPayload>(
-    VOID_CUT_LOG_QUEUE,
-    async (job) => voidCutLogHandler(job),
-    {
-      connection,
-      concurrency: env.voidCutLogWorkerConcurrency,
-      lockDuration: env.voidCutLogWorkerLockDurationMs,
-      autorun: false,
-    },
-  )
-  const voidCutLogEvents = new QueueEvents(VOID_CUT_LOG_QUEUE, { connection })
-
-  voidCutLogWorker.on("active", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Void cut log job active",
-      action: "worker.cut_logs.void.active",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "PROCESSING",
-      details: {
-        inventoryId: job.data.inventoryId,
-        cutLogId: job.data.cutLogId,
-      },
-    })
-  })
-
-  voidCutLogWorker.on("completed", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Void cut log job completed",
-      action: "worker.cut_logs.void.completed",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "COMPLETED",
-      details: {
-        inventoryId: job.data.inventoryId,
-        cutLogId: job.data.cutLogId,
-      },
-    })
-  })
-
-  voidCutLogWorker.on("failed", (job, error) => {
-    logStructuredEvent({
-      level: "error",
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Void cut log job failed",
-      action: "worker.cut_logs.void.failed",
-      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
-      queueJobId: typeof job?.id === "string" ? job.id : undefined,
-      attempt: job?.attemptsStarted,
-      status: "FAILED",
-      details: job
-        ? {
-            inventoryId: job.data.inventoryId,
-            cutLogId: job.data.cutLogId,
           }
         : undefined,
       error,
@@ -583,12 +350,6 @@ async function main() {
   await Promise.all([
     materializeWorker.waitUntilReady(),
     materializeEvents.waitUntilReady(),
-    pendingSaveCutLogWorker.waitUntilReady(),
-    pendingSaveCutLogEvents.waitUntilReady(),
-    finalizeCutLogWorker.waitUntilReady(),
-    finalizeCutLogEvents.waitUntilReady(),
-    voidCutLogWorker.waitUntilReady(),
-    voidCutLogEvents.waitUntilReady(),
     woPendingCutLogWorker.waitUntilReady(),
     woPendingCutLogEvents.waitUntilReady(),
     woFinalizeCutLogWorker.waitUntilReady(),
@@ -608,9 +369,6 @@ async function main() {
   // resolve when each worker is closed (during shutdown); we deliberately
   // don't await them at the call site.
   void materializeWorker.run()
-  void pendingSaveCutLogWorker.run()
-  void finalizeCutLogWorker.run()
-  void voidCutLogWorker.run()
   void woPendingCutLogWorker.run()
   void woFinalizeCutLogWorker.run()
   void woFileGenWorker.run()
@@ -624,27 +382,18 @@ async function main() {
     details: {
       queues: [
         IMPORT_MATERIALIZE_QUEUE,
-        PENDING_SAVE_CUT_LOG_QUEUE,
-        FINALIZE_CUT_LOG_QUEUE,
-        VOID_CUT_LOG_QUEUE,
         SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_QUEUE,
         FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
         GENERATE_WORK_ORDER_FILE_QUEUE,
       ],
       concurrency: {
         materialize: env.materializeWorkerConcurrency,
-        pendingSaveCutLog: env.pendingSaveCutLogWorkerConcurrency,
-        finalizeCutLog: env.finalizeCutLogWorkerConcurrency,
-        voidCutLog: env.voidCutLogWorkerConcurrency,
         workOrderPendingCutLog: env.workOrderPendingCutLogWorkerConcurrency,
         workOrderFinalizeCutLog: env.workOrderFinalizeCutLogWorkerConcurrency,
         workOrderFileGeneration: env.workOrderFileGenerationWorkerConcurrency,
       },
       lockDurationMs: {
         materialize: env.materializeWorkerLockDurationMs,
-        pendingSaveCutLog: env.pendingSaveCutLogWorkerLockDurationMs,
-        finalizeCutLog: env.finalizeCutLogWorkerLockDurationMs,
-        voidCutLog: env.voidCutLogWorkerLockDurationMs,
         workOrderPendingCutLog: env.workOrderPendingCutLogWorkerLockDurationMs,
         workOrderFinalizeCutLog: env.workOrderFinalizeCutLogWorkerLockDurationMs,
         workOrderFileGeneration: env.workOrderFileGenerationWorkerLockDurationMs,
@@ -659,12 +408,6 @@ async function main() {
       await Promise.all([
         materializeEvents.close(),
         materializeWorker.close(),
-        pendingSaveCutLogEvents.close(),
-        pendingSaveCutLogWorker.close(),
-        finalizeCutLogEvents.close(),
-        finalizeCutLogWorker.close(),
-        voidCutLogEvents.close(),
-        voidCutLogWorker.close(),
         woPendingCutLogEvents.close(),
         woPendingCutLogWorker.close(),
         woFinalizeCutLogEvents.close(),
