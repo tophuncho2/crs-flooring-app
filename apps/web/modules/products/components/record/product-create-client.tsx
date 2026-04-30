@@ -66,7 +66,12 @@ function ProductCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_PRODUCT_CREATE_FORM }),
     createRecord: async (localValue) => {
-      const validationError = validateProductPrimaryForm(localValue)
+      const selectedCategory = categoryOptions.find((category) => category.id === localValue.categoryId)
+      const validationError = validateProductPrimaryForm({
+        ...localValue,
+        categorySlug: selectedCategory?.slug ?? null,
+        categoryName: selectedCategory?.name ?? null,
+      })
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",

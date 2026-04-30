@@ -10,7 +10,7 @@ This file is updated after each sweep ships. The plan file is locked once approv
 
 | # | Sweep | Status | Date | Commit(s) |
 |---|---|---|---|---|
-| 1 | Products migration + coverage rule | ⬜ Not started | — | — |
+| 1 | Coverage_per_unit cell hardening (descoped) | 🟡 In progress | 2026-04-30 | — |
 | 2 | Staged inventory cost/freight UI removal | ⬜ Not started | — | — |
 | 3 | Inventory cost/freight removal (UI + reads) | ⬜ Not started | — | — |
 | 4 | Inventory cut-log decomp + WOMI cut-log redesign | ⬜ Not started | — | — |
@@ -35,21 +35,67 @@ Before Sweep 1 kicks off, the 7 open questions in the plan need answers. Resolut
 
 ---
 
-## Sweep 1 — Products migration + coverage rule
+## Sweep 1 — Coverage_per_unit cell hardening (descoped)
 
-_Not started._
+✅ Code changes complete; awaiting user manual smoke + commit approval.
 
-### Files touched
-_(populate at completion)_
+### Step 1 — Audit ✅ shipped 2026-04-30
+Report: [`sessions/sweep-1-step-1-products-audit.md`](sweep-1-step-1-products-audit.md). Stays as reference for the future engine-migration sweep.
 
-### Commit(s)
-_(populate at completion)_
+### Plan revision 2026-04-30 — engine migration descoped
+Per user direction, sweep narrowed to coverage_per_unit cell hardening only. Engine migration, list-view changes, UoM column display, and React Query SSR upgrade all deferred to post-V1.
 
-### Verification results
-_(populate at completion)_
+### Step 2 — UI cell hardening ✅ shipped 2026-04-30
+File: [`apps/web/modules/products/components/record/product-primary-fields-section.tsx`](../apps/web/modules/products/components/record/product-primary-fields-section.tsx)
+
+Changes:
+- Coverage Per Unit input: `disabled={disabled || !coverageRequired}` + `required={coverageRequired}` + `aria-required={coverageRequired}` + greyed-out via `opacity-60` when not required + `disabled:cursor-not-allowed` + placeholder swap (`"0.0000"` ↔ `"Not applicable for this category"`)
+- Category select onChange: when user picks a category that does NOT require coverage, ALSO call `onFieldChange("coveragePerUnit", "")` so the value is cleared in the same render rather than left dangling
+
+### Step 3 — Client validator wired with slug + name ✅ shipped 2026-04-30
+Files:
+- [`apps/web/modules/products/controllers/use-product-primary-section.ts`](../apps/web/modules/products/controllers/use-product-primary-section.ts) — record-view (update) flow: pulls `categorySlug` + `categoryName` from `record.category` and spreads into `validateProductPrimaryForm`. Comment explains why (category is immutable post-create, so the loaded record is the authoritative source).
+- [`apps/web/modules/products/components/record/product-create-client.tsx`](../apps/web/modules/products/components/record/product-create-client.tsx) — create flow: resolves `selectedCategory` from `categoryOptions` against `localValue.categoryId`, passes slug + name to validator. (Same gap existed there — `localValue` alone doesn't carry slug/name.)
+
+Effect: the validator's `categoryRequiresCoveragePerUnit && !coveragePerUnit` and `!categoryRequiresCoveragePerUnit && coveragePerUnit` branches now actually fire client-side, raising the inline error before any HTTP roundtrip.
+
+### Step 4 — Verify ✅ typecheck passed; manual smoke pending user
+- `npm run typecheck --workspace @builders/web` — passed clean (only output: `✓ Types generated successfully`)
+- Manual smoke (deferred to user): exercise (a) record-view edit on vinyl-plank product, (b) record-view edit on a non-requiring product (cell disabled), (c) create flow with vinyl-plank + blank coverage (inline reject before HTTP), (d) create flow + switch category from vinyl-plank to tile (value clears + cell disables).
+
+### Files touched (3)
+1. `apps/web/modules/products/components/record/product-primary-fields-section.tsx`
+2. `apps/web/modules/products/controllers/use-product-primary-section.ts`
+3. `apps/web/modules/products/components/record/product-create-client.tsx`
+
+### Server-side enforcement (untouched, already comprehensive)
+- `packages/application/src/flooring/products/create-product.ts:37-44` — null + required category → reject
+- `packages/application/src/flooring/products/update-product.ts:55-62` — empty + required category → reject
+- `packages/application/src/flooring/products/update-product.ts:64-71` — non-empty + non-allowing category → reject
+- `packages/application/src/flooring/products/update-product.ts:73-94` — change while inventories link → reject
+
+### Commit message (proposed; awaiting user instruction to commit)
+```
+products: harden coverage_per_unit cell with category-aware UI gates + client validator
+
+- Disable Coverage Per Unit input when the selected category isn't one of the
+  four that require it (vinyl-plank, carpet-tile, covebase, pad). Greyed-out
+  styling, "Not applicable for this category" placeholder, aria-required +
+  required attributes track the rule.
+- When the user changes category to a non-requiring one, auto-clear
+  coveragePerUnit in the same render so the draft can never carry a value
+  the server will reject.
+- Pass categorySlug + categoryName to validateProductPrimaryForm in both the
+  record-view (update) and create flows so the required / not-allowed branches
+  actually fire client-side instead of relying on the server roundtrip.
+
+Server-side enforcement unchanged — already comprehensive in
+createProductUseCase + updateProductUseCase.
+```
 
 ### Follow-ups surfaced
-_(populate at completion)_
+- **Legacy data edge case:** if any product row has `coveragePerUnit` populated on a non-requiring category (shouldn't exist if rules were always enforced, but possible from older data), the user can't save edits on that row — the cell is disabled + the server's NOT_ALLOWED branch fires on save. Per resolved Open Q §1, no data fix in this sweep. Track as a separate post-V1 item if it ever surfaces.
+- Engine migration of products module remains queued for post-V1 (audit report already documents the plan).
 
 ---
 

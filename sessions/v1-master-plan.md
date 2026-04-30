@@ -41,42 +41,49 @@ No schema changes anywhere in this sweep. Each sweep ships as its own commit (cl
 
 ---
 
-## Sweep 1 — Products module: engine extraction + coverage_per_unit rule
+## Sweep 1 — Coverage_per_unit cell hardening (DESCOPED 2026-04-30)
+
+> **Plan revision (2026-04-30):** Engine migration descoped per user direction — "let's forget about migrating the products off of the engine for now and just make sure that the coverage per unit cell is secure." Engine extraction, list-view migration, UoM column display, and React Query SSR upgrade all deferred to a post-V1 sweep. The Step 1 audit (`sessions/sweep-1-step-1-products-audit.md`) is preserved as reference for the future engine-migration sweep.
 
 ### Goal
-Migrate `apps/web/modules/products/` UI fully off `modules/shared/engines/` (mirror the imports pattern from session-3). Enforce: `coveragePerUnit` is **required** when the product's category is one of `vinyl-plank`, `carpet-tile`, `covebase`, `pad`. For all other categories, the cell is **disabled / not editable** (and will be persisted as null on save). Surface unit-of-measure columns in the list/grid.
+Make the `coveragePerUnit` cell on the product primary section **secure end-to-end**: cell required when category is one of `vinyl-plank`, `carpet-tile`, `covebase`, `pad`; cell disabled (not editable) and any existing value auto-cleared when user switches to a non-requiring category; client-side pre-submit validator gets the data it needs to fire the rule branches before the server roundtrip. Server-side enforcement is already comprehensive (`createProductUseCase` + `updateProductUseCase` both check the rule); no work needed there.
 
-### Existing assets to reuse
-- **Domain rule already exists:** `packages/domain/src/flooring/categories/rules.ts` — `categoryRequiresCoveragePerUnit(slug)` returns true for the four categories. No domain work needed.
-- **Module skeleton already in place:** `apps/web/modules/products/` has parallel `components/`, `controllers/`, `data/` dirs (per Explore findings). Status: scaffold present; pages still import the shared engine. Migration completes the wiring.
-- **Imports migration as reference:** `sessions/sessions-1-through-11/session-3/imports-migration-revised-plan.md` documents the engine-extraction pattern (RecordDetailClientScaffold, RecordCreateClientScaffold stay; everything else moves).
-- **UoM columns already in select:** `coverageUnit`, `stockUnitName`, `sendUnitName` are returned by the products read repository. Just need grid display.
+### Pre-existing assets to lean on (no work needed)
+- **Domain rule:** `packages/domain/src/flooring/categories/rules.ts:30` — `categoryRequiresCoveragePerUnit(slug)`
+- **Domain validator:** `packages/domain/src/flooring/products/product-rules.ts:145` — `validateProductPrimaryForm(input)` returns error string or empty
+- **Server-side enforcement:**
+  - `packages/application/src/flooring/products/create-product.ts:37-44` — rejects null coverage when required
+  - `packages/application/src/flooring/products/update-product.ts:55-62` — rejects empty coverage when required
+  - `packages/application/src/flooring/products/update-product.ts:64-71` — rejects non-empty coverage when not allowed
+  - `packages/application/src/flooring/products/update-product.ts:73-94` — blocks coverage change when inventories link to product
+- **UI label cue:** `apps/web/modules/products/components/record/product-primary-fields-section.tsx:164` already shows `"Coverage Per Unit *"` when required
 
-### Critical files
-- `apps/web/app/dashboard/products/page.tsx` — page entry, currently imports engine
-- `apps/web/modules/products/components/list/products-table.tsx:65` — `coveragePerUnit` cell rendering (already shows `${value} / ${coverageUnit}`)
-- `apps/web/modules/products/components/record/` — record view sections (currently engine-driven)
-- `apps/web/modules/products/controllers/` — UI orchestration to move off engine
-- `packages/domain/src/flooring/categories/rules.ts:30` — `categoryRequiresCoveragePerUnit` (reuse, do not duplicate)
-- `packages/application/src/flooring/products/` — use cases for create/update; add zod validator that calls `categoryRequiresCoveragePerUnit` and rejects null `coveragePerUnit` for the four categories
-- `apps/web/modules/products/transport/` — request shape (create if missing, mirroring imports)
+### Critical files (only 2 to edit)
+- `apps/web/modules/products/components/record/product-primary-fields-section.tsx` — disable input when `!coverageRequired`; auto-clear coveragePerUnit when category select changes to a non-requiring category; add `required` attribute when required; visual greyed-out treatment
+- `apps/web/modules/products/controllers/use-product-primary-section.ts` — pass `categorySlug` + `categoryName` to `validateProductPrimaryForm` so the required/not-allowed branches actually fire client-side (currently they're skipped because slug is undefined)
 
-### Steps
-1. Audit current products module structure vs target (imports module shape). Identify exactly which files still import from `modules/shared/engines/`.
-2. Move record view sections off engine — create `components/record/sections/products-primary-fields-section.tsx` etc., mirroring imports module file naming.
-3. Wire the coverage-per-unit cell with category-aware behavior:
-   - When category is one of the four → cell required, validation error if blank
-   - When category is anything else → cell disabled/grey + tooltip ("Not applicable for this category"), persist as null
-4. Add UoM columns to the products list table (stock UoM abbreviation + send UoM abbreviation as separate columns; coverage UoM already shown alongside coverage_per_unit).
-5. Add zod validation in the create/update use cases — server-side enforcement of the coverage rule.
-6. Verify pages do not import `modules/shared/engines/` — `grep -r "modules/shared/engines" apps/web/app/dashboard/products`.
-7. **Do not delete anything from `modules/shared/`** — confirm zero consumers per file before any deletion is even considered. Per CLAUDE.md, leave shims that have any consumer.
+### Steps (descoped — was 7, now 4)
+1. ~~Audit~~ ✅ Done (Step 1, 2026-04-30 — see `sessions/sweep-1-step-1-products-audit.md`)
+2. Edit `product-primary-fields-section.tsx`: add `disabled={disabled || !coverageRequired}` to the coverage input; on category select change, if new category doesn't require coverage, also call `onFieldChange("coveragePerUnit", "")`; add `required={coverageRequired}` attribute; greyed-out CSS treatment for the disabled state.
+3. Edit `use-product-primary-section.ts`: resolve `categorySlug` + `categoryName` from `product.category` (record-view mode — category is immutable) and pass them into `validateProductPrimaryForm({ ...localValue, categorySlug, categoryName })`.
+4. Verify: typecheck passes; manual smoke confirms (a) `vinyl-plank` blocks empty coverage at the client before any network request, (b) switching from `vinyl-plank` to `tile` clears the value AND disables the cell, (c) save succeeds when category requires coverage and value is provided, (d) save fails with a clear inline error otherwise.
+
+### Out of scope (deferred to post-V1 engine-migration sweep)
+- Migrating products UI off `modules/shared/engines/`
+- List-view layer migration (DashboardListPageScaffold → SectionHeader/Grid)
+- UoM column display in list view
+- React Query SSR upgrade for `dashboard/products/page.tsx`
+- Record-view section file relocation (`product-primary-fields-section.tsx` → `record/sections/`)
+- Transport migration (`engines/common/transport/*` → `@/transport`)
 
 ### Verification
-- Typecheck: `npm run typecheck` (or repo equivalent)
-- Manual smoke: create a product with category `vinyl-plank`, leave `coveragePerUnit` blank → should reject. Same with `carpet-tile`, `covebase`, `pad`. Create with `tile` (or any other category) → coverage cell disabled, save succeeds with null.
-- List view: confirm UoM columns render with abbreviations
-- Open question: should existing rows of non-required categories that already have a `coveragePerUnit` value be null'd on first save, or left untouched? See Open Questions §1.
+- Typecheck: `npm run typecheck`
+- Manual smoke (record-view, edit existing vinyl-plank product):
+  1. Open `/dashboard/products/[id]` for a vinyl-plank product → coverage cell shows `*`, accepts numeric input, saves successfully
+  2. Open `/dashboard/products/[id]` for a tile (or any non-requiring) product → coverage cell is disabled/greyed, value displays as empty, save succeeds
+  3. (Create flow) `/dashboard/products/new` → pick vinyl-plank, leave coverage blank, click save → inline error before any HTTP call
+  4. (Create flow) Pick vinyl-plank, type 1.234, switch to tile → coverage value clears AND cell disables; save succeeds
+- Open question: existing rows of non-required categories that already have `coveragePerUnit` values stay untouched (per resolved Open Q §1) — confirm by loading such a row pre-edit; the cell is disabled but the underlying DB value is preserved unless the user explicitly saves.
 
 ---
 

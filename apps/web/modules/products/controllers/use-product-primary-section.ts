@@ -42,7 +42,15 @@ export function useProductPrimarySection({
     createLocalValue: toProductRecordViewForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record, revisionKey }) => {
-      const validationError = validateProductPrimaryForm(localValue)
+      // Category is immutable post-create — pass the loaded record's category
+      // slug + name so `validateProductPrimaryForm` can fire its required /
+      // not-allowed branches before the network roundtrip. Without these,
+      // the validator only checks categoryId-non-empty + numeric format.
+      const validationError = validateProductPrimaryForm({
+        ...localValue,
+        categorySlug: record.category.slug,
+        categoryName: record.category.name,
+      })
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",
