@@ -35,8 +35,23 @@ function toExistingDiffRow(row: StagedInventoryRecord): DiffExistingStagedInvent
   }
 }
 
-function collectReferencedLocationIds(diff: StagedInventoryRowsDiff): string[] {
+function collectReferencedLocationIds(
+  diff: StagedInventoryRowsDiff,
+  existingRows: StagedInventoryRecord[],
+): string[] {
   const ids = new Set<string>()
+  const deletedIds = new Set(diff.deleted.map((d) => d.id))
+  // The domain validator projects every post-diff row (existing untouched
+  // + modified + added) and checks each one's locationId against the
+  // resolved-locations index. Existing rows that survive the diff
+  // contribute their locationId, so the use case must fetch those
+  // locations even when the user didn't touch the row in this save.
+  // Without this, untouched existing rows with valid locations surface
+  // as STAGED_UNKNOWN_LOCATION false positives.
+  for (const row of existingRows) {
+    if (deletedIds.has(row.id)) continue
+    if (row.locationId) ids.add(row.locationId)
+  }
   for (const draft of diff.added) {
     if (draft.locationId) ids.add(draft.locationId)
   }
@@ -117,7 +132,7 @@ export async function saveStagedInventoryRowsUseCase(
 
     const existing = existingRows.map(toExistingDiffRow)
 
-    const referencedLocationIds = collectReferencedLocationIds(diff)
+    const referencedLocationIds = collectReferencedLocationIds(diff, existingRows)
     const locations: DiffStagedLocationLookup[] = []
     for (const id of referencedLocationIds) {
       const location = await getLocationById(id, c)
