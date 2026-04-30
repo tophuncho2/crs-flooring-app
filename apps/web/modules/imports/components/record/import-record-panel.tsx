@@ -139,6 +139,9 @@ export function ImportRecordPanel({
               eligibleSelectedIds={stagedRowsSection.eligibleSelectedIds}
               isMarking={stagedRowsSection.isMarking}
               markError={stagedRowsSection.markError}
+              isSelectionActive={stagedRowsSection.isSelectionActive}
+              canToggleSelection={stagedRowsSection.canToggleSelection}
+              eligibleCount={stagedRowsSection.eligibleCount}
               onSave={() => void stagedRowsSection.save()}
               onDiscard={() => stagedRowsSection.discard()}
               onAddRow={stagedRowsSection.addRow}
@@ -146,6 +149,7 @@ export function ImportRecordPanel({
               onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
               onRemoveRow={stagedRowsSection.removeRow}
               onToggleSelection={stagedRowsSection.toggleSelection}
+              onToggleAllEligible={stagedRowsSection.toggleAllEligible}
               onMarkForImport={() => void stagedRowsSection.markForImport()}
             />
           ),

@@ -12,6 +12,7 @@ import {
   UnitCell,
 } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { SelectAllButton } from "@/components/features/select-batch"
 import type { FlooringStagedRowStatus, StagedInventoryRow } from "@builders/domain"
 import type {
   CategoryOption,
@@ -66,6 +67,9 @@ export function ImportStagedInventoryRowsSection({
   eligibleSelectedIds,
   isMarking,
   markError,
+  isSelectionActive,
+  canToggleSelection,
+  eligibleCount,
   onSave,
   onDiscard,
   onAddRow,
@@ -73,6 +77,7 @@ export function ImportStagedInventoryRowsSection({
   onRowCategoryFilterChange,
   onRemoveRow,
   onToggleSelection,
+  onToggleAllEligible,
   onMarkForImport,
 }: {
   drafts: ImportStagedRowDraft[]
@@ -92,6 +97,9 @@ export function ImportStagedInventoryRowsSection({
   eligibleSelectedIds: string[]
   isMarking: boolean
   markError: ReactNode
+  isSelectionActive: boolean
+  canToggleSelection: boolean
+  eligibleCount: number
   onSave: () => void
   onDiscard: () => void
   onAddRow: () => void
@@ -103,6 +111,7 @@ export function ImportStagedInventoryRowsSection({
   onRowCategoryFilterChange: (index: number, categoryId: string | null) => void
   onRemoveRow: (index: number) => void
   onToggleSelection: (id: string) => void
+  onToggleAllEligible: () => void
   onMarkForImport: () => void
 }) {
   const serverRowsById = new Map(serverRows.map((row) => [row.id, row]))
@@ -145,34 +154,43 @@ export function ImportStagedInventoryRowsSection({
             ? { tone: "processing", label: "Ready to queue", detail: "Worker will materialize on Run" }
             : undefined
         }
+        extraActions={
+          <SelectAllButton
+            isSelectionActive={isSelectionActive}
+            selectedCount={selectedIds.size}
+            eligibleCount={eligibleCount}
+            canSelect={canToggleSelection}
+            onToggle={onToggleAllEligible}
+          />
+        }
         actions={[
           {
             key: "add",
             label: "Add Row",
             onClick: onAddRow,
             kind: "secondary",
-            disabled: isSaving || isMarking,
+            disabled: isSaving || isMarking || isSelectionActive,
           },
           {
             key: "discard",
             label: "Discard",
             onClick: onDiscard,
             kind: "secondary",
-            disabled: !isDirty || isSaving || isMarking,
+            disabled: !isDirty || isSaving || isMarking || isSelectionActive,
           },
           {
             key: "save",
             label: isSaving ? "Saving Rows..." : "Save Rows",
             onClick: onSave,
             kind: "primary",
-            disabled: !isDirty || isSaving || hasConflict || isMarking,
+            disabled: !isDirty || isSaving || hasConflict || isMarking || isSelectionActive,
           },
           {
             key: "run",
             label: isMarking ? "Running..." : "Run Import",
             onClick: onMarkForImport,
             kind: "primary",
-            disabled: eligibleSelectedIds.length === 0 || isMarking || isSaving,
+            disabled: eligibleSelectedIds.length === 0 || isMarking || isSaving || isDirty,
           },
         ]}
         message={noticeMessage}
@@ -185,7 +203,12 @@ export function ImportStagedInventoryRowsSection({
         empty={<GridEmpty>No staged inventory rows have been added yet.</GridEmpty>}
         renderCell={(column, row) => {
           const locked = isRowLocked(row)
-          const editable = !locked
+          // Per-row data cells lock when the section is in selection mode —
+          // any checked box freezes edits across the whole grid until the
+          // user clears the selection or fires the batch. Closes the gap
+          // where the in-flight batch could dispatch against stale snapshots
+          // edited mid-prep.
+          const editable = !locked && !isSelectionActive
           const index = findIndex(row.clientId)
           const selectedProduct = productOptions.find((product) => product.id === row.productId)
           const visibleProducts = row.categoryFilterId
@@ -279,9 +302,12 @@ export function ImportStagedInventoryRowsSection({
           const index = findIndex(row.clientId)
 
           if (control.kind === "selection") {
+            // Gate per-row checkbox on `canToggleSelection` so users can't
+            // mark rows for import while the section is dirty (would
+            // silently abandon unsaved edits when the batch fires).
             return (
               <CheckboxCell
-                editable={isServerRow && !locked}
+                editable={canToggleSelection && isServerRow && !locked}
                 value={selectedIds.has(row.clientId)}
                 onChange={() => onToggleSelection(row.clientId)}
                 ariaLabel={`Select row ${index + 1}`}

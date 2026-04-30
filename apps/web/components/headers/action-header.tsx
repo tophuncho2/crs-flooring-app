@@ -25,6 +25,13 @@ export type ActionHeaderProps = {
   status?: HeaderStatus
   actions?: ReadonlyArray<HeaderAction>
   /**
+   * Optional JSX rendered alongside the descriptor-driven `actions`, in the
+   * same flex row. Use for action affordances whose state shape doesn't fit
+   * the simple `HeaderAction` descriptor (e.g. a toggle whose label flips
+   * with selection state). Renders BEFORE the descriptor actions.
+   */
+  extraActions?: ReactNode
+  /**
    * Optional positive notice surface (info / success). Pass a string for the
    * default styled message block, or a fully-rendered ReactNode for custom
    * presentation. Renders above `error` so both can coexist.
@@ -44,7 +51,7 @@ export type ActionHeaderProps = {
  * decoupled from the engine's section tokens and without a baked-in surface
  * wrapper (consumer composes the surrounding panel).
  */
-export function ActionHeader({ title, summary, status, actions, message, error, className }: ActionHeaderProps) {
+export function ActionHeader({ title, summary, status, actions, extraActions, message, error, className }: ActionHeaderProps) {
   return (
     <div
       className={joinClassNames(
@@ -86,9 +93,10 @@ export function ActionHeader({ title, summary, status, actions, message, error, 
           )
         ) : null}
       </div>
-      {actions && actions.length > 0 ? (
+      {extraActions || (actions && actions.length > 0) ? (
         <div className="flex shrink-0 items-center gap-2">
-          {actions.map((action) => (
+          {extraActions}
+          {actions?.map((action) => (
             <button
               key={action.key}
               type="button"

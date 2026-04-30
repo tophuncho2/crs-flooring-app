@@ -5,9 +5,9 @@ import {
   createLocalRecordRowId,
   createRecordSectionError,
   isLocalOnlyRecordRow,
-  useBatchSelectAction,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
+import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
 import type {
   ImportDetail,
   StagedInventoryRow,
@@ -255,12 +255,15 @@ export function useImportStagedInventoryRowsSection({
   }
 
   // Mark-for-import batch action. Eligibility = persisted server row that's
-  // still DRAFT with a product + starting stock. The hook handles selection
-  // state, eligibility filtering, the firing lifecycle, and clears selection
-  // on success. Optimistic flip on success preserves unsaved edits in other
-  // rows (row count + parent.updatedAt unchanged → engine revisionKey stays
-  // stable).
-  const markForImport = useBatchSelectAction({
+  // still DRAFT with a product + starting stock. `useGatedBatchSelect` wraps
+  // the underlying `useBatchSelectAction` primitive with section-aware
+  // gating: `canToggleSelection` is false while the section is dirty
+  // (preventing users from marking rows for import while abandoning unsaved
+  // edits) and `isSelectionActive` flags the section for read-only edit-lock
+  // while a batch is being prepared. Optimistic flip on success preserves
+  // unsaved edits in other rows (row count + parent.updatedAt unchanged →
+  // engine revisionKey stays stable).
+  const markForImport = useGatedBatchSelect({
     rows: stagedRows,
     isEligible: (row) => {
       if (row.status !== "DRAFT") return false
@@ -278,6 +281,8 @@ export function useImportStagedInventoryRowsSection({
       },
       [markStagedRowsForImport, record.id, publishMarkedForImport],
     ),
+    isSectionDirty: section.isDirty,
+    isSectionBusy: section.isSaving,
   })
 
   return {
@@ -294,5 +299,9 @@ export function useImportStagedInventoryRowsSection({
     isMarking: markForImport.isFiring,
     markError: markForImport.error,
     markForImport: markForImport.fire,
+    isSelectionActive: markForImport.isSelectionActive,
+    canToggleSelection: markForImport.canToggleSelection,
+    eligibleCount: markForImport.eligibleCount,
+    toggleAllEligible: markForImport.toggleAllEligible,
   }
 }
