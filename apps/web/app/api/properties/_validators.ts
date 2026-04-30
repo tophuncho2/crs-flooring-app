@@ -54,6 +54,7 @@ export function validateCreatePropertyInput(
     postalCode: optionalString(pickPostalCode(body)),
     phone: optionalString(body.phone),
     email: optionalString(body.email),
+    instructions: optionalString(body.instructions),
   }
 }
 
@@ -70,6 +71,7 @@ export function validateUpdatePropertyInput(
   if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
   if ("phone" in body) input.phone = optionalString(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
+  if ("instructions" in body) input.instructions = optionalString(body.instructions)
 
   return input
 }
