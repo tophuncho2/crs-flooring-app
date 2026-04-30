@@ -1,6 +1,7 @@
 export * from "./contracts"
 export * from "./text-cell"
 export * from "./textarea-cell"
+export * from "./date-cell"
 export * from "./number-cell"
 export * from "./currency-cell"
 export * from "./unit-cell"

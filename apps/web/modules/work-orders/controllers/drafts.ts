@@ -8,7 +8,15 @@ import {
 
 export type WorkOrderRecordEntry = WorkOrderDetail
 
-export type PropertyOption = { id: string; label: string }
+export type PropertyOption = {
+  id: string
+  label: string
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
+  instructions: string
+}
 export type WarehouseOption = { id: string; name: string }
 export type JobTypeOption = { id: string; name: string }
 export type ManagementCompanyOption = { id: string; name: string }

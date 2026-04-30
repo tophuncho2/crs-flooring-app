@@ -3,7 +3,10 @@
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { TemplateRecordPanel } from "./template-record-panel"
 import type { TemplateDetail } from "@builders/domain"
-import type { TemplateDropdownOption } from "./template-primary-fields-section"
+import type {
+  TemplateDropdownOption,
+  TemplatePropertyOption,
+} from "./template-primary-fields-section"
 import type {
   MaterialItemProductOption,
   TemplateMaterialItemCategoryOption,
@@ -21,7 +24,7 @@ export function TemplateDetailClient({
 }: {
   template: TemplateDetail
   managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplateDropdownOption[]
+  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   productOptions: MaterialItemProductOption[]

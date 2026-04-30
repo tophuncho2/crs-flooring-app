@@ -43,6 +43,16 @@ const templateListSelect = {
 
 const templateDetailSelect = {
   ...templateListSelect,
+  property: {
+    select: {
+      name: true,
+      streetAddress: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      instructions: true,
+    },
+  },
   instructions: true,
   templateNotes: true,
   items: {

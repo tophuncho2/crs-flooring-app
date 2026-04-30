@@ -46,6 +46,11 @@ export type PropertyOption = {
   id: string
   name: string
   address: string
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
+  instructions: string
 }
 
 export type PropertyPrimaryForm = {

@@ -23,7 +23,15 @@ import { withLoaderTiming } from "@/modules/shared/engines/common/application/lo
 export type { WorkOrderFileRow }
 
 export type WorkOrderFormOptionSet = {
-  propertyOptions: Array<{ id: string; label: string }>
+  propertyOptions: Array<{
+    id: string
+    label: string
+    streetAddress: string
+    city: string
+    state: string
+    postalCode: string
+    instructions: string
+  }>
   warehouseOptions: Array<{ id: string; name: string }>
   jobTypeOptions: Array<{ id: string; name: string }>
   managementCompanyOptions: Array<{ id: string; name: string }>
@@ -58,7 +66,15 @@ export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet>
       listCategories(),
     ])
     return {
-      propertyOptions: properties.map((p) => ({ id: p.id, label: p.name })),
+      propertyOptions: properties.map((p) => ({
+        id: p.id,
+        label: p.name,
+        streetAddress: p.streetAddress,
+        city: p.city,
+        state: p.state,
+        postalCode: p.postalCode,
+        instructions: p.instructions,
+      })),
       warehouseOptions: warehouses.map((w) => ({ id: w.id, name: w.name })),
       jobTypeOptions: jobTypes.map((j) => ({ id: j.id, name: j.name })),
       managementCompanyOptions: managementCompanies.map((m) => ({ id: m.id, name: m.name })),

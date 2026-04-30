@@ -79,6 +79,7 @@ const propertyOptionSelect = {
   city: true,
   state: true,
   postalCode: true,
+  instructions: true,
 } as const
 
 function buildPropertiesWhere(

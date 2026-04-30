@@ -12,6 +12,7 @@ import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import {
   TemplatePrimaryFieldsSection,
   type TemplateDropdownOption,
+  type TemplatePropertyOption,
 } from "./template-primary-fields-section"
 import {
   TemplateMaterialItemsSection,
@@ -32,7 +33,7 @@ export function TemplateRecordPanel({
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
   managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplateDropdownOption[]
+  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   productOptions: MaterialItemProductOption[]

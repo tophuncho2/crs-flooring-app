@@ -1,14 +1,16 @@
 "use client"
 
 import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
+import { FieldSection, FormField } from "@/components/fields"
 import {
   CheckboxCell,
+  DateCell,
   SelectCell,
   StatusCell,
   TextCell,
   TextareaCell,
 } from "@/components/cells"
+import { PropertyJoinedReadOnlyCells } from "@/modules/shared/property-fields"
 import type { WorkOrderForm } from "@builders/domain"
 import type {
   JobTypeOption,
@@ -19,7 +21,6 @@ import type {
 } from "@/modules/work-orders/controllers/drafts"
 
 const VACANCY_OPTIONS = [
-  { value: "", label: "—" },
   { value: "VACANT", label: "Vacant" },
   { value: "OCCUPIED", label: "Occupied" },
 ]
@@ -28,8 +29,6 @@ export function WorkOrderPrimaryFieldsSection({
   draft,
   workOrderNumber,
   status,
-  propertyAddress,
-  propertyInstructions,
   propertyOptions,
   warehouseOptions,
   jobTypeOptions,
@@ -41,13 +40,6 @@ export function WorkOrderPrimaryFieldsSection({
   draft: WorkOrderForm
   workOrderNumber: string
   status: string
-  propertyAddress: {
-    streetAddress: string
-    city: string
-    state: string
-    postalCode: string
-  }
-  propertyInstructions: string
   propertyOptions: PropertyOption[]
   warehouseOptions: WarehouseOption[]
   jobTypeOptions: JobTypeOption[]
@@ -70,13 +62,7 @@ export function WorkOrderPrimaryFieldsSection({
     label: `${o.templateNumber} (${o.unitType})`,
   }))
 
-  const formattedAddressLines = [
-    propertyAddress.streetAddress,
-    [propertyAddress.city, propertyAddress.state, propertyAddress.postalCode]
-      .filter(Boolean)
-      .join(", "),
-  ].filter(Boolean)
-  const formattedAddress = formattedAddressLines.join("\n") || "—"
+  const selectedProperty = propertyOptions.find((o) => o.id === draft.propertyId) ?? null
 
   return (
     <FieldSection>
@@ -91,6 +77,7 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.propertyId}
             options={propertySelectOptions}
+            placeholder="Select property"
             onChange={(value) => onFieldChange("propertyId", value)}
           />
         </FormField>
@@ -100,7 +87,8 @@ export function WorkOrderPrimaryFieldsSection({
           <SelectCell
             editable={editable}
             value={draft.templateId}
-            options={[{ value: "", label: "—" }, ...templateSelectOptions]}
+            options={templateSelectOptions}
+            placeholder="—"
             onChange={(value) => onFieldChange("templateId", value)}
           />
         </FormField>
@@ -111,7 +99,8 @@ export function WorkOrderPrimaryFieldsSection({
           <SelectCell
             editable={editable}
             value={draft.managementCompanyId}
-            options={[{ value: "", label: "—" }, ...managementCompanySelectOptions]}
+            options={managementCompanySelectOptions}
+            placeholder="—"
             onChange={(value) => onFieldChange("managementCompanyId", value)}
           />
         </FormField>
@@ -121,7 +110,8 @@ export function WorkOrderPrimaryFieldsSection({
           <SelectCell
             editable={editable}
             value={draft.jobTypeId}
-            options={[{ value: "", label: "—" }, ...jobTypeSelectOptions]}
+            options={jobTypeSelectOptions}
+            placeholder="—"
             onChange={(value) => onFieldChange("jobTypeId", value)}
           />
         </FormField>
@@ -132,6 +122,7 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.warehouseId}
             options={warehouseSelectOptions}
+            placeholder="Select warehouse"
             onChange={(value) => onFieldChange("warehouseId", value)}
           />
         </FormField>
@@ -157,17 +148,17 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.vacancy}
             options={VACANCY_OPTIONS}
+            placeholder="—"
             onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
           />
         </FormField>
       </CellAt>
       <CellAt col={7} row={3} colSpan={2}>
         <FormField label="Scheduled For">
-          <TextCell
+          <DateCell
             editable={editable}
             value={draft.scheduledFor}
             onChange={(value) => onFieldChange("scheduledFor", value)}
-            placeholder="YYYY-MM-DD"
           />
         </FormField>
       </CellAt>
@@ -202,21 +193,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={6} colSpan={8}>
-        <FormField label="Property Address (read-only)">
-          <StaticFieldValue>
-            <span className="whitespace-pre-line">{formattedAddress}</span>
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-
-      <CellAt col={1} row={7} colSpan={8}>
-        <FormField label="Property Instructions (read-only)">
-          <StaticFieldValue>
-            <span className="whitespace-pre-line">{propertyInstructions || "—"}</span>
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
+      <PropertyJoinedReadOnlyCells property={selectedProperty} startRow={6} />
 
       <CellAt col={1} row={8} colSpan={8}>
         <FormField label="Description">

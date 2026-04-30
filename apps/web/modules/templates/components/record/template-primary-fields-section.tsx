@@ -3,9 +3,11 @@
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
-import type { TemplateForm } from "@builders/domain"
+import { PropertyJoinedReadOnlyCells } from "@/modules/shared/property-fields"
+import type { PropertyOption, TemplateForm } from "@builders/domain"
 
 export type TemplateDropdownOption = { id: string; name: string }
+export type TemplatePropertyOption = PropertyOption
 
 export function TemplatePrimaryFieldsSection({
   draft,
@@ -20,7 +22,7 @@ export function TemplatePrimaryFieldsSection({
 }: {
   draft: TemplateForm
   managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplateDropdownOption[]
+  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   propertyLocked?: boolean
@@ -29,6 +31,8 @@ export function TemplatePrimaryFieldsSection({
   onFieldChange: (field: keyof TemplateForm, value: string) => void
 }) {
   const editable = !disabled
+
+  const selectedProperty = propertyOptions.find((option) => option.id === draft.propertyId) ?? null
 
   return (
     <FieldSection>
@@ -121,6 +125,9 @@ export function TemplatePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
+
+      {/* Rows 5-6: Property address + instructions (read-only, live from selection) */}
+      <PropertyJoinedReadOnlyCells property={selectedProperty} startRow={5} />
     </FieldSection>
   )
 }

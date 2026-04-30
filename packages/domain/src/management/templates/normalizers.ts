@@ -20,7 +20,15 @@ type TemplateListInput = {
   updatedAt: Date | string
 }
 
-type TemplateDetailInput = TemplateListInput & {
+type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
+  property: {
+    name: string
+    streetAddress: string | null
+    city: string | null
+    state: string | null
+    postalCode: string | null
+    instructions: string | null
+  }
   instructions: string | null
   templateNotes: string | null
   items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
@@ -51,6 +59,11 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
   const items: TemplateMaterialItemRow[] = template.items.map(normalizeTemplateMaterialItem)
   return {
     ...base,
+    propertyStreetAddress: template.property.streetAddress ?? "",
+    propertyCity: template.property.city ?? "",
+    propertyState: template.property.state ?? "",
+    propertyPostalCode: template.property.postalCode ?? "",
+    propertyInstructions: template.property.instructions ?? "",
     instructions: template.instructions ?? "",
     templateNotes: template.templateNotes ?? "",
     items,

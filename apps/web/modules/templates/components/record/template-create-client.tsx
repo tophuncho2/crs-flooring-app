@@ -13,6 +13,7 @@ import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
 import {
   TemplatePrimaryFieldsSection,
   type TemplateDropdownOption,
+  type TemplatePropertyOption,
 } from "./template-primary-fields-section"
 
 function createInitialTemplateForm(defaults: Partial<TemplateForm>): TemplateForm {
@@ -32,7 +33,7 @@ function TemplateCreatePanel({
   page: RecordDetailClientScaffoldContext
   backHref: string
   managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplateDropdownOption[]
+  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   initialPropertyId: string
@@ -96,7 +97,7 @@ export function TemplateCreateClient({
 }: {
   backHref: string
   managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplateDropdownOption[]
+  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   initialPropertyId: string

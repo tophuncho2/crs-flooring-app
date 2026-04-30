@@ -67,13 +67,6 @@ export function WorkOrderRecordPanel({
                 draft={controller.primarySection.localValue}
                 workOrderNumber={controller.record.workOrderNumber}
                 status={controller.record.status}
-                propertyAddress={{
-                  streetAddress: controller.record.propertyStreetAddress,
-                  city: controller.record.propertyCity,
-                  state: controller.record.propertyState,
-                  postalCode: controller.record.propertyPostalCode,
-                }}
-                propertyInstructions={controller.record.propertyInstructions}
                 propertyOptions={options.propertyOptions}
                 warehouseOptions={options.warehouseOptions}
                 jobTypeOptions={options.jobTypeOptions}

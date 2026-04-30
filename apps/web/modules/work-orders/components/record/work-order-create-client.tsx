@@ -71,8 +71,6 @@ function WorkOrderCreatePanel({
           draft={controller.primarySection.localValue}
           workOrderNumber=""
           status="IDLE"
-          propertyAddress={{ streetAddress: "", city: "", state: "", postalCode: "" }}
-          propertyInstructions=""
           propertyOptions={options.propertyOptions}
           warehouseOptions={options.warehouseOptions}
           jobTypeOptions={options.jobTypeOptions}

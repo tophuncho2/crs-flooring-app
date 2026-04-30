@@ -1,3 +1,4 @@
+import { toDateInputValue } from "../../shared/date-format.js"
 import type { WorkOrderDetail, WorkOrderForm } from "./types.js"
 
 export function validateWorkOrderForm(input: WorkOrderForm) {
@@ -22,7 +23,7 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     description: workOrder.description,
     instructions: workOrder.instructions,
     notes: workOrder.notes,
-    scheduledFor: workOrder.scheduledFor,
+    scheduledFor: toDateInputValue(workOrder.scheduledFor),
     isComplete: workOrder.isComplete,
     vacancy: workOrder.vacancy ?? "",
   }

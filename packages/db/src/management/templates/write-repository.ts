@@ -23,7 +23,16 @@ const templateDetailSelect = {
   unitType: true,
   description: true,
   propertyId: true,
-  property: { select: { name: true } },
+  property: {
+    select: {
+      name: true,
+      streetAddress: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      instructions: true,
+    },
+  },
   managementCompanyId: true,
   managementCompany: { select: { id: true, name: true } },
   jobTypeId: true,

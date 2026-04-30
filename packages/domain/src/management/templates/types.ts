@@ -19,6 +19,11 @@ export type TemplateListRow = {
 }
 
 export type TemplateDetail = TemplateListRow & {
+  propertyStreetAddress: string
+  propertyCity: string
+  propertyState: string
+  propertyPostalCode: string
+  propertyInstructions: string
   instructions: string
   templateNotes: string
   items: TemplateMaterialItemRow[]
