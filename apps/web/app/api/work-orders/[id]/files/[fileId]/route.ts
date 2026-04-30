@@ -1,6 +1,6 @@
 import { deleteWorkOrderFileUseCase } from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { getStorageEnvironment } from "@/server/platform/env"
 import { routeError, routeJson } from "@/server/http/route-helpers"

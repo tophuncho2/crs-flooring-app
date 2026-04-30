@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo } from "react"
 import { RequestJsonError } from "@builders/lib"
-import { normalizeRecordSectionError } from "@/modules/shared/engines/record-view/contracts"
+import { normalizeRecordSectionError } from "@/types/record/section-error"
 import type { RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view/client/scaffolds/record-detail-client-scaffold"
 import { useRecordDetailController } from "./use-record-detail-controller"
 import {

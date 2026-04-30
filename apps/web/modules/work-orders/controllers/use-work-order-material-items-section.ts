@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation"
 import {
   createLocalRecordRowId,
-  createRecordSectionError,
   isLocalOnlyRecordRow,
-  useRecordScopedSectionController,
-} from "@/modules/shared/engines/record-view"
+} from "@/controllers/record/utils/record-row-ids"
+import { useRecordScopedSectionController } from "@/controllers/record/use-record-scoped-section-controller"
+import { createRecordSectionError } from "@/types/record/section-error"
 import type {
   WorkOrderDetail,
   WorkOrderMaterialItemForm,

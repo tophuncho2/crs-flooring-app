@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { RecordSectionError } from "@/modules/shared/engines/record-view/contracts"
+import type { RecordSectionError } from "@/types/record/section-error"
 import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,

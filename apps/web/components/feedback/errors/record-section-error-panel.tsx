@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { joinRecordSectionClasses } from "@/components/sections/structure/record-section-tokens"
-import type { RecordSectionError } from "@/modules/shared/engines/record-view/contracts"
+import type { RecordSectionError } from "@/types/record/section-error"
 
 function readSectionErrorToneClassName(kind: RecordSectionError["kind"]) {
   if (kind === "validation") {

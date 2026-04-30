@@ -7,7 +7,7 @@ import {
   confirmRecordAction,
 } from "@/controllers/record/utils/confirm-record-action"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
-import type { RecordSectionError } from "@/modules/shared/engines/record-view/contracts"
+import type { RecordSectionError } from "@/types/record/section-error"
 import {
   RecordPanelRenderer,
   type RecordPanelFooterConfig,

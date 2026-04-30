@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   normalizeRecordSectionError,
   type RecordSectionError,
-} from "@/modules/shared/engines/record-view/contracts"
+} from "@/types/record/section-error"
 import { usePendingWorkflowPolling } from "./use-pending-workflow-polling"
 
 export type RecordSectionWorkflowPhase =

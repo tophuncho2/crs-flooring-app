@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 import { useWorkOrdersListMutations } from "./use-work-orders-list-mutations"
 
 export type { WorkOrderListRow } from "@builders/domain"

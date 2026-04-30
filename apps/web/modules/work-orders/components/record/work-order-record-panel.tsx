@@ -1,12 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import {
-  RecordMultiSectionPanel,
-  RecordPrimarySectionInstance,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
-import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
+import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
+import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import type { WorkOrderDetail, WorkOrderMaterialItemRow } from "@builders/domain"
 import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/use-work-order-primary-section"

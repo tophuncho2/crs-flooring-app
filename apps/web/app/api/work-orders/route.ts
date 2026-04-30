@@ -1,7 +1,7 @@
 import { createWorkOrderUseCase } from "@builders/application"
 import { listWorkOrders } from "@builders/db"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,

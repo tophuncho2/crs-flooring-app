@@ -1,14 +1,12 @@
 "use client"
 
-import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { buildRecordDetailHref } from "@/hooks/navigation"
 import { createWorkOrderRequest } from "@/modules/work-orders/data/mutations"
-import {
-  RecordCreateClientScaffold,
-  RecordPanelFooter,
-  RecordSingleSectionPanel,
-  useSingleSectionCreateController,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+import { RecordCreateClientScaffold } from "@/scaffolds/record-create-client-scaffold"
+import { RecordPanelFooter } from "@/components/panels/record-panel-footer"
+import { RecordSingleSectionPanel } from "@/components/sections/panels/record-single-section-panel"
+import { useSingleSectionCreateController } from "@/controllers/record/use-single-section-create-controller"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { EMPTY_WORK_ORDER_FORM, type WorkOrderForm } from "@builders/domain"
 import type { WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
 import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/drafts"

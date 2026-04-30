@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { WorkOrderCreateClient } from "@/modules/work-orders/components/record/work-order-create-client"
 import { getWorkOrderCreatePageData } from "@/modules/work-orders/data/queries"
 

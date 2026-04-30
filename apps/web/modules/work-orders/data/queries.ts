@@ -15,7 +15,7 @@ import {
   type WorkOrderFileRow,
 } from "@builders/db"
 import type { WorkOrderDetail, WorkOrderMaterialItemRow } from "@builders/domain"
-import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
+import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 
 // Re-export Prisma payload types so module UI files don't have to
 // import `@builders/db` directly. Per `apps/web/modules/CLAUDE.md`,

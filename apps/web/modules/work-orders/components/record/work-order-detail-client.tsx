@@ -3,7 +3,7 @@
 import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/scaffolds/record-detail-client-scaffold"
 import type { WorkOrderDetail, WorkOrderMaterialItemRow } from "@builders/domain"
 import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"

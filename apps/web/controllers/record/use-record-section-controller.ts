@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   normalizeRecordSectionError,
   type RecordSectionError,
-} from "@/modules/shared/engines/record-view/contracts"
+} from "@/types/record/section-error"
 
 type MaybeUpdater<T> = T | ((previous: T) => T)
 type PendingServerState<T> = {
