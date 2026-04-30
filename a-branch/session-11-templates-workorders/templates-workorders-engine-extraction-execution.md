@@ -16,7 +16,7 @@
 
 | Sub | Description | Status | Notes |
 |---|---|---|---|
-| 1a | `engines/common/application/` → `apps/web/server/telemetry/` (+ shims) | ⬜ | |
+| 1a | `engines/common/application/` → `apps/web/server/telemetry/` (+ shims) | ✅ | 4 files moved (loader-timing, mutation-telemetry, run-use-case, with-transaction). Engine files converted to one-line re-export shims. 49 consumers untouched. `npm run typecheck` green. |
 | 1b | Verify `@/transport/*` engine shims still in place (no work) | ⬜ | |
 | 1c | `engines/common/record-entry/` → `apps/web/hooks/navigation/` | ⬜ | |
 | 1c | `engines/record-view/client/hooks/` → `apps/web/hooks/record/` | ⬜ | |
