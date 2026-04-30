@@ -11,8 +11,6 @@ export type StagedInventoryRowDraft = {
   warehouseId: string
   locationId: string | null
   startingStock: string
-  cost: string | null
-  freight: string | null
   notes: string | null
 }
 
@@ -23,8 +21,6 @@ export type StagedInventoryRowUpdatePatch = {
   warehouseId?: string
   locationId?: string | null
   startingStock?: string
-  cost?: string | null
-  freight?: string | null
   notes?: string | null
 }
 

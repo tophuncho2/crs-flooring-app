@@ -15,8 +15,6 @@ const HISTORICAL_LAYOUT: GridLayout<CutLogRow> = {
     { key: "cutLogNumber", label: "Cut #", minWidth: 132, grow: 0 },
     { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
     { key: "coverageCut", label: "Coverage", minWidth: 144, grow: 0, align: "center" },
-    { key: "cost", label: "Cost", kind: "currency", minWidth: 116, grow: 0, align: "end" },
-    { key: "freight", label: "Freight", kind: "currency", minWidth: 116, grow: 0, align: "end" },
     { key: "isWaste", label: "Waste", minWidth: 80, grow: 0, align: "center" },
     { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
     { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
@@ -101,14 +99,6 @@ export function InventoryHistoricalCutLogsSection({
                   unit={coverageUnitAbbrev}
                   ariaLabel={`${row.cutLogNumber} coverage cut`}
                 />
-              )
-            case "cost":
-              return (
-                <CurrencyCell editable={false} value={row.cost ?? ""} ariaLabel={`${row.cutLogNumber} cost`} />
-              )
-            case "freight":
-              return (
-                <CurrencyCell editable={false} value={row.freight ?? ""} ariaLabel={`${row.cutLogNumber} freight`} />
               )
             case "isWaste":
               return (

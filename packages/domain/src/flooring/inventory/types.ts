@@ -45,10 +45,6 @@ export type InventoryRow = {
   level: string
   startingStock: string
   totalCutSum: string
-  cost: string
-  freight: string
-  costPerUnit: string
-  freightPerUnit: string
   coveragePerUnit: string
   stockBalance: string
   coverageBalance: string

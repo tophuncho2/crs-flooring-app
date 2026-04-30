@@ -56,8 +56,6 @@ function patchToDbUpdate(
   if (patch.warehouseId !== undefined) data.warehouseId = patch.warehouseId
   if (patch.locationId !== undefined) data.locationId = patch.locationId
   if (patch.startingStock !== undefined) data.startingStock = patch.startingStock
-  if (patch.cost !== undefined) data.cost = patch.cost
-  if (patch.freight !== undefined) data.freight = patch.freight
   if (patch.notes !== undefined) data.notes = patch.notes
   return data
 }
@@ -167,8 +165,11 @@ export async function saveStagedInventoryRowsUseCase(
         warehouseId: draft.warehouseId,
         locationId: draft.locationId,
         startingStock: draft.startingStock,
-        cost: draft.cost,
-        freight: draft.freight,
+        // cost / freight aren't user-editable in V1 — write null here.
+        // ETL paths that set cost/freight write via the data-layer repo
+        // directly, not through this use case.
+        cost: null,
+        freight: null,
         notes: draft.notes,
       })),
       modified: diff.modified.map((m) => ({

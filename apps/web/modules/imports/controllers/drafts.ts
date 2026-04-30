@@ -45,8 +45,6 @@ export type ImportStagedRowDraft = {
   startingStock: string
   locationId: string
   dyeLot: string
-  cost: string
-  freight: string
   notes: string
   /**
    * Client-only helper: scopes the product dropdown to products matching this
@@ -65,8 +63,6 @@ export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportSta
     startingStock: item?.startingStock ?? "",
     locationId: item?.locationId ?? "",
     dyeLot: item?.dyeLot ?? "",
-    cost: item?.cost ?? "",
-    freight: item?.freight ?? "",
     notes: item?.notes ?? "",
     categoryFilterId: null,
   }

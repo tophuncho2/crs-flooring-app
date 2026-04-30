@@ -23,8 +23,6 @@ const INVENTORY_LIST_COLUMNS_BY_KEY: Record<string, GridColumn<InventoryRow>> = 
   warehouse: { key: "warehouse", label: "Warehouse", minWidth: 160, grow: 1 },
   fullLocation: { key: "fullLocation", label: "Full Location", minWidth: 160, grow: 0 },
   dyeLot: { key: "dyeLot", label: "Dye Lot", minWidth: 120, grow: 0 },
-  cost: { key: "cost", label: "Cost $", kind: "currency", minWidth: 110, grow: 0, align: "end" },
-  freight: { key: "freight", label: "Freight $", kind: "currency", minWidth: 110, grow: 0, align: "end" },
   notes: { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
   updated: { key: "updated", label: "Updated", minWidth: 120, grow: 0 },
 }
@@ -117,10 +115,6 @@ export function InventoryTable({
             return row.locationCode || "-"
           case "dyeLot":
             return row.dyeLot || "-"
-          case "cost":
-            return <span className="tabular-nums">{row.cost || "-"}</span>
-          case "freight":
-            return <span className="tabular-nums">{row.freight || "-"}</span>
           case "notes":
             return row.notes || "-"
           case "updated":

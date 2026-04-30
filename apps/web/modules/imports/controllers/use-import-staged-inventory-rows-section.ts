@@ -57,8 +57,6 @@ function toDraftPayload(
     warehouseId: importWarehouseId,
     locationId: row.locationId || null,
     startingStock: row.startingStock,
-    cost: row.cost || null,
-    freight: row.freight || null,
     notes: row.notes || null,
   }
 }
@@ -75,8 +73,6 @@ function toUpdatePatch(
     patch.locationId = row.locationId || null
   }
   if (row.startingStock !== existing.startingStock) patch.startingStock = row.startingStock
-  if ((row.cost || null) !== (existing.cost || null)) patch.cost = row.cost || null
-  if ((row.freight || null) !== (existing.freight || null)) patch.freight = row.freight || null
   if ((row.notes || null) !== (existing.notes || null)) patch.notes = row.notes || null
   return patch
 }

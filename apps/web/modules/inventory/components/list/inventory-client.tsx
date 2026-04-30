@@ -49,8 +49,6 @@ export default function InventoryClient({
       { key: "warehouse", label: "Warehouse", getValue: (row) => row.importWarehouseName || row.warehouseName, groupable: true },
       { key: "fullLocation", label: "Full Location", getValue: (row) => row.locationCode, defaultHidden: true, groupable: true },
       { key: "dyeLot", label: "Dye Lot", getValue: (row) => row.dyeLot, groupable: false },
-      { key: "cost", label: "Cost $", getValue: (row) => row.cost, defaultHidden: true, groupable: false },
-      { key: "freight", label: "Freight $", getValue: (row) => row.freight, defaultHidden: true, groupable: false },
       { key: "notes", label: "Notes", getValue: (row) => row.notes, defaultHidden: true, groupable: false },
       { key: "updated", label: "Updated", getValue: (row) => row.updatedAt.split("T")[0], defaultHidden: true, groupable: false },
     ],

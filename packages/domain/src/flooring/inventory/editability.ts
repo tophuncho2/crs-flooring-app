@@ -11,10 +11,6 @@
  */
 export const INVENTORY_IMMUTABLE_FIELDS = [
   "startingStock",
-  "cost",
-  "freight",
-  "costPerUnit",
-  "freightPerUnit",
   "coveragePerUnit",
   "importEntryId",
   "productId",

@@ -125,20 +125,8 @@ export function InventoryPrimaryFieldsSection({
         </CellAt>
       ) : null}
 
-      {/* Row 4: Cost · Freight */}
-      <CellAt col={1} row={4} colSpan={2}>
-        <FormField label="Cost">
-          <StaticFieldValue>{inventory.cost ? `$${inventory.cost}` : "-"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={4} colSpan={2}>
-        <FormField label="Freight">
-          <StaticFieldValue>{inventory.freight ? `$${inventory.freight}` : "-"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-
-      {/* Row 5: Notes (full width) */}
-      <CellAt col={1} row={5} colSpan={8}>
+      {/* Row 4: Notes (full width) */}
+      <CellAt col={1} row={4} colSpan={8}>
         <FormField label="Notes">
           <TextareaCell
             editable={editable}

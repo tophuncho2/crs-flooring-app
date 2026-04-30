@@ -13,8 +13,6 @@ const IMPORTED_ROWS_LAYOUT: GridLayout<StagedInventoryRow> = {
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
     { key: "location", label: "Location", minWidth: 196, grow: 0 },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
-    { key: "cost", label: "Cost", kind: "currency", minWidth: 116, grow: 0, align: "end" },
-    { key: "freight", label: "Freight", kind: "currency", minWidth: 116, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.2 },
   ],
   trailingControls: [{ key: "status", kind: "status-indicator", width: 132 }],
@@ -62,14 +60,6 @@ export function ImportImportedRowsSection({ rows }: { rows: StagedInventoryRow[]
             case "dyeLot":
               return (
                 <TextCell editable={false} value={row.dyeLot || "—"} ariaLabel={`${row.itemNumber} dye lot`} />
-              )
-            case "cost":
-              return (
-                <CurrencyCell editable={false} value={row.cost} ariaLabel={`${row.itemNumber} cost`} />
-              )
-            case "freight":
-              return (
-                <CurrencyCell editable={false} value={row.freight} ariaLabel={`${row.itemNumber} freight`} />
               )
             case "notes":
               return (

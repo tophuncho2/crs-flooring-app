@@ -87,7 +87,11 @@ Make the `coveragePerUnit` cell on the product primary section **secure end-to-e
 
 ---
 
-## Sweep 2 — Staged inventory: drop cost/freight cells from imports UI
+## Sweeps 2 + 3 — Cost/freight removal (BUNDLED + SHIPPED 2026-04-30)
+
+> **Plan revision (2026-04-30):** Sweeps 2 and 3 executed as a single bundled change per user direction. Audit at `sessions/sweep-2-3-cost-freight-inventory.md`. Execution log at `sessions/v1-master-execution.md` §Sweeps 2+3. Three open questions (drop server validator, drop INVENTORY_IMMUTABLE_FIELDS entries, single bundled commit) were all confirmed prior to execution. Typecheck passed across all 6 workspaces.
+
+### Original Sweep 2 — Staged inventory: drop cost/freight cells from imports UI
 
 ### Goal
 Remove `cost` and `freight` cells from the staged-inventory-rows grid in the imports record view. Keep the schema columns (`FlooringImportStagedInventoryRow.cost`, `.freight`) — they're written by ETL and consumed by the materialize worker. Just stop showing them to the user.
@@ -110,7 +114,7 @@ Remove `cost` and `freight` cells from the staged-inventory-rows grid in the imp
 
 ---
 
-## Sweep 3 — Inventory record view: drop cost/freight from UI + read-repository select
+## Original Sweep 3 — Inventory record view: drop cost/freight from UI + read-repository select
 
 ### Goal
 Remove `cost`, `freight`, `costPerUnit`, `freightPerUnit` cells from inventory list table, inventory record view primary fields section, and inventory cut-logs grid. **Drop these four fields from the `inventoryRowSelect` in the data layer** so we stop fetching dead columns. Keep the schema columns.

@@ -32,8 +32,6 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
     { key: "location", label: "Location", minWidth: 196, grow: 0 },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
-    { key: "cost", label: "Cost", kind: "currency", minWidth: 116, grow: 0, align: "end" },
-    { key: "freight", label: "Freight", kind: "currency", minWidth: 116, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.2 },
   ],
   trailingControls: [
@@ -258,24 +256,6 @@ export function ImportStagedInventoryRowsSection({
                   value={row.dyeLot}
                   onChange={(value) => onRowFieldChange(index, "dyeLot", value)}
                   ariaLabel={`Row ${index + 1} dye lot`}
-                />
-              )
-            case "cost":
-              return (
-                <CurrencyCell
-                  editable={editable}
-                  value={row.cost}
-                  onChange={(value) => onRowFieldChange(index, "cost", value)}
-                  ariaLabel={`Row ${index + 1} cost`}
-                />
-              )
-            case "freight":
-              return (
-                <CurrencyCell
-                  editable={editable}
-                  value={row.freight}
-                  onChange={(value) => onRowFieldChange(index, "freight", value)}
-                  ariaLabel={`Row ${index + 1} freight`}
                 />
               )
             case "notes":

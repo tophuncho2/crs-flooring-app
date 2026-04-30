@@ -108,8 +108,6 @@ function shapeStagedDraft(raw: unknown, idx: number): StagedInventoryRowDraft {
     warehouseId: requireStagedString(row.warehouseId, `added[${idx}].warehouseId`),
     locationId: nullableStagedString(row.locationId, `added[${idx}].locationId`),
     startingStock: requireStagedString(row.startingStock, `added[${idx}].startingStock`),
-    cost: nullableStagedString(row.cost, `added[${idx}].cost`),
-    freight: nullableStagedString(row.freight, `added[${idx}].freight`),
     notes: nullableStagedString(row.notes, `added[${idx}].notes`),
   }
 }
@@ -123,8 +121,6 @@ function shapeStagedPatch(raw: unknown, idx: number): StagedInventoryRowUpdatePa
   if (patch.warehouseId !== undefined) result.warehouseId = requireStagedString(patch.warehouseId, `modified[${idx}].patch.warehouseId`)
   if (patch.locationId !== undefined) result.locationId = nullableStagedString(patch.locationId, `modified[${idx}].patch.locationId`)
   if (patch.startingStock !== undefined) result.startingStock = requireStagedString(patch.startingStock, `modified[${idx}].patch.startingStock`)
-  if (patch.cost !== undefined) result.cost = nullableStagedString(patch.cost, `modified[${idx}].patch.cost`)
-  if (patch.freight !== undefined) result.freight = nullableStagedString(patch.freight, `modified[${idx}].patch.freight`)
   if (patch.notes !== undefined) result.notes = nullableStagedString(patch.notes, `modified[${idx}].patch.notes`)
   return result
 }
