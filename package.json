@@ -45,6 +45,13 @@
     "dotenv": "^16.4.7"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.60.1"
+    "@rollup/rollup-linux-x64-gnu": "^4.60.1",
+    "@next/swc-linux-x64-gnu": "16.2.1",
+    "lightningcss-linux-x64-gnu": "1.31.1",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.2.1",
+    "@unrs/resolver-binding-linux-x64-gnu": "1.11.1",
+    "@img/sharp-linux-x64": "0.34.5",
+    "@img/sharp-libvips-linux-x64": "1.2.4",
+    "@msgpackr-extract/msgpackr-extract-linux-x64": "3.0.3"
   }
 }
