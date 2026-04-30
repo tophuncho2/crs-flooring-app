@@ -26,10 +26,6 @@ type PropertyListRowInput = {
   phone: string | null
   email: string | null
   managementCompany: { id: string; name: string } | null
-  templates: Array<{
-    id: string
-    unitType: string
-  }>
   _count: { templates: number }
 }
 
@@ -75,7 +71,6 @@ export function normalizePropertyListRow(property: PropertyListRowInput): Proper
     fullAddress: buildAddressLine(property),
     managementCompany: property.managementCompany,
     templateCount: property._count.templates,
-    templatePreviewTags: property.templates.map((template) => template.unitType),
   }
 }
 

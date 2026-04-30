@@ -39,11 +39,6 @@ const propertyListSelect = {
   _count: {
     select: { templates: true },
   },
-  templates: {
-    select: { id: true, unitType: true },
-    orderBy: { createdAt: "desc" as const },
-    take: 3,
-  },
 } as const
 
 const propertyDetailSelect = {

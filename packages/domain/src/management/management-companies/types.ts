@@ -23,7 +23,6 @@ export type ManagementCompanyListRow = {
   email: string
   fullAddress: string
   propertyCount: number
-  propertyPreviewNames: string[]
 }
 
 export type ManagementCompanyOption = {

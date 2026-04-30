@@ -27,10 +27,6 @@ type ManagementCompanyListRowInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
-  properties: Array<{
-    id: string
-    name: string
-  }>
   _count: { properties: number }
 }
 
@@ -62,7 +58,6 @@ export function normalizeManagementCompanyListRow(company: ManagementCompanyList
     email: company.email ?? "",
     fullAddress: buildAddressLine(company),
     propertyCount: company._count.properties,
-    propertyPreviewNames: company.properties.map((property) => property.name),
   }
 }
 

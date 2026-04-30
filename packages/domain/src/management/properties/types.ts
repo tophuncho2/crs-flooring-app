@@ -31,7 +31,6 @@ export type PropertyListRow = {
   fullAddress: string
   managementCompany: PropertyManagementCompany | null
   templateCount: number
-  templatePreviewTags: string[]
 }
 
 export type PropertyOption = {

@@ -36,11 +36,6 @@ const managementCompanyListSelect = {
   _count: {
     select: { properties: true },
   },
-  properties: {
-    select: { id: true, name: true },
-    orderBy: { name: "asc" as const },
-    take: 3,
-  },
 } as const
 
 const managementCompanyDetailSelect = {
