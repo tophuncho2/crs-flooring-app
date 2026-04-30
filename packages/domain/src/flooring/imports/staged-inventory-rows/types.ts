@@ -1,7 +1,11 @@
-import type { FlooringStagedRowStatus } from "@prisma/client"
-
-// Re-exported so consumers don't have to reach into Prisma directly.
-export type { FlooringStagedRowStatus } from "@prisma/client"
+// Mirror of the `FlooringStagedRowStatus` enum at
+// `packages/db/prisma/schema.prisma`. Defined here as a string-literal
+// union so the domain stays free of any data-layer imports (the
+// prisma-guard rule keeps generated client types confined to
+// `packages/db/`). Keep the value list in lockstep with the schema
+// enum; the data layer's generated union is structurally identical, so
+// values pass through without a runtime conversion.
+export type FlooringStagedRowStatus = "DRAFT" | "QUEUED" | "IMPORTED"
 
 // Staged inventory row — read + form shapes. Each staged row belongs to exactly
 // one import (FK is RESTRICT post sweep-1 migration; the domain predicate
