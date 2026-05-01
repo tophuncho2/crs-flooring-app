@@ -3,18 +3,15 @@ import {
   FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
   GENERATE_WORK_ORDER_FILE_QUEUE,
   IMPORT_MATERIALIZE_QUEUE,
-  SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_QUEUE,
   type FinalizeWorkOrderCutLogBatchPayload,
   type GenerateWorkOrderFilePayload,
   type ImportMaterializeBatchPayload,
-  type SaveWorkOrderItemPendingCutLogDiffPayload,
 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
 import { QueueEvents, Worker } from "bullmq"
 import { getWorkerEnvironment, getWorkerStorageEnvironment } from "./env.js"
 import { createFinalizeWorkOrderCutLogBatchHandler } from "./processors/finalize-work-order-cut-log-batch.js"
 import { createMaterializeImportBatchHandler } from "./processors/materialize-import-batch.js"
-import { createSaveWorkOrderItemPendingCutLogDiffHandler } from "./processors/save-work-order-item-pending-cut-log-diff.js"
 import { createWorkOrderFileGenerationHandler } from "./processors/work-order-file-generation.js"
 import { createQueueConnection } from "./queues/connection.js"
 
@@ -93,89 +90,6 @@ async function main() {
         ? {
             importEntryId: job.data.importEntryId,
             stagedRowCount: job.data.stagedRowIds.length,
-          }
-        : undefined,
-      error,
-    })
-  })
-
-  // ---------------------------------------------------------------------------
-  // Work order item pending cut-log diff (sweep 7)
-  // ---------------------------------------------------------------------------
-  const woPendingCutLogHandler = createSaveWorkOrderItemPendingCutLogDiffHandler()
-  const woPendingCutLogWorker = new Worker<SaveWorkOrderItemPendingCutLogDiffPayload>(
-    SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_QUEUE,
-    async (job) => woPendingCutLogHandler(job),
-    {
-      connection,
-      concurrency: env.workOrderPendingCutLogWorkerConcurrency,
-      lockDuration: env.workOrderPendingCutLogWorkerLockDurationMs,
-      autorun: false,
-    },
-  )
-  const woPendingCutLogEvents = new QueueEvents(
-    SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_QUEUE,
-    { connection },
-  )
-
-  woPendingCutLogWorker.on("active", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order pending cut-log diff job active",
-      action: "worker.work_orders.pending_cut_log_diff.active",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "PROCESSING",
-      details: {
-        workOrderId: job.data.workOrderId,
-        workOrderItemId: job.data.workOrderItemId,
-        addedCount: job.data.diff.added.length,
-        modifiedCount: job.data.diff.modified.length,
-        deletedCount: job.data.diff.deleted.length,
-      },
-    })
-  })
-
-  woPendingCutLogWorker.on("completed", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order pending cut-log diff job completed",
-      action: "worker.work_orders.pending_cut_log_diff.completed",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "COMPLETED",
-      details: {
-        workOrderId: job.data.workOrderId,
-        workOrderItemId: job.data.workOrderItemId,
-        addedCount: job.data.diff.added.length,
-        modifiedCount: job.data.diff.modified.length,
-        deletedCount: job.data.diff.deleted.length,
-      },
-    })
-  })
-
-  woPendingCutLogWorker.on("failed", (job, error) => {
-    logStructuredEvent({
-      level: "error",
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order pending cut-log diff job failed",
-      action: "worker.work_orders.pending_cut_log_diff.failed",
-      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
-      queueJobId: typeof job?.id === "string" ? job.id : undefined,
-      attempt: job?.attemptsStarted,
-      status: "FAILED",
-      details: job
-        ? {
-            workOrderId: job.data.workOrderId,
-            workOrderItemId: job.data.workOrderItemId,
-            addedCount: job.data.diff.added.length,
-            modifiedCount: job.data.diff.modified.length,
-            deletedCount: job.data.diff.deleted.length,
           }
         : undefined,
       error,
@@ -350,8 +264,6 @@ async function main() {
   await Promise.all([
     materializeWorker.waitUntilReady(),
     materializeEvents.waitUntilReady(),
-    woPendingCutLogWorker.waitUntilReady(),
-    woPendingCutLogEvents.waitUntilReady(),
     woFinalizeCutLogWorker.waitUntilReady(),
     woFinalizeCutLogEvents.waitUntilReady(),
     woFileGenWorker.waitUntilReady(),
@@ -369,7 +281,6 @@ async function main() {
   // resolve when each worker is closed (during shutdown); we deliberately
   // don't await them at the call site.
   void materializeWorker.run()
-  void woPendingCutLogWorker.run()
   void woFinalizeCutLogWorker.run()
   void woFileGenWorker.run()
 
@@ -382,19 +293,16 @@ async function main() {
     details: {
       queues: [
         IMPORT_MATERIALIZE_QUEUE,
-        SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_QUEUE,
         FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
         GENERATE_WORK_ORDER_FILE_QUEUE,
       ],
       concurrency: {
         materialize: env.materializeWorkerConcurrency,
-        workOrderPendingCutLog: env.workOrderPendingCutLogWorkerConcurrency,
         workOrderFinalizeCutLog: env.workOrderFinalizeCutLogWorkerConcurrency,
         workOrderFileGeneration: env.workOrderFileGenerationWorkerConcurrency,
       },
       lockDurationMs: {
         materialize: env.materializeWorkerLockDurationMs,
-        workOrderPendingCutLog: env.workOrderPendingCutLogWorkerLockDurationMs,
         workOrderFinalizeCutLog: env.workOrderFinalizeCutLogWorkerLockDurationMs,
         workOrderFileGeneration: env.workOrderFileGenerationWorkerLockDurationMs,
       },
@@ -408,8 +316,6 @@ async function main() {
       await Promise.all([
         materializeEvents.close(),
         materializeWorker.close(),
-        woPendingCutLogEvents.close(),
-        woPendingCutLogWorker.close(),
         woFinalizeCutLogEvents.close(),
         woFinalizeCutLogWorker.close(),
         woFileGenEvents.close(),

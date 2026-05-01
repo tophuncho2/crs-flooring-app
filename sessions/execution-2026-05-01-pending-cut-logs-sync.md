@@ -288,28 +288,94 @@ application(cut-logs): add sync per-row create / update / delete use cases
 
 ## Phase 4 — Outbox / Relay / Worker dismantle
 
-**Files:**
-- [ ] `apps/worker/src/processors/save-work-order-item-pending-cut-log-diff.ts` (DELETED)
-- [ ] `apps/worker/src/bootstrap.ts` (UPDATED — strip pending-diff worker block)
-- [ ] `apps/relay/src/dispatch/build-save-work-order-item-pending-cut-log-dispatcher.ts` (DELETED)
-- [ ] `apps/relay/src/dispatch/dispatchers.ts` (UPDATED — drop registration)
+**Goal:** Tear down the entire pending-cut-log async pipeline (processor + dispatcher + relay registration + producer/consumer use cases) and clean up the orphaned data-layer diff helpers Phase 2 deferred. Imports + finalize + file-generation workers are untouched.
 
-**Grep gate (run before declaring Phase 4 done):**
-- [ ] `git grep "SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF"` returns 0 source matches.
-- [ ] `git grep "flooring.work-order-item.pending-cut-log.save"` returns 0 source matches.
-- [ ] `git grep "flooring-work-order-item-pending-cut-log-diff"` returns 0 source matches.
-- [ ] `git grep "wo-pcl-diff:"` returns 0 source matches.
+**Plan deviations (in scope, signaled before execution):**
+- **Data-layer cleanup landed here**, not Phase 2: `applyWorkOrderItemCutLogPendingDiff`, `getInventoriesForCutLogDiff`, and the four input types (`WorkOrderCutLogPending{Draft,Update,Delete}Input`, `ApplyWorkOrderItemCutLogPendingDiffInput`) deleted from `packages/db/src/flooring/work-orders/cut-logs/{read,write}-repository.ts`. Documented in the Phase 2 execution log.
+- **Orphaned application types deleted:** `SaveWorkOrderItemPendingCutLogDiffInput` + `SaveWorkOrderItemPendingCutLogDiffResult` in `packages/application/src/flooring/work-orders/cut-logs/types.ts` were tied 1:1 to the deleted producer use case.
+- **Worker env.ts cleanup:** the dismantled processor's two env entries (`WORK_ORDER_PENDING_CUT_LOG_WORKER_CONCURRENCY`, `WORK_ORDER_PENDING_CUT_LOG_WORKER_LOCK_DURATION_MS`) and their projected fields (`workOrderPendingCutLog{Concurrency,LockDurationMs}`) are removed. Out-of-the-box for the plan, but bootstrap.ts wouldn't typecheck otherwise (those env fields are read by the deleted block).
 
-(Docs / sessions / `cut-logs/pending-cut-log-worker.md` references are allowed — those are historical.)
+**Files (all done):**
 
-**Verification:**
-- [ ] `pnpm build` clean for `apps/worker` + `apps/relay`.
-- [ ] Worker boot log shows only the finalize and imports queues.
+DELETED (4):
+- [x] `apps/worker/src/processors/save-work-order-item-pending-cut-log-diff.ts`
+- [x] `apps/relay/src/dispatch/build-save-work-order-item-pending-cut-log-dispatcher.ts`
+- [x] `packages/application/src/flooring/work-orders/cut-logs/save-work-order-item-pending-cut-log-diff.ts`
+- [x] `packages/application/src/flooring/work-orders/cut-logs/apply-work-order-item-pending-cut-log-diff.ts` (also took `markWorkOrderItemFailedFromCutLogDiff` with it)
 
-**Status:** _not started_
+EDITED (8):
+- [x] `apps/worker/src/bootstrap.ts` — removed: import line for the handler factory; queue + payload type imports from `@builders/domain`; the entire pending-cut-log construction + listener block (~80 lines); `waitUntilReady`, `run()`, ready-log queue/concurrency/lockDuration entries, and shutdown `close()` calls. Imports + finalize + file-gen blocks untouched.
+- [x] `apps/worker/src/env.ts` — removed: `WORK_ORDER_PENDING_CUT_LOG_WORKER_*` from the zod schema, the type fields, the parse-input map, and the projection.
+- [x] `apps/relay/src/dispatch/dispatchers.ts` — removed: import + the `buildSaveWorkOrderItemPendingCutLogDispatcher(connection)` registration.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/index.ts` — removed: barrel exports for the 2 deleted use case files.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/types.ts` — removed: `SaveWorkOrderItemPendingCutLogDiffInput`, `SaveWorkOrderItemPendingCutLogDiffResult`.
+- [x] `packages/db/src/flooring/work-orders/cut-logs/write-repository.ts` — removed: `applyWorkOrderItemCutLogPendingDiff` function + the four input types.
+- [x] `packages/db/src/flooring/work-orders/cut-logs/read-repository.ts` — removed: `getInventoriesForCutLogDiff`.
+
+KEPT (untouched, per scope):
+- `apps/worker/src/processors/materialize-import-batch.ts` (imports worker)
+- `apps/worker/src/processors/finalize-work-order-cut-log-batch.ts` (finalize worker)
+- `apps/worker/src/processors/work-order-file-generation.ts` (file-generation worker — incomplete per user; explicitly out of scope)
+- `apps/relay/src/dispatch/build-{materialize-import,finalize-work-order-cut-log,work-order-file-generation}-dispatcher.ts`
+- All cut-log domain rules (`assertCutLog*`, `computeCutCoverage`, `assertCutSumWithinStartingStock`, etc.)
+- Application's diff types (`WorkOrderCutLogPendingDraft`, `WorkOrderCutLogPendingUpdate`, `WorkOrderCutLogPendingDelete`, `WorkOrderCutLogPendingDiff`) — still consumed by the validator + UI hook; deletion targets in Phase 6 + 7.
+
+**Grep gate — all clean (zero source matches):**
+
+| Search | Source matches |
+|---|---|
+| `flooring.work-order-item.pending-cut-log.save` | 1 (doc-comment in `apps/web/.../section/route.ts` — Phase 5 target) |
+| `flooring-work-order-item-pending-cut-log-diff` | 0 |
+| `wo-pcl-diff:` | 0 |
+| `saveWorkOrderItemPendingCutLogDiffUseCase` | 1 import + 2 refs (all in `apps/web/.../section/route.ts` — Phase 5 target) |
+| `applyWorkOrderItemPendingCutLogDiffUseCase` | 0 |
+| `markWorkOrderItemFailedFromCutLogDiff` | 0 |
+| `applyWorkOrderItemCutLogPendingDiff` | 0 |
+| `getInventoriesForCutLogDiff` | 0 |
+| `buildSaveWorkOrderItemPendingCutLogDispatcher` | 0 |
+
+**Build state after Phase 4:**
+
+| Package | Typecheck |
+|---|---|
+| `@builders/domain` | ✅ green (untouched this phase) |
+| `@builders/db` | ✅ green |
+| `@builders/application` | ✅ green |
+| `apps/worker` | ✅ green |
+| `apps/relay` | ✅ green |
+| `apps/web` | ❌ 2 errors, both expected: `section/route.ts` (Phase 5 target) imports the deleted producer use case; `work-order-material-items-section.tsx:44` (Phase 7 target) still has a `case "SAVING_CUTS":` branch in a switch over the narrowed `WorkOrderItemStatus`. |
+
+**Commit message (when user is ready):**
+
+```
+worker(cut-logs): dismantle pending cut-log worker / relay / outbox
+
+- Delete the BullMQ processor + relay dispatcher + producer +
+  consumer use cases. The pending-cut-log queue, topic, and
+  idempotency prefix are now unused everywhere.
+- bootstrap.ts: strip the pending-cut-log Worker construction,
+  event listeners, waitUntilReady / run / shutdown entries, and
+  the ready-log queue / concurrency / lockDuration fields.
+  env.ts loses its two paired env entries.
+- dispatchers.ts: drop buildSaveWorkOrderItemPendingCutLogDispatcher
+  from the topic registry.
+- application/cut-logs/types.ts: drop orphaned
+  SaveWorkOrderItemPendingCutLogDiffInput/Result.
+- db/work-orders/cut-logs: drop applyWorkOrderItemCutLogPendingDiff
+  + getInventoriesForCutLogDiff + their four input types
+  (deferred from Phase 2 — only the deleted consumer used them).
+- Imports + finalize + file-generation workers untouched.
+- apps/web is currently red on section/route.ts (Phase 5 target)
+  and the UI section's "SAVING_CUTS" switch case (Phase 7 target);
+  every other package is green.
+```
+
+**Status:** ✅ done. Worker + relay + application + db all typecheck clean. Pending cut-log queue + topic + dispatcher + processor + use cases are gone end-to-end. Workers staying: imports, finalize, file-generation.
 
 **Notes:**
-- _empty until execution_
+- The `cut-logs/pending-cut-log-worker.md` file is historical; not deleted (the user has it for reference). It's superseded by this sweep's plan + execution.
+- Outbox `flooring_queue_outbox_event` rows whose `topic = 'flooring.work-order-item.pending-cut-log.save'` may still exist in the DB if any were written before Phase 4 lands. They will never dispatch (no relay registration). Cleanup is a one-line SQL `DELETE FROM ... WHERE topic = ...` if/when desired — not required for correctness, since unread rows just sit there. Out-of-scope for this sweep.
+- `apps/worker/dist` and `apps/relay/dist` artifacts matching `*pending*cut*log*` will regenerate on next build (now empty); not hand-deleted per the plan.
 
 ---
 
@@ -385,6 +451,6 @@ _To be filled in as work proceeds. Issues that don't fit a single phase land her
 | 1 — Domain | ✅ done (uncommitted) | `material-items/types.ts`, `material-items/status-rules.ts`, `work-orders/errors.ts`, `inventory/cut-logs/errors.ts`, `inventory/cut-logs/pending-mutation-rules.ts` (NEW), `inventory/cut-logs/index.ts`, `work-orders/cut-logs/types.ts`, `queue/save-work-order-item-pending-cut-log-diff.ts` (DELETED), `src/index.ts` | 0 | Domain typecheck green. `assignDraftIds` kept (used by other flows). Monorepo typecheck still red — fixes land Phase 2/3/4. |
 | 2 — Data | ✅ done (uncommitted) | `domain/inventory/cut-logs/types.ts`, `domain/inventory/cut-logs/diff/types.ts`, `db/inventory/cut-logs/shared.ts`, `db/inventory/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/write-repository.ts`, `db/work-orders/material-items/write-repository.ts` | 0 | Domain + db typechecks green. App package still red (producer/consumer) — expected until Phase 4. |
 | 3 — Application | ✅ done (uncommitted) | `domain/work-orders/cut-logs/types.ts`, `domain/inventory/cut-logs/category-math.ts`, `application/work-orders/cut-logs/{errors,types,index}.ts`, `application/work-orders/cut-logs/{create,update,delete}-pending-cut-log.ts` (3 NEW) | 0 in new code; 11 in Phase 4 deletion targets (expected) | New use cases compile clean. Red errors all in producer/consumer files Phase 4 will delete. |
-| 4 — Worker dismantle | _not started_ | — | — | — |
+| 4 — Worker dismantle | ✅ done (uncommitted) | 4 deleted (worker processor, relay dispatcher, producer + consumer use cases); 7 edited (worker bootstrap + env, relay dispatchers, application barrel + types, db read + write repos) | 0 | Domain, db, application, worker, relay all green. apps/web red on Phase 5 + 7 targets only. |
 | 5 — API routes | _not started_ | — | — | — |
 | 6 — Validators | _not started_ | — | — | — |

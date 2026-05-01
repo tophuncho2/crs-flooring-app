@@ -73,38 +73,6 @@ export async function listCutLogsForWorkOrderItemIds(
 }
 
 /**
- * Returns the union of inventory ids touched by a pending-cut-log diff:
- *  - Every draft's `inventoryId` (drafts target the inventory directly).
- *  - The `inventoryId` of every existing cut log referenced by an update
- *    or delete (looked up by id).
- *
- * The application layer hands this set to `lockInventoriesForCutLogBatch`
- * for deterministic FOR UPDATE locking before applying the diff.
- */
-export async function getInventoriesForCutLogDiff(
-  diff: {
-    drafts: Array<{ inventoryId: string }>
-    updates: Array<{ id: string }>
-    deletes: Array<{ id: string }>
-  },
-  client: WorkOrdersDbClient = db,
-): Promise<string[]> {
-  const fromDrafts = diff.drafts.map((d) => d.inventoryId)
-  const referencedIds = [...diff.updates.map((u) => u.id), ...diff.deletes.map((d) => d.id)]
-
-  if (referencedIds.length === 0) {
-    return Array.from(new Set(fromDrafts))
-  }
-
-  const rows = await client.flooringCutLog.findMany({
-    where: { id: { in: referencedIds } },
-    select: { inventoryId: true },
-  })
-
-  return Array.from(new Set([...fromDrafts, ...rows.map((r) => r.inventoryId)]))
-}
-
-/**
  * Returns the inventory ids touched by the cut-log set referenced for a
  * finalize-batch operation. Worker hands the resulting set to
  * `lockInventoriesForCutLogBatch`.

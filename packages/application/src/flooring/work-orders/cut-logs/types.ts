@@ -43,20 +43,6 @@ export type WorkOrderCutLogPendingDiff = {
   deleted: WorkOrderCutLogPendingDelete[]
 }
 
-export type SaveWorkOrderItemPendingCutLogDiffInput = {
-  workOrderId: string
-  workOrderItemId: string
-  requestKey: string
-  diff: WorkOrderCutLogPendingDiff
-  requestedBy: RequestedBy
-}
-
-export type SaveWorkOrderItemPendingCutLogDiffResult = {
-  outboxEventId: string
-  wasDuplicate: boolean
-  tempIdMap: Record<string, string>
-}
-
 export type FinalizeWorkOrderCutLogBatchInput = {
   workOrderId: string
   requestKey: string
