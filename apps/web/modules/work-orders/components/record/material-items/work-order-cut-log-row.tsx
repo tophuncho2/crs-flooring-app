@@ -179,7 +179,7 @@ export function WorkOrderCutLogRow({
         return <span className={`truncate ${decoration}`}>{label}</span>
       }
       case "before":
-        return <span className={`tabular-nums ${decoration}`}>{row.before}</span>
+        return <span className={`tabular-nums ${decoration}`}>{row.before ?? "—"}</span>
       case "cut":
         if (editableCell) {
           return (
@@ -197,7 +197,7 @@ export function WorkOrderCutLogRow({
           <span className={`tabular-nums ${decoration}`}>{update?.cut ?? row.cut}</span>
         )
       case "after":
-        return <span className={`tabular-nums ${decoration}`}>{row.after}</span>
+        return <span className={`tabular-nums ${decoration}`}>{row.after ?? "—"}</span>
       case "coverage":
         return (
           <span className={`tabular-nums ${decoration}`}>

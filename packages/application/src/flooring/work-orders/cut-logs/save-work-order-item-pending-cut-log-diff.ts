@@ -80,17 +80,17 @@ export async function saveWorkOrderItemPendingCutLogDiffUseCase(
       })
     }
 
+    // Linkage symmetry is constant across all drafts (every draft inherits
+    // the WOMI's workOrderId + the WOMI's id), so assert once up front.
+    assertCutLogLinkageSymmetry({
+      workOrderId: input.workOrderId,
+      workOrderItemId: input.workOrderItemId,
+    })
+
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
     const tempIdMap: Record<string, string> = {}
     for (const draft of addedWithIds) {
       tempIdMap[draft.tempId] = draft.id
-      // Defensive symmetry check on each draft's link pair (always set
-      // both, never neither) — surfaces any future drift in the producer's
-      // stamping logic.
-      assertCutLogLinkageSymmetry({
-        workOrderId: input.workOrderId,
-        workOrderItemId: input.workOrderItemId,
-      })
     }
 
     await markWorkOrderItemStatus(input.workOrderItemId, "SAVING_CUTS", c)

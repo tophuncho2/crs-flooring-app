@@ -30,6 +30,13 @@ export type WorkOrderCutLogPendingDraftInput = {
   tempId: string
   inventoryId: string
   cut: string
+  /**
+   * Pre-derived by the consumer use case from the inventory's
+   * `coveragePerUnit` + `categorySlug` (via the domain's
+   * `computeCutCoverage`). `null` when the inventory's category lacks a
+   * coverage unit, or when `coveragePerUnit` is null.
+   */
+  coverageCut: string | null
   isWaste: boolean
   notes: string
 }
@@ -39,6 +46,12 @@ export type WorkOrderCutLogPendingUpdateInput = {
   expectedUpdatedAt: string
   patch: {
     cut?: string
+    /**
+     * Re-derived by the consumer when (and only when) `cut` is in the
+     * patch. Carries `null` if the parent inventory's category doesn't
+     * support coverage. Absent when `cut` didn't change.
+     */
+    coverageCut?: string | null
     isWaste?: boolean
     notes?: string
   }
@@ -63,11 +76,19 @@ export type ApplyWorkOrderItemCutLogPendingDiffInput = {
  * `workOrderItemId`) — the producer use case asserts symmetry via
  * `assertCutLogLinkageSymmetry` before calling here.
  *
- * `cost` and `freight` are intentionally written as null on every draft
- * — WO-side cut logs do not surface those columns (locked decision #3).
+ * `before`, `after`, `finalCutSequence`, `cost`, `freight` are NOT set
+ * here. `before`/`after`/`finalCutSequence` are stamped at finalize
+ * time. `cost`/`freight` are never written on the WO side.
+ *
+ * `coverageCut` is pre-derived by the consumer (it needs the parent
+ * inventory's `coveragePerUnit` and `categorySlug`, which are read once
+ * under the FOR UPDATE lock and applied via `computeCutCoverage`).
  *
  * Caller is responsible for taking the multi-inventory FOR UPDATE lock
  * (via `lockInventoriesForCutLogBatch`) before this function runs.
+ *
+ * `createMany` runs with `skipDuplicates: true` so a retried worker job
+ * is a no-op against the producer-stamped UUIDs already in the table.
  */
 export async function applyWorkOrderItemCutLogPendingDiff(
   tx: Prisma.TransactionClient,
@@ -85,63 +106,28 @@ export async function applyWorkOrderItemCutLogPendingDiff(
   }
 
   if (input.drafts.length > 0) {
-    // Drafts need `before` + `after` populated. The before is current
-    // inventory.startingStock - existing totalCutSum (post-delete). After
-    // is before - cut. Worker computes these AFTER deletes are applied
-    // and the per-inventory remaining is known.
-    //
-    // We resolve them up front via a per-inventory snapshot of the
-    // remaining stock so each draft's before/after is consistent within
-    // the locked TX.
-    const inventoryIds = Array.from(new Set(input.drafts.map((d) => d.inventoryId)))
-    const inventories = await tx.flooringInventory.findMany({
-      where: { id: { in: inventoryIds } },
-      select: { id: true, startingStock: true, totalCutSum: true },
+    const createRows: Array<Prisma.FlooringCutLogCreateManyInput> = input.drafts.map(
+      (draft) => ({
+        id: draft.id,
+        inventoryId: draft.inventoryId,
+        workOrderId: input.workOrderId,
+        workOrderItemId: input.workOrderItemId,
+        cut: draft.cut,
+        coverageCut: draft.coverageCut,
+        isWaste: draft.isWaste,
+        notes: draft.notes ? draft.notes : null,
+        // before, after: null (stamped at finalize time)
+        // finalCutSequence: null (allocated at finalize time)
+        // cost, freight: null (never written on WO side)
+        // status defaults to PENDING; isFinal defaults to false; void defaults to false
+        // cutLogNumber is DB-generated via sequence
+      }),
+    )
+
+    await tx.flooringCutLog.createMany({
+      data: createRows,
+      skipDuplicates: true,
     })
-    const remainingByInventory = new Map<string, number>()
-    for (const inv of inventories) {
-      remainingByInventory.set(inv.id, Number(inv.startingStock) - Number(inv.totalCutSum))
-    }
-
-    const draftsByInventory = new Map<string, WorkOrderCutLogPendingDraftInput[]>()
-    for (const draft of input.drafts) {
-      const list = draftsByInventory.get(draft.inventoryId) ?? []
-      list.push(draft)
-      draftsByInventory.set(draft.inventoryId, list)
-    }
-
-    const createRows: Array<Prisma.FlooringCutLogCreateManyInput> = []
-    for (const [inventoryId, drafts] of draftsByInventory) {
-      let runningRemaining = remainingByInventory.get(inventoryId) ?? 0
-      for (const draft of drafts) {
-        const cutValue = Number(draft.cut)
-        const before = runningRemaining
-        const after = before - (Number.isFinite(cutValue) ? cutValue : 0)
-        runningRemaining = after
-        createRows.push({
-          id: draft.id,
-          inventoryId,
-          workOrderId: input.workOrderId,
-          workOrderItemId: input.workOrderItemId,
-          before: before.toFixed(2),
-          cut: draft.cut,
-          after: after.toFixed(2),
-          coverageCut: null,
-          status: "PENDING",
-          isFinal: false,
-          finalCutSequence: null,
-          cost: null,
-          freight: null,
-          isWaste: draft.isWaste,
-          void: false,
-          notes: draft.notes ? draft.notes : null,
-        })
-      }
-    }
-
-    if (createRows.length > 0) {
-      await tx.flooringCutLog.createMany({ data: createRows })
-    }
   }
 
   for (const update of input.updates) {
@@ -149,6 +135,9 @@ export async function applyWorkOrderItemCutLogPendingDiff(
       where: { id: update.id },
       data: {
         ...(update.patch.cut !== undefined ? { cut: update.patch.cut } : {}),
+        ...(update.patch.coverageCut !== undefined
+          ? { coverageCut: update.patch.coverageCut }
+          : {}),
         ...(update.patch.isWaste !== undefined ? { isWaste: update.patch.isWaste } : {}),
         ...(update.patch.notes !== undefined
           ? { notes: update.patch.notes ? update.patch.notes : null }
