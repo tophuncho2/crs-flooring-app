@@ -60,35 +60,66 @@ User action: Selects one or more pending cut log rows on the WOMI's expandable s
    - [ ] Figure out which inventory rows are touched (look up each selected cut log's `inventoryId`).
    - [ ] Lock those inventory rows `FOR UPDATE` in sorted order.
    - [ ] Re-read every selected cut log under the lock. Re-validate finalizability — catches anything that drifted between producer time and now (e.g. someone voided a row in between).
-   - [ ] One batched read for all touched inventories: every cut log on those inventories, regardless of status (PENDING / FINAL / voided), selecting `{id, inventoryId, cut, createdAt, isFinal, finalCutSequence, void}`, ordered by `inventoryId asc, createdAt asc`. This single read powers both the chronological walk and the sequence allocation below.
-   - [ ] 🔧 For each touched inventory, run the chronological walk:
-     - [ ] Starting `finalCutSequence`: the max `finalCutSequence` over rows with `isFinal: true` for this inventory, **including voided-after-finalized rows** (they keep their sequence). Add 1 — that's `nextSequence` for this batch.
-     - [ ] Walk all non-void cut logs for this inventory in `createdAt asc` order, maintaining `balance` starting at `inventory.startingStock`:
-       - For each row in order, compute `entering = balance`, `leaving = balance - row.cut`.
-       - **If the row is in this finalize batch:** stamp it. Update `status = FINAL`, `isFinal = true`, `finalCutSequence = nextSequence`, `before = entering`, `after = leaving`. `cut`, `coverageCut`, `notes`, `isWaste` stay as the user saved them. Advance `nextSequence += 1`.
-       - **If the row is NOT in this batch** (existing FINAL, or other PENDING that aren't being finalized right now): don't update anything — just advance `balance = leaving` and continue.
-     - **Voided rows.** Their `cut = 0`, so they don't shift the balance. They can be skipped in the walk (or walked through with a 0 deduction — same outcome).
-   - [ ] Defensive check per stamped row: `before − cut === after` (within float tolerance). Throw if not — TX rolls back.
+   - [ ] 🔧 For each touched inventory, allocate sequences and stamp `before`/`after`. **Pending cuts are not part of this computation** — they have no before/after and no sequence until they themselves get finalized.
+     - [ ] Read every existing FINAL non-void cut log on this inventory: their `cut` value. Sum them → `existingFinalCutSum`.
+     - [ ] Read the max `finalCutSequence` for this inventory across rows with `isFinal: true` — **including voided-after-finalized rows** (they keep their sequence). Call it `maxExistingSequence`. The first sequence to allocate is `maxExistingSequence + 1`.
+     - [ ] Initialize: `runningBalance = startingStock - existingFinalCutSum`; `nextSequence = maxExistingSequence + 1`.
+     - [ ] Sort this batch's cuts (for this inventory) by `createdAt asc` — gives a stable, deterministic order for sequence allocation within the batch.
+     - [ ] For each cut in order:
+       - `before = runningBalance`
+       - `after = before - cut`
+       - Update the row: `status = FINAL`, `isFinal = true`, `finalCutSequence = nextSequence`, `before`, `after`. `cut`, `coverageCut`, `notes`, `isWaste` stay as the user saved them.
+       - Defensive check: `before − cut === after` (within float tolerance). Throw if not.
+       - Advance: `runningBalance = after`, `nextSequence += 1`.
    - [ ] 🔧 **Don't recompute `totalCutSum`.** Cut values didn't change at finalize, so the sum is identical pre/post. Don't re-assert the `≤ startingStock` invariant either, for the same reason. Both are no-ops here.
    - [ ] Flip each touched WOMI back to `IDLE`.
    - [ ] Commit transaction. Done.
 
-### Worked example — what this means
+### Two distinct sums to keep straight
 
-Inventory has `startingStock = 100`. Three cut logs, all pending, in createdAt order: **A** (cut 10), **B** (cut 20), **C** (cut 30). `totalCutSum = 60`, `stockBalance = 40`.
+| Sum | Formula | Includes | Used for |
+|---|---|---|---|
+| `inventory.totalCutSum` (persisted on the row) | `sum(non-void cuts)` | All non-void cuts: PENDING + FINAL | The displayed `stockBalance = startingStock − totalCutSum` shows "what's available right now" to the user |
+| Finalize worker's `existingFinalCutSum` (in-memory only) | `sum(FINAL non-void cuts)` | **Only** FINAL non-void cuts | Drives `runningBalance = startingStock − existingFinalCutSum` for stamping `before`/`after` on the cuts in this finalize batch |
 
-User finalizes **only B** in this batch:
-- Walk: A first (skip — not in batch). Balance: 100 → 90. A stays pending.
-- B (in batch): entering = 90, leaving = 70. **Stamp B: `before = 90`, `after = 70`, `finalCutSequence = 1` (assuming no prior FINAL on this inventory).**
-- C (skip — not in batch). Balance: 70 → 40. C stays pending.
-- `totalCutSum` is still 60. `stockBalance` is still 40. Nothing changed there.
+These are not the same number. The first includes pending; the second excludes pending. Pending cuts contribute to the user's "available" view but never to a cut log's stamped `before`/`after`.
 
-User later finalizes **A**:
-- Walk: A (in batch): entering = 100, leaving = 90. **Stamp A: `before = 100`, `after = 90`, `finalCutSequence = 2`** (max existing sequence is B's 1; A gets next = 2).
-- B (skip — already FINAL). Balance: 90 → 70.
-- C (skip — still pending). Balance: 70 → 40.
+### Worked example
 
-Notice: **B's stamped `before`/`after` stay 90/70** even after A finalizes later. The values are a snapshot at B's moment-of-finalize. That's the "history" semantic.
+Inventory: `startingStock = 100`. Three cut logs, all PENDING in createdAt order: **A** (cut=10), **B** (cut=20), **C** (cut=30).
+
+**State now (everything pending):**
+- `totalCutSum = 60`, `stockBalance = 40` — what the user sees.
+- A, B, C: `before = null`, `after = null`, `finalCutSequence = null`. Inert.
+
+**User finalizes only B.**
+- `existingFinalCutSum = 0` (no FINAL on this inventory yet).
+- `maxExistingSequence = 0`, so `nextSequence = 1`.
+- `runningBalance = 100 - 0 = 100`.
+- Walk batch (just B): `before = 100`, `after = 80`. Stamped: B = `(100, 80, seq 1)`.
+- After: A pending (null/null/null), B FINAL `(100, 80, seq 1)`, C pending.
+- `totalCutSum` still `60` (no cut value changed). `stockBalance` still `40`.
+
+**Later, user finalizes A.**
+- `existingFinalCutSum = 20` (just B's cut now).
+- `maxExistingSequence = 1`, so `nextSequence = 2`.
+- `runningBalance = 100 - 20 = 80`.
+- Walk batch (just A): `before = 80`, `after = 70`. Stamped: A = `(80, 70, seq 2)`.
+- After: A FINAL `(80, 70, seq 2)`, B FINAL `(100, 80, seq 1)` unchanged, C still pending.
+
+**Notice the order of finalization, not creation, drives the sequence and the running balance.** A was created before B but finalized after — A gets sequence 2 with `before = 80` (post-B's deduction), while B keeps its frozen `(100, 80, seq 1)`.
+
+**User then voids A.**
+- A patch: `cut → "0"`, `coverageCut → null`, `void → true`, `status → "VOID"`. `finalCutSequence`, `isFinal`, `before`, `after` preserved.
+- Recompute `totalCutSum`: `0 + 20 + 30 = 50`. `stockBalance = 50`.
+- B unchanged.
+
+**User then finalizes C.**
+- `existingFinalCutSum = 0 + 20 = 20` (A voided contributes 0; B contributes 20).
+- `maxExistingSequence = 2` (A's — voided rows still have `isFinal: true` so they match). `nextSequence = 3`.
+- `runningBalance = 100 - 20 = 80`.
+- C stamped: `before = 80`, `after = 50`, `finalCutSequence = 3`.
+- After: `totalCutSum = 50`, `stockBalance = 50` — matches C's stamped `after`. The two views align at the moment of finalize because there are no other pending cuts.
 
 ### What this worker does NOT touch
 
@@ -157,17 +188,23 @@ WOMI status is **not touched** by void — voiding doesn't take the WOMI in or o
 ## Questions
 
 1. **Pending worker — delete-final guard placement.** Recommend the consumer (under the lock) over the producer, because the lock guarantees no race between the check and the delete. Confirm?
+- Agreed
 
-2. **Finalize worker — chronological walk semantics.** Re-stating to be explicit: at finalize time, `before`/`after` are stamped from a chronological walk through **all non-void cut logs** for the inventory (pending + final), in `createdAt asc` order. Once stamped, the row's `before`/`after` are frozen — they don't shift if other (older) pending cuts later finalize or change. Confirm that's the intended "history" semantic.
+2. **Finalize worker — within-batch ordering.** Each cut in a finalize batch needs both a `finalCutSequence` and a `before`/`after`. The natural order to assign them is `createdAt asc` — the order the user saved them — even though `createdAt` is "irrelevant" for pending cuts in every other respect. (We have to pick *some* deterministic order within the batch; createdAt is the only stable per-row signal we have, and matches `cutLogNumber asc`.) Confirm or pick a different tiebreaker.
+- we should probably use the sequence number to determine then next sequence order #.
+- Or are you asking which order the worker should actually make the cuts. If thats the question, my guess would be that it doesn't. matter because if any cut fails it rolls back right? 
 
-3. **Finalize worker — ordering tiebreaker.** If two cuts in the same inventory have the *exact same* `createdAt` timestamp, the chronological walk order is undefined. In practice impossible (each save lands at a different microsecond) but theoretically — do you want a tiebreaker like `cutLogNumber asc` after `createdAt asc`? Or accept that "shouldn't happen"?
+3. **Finalize worker — partial-stamping under failure.** If we stamp 3 of 5 cuts in an inventory and then the 4th throws (e.g., invariant check fails), the whole TX rolls back — no row gets stamped, every touched WOMI flips to `FAILED`. The user retries the whole batch. Confirm that's the intended UX (vs. partial finalize).
+- Agreed.
 
-4. **Finalize worker — partial-stamping under failure.** If we stamp 3 of 5 cuts in an inventory and then the 4th throws (e.g., invariant check fails), the whole TX rolls back — no row gets `finalCutSequence`, no `before`/`after` stamped, and every touched WOMI flips to `FAILED`. The user retries the whole batch. Confirm that's the intended UX (vs. partial finalize).
+4. **Voiding a finalized cut log — `before`/`after` preserved on the voided row.** `buildVoidedCutLogPatch` only clears `cut`/`coverageCut`/`cost`/`freight` and flips `void`/`status`. It preserves `before`, `after`, `cutLogNumber`, `isFinal`, `finalCutSequence` as a historical record. The voided row's `before`/`after` are therefore frozen at the moment-of-finalize snapshot, not "the always-current chronological position." Confirm — this is what `buildVoidedCutLogPatch` already does today.
+- put this on hokd
 
-5. **Void — should the row's `before` / `after` be cleared too?** Today they're preserved as audit history. Once the new model lands, voiding a *pending* row leaves them null (they were never stamped). Voiding a *final* row leaves them populated (the final-time snapshot). That asymmetry feels right but worth confirming.
+5. **Voiding a finalized cut — does it affect other FINAL rows' stamped `before`/`after`?** No, by the new model. Each FINAL row's `before`/`after` are stamped at the moment of *its own* finalize. Voiding cut A doesn't re-stamp cut B's history. The `existingFinalCutSum` for *future* finalizes will correctly exclude A's voided cut (because `cut = 0` after void), but already-stamped rows stay frozen. Confirm.
+- agreed
 
-6. **Voiding a finalized cut log — does it shift other rows' `before`/`after`?** Currently no (stamped values are frozen). But voiding zeroes the cut, which means if you re-walked the chronological history *now*, downstream rows would see different running balances. Their stamped `before`/`after` would no longer match a fresh walk. Treating stamped values as historical snapshots (which is what we just locked in) means we accept this drift — the row's stamped values reflect "the moment of finalize," not "the always-current chronological position." Confirm.
+6. **WOMI status — explicit FOR UPDATE never?** Reading the code, the status-as-mutex pattern works correctly for the current set of transitions. The producer's `assertWorkOrderItemStatusTransition` + the row-level lock during UPDATE make a separate `SELECT ... FOR UPDATE` redundant. Confirming you're OK leaving WOMI rows without an explicit FOR UPDATE.
+- put this on hold so i can research,
 
-7. **WOMI status — explicit FOR UPDATE never?** Reading the code, the status-as-mutex pattern works correctly for the current set of transitions. If at some point two different workers could legitimately need the same WOMI's status field at the same time (not the case today), an explicit lock would matter. Today: no need. Confirming you're OK leaving it that way.
-
-8. **Coverage gating — verifying my read of the data.** All four coverage-supporting categories are `vinyl-plank`, `carpet-tile`, `covebase`, `pad`. Any other category → `coverageCut = null` always. Confirming this list is current and complete.
+7. **Coverage gating — verifying my read of the data.** The four coverage-supporting categories are `vinyl-plank`, `carpet-tile`, `covebase`, `pad`. Any other category → `coverageCut = null` always. Confirming this list is current and complete.
+ - inventory rows outside of those four categories will never have a coverage per unit in the inv row OR in the product row. so the cut doesn't necessarily need to know the category, so my guess would be it computes no matter what, but most inventory rows will have a null coverage per unit, therefore the coverage cut is null.
