@@ -17,6 +17,8 @@ export type CutLogDomainErrorCode =
   | "CUT_LOG_TOTALCUTSUM_EXCEEDS_STARTING_STOCK"
   | "CUT_LOG_FINAL_SEQUENCE_INVALID"
   | "CUT_LOG_LINK_UPDATE_BLOCKED"
+  // Sync per-row mutation flow (create / update / delete pending cut log)
+  | "CUT_LOG_STALE_UPDATED_AT"
 
 export class CutLogDomainError extends Error {
   readonly code: CutLogDomainErrorCode

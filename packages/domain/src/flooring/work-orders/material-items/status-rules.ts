@@ -2,10 +2,9 @@ import { WorkOrderDomainError } from "../errors.js"
 import type { WorkOrderItemStatus } from "./types.js"
 
 const ALLOWED_TRANSITIONS: Record<WorkOrderItemStatus, ReadonlySet<WorkOrderItemStatus>> = {
-  IDLE: new Set<WorkOrderItemStatus>(["IDLE", "SAVING_CUTS", "FINALIZING"]),
-  SAVING_CUTS: new Set<WorkOrderItemStatus>(["IDLE", "FAILED"]),
+  IDLE: new Set<WorkOrderItemStatus>(["IDLE", "FINALIZING"]),
   FINALIZING: new Set<WorkOrderItemStatus>(["IDLE", "FAILED"]),
-  FAILED: new Set<WorkOrderItemStatus>(["SAVING_CUTS", "FINALIZING", "IDLE"]),
+  FAILED: new Set<WorkOrderItemStatus>(["FINALIZING", "IDLE"]),
 }
 
 export function isWorkOrderItemStatusTransitionAllowed(input: {

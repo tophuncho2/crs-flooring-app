@@ -67,26 +67,54 @@ IDLE before swapping the enum type.
 **Goal:** Add per-row mutation predicates; remove queue contract for the pending diff topic.
 
 **Files:**
-- [ ] `packages/domain/src/flooring/inventory/cut-logs/pending-mutation-rules.ts` (NEW)
-  - `assertWorkOrderItemReadyForCutLogMutation(womi)` → `WORK_ORDER_ITEM_NOT_IDLE` (409) if status !== IDLE
-  - `assertCutLogPendingMutationAllowed(row)` → `WORK_ORDER_CUT_LOG_NOT_PENDING` (409)
-  - `assertCutLogExpectedUpdatedAtMatches({ row, expected })` → `WORK_ORDER_CUT_LOG_STALE` (409)
-- [ ] `packages/domain/src/flooring/inventory/cut-logs/index.ts` (UPDATED — barrel)
-- [ ] `packages/domain/src/flooring/work-orders/cut-logs/types.ts` (UPDATED — add per-row input types)
-- [ ] `packages/domain/src/queue/save-work-order-item-pending-cut-log-diff.ts` (DELETED)
-- [ ] `packages/domain/src/queue/index.ts` (UPDATED — drop re-exports)
-- [ ] `assignDraftIds` removed from domain barrel (no longer used).
+- [x] `packages/domain/src/flooring/work-orders/material-items/types.ts` (UPDATED) — `WorkOrderItemStatus` union narrowed to `"IDLE" | "FINALIZING" | "FAILED"`.
+- [x] `packages/domain/src/flooring/work-orders/material-items/status-rules.ts` (UPDATED) — `ALLOWED_TRANSITIONS` rebuilt without `SAVING_CUTS`. Final transitions: `IDLE → {IDLE, FINALIZING}`, `FINALIZING → {IDLE, FAILED}`, `FAILED → {FINALIZING, IDLE}`.
+- [x] `packages/domain/src/flooring/work-orders/errors.ts` (UPDATED) — added `WORK_ORDER_ITEM_NOT_IDLE` to `WorkOrderDomainErrorCode`.
+- [x] `packages/domain/src/flooring/inventory/cut-logs/errors.ts` (UPDATED) — added `CUT_LOG_STALE_UPDATED_AT` to `CutLogDomainErrorCode`.
+- [x] `packages/domain/src/flooring/inventory/cut-logs/pending-mutation-rules.ts` (NEW) — three assertions:
+  - `assertWorkOrderItemReadyForCutLogMutation({ status })` — throws `WorkOrderDomainError("WORK_ORDER_ITEM_NOT_IDLE")` when status !== IDLE.
+  - `assertCutLogPendingMutationAllowed(row)` — delegates to `assertCutLogDeleteAllowed` (identical predicate; surfaces under update-or-delete intent name).
+  - `assertCutLogExpectedUpdatedAtMatches({ rowUpdatedAt, expected })` — throws `CutLogDomainError("CUT_LOG_STALE_UPDATED_AT")` on mismatch.
+- [x] `packages/domain/src/flooring/inventory/cut-logs/index.ts` (UPDATED) — barrel re-exports `pending-mutation-rules.js`.
+- [x] `packages/domain/src/flooring/work-orders/cut-logs/types.ts` (UPDATED) — added `CreatePendingCutLogInput`, `UpdatePendingCutLogInput`, `UpdatePendingCutLogPatch`, `DeletePendingCutLogInput`. `requestKey` + `requestedBy` carried on every input.
+- [x] `packages/domain/src/queue/save-work-order-item-pending-cut-log-diff.ts` (DELETED).
+- [x] `packages/domain/src/index.ts` (UPDATED) — dropped the queue file's barrel re-export.
 
-**Reuses (no edits):** `assertCutLogLinkageSymmetry`, `assertCutLogDeleteAllowed`, `computeCutCoverage`, `assertCutSumWithinStartingStock`.
+**Plan deviations (recorded):**
+- **`assignDraftIds` left intact** in `packages/domain/src/shared/diff-identity.ts`. The plan slated it for deletion, but `git grep` showed it's used by two unrelated flows that are NOT being torn down: `save-work-order-material-items-section.ts` and `save-template-material-items-section.ts`. Only the producer use case (`save-work-order-item-pending-cut-log-diff.ts`) used it for cut logs, and that file is deleted in Phase 4. Helper stays.
+- **No `packages/domain/src/queue/index.ts`** existed in the first place — queue file barrels are direct re-exports from `packages/domain/src/index.ts`. The barrel update happened there.
+- **New `WorkOrderItemStatus` union narrowing committed in this phase**, even though the plan put the type-level edit alongside the schema. The TS-level narrowing is a domain-layer change and naturally belongs here; coupling it with the data-layer `git status` keeps Phase 0 strictly the schema commit.
+
+**Reuses (no edits):** `assertCutLogLinkageSymmetry`, `assertCutLogDeleteAllowed`, `computeCutCoverage`, `assertCutSumWithinStartingStock`, `assertWorkOrderItemStatusTransition`.
 
 **Verification:**
-- [ ] `pnpm typecheck` for `@builders/domain` clean.
-- [ ] Unit tests for the three new assertion helpers pass.
+- [x] `pnpm typecheck` for `@builders/domain` (`tsc -p tsconfig.json --noEmit`) — clean (no output).
+- [x] Grep gate: `git grep -E "SAVING_CUTS|save-work-order-item-pending-cut-log-diff|SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF" -- 'packages/domain/'` returns 0 matches.
+- [ ] Unit tests for the three new assertion helpers — not yet authored. Will land alongside the application tests in Phase 3 (per repo convention; pure-domain helpers are tested via the use cases that consume them).
 
-**Status:** _not started_
+**Commit message (when user is ready):**
+
+```
+domain(cut-logs): add per-row pending-mutation predicates; drop SAVING_CUTS
+
+- Narrow WorkOrderItemStatus to IDLE | FINALIZING | FAILED. Rebuild
+  the transition map accordingly (FAILED still re-enters FINALIZING
+  or IDLE; SAVING_CUTS is no longer reachable).
+- Add WORK_ORDER_ITEM_NOT_IDLE and CUT_LOG_STALE_UPDATED_AT codes.
+- Add pending-mutation-rules.ts with the three assertions the new
+  sync use cases (create / update / delete) will call inside their
+  TX: WOMI readiness, row-state allowlist (delegates to existing
+  assertCutLogDeleteAllowed), and updatedAt OCC check.
+- Add CreatePendingCutLogInput / UpdatePendingCutLogInput /
+  DeletePendingCutLogInput to work-orders/cut-logs/types.ts.
+- Delete the obsolete pending-cut-log-diff queue contract + barrel
+  re-export. assignDraftIds stays — used by other flows.
+```
+
+**Status:** ✅ done. Domain typecheck green; ready for Phase 2 (Data).
 
 **Notes:**
-- _empty until execution_
+- The status enum migration in Phase 0 + the union narrowing here together un-block all subsequent phases. Files outside the domain package that still reference `"SAVING_CUTS"` are now provably broken at typecheck time, but those references all live in the producer/consumer use cases (Phase 4 deletion target) or in the section-route (Phase 5 deletion target) or the section UI (Phase 7 deletion target). Build remains red across the whole monorepo until Phase 4 lands; expected.
 
 ---
 
@@ -252,7 +280,7 @@ _To be filled in as work proceeds. Issues that don't fit a single phase land her
 | Phase | Status | Files touched | Errors | Notes |
 |---|---|---|---|---|
 | 0 — Schema | ✅ committed + applied | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/20260501190000_drop_work_order_item_status_saving_cuts/migration.sql` | 0 | Migration deployed to Railway Postgres. Monorepo typecheck expected red until Phase 1 + 4 land. |
-| 1 — Domain | _not started_ | — | — | — |
+| 1 — Domain | ✅ done (uncommitted) | `material-items/types.ts`, `material-items/status-rules.ts`, `work-orders/errors.ts`, `inventory/cut-logs/errors.ts`, `inventory/cut-logs/pending-mutation-rules.ts` (NEW), `inventory/cut-logs/index.ts`, `work-orders/cut-logs/types.ts`, `queue/save-work-order-item-pending-cut-log-diff.ts` (DELETED), `src/index.ts` | 0 | Domain typecheck green. `assignDraftIds` kept (used by other flows). Monorepo typecheck still red — fixes land Phase 2/3/4. |
 | 2 — Data | _not started_ | — | — | — |
 | 3 — Application | _not started_ | — | — | — |
 | 4 — Worker dismantle | _not started_ | — | — | — |

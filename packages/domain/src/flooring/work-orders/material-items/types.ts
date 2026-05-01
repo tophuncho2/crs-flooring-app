@@ -1,4 +1,4 @@
-export type WorkOrderItemStatus = "IDLE" | "SAVING_CUTS" | "FINALIZING" | "FAILED"
+export type WorkOrderItemStatus = "IDLE" | "FINALIZING" | "FAILED"
 
 export type WorkOrderMaterialItemRow = {
   id: string
