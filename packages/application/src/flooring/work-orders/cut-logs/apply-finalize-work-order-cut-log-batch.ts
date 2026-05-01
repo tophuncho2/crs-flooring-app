@@ -4,15 +4,15 @@ import {
   getInventoriesForCutLogIds,
   lockInventoriesForCutLogBatch,
   markWorkOrderItemStatus,
-  recomputeAndPersistTotalCutSums,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
-  assertCutSumWithinStartingStock,
+  assertBeforeCutAfterInvariant,
   canFinalizeCutLog,
   getCutLogFinalizabilityBlocker,
   type FinalizeWorkOrderCutLogBatchPayload,
 } from "@builders/domain"
+import { logStructuredEvent } from "@builders/lib"
 import { WorkOrderCutLogExecutionError } from "./errors.js"
 
 /**
@@ -25,10 +25,22 @@ import { WorkOrderCutLogExecutionError } from "./errors.js"
  *   3. Re-validate every row's `canFinalizeCutLog` predicate (defensive
  *      against drift between producer time and consumer time).
  *   4. Apply finalize: flip status PENDING → FINAL, stamp
- *      `finalCutSequence` per inventory.
- *   5. Recompute `totalCutSum` per touched inventory and assert the
- *      `≤ startingStock` invariant.
+ *      `before` / `after` / `finalCutSequence` per inventory via the
+ *      data layer's chronological walk (sorted by createdAt asc within
+ *      each inventory; running balance starts at
+ *      `startingStock − sum(existing FINAL non-void cuts)`; sequence
+ *      starts at `max(finalCutSequence over isFinal=true rows) + 1`,
+ *      including voided-after-final rows so their slot is never reused).
+ *   5. Defensively assert `before − cut === after` per stamped row via
+ *      the domain invariant. Pure check; throws on arithmetic drift.
  *   6. Mark every touched WOMI `FINALIZING → IDLE`.
+ *
+ * `recomputeAndPersistTotalCutSums` and `assertCutSumWithinStartingStock`
+ * are intentionally NOT called here — cut values don't change at
+ * finalize time, so `totalCutSum` is identical pre/post and the
+ * invariant is automatically preserved. Both calls are no-ops at
+ * finalize and have been dropped to save a query and avoid misleading
+ * "we re-checked the invariant" semantics.
  *
  * On any throw, the worker processor flips every touched WOMI to
  * FAILED in a fresh TX after the rollback (parallels the pending-diff
@@ -104,20 +116,18 @@ export async function applyFinalizeWorkOrderCutLogBatchUseCase(
       touchedWorkOrderItemIds.add(row.workOrderItemId)
     }
 
-    await applyFinalizeWorkOrderCutLogBatch(c, { cutLogIds: payload.cutLogIds })
-
-    const recomputed = await recomputeAndPersistTotalCutSums(c, inventoryIds)
-    const startingStocks = await c.flooringInventory.findMany({
-      where: { id: { in: inventoryIds } },
-      select: { id: true, startingStock: true },
+    const { stampedRows } = await applyFinalizeWorkOrderCutLogBatch(c, {
+      cutLogIds: payload.cutLogIds,
     })
-    const stockById = new Map(startingStocks.map((s) => [s.id, s.startingStock.toString()]))
-    for (const row of recomputed) {
-      const startingStock = stockById.get(row.inventoryId)
-      if (startingStock === undefined) continue
-      assertCutSumWithinStartingStock({
-        totalCutSum: row.totalCutSum,
-        startingStock,
+
+    // Defensively re-assert the arithmetic invariant on each row the
+    // data layer just stamped. Pure check (no I/O). Catches drift
+    // between the running-balance walk and the persisted values.
+    for (const row of stampedRows) {
+      assertBeforeCutAfterInvariant({
+        before: row.before,
+        cut: row.cut,
+        after: row.after,
       })
     }
 
@@ -141,6 +151,12 @@ export async function applyFinalizeWorkOrderCutLogBatchUseCase(
  * Takes cut-log IDs (not WOMI IDs) because that's what the worker has
  * available from the payload at catch time. Internally derives the
  * unique non-null `workOrderItemId` set, then writes each.
+ *
+ * If a per-WOMI FAILED-marker write itself throws, the error is logged
+ * at `error` level (so stuck-state WOMIs are observable) and swallowed
+ * — the worker processor's caller already has the original error to
+ * surface for BullMQ classification, and re-throwing here would mask it
+ * and short-circuit the loop over remaining WOMIs.
  */
 export async function markWorkOrderItemsFailedFromFinalizeBatch(
   cutLogIds: string[],
@@ -162,8 +178,17 @@ export async function markWorkOrderItemsFailedFromFinalizeBatch(
     for (const id of womiIds) {
       try {
         await markWorkOrderItemStatus(id, "FAILED", c)
-      } catch {
-        // Swallow: same rationale as pending-diff failure path.
+      } catch (err) {
+        logStructuredEvent({
+          level: "error",
+          service: "builders-application",
+          environment: process.env.NODE_ENV ?? "unknown",
+          message:
+            "Failed to mark WOMI FAILED after finalize-batch worker error — WOMI may be stuck in FINALIZING",
+          action: "work_orders.cut_logs.finalize.mark_failed_failed",
+          details: { workOrderItemId: id },
+          error: err,
+        })
       }
     }
   })

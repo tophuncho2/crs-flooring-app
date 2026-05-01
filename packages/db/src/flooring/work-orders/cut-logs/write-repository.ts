@@ -153,11 +153,36 @@ export type ApplyFinalizeWorkOrderCutLogBatchInput = {
   cutLogIds: string[]
 }
 
+export type FinalizeStampedRow = {
+  id: string
+  before: string
+  cut: string
+  after: string
+}
+
 /**
- * Flips the listed PENDING cut logs to FINAL with deterministic
- * `finalCutSequence` per inventory. Sequence is assigned per-inventory
- * by max(finalCutSequence) + N over the existing FINAL rows for that
- * inventory.
+ * Flips the listed PENDING cut logs to FINAL, stamping `before`/`after`
+ * + `finalCutSequence` deterministically per inventory.
+ *
+ * Per touched inventory:
+ *   - `existingFinalCutSum` = sum of `cut` over rows where `isFinal:
+ *     true` AND `void: false` (voided-after-finalized contribute 0
+ *     because their `cut` is `"0"`).
+ *   - `maxExistingSequence` = max `finalCutSequence` over rows where
+ *     `isFinal: true` — INCLUDING voided-after-final (those keep their
+ *     sequence, never reused; the next allocation jumps over their
+ *     slot).
+ *   - `runningBalance = startingStock − existingFinalCutSum` is the
+ *     starting point for the walk.
+ *   - `nextSequence = maxExistingSequence + 1`.
+ *   - The batch's rows for this inventory are walked in `createdAt
+ *     asc`. For each: `before = runningBalance`, `after = before − cut`,
+ *     then advance both `runningBalance` and `nextSequence`.
+ *
+ * Returns the per-row stamped values so the caller can defensively
+ * assert `before − cut === after` via the domain invariant. The data
+ * layer itself doesn't throw — keeps it free of business-rule
+ * assertions per `packages/db/CLAUDE.md`.
  *
  * Caller takes the multi-inventory FOR UPDATE lock (via
  * `lockInventoriesForCutLogBatch`) before this runs.
@@ -165,42 +190,86 @@ export type ApplyFinalizeWorkOrderCutLogBatchInput = {
 export async function applyFinalizeWorkOrderCutLogBatch(
   tx: Prisma.TransactionClient,
   input: ApplyFinalizeWorkOrderCutLogBatchInput,
-): Promise<void> {
-  if (input.cutLogIds.length === 0) return
+): Promise<{ stampedRows: FinalizeStampedRow[] }> {
+  if (input.cutLogIds.length === 0) return { stampedRows: [] }
 
   const targets = await tx.flooringCutLog.findMany({
     where: { id: { in: input.cutLogIds } },
-    select: { id: true, inventoryId: true, createdAt: true },
+    select: { id: true, inventoryId: true, cut: true, createdAt: true },
     orderBy: [{ inventoryId: "asc" }, { createdAt: "asc" }],
   })
 
-  const targetsByInventory = new Map<string, Array<{ id: string }>>()
-  for (const t of targets) {
-    const list = targetsByInventory.get(t.inventoryId) ?? []
-    list.push({ id: t.id })
-    targetsByInventory.set(t.inventoryId, list)
-  }
+  const inventoryIds = Array.from(new Set(targets.map((t) => t.inventoryId)))
 
-  for (const [inventoryId, rows] of targetsByInventory) {
-    const maxSequenceRow = await tx.flooringCutLog.findFirst({
-      where: { inventoryId, isFinal: true },
-      orderBy: { finalCutSequence: "desc" },
-      select: { finalCutSequence: true },
+  const [inventoryRows, existingFinalRows] = await Promise.all([
+    tx.flooringInventory.findMany({
+      where: { id: { in: inventoryIds } },
+      select: { id: true, startingStock: true },
+    }),
+    tx.flooringCutLog.findMany({
+      where: { inventoryId: { in: inventoryIds }, isFinal: true },
+      select: { inventoryId: true, cut: true, finalCutSequence: true, void: true },
+    }),
+  ])
+
+  const startingStockById = new Map(
+    inventoryRows.map((r) => [r.id, Number(r.startingStock)]),
+  )
+
+  type InventoryWalkState = { runningBalance: number; nextSequence: number }
+  const stateByInventory = new Map<string, InventoryWalkState>()
+  for (const id of inventoryIds) {
+    stateByInventory.set(id, {
+      runningBalance: startingStockById.get(id) ?? 0,
+      nextSequence: 1,
     })
-    let nextSequence = (maxSequenceRow?.finalCutSequence ?? 0) + 1
-
-    for (const row of rows) {
-      await tx.flooringCutLog.update({
-        where: { id: row.id },
-        data: {
-          status: "FINAL",
-          isFinal: true,
-          finalCutSequence: nextSequence,
-        },
-      })
-      nextSequence += 1
+  }
+  for (const row of existingFinalRows) {
+    const state = stateByInventory.get(row.inventoryId)
+    if (state === undefined) continue
+    if (!row.void) {
+      state.runningBalance -= Number(row.cut)
+    }
+    if (row.finalCutSequence !== null && row.finalCutSequence >= state.nextSequence) {
+      state.nextSequence = row.finalCutSequence + 1
     }
   }
+
+  const stampedRows: FinalizeStampedRow[] = []
+
+  for (const target of targets) {
+    const state = stateByInventory.get(target.inventoryId)
+    if (state === undefined) continue
+    const cutNum = Number(target.cut)
+    const beforeNum = state.runningBalance
+    const afterNum = beforeNum - cutNum
+    const beforeStr = beforeNum.toFixed(2)
+    const afterStr = afterNum.toFixed(2)
+    const cutStr = target.cut.toString()
+
+    await tx.flooringCutLog.update({
+      where: { id: target.id },
+      data: {
+        status: "FINAL",
+        isFinal: true,
+        finalCutSequence: state.nextSequence,
+        before: beforeStr,
+        after: afterStr,
+      },
+    })
+
+    stampedRows.push({
+      id: target.id,
+      before: beforeStr,
+      cut: cutStr,
+      after: afterStr,
+    })
+
+    state.runningBalance = afterNum
+    state.nextSequence += 1
+  }
+
+  return { stampedRows }
 }
 
 /**
