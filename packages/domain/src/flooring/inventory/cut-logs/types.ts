@@ -28,9 +28,9 @@ export type CutLogRow = {
   inventoryId: string
   workOrderId: string | null
   workOrderItemId: string | null
-  before: string
+  before: string | null
   cut: string
-  after: string
+  after: string | null
   coverageCut: string | null
   status: FlooringCutLogStatus
   isFinal: boolean

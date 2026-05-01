@@ -391,10 +391,10 @@ model FlooringCutLog {
   workOrder        FlooringWorkOrder?     @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   workOrderItemId  String?
   workOrderItem    FlooringWorkOrderItem? @relation(fields: [workOrderItemId], references: [id], onDelete: SetNull)
-  before           Decimal                @db.Decimal(12, 2)
+  before           Decimal?               @db.Decimal(12, 2)
   cut              Decimal                @db.Decimal(12, 2)
   coverageCut      Decimal?               @db.Decimal(12, 2)
-  after            Decimal                @db.Decimal(12, 2)
+  after            Decimal?               @db.Decimal(12, 2)
   status           FlooringCutLogStatus   @default(PENDING)
   isFinal          Boolean                @default(false)
   finalCutSequence Int?

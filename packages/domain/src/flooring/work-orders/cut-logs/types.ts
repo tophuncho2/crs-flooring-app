@@ -14,9 +14,9 @@ export type WorkOrderItemPendingCutLogRow = {
   status: FlooringCutLogStatus
   isFinal: boolean
   inventoryId: string
-  before: string
+  before: string | null
   cut: string
-  after: string
+  after: string | null
   coverageCut: string
   isWaste: boolean
   notes: string

@@ -7,9 +7,9 @@ type WorkOrderItemPendingCutLogRowInput = {
   status: FlooringCutLogStatus
   isFinal: boolean
   inventoryId: string
-  before: { toString(): string }
+  before: { toString(): string } | null
   cut: { toString(): string }
-  after: { toString(): string }
+  after: { toString(): string } | null
   coverageCut: { toString(): string } | null
   isWaste: boolean
   notes: string | null
@@ -26,9 +26,9 @@ export function normalizeWorkOrderItemPendingCutLogRow(
     status: row.status,
     isFinal: row.isFinal,
     inventoryId: row.inventoryId,
-    before: row.before.toString(),
+    before: row.before === null ? null : row.before.toString(),
     cut: row.cut.toString(),
-    after: row.after.toString(),
+    after: row.after === null ? null : row.after.toString(),
     coverageCut: row.coverageCut === null ? "" : row.coverageCut.toString(),
     isWaste: row.isWaste,
     notes: row.notes ?? "",
