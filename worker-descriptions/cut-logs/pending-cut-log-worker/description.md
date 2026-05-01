@@ -55,22 +55,34 @@ Wraps everything below in a single DB transaction:
 
 - [ ] For each inventory id in sorted order, run `SELECT "id" FROM "flooring_inventory" WHERE "id" = $id FOR UPDATE`. (Same single-id pattern used everywhere else; sorting prevents deadlocks across overlapping concurrent batches.)
 
-### 3. Pre-validate deletes (close the FINAL-delete gap)
+### 3. Read coverage data for every touched inventory
 
-- [ ] For every entry in `deleted[]`, re-read the cut log under the lock and confirm `status = "PENDING"` (and not voided, not finalized).
-- [ ] If any delete targets a `FINAL`, `VOID`, or `QUEUED` row → throw and roll back. Final cuts can only be voided, never deleted.
-
-### 4. Apply deletes
-
-- [ ] Run `flooringCutLog.deleteMany({ where: { id: { in: deletedIds } } })`.
-
-### 5. Read coverage data for every touched inventory
-
-Need this for both creates and `cut`-changing updates.
+Drives `coverageCut` derivation for both creates and `cut`-changing updates.
 
 - [ ] Read `{ id, categorySlug, coveragePerUnit }` for every inventory id in the lock set. Build a `Map<inventoryId, { categorySlug, coveragePerUnit }>`.
 
-### 6. Apply creates
+### 4. Pre-read every referenced cut log (powers the next three checks)
+
+Single batched `findMany` selecting `{ id, inventoryId, workOrderItemId, status, isFinal, void }` for every id in `modified[] ∪ deleted[]`. Used by:
+- **Linkage check** (step 5) — every existing row must belong to this WOMI.
+- **Delete-allowed check** (step 6) — status must be PENDING.
+- **Coverage re-derivation** in step 8 — supplies the parent `inventoryId` for `cut`-changing updates without a second round-trip.
+
+### 5. Linkage check (close the cross-WOMI mutation gap)
+
+- [ ] For every referenced row that exists, confirm `workOrderItemId === payload.workOrderItemId`. If a referenced cut log belongs to a *different* WOMI → throw `WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH` and roll back.
+- [ ] Missing-id rows are intentionally not flagged here — `deleteMany` is idempotent on missing ids (retry safety), and `update` against a missing id surfaces a clear error from the data layer.
+
+### 6. Delete-allowed check (close the FINAL-delete gap)
+
+- [ ] For every entry in `deleted[]`, look up the row in the pre-read map and run `assertCutLogDeleteAllowed`. Only PENDING rows are deletable.
+- [ ] If any delete targets a `FINAL`, `VOID`, or `QUEUED` row → throw `WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED` and roll back. Final cuts can only be voided, never deleted.
+
+### 7. Apply deletes
+
+- [ ] Run `flooringCutLog.deleteMany({ where: { id: { in: deletedIds } } })`.
+
+### 8. Apply creates
 
 For each entry in `added[]`:
 
@@ -89,32 +101,32 @@ For each entry in `added[]`:
   - **`cost` = null, `freight` = null** (never written on the WO side)
   - `status` = `"PENDING"`, `isFinal` = `false`, `void` = `false`
   - `cutLogNumber` is **not** explicitly set — the DB sequence default `('CUT-' || lpad(nextval(...), 7, '0'))` allocates it
-- [ ] Run a single `flooringCutLog.createMany({ data: [...] })` with all the build rows.
+- [ ] Run a single `flooringCutLog.createMany({ data: [...], skipDuplicates: true })`. The `skipDuplicates` flag is `INSERT ... ON CONFLICT DO NOTHING` — a retried worker is a silent no-op against the already-inserted rows.
 
-### 7. Apply updates
+### 9. Apply updates
 
 For each entry in `modified[]`:
 
 - [ ] Build the patch from the user diff: `cut`, `isWaste`, `notes` (only the fields actually changed).
-- [ ] **If `cut` changed:** look up the parent inventory in the coverage map and **re-derive `coverageCut`** the same way as creates. Add it to the patch (write `null` if the category doesn't support coverage or `coveragePerUnit` is null).
+- [ ] **If `cut` changed:** look up the parent inventory in the coverage map (via the pre-read row's `inventoryId`) and **re-derive `coverageCut`** the same way as creates. Add it to the patch (write `null` if the category doesn't support coverage or `coveragePerUnit` is null).
 - [ ] Run `flooringCutLog.update({ where: { id }, data: patch })`.
 
-### 8. Recompute and persist `totalCutSum` per touched inventory
+### 10. Recompute and persist `totalCutSum` per touched inventory
 
 - [ ] For every inventory id in the lock set, recompute `totalCutSum` from the post-diff cut log set (sum of `cut` values across non-void rows; pending and final both contribute).
 - [ ] Write the new `totalCutSum` back to each inventory row.
 
 This is what feeds the user-displayed `stockBalance = startingStock − totalCutSum`. The worker doesn't compute `stockBalance` directly — that's a read-time concern.
 
-### 9. Assert the invariant
+### 11. Assert the invariant
 
 - [ ] Per touched inventory: `totalCutSum ≤ startingStock`. If violated → throw `WorkOrderCutLogExecutionError` and roll back.
 
-### 10. Flip the WOMI back
+### 12. Flip the WOMI back
 
 - [ ] `markWorkOrderItemStatus(womiId, "IDLE")` — `SAVING_CUTS → IDLE`.
 
-### 11. Commit
+### 13. Commit
 
 Transaction commits. Done.
 

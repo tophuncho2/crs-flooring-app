@@ -59,10 +59,19 @@ function deriveCoverageCutString(input: {
  *   3. Read each touched inventory's `categorySlug` + `coveragePerUnit`
  *      under the lock (used to derive `coverageCut` per draft and per
  *      `cut`-changing update).
- *   4. Re-validate every delete under the lock via
- *      `assertCutLogDeleteAllowed` — final / voided / queued rows
- *      cannot be deleted (only voided). Throws if any delete targets a
- *      non-deletable row.
+ *   4. Pre-read every cut log referenced by the diff's `modified[]` or
+ *      `deleted[]` in a single query. Powers three under-the-lock
+ *      validations:
+ *        (a) Linkage — every existing referenced row's
+ *            `workOrderItemId` must match the payload's WOMI. Closes
+ *            cross-WOMI mutation via crafted payloads (a malicious
+ *            client could otherwise put another WOMI's cut-log id in
+ *            `modified[]` or `deleted[]`).
+ *        (b) Delete-allowed — `assertCutLogDeleteAllowed` rejects any
+ *            delete targeting a final / voided / queued row (those can
+ *            only be voided, never deleted).
+ *        (c) Coverage re-derivation — supplies the parent `inventoryId`
+ *            for `cut`-changing update enrichment.
  *   5. Enrich drafts with derived `coverageCut`.
  *   6. Enrich updates whose patch includes `cut` with re-derived
  *      `coverageCut`.
@@ -112,35 +121,91 @@ export async function applyWorkOrderItemPendingCutLogDiffUseCase(
       ]),
     )
 
-    // Re-validate every delete under the lock. Final / voided / queued
-    // rows can only be voided, never deleted. Closes the gap where a
-    // malformed payload could otherwise drop a finalized row through
-    // the data layer's deleteMany.
-    if (payload.diff.deleted.length > 0) {
-      const deleteIds = payload.diff.deleted.map((d) => d.id)
-      const existing = await c.flooringCutLog.findMany({
-        where: { id: { in: deleteIds } },
-        select: { id: true, status: true, isFinal: true, void: true },
+    // Pre-read every cut log referenced by `modified[]` or `deleted[]`
+    // in a single batched query. The same select powers three checks:
+    //   (a) WOMI linkage — every referenced row must belong to this
+    //       WOMI (closes cross-WOMI mutation via crafted payloads).
+    //   (b) Delete-allowed — final / voided / queued rows can only be
+    //       voided, not deleted.
+    //   (c) Coverage re-derivation — `cut`-changing updates need the
+    //       parent `inventoryId` to look up coverage data.
+    const referencedIds = Array.from(
+      new Set([
+        ...payload.diff.modified.map((u) => u.id),
+        ...payload.diff.deleted.map((d) => d.id),
+      ]),
+    )
+    type ReferencedRow = {
+      inventoryId: string
+      workOrderItemId: string | null
+      status: "PENDING" | "QUEUED" | "FINAL" | "VOID"
+      isFinal: boolean
+      void: boolean
+    }
+    const referencedById = new Map<string, ReferencedRow>()
+    if (referencedIds.length > 0) {
+      const rows = await c.flooringCutLog.findMany({
+        where: { id: { in: referencedIds } },
+        select: {
+          id: true,
+          inventoryId: true,
+          workOrderItemId: true,
+          status: true,
+          isFinal: true,
+          void: true,
+        },
       })
-      for (const row of existing) {
-        try {
-          assertCutLogDeleteAllowed(row)
-        } catch {
-          throw new WorkOrderCutLogExecutionError({
-            code: "WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED",
-            message: "Cannot delete a finalized or voided cut log; void it instead",
-            status: 409,
-            payload: {
-              cutLogId: row.id,
-              status: row.status,
-              isFinal: row.isFinal,
-              void: row.void,
-            },
-          })
-        }
+      for (const r of rows) {
+        referencedById.set(r.id, {
+          inventoryId: r.inventoryId,
+          workOrderItemId: r.workOrderItemId,
+          status: r.status,
+          isFinal: r.isFinal,
+          void: r.void,
+        })
       }
-      // Missing-id rows are intentionally not flagged here — `deleteMany`
-      // is idempotent on already-deleted ids (retry safety).
+    }
+
+    // (a) Linkage — every existing referenced row must belong to this
+    //     WOMI. Missing rows are not flagged here: deletes are
+    //     idempotent on missing ids, and updates against missing ids
+    //     surface a clear error from the data layer's `update`.
+    for (const id of referencedIds) {
+      const row = referencedById.get(id)
+      if (row === undefined) continue
+      if (row.workOrderItemId !== payload.workOrderItemId) {
+        throw new WorkOrderCutLogExecutionError({
+          code: "WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH",
+          message: "Cut log does not belong to this material item",
+          status: 409,
+          payload: {
+            cutLogId: id,
+            expectedWorkOrderItemId: payload.workOrderItemId,
+            actualWorkOrderItemId: row.workOrderItemId,
+          },
+        })
+      }
+    }
+
+    // (b) Delete-allowed — only PENDING rows are deletable.
+    for (const del of payload.diff.deleted) {
+      const row = referencedById.get(del.id)
+      if (row === undefined) continue
+      try {
+        assertCutLogDeleteAllowed(row)
+      } catch {
+        throw new WorkOrderCutLogExecutionError({
+          code: "WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED",
+          message: "Cannot delete a finalized or voided cut log; void it instead",
+          status: 409,
+          payload: {
+            cutLogId: del.id,
+            status: row.status,
+            isFinal: row.isFinal,
+            void: row.void,
+          },
+        })
+      }
     }
 
     // Enrich drafts with derived coverageCut.
@@ -154,29 +219,17 @@ export async function applyWorkOrderItemPendingCutLogDiffUseCase(
       }),
     )
 
-    // Enrich updates whose patch includes a new `cut` value with a
-    // re-derived `coverageCut`. Need each update's parent inventory id
-    // to look up coverage data.
-    const cutChangingUpdateIds = payload.diff.modified
-      .filter((u) => u.patch.cut !== undefined)
-      .map((u) => u.id)
-    const updateInventoryById = new Map<string, string>()
-    if (cutChangingUpdateIds.length > 0) {
-      const updateRows = await c.flooringCutLog.findMany({
-        where: { id: { in: cutChangingUpdateIds } },
-        select: { id: true, inventoryId: true },
-      })
-      for (const r of updateRows) updateInventoryById.set(r.id, r.inventoryId)
-    }
-
+    // (c) Enrich updates whose patch includes a new `cut` value with a
+    //     re-derived `coverageCut`. Parent `inventoryId` comes from
+    //     `referencedById` (same pre-read).
     const enrichedUpdates: WorkOrderCutLogPendingUpdateInput[] = payload.diff.modified.map(
       (update) => {
         if (update.patch.cut === undefined) return update
-        const invId = updateInventoryById.get(update.id)
-        if (invId === undefined) return update
+        const row = referencedById.get(update.id)
+        if (row === undefined) return update
         const coverageCut = deriveCoverageCutString({
           cut: update.patch.cut,
-          coverage: coverageById.get(invId),
+          coverage: coverageById.get(row.inventoryId),
         })
         return {
           ...update,

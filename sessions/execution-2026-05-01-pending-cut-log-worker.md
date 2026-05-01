@@ -17,7 +17,7 @@ Five files touched across application + data + domain (errors) + UI layers.
 | 1 | [packages/application/src/flooring/work-orders/cut-logs/errors.ts](packages/application/src/flooring/work-orders/cut-logs/errors.ts) | Added `WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED` to the error code union |
 | 2 | [packages/db/src/flooring/work-orders/cut-logs/write-repository.ts](packages/db/src/flooring/work-orders/cut-logs/write-repository.ts) | `applyWorkOrderItemCutLogPendingDiff` rewritten: dropped before/after computation, accepts pre-derived `coverageCut` on drafts and updates, uses `createMany({ skipDuplicates: true })`, emits null-default rows for `before/after/cost/freight/finalCutSequence` (Prisma defaults) |
 | 3 | [packages/application/src/flooring/work-orders/cut-logs/save-work-order-item-pending-cut-log-diff.ts](packages/application/src/flooring/work-orders/cut-logs/save-work-order-item-pending-cut-log-diff.ts) | Hoisted `assertCutLogLinkageSymmetry` out of the per-draft loop into a single call before draft-id stamping |
-| 4 | [packages/application/src/flooring/work-orders/cut-logs/apply-work-order-item-pending-cut-log-diff.ts](packages/application/src/flooring/work-orders/cut-logs/apply-work-order-item-pending-cut-log-diff.ts) | Consumer reads coverage data per touched inventory under the lock; re-validates deletes via `assertCutLogDeleteAllowed`; enriches drafts and `cut`-changing updates with derived `coverageCut`; `markFailed` swallow now logs at error level via `logStructuredEvent` |
+| 4 | [packages/application/src/flooring/work-orders/cut-logs/apply-work-order-item-pending-cut-log-diff.ts](packages/application/src/flooring/work-orders/cut-logs/apply-work-order-item-pending-cut-log-diff.ts) | Consumer reads coverage data per touched inventory under the lock; pre-reads every referenced cut log in one batched query; **enforces WOMI-linkage check on every referenced row** (closes cross-WOMI mutation gap); re-validates deletes via `assertCutLogDeleteAllowed`; enriches drafts and `cut`-changing updates with derived `coverageCut`; `markFailed` swallow now logs at error level via `logStructuredEvent` |
 | 5 | [apps/web/modules/work-orders/components/record/material-items/work-order-cut-log-row.tsx](apps/web/modules/work-orders/components/record/material-items/work-order-cut-log-row.tsx) | UI `?? "—"` fallback on `{row.before}` and `{row.after}` so PENDING rows render gracefully |
 
 ---
@@ -49,7 +49,8 @@ Five files touched across application + data + domain (errors) + UI layers.
 - **New pending rows write null `before`/`after`/`finalCutSequence`/`cost`/`freight`.** The schema (already migrated) accepts them; the finalize worker (TBD) is what stamps before/after/finalCutSequence.
 - **`coverageCut` is now correctly derived on creates.** When the parent inventory's category is in `{vinyl-plank, carpet-tile, covebase, pad}` AND `coveragePerUnit` is non-null, `coverageCut = cut × coveragePerUnit` (formatted to 2 decimals). Otherwise null.
 - **`coverageCut` is re-derived on updates that change `cut`.** Notes-only or isWaste-only edits leave `coverageCut` untouched.
-- **Final / voided / queued cut logs cannot be deleted via the pending diff.** The consumer asserts `assertCutLogDeleteAllowed` per delete entry under the lock; mismatches throw `WorkOrderCutLogExecutionError("WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED", 409)`. Producer flow is unchanged — the gap was always at the consumer/data boundary.
+- **Cut logs from other WOMIs cannot be mutated via the pending diff.** The consumer pre-reads every referenced cut log (modified + deleted) under the lock and verifies `workOrderItemId === payload.workOrderItemId` for each existing row. A crafted payload that slips another WOMI's cut-log id into `modified[]` or `deleted[]` now throws `WorkOrderCutLogExecutionError("WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH", 409)`. Closes a pre-existing cross-WOMI mutation gap that the original code carried.
+- **Final / voided / queued cut logs cannot be deleted via the pending diff.** The consumer asserts `assertCutLogDeleteAllowed` per delete entry under the lock (sharing the pre-read with the linkage check); mismatches throw `WorkOrderCutLogExecutionError("WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED", 409)`. Producer flow is unchanged — the gap was always at the consumer/data boundary.
 - **Stuck-state observability.** If `markWorkOrderItemStatus(womiId, "FAILED")` itself errors (Prisma transport blip during recovery), an `error`-level structured log line surfaces with `workOrderItemId` and the serialized error. Original failure-mode error still flows to BullMQ unchanged.
 - **Retry idempotency on creates.** `createMany({ skipDuplicates: true })` maps to native `INSERT ... ON CONFLICT DO NOTHING` — a retried worker job is a silent no-op against rows already in the table.
 
@@ -98,10 +99,18 @@ The pending cut-log worker now:
 - Re-derives `coverageCut` on update when (and only when) the user
   changes `cut`. Notes-only or isWaste-only edits leave `coverageCut`
   untouched.
-- Re-validates every delete under the inventory FOR UPDATE lock via the
-  domain's `assertCutLogDeleteAllowed`. Final / voided / queued rows
-  cannot be deleted (only voided) — closes the gap where the data
-  layer's `deleteMany` would otherwise silently drop a finalized row.
+- Pre-reads every cut log referenced by `modified[]` or `deleted[]` in
+  one batched query under the inventory FOR UPDATE lock. The same read
+  drives three under-lock validations:
+  - **WOMI linkage** — every existing referenced row's
+    `workOrderItemId` must match the payload's WOMI. Closes a
+    pre-existing cross-WOMI mutation gap where a crafted payload could
+    delete or update cut logs belonging to a different WOMI.
+  - **Delete-allowed** — `assertCutLogDeleteAllowed` rejects any
+    delete targeting a final / voided / queued row (those can only be
+    voided).
+  - **Coverage re-derivation** — supplies the parent `inventoryId` for
+    `cut`-changing updates without a second round-trip.
 - Uses `createMany({ skipDuplicates: true })` for retry idempotency.
   Producer-stamped UUIDs make the only collision case a genuine retry,
   where silent skip is the correct semantic.
