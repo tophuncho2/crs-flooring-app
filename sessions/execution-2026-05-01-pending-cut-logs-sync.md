@@ -188,39 +188,101 @@ data(cut-logs): per-row pending mutation primitives + unit snapshot surface
 
 ## Phase 3 — Application (3 use cases)
 
-**Goal:** Three new sync use cases; delete the producer + consumer.
+**Goal:** Three new sync use cases; producer + consumer deletion deferred to Phase 4.
 
-**Files:**
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/create-pending-cut-log.ts` (NEW)
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/update-pending-cut-log.ts` (NEW)
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/delete-pending-cut-log.ts` (NEW)
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/save-work-order-item-pending-cut-log-diff.ts` (DELETED)
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/apply-work-order-item-pending-cut-log-diff.ts` (DELETED)
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/types.ts` (UPDATED — drop diff types, add per-row types)
-- [ ] `packages/application/src/flooring/work-orders/cut-logs/index.ts` (UPDATED — barrel)
-- [ ] `markWorkOrderItemFailedFromCutLogDiff` deleted (used only by the deleted worker).
+**Plan deviations (approved by user before execution):**
+- **D1:** dropped `requestKey` and `requestedBy` from `CreatePendingCutLogInput / UpdatePendingCutLogInput / DeletePendingCutLogInput`. They are API-boundary concerns (idempotency receipt + telemetry); the void use case sets the precedent of operational-only inputs.
+- **D2:** added `deriveCutLogCoverageCutString` to domain `category-math.ts` — pure string-formatting wrapper around `computeCutCoverage`. Single source of truth, reused by all three use cases.
+- **D3:** all three use cases call `validateCutLogPendingForm` before writing — `cut > 0` is now enforced server-side at the use case layer.
+- **D4:** application's `types.ts` re-exports the four new domain inputs (`Create / Update / UpdatePatch / Delete`) so consumers that import from `@builders/application` see them.
+- **D5:** WOMI status check uses a separate `findUnique` (not bloated into the join helper).
+- **D6:** `assertCutSumWithinStartingStock` lets `CutLogDomainError` bubble up unwrapped (matches void); predicate failures (linkage, status, OCC) are wrapped in `WorkOrderCutLogExecutionError`.
+
+**Files (all done):**
+- [x] `packages/domain/src/flooring/work-orders/cut-logs/types.ts` (UPDATED) — D1: stripped `requestKey` + `requestedBy` from the three input types.
+- [x] `packages/domain/src/flooring/inventory/cut-logs/category-math.ts` (UPDATED) — D2: added `deriveCutLogCoverageCutString({ cut, coveragePerUnit, categorySlug })`.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/errors.ts` (UPDATED) — added `WORK_ORDER_ITEM_NOT_IDLE`, `WORK_ORDER_CUT_LOG_NOT_PENDING`, `WORK_ORDER_CUT_LOG_STALE` to `WorkOrderCutLogErrorCode`.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/types.ts` (UPDATED) — D4: re-export of `CreatePendingCutLogInput`, `UpdatePendingCutLogInput`, `UpdatePendingCutLogPatch`, `DeletePendingCutLogInput` from `@builders/domain`.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/create-pending-cut-log.ts` (NEW) — single TX flow:
+  1. `validateCutLogPendingForm` → 400 on issues.
+  2. Read WOMI; assert ownership + `status === IDLE`.
+  3. `assertCutLogLinkageSymmetry`.
+  4. `lockInventoriesForCutLogBatch(c, [inventoryId])`.
+  5. `getInventoryParentContextForCutLogs` (post-lock).
+  6. `deriveCutLogCoverageCutString`.
+  7. `insertPendingCutLogRow` — stamps the four unit-snapshot fields from inventory.
+  8. `recomputeAndPersistTotalCutSums` + `assertCutSumWithinStartingStock`.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/update-pending-cut-log.ts` (NEW) — single TX flow:
+  1. Read WOMI; assert ownership + IDLE.
+  2. `getPendingCutLogWithInventoryForMutation` — single round-trip read.
+  3. Linkage check + `assertCutLogPendingMutationAllowed` (final cuts can't be edited via this path) + `assertCutLogExpectedUpdatedAtMatches` (OCC).
+  4. `assertCutLogLinkageSymmetry`.
+  5. `validateCutLogPendingForm` against the merged post-patch state (cut, isWaste, notes).
+  6. `lockInventoriesForCutLogBatch(c, [inventoryId])`.
+  7. Re-derive `coverageCut` only when `cut` changed.
+  8. `updatePendingCutLogRow` — patch carries only the user-editable fields.
+  9. `recomputeAndPersistTotalCutSums` + invariant.
+- [x] `packages/application/src/flooring/work-orders/cut-logs/delete-pending-cut-log.ts` (NEW) — single TX flow:
+  1. Read WOMI; assert ownership + IDLE.
+  2. `getPendingCutLogWithInventoryForMutation`.
+  3. Linkage + PENDING-only (`assertCutLogPendingMutationAllowed` mapped to `WORK_ORDER_CUT_LOG_DELETE_NOT_ALLOWED` here — final cuts can only be voided) + OCC.
+  4. `assertCutLogLinkageSymmetry`.
+  5. `lockInventoriesForCutLogBatch(c, [inventoryId])`.
+  6. `deletePendingCutLogRow`.
+  7. `recomputeAndPersistTotalCutSums` + invariant (defense-in-depth — total only decreases on delete).
+- [x] `packages/application/src/flooring/work-orders/cut-logs/index.ts` (UPDATED) — added barrel exports for the three new files. Producer + consumer files **still exported** — they get deleted in Phase 4.
 
 **Each use case:**
-1. Opens TX via `withDatabaseTransaction`, accepts optional `client`.
-2. Loads WOMI, asserts `status === 'IDLE'` (`assertWorkOrderItemReadyForCutLogMutation`) and `workOrderId` ownership.
-3. `assertCutLogLinkageSymmetry`.
-4. (update/delete) load row + parent inventory in one round trip; assert linkage, OCC, and PENDING status.
-5. Lock parent inventory `FOR UPDATE` via `lockInventoriesForCutLogBatch(c, [inventoryId])`.
-6. (create) read inventory under lock; (update with `cut` change) re-derive `coverageCut`.
-7. Write the row via the appropriate write helper.
-8. `recomputeAndPersistTotalCutSums(c, [inventoryId])` + `assertCutSumWithinStartingStock`.
-9. Return the post-mutation row (or `{ deletedId, inventoryId, totalCutSum }`).
-
-No outbox writes, no WOMI status flip.
+- Opens TX via `withDatabaseTransaction`, accepts optional `client?: Prisma.TransactionClient`.
+- Imports only from `@builders/domain` and `@builders/db` (per [packages/application/CLAUDE.md](packages/application/CLAUDE.md) rule 1).
+- No outbox writes, no WOMI status flip — the TX holds the inventory row lock for the duration; sync end-to-end.
+- Returns the post-mutation row(s): create + update return `{ cutLog, inventoryId, totalCutSum }`; delete returns `{ deletedId, inventoryId, totalCutSum }`.
 
 **Verification:**
-- [ ] `pnpm typecheck` for `@builders/application` clean.
-- [ ] Unit tests per use case covering: happy path, OCC mismatch, status non-IDLE, final row delete attempt, linkage mismatch, invariant violation.
+- [x] Domain rebuild: `tsc -p packages/domain/tsconfig.json` — clean.
+- [x] DB rebuild: `tsc -p packages/db/tsconfig.json` — clean.
+- [x] Application typecheck: errors are entirely in two files — `save-work-order-item-pending-cut-log-diff.ts` (producer) and `apply-work-order-item-pending-cut-log-diff.ts` (consumer). Both are Phase 4 deletion targets. **Zero errors in any of the three new use cases, the new error codes, the type re-exports, or the barrel.** Confirmed via `tsc ... 2>&1 | grep -oE 'src/[^ ]+\\.ts' | sort -u` — output limited to those two files.
 
-**Status:** _not started_
+| File | Errors |
+|---|---|
+| `create-pending-cut-log.ts` | 0 |
+| `update-pending-cut-log.ts` | 0 |
+| `delete-pending-cut-log.ts` | 0 |
+| `errors.ts`, `types.ts`, `index.ts` | 0 |
+| `save-work-order-item-pending-cut-log-diff.ts` (Phase 4 target) | references deleted topic + payload schema + `"SAVING_CUTS"` |
+| `apply-work-order-item-pending-cut-log-diff.ts` (Phase 4 target) | references deleted payload type |
+
+- [ ] Unit tests per use case — not yet authored. Will land alongside Phase 5 routes (test the use case via the API path).
+
+**Commit message (when user is ready):**
+
+```
+application(cut-logs): add sync per-row create / update / delete use cases
+
+- New: createPendingCutLogUseCase, updatePendingCutLogUseCase,
+  deletePendingCutLogUseCase. Each opens its own TX, asserts WOMI
+  ownership + IDLE, takes the parent inventory FOR UPDATE lock,
+  applies the mutation, recomputes totalCutSum, and asserts
+  totalCutSum <= startingStock. No outbox writes; sync end-to-end.
+- New error codes: WORK_ORDER_ITEM_NOT_IDLE,
+  WORK_ORDER_CUT_LOG_NOT_PENDING, WORK_ORDER_CUT_LOG_STALE.
+- Domain: drop requestKey / requestedBy from the per-row input
+  types (API-boundary concerns); add deriveCutLogCoverageCutString
+  pure helper alongside computeCutCoverage.
+- Application types.ts re-exports the four new domain inputs so
+  the API-route validators (Phase 6) can keep importing from
+  @builders/application.
+- Producer + consumer use cases (save / apply *-diff.ts) still
+  present and barreled — Phase 4 deletes them. Application
+  typecheck is currently red on those two files only; new use
+  cases compile clean.
+```
+
+**Status:** ✅ done. New use cases compile and are ready for Phase 4 worker dismantle (which removes the two remaining red files) and Phase 5 API routes.
 
 **Notes:**
-- _empty until execution_
+- The producer + consumer files reference deleted symbols (`SAVE_WORK_ORDER_ITEM_PENDING_CUT_LOG_DIFF_TOPIC`, `SaveWorkOrderItemPendingCutLogDiffPayloadSchema`, `"SAVING_CUTS"`). They have NOT been edited or stubbed in this phase — they are Phase 4's deletion targets. Per CLAUDE.md commit boundaries, application work and worker dismantle are separate concerns.
+- Domain rule preserved: domain never imports from application or db. All cross-layer flow is via `@builders/domain` → `@builders/application` → `@builders/db` (with the carve-out that data-layer normalizers may import pure domain helpers — exercised here by `deriveCutLogCoverageCutString` on the use case side, not the data side).
 
 ---
 
@@ -322,7 +384,7 @@ _To be filled in as work proceeds. Issues that don't fit a single phase land her
 | 0 — Schema | ✅ committed + applied | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/20260501190000_drop_work_order_item_status_saving_cuts/migration.sql` | 0 | Migration deployed to Railway Postgres. Monorepo typecheck expected red until Phase 1 + 4 land. |
 | 1 — Domain | ✅ done (uncommitted) | `material-items/types.ts`, `material-items/status-rules.ts`, `work-orders/errors.ts`, `inventory/cut-logs/errors.ts`, `inventory/cut-logs/pending-mutation-rules.ts` (NEW), `inventory/cut-logs/index.ts`, `work-orders/cut-logs/types.ts`, `queue/save-work-order-item-pending-cut-log-diff.ts` (DELETED), `src/index.ts` | 0 | Domain typecheck green. `assignDraftIds` kept (used by other flows). Monorepo typecheck still red — fixes land Phase 2/3/4. |
 | 2 — Data | ✅ done (uncommitted) | `domain/inventory/cut-logs/types.ts`, `domain/inventory/cut-logs/diff/types.ts`, `db/inventory/cut-logs/shared.ts`, `db/inventory/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/write-repository.ts`, `db/work-orders/material-items/write-repository.ts` | 0 | Domain + db typechecks green. App package still red (producer/consumer) — expected until Phase 4. |
-| 3 — Application | _not started_ | — | — | — |
+| 3 — Application | ✅ done (uncommitted) | `domain/work-orders/cut-logs/types.ts`, `domain/inventory/cut-logs/category-math.ts`, `application/work-orders/cut-logs/{errors,types,index}.ts`, `application/work-orders/cut-logs/{create,update,delete}-pending-cut-log.ts` (3 NEW) | 0 in new code; 11 in Phase 4 deletion targets (expected) | New use cases compile clean. Red errors all in producer/consumer files Phase 4 will delete. |
 | 4 — Worker dismantle | _not started_ | — | — | — |
 | 5 — API routes | _not started_ | — | — | — |
 | 6 — Validators | _not started_ | — | — | — |

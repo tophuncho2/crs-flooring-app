@@ -40,11 +40,14 @@ type PendingCutLogScope = {
 /**
  * Per-row input types for the synchronous pending-cut-log mutations.
  * Each is consumed by exactly one application use case (create /
- * update / delete) and one API route. Unit-of-measure snapshot fields
- * (`stockUnitAbbrev` / `stockUnitName` / `itemCoverageUnitAbbrev` /
- * `itemCoverageUnitName`) are NOT in the input — they are stamped from
- * the parent inventory row inside the use case at create time and
- * never mutated afterward.
+ * update / delete) and one API route.
+ *
+ * `requestKey` and `requestedBy` are NOT carried here — those are
+ * API-boundary concerns (idempotency receipt + telemetry) handled by
+ * `enforceMutationReceipt` and `applyRoutePolicy`. Use cases receive
+ * only the operational input. Unit-of-measure snapshot fields are
+ * also absent: they're stamped from the parent inventory row inside
+ * the use case at create time and never mutated afterward.
  */
 
 export type CreatePendingCutLogInput = PendingCutLogScope & {
@@ -52,8 +55,6 @@ export type CreatePendingCutLogInput = PendingCutLogScope & {
   cut: string
   isWaste: boolean
   notes: string
-  requestKey: string
-  requestedBy: { userId: string; userEmail: string }
 }
 
 export type UpdatePendingCutLogPatch = {
@@ -66,13 +67,9 @@ export type UpdatePendingCutLogInput = PendingCutLogScope & {
   cutLogId: string
   expectedUpdatedAt: string
   patch: UpdatePendingCutLogPatch
-  requestKey: string
-  requestedBy: { userId: string; userEmail: string }
 }
 
 export type DeletePendingCutLogInput = PendingCutLogScope & {
   cutLogId: string
   expectedUpdatedAt: string
-  requestKey: string
-  requestedBy: { userId: string; userEmail: string }
 }

@@ -3,6 +3,17 @@ export type RequestedBy = {
   userEmail: string
 }
 
+// Per-row sync pending-cut-log mutation inputs are owned by the domain
+// layer (single source of truth). Re-exported here so consumers that
+// import from `@builders/application` (notably the API-route validators)
+// don't need to add a domain import.
+export type {
+  CreatePendingCutLogInput,
+  UpdatePendingCutLogInput,
+  UpdatePendingCutLogPatch,
+  DeletePendingCutLogInput,
+} from "@builders/domain"
+
 export type WorkOrderCutLogPendingDraft = {
   tempId: string
   inventoryId: string
