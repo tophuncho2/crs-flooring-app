@@ -179,11 +179,16 @@ The consumer **does not** re-validate:
 ## Open questions
 
 1. **Coverage gating — confirm the four categories** are exactly `vinyl-plank`, `carpet-tile`, `covebase`, `pad`. Any other slug → `coverageCut = null` always. Confirm the list in [packages/domain/src/flooring/categories/rules.ts](packages/domain/src/flooring/categories/rules.ts) is current and complete.
+- correct
 
 2. **Update path — re-derive `coverageCut` only when `cut` changes, or always?** Current proposal: only when `cut` is in the patch. Alternative: re-derive on every update (defensive against any drift in `coveragePerUnit` since the row was created). Recommend **only when `cut` changes** — otherwise you'd be re-deriving from snapshot data the user didn't touch.
+- only when cut changes
 
 3. **Retry idempotency on createMany.** Prefer `skipDuplicates: true` on createMany (single round-trip, native Postgres `ON CONFLICT DO NOTHING`)? Or per-row `upsert` (more queries but explicit "do nothing if already there" semantic)? Recommend `skipDuplicates`.
+- should we do per row? or will skipduplicates suffice.
 
 4. **`markFailed` swallow logging.** Today the catch's catch is silent — if the FAILED marker write itself errors, the WOMI stays stuck in `SAVING_CUTS` forever. Add an `error`-level log line so we can page on stuck states later? (Out of immediate scope but flag for the next pass.)
+- this decision needs to be made and applied in this pass
 
 5. **`assertCutLogLinkageSymmetry` per-draft loop call.** Producer calls it inside the per-draft loop with constant args. Cosmetic — should be one call at top of producer, not per draft. (Out of worker scope but lives in the same file.)
+- need a decision here.
