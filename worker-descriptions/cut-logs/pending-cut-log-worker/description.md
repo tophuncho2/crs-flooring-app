@@ -176,19 +176,14 @@ The consumer **does not** re-validate:
 
 ---
 
-## Open questions
+## Locked decisions
 
-1. **Coverage gating — confirm the four categories** are exactly `vinyl-plank`, `carpet-tile`, `covebase`, `pad`. Any other slug → `coverageCut = null` always. Confirm the list in [packages/domain/src/flooring/categories/rules.ts](packages/domain/src/flooring/categories/rules.ts) is current and complete.
-- correct
+1. **Coverage gating** — the four coverage-supporting categories are `vinyl-plank`, `carpet-tile`, `covebase`, `pad` (the keys of `CATEGORY_UNIT_RULES` in [packages/domain/src/flooring/categories/rules.ts:3-8](packages/domain/src/flooring/categories/rules.ts:3)). Any other slug → `coverageCut = null` always. Use the existing `computeCutCoverage` domain helper to derive — it already encapsulates the gating.
 
-2. **Update path — re-derive `coverageCut` only when `cut` changes, or always?** Current proposal: only when `cut` is in the patch. Alternative: re-derive on every update (defensive against any drift in `coveragePerUnit` since the row was created). Recommend **only when `cut` changes** — otherwise you'd be re-deriving from snapshot data the user didn't touch.
-- only when cut changes
+2. **Update path coverage re-derivation** — re-derive `coverageCut` **only when `cut` is in the patch**. If the user only edited `notes` or `isWaste`, the existing `coverageCut` stays untouched.
 
-3. **Retry idempotency on createMany.** Prefer `skipDuplicates: true` on createMany (single round-trip, native Postgres `ON CONFLICT DO NOTHING`)? Or per-row `upsert` (more queries but explicit "do nothing if already there" semantic)? Recommend `skipDuplicates`.
-- should we do per row? or will skipduplicates suffice.
+3. **Retry idempotency on createMany** — use `createMany({ data, skipDuplicates: true })`. Single round-trip; Prisma maps to native Postgres `ON CONFLICT DO NOTHING`. Producer-stamped UUIDs make the only possible collision case a genuine retry, where silent skip is the right behavior.
 
-4. **`markFailed` swallow logging.** Today the catch's catch is silent — if the FAILED marker write itself errors, the WOMI stays stuck in `SAVING_CUTS` forever. Add an `error`-level log line so we can page on stuck states later? (Out of immediate scope but flag for the next pass.)
-- this decision needs to be made and applied in this pass
+4. **`markFailed` swallow logging** — keep the swallow (so the original error reaches BullMQ for retry/unrecoverable classification), but add an `error`-level structured log line inside the catch carrying `workOrderItemId` + the serialized error. Gives stuck-state observability without changing control flow. Apply in this pass.
 
-5. **`assertCutLogLinkageSymmetry` per-draft loop call.** Producer calls it inside the per-draft loop with constant args. Cosmetic — should be one call at top of producer, not per draft. (Out of worker scope but lives in the same file.)
-- need a decision here.
+5. **`assertCutLogLinkageSymmetry` per-draft loop call** — hoist to a single call at the top of the producer, before any draft-stamping. The args don't vary per draft, so the loop call is dead instrumentation. Apply in this pass.
