@@ -379,51 +379,91 @@ worker(cut-logs): dismantle pending cut-log worker / relay / outbox
 
 ---
 
-## Phase 5 — API routes
+## Phase 5 + 6 — API routes + Validators (bundled)
 
-**Files:**
-- [ ] `apps/web/app/api/work-orders/[id]/material-items/[itemId]/pending-cut-logs/route.ts` (NEW — POST)
-- [ ] `apps/web/app/api/work-orders/[id]/material-items/[itemId]/pending-cut-logs/[cutLogId]/route.ts` (NEW — PATCH + DELETE)
-- [ ] `apps/web/app/api/work-orders/[id]/material-items/[itemId]/pending-cut-logs/section/route.ts` (DELETED)
+**Goal:** Three new sync routes + three new validators. Old diff route + diff validator deleted. Existing void route relocated to a sub-action path so DELETE is reserved for actual row deletion (pending only).
 
-**Each route:** `applyRoutePolicy` → `parseUuidParam(s)` → `parseMutationEnvelope` → `enforceMutationReceipt` → `withMutationTelemetry(... use case ...)` → `finalizeMutationReceipt` → `routeJson(200)` / `routeError`.
+**Plan deviations (approved before execution):**
+- **Routes go under `[id]/cut-logs/`, NOT `[id]/material-items/[itemId]/pending-cut-logs/`** (user instruction). `workOrderItemId` is carried in the request body for all three new routes.
+- **Void route moved** (Option A from the pre-execution scan): from `DELETE /[id]/cut-logs/[cutLogId]` to `POST /[id]/cut-logs/[cutLogId]/void`. DELETE is now reserved exclusively for pending-row deletion. Void semantics (set `void=true`, preserve the row) are honestly POST-to-action, not DELETE.
+- **`requestKey` removed from validator outputs.** Sync routes use `mutation.idempotencyKey` (via `enforceMutationReceipt`) for idempotency; no producer-side outbox key to fold into. Matches the Phase 3 use case input shape.
+- **Diff types kept in `@builders/application`** until Phase 7 deletes the UI hook that imports them. Phase 6 only removes the diff *validator*.
+- **`saveWorkOrderItemPendingCutLogDiffRequest` client helper kept** (Phase 7 target) — its mutation helper still posts to the deleted section route. TS-clean (no compile dependency on the route path), runtime 404 on call. Phase 7 deletes this helper alongside the UI hook that calls it.
+- **Empty `material-items/[itemId]/pending-cut-logs/` directory tree removed** after the section route deletion.
 
-**DELETE-body resolution check:** at the start of this phase, confirm `parseMutationEnvelope` parses DELETE bodies (open question #1). If not, fall back to header-based `requestKey` + `expectedUpdatedAt`. Decision recorded here:
-- _resolution: pending_
+**Files (all done):**
 
-**Receipt scopes:**
-- `work-orders.material-items.pending-cut-logs.create`
-- `work-orders.material-items.pending-cut-logs.update`
-- `work-orders.material-items.pending-cut-logs.delete`
+NEW routes (3):
+- [x] `apps/web/app/api/work-orders/[id]/cut-logs/route.ts` — `POST` calls `createPendingCutLogUseCase`. Scope: `work-orders.cut-logs.pending.create`. Rate limit: 120 req / 10 min.
+- [x] `apps/web/app/api/work-orders/[id]/cut-logs/[cutLogId]/route.ts` — REPLACED. Now exports both `PATCH` (calls `updatePendingCutLogUseCase`, scope `…pending.update`, 240 req / 10 min, requires `mutation.expectedUpdatedAt`) and `DELETE` (calls `deletePendingCutLogUseCase`, scope `…pending.delete`, 120 req / 10 min, requires `mutation.expectedUpdatedAt`).
+- [x] `apps/web/app/api/work-orders/[id]/cut-logs/[cutLogId]/void/route.ts` — `POST` calls `voidWorkOrderCutLogUseCase`. Identical handler logic to the old DELETE route, just relocated. Scope: `work-orders.cut-logs.void`. Rate limit: 60 req / 10 min.
 
-**Rate limits:** mirror today's section route — `limit: 50, windowMs: 10 * 60 * 1000`, capability `system.access`, tool slug `WORK_ORDERS_TOOL_SLUG`.
+DELETED:
+- [x] `apps/web/app/api/work-orders/[id]/material-items/[itemId]/pending-cut-logs/section/route.ts` (old diff producer route).
+- [x] `apps/web/app/api/work-orders/[id]/material-items/[itemId]/pending-cut-logs/section/` (empty dir removed).
+- [x] `apps/web/app/api/work-orders/[id]/material-items/[itemId]/pending-cut-logs/` (empty dir removed).
+
+EDITED:
+- [x] `apps/web/app/api/work-orders/_validators.ts`:
+  - REMOVED: `validateWorkOrderItemPendingCutLogDiffInput`, `ValidatedWorkOrderItemPendingCutLogDiffInput`, `validatePendingDraft`, `validatePendingUpdate`, `validatePendingDelete`. Removed the 4 unused diff-type imports from `@builders/application`.
+  - ADDED: `validateCreatePendingCutLogInput`, `validateUpdatePendingCutLogInput`, `validateDeletePendingCutLogInput` (+ `Validated…Input` type aliases). Each returns the operational portion of the body; routes layer on `workOrderId`/`cutLogId` from the path and `expectedUpdatedAt` from the mutation envelope. The update validator rejects empty patches.
+- [x] `apps/web/modules/work-orders/data/mutations.ts` — `voidWorkOrderCutLogRequest` repointed from `DELETE /cut-logs/[cutLogId]` to `POST /cut-logs/[cutLogId]/void`.
+
+NEXT.JS DEV CACHE:
+- [x] Removed stale `.next/dev/types/` (auto-regenerates on next `next dev` / `next build` — gitignored, no impact on source).
+
+**Each new route follows the canonical mutation gauntlet:**
+
+```
+applyRoutePolicy(request, { capability, toolSlug, rateLimit })
+  → parseUuidParam(...) for workOrderId (and cutLogId on the [cutLogId] route)
+  → parseMutationEnvelope(body, validator, { requireExpectedUpdatedAt? })
+  → enforceMutationReceipt({ scope, request, access, mutation, body }) → replay short-circuit
+  → withMutationTelemetry(access, telemetryConfig, () => useCase(...))
+  → finalizeMutationReceipt({ scope, access, mutation, responseStatus, responseBody })
+  → routeJson(access, responseBody) | routeError(access, error)
+```
+
+**DELETE-body resolution (open question #1 from the plan):** confirmed working — `parseMutationEnvelope` reads `body.mutation` for the envelope and passes the rest to the validator regardless of HTTP verb. The existing void DELETE route was already using this; no fallback needed.
 
 **Verification:**
-- [ ] `pnpm typecheck` for `apps/web` clean.
-- [ ] Manual curl: each route returns 200 with the expected body shape.
+- [x] `tsc -p apps/web/tsconfig.json --noEmit` — exactly **1 error** remaining: `modules/work-orders/components/record/material-items/work-order-material-items-section.tsx:44` `case "SAVING_CUTS":` — Phase 7 deletion target.
+- [x] Grep gate:
+  - `validateWorkOrderItemPendingCutLogDiffInput` → 0 source matches.
+  - `validatePendingDraft|validatePendingUpdate|validatePendingDelete` → 0 source matches.
+  - Old section path → 1 match (in `mutations.ts:86` — Phase 7 client helper, expected).
+  - `WorkOrderCutLogPendingDiff/Draft/Update/Delete` types → only in the UI hook (`use-work-order-cut-log-section-state.ts`) and the matching client helper in `mutations.ts` — both Phase 7 targets.
+- [ ] Manual curl per route — not yet exercised. Will land alongside Phase 7 (when the UI calls them) or via a quick smoke test if needed earlier.
 
-**Status:** _not started_
+**Commit message (when user is ready):**
+
+```
+api(cut-logs): sync per-row create / update / delete routes; relocate void
+
+- New POST /work-orders/[id]/cut-logs (create pending cut log).
+- New PATCH /work-orders/[id]/cut-logs/[cutLogId] (update pending,
+  with mutation.expectedUpdatedAt enforced for OCC).
+- New DELETE /work-orders/[id]/cut-logs/[cutLogId] (delete pending,
+  same OCC enforcement).
+- Move void from DELETE /[cutLogId] to POST /[cutLogId]/void. Void
+  is a lifecycle action on a final cut log — it sets void=true and
+  preserves the row, so it is honestly POST-to-action, not DELETE.
+  DELETE on the row is now exclusively pending-row deletion. The
+  voidWorkOrderCutLogRequest client helper is repointed too.
+- _validators.ts: drop validateWorkOrderItemPendingCutLogDiffInput
+  + the three diff-row helpers; add validateCreatePendingCutLogInput,
+  validateUpdatePendingCutLogInput, validateDeletePendingCutLogInput.
+- Delete the section route + the now-empty pending-cut-logs/
+  directory under material-items/[itemId]. The Phase 7 UI sweep
+  removes the only remaining red callsite (case "SAVING_CUTS") and
+  the saveWorkOrderItemPendingCutLogDiffRequest client helper.
+```
+
+**Status:** ✅ done. apps/web typecheck has exactly 1 expected error (Phase 7 target). All other packages green end-to-end.
 
 **Notes:**
-- _empty until execution_
-
----
-
-## Phase 6 — Validators
-
-**File:** `apps/web/app/api/work-orders/_validators.ts`
-
-- [ ] DELETE: `validateWorkOrderItemPendingCutLogDiffInput`, `ValidatedWorkOrderItemPendingCutLogDiffInput`, `validatePendingDraft`, `validatePendingUpdate`, `validatePendingDelete`.
-- [ ] ADD: `validateCreatePendingCutLogInput`, `validateUpdatePendingCutLogInput`, `validateDeletePendingCutLogInput`.
-
-**Verification:**
-- [ ] `pnpm typecheck` clean.
-- [ ] Validator unit tests cover empty patches, missing required fields, malformed payloads.
-
-**Status:** _not started_
-
-**Notes:**
-- _empty until execution_
+- The `saveWorkOrderItemPendingCutLogDiffRequest` client helper still posts to the deleted section route — TS-clean because there's no compile-time tie to the route path, but any runtime call would 404. Only caller is the Phase 7 UI hook; both go away in the next sweep's UI rework.
+- The Next.js dev type cache (`.next/dev/types/`) was the source of one transient typecheck failure — it's an auto-generated artifact that mirrors the route tree and didn't update after the section route deletion. Removing the directory and rerunning typecheck cleared it; `next dev` / `next build` will regenerate it next time.
 
 ---
 
@@ -452,5 +492,5 @@ _To be filled in as work proceeds. Issues that don't fit a single phase land her
 | 2 — Data | ✅ done (uncommitted) | `domain/inventory/cut-logs/types.ts`, `domain/inventory/cut-logs/diff/types.ts`, `db/inventory/cut-logs/shared.ts`, `db/inventory/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/write-repository.ts`, `db/work-orders/material-items/write-repository.ts` | 0 | Domain + db typechecks green. App package still red (producer/consumer) — expected until Phase 4. |
 | 3 — Application | ✅ done (uncommitted) | `domain/work-orders/cut-logs/types.ts`, `domain/inventory/cut-logs/category-math.ts`, `application/work-orders/cut-logs/{errors,types,index}.ts`, `application/work-orders/cut-logs/{create,update,delete}-pending-cut-log.ts` (3 NEW) | 0 in new code; 11 in Phase 4 deletion targets (expected) | New use cases compile clean. Red errors all in producer/consumer files Phase 4 will delete. |
 | 4 — Worker dismantle | ✅ done (uncommitted) | 4 deleted (worker processor, relay dispatcher, producer + consumer use cases); 7 edited (worker bootstrap + env, relay dispatchers, application barrel + types, db read + write repos) | 0 | Domain, db, application, worker, relay all green. apps/web red on Phase 5 + 7 targets only. |
-| 5 — API routes | _not started_ | — | — | — |
-| 6 — Validators | _not started_ | — | — | — |
+| 5 — API routes | ✅ done (uncommitted) | 3 NEW (`cut-logs/route.ts`, `cut-logs/[cutLogId]/route.ts`, `cut-logs/[cutLogId]/void/route.ts`); 1 DELETED (section route + empty dirs); 1 EDITED (`mutations.ts` void helper repointed to POST `/void`) | 0 in new code | apps/web has 1 remaining error — Phase 7 UI target. |
+| 6 — Validators | ✅ done (uncommitted, bundled with 5) | `_validators.ts`: removed diff validator + helpers; added 3 per-row validators (`Create/Update/Delete PendingCutLogInput`) | 0 | OCC `expectedUpdatedAt` flows through the mutation envelope, not the validator output. |

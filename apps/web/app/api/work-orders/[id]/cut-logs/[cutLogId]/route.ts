@@ -1,4 +1,7 @@
-import { voidWorkOrderCutLogUseCase } from "@builders/application"
+import {
+  deletePendingCutLogUseCase,
+  updatePendingCutLogUseCase,
+} from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -9,29 +12,34 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
+import {
+  validateDeletePendingCutLogInput,
+  validateUpdatePendingCutLogInput,
+} from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string; cutLogId: string }>
 }
 
 /**
- * DELETE /api/work-orders/[id]/cut-logs/[cutLogId]
+ * PATCH /api/work-orders/[id]/cut-logs/[cutLogId]
  *
- * Synchronous void use case (no worker, no outbox). Calls
- * `voidWorkOrderCutLogUseCase`, which locks the parent inventory FOR
- * UPDATE, asserts `canVoidCutLog`, applies `buildVoidedCutLogPatch`,
- * and recomputes the inventory's totalCutSum. Returns 200 OK with the
- * voided row identifier.
- *
- * Per locked decision #1, void does NOT flip the parent WOMI's status.
+ * Synchronous update for a single pending cut log. Calls
+ * `updatePendingCutLogUseCase`, which opens its own TX, asserts WOMI
+ * ownership + IDLE status, asserts the row is still PENDING (final
+ * cuts cannot be edited via this path), enforces optimistic
+ * concurrency against `mutation.expectedUpdatedAt`, locks the parent
+ * inventory FOR UPDATE, applies the patch, re-derives `coverageCut`
+ * if `cut` changed, recomputes `totalCutSum`, and asserts the
+ * invariant. Returns 200 with the updated row.
  */
-export async function DELETE(request: Request, { params }: RouteContext) {
+export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
-      scope: "work-orders.cut-logs.void",
-      limit: 60,
+      scope: "work-orders.cut-logs.pending.update",
+      limit: 240,
       windowMs: 10 * 60 * 1000,
       route: "/api/work-orders/[id]/cut-logs/[cutLogId]",
     },
@@ -44,10 +52,14 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
 
     const body = (await request.json()) as Record<string, unknown>
-    const { input: _input, mutation } = parseMutationEnvelope(body, (value) => value)
+    const { input, mutation } = parseMutationEnvelope(
+      body,
+      validateUpdatePendingCutLogInput,
+      { requireExpectedUpdatedAt: true },
+    )
 
     const receipt = await enforceMutationReceipt({
-      scope: "work-orders.cut-logs.void",
+      scope: "work-orders.cut-logs.pending.update",
       request,
       access,
       mutation,
@@ -58,22 +70,105 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Work-order cut log voided",
-        action: "work-orders.cut-logs.void",
+        message: "Pending cut log updated",
+        action: "work-orders.cut-logs.pending.update",
         route: "/api/work-orders/[id]/cut-logs/[cutLogId]",
         entityType: "flooringCutLog",
         entityId: cutLogId,
       },
-      () => voidWorkOrderCutLogUseCase({ workOrderId, cutLogId }),
+      () =>
+        updatePendingCutLogUseCase({
+          workOrderId,
+          workOrderItemId: input.workOrderItemId,
+          cutLogId,
+          expectedUpdatedAt: mutation.expectedUpdatedAt!,
+          patch: input.patch,
+        }),
     )
 
-    const responseBody = { cutLog: result }
+    const responseBody = result
     await finalizeMutationReceipt({
-      scope: "work-orders.cut-logs.void",
+      scope: "work-orders.cut-logs.pending.update",
       access,
       mutation,
       responseStatus: 200,
-      responseBody,
+      responseBody: responseBody as unknown as Record<string, unknown>,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
+    return routeError(access, error)
+  }
+}
+
+/**
+ * DELETE /api/work-orders/[id]/cut-logs/[cutLogId]
+ *
+ * Synchronous delete for a single pending cut log. Calls
+ * `deletePendingCutLogUseCase`, which asserts WOMI ownership + IDLE
+ * status, asserts the row is PENDING (final cuts cannot be deleted —
+ * void them at /void instead), enforces OCC, locks the parent
+ * inventory FOR UPDATE, deletes the row, and recomputes
+ * `totalCutSum`. Returns 200.
+ */
+export async function DELETE(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: WORK_ORDERS_TOOL_SLUG,
+    rateLimit: {
+      scope: "work-orders.cut-logs.pending.delete",
+      limit: 120,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/work-orders/[id]/cut-logs/[cutLogId]",
+    },
+  })
+  if (access instanceof Response) return access
+
+  try {
+    const { id: rawId, cutLogId: rawCutLogId } = await params
+    const workOrderId = parseUuidParam(rawId, "id")
+    const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
+
+    const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(
+      body,
+      validateDeletePendingCutLogInput,
+      { requireExpectedUpdatedAt: true },
+    )
+
+    const receipt = await enforceMutationReceipt({
+      scope: "work-orders.cut-logs.pending.delete",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
+    const result = await withMutationTelemetry(
+      access,
+      {
+        message: "Pending cut log deleted",
+        action: "work-orders.cut-logs.pending.delete",
+        route: "/api/work-orders/[id]/cut-logs/[cutLogId]",
+        entityType: "flooringCutLog",
+        entityId: cutLogId,
+      },
+      () =>
+        deletePendingCutLogUseCase({
+          workOrderId,
+          workOrderItemId: input.workOrderItemId,
+          cutLogId,
+          expectedUpdatedAt: mutation.expectedUpdatedAt!,
+        }),
+    )
+
+    const responseBody = result
+    await finalizeMutationReceipt({
+      scope: "work-orders.cut-logs.pending.delete",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody: responseBody as unknown as Record<string, unknown>,
     })
     return routeJson(access, responseBody)
   } catch (error) {

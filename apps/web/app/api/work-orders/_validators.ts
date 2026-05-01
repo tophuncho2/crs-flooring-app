@@ -6,10 +6,6 @@ import {
 import type {
   CreateWorkOrderUseCaseInput,
   UpdateWorkOrderUseCaseInput,
-  WorkOrderCutLogPendingDelete,
-  WorkOrderCutLogPendingDiff,
-  WorkOrderCutLogPendingDraft,
-  WorkOrderCutLogPendingUpdate,
 } from "@builders/application"
 import type {
   WorkOrderMaterialItemForm,
@@ -191,65 +187,81 @@ export function validateWorkOrderMaterialItemsDiffInput(
 }
 
 // ---------------------------------------------------------------------------
-// Pending cut-log diff (per WOMI)
+// Per-row pending cut-log mutations (sync; one row per request)
 // ---------------------------------------------------------------------------
+//
+// Each validator returns the operational portion of the body — every
+// route adds the path-derived `workOrderId` (and `cutLogId` for
+// update/delete) before calling its use case. `expectedUpdatedAt` for
+// update + delete travels through the mutation envelope's
+// `expectedUpdatedAt` field (parsed by `parseMutationEnvelope` with
+// `requireExpectedUpdatedAt: true`), not the input body, so it is not
+// part of the validator's output.
 
-function validatePendingDraft(value: unknown, path: string): WorkOrderCutLogPendingDraft {
-  const obj = requireObject(value, path, failCutLog)
-  const isWaste = typeof obj.isWaste === "boolean" ? obj.isWaste : false
-  return {
-    tempId: requireString(obj.tempId, `${path}.tempId`, failCutLog),
-    inventoryId: requireString(obj.inventoryId, `${path}.inventoryId`, failCutLog),
-    cut: requireString(obj.cut, `${path}.cut`, failCutLog),
-    isWaste,
-    notes: typeof obj.notes === "string" ? obj.notes : "",
-  }
+export type ValidatedCreatePendingCutLogInput = {
+  workOrderItemId: string
+  inventoryId: string
+  cut: string
+  isWaste: boolean
+  notes: string
 }
 
-function validatePendingUpdate(value: unknown, path: string): WorkOrderCutLogPendingUpdate {
-  const obj = requireObject(value, path, failCutLog)
-  const patch = requireObject(obj.patch, `${path}.patch`, failCutLog)
-  const patchOut: WorkOrderCutLogPendingUpdate["patch"] = {}
-  if ("cut" in patch) patchOut.cut = requireString(patch.cut, `${path}.patch.cut`, failCutLog)
-  if ("isWaste" in patch && typeof patch.isWaste === "boolean") patchOut.isWaste = patch.isWaste
-  if ("notes" in patch && typeof patch.notes === "string") patchOut.notes = patch.notes
-  return {
-    id: requireString(obj.id, `${path}.id`, failCutLog),
-    expectedUpdatedAt: requireString(obj.expectedUpdatedAt, `${path}.expectedUpdatedAt`, failCutLog),
-    patch: patchOut,
-  }
-}
-
-function validatePendingDelete(value: unknown, path: string): WorkOrderCutLogPendingDelete {
-  const obj = requireObject(value, path, failCutLog)
-  return {
-    id: requireString(obj.id, `${path}.id`, failCutLog),
-    expectedUpdatedAt: requireString(obj.expectedUpdatedAt, `${path}.expectedUpdatedAt`, failCutLog),
-  }
-}
-
-export type ValidatedWorkOrderItemPendingCutLogDiffInput = {
-  requestKey: string
-  diff: WorkOrderCutLogPendingDiff
-}
-
-export function validateWorkOrderItemPendingCutLogDiffInput(
+export function validateCreatePendingCutLogInput(
   body: Record<string, unknown>,
-): ValidatedWorkOrderItemPendingCutLogDiffInput {
-  const diffBody = requireObject(body.diff, "diff", failCutLog)
-  const added = requireArray(diffBody.added, "diff.added", failCutLog).map((entry, idx) =>
-    validatePendingDraft(entry, `diff.added[${idx}]`),
-  )
-  const modified = requireArray(diffBody.modified, "diff.modified", failCutLog).map((entry, idx) =>
-    validatePendingUpdate(entry, `diff.modified[${idx}]`),
-  )
-  const deleted = requireArray(diffBody.deleted, "diff.deleted", failCutLog).map((entry, idx) =>
-    validatePendingDelete(entry, `diff.deleted[${idx}]`),
-  )
-
+): ValidatedCreatePendingCutLogInput {
+  const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
   return {
-    requestKey: requireString(body.requestKey, "requestKey", failCutLog),
-    diff: { added, modified, deleted },
+    workOrderItemId: requireString(body.workOrderItemId, "workOrderItemId", failCutLog),
+    inventoryId: requireString(body.inventoryId, "inventoryId", failCutLog),
+    cut: requireString(body.cut, "cut", failCutLog),
+    isWaste,
+    notes: typeof body.notes === "string" ? body.notes : "",
+  }
+}
+
+export type ValidatedUpdatePendingCutLogPatch = {
+  cut?: string
+  isWaste?: boolean
+  notes?: string
+}
+
+export type ValidatedUpdatePendingCutLogInput = {
+  workOrderItemId: string
+  patch: ValidatedUpdatePendingCutLogPatch
+}
+
+export function validateUpdatePendingCutLogInput(
+  body: Record<string, unknown>,
+): ValidatedUpdatePendingCutLogInput {
+  const patchBody = requireObject(body.patch, "patch", failCutLog)
+  const patch: ValidatedUpdatePendingCutLogPatch = {}
+  if ("cut" in patchBody) {
+    patch.cut = requireString(patchBody.cut, "patch.cut", failCutLog)
+  }
+  if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
+    patch.isWaste = patchBody.isWaste
+  }
+  if ("notes" in patchBody && typeof patchBody.notes === "string") {
+    patch.notes = patchBody.notes
+  }
+  if (Object.keys(patch).length === 0) {
+    failCutLog("Patch must contain at least one of cut, isWaste, or notes", "patch")
+  }
+  return {
+    workOrderItemId: requireString(body.workOrderItemId, "workOrderItemId", failCutLog),
+    patch,
+  }
+}
+
+export type ValidatedDeletePendingCutLogInput = {
+  workOrderItemId: string
+}
+
+export function validateDeletePendingCutLogInput(
+  body: Record<string, unknown>,
+): ValidatedDeletePendingCutLogInput {
+  return {
+    workOrderItemId: requireString(body.workOrderItemId, "workOrderItemId", failCutLog),
   }
 }
 

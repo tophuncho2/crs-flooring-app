@@ -124,9 +124,9 @@ export async function voidWorkOrderCutLogRequest(args: {
   cutLogId: string
 }) {
   return requestJson<{ cutLog: { id: string; inventoryId: string } }>(
-    `/api/work-orders/${args.workOrderId}/cut-logs/${args.cutLogId}`,
+    `/api/work-orders/${args.workOrderId}/cut-logs/${args.cutLogId}/void`,
     {
-      method: "DELETE",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(withMutationMeta({})),
     },
