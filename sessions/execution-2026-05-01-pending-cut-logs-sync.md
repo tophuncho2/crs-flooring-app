@@ -26,7 +26,7 @@ This file tracks each phase's progress, files touched, errors encountered, and v
 
 **Verification:**
 - [x] Prisma client regenerated via `pnpm --filter @builders/db db:generate` (path: `packages/db`, run with the workspace-hoisted prisma binary). Generated `node_modules/.prisma/client/schema.prisma` and `index-browser.js` now show the narrowed enum (`IDLE`, `FINALIZING`, `FAILED`).
-- [ ] **Migration not yet applied to any database.** When ready: run `pnpm --filter @builders/db db:migrate:dev` locally to apply, or `pnpm --filter @builders/db db:deploy` for staging/prod. Hold off until the dependent code is updated (otherwise the worker / producer code crashes on startup against the narrowed enum).
+- [x] **Migration applied** via `npx prisma migrate deploy` (run from `packages/db` with `DOTENV_CONFIG_PATH=../../.env`). Output confirmed: `Applying migration 20260501190000_drop_work_order_item_status_saving_cuts` → `All migrations have been successfully applied.` Target DB: Railway Postgres (`railway` database, `public` schema) at `shortline.proxy.rlwy.net:22153`. Defensive `UPDATE ... SET status='IDLE' WHERE status='SAVING_CUTS'` ran first; enum swap completed without errors.
 - [ ] `pnpm typecheck` (monorepo-wide) is **expected red** until Phase 1 + Phase 4 land. Confirmed callsites that reference `SAVING_CUTS` and will be fixed/deleted in later phases:
 
 | File | Disposition |
@@ -53,10 +53,10 @@ migration defensively flips any pre-existing SAVING_CUTS rows to
 IDLE before swapping the enum type.
 ```
 
-**Status:** ✅ schema files staged (not yet committed, not yet applied to DB).
+**Status:** ✅ committed and applied to the Railway DB.
 
 **Notes:**
-- The `db:migrate:dev` step was intentionally NOT run during Phase 0 execution: applying the migration before the dependent code (Phase 1 + 4) lands would put any running worker/relay/web process into a state where it tries to write `SAVING_CUTS` to a column that no longer accepts it. Schema files are authored in this commit; migration deployment happens once the source-side code dependencies are removed.
+- Migration was applied immediately after commit per user's call. The running worker / relay / web processes still reference the deleted `SAVING_CUTS` enum literal in TypeScript source — they will throw at runtime if any code path that currently writes `"SAVING_CUTS"` gets exercised before Phase 4 deletes it. In practice the producer use case is the only writer of that value, and it only runs when the section route fires — both of which we are about to dismantle. Phase 1 starts immediately.
 - The package manager warning `"workspaces" field in package.json is not supported by pnpm. Create a "pnpm-workspace.yaml" file instead.` is pre-existing — npm-style workspaces hoist at the root, and pnpm tolerates it. Out of scope for this sweep.
 - Working tree before Phase 0: only the two new files in `sessions/`. After Phase 0: schema.prisma edit + new migration folder + regenerated client artifacts in `node_modules/.prisma/client/` (those are gitignored and not committed).
 
@@ -251,7 +251,7 @@ _To be filled in as work proceeds. Issues that don't fit a single phase land her
 
 | Phase | Status | Files touched | Errors | Notes |
 |---|---|---|---|---|
-| 0 — Schema | ✅ done (uncommitted, unapplied) | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/20260501190000_drop_work_order_item_status_saving_cuts/migration.sql` | 0 | Prisma client regenerated; monorepo typecheck expected red until Phase 1 + 4 land. |
+| 0 — Schema | ✅ committed + applied | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/20260501190000_drop_work_order_item_status_saving_cuts/migration.sql` | 0 | Migration deployed to Railway Postgres. Monorepo typecheck expected red until Phase 1 + 4 land. |
 | 1 — Domain | _not started_ | — | — | — |
 | 2 — Data | _not started_ | — | — | — |
 | 3 — Application | _not started_ | — | — | — |
