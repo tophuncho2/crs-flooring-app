@@ -44,6 +44,10 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     cut: toDecimalString(row.cut),
     after: toDecimalStringOrNull(row.after),
     coverageCut: toDecimalStringOrNull(row.coverageCut),
+    stockUnitName: row.stockUnitName ?? null,
+    stockUnitAbbrev: row.stockUnitAbbrev ?? null,
+    itemCoverageUnitName: row.itemCoverageUnitName ?? null,
+    itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? null,
     status,
     isFinal: row.isFinal,
     finalCutSequence: row.finalCutSequence,
@@ -220,10 +224,19 @@ export async function getCutLogsForFinalize(
 }
 
 /**
- * Returns the parent inventory context the diff validator
- * (`validateCutLogsDiff`) AND the worker's `coverageCut` recompute path
- * need: starting stock + current totalCutSum + coveragePerUnit +
- * categorySlug. Caller has already locked the inventory FOR UPDATE.
+ * Returns the parent inventory context every cut-log mutation path needs
+ * under the FOR UPDATE lock:
+ *   - `startingStock` + `currentTotalCutSum` for the
+ *     `totalCutSum ≤ startingStock` invariant (asserted by
+ *     `assertCutSumWithinStartingStock`).
+ *   - `coveragePerUnit` + `categorySlug` for `computeCutCoverage` —
+ *     re-derived on every create and on every `cut`-changing update.
+ *   - The four unit-snapshot fields (`stockUnitName` / `stockUnitAbbrev`
+ *     / `itemCoverageUnitName` / `itemCoverageUnitAbbrev`) — the WO-side
+ *     sync create use case stamps these onto the new cut log row at
+ *     insert time. After insert they are immutable on the cut log.
+ *
+ * Caller has already locked the inventory FOR UPDATE.
  *
  * `coveragePerUnit` is `Decimal?` on the schema, surfaced as
  * `string | null` here. `categorySlug` is non-nullable on the schema.
@@ -240,6 +253,10 @@ export async function getInventoryParentContextForCutLogs(
       totalCutSum: true,
       coveragePerUnit: true,
       categorySlug: true,
+      stockUnitName: true,
+      stockUnitAbbrev: true,
+      itemCoverageUnitName: true,
+      itemCoverageUnitAbbrev: true,
     },
   })
   if (!row) return null
@@ -250,6 +267,10 @@ export async function getInventoryParentContextForCutLogs(
     coveragePerUnit:
       row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
     categorySlug: row.categorySlug,
+    stockUnitName: row.stockUnitName ?? null,
+    stockUnitAbbrev: row.stockUnitAbbrev ?? null,
+    itemCoverageUnitName: row.itemCoverageUnitName ?? null,
+    itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? null,
   }
 }
 

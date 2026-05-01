@@ -22,6 +22,13 @@ export type CutLogStatus = FlooringCutLogStatus
 // Full cut-log read shape returned by the data layer. Decimal columns surface
 // as strings (Prisma's `Decimal` is serialized to string at the data-layer
 // boundary to keep precision predictable in the UI / API).
+//
+// Unit-snapshot fields (`stockUnitName` / `stockUnitAbbrev` /
+// `itemCoverageUnitName` / `itemCoverageUnitAbbrev`) are stamped from the
+// parent inventory at create time and never mutated afterward — they are
+// the cut log's frozen unit-of-measure label, immune to later edits on
+// the parent inventory's UoM. Pre-snapshot rows surface the columns as
+// null.
 export type CutLogRow = {
   id: string
   cutLogNumber: string
@@ -32,6 +39,10 @@ export type CutLogRow = {
   cut: string
   after: string | null
   coverageCut: string | null
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
+  itemCoverageUnitName: string | null
+  itemCoverageUnitAbbrev: string | null
   status: FlooringCutLogStatus
   isFinal: boolean
   finalCutSequence: number | null

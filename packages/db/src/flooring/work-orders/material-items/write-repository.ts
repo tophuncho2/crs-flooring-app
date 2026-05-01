@@ -169,10 +169,12 @@ export async function applyWorkOrderMaterialItemsDiff(
 }
 
 /**
- * Sets the WOMI's status field. Called by:
- *  - The pending cut-log producer (IDLE → SAVING_CUTS).
- *  - The pending cut-log worker (SAVING_CUTS → IDLE / FAILED).
- *  - The finalize batch producer/worker (IDLE → FINALIZING → IDLE / FAILED).
+ * Sets the WOMI's status field. Used only by the finalize batch flow
+ * (IDLE → FINALIZING → IDLE / FAILED).
+ *
+ * Pending cut-log create / update / delete are synchronous in their
+ * own request TX (sweep N, 2026-05-01); they hold the parent
+ * inventory's row lock for the duration and never flip WOMI status.
  *
  * Application layer enforces transition validity via
  * `assertWorkOrderItemStatusTransition`. Data layer is a thin write.

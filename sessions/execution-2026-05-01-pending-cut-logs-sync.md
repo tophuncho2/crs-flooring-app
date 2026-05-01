@@ -120,29 +120,69 @@ domain(cut-logs): add per-row pending-mutation predicates; drop SAVING_CUTS
 
 ## Phase 2 — Data
 
-**Goal:** Per-row write helpers + a single-call read helper that joins parent inventory.
+**Goal:** Per-row write helpers + a single-call read helper that joins parent inventory; surface the four unit-snapshot fields end-to-end through the read path.
 
-**Files:**
-- [ ] `packages/db/src/flooring/work-orders/cut-logs/write-repository.ts`
-  - `insertPendingCutLogRow(c, input)` (NEW) — stamps the four unit-snapshot fields from input
-  - `updatePendingCutLogRow(c, { id, patch })` (NEW) — never writes immutable fields
-  - `deletePendingCutLogRow(c, { id })` (NEW)
-  - `applyWorkOrderItemCutLogPendingDiff` (DELETED)
-- [ ] `packages/db/src/flooring/work-orders/cut-logs/read-repository.ts`
-  - `getPendingCutLogWithInventoryForMutation(c, cutLogId)` (NEW)
-  - `getInventoryForPendingCutLogCreate(c, inventoryId)` (NEW)
-- [ ] `packages/db/src/flooring/work-orders/cut-logs/index.ts` (UPDATED — barrel)
+**Plan deviations (approved by user before execution):**
+- **`getInventoryForPendingCutLogCreate` not added.** Instead, extended the existing `getInventoryParentContextForCutLogs` to surface the four unit-snapshot fields. One canonical helper, reused by create/update/delete + the still-living diff validator + the finalize path.
+- **`CutLogParentContext` (domain type) extended in place** instead of forking a parallel type. Same shape used by every cut-log mutation flow.
+- **Diff helpers (`applyWorkOrderItemCutLogPendingDiff`, `getInventoriesForCutLogDiff`, the diff input types) are NOT deleted in Phase 2.** They stay until Phase 4 deletes the producer/consumer use cases that consume them.
 
-**Reuses:** `lockInventoriesForCutLogBatch(c, [inventoryId])`, `recomputeAndPersistTotalCutSums(c, [inventoryId])`.
+**Files (all done):**
+- [x] `packages/domain/src/flooring/inventory/cut-logs/types.ts` (UPDATED) — `CutLogRow` extended with `stockUnitName`, `stockUnitAbbrev`, `itemCoverageUnitName`, `itemCoverageUnitAbbrev` (each `string | null`).
+- [x] `packages/domain/src/flooring/inventory/cut-logs/diff/types.ts` (UPDATED) — `CutLogParentContext` extended with the same four fields.
+- [x] `packages/db/src/flooring/inventory/cut-logs/shared.ts` (UPDATED) — `cutLogRowSelect` selects the four columns.
+- [x] `packages/db/src/flooring/inventory/cut-logs/read-repository.ts` (UPDATED):
+  - `normalizeCutLogRow` surfaces the four fields.
+  - `getInventoryParentContextForCutLogs` reads + returns the four fields.
+- [x] `packages/db/src/flooring/work-orders/cut-logs/read-repository.ts` (UPDATED):
+  - `workOrderCutLogSelect` selects the four columns.
+  - NEW: `getPendingCutLogWithInventoryForMutation(tx, cutLogId)` — single round-trip read using Prisma `select` with a nested `inventory` select. Returns `{ cutLog: CutLogRecord; inventory: CutLogParentContext } | null`.
+- [x] `packages/db/src/flooring/work-orders/cut-logs/write-repository.ts` (UPDATED):
+  - NEW: `insertPendingCutLogRow(tx, input)` — single-row create. Stamps the four unit-snapshot fields from `input.unitSnapshot`. Returns the normalized record.
+  - NEW: `updatePendingCutLogRow(tx, { id, patch })` — single-row update. Patch only ever covers `cut`, `coverageCut`, `isWaste`, `notes`. Empty-patch falls through to a `findUniqueOrThrow` so the caller still gets the row. Returns the normalized record.
+  - NEW: `deletePendingCutLogRow(tx, { id })` — single-row delete. Pure persistence call.
+  - NEW types exported: `PendingCutLogUnitSnapshot`, `InsertPendingCutLogRowInput`, `UpdatePendingCutLogRowPatch`, `UpdatePendingCutLogRowInput`, `DeletePendingCutLogRowInput`.
+- [x] `packages/db/src/flooring/work-orders/material-items/write-repository.ts` (UPDATED) — doc comment on `markWorkOrderItemStatus` rewritten to drop the old `IDLE → SAVING_CUTS` line. Notes that the function is now finalize-only and that pending mutations hold the inventory row lock instead of flipping WOMI status.
+
+**Reuses (no edits):** `lockInventoriesForCutLogBatch(c, [inventoryId])`, `recomputeAndPersistTotalCutSums(c, [inventoryId])`, `getCutLogById`, `listCutLogsForWorkOrderItem*`, `listCutLogsForInventoryIds`.
+
+**Untouched (different flows):** `createCutLogRecord`, `updateCutLogPending`, `voidCutLogRecord`, `applyVoidToCutLog`, `finalizeCutLogRecord`, `finalizeCutLogBatch`, `applyFinalizeWorkOrderCutLogBatch`, `markCutLogsForFinalize`, `markCutLogForVoid`, `applyCutLogPendingSaveDiff`, `updateCutLogLinks`, `deleteCutLogRecordById`.
 
 **Verification:**
-- [ ] `pnpm typecheck` for `@builders/db` clean.
-- [ ] Repository tests cover insert/update/delete + the snapshot-immutable contract on update.
+- [x] Domain rebuild clean: `tsc -p tsconfig.json` (domain) emits with no errors. (Required because the db package consumes `@builders/domain` from its compiled `dist/` output, not src; type changes need the dist rebuilt before db typecheck sees them.)
+- [x] `tsc -p tsconfig.json --noEmit` (domain) — clean.
+- [x] `tsc -p tsconfig.json --noEmit` (db) — clean.
+- [ ] Repository tests for the three new write helpers + the new read helper — not yet authored. Defer to alongside Phase 3 use case tests.
 
-**Status:** _not started_
+**Commit message (when user is ready):**
+
+```
+data(cut-logs): per-row pending mutation primitives + unit snapshot surface
+
+- Extend CutLogRow + CutLogParentContext with the four unit-snapshot
+  fields (stockUnit{Name,Abbrev}, itemCoverageUnit{Name,Abbrev}).
+- Plumb through cutLogRowSelect, workOrderCutLogSelect, and
+  normalizeCutLogRow so every cut-log read surfaces them.
+- Extend getInventoryParentContextForCutLogs to return the four
+  fields under the FOR UPDATE lock — one canonical context helper
+  reused by create / update / delete / diff validator / finalize.
+- Add getPendingCutLogWithInventoryForMutation: single round-trip
+  read returning {cutLog, inventory} for the WO-side update + delete
+  use cases.
+- Add insertPendingCutLogRow / updatePendingCutLogRow /
+  deletePendingCutLogRow (single-row WO-side primitives). insert
+  stamps the four unit fields from input.unitSnapshot; update never
+  writes them, never writes before/after/finalCutSequence/isFinal/
+  void/cost/freight/links/cutLogNumber.
+- Refresh markWorkOrderItemStatus doc comment — pending flow no
+  longer touches WOMI status.
+```
+
+**Status:** ✅ done. Domain + db typechecks green. Application package still red (producer/consumer use cases reference deleted symbols) — expected until Phase 4.
 
 **Notes:**
-- _empty until execution_
+- The db package consumes `@builders/domain` via `file:../domain` (resolved through the domain `dist/` build output), so any domain edit must be followed by `tsc -p packages/domain/tsconfig.json` before re-typechecking db. Phase 1's edits had been compiled into `dist/` only at the time of Phase 1's domain-only typecheck — Phase 2's edits required a fresh build, which surfaced four real errors in db that resolved as soon as the rebuilt `dist/` was in place.
+- Snapshot stamping is enforced by shape, not by check: `updatePendingCutLogRow`'s patch type physically does not include the four unit fields, so there is no callsite that could write to them post-create. Same for the worker-only fields (`before`, `after`, `finalCutSequence`, `isFinal`, `void`, `cost`, `freight`).
 
 ---
 
@@ -281,7 +321,7 @@ _To be filled in as work proceeds. Issues that don't fit a single phase land her
 |---|---|---|---|---|
 | 0 — Schema | ✅ committed + applied | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/20260501190000_drop_work_order_item_status_saving_cuts/migration.sql` | 0 | Migration deployed to Railway Postgres. Monorepo typecheck expected red until Phase 1 + 4 land. |
 | 1 — Domain | ✅ done (uncommitted) | `material-items/types.ts`, `material-items/status-rules.ts`, `work-orders/errors.ts`, `inventory/cut-logs/errors.ts`, `inventory/cut-logs/pending-mutation-rules.ts` (NEW), `inventory/cut-logs/index.ts`, `work-orders/cut-logs/types.ts`, `queue/save-work-order-item-pending-cut-log-diff.ts` (DELETED), `src/index.ts` | 0 | Domain typecheck green. `assignDraftIds` kept (used by other flows). Monorepo typecheck still red — fixes land Phase 2/3/4. |
-| 2 — Data | _not started_ | — | — | — |
+| 2 — Data | ✅ done (uncommitted) | `domain/inventory/cut-logs/types.ts`, `domain/inventory/cut-logs/diff/types.ts`, `db/inventory/cut-logs/shared.ts`, `db/inventory/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/read-repository.ts`, `db/work-orders/cut-logs/write-repository.ts`, `db/work-orders/material-items/write-repository.ts` | 0 | Domain + db typechecks green. App package still red (producer/consumer) — expected until Phase 4. |
 | 3 — Application | _not started_ | — | — | — |
 | 4 — Worker dismantle | _not started_ | — | — | — |
 | 5 — API routes | _not started_ | — | — | — |

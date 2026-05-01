@@ -1,4 +1,8 @@
 import { db } from "../../../client.js"
+import { normalizeCutLogRow } from "../../inventory/cut-logs/read-repository.js"
+import type { CutLogRecord } from "../../inventory/cut-logs/read-repository.js"
+import { cutLogRowSelect } from "../../inventory/cut-logs/shared.js"
+import type { CutLogParentContext } from "@builders/domain"
 import type { Prisma, PrismaClient } from "@prisma/client"
 
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
@@ -13,6 +17,10 @@ const workOrderCutLogSelect = {
   cut: true,
   coverageCut: true,
   after: true,
+  stockUnitName: true,
+  stockUnitAbbrev: true,
+  itemCoverageUnitName: true,
+  itemCoverageUnitAbbrev: true,
   status: true,
   isFinal: true,
   finalCutSequence: true,
@@ -132,4 +140,62 @@ export async function listCutLogsForInventoryIds(
     cut: r.cut.toString(),
     void: r.void,
   }))
+}
+
+export type PendingCutLogWithInventoryForMutation = {
+  cutLog: CutLogRecord
+  inventory: CutLogParentContext
+}
+
+/**
+ * Single-query read powering the per-row update + delete sync use cases.
+ * Returns the cut log (full normalized record) plus the parent
+ * inventory's `CutLogParentContext` shape — the use case asserts WOMI
+ * linkage / pending-status / OCC against the cut log, then locks the
+ * inventory row FOR UPDATE and applies the patch.
+ *
+ * Caller is the WO-side application use case; transaction client is
+ * required (no `db` default) so the read participates in the same TX
+ * that takes the lock.
+ */
+export async function getPendingCutLogWithInventoryForMutation(
+  tx: Prisma.TransactionClient,
+  cutLogId: string,
+): Promise<PendingCutLogWithInventoryForMutation | null> {
+  const row = await tx.flooringCutLog.findUnique({
+    where: { id: cutLogId },
+    select: {
+      ...cutLogRowSelect,
+      inventory: {
+        select: {
+          id: true,
+          startingStock: true,
+          totalCutSum: true,
+          coveragePerUnit: true,
+          categorySlug: true,
+          stockUnitName: true,
+          stockUnitAbbrev: true,
+          itemCoverageUnitName: true,
+          itemCoverageUnitAbbrev: true,
+        },
+      },
+    },
+  })
+  if (!row) return null
+  const { inventory: inv, ...cutLogPayload } = row
+  return {
+    cutLog: normalizeCutLogRow(cutLogPayload),
+    inventory: {
+      inventoryId: inv.id,
+      startingStock: inv.startingStock.toString(),
+      currentTotalCutSum: inv.totalCutSum.toString(),
+      coveragePerUnit:
+        inv.coveragePerUnit === null ? null : inv.coveragePerUnit.toString(),
+      categorySlug: inv.categorySlug,
+      stockUnitName: inv.stockUnitName ?? null,
+      stockUnitAbbrev: inv.stockUnitAbbrev ?? null,
+      itemCoverageUnitName: inv.itemCoverageUnitName ?? null,
+      itemCoverageUnitAbbrev: inv.itemCoverageUnitAbbrev ?? null,
+    },
+  }
 }

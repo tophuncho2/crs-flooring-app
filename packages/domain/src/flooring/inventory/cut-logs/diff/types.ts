@@ -59,6 +59,11 @@ export type CutLogsDiff = {
  * the recomputed `coverageCut` snapshot ensures historical correctness:
  * if the parent inventory's `coveragePerUnit` ever changes later, each
  * cut log keeps its own snapshot from the moment of its last cut edit.
+ *
+ * The four unit-snapshot fields are exposed so the WO-side sync create
+ * use case can stamp the cut log's frozen unit labels at insert time
+ * (the cut log's own unit columns are never mutated after create). They
+ * are nullable because not every inventory has every unit category set.
  */
 export type CutLogParentContext = {
   inventoryId: string
@@ -66,6 +71,10 @@ export type CutLogParentContext = {
   currentTotalCutSum: string
   coveragePerUnit: string | null
   categorySlug: string
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
+  itemCoverageUnitName: string | null
+  itemCoverageUnitAbbrev: string | null
 }
 
 /**
