@@ -14,34 +14,10 @@ export type {
   DeletePendingCutLogInput,
 } from "@builders/domain"
 
-export type WorkOrderCutLogPendingDraft = {
-  tempId: string
-  inventoryId: string
-  cut: string
-  isWaste: boolean
-  notes: string
-}
-
-export type WorkOrderCutLogPendingUpdate = {
-  id: string
-  expectedUpdatedAt: string
-  patch: {
-    cut?: string
-    isWaste?: boolean
-    notes?: string
-  }
-}
-
-export type WorkOrderCutLogPendingDelete = {
-  id: string
-  expectedUpdatedAt: string
-}
-
-export type WorkOrderCutLogPendingDiff = {
-  added: WorkOrderCutLogPendingDraft[]
-  modified: WorkOrderCutLogPendingUpdate[]
-  deleted: WorkOrderCutLogPendingDelete[]
-}
+// Diff types from the prior async pending-save flow have been removed
+// (sweep replacing batch save with per-row sync mutations). Per-row
+// inputs (`CreatePendingCutLogInput` / `UpdatePendingCutLogInput` /
+// `DeletePendingCutLogInput`) are re-exported above from the domain.
 
 export type FinalizeWorkOrderCutLogBatchInput = {
   workOrderId: string

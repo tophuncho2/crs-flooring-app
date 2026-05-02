@@ -6,8 +6,8 @@ import { RecordPrimarySectionInstance } from "@/components/sections/panels/recor
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import type {
+  CutLogRow,
   WorkOrderDetail,
-  WorkOrderItemPendingCutLogRow,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
@@ -27,7 +27,7 @@ export function WorkOrderRecordPanel({
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialCutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]>
+  initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   initialFiles: WorkOrderFileRow[]
   options: WorkOrderFormOptionSet
 }) {

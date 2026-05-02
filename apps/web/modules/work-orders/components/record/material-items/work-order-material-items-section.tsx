@@ -1,14 +1,14 @@
 "use client"
 
-import { Fragment, useCallback, useMemo, useState } from "react"
+import { Fragment, useMemo, useState } from "react"
 import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandToggle, ExpandableRow } from "@/components/grid/expandable-rows"
 import { SelectAllButton } from "@/components/features/select-batch"
-import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
 import type {
+  CutLogRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -16,15 +16,12 @@ import type {
   CategoryOption,
   ProductOption,
 } from "@/modules/work-orders/controllers/drafts"
-import { useWorkOrderCutLogSectionState } from "@/modules/work-orders/controllers/use-work-order-cut-log-section-state"
-import { useWorkOrderCutLogVoid } from "@/modules/work-orders/controllers/use-work-order-cut-log-void"
+import { useFinalizeCutLogBatchSection } from "@/modules/work-orders/controllers/use-finalize-cut-log-batch-section"
 import {
   useWorkOrderMaterialItemsSection,
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/use-work-order-material-items-section"
-import { finalizeWorkOrderCutLogBatchRequest } from "@/modules/work-orders/data/mutations"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
-import type { WorkOrderItemPendingCutLogRow as PendingCutLogRow } from "@builders/domain"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
@@ -41,8 +38,6 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
 
 function statusTone(status: WorkOrderMaterialItemRow["status"]): BadgeTone {
   switch (status) {
-    case "SAVING_CUTS":
-      return "processing"
     case "FINALIZING":
       return "processing"
     case "FAILED":
@@ -51,8 +46,6 @@ function statusTone(status: WorkOrderMaterialItemRow["status"]): BadgeTone {
       return "muted"
   }
 }
-
-const isPendingCutLogRow = (row: PendingCutLogRow) => row.status === "PENDING"
 
 export function WorkOrderMaterialItemsSection({
   workOrder,
@@ -65,7 +58,7 @@ export function WorkOrderMaterialItemsSection({
 }: {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  cutLogsByWorkOrderItemId: Record<string, PendingCutLogRow[]>
+  cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   productOptions: ProductOption[]
   categoryOptions: CategoryOption[]
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
@@ -77,47 +70,40 @@ export function WorkOrderMaterialItemsSection({
     publishMaterialItems,
     publishWorkOrder,
   })
-  const cutLogState = useWorkOrderCutLogSectionState({ workOrderId: workOrder.id })
-  const voider = useWorkOrderCutLogVoid({ workOrderId: workOrder.id })
 
   // Flatten all WOMI cut-logs into one snapshot for the gated batch-select.
-  // Eligibility (status === "PENDING") is enforced inside the hook via the
-  // predicate; the hook returns `eligibleSelectedIds` filtered against the
-  // latest snapshot so a row that drifted state since the user clicked it
-  // is automatically excluded.
+  // Eligibility (status === "PENDING") is enforced inside the finalize
+  // controller; the controller returns `eligibleSelectedIds` filtered
+  // against the latest snapshot so a row that drifted state since the
+  // user clicked it is automatically excluded.
+  //
+  // The snapshot reflects SSR-loaded data only — newly-created cut logs
+  // become finalize-eligible after a record refresh. Lifting per-WOMI
+  // section state up to aggregate post-create rows is out of scope here
+  // (the locked decision deferred speedy-finalize-refresh to the
+  // finalize-hardening sweep).
   const allCutLogs = useMemo(
     () => Object.values(cutLogsByWorkOrderItemId).flat(),
     [cutLogsByWorkOrderItemId],
   )
 
-  const finalize = useGatedBatchSelect<PendingCutLogRow>({
+  const finalize = useFinalizeCutLogBatchSection({
+    workOrderId: workOrder.id,
     rows: allCutLogs,
-    isEligible: isPendingCutLogRow,
-    isSectionDirty: cutLogState.isAnyDirty || section.isDirty,
-    isSectionBusy: cutLogState.isSavingPendingCuts || section.isSaving,
-    performAction: useCallback(
-      async (cutLogIds) => {
-        await finalizeWorkOrderCutLogBatchRequest({
-          workOrderId: workOrder.id,
-          requestKey: crypto.randomUUID(),
-          cutLogIds,
-        })
-      },
-      [workOrder.id],
-    ),
+    isSectionDirty: section.isDirty,
+    isSectionBusy: section.isSaving,
   })
 
   const isSelectionActive = finalize.isSelectionActive
   const isFinalizingInFlight = finalize.isFiring
 
-  // Cell-level edit lock: any in-flight or selection state across the
-  // entire section. Mirrors the lock signal threaded into the cut-log
-  // row component for its per-cell editability.
+  // Cell-level edit lock for material items + per-WOMI cut-log row
+  // affordances. Per-WOMI cut-log mutations have their own row-scoped
+  // pending state; this section-level signal only fires when the parent
+  // material-items mutation, finalize-batch mutation, or finalize
+  // selection mode are active.
   const sectionBusy =
-    isSelectionActive ||
-    cutLogState.isSavingPendingCuts ||
-    isFinalizingInFlight ||
-    section.isSaving
+    isSelectionActive || isFinalizingInFlight || section.isSaving
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
   function toggleExpanded(rowId: string) {
@@ -256,8 +242,6 @@ export function WorkOrderMaterialItemsSection({
     ? "Finalizing…"
     : `Finalize Selected (${finalize.eligibleSelectedIds.length})`
   const canFinalize =
-    !cutLogState.isAnyDirty &&
-    !cutLogState.isSavingPendingCuts &&
     !isFinalizingInFlight &&
     !section.isSaving &&
     finalize.eligibleSelectedIds.length > 0
@@ -315,26 +299,10 @@ export function WorkOrderMaterialItemsSection({
             disabled:
               !section.isDirty || section.isSaving || section.hasConflict || isSelectionActive,
           },
-          {
-            key: "discard-cuts",
-            label: "Discard Pending Cuts",
-            onClick: cutLogState.discardAll,
-            kind: "secondary",
-            disabled:
-              !cutLogState.isAnyDirty ||
-              cutLogState.isSavingPendingCuts ||
-              isSelectionActive,
-          },
-          {
-            key: "save-cuts",
-            label: cutLogState.isSavingPendingCuts ? "Saving…" : "Save Pending Cuts",
-            onClick: () => void cutLogState.save(),
-            kind: "primary",
-            disabled:
-              !cutLogState.isAnyDirty ||
-              cutLogState.isSavingPendingCuts ||
-              isSelectionActive,
-          },
+          // Section-wide "Save Pending Cuts" / "Discard Pending Cuts"
+          // buttons are removed in this sweep — pending cut log
+          // mutations are now per-row inline triggers (one circular
+          // commit button per row).
           {
             key: "finalize",
             label: finalizeButtonLabel,
@@ -344,17 +312,7 @@ export function WorkOrderMaterialItemsSection({
           },
         ]}
         message={section.noticeMessage}
-        error={
-          sectionError ||
-          cutLogState.pendingSaveError ||
-          finalize.error ||
-          voider.error
-            ? (sectionError ?? null) ||
-              cutLogState.pendingSaveError ||
-              finalize.error ||
-              voider.error
-            : null
-        }
+        error={sectionError || finalize.error || null}
       />
 
       <Grid<WorkOrderMaterialItemLocal>
@@ -382,14 +340,10 @@ export function WorkOrderMaterialItemsSection({
                       workOrderId={workOrder.id}
                       workOrderItemId={row.id}
                       serverRows={cutLogs}
-                      cutLogState={cutLogState}
                       selectedIds={finalize.selectedIds}
                       onToggleSelected={finalize.toggleSelected}
                       canToggleSelection={finalize.canToggleSelection}
-                      isSelectionActive={isSelectionActive}
-                      isSavingPendingCuts={cutLogState.isSavingPendingCuts}
-                      isFinalizingInFlight={isFinalizingInFlight}
-                      voider={voider}
+                      isSectionBusy={sectionBusy}
                     />
                   </div>
                 ) : null}

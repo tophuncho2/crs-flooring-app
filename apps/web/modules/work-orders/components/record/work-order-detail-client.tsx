@@ -5,8 +5,8 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/scaffolds/record-detail-client-scaffold"
 import type {
+  CutLogRow,
   WorkOrderDetail,
-  WorkOrderItemPendingCutLogRow,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
@@ -22,7 +22,7 @@ export function WorkOrderDetailClient({
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialCutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]>
+  initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   initialFiles: WorkOrderFileRow[]
   options: WorkOrderFormOptionSet
   backHref: string

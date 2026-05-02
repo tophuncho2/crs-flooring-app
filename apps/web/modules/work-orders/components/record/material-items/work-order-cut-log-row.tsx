@@ -1,22 +1,28 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import type { WorkOrderItemPendingCutLogRow as PendingCutLogRow } from "@builders/domain"
-import type { WorkOrderCutLogSectionState } from "@/modules/work-orders/controllers/use-work-order-cut-log-section-state"
-import type { useWorkOrderCutLogVoid } from "@/modules/work-orders/controllers/use-work-order-cut-log-void"
-import { listEligibleInventoryRequest } from "@/modules/work-orders/data/mutations"
-import { StatusBadge } from "@/components/badges"
+import type { ReactNode } from "react"
+import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
+import { CutLogStatusBadge } from "@/components/badges"
 import {
   CheckboxCell,
+  CircularCommitButton,
   DropdownCell,
   NumberCell,
-  RowActionButton,
   TextCell,
 } from "@/components/cells"
 import { ConfirmActionButton } from "@/components/features/confirm-action"
+import {
+  renderCutLogReadOnlyCell,
+  renderCutLogStatusControl,
+} from "@/components/features/cut-log-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
-import type { GridRow } from "@/components/grid/contracts/grid-row"
-import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
+import type { GridControlColumn } from "@/components/grid/contracts/grid-control-column"
+import {
+  usePendingCutLogSection,
+  type PendingCutLogRowController,
+} from "@/modules/work-orders/controllers/use-pending-cut-log-section"
+import { listEligibleInventoryRequest } from "@/modules/work-orders/data/mutations"
 
 type EligibleInventory = {
   id: string
@@ -28,73 +34,100 @@ type EligibleInventory = {
   locationCode: string
 }
 
-type CutLogGridRow = GridRow &
-  (
-    | { kind: "draft"; clientId: string }
-    | { kind: "server"; serverRow: PendingCutLogRow }
-  )
-
-function statusTone(status: PendingCutLogRow["status"]): BadgeTone {
-  switch (status) {
-    case "FINAL":
-      return "success"
-    case "VOID":
-      return "muted"
-    case "QUEUED":
-      return "processing"
-    case "PENDING":
-      return "warning"
-    default:
-      return "default"
-  }
+type CutLogGridRow = {
+  id: string
+  /** Per-row controller projection from the section hook. */
+  controller: PendingCutLogRowController
 }
 
-const GRID_LAYOUT: GridLayout<CutLogGridRow> = {
-  leadingControls: [{ key: "select", kind: "selection" as const, width: 40 }],
+const WO_CUT_LOG_LAYOUT: GridLayout<CutLogGridRow> = {
+  leadingControls: [{ key: "select", kind: "selection", width: 40 }],
   dataColumns: [
-    { key: "cutLogNumber", label: "Cut #", minWidth: 70, grow: 0 },
-    { key: "inventory", label: "Inventory", minWidth: 220, grow: 1.5 },
-    { key: "before", label: "Before", kind: "number", minWidth: 70, grow: 0, align: "end" },
-    { key: "cut", label: "Cut", kind: "number", minWidth: 80, grow: 0, align: "end" },
-    { key: "after", label: "After", kind: "number", minWidth: 70, grow: 0, align: "end" },
-    { key: "coverage", label: "Coverage", kind: "number", minWidth: 80, grow: 0, align: "end" },
-    { key: "status", label: "Status", kind: "status", minWidth: 100, grow: 0, align: "center" },
-    { key: "finalCutSequence", label: "Final #", kind: "number", minWidth: 70, grow: 0, align: "end" },
-    { key: "isWaste", label: "Waste", minWidth: 60, grow: 0, align: "center" },
-    { key: "notes", label: "Notes", minWidth: 160, grow: 1 },
-    { key: "created", label: "Created", minWidth: 90, grow: 0 },
-    { key: "updated", label: "Updated", minWidth: 90, grow: 0 },
+    { key: "cutLogNumber", label: "Cut #", minWidth: 132, grow: 0 },
+    { key: "inventoryRef", label: "Inventory", minWidth: 240, grow: 1 },
+    { key: "cut", label: "Cut", minWidth: 110, grow: 0, align: "center" },
+    { key: "coverageCut", label: "Coverage", minWidth: 120, grow: 0, align: "center" },
+    { key: "isWaste", label: "Waste", minWidth: 70, grow: 0, align: "center" },
+    { key: "before", label: "Before", minWidth: 90, grow: 0, align: "center" },
+    { key: "after", label: "After", minWidth: 90, grow: 0, align: "center" },
+    { key: "finalSeq", label: "Seq", minWidth: 64, grow: 0, align: "center" },
+    { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
+    { key: "createdAt", label: "Created", minWidth: 140, grow: 0 },
+    { key: "updatedAt", label: "Updated", minWidth: 140, grow: 0 },
   ],
-  trailingControls: [{ key: "actions", kind: "actions", width: 96 }],
+  trailingControls: [
+    { key: "status", kind: "status-indicator", width: 120 },
+    { key: "destructive", kind: "actions", width: 80 },
+    { key: "commit", kind: "commit", width: 56 },
+  ],
+}
+
+function pickDestructiveCopy(status: FlooringCutLogStatus | "DRAFT", cutLogNumber: string): {
+  label: string
+  pendingLabel: string
+  confirmTitle: string
+  confirmMessage: ReactNode
+  confirmLabel: string
+  ariaLabel: string
+} {
+  if (status === "FINAL") {
+    return {
+      label: "Void",
+      pendingLabel: "Voiding…",
+      confirmTitle: `Void ${cutLogNumber}?`,
+      confirmMessage:
+        "Voiding marks this finalized cut log as no longer counted; the row stays in the history with its original sequence number. This cannot be undone.",
+      confirmLabel: "Void cut log",
+      ariaLabel: `Void cut ${cutLogNumber}`,
+    }
+  }
+  // PENDING (or DRAFT — destructive on a draft just discards locally; no
+  // confirm needed, but the button still routes through the same prop
+  // surface to keep the column constant).
+  return {
+    label: status === "DRAFT" ? "Discard" : "Delete",
+    pendingLabel: "Deleting…",
+    confirmTitle: status === "DRAFT" ? "Discard draft?" : `Delete ${cutLogNumber}?`,
+    confirmMessage:
+      status === "DRAFT"
+        ? "Discards the unsaved draft row."
+        : "This pending cut log will be removed. Final cuts cannot be deleted — they can only be voided.",
+    confirmLabel: status === "DRAFT" ? "Discard" : "Delete cut log",
+    ariaLabel: `Remove cut ${cutLogNumber}`,
+  }
 }
 
 export function WorkOrderCutLogRow({
   workOrderId,
   workOrderItemId,
   serverRows,
-  cutLogState,
   selectedIds,
   onToggleSelected,
   canToggleSelection,
-  isSelectionActive,
-  isSavingPendingCuts,
-  isFinalizingInFlight,
-  voider,
+  isSectionBusy,
 }: {
   workOrderId: string
   workOrderItemId: string
-  serverRows: PendingCutLogRow[]
-  cutLogState: WorkOrderCutLogSectionState
+  serverRows: ReadonlyArray<CutLogRow>
   selectedIds: ReadonlySet<string>
   onToggleSelected: (cutLogId: string) => void
   canToggleSelection: boolean
-  isSelectionActive: boolean
-  isSavingPendingCuts: boolean
-  isFinalizingInFlight: boolean
-  voider: ReturnType<typeof useWorkOrderCutLogVoid>
+  /**
+   * True when the parent material-items section has any in-flight or
+   * selection-active state. Used to lock the per-row commit/edit affordances
+   * during finalize / material-item save.
+   */
+  isSectionBusy: boolean
 }) {
-  const local = cutLogState.getStateForWomi(workOrderItemId)
+  const section = usePendingCutLogSection({
+    workOrderId,
+    workOrderItemId,
+    initialRows: serverRows,
+  })
 
+  // Eligible inventory for the inventory dropdown on draft rows. Loaded
+  // lazily; once loaded, used both for the dropdown options and for the
+  // saved-row inventory display name.
   const [eligibleInventory, setEligibleInventory] = useState<EligibleInventory[]>([])
   const [loadingInventory, setLoadingInventory] = useState(false)
 
@@ -121,10 +154,7 @@ export function WorkOrderCutLogRow({
   }, [workOrderId, workOrderItemId])
 
   const distinctLocationCodes = useMemo(
-    () =>
-      Array.from(
-        new Set(eligibleInventory.map((i) => i.locationCode).filter(Boolean)),
-      ).sort(),
+    () => Array.from(new Set(eligibleInventory.map((i) => i.locationCode).filter(Boolean))).sort(),
     [eligibleInventory],
   )
   const locationOptions = useMemo(
@@ -137,301 +167,269 @@ export function WorkOrderCutLogRow({
     return map
   }, [eligibleInventory])
 
-  function inventoriesForLocation(locationCode: string): EligibleInventory[] {
-    if (!locationCode) return eligibleInventory
-    return eligibleInventory.filter((inv) => inv.locationCode === locationCode)
+  function inventoriesForLocation(code: string): EligibleInventory[] {
+    if (!code) return eligibleInventory
+    return eligibleInventory.filter((inv) => inv.locationCode === code)
   }
 
+  // Build the grid rows: drafts first (so they render at the top while the
+  // user is filling them in), then saved rows in their existing order.
   const gridRows: CutLogGridRow[] = useMemo(() => {
-    const drafts: CutLogGridRow[] = local.drafts.map((d) => ({
-      id: d.clientId,
-      kind: "draft" as const,
-      clientId: d.clientId,
-    }))
-    const server: CutLogGridRow[] = serverRows.map((row) => ({
-      id: row.id,
-      kind: "server" as const,
-      serverRow: row,
-    }))
-    return [...drafts, ...server]
-  }, [local.drafts, serverRows])
+    return section.rowIds
+      .map((id) => {
+        const controller = section.getRowController(id)
+        if (!controller) return null
+        return { id, controller } as CutLogGridRow
+      })
+      .filter((row): row is CutLogGridRow => row !== null)
+  }, [section])
 
-  // Cells lock when the section is in a batch operation: selecting,
-  // saving pending cuts, or finalizing. Per-row lock when the user has
-  // queued this row for delete.
-  const sectionBusy = isSelectionActive || isSavingPendingCuts || isFinalizingInFlight
+  // Read-only fallback renderer for rows that aren't currently being edited.
+  const renderReadOnlyCell = useMemo(
+    () => renderCutLogReadOnlyCell({}),
+    [],
+  )
 
-  function renderServerCell(column: { key: string }, row: PendingCutLogRow) {
-    const isPending = row.status === "PENDING"
-    const update = local.updates[row.id]
-    const isDeleted = !!local.deletes[row.id]
-    const editableCell = isPending && !isDeleted && !sectionBusy
-    const decoration = isDeleted ? "line-through opacity-60" : ""
+  function renderInventoryCell(rc: PendingCutLogRowController): ReactNode {
+    if (rc.kind === "draft") {
+      const filtered = inventoriesForLocation(rc.form.locationFilterCode)
+      const inventoryOptions = filtered.map((inv) => ({
+        id: inv.id,
+        label: `${inv.inventoryNumber} · ${inv.remainingStock} ${inv.stockUnitAbbrev}${
+          inv.locationCode ? ` · ${inv.locationCode}` : ""
+        }`,
+      }))
+      const editable = rc.isEditing && !isSectionBusy
+      return (
+        <div className="flex w-full flex-col gap-1">
+          <DropdownCell
+            editable={editable}
+            value={rc.form.locationFilterCode || null}
+            onChange={(next) => rc.setLocationFilterCode(next ?? "")}
+            options={locationOptions}
+            allowClear
+            placeholder="All locations"
+            ariaLabel="Cut log location filter"
+          />
+          <DropdownCell
+            editable={editable}
+            value={rc.form.inventoryId || null}
+            onChange={(next) => rc.setInventoryId(next ?? "")}
+            options={inventoryOptions}
+            placeholder={loadingInventory ? "Loading…" : "Pick inventory"}
+            ariaLabel="Cut log inventory"
+          />
+        </div>
+      )
+    }
+    // Saved row — display the inventory by its enriched label when we
+    // have it, else by id. Read-only.
+    const row = rc.row
+    if (!row) return null
+    const inv = inventoryById.get(row.inventoryId)
+    const label = inv
+      ? `${inv.inventoryNumber}${inv.locationCode ? ` · ${inv.locationCode}` : ""}`
+      : row.inventoryId
+    return <span className="truncate">{label}</span>
+  }
 
-    switch (column.key) {
-      case "cutLogNumber":
-        return <span className={decoration}>{row.cutLogNumber}</span>
-      case "inventory": {
-        const inv = inventoryById.get(row.inventoryId)
-        const label = inv
-          ? `${inv.inventoryNumber}${inv.locationCode ? ` · ${inv.locationCode}` : ""}`
-          : row.inventoryId
-        return <span className={`truncate ${decoration}`}>{label}</span>
-      }
-      case "before":
-        return <span className={`tabular-nums ${decoration}`}>{row.before ?? "—"}</span>
-      case "cut":
-        if (editableCell) {
+  function renderCell(column: { key: string }, gridRow: CutLogGridRow): ReactNode {
+    const rc = gridRow.controller
+    // Editable-cell branches: only when the row is currently the editingRow
+    // AND it isn't locked by a section-level busy signal.
+    const isEditableNow = rc.isEditing && !isSectionBusy
+
+    if (column.key === "inventoryRef") {
+      return renderInventoryCell(rc)
+    }
+
+    if (rc.kind === "draft") {
+      // Drafts have no server snapshot — render placeholders + editable cells.
+      switch (column.key) {
+        case "cutLogNumber":
+          return <span className="italic text-[var(--foreground)]/55">new</span>
+        case "cut":
           return (
             <NumberCell
-              editable={true}
-              value={update?.cut ?? row.cut}
-              onChange={(next) =>
-                cutLogState.editServerRow(workOrderItemId, row, { cut: next })
-              }
+              editable={isEditableNow}
+              value={rc.form.cut}
+              onChange={(next) => rc.setCut(next)}
               ariaLabel="Cut amount"
             />
           )
-        }
-        return (
-          <span className={`tabular-nums ${decoration}`}>{update?.cut ?? row.cut}</span>
-        )
-      case "after":
-        return <span className={`tabular-nums ${decoration}`}>{row.after ?? "—"}</span>
-      case "coverage":
-        return (
-          <span className={`tabular-nums ${decoration}`}>
-            {row.coverageCut || "—"}
-          </span>
-        )
-      case "status":
-        return <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>
-      case "finalCutSequence":
-        return <span className="tabular-nums">{row.finalCutSequence ?? "—"}</span>
-      case "isWaste":
-        if (editableCell) {
+        case "isWaste":
           return (
             <CheckboxCell
-              editable={true}
-              value={update?.isWaste ?? row.isWaste}
-              onChange={(next) =>
-                cutLogState.editServerRow(workOrderItemId, row, { isWaste: next })
-              }
+              editable={isEditableNow}
+              value={rc.form.isWaste}
+              onChange={(next) => rc.setIsWaste(next)}
               ariaLabel="Cut log waste flag"
             />
           )
-        }
-        return (
-          <CheckboxCell
-            editable={false}
-            value={update?.isWaste ?? row.isWaste}
-            ariaLabel="Cut log waste flag"
-          />
-        )
-      case "notes":
-        if (editableCell) {
+        case "notes":
           return (
             <TextCell
-              editable={true}
-              value={update?.notes ?? row.notes}
-              onChange={(next) =>
-                cutLogState.editServerRow(workOrderItemId, row, { notes: next })
-              }
+              editable={isEditableNow}
+              value={rc.form.notes}
+              onChange={(next) => rc.setNotes(next)}
               placeholder="Notes"
               ariaLabel="Cut log notes"
             />
           )
-        }
-        return (
-          <span className={`truncate ${decoration}`}>{update?.notes ?? row.notes ?? "—"}</span>
-        )
-      case "created":
-      case "updated":
-        return <span className="text-[var(--foreground)]/55">—</span>
-      default:
-        return null
+        case "before":
+        case "after":
+        case "coverageCut":
+        case "finalSeq":
+        case "createdAt":
+        case "updatedAt":
+          return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
+        default:
+          return null
+      }
     }
-  }
 
-  function renderDraftCell(column: { key: string }, clientId: string) {
-    const draft = local.drafts.find((d) => d.clientId === clientId)
-    if (!draft) return null
-    const filtered = inventoriesForLocation(draft.locationFilterCode)
-    const inventoryOptions = filtered.map((inv) => ({
-      id: inv.id,
-      label: `${inv.inventoryNumber} · ${inv.remainingStock} ${inv.stockUnitAbbrev}${inv.locationCode ? ` · ${inv.locationCode}` : ""}`,
-    }))
-    const editableDraftCell = !sectionBusy
+    // Saved row.
+    const savedRow = rc.row
+    if (!savedRow) return null
 
-    switch (column.key) {
-      case "cutLogNumber":
-        return <span className="italic text-[var(--foreground)]/55">new</span>
-      case "inventory":
-        return (
-          <div className="flex w-full flex-col gap-1">
-            <DropdownCell
-              editable={editableDraftCell}
-              value={draft.locationFilterCode || null}
-              onChange={(next) =>
-                cutLogState.updateDraft(workOrderItemId, draft.clientId, {
-                  locationFilterCode: next ?? "",
-                })
-              }
-              options={locationOptions}
-              allowClear
-              placeholder="All locations"
-              ariaLabel="Cut log location filter"
+    if (isEditableNow) {
+      switch (column.key) {
+        case "cut":
+          return (
+            <NumberCell
+              editable
+              value={rc.form.cut}
+              onChange={(next) => rc.setCut(next)}
+              ariaLabel="Cut amount"
             />
-            <DropdownCell
-              editable={editableDraftCell}
-              value={draft.inventoryId || null}
-              onChange={(next) =>
-                cutLogState.updateDraft(workOrderItemId, draft.clientId, {
-                  inventoryId: next ?? "",
-                })
-              }
-              options={inventoryOptions}
-              placeholder={loadingInventory ? "Loading…" : "Pick inventory"}
-              ariaLabel="Cut log inventory"
+          )
+        case "isWaste":
+          return (
+            <CheckboxCell
+              editable
+              value={rc.form.isWaste}
+              onChange={(next) => rc.setIsWaste(next)}
+              ariaLabel="Cut log waste flag"
             />
-          </div>
-        )
-      case "before":
-        return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
-      case "cut":
-        return (
-          <NumberCell
-            editable={editableDraftCell}
-            value={draft.cut}
-            onChange={(next) =>
-              cutLogState.updateDraft(workOrderItemId, draft.clientId, { cut: next })
-            }
-            ariaLabel="Cut amount"
-          />
-        )
-      case "after":
-      case "coverage":
-        return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
-      case "status":
-        return <StatusBadge tone="warning">DRAFT</StatusBadge>
-      case "finalCutSequence":
-        return <span className="tabular-nums text-[var(--foreground)]/55">—</span>
-      case "isWaste":
-        return (
-          <CheckboxCell
-            editable={editableDraftCell}
-            value={draft.isWaste}
-            onChange={(next) =>
-              cutLogState.updateDraft(workOrderItemId, draft.clientId, { isWaste: next })
-            }
-            ariaLabel="Cut log waste flag"
-          />
-        )
-      case "notes":
-        return (
-          <TextCell
-            editable={editableDraftCell}
-            value={draft.notes}
-            onChange={(next) =>
-              cutLogState.updateDraft(workOrderItemId, draft.clientId, { notes: next })
-            }
-            placeholder="Notes"
-            ariaLabel="Cut log notes"
-          />
-        )
-      case "created":
-      case "updated":
-        return <span className="text-[var(--foreground)]/55">—</span>
-      default:
-        return null
+          )
+        case "notes":
+          return (
+            <TextCell
+              editable
+              value={rc.form.notes}
+              onChange={(next) => rc.setNotes(next)}
+              placeholder="Notes"
+              ariaLabel="Cut log notes"
+            />
+          )
+      }
     }
+
+    return renderReadOnlyCell(column, savedRow)
   }
 
-  function renderCell(column: { key: string }, row: CutLogGridRow) {
-    if (row.kind === "draft") return renderDraftCell(column, row.clientId)
-    return renderServerCell(column, row.serverRow)
-  }
+  function renderControl(control: GridControlColumn, gridRow: CutLogGridRow): ReactNode {
+    const rc = gridRow.controller
 
-  function renderControl(control: { key: string; kind: string }, row: CutLogGridRow) {
     if (control.kind === "selection") {
-      // Drafts have client-only ids — not selectable for a batch action.
-      // Per the always-visible-when-clean pattern (matches imports), the
-      // checkbox renders for every PENDING server row whether the section
-      // is dirty or clean; `editable` gates interaction via the shared
-      // `canToggleSelection` signal.
-      if (row.kind === "draft") return null
-      const serverRow = row.serverRow
-      if (serverRow.status !== "PENDING") return null
+      // Drafts aren't finalizable (they don't exist server-side yet).
+      if (rc.kind === "draft" || !rc.row) return null
+      const status = rc.row.status as FlooringCutLogStatus
+      if (status !== "PENDING") return null
       return (
         <CheckboxCell
-          editable={canToggleSelection}
-          value={selectedIds.has(serverRow.id)}
-          onChange={() => onToggleSelected(serverRow.id)}
-          ariaLabel={`Select cut ${serverRow.cutLogNumber}`}
+          editable={canToggleSelection && !isSectionBusy}
+          value={selectedIds.has(rc.row.id)}
+          onChange={() => onToggleSelected(rc.row!.id)}
+          ariaLabel={`Select cut ${rc.row.cutLogNumber}`}
         />
       )
     }
-    if (control.kind === "actions") {
-      if (row.kind === "draft") {
-        return (
-          <RowActionButton
-            label="Remove"
-            ariaLabel="Remove draft cut"
-            tone="destructive"
-            editable={!sectionBusy}
-            onClick={() => cutLogState.removeDraft(workOrderItemId, row.clientId)}
-          />
-        )
-      }
-      const serverRow = row.serverRow
-      const isPending = serverRow.status === "PENDING"
-      const isFinal = serverRow.status === "FINAL"
-      const isDeleted = !!local.deletes[serverRow.id]
 
-      if (isPending && !isDeleted) {
-        return (
-          <RowActionButton
-            label="Remove"
-            ariaLabel={`Remove cut ${serverRow.cutLogNumber}`}
-            tone="destructive"
-            editable={!sectionBusy}
-            onClick={() => cutLogState.deleteServerRow(workOrderItemId, serverRow)}
-          />
-        )
+    if (control.kind === "status-indicator") {
+      if (rc.kind === "draft" || !rc.row) {
+        return <CutLogStatusBadge status={"PENDING" as FlooringCutLogStatus} />
       }
-      if (isPending && isDeleted) {
-        return (
-          <RowActionButton
-            label="Undo"
-            ariaLabel={`Undo remove cut ${serverRow.cutLogNumber}`}
-            tone="neutral"
-            editable={!sectionBusy}
-            onClick={() => cutLogState.undoDelete(workOrderItemId, serverRow.id)}
-          />
-        )
-      }
-      if (isFinal) {
-        const isVoidingThisRow = voider.isVoiding && voider.voidingId === serverRow.id
-        const voidEnabled = !sectionBusy && !voider.isVoiding
+      return renderCutLogStatusControl(control, rc.row)
+    }
+
+    if (control.kind === "actions") {
+      const cutLogNumber = rc.row?.cutLogNumber ?? "draft"
+      const copy = pickDestructiveCopy(rc.destructiveStatus, cutLogNumber)
+
+      // Drafts: no confirm dialog — just discard locally.
+      if (rc.kind === "draft") {
         return (
           <ConfirmActionButton
-            label={isVoidingThisRow ? "Voiding…" : "Void"}
-            ariaLabel={`Void cut ${serverRow.cutLogNumber}`}
+            label={copy.label}
+            ariaLabel={copy.ariaLabel}
             buttonTone="destructive"
-            editable={voidEnabled}
-            confirmTitle={`Void ${serverRow.cutLogNumber}?`}
-            confirmMessage="Voiding will erase the cut value, coverage, cost, and freight on this cut log. The row stays as a void marker; before / after history is preserved. This cannot be undone."
-            confirmLabel="Void cut log"
-            pendingLabel="Voiding…"
+            editable={!isSectionBusy}
+            confirmTitle={copy.confirmTitle}
+            confirmMessage={copy.confirmMessage}
+            confirmLabel={copy.confirmLabel}
             confirmTone="destructive"
+            pendingLabel={copy.pendingLabel}
             onConfirm={async () => {
-              await voider.voidCutLog(serverRow.id)
+              rc.discardDraft()
             }}
           />
         )
       }
-      return null
+
+      // Saved row: status-aware destructive (delete for PENDING, void for FINAL).
+      // Disabled with tooltip for VOID/QUEUED.
+      const disabledTitle =
+        rc.destructiveStatus === "VOID"
+          ? "Already voided"
+          : rc.destructiveStatus === "QUEUED"
+            ? "Cut log is in flight; refresh to see latest state"
+            : undefined
+      return (
+        <ConfirmActionButton
+          label={
+            rc.commitState === "pending" && rc.destructiveStatus !== "PENDING"
+              ? copy.pendingLabel
+              : copy.label
+          }
+          ariaLabel={copy.ariaLabel}
+          buttonTone="destructive"
+          editable={rc.destructiveEnabled && !isSectionBusy}
+          title={disabledTitle}
+          confirmTitle={copy.confirmTitle}
+          confirmMessage={copy.confirmMessage}
+          confirmLabel={copy.confirmLabel}
+          confirmTone="destructive"
+          pendingLabel={copy.pendingLabel}
+          onConfirm={async () => {
+            rc.fireDestructive()
+          }}
+        />
+      )
     }
+
+    if (control.kind === "commit") {
+      const editable = !isSectionBusy
+      const cutLogNumber = rc.row?.cutLogNumber ?? "new draft"
+      const title =
+        rc.commitState === "pristine"
+          ? "No changes to save"
+          : rc.commitState === "pending"
+            ? "Saving…"
+            : rc.commitState === "success"
+              ? "Saved"
+              : "Save row"
+      return (
+        <CircularCommitButton
+          editable={editable}
+          state={rc.commitState}
+          title={title}
+          ariaLabel={`Save cut ${cutLogNumber}`}
+          onClick={rc.commit}
+        />
+      )
+    }
+
     return null
   }
 
@@ -440,30 +438,33 @@ export function WorkOrderCutLogRow({
       <div className="flex items-center justify-between text-xs">
         <span className="font-medium">Cut Logs</span>
         <span className="text-[var(--foreground)]/55">
-          {serverRows.length} server rows · {local.drafts.length} drafts ·{" "}
-          {Object.keys(local.updates).length} edits ·{" "}
-          {Object.keys(local.deletes).length} pending deletes
+          {gridRows.length} row{gridRows.length === 1 ? "" : "s"}
         </span>
       </div>
 
       <Grid<CutLogGridRow>
         rows={gridRows}
-        layout={GRID_LAYOUT}
+        layout={WO_CUT_LOG_LAYOUT}
         empty={<GridEmpty>No cut logs yet.</GridEmpty>}
         renderCell={renderCell}
         renderControl={renderControl}
       />
 
+      {/*
+        "Add Pending Cut" lives inside this WOMI's expanded cut-log
+        section per the locked sweep decision — one button per WOMI, not
+        promoted to a section-wide header. Each material item owns its
+        own cut-log set, so this is the right scope.
+      */}
       <div className="flex items-center justify-between text-xs">
         <button
           type="button"
           className="rounded border border-[var(--panel-border)] px-2 py-1 hover:bg-[var(--panel-border)]/10 disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={() => cutLogState.addDraft(workOrderItemId)}
-          disabled={sectionBusy}
+          onClick={section.addDraft}
+          disabled={isSectionBusy}
         >
           + Add Pending Cut
         </button>
-        {voider.error ? <span className="text-rose-700">{voider.error}</span> : null}
       </div>
     </div>
   )

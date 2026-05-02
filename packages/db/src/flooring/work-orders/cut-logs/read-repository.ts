@@ -7,47 +7,20 @@ import type { Prisma, PrismaClient } from "@prisma/client"
 
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
-const workOrderCutLogSelect = {
-  id: true,
-  cutLogNumber: true,
-  inventoryId: true,
-  workOrderId: true,
-  workOrderItemId: true,
-  before: true,
-  cut: true,
-  coverageCut: true,
-  after: true,
-  stockUnitName: true,
-  stockUnitAbbrev: true,
-  itemCoverageUnitName: true,
-  itemCoverageUnitAbbrev: true,
-  status: true,
-  isFinal: true,
-  finalCutSequence: true,
-  isWaste: true,
-  void: true,
-  notes: true,
-  createdAt: true,
-  updatedAt: true,
-} as const
-
-export type WorkOrderCutLogRowPayload = Prisma.FlooringCutLogGetPayload<{
-  select: typeof workOrderCutLogSelect
-}>
-
 export async function listCutLogsForWorkOrderItem(
   workOrderItemId: string,
   client: WorkOrdersDbClient = db,
-): Promise<WorkOrderCutLogRowPayload[]> {
-  return client.flooringCutLog.findMany({
+): Promise<CutLogRecord[]> {
+  const rows = await client.flooringCutLog.findMany({
     where: { workOrderItemId },
-    select: workOrderCutLogSelect,
+    select: cutLogRowSelect,
     orderBy: [
       { isFinal: "asc" },
       { finalCutSequence: "asc" },
       { createdAt: "asc" },
     ],
   })
+  return rows.map(normalizeCutLogRow)
 }
 
 /**
@@ -55,21 +28,26 @@ export async function listCutLogsForWorkOrderItem(
  * set across many WOMI ids in one query, ordered identically. The SSR
  * loader for the WO record page calls this once and groups client-side
  * so every expandable cut-log row hydrates from initial data.
+ *
+ * Returns the canonical normalized `CutLogRecord` shape — the same shape
+ * the inventory cut-log section consumes — so a single shared row
+ * primitive can render rows in either context.
  */
 export async function listCutLogsForWorkOrderItemIds(
   workOrderItemIds: string[],
   client: WorkOrdersDbClient = db,
-): Promise<WorkOrderCutLogRowPayload[]> {
+): Promise<CutLogRecord[]> {
   if (workOrderItemIds.length === 0) return []
-  return client.flooringCutLog.findMany({
+  const rows = await client.flooringCutLog.findMany({
     where: { workOrderItemId: { in: workOrderItemIds } },
-    select: workOrderCutLogSelect,
+    select: cutLogRowSelect,
     orderBy: [
       { isFinal: "asc" },
       { finalCutSequence: "asc" },
       { createdAt: "asc" },
     ],
   })
+  return rows.map(normalizeCutLogRow)
 }
 
 /**

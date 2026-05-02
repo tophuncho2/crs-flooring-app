@@ -15,11 +15,10 @@ import {
   type PrismaDetailPageResult,
   type WorkOrderFileRow,
 } from "@builders/db"
-import {
-  normalizeWorkOrderItemPendingCutLogRow,
-  type WorkOrderDetail,
-  type WorkOrderItemPendingCutLogRow,
-  type WorkOrderMaterialItemRow,
+import type {
+  CutLogRow,
+  WorkOrderDetail,
+  WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 
@@ -104,7 +103,7 @@ export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet>
 export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  cutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]>
+  cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   files: WorkOrderFileRow[]
   options: WorkOrderFormOptionSet
 }
@@ -125,13 +124,13 @@ export async function getWorkOrderDetailPageData(
     }
 
     const cutLogRows = await listCutLogsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
-    const cutLogsByWorkOrderItemId: Record<string, WorkOrderItemPendingCutLogRow[]> = {}
+    const cutLogsByWorkOrderItemId: Record<string, CutLogRow[]> = {}
     for (const mi of materialItems) cutLogsByWorkOrderItemId[mi.id] = []
     for (const row of cutLogRows) {
       if (row.workOrderItemId === null) continue
       const bucket = cutLogsByWorkOrderItemId[row.workOrderItemId]
       if (bucket === undefined) continue
-      bucket.push(normalizeWorkOrderItemPendingCutLogRow(row))
+      bucket.push(row)
     }
 
     return {

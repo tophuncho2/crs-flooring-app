@@ -1,28 +1,7 @@
-import type { FlooringCutLogStatus } from "../../inventory/cut-logs/types.js"
-
-/**
- * UI projection of a cut log row as displayed inside the WOMI section's
- * cut-log grid. Narrower than `CutLogRow` from the inventory cut-log
- * domain — drops fields the section doesn't render
- * (`cost` / `freight` / `createdAt` / `void` / `workOrderId` /
- * `workOrderItemId`) and pins `coverageCut` as a string (the SSR loader
- * normalizes nulls to "").
- */
-export type WorkOrderItemPendingCutLogRow = {
-  id: string
-  cutLogNumber: string
-  status: FlooringCutLogStatus
-  isFinal: boolean
-  inventoryId: string
-  before: string | null
-  cut: string
-  after: string | null
-  coverageCut: string
-  isWaste: boolean
-  notes: string
-  finalCutSequence: number | null
-  updatedAt: string
-}
+// `WorkOrderItemPendingCutLogRow` (the narrower WO-side projection) was
+// removed in the row-UI sweep — the SSR loader now provides the canonical
+// `CutLogRow` shape (from ../../inventory/cut-logs/types) so the WO row
+// component and the inventory row component can share a single primitive.
 
 /**
  * Identity carried on every per-row pending-cut-log mutation. The use

@@ -16,6 +16,7 @@ export type GridControlKind =
   | "open"
   | "status-indicator"
   | "void"
+  | "commit"
 
 export type GridControlColumn = {
   key: string
