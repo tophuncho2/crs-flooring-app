@@ -11,7 +11,6 @@ async function readWorkspaceFile(relativePath: string) {
 describe("record view feature alignment", () => {
   it("active detail and create routes point at engine-owned record clients", async () => {
     const routeFiles = [
-      "apps/web/app/dashboard/categories/[id]/page.tsx",
       "apps/web/app/dashboard/imports/[id]/page.tsx",
       "apps/web/app/dashboard/inventory/[id]/page.tsx",
       "apps/web/app/dashboard/management-companies/[id]/page.tsx",
@@ -21,7 +20,6 @@ describe("record view feature alignment", () => {
       "apps/web/app/dashboard/templates/[id]/page.tsx",
       "apps/web/app/dashboard/warehouse/[id]/page.tsx",
       "apps/web/app/dashboard/work-orders/[id]/page.tsx",
-      "apps/web/app/dashboard/categories/new/page.tsx",
       "apps/web/app/dashboard/imports/new/page.tsx",
       "apps/web/app/dashboard/management-companies/new/page.tsx",
       "apps/web/app/dashboard/manufacturers/new/page.tsx",
@@ -100,9 +98,7 @@ describe("record view feature alignment", () => {
 
   it("keeps scoped single-section record and create panels on the engine-owned single-section runtime", async () => {
     const panelFiles = [
-      "apps/web/modules/categories/record/panel/category-record-panel.tsx",
       "apps/web/modules/manufacturers/components/record/manufacturer-record-panel.tsx",
-      "apps/web/modules/categories/record/create/category-create-client.tsx",
       "apps/web/modules/manufacturers/components/record/manufacturer-create-client.tsx",
     ]
 
