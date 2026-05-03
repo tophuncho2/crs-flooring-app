@@ -1,6 +1,6 @@
 "use client"
 
-import { isCutLogPendingEditable, type CutLogRow } from "@builders/domain"
+import { formatInventoryRefPackage, isCutLogPendingEditable, type CutLogRow } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
@@ -40,9 +40,7 @@ export function CutLogEditFormFields({
   const inventoryDisplay = (() => {
     if (!cutLog) return "—"
     const inv = eligibleInventory.find((i) => i.id === cutLog.inventoryId)
-    if (inv) {
-      return [inv.inventoryNumber, inv.locationCode].filter(Boolean).join(" · ")
-    }
+    if (inv) return formatInventoryRefPackage(inv)
     return cutLog.inventoryId
   })()
 

@@ -238,12 +238,11 @@ export async function listEligibleInventoryRequest(args: {
       inventoryNumber: string
       itemNumber: string
       dyeLot: string
+      notes: string
       startingStock: string
       totalCutSum: string
       remainingStock: string
       stockUnitAbbrev: string
-      locationCode: string
-      sectionCode: string
     }>
   }>(
     `/api/work-orders/${args.workOrderId}/material-items/${args.workOrderItemId}/eligible-inventory`,

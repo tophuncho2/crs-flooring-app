@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
-import type { CutLogRow } from "@builders/domain"
+import { formatInventoryRefPackage, type CutLogRow } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { renderCutLogReadOnlyCell } from "@/components/features/cut-log-row"
 import { Grid, GridEmpty } from "@/components/grid"
@@ -11,7 +11,9 @@ import { WO_CUT_LOG_LAYOUT, type CutLogGridRow } from "./cut-log-row-layout"
 
 type InventoryLabelData = {
   inventoryNumber: string
-  locationCode: string
+  itemNumber: string
+  dyeLot: string
+  notes: string
 }
 
 export type WorkOrderCutLogRowProps = {
@@ -50,9 +52,10 @@ export function WorkOrderCutLogRow({
   )
 
   // Cut logs only store `inventoryId`; build a label map from the eligible
-  // inventory endpoint so the Inventory column shows "INV-00019 · W1-S1-R1-L1"
-  // instead of a raw UUID. Inventory rows depleted since this cut log was
-  // recorded won't appear in the eligible list — those fall back to the raw id.
+  // inventory endpoint so the Inventory column shows the full
+  // "INV# - itemNumber - dyeLot - notes" package instead of a raw UUID.
+  // Inventory rows depleted since this cut log was recorded won't appear in
+  // the eligible list — those fall back to the raw id.
   const [inventoryLabels, setInventoryLabels] = useState<Map<string, InventoryLabelData>>(
     () => new Map(),
   )
@@ -63,7 +66,12 @@ export function WorkOrderCutLogRow({
         if (cancelled) return
         const map = new Map<string, InventoryLabelData>()
         for (const inv of inventories) {
-          map.set(inv.id, { inventoryNumber: inv.inventoryNumber, locationCode: inv.locationCode })
+          map.set(inv.id, {
+            inventoryNumber: inv.inventoryNumber,
+            itemNumber: inv.itemNumber,
+            dyeLot: inv.dyeLot,
+            notes: inv.notes,
+          })
         }
         setInventoryLabels(map)
       })
@@ -82,9 +90,7 @@ export function WorkOrderCutLogRow({
     if (column.key === "status") return <CutLogStatusBadge status={cutLog.status} />
     if (column.key === "inventoryRef") {
       const label = inventoryLabels.get(cutLog.inventoryId)
-      const display = label
-        ? `${label.inventoryNumber}${label.locationCode ? ` · ${label.locationCode}` : ""}`
-        : cutLog.inventoryId
+      const display = label ? formatInventoryRefPackage(label) : cutLog.inventoryId
       return <span className="truncate text-sm">{display}</span>
     }
     return renderReadOnlyCell(column, cutLog)

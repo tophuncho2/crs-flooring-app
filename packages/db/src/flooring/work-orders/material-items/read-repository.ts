@@ -1,8 +1,6 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
 import {
-  formatFullLocationCode,
-  formatSectionCode,
   normalizeWorkOrderMaterialItem,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -70,12 +68,11 @@ export type EligibleInventoryRow = {
   inventoryNumber: string
   itemNumber: string
   dyeLot: string
+  notes: string
   startingStock: string
   totalCutSum: string
   remainingStock: string
   stockUnitAbbrev: string
-  locationCode: string
-  sectionCode: string
 }
 
 /**
@@ -83,9 +80,6 @@ export type EligibleInventoryRow = {
  * same warehouse as the parent WO, same product as the WOMI, and at
  * least some remaining stock (`startingStock - totalCutSum > 0`). Drives
  * the inventory dropdown in the cut-log expandable row UI.
- *
- * The location code uses `formatFullLocationCode` from the domain layer
- * (carve-out for pure formatters per CLAUDE.md).
  */
 export async function listEligibleInventoryForWorkOrderItem(
   args: { workOrderId: string; workOrderItemId: string },
@@ -112,17 +106,10 @@ export async function listEligibleInventoryForWorkOrderItem(
       inventoryNumber: true,
       itemNumber: true,
       dyeLot: true,
+      notes: true,
       startingStock: true,
       totalCutSum: true,
       stockUnitAbbrev: true,
-      location: {
-        select: {
-          rafter: true,
-          level: true,
-          section: { select: { number: true } },
-          warehouse: { select: { number: true } },
-        },
-      },
     },
     orderBy: { fifoReceivedAt: "asc" },
   })
@@ -137,24 +124,11 @@ export async function listEligibleInventoryForWorkOrderItem(
         inventoryNumber: inv.inventoryNumber,
         itemNumber: inv.itemNumber ?? "",
         dyeLot: inv.dyeLot ?? "",
+        notes: inv.notes ?? "",
         startingStock: inv.startingStock.toString(),
         totalCutSum: inv.totalCutSum.toString(),
         remainingStock: remaining.toFixed(2),
         stockUnitAbbrev: inv.stockUnitAbbrev ?? "",
-        locationCode: inv.location
-          ? formatFullLocationCode({
-              warehouseNumber: inv.location.warehouse.number,
-              sectionNumber: inv.location.section.number,
-              rafter: inv.location.rafter,
-              level: inv.location.level,
-            })
-          : "",
-        sectionCode: inv.location
-          ? formatSectionCode({
-              warehouseNumber: inv.location.warehouse.number,
-              sectionNumber: inv.location.section.number,
-            })
-          : "",
         _remaining: remaining,
       }
     })

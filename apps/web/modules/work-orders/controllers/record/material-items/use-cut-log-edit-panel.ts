@@ -35,10 +35,9 @@ export type EligibleInventoryRow = {
   inventoryNumber: string
   itemNumber: string
   dyeLot: string
+  notes: string
   remainingStock: string
   stockUnitAbbrev: string
-  locationCode: string
-  sectionCode: string
 }
 
 /**
