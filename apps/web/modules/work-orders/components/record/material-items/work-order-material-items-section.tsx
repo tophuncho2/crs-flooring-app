@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useCallback, useMemo, useRef, useState } from "react"
+import { Fragment, useCallback, useMemo, useState } from "react"
 import { StatusBadge } from "@/components/badges"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
@@ -14,12 +14,16 @@ import type {
   CategoryOption,
   ProductOption,
 } from "@/modules/work-orders/controllers/record/drafts"
-import { useFinalizeCutLogBatchSection } from "@/modules/work-orders/controllers/record/material-items/use-finalize-cut-log-batch-section"
 import {
   useWorkOrderMaterialItemsSection,
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
+import {
+  useCutLogEditPanel,
+  type CutLogPanelPatch,
+} from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
+import { CutLogEditPanel } from "./cut-log-edit-panel"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
@@ -54,6 +58,7 @@ export function WorkOrderMaterialItemsSection({
   categoryOptions,
   publishMaterialItems,
   publishWorkOrder,
+  publishCutLogPatch,
 }: {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
@@ -62,6 +67,8 @@ export function WorkOrderMaterialItemsSection({
   categoryOptions: CategoryOption[]
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
+  /** Apply a single-row patch to the parent's cut-log snapshot after a panel mutation. */
+  publishCutLogPatch: (patch: CutLogPanelPatch) => void
 }) {
   const section = useWorkOrderMaterialItemsSection({
     workOrder,
@@ -70,39 +77,12 @@ export function WorkOrderMaterialItemsSection({
     publishWorkOrder,
   })
 
-  // Flatten all WOMI cut-logs into one snapshot for the gated batch-select.
-  // Eligibility (status === "PENDING") is enforced inside the finalize
-  // controller; the controller returns `eligibleSelectedIds` filtered
-  // against the latest snapshot so a row that drifted state since the
-  // user clicked it is automatically excluded.
-  //
-  // The snapshot reflects SSR-loaded data only — newly-created cut logs
-  // become finalize-eligible after a record refresh. Lifting per-WOMI
-  // section state up to aggregate post-create rows is out of scope here
-  // (the locked decision deferred speedy-finalize-refresh to the
-  // finalize-hardening sweep).
-  const allCutLogs = useMemo(
-    () => Object.values(cutLogsByWorkOrderItemId).flat(),
-    [cutLogsByWorkOrderItemId],
-  )
-
-  const finalize = useFinalizeCutLogBatchSection({
+  const cutLogPanel = useCutLogEditPanel({
     workOrderId: workOrder.id,
-    rows: allCutLogs,
-    isSectionDirty: section.isDirty,
-    isSectionBusy: section.isSaving,
+    publish: publishCutLogPatch,
   })
 
-  const isSelectionActive = finalize.isSelectionActive
-  const isFinalizingInFlight = finalize.isFiring
-
-  // Cell-level edit lock for material items + per-WOMI cut-log row
-  // affordances. Per-WOMI cut-log mutations have their own row-scoped
-  // pending state; this section-level signal only fires when the parent
-  // material-items mutation, finalize-batch mutation, or finalize
-  // selection mode are active.
-  const sectionBusy =
-    isSelectionActive || isFinalizingInFlight || section.isSaving
+  const sectionBusy = section.isSaving
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
   function toggleExpanded(rowId: string) {
@@ -113,36 +93,6 @@ export function WorkOrderMaterialItemsSection({
       return next
     })
   }
-
-  // Aggregate cut-log mutation errors from each per-WOMI row hook so they
-  // surface at the section header (canonical — see imports module). Each
-  // WorkOrderCutLogRow reports its latest error via a per-WOMI onError
-  // callback; we keep one message per WOMI keyed by item id and display
-  // the most recent. Callbacks are cached so the row-side useEffect only
-  // refires when its actual error changes.
-  const [cutLogErrorByItemId, setCutLogErrorByItemId] = useState<Record<string, string>>({})
-  const errorCallbacksRef = useRef(new Map<string, (message: string | null) => void>())
-  const getCutLogErrorHandler = useCallback((itemId: string) => {
-    const cached = errorCallbacksRef.current.get(itemId)
-    if (cached) return cached
-    const handler = (message: string | null) => {
-      setCutLogErrorByItemId((current) => {
-        if (message === null) {
-          if (!(itemId in current)) return current
-          const { [itemId]: _drop, ...rest } = current
-          return rest
-        }
-        if (current[itemId] === message) return current
-        return { ...current, [itemId]: message }
-      })
-    }
-    errorCallbacksRef.current.set(itemId, handler)
-    return handler
-  }, [])
-  const cutLogError = useMemo(() => {
-    const messages = Object.values(cutLogErrorByItemId).filter((m): m is string => Boolean(m))
-    return messages[messages.length - 1] ?? null
-  }, [cutLogErrorByItemId])
 
   const editable = !sectionBusy
   const categoryCellOptions = useMemo(
@@ -165,14 +115,26 @@ export function WorkOrderMaterialItemsSection({
     return serverStatusById.get(itemId) ?? "IDLE"
   }
 
+  const handleOpenEdit = useCallback(
+    (workOrderItemId: string, cutLog: CutLogRow) => {
+      cutLogPanel.openPanel({ mode: "edit", workOrderItemId, cutLog })
+    },
+    [cutLogPanel],
+  )
+
+  const handleCreateNew = useCallback(
+    (workOrderItemId: string) => {
+      cutLogPanel.openPanel({ mode: "create", workOrderItemId })
+    },
+    [cutLogPanel],
+  )
+
   function renderParentCell(
     column: { key: string },
     item: WorkOrderMaterialItemLocal,
   ) {
     switch (column.key) {
       case "categoryFilter": {
-        // For saved rows the explicit categoryFilterId is null (UI-only,
-        // not persisted), so derive from the picked product's category.
         const productCategoryId = item.productId
           ? productById.get(item.productId)?.categoryId ?? null
           : null
@@ -283,19 +245,11 @@ export function WorkOrderMaterialItemsSection({
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
       <MaterialItemsSectionHeader
         itemsCount={section.items.length}
-        selectedCount={finalize.selectedIds.size}
-        eligibleSelectedCount={finalize.eligibleSelectedIds.length}
-        eligibleCount={finalize.eligibleCount}
-        canToggleSelection={finalize.canToggleSelection}
-        isSelectionActive={isSelectionActive}
-        isFinalizingInFlight={isFinalizingInFlight}
         isSaving={section.isSaving}
         isDirty={section.isDirty}
         hasConflict={section.hasConflict}
         noticeMessage={section.noticeMessage}
-        error={sectionError || finalize.error || cutLogError || null}
-        onToggleSelectAll={finalize.toggleAllEligible}
-        onFinalize={() => void finalize.fire()}
+        error={sectionError || null}
         onDiscard={() => section.discard()}
         onSave={() => void section.save()}
         onAddItem={section.addItem}
@@ -321,14 +275,11 @@ export function WorkOrderMaterialItemsSection({
                 {isExpanded ? (
                   <div className="px-4 py-3">
                     <WorkOrderCutLogRow
-                      workOrderId={workOrder.id}
                       workOrderItemId={row.id}
                       serverRows={cutLogs}
-                      selectedIds={finalize.selectedIds}
-                      onToggleSelected={finalize.toggleSelected}
-                      canToggleSelection={finalize.canToggleSelection}
+                      onOpenEdit={handleOpenEdit}
+                      onCreateNew={handleCreateNew}
                       isSectionBusy={sectionBusy}
-                      onError={getCutLogErrorHandler(row.id)}
                     />
                   </div>
                 ) : null}
@@ -337,6 +288,8 @@ export function WorkOrderMaterialItemsSection({
           )
         }}
       />
+
+      <CutLogEditPanel controller={cutLogPanel} />
     </div>
   )
 }

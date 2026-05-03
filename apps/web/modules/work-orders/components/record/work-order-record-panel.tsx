@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
 import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
@@ -12,6 +12,7 @@ import type {
 } from "@builders/domain"
 import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
+import type { CutLogPanelPatch } from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderFilesSection } from "./files/work-order-files-section"
@@ -33,8 +34,24 @@ export function WorkOrderRecordPanel({
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
+  const [cutLogsByWorkOrderItemId, setCutLogsByWorkOrderItemId] = useState(
+    initialCutLogsByWorkOrderItemId,
+  )
 
-  const cutLogsByWorkOrderItemId = initialCutLogsByWorkOrderItemId
+  const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
+    setCutLogsByWorkOrderItemId((current) => {
+      const existing = current[patch.workOrderItemId] ?? []
+      if (patch.kind === "delete") {
+        const next = existing.filter((row) => row.id !== patch.cutLogId)
+        return { ...current, [patch.workOrderItemId]: next }
+      }
+      const idx = existing.findIndex((row) => row.id === patch.cutLog.id)
+      const next = idx >= 0
+        ? existing.map((row, i) => (i === idx ? patch.cutLog : row))
+        : [...existing, patch.cutLog]
+      return { ...current, [patch.workOrderItemId]: next }
+    })
+  }, [])
 
   return (
     <RecordMultiSectionPanel
@@ -95,6 +112,7 @@ export function WorkOrderRecordPanel({
               categoryOptions={options.categoryOptions}
               publishMaterialItems={setMaterialItems}
               publishWorkOrder={controller.publishRecord}
+              publishCutLogPatch={publishCutLogPatch}
             />
           ),
         },

@@ -1,18 +1,21 @@
+import type { CutLogRow } from "@builders/domain"
 import type { GridLayout } from "@/components/grid"
-import type { PendingCutLogRowController } from "@/modules/work-orders/controllers/record/material-items/use-pending-cut-log-section"
 
 export type CutLogGridRow = {
   id: string
-  controller: PendingCutLogRowController
+  cutLog: CutLogRow
 }
 
+/**
+ * Read-only display layout for the work-order cut-log row. All editing
+ * happens in the side panel — the row is a click target for the panel and
+ * holds no editable cells, no commit button, no destructive button, and no
+ * selection checkbox. Status renders as a data column for consistent
+ * column alignment with the rest of the grid.
+ */
 export const WO_CUT_LOG_LAYOUT: GridLayout<CutLogGridRow> = {
-  leadingControls: [
-    { key: "select", kind: "selection", width: 40 },
-    { key: "commit", kind: "commit", width: 56 },
-    { key: "status", kind: "status-indicator", width: 120 },
-  ],
   dataColumns: [
+    { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
     { key: "cutLogNumber", label: "Cut #", minWidth: 132, grow: 0 },
     { key: "inventoryRef", label: "Inventory", minWidth: 240, grow: 1 },
     { key: "cut", label: "Cut", minWidth: 110, grow: 0, align: "center" },
@@ -25,5 +28,4 @@ export const WO_CUT_LOG_LAYOUT: GridLayout<CutLogGridRow> = {
     { key: "createdAt", label: "Created", minWidth: 140, grow: 0 },
     { key: "updatedAt", label: "Updated", minWidth: 140, grow: 0 },
   ],
-  trailingControls: [{ key: "destructive", kind: "actions", width: 80 }],
 }
