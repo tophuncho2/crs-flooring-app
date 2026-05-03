@@ -2,7 +2,7 @@ import {
   Prisma,
   getInventoryParentContextForCutLogs,
   insertPendingCutLogRow,
-  lockInventoriesForCutLogBatch,
+  lockInventoryForCutLog,
   recomputeAndPersistTotalCutSums,
   withDatabaseTransaction,
   type CutLogRecord,
@@ -10,9 +10,7 @@ import {
 import {
   assertCutLogLinkageSymmetry,
   assertCutSumWithinStartingStock,
-  assertWorkOrderItemReadyForCutLogMutation,
   CutLogDomainError,
-  WorkOrderDomainError,
   deriveCutLogCoverageCutString,
   describeCutLogPendingFormIssues,
   validateCutLogPendingForm,
@@ -25,7 +23,7 @@ import { WorkOrderCutLogExecutionError } from "./errors.js"
  * TX:
  *   1. Per-row form validation (`validateCutLogPendingForm`) — `cut`
  *      must be a positive number.
- *   2. WOMI ownership + status check (status === IDLE).
+ *   2. WOMI ownership check (cut log links to the right WO).
  *   3. Linkage symmetry assertion.
  *   4. Lock the parent inventory FOR UPDATE.
  *   5. Read the inventory parent context (startingStock,
@@ -35,6 +33,11 @@ import { WorkOrderCutLogExecutionError } from "./errors.js"
  *      the inventory read.
  *   8. Recompute the inventory's `totalCutSum`.
  *   9. Assert `totalCutSum ≤ startingStock` (domain error bubbles).
+ *
+ * WOMI status is not consulted — the parent inventory's row lock is the
+ * sole concurrency mechanism. Two CRUD operations against the same
+ * inventory serialize on the lock; against different inventories they
+ * run in parallel.
  *
  * Returns the inserted cut log (full normalized record).
  */
@@ -62,10 +65,10 @@ export async function createPendingCutLogUseCase(
       })
     }
 
-    // 2. Read WOMI; assert ownership + IDLE.
+    // 2. Read WOMI; assert ownership.
     const womi = await c.flooringWorkOrderItem.findUnique({
       where: { id: input.workOrderItemId },
-      select: { id: true, workOrderId: true, status: true },
+      select: { id: true, workOrderId: true },
     })
     if (!womi) {
       throw new WorkOrderCutLogExecutionError({
@@ -85,20 +88,6 @@ export async function createPendingCutLogUseCase(
         },
       })
     }
-    try {
-      assertWorkOrderItemReadyForCutLogMutation({ status: womi.status })
-    } catch (error) {
-      if (error instanceof WorkOrderDomainError) {
-        throw new WorkOrderCutLogExecutionError({
-          code: "WORK_ORDER_ITEM_NOT_IDLE",
-          message:
-            "Material item is currently busy with another cut-log operation",
-          status: 409,
-          payload: { status: womi.status, cause: String(error) },
-        })
-      }
-      throw error
-    }
 
     // 3. Linkage symmetry.
     assertCutLogLinkageSymmetry({
@@ -107,7 +96,7 @@ export async function createPendingCutLogUseCase(
     })
 
     // 4. Lock the parent inventory.
-    await lockInventoriesForCutLogBatch(c, [input.inventoryId])
+    await lockInventoryForCutLog(c, input.inventoryId)
 
     // 5. Read inventory context (post-lock).
     const inventory = await getInventoryParentContextForCutLogs(c, input.inventoryId)

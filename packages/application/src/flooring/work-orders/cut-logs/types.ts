@@ -19,17 +19,17 @@ export type {
 // inputs (`CreatePendingCutLogInput` / `UpdatePendingCutLogInput` /
 // `DeletePendingCutLogInput`) are re-exported above from the domain.
 
-export type FinalizeWorkOrderCutLogBatchInput = {
+export type FinalizeWorkOrderCutLogInput = {
   workOrderId: string
   requestKey: string
-  cutLogIds: string[]
+  cutLogId: string
   requestedBy: RequestedBy
 }
 
-export type FinalizeWorkOrderCutLogBatchResult = {
+export type FinalizeWorkOrderCutLogResult = {
   outboxEventId: string
   wasDuplicate: boolean
-  touchedWorkOrderItemIds: string[]
+  touchedWorkOrderItemId: string
 }
 
 export type VoidWorkOrderCutLogInput = {

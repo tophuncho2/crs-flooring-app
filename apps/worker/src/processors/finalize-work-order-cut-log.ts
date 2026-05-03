@@ -1,57 +1,56 @@
 import {
   WorkOrderCutLogExecutionError,
-  applyFinalizeWorkOrderCutLogBatchUseCase,
-  markWorkOrderItemsFailedFromFinalizeBatch,
+  applyFinalizeWorkOrderCutLogUseCase,
 } from "@builders/application"
 import {
-  parseFinalizeWorkOrderCutLogBatchPayload,
-  type FinalizeWorkOrderCutLogBatchPayload,
+  parseFinalizeWorkOrderCutLogPayload,
+  type FinalizeWorkOrderCutLogPayload,
 } from "@builders/domain"
 import { UnrecoverableError } from "bullmq"
 
 /**
  * BullMQ handler for the `flooring.work-order.cut-log.finalize` topic.
  *
- * Parses the job payload, calls the apply-finalize-batch use case, and
- * classifies thrown errors:
- *  - `WorkOrderCutLogExecutionError` → first marks every touched WOMI
- *    FAILED in a fresh transaction (so FAILED state survives the apply
- *    TX rollback), then throws `UnrecoverableError` for BullMQ.
- *  - Anything else → also marks WOMIs FAILED in a fresh TX, then
- *    re-throws so BullMQ retries per its job options.
+ * Single-row finalize: each job stamps `before` / `after` /
+ * `finalCutSequence` on exactly one cut log under the parent inventory's
+ * row lock. WOMI status is not touched by this flow.
  *
- * `markWorkOrderItemsFailedFromFinalizeBatch` derives the touched WOMI
- * set from the payload's cut-log IDs internally — the worker has only
- * the cut-log IDs at catch time.
+ * Error classification:
+ *  - `WorkOrderCutLogExecutionError` → terminal. Wrapped as
+ *    `UnrecoverableError` so BullMQ does not retry. The apply use case's
+ *    TX has already rolled back; the cut log row stays in its prior
+ *    state and the user can retry from the UI.
+ *  - Anything else (transient DB / Redis errors) → re-thrown so BullMQ
+ *    retries per the job's retry options.
+ *
+ * No compensating writes on failure. The TX rollback IS the failure
+ * model.
  */
 
-export type FinalizeWorkOrderCutLogBatchResult = Awaited<
-  ReturnType<typeof applyFinalizeWorkOrderCutLogBatchUseCase>
+export type FinalizeWorkOrderCutLogResult = Awaited<
+  ReturnType<typeof applyFinalizeWorkOrderCutLogUseCase>
 >
 
-export type FinalizeWorkOrderCutLogBatchHandlerDependencies = {
-  applyFinalizeBatch: typeof applyFinalizeWorkOrderCutLogBatchUseCase
-  markFailed: typeof markWorkOrderItemsFailedFromFinalizeBatch
-  parsePayload: typeof parseFinalizeWorkOrderCutLogBatchPayload
+export type FinalizeWorkOrderCutLogHandlerDependencies = {
+  applyFinalize: typeof applyFinalizeWorkOrderCutLogUseCase
+  parsePayload: typeof parseFinalizeWorkOrderCutLogPayload
 }
 
-const defaultDependencies: FinalizeWorkOrderCutLogBatchHandlerDependencies = {
-  applyFinalizeBatch: applyFinalizeWorkOrderCutLogBatchUseCase,
-  markFailed: markWorkOrderItemsFailedFromFinalizeBatch,
-  parsePayload: parseFinalizeWorkOrderCutLogBatchPayload,
+const defaultDependencies: FinalizeWorkOrderCutLogHandlerDependencies = {
+  applyFinalize: applyFinalizeWorkOrderCutLogUseCase,
+  parsePayload: parseFinalizeWorkOrderCutLogPayload,
 }
 
-export function createFinalizeWorkOrderCutLogBatchHandler(
-  dependencies: FinalizeWorkOrderCutLogBatchHandlerDependencies = defaultDependencies,
+export function createFinalizeWorkOrderCutLogHandler(
+  dependencies: FinalizeWorkOrderCutLogHandlerDependencies = defaultDependencies,
 ) {
-  return async function processFinalizeWorkOrderCutLogBatchJob(
+  return async function processFinalizeWorkOrderCutLogJob(
     job: { data: unknown },
-  ): Promise<FinalizeWorkOrderCutLogBatchResult> {
-    const payload: FinalizeWorkOrderCutLogBatchPayload = dependencies.parsePayload(job.data)
+  ): Promise<FinalizeWorkOrderCutLogResult> {
+    const payload: FinalizeWorkOrderCutLogPayload = dependencies.parsePayload(job.data)
     try {
-      return await dependencies.applyFinalizeBatch(payload)
+      return await dependencies.applyFinalize(payload)
     } catch (error) {
-      await dependencies.markFailed(payload.cutLogIds)
       if (error instanceof WorkOrderCutLogExecutionError) {
         throw new UnrecoverableError(error.message)
       }

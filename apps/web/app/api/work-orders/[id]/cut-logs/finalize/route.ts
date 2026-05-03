@@ -1,4 +1,4 @@
-import { finalizeWorkOrderCutLogBatchUseCase } from "@builders/application"
+import { finalizeWorkOrderCutLogUseCase } from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -9,7 +9,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateFinalizeWorkOrderCutLogBatchInput } from "../../../_validators"
+import { validateFinalizeWorkOrderCutLogInput } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -18,15 +18,16 @@ type RouteContext = {
 /**
  * POST /api/work-orders/[id]/cut-logs/finalize
  *
- * Producer route for the WO-scoped finalize-batch flow. The selection
- * may span multiple WOMIs and multiple inventories under one work
- * order. Calls `finalizeWorkOrderCutLogBatchUseCase`, which validates
- * each row's finalizability, transitions every touched WOMI
- * `IDLE → FINALIZING`, and writes a
- * `flooring.work-order.cut-log.finalize` outbox event.
+ * Producer route for the WO-scoped single-row finalize flow. Each
+ * request finalizes exactly one cut log under one inventory; multiple
+ * back-to-back finalizes on the same WOMI queue cleanly because the
+ * WOMI status is no longer consulted.
  *
- * Returns 202 Accepted; the worker locks touched inventories
- * deterministically and stamps `finalCutSequence` per inventory.
+ * Calls `finalizeWorkOrderCutLogUseCase`, which validates the row's
+ * finalizability and writes a `flooring.work-order.cut-log.finalize`
+ * outbox event. Returns 202 Accepted; the worker then takes the parent
+ * inventory's row lock and stamps `before` / `after` /
+ * `finalCutSequence`.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
@@ -48,7 +49,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(
       body,
-      validateFinalizeWorkOrderCutLogBatchInput,
+      validateFinalizeWorkOrderCutLogInput,
     )
 
     const receipt = await enforceMutationReceipt({
@@ -65,22 +66,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Work-order cut-log finalize batch queued",
+        message: "Work-order cut-log finalize queued",
         action: "work-orders.cut-logs.finalize",
         route: "/api/work-orders/[id]/cut-logs/finalize",
         entityType: "flooringWorkOrder",
         entityId: workOrderId,
       },
       () =>
-        finalizeWorkOrderCutLogBatchUseCase({
+        finalizeWorkOrderCutLogUseCase({
           workOrderId,
           requestKey: input.requestKey,
-          cutLogIds: input.cutLogIds,
+          cutLogId: input.cutLogId,
           requestedBy,
         }),
     )
 
-    const responseBody = { batch: result }
+    const responseBody = { finalize: result }
     await finalizeMutationReceipt({
       scope: "work-orders.cut-logs.finalize",
       access,

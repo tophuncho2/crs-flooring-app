@@ -1,16 +1,16 @@
 import { getDatabaseEnvironment } from "@builders/db"
 import {
-  FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
+  FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
   GENERATE_WORK_ORDER_FILE_QUEUE,
   IMPORT_MATERIALIZE_QUEUE,
-  type FinalizeWorkOrderCutLogBatchPayload,
+  type FinalizeWorkOrderCutLogPayload,
   type GenerateWorkOrderFilePayload,
   type ImportMaterializeBatchPayload,
 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
 import { QueueEvents, Worker } from "bullmq"
 import { getWorkerEnvironment, getWorkerStorageEnvironment } from "./env.js"
-import { createFinalizeWorkOrderCutLogBatchHandler } from "./processors/finalize-work-order-cut-log-batch.js"
+import { createFinalizeWorkOrderCutLogHandler } from "./processors/finalize-work-order-cut-log.js"
 import { createMaterializeImportBatchHandler } from "./processors/materialize-import-batch.js"
 import { createWorkOrderFileGenerationHandler } from "./processors/work-order-file-generation.js"
 import { createQueueConnection } from "./queues/connection.js"
@@ -97,11 +97,11 @@ async function main() {
   })
 
   // ---------------------------------------------------------------------------
-  // Work order finalize cut-log batch (sweep 7)
+  // Work order finalize cut-log (single-row)
   // ---------------------------------------------------------------------------
-  const woFinalizeCutLogHandler = createFinalizeWorkOrderCutLogBatchHandler()
-  const woFinalizeCutLogWorker = new Worker<FinalizeWorkOrderCutLogBatchPayload>(
-    FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
+  const woFinalizeCutLogHandler = createFinalizeWorkOrderCutLogHandler()
+  const woFinalizeCutLogWorker = new Worker<FinalizeWorkOrderCutLogPayload>(
+    FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
     async (job) => woFinalizeCutLogHandler(job),
     {
       connection,
@@ -111,7 +111,7 @@ async function main() {
     },
   )
   const woFinalizeCutLogEvents = new QueueEvents(
-    FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
+    FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
     { connection },
   )
 
@@ -119,7 +119,7 @@ async function main() {
     logStructuredEvent({
       service: env.serviceName,
       environment: env.environmentName,
-      message: "Work-order finalize cut-log batch job active",
+      message: "Work-order finalize cut-log job active",
       action: "worker.work_orders.finalize_cut_log.active",
       idempotencyKey: typeof job.id === "string" ? job.id : undefined,
       queueJobId: typeof job.id === "string" ? job.id : undefined,
@@ -127,16 +127,18 @@ async function main() {
       status: "PROCESSING",
       details: {
         workOrderId: job.data.workOrderId,
-        cutLogCount: job.data.cutLogIds.length,
+        cutLogId: job.data.cutLogId,
       },
     })
   })
 
   woFinalizeCutLogWorker.on("completed", (job, result) => {
+    const r =
+      result && typeof result === "object" ? (result as Record<string, unknown>) : undefined
     logStructuredEvent({
       service: env.serviceName,
       environment: env.environmentName,
-      message: "Work-order finalize cut-log batch job completed",
+      message: "Work-order finalize cut-log job completed",
       action: "worker.work_orders.finalize_cut_log.completed",
       idempotencyKey: typeof job.id === "string" ? job.id : undefined,
       queueJobId: typeof job.id === "string" ? job.id : undefined,
@@ -144,14 +146,10 @@ async function main() {
       status: "COMPLETED",
       details: {
         workOrderId: job.data.workOrderId,
-        cutLogCount: job.data.cutLogIds.length,
-        touchedWorkOrderItemIdsCount:
-          result &&
-          typeof result === "object" &&
-          "touchedWorkOrderItemIds" in result &&
-          Array.isArray((result as { touchedWorkOrderItemIds: unknown[] }).touchedWorkOrderItemIds)
-            ? (result as { touchedWorkOrderItemIds: unknown[] }).touchedWorkOrderItemIds.length
-            : undefined,
+        cutLogId: job.data.cutLogId,
+        touchedInventoryId:
+          r && typeof r.touchedInventoryId === "string" ? r.touchedInventoryId : null,
+        alreadyResolved: r && typeof r.alreadyResolved === "boolean" ? r.alreadyResolved : undefined,
       },
     })
   })
@@ -161,7 +159,7 @@ async function main() {
       level: "error",
       service: env.serviceName,
       environment: env.environmentName,
-      message: "Work-order finalize cut-log batch job failed",
+      message: "Work-order finalize cut-log job failed",
       action: "worker.work_orders.finalize_cut_log.failed",
       idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
       queueJobId: typeof job?.id === "string" ? job.id : undefined,
@@ -170,7 +168,7 @@ async function main() {
       details: job
         ? {
             workOrderId: job.data.workOrderId,
-            cutLogCount: job.data.cutLogIds.length,
+            cutLogId: job.data.cutLogId,
           }
         : undefined,
       error,
@@ -293,7 +291,7 @@ async function main() {
     details: {
       queues: [
         IMPORT_MATERIALIZE_QUEUE,
-        FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
+        FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
         GENERATE_WORK_ORDER_FILE_QUEUE,
       ],
       concurrency: {

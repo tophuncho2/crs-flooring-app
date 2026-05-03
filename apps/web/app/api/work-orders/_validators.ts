@@ -266,26 +266,19 @@ export function validateDeletePendingCutLogInput(
 }
 
 // ---------------------------------------------------------------------------
-// Finalize cut-log batch (WO-scoped)
+// Finalize cut-log (WO-scoped, single row per request)
 // ---------------------------------------------------------------------------
 
-export type ValidatedFinalizeWorkOrderCutLogBatchInput = {
+export type ValidatedFinalizeWorkOrderCutLogInput = {
   requestKey: string
-  cutLogIds: string[]
+  cutLogId: string
 }
 
-export function validateFinalizeWorkOrderCutLogBatchInput(
+export function validateFinalizeWorkOrderCutLogInput(
   body: Record<string, unknown>,
-): ValidatedFinalizeWorkOrderCutLogBatchInput {
-  const cutLogIdsRaw = requireArray(body.cutLogIds, "cutLogIds", failCutLog)
-  if (cutLogIdsRaw.length === 0) {
-    failCutLog("Select at least one cut log to finalize", "cutLogIds")
-  }
-  const cutLogIds = cutLogIdsRaw.map((entry, idx) =>
-    requireString(entry, `cutLogIds[${idx}]`, failCutLog),
-  )
+): ValidatedFinalizeWorkOrderCutLogInput {
   return {
     requestKey: requireString(body.requestKey, "requestKey", failCutLog),
-    cutLogIds,
+    cutLogId: requireString(body.cutLogId, "cutLogId", failCutLog),
   }
 }

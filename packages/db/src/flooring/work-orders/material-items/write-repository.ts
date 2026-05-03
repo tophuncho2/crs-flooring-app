@@ -3,7 +3,6 @@ import type { Prisma, PrismaClient } from "@prisma/client"
 import {
   normalizeWorkOrderMaterialItem,
   type ItemSendUnitSnapshot,
-  type WorkOrderItemStatus,
   type WorkOrderMaterialItemForm,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -168,25 +167,3 @@ export async function applyWorkOrderMaterialItemsDiff(
   return { items, tempIdMap }
 }
 
-/**
- * Sets the WOMI's status field. Used only by the finalize batch flow
- * (IDLE → FINALIZING → IDLE / FAILED).
- *
- * Pending cut-log create / update / delete are synchronous in their
- * own request TX (sweep N, 2026-05-01); they hold the parent
- * inventory's row lock for the duration and never flip WOMI status.
- *
- * Application layer enforces transition validity via
- * `assertWorkOrderItemStatusTransition`. Data layer is a thin write.
- */
-export async function markWorkOrderItemStatus(
-  id: string,
-  status: WorkOrderItemStatus,
-  client: WorkOrdersDbClient = db,
-): Promise<void> {
-  await client.flooringWorkOrderItem.update({
-    where: { id },
-    data: { status },
-    select: { id: true },
-  })
-}

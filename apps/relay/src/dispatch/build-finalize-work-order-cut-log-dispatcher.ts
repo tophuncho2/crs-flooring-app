@@ -1,9 +1,9 @@
 import {
-  FINALIZE_WORK_ORDER_CUT_LOG_BATCH_JOB_NAME,
-  FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
-  FINALIZE_WORK_ORDER_CUT_LOG_BATCH_TOPIC,
-  parseFinalizeWorkOrderCutLogBatchPayload,
-  type FinalizeWorkOrderCutLogBatchPayload,
+  FINALIZE_WORK_ORDER_CUT_LOG_JOB_NAME,
+  FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
+  FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
+  parseFinalizeWorkOrderCutLogPayload,
+  type FinalizeWorkOrderCutLogPayload,
 } from "@builders/domain"
 import type { RedisConnectionConfig } from "@builders/lib"
 import { Queue } from "bullmq"
@@ -11,17 +11,17 @@ import type { TopicDispatcher } from "./topic-dispatcher.js"
 
 export function buildFinalizeWorkOrderCutLogDispatcher(
   connection: RedisConnectionConfig,
-): TopicDispatcher<FinalizeWorkOrderCutLogBatchPayload> {
-  const queue = new Queue<FinalizeWorkOrderCutLogBatchPayload>(
-    FINALIZE_WORK_ORDER_CUT_LOG_BATCH_QUEUE,
+): TopicDispatcher<FinalizeWorkOrderCutLogPayload> {
+  const queue = new Queue<FinalizeWorkOrderCutLogPayload>(
+    FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
     { connection },
   )
 
   return {
-    topic: FINALIZE_WORK_ORDER_CUT_LOG_BATCH_TOPIC,
-    jobName: FINALIZE_WORK_ORDER_CUT_LOG_BATCH_JOB_NAME,
+    topic: FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
+    jobName: FINALIZE_WORK_ORDER_CUT_LOG_JOB_NAME,
     queue,
-    parsePayload: parseFinalizeWorkOrderCutLogBatchPayload,
+    parsePayload: parseFinalizeWorkOrderCutLogPayload,
     buildJobId: (_payload, event) => event.idempotencyKey,
     close: () => queue.close(),
   }

@@ -1,31 +1,18 @@
-import { WorkOrderDomainError } from "../../work-orders/errors.js"
-import type { WorkOrderItemStatus } from "../../work-orders/material-items/types.js"
 import { assertCutLogDeleteAllowed } from "./cut-log-rules.js"
 import { CutLogDomainError } from "./errors.js"
 import type { CutLogRow } from "./types.js"
 
 /**
  * Predicates for the synchronous per-row pending-cut-log mutations
- * (create / update / delete). These replace the diff-batch worker
- * predicates: each sync use case asserts these inside its TX before
- * touching the parent inventory.
+ * (create / update / delete). These run inside each sync use case's TX
+ * before touching the parent inventory.
+ *
+ * Note: WOMI status is no longer consulted by cut-log mutations. The
+ * parent inventory's row lock is the sole correctness mechanism;
+ * coupling cut-log CRUD to a WOMI-level mutex was preventing legitimate
+ * fast iteration (back-to-back finalizes, edit-while-finalize-queued)
+ * with no concurrency benefit the inventory lock didn't already provide.
  */
-
-/**
- * Pending cut log mutations are blocked while the WOMI is in any
- * non-IDLE state (FINALIZING, FAILED). Producer/SAVING_CUTS no longer
- * exists — cut log mutations now hold the inventory row lock for the
- * duration of the request, so there is no in-flight WOMI state.
- */
-export function assertWorkOrderItemReadyForCutLogMutation(input: {
-  status: WorkOrderItemStatus
-}): void {
-  if (input.status !== "IDLE") {
-    throw new WorkOrderDomainError("WORK_ORDER_ITEM_NOT_IDLE", {
-      status: input.status,
-    })
-  }
-}
 
 /**
  * Update / delete are only allowed against PENDING rows. Final cut logs

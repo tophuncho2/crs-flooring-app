@@ -2,7 +2,7 @@ import {
   Prisma,
   deletePendingCutLogRow,
   getPendingCutLogWithInventoryForMutation,
-  lockInventoriesForCutLogBatch,
+  lockInventoryForCutLog,
   recomputeAndPersistTotalCutSums,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -11,16 +11,14 @@ import {
   assertCutLogLinkageSymmetry,
   assertCutLogPendingMutationAllowed,
   assertCutSumWithinStartingStock,
-  assertWorkOrderItemReadyForCutLogMutation,
   CutLogDomainError,
-  WorkOrderDomainError,
   type DeletePendingCutLogInput,
 } from "@builders/domain"
 import { WorkOrderCutLogExecutionError } from "./errors.js"
 
 /**
  * Synchronous delete for a single pending cut log. Single TX:
- *   1. WOMI ownership + status check (status === IDLE).
+ *   1. WOMI ownership check (cut log links to the right WO).
  *   2. Read cut log + parent inventory in one round trip.
  *   3. Assert linkage, PENDING-only (final cuts cannot be deleted —
  *      they can only be voided), OCC.
@@ -29,6 +27,9 @@ import { WorkOrderCutLogExecutionError } from "./errors.js"
  *   6. Delete the row.
  *   7. Recompute `totalCutSum` (defense-in-depth — total can only
  *      decrease on delete) + invariant assertion.
+ *
+ * WOMI status is not consulted — inventory row lock is the sole
+ * concurrency mechanism.
  */
 export async function deletePendingCutLogUseCase(
   input: DeletePendingCutLogInput,
@@ -37,10 +38,10 @@ export async function deletePendingCutLogUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    // 1. Read WOMI; assert ownership + IDLE.
+    // 1. Read WOMI; assert ownership.
     const womi = await c.flooringWorkOrderItem.findUnique({
       where: { id: input.workOrderItemId },
-      select: { id: true, workOrderId: true, status: true },
+      select: { id: true, workOrderId: true },
     })
     if (!womi) {
       throw new WorkOrderCutLogExecutionError({
@@ -59,20 +60,6 @@ export async function deletePendingCutLogUseCase(
           actualWorkOrderId: womi.workOrderId,
         },
       })
-    }
-    try {
-      assertWorkOrderItemReadyForCutLogMutation({ status: womi.status })
-    } catch (error) {
-      if (error instanceof WorkOrderDomainError) {
-        throw new WorkOrderCutLogExecutionError({
-          code: "WORK_ORDER_ITEM_NOT_IDLE",
-          message:
-            "Material item is currently busy with another cut-log operation",
-          status: 409,
-          payload: { status: womi.status, cause: String(error) },
-        })
-      }
-      throw error
     }
 
     // 2. Read cut log + parent inventory in one round trip.
@@ -155,7 +142,7 @@ export async function deletePendingCutLogUseCase(
     })
 
     // 5. Lock the parent inventory.
-    await lockInventoriesForCutLogBatch(c, [existing.inventoryId])
+    await lockInventoryForCutLog(c, existing.inventoryId)
 
     // 6. Delete the row.
     await deletePendingCutLogRow(c, { id: existing.id })

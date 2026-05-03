@@ -51,23 +51,6 @@ export async function listCutLogsForWorkOrderItemIds(
 }
 
 /**
- * Returns the inventory ids touched by the cut-log set referenced for a
- * finalize-batch operation. Worker hands the resulting set to
- * `lockInventoriesForCutLogBatch`.
- */
-export async function getInventoriesForCutLogIds(
-  cutLogIds: string[],
-  client: WorkOrdersDbClient = db,
-): Promise<string[]> {
-  if (cutLogIds.length === 0) return []
-  const rows = await client.flooringCutLog.findMany({
-    where: { id: { in: cutLogIds } },
-    select: { inventoryId: true },
-  })
-  return Array.from(new Set(rows.map((r) => r.inventoryId)))
-}
-
-/**
  * Reads the projected post-diff cut-log rows that
  * `computeTotalCutSum` operates on. Used by the worker after applying
  * the diff to recompute each touched inventory's totalCutSum.

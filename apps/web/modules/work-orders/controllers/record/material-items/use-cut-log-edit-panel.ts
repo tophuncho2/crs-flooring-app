@@ -6,7 +6,7 @@ import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
 import {
   createPendingCutLogRequest,
   deletePendingCutLogRequest,
-  finalizeWorkOrderCutLogBatchRequest,
+  finalizeWorkOrderCutLogRequest,
   listEligibleInventoryRequest,
   updatePendingCutLogRequest,
   voidWorkOrderCutLogRequest,
@@ -265,10 +265,10 @@ export function useCutLogEditPanel({
 
   const finalizeMutation = useMutation({
     mutationFn: (input: { workOrderItemId: string; cutLog: CutLogRow }) =>
-      finalizeWorkOrderCutLogBatchRequest({
+      finalizeWorkOrderCutLogRequest({
         workOrderId,
         requestKey: `${input.cutLog.id}:${Date.now()}`,
-        cutLogIds: [input.cutLog.id],
+        cutLogId: input.cutLog.id,
       }),
     onSuccess: (_response, variables) => {
       // Optimistic: mark FINAL. Worker stamps before/after/seq async; the

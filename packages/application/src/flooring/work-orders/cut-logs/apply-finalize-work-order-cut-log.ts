@@ -1,67 +1,78 @@
 import {
   Prisma,
-  applyFinalizeWorkOrderCutLogBatch,
-  getInventoriesForCutLogIds,
-  lockInventoriesForCutLogBatch,
-  markWorkOrderItemStatus,
+  applyFinalizeWorkOrderCutLog,
+  lockInventoryForCutLog,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
   assertBeforeCutAfterInvariant,
   canFinalizeCutLog,
   getCutLogFinalizabilityBlocker,
-  type FinalizeWorkOrderCutLogBatchPayload,
+  type FinalizeWorkOrderCutLogPayload,
 } from "@builders/domain"
-import { logStructuredEvent } from "@builders/lib"
 import { WorkOrderCutLogExecutionError } from "./errors.js"
 
+export type ApplyFinalizeWorkOrderCutLogResult = {
+  cutLogId: string
+  touchedInventoryId: string | null
+  alreadyResolved: boolean
+}
+
 /**
- * Consumer (called by the BullMQ worker processor) for the finalize-batch
- * flow.
+ * Consumer (called by the BullMQ worker processor) for the single-row
+ * finalize flow.
  *
- * Inside a single TX:
- *   1. Derive the touched inventory ids from the referenced cut log rows.
- *   2. `lockInventoriesForCutLogBatch` — sorted ascending FOR UPDATE.
- *   3. Re-validate every row's `canFinalizeCutLog` predicate (defensive
- *      against drift between producer time and consumer time).
- *   4. Apply finalize: flip status PENDING → FINAL, stamp
- *      `before` / `after` / `finalCutSequence` per inventory via the
- *      data layer's chronological walk (sorted by createdAt asc within
- *      each inventory; running balance starts at
- *      `startingStock − sum(existing FINAL non-void cuts)`; sequence
- *      starts at `max(finalCutSequence over isFinal=true rows) + 1`,
- *      including voided-after-final rows so their slot is never reused).
- *   5. Defensively assert `before − cut === after` per stamped row via
- *      the domain invariant. Pure check; throws on arithmetic drift.
- *   6. Mark every touched WOMI `FINALIZING → IDLE`.
+ * Inside one TX:
+ *   1. Read the cut log row to derive its inventory id.
+ *      - Row missing → no-op success (`alreadyResolved: true`). The row
+ *        was deleted between outbox enqueue and worker pickup; nothing
+ *        to do, no compensating writes.
+ *   2. `lockInventoryForCutLog` on that inventory.
+ *   3. Re-read the row under the lock and re-run the finalizability
+ *      predicate.
+ *      - Row missing now → no-op success.
+ *      - Already FINAL or VOID → no-op success. The row reached its
+ *        terminal state by some other means (concurrent finalize, void,
+ *        etc.); double-clicks and retries don't surface as failures.
+ *      - Linkage drift → terminal `WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH`.
+ *      - Other ineligibility (e.g. cut value invalidated) → terminal
+ *        `WORK_ORDER_CUT_LOG_FINALIZE_BLOCKED`.
+ *   4. `applyFinalizeWorkOrderCutLog` stamps `before` / `after` /
+ *      `finalCutSequence` and flips status to FINAL.
+ *   5. `assertBeforeCutAfterInvariant` defensively re-asserts the
+ *      arithmetic on the stamped row.
  *
  * `recomputeAndPersistTotalCutSums` and `assertCutSumWithinStartingStock`
- * are intentionally NOT called here — cut values don't change at
- * finalize time, so `totalCutSum` is identical pre/post and the
- * invariant is automatically preserved. Both calls are no-ops at
- * finalize and have been dropped to save a query and avoid misleading
- * "we re-checked the invariant" semantics.
+ * are intentionally NOT called here — `cut` doesn't change at finalize
+ * time, so `totalCutSum` is identical pre/post and the invariant is
+ * automatically preserved.
  *
- * On any throw, the worker processor flips every touched WOMI to
- * FAILED in a fresh TX after the rollback (parallels the pending-diff
- * worker's failure path).
+ * Failures roll back the TX. The cut log row stays PENDING; the user
+ * can retry. WOMI status is not touched.
  */
-export async function applyFinalizeWorkOrderCutLogBatchUseCase(
-  payload: FinalizeWorkOrderCutLogBatchPayload,
+export async function applyFinalizeWorkOrderCutLogUseCase(
+  payload: FinalizeWorkOrderCutLogPayload,
   client?: Prisma.TransactionClient,
-): Promise<{ touchedInventoryIds: string[]; touchedWorkOrderItemIds: string[] }> {
+): Promise<ApplyFinalizeWorkOrderCutLogResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const inventoryIds = await getInventoriesForCutLogIds(payload.cutLogIds, c)
-    await lockInventoriesForCutLogBatch(c, inventoryIds)
+    const initial = await c.flooringCutLog.findUnique({
+      where: { id: payload.cutLogId },
+      select: { inventoryId: true },
+    })
+    if (initial === null) {
+      return {
+        cutLogId: payload.cutLogId,
+        touchedInventoryId: null,
+        alreadyResolved: true,
+      }
+    }
 
-    // Defensive revalidation. Read each row's current state under the
-    // lock and re-run the same finalizability checks the producer ran;
-    // any drift since outbox enqueue (e.g., a void landed in between)
-    // surfaces here.
-    const rows = await c.flooringCutLog.findMany({
-      where: { id: { in: payload.cutLogIds } },
+    await lockInventoryForCutLog(c, initial.inventoryId)
+
+    const row = await c.flooringCutLog.findUnique({
+      where: { id: payload.cutLogId },
       select: {
         id: true,
         cutLogNumber: true,
@@ -71,125 +82,73 @@ export async function applyFinalizeWorkOrderCutLogBatchUseCase(
         isFinal: true,
         void: true,
         cut: true,
-        before: true,
-        after: true,
       },
     })
+    if (row === null) {
+      return {
+        cutLogId: payload.cutLogId,
+        touchedInventoryId: null,
+        alreadyResolved: true,
+      }
+    }
 
-    if (rows.length !== payload.cutLogIds.length) {
+    if (row.workOrderId !== payload.workOrderId || row.workOrderItemId === null) {
       throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
-        message: "One or more selected cut logs disappeared before finalize ran",
+        code: "WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH",
+        message: "Cut log linkage drifted before finalize ran",
         status: 409,
-        payload: {
-          requestedCount: payload.cutLogIds.length,
-          foundCount: rows.length,
-        },
+        payload: { cutLogId: row.id },
       })
     }
 
-    const touchedWorkOrderItemIds = new Set<string>()
-    for (const row of rows) {
-      if (row.workOrderId !== payload.workOrderId || row.workOrderItemId === null) {
-        throw new WorkOrderCutLogExecutionError({
-          code: "WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH",
-          message: "Cut log linkage drifted before finalize ran",
-          status: 409,
-          payload: { cutLogId: row.id },
-        })
+    const predicateRow = {
+      status: row.status,
+      cut: row.cut.toString(),
+      isFinal: row.isFinal,
+      void: row.void,
+    }
+    const blocker = getCutLogFinalizabilityBlocker(predicateRow)
+    if (blocker !== null || !canFinalizeCutLog(predicateRow)) {
+      // Already-FINAL / already-VOID is the common "row reached its
+      // terminal state by some other means" case (double-click, replay,
+      // concurrent void). Treat as no-op success.
+      if (row.isFinal || row.void) {
+        return {
+          cutLogId: payload.cutLogId,
+          touchedInventoryId: initial.inventoryId,
+          alreadyResolved: true,
+        }
       }
-      const predicateRow = {
-        status: row.status,
-        cut: row.cut.toString(),
-        isFinal: row.isFinal,
-        void: row.void,
-      }
-      const blocker = getCutLogFinalizabilityBlocker(predicateRow)
-      if (blocker !== null || !canFinalizeCutLog(predicateRow)) {
-        throw new WorkOrderCutLogExecutionError({
-          code: "WORK_ORDER_CUT_LOG_FINALIZE_BLOCKED",
-          message: "Cut log can no longer be finalized",
-          status: 409,
-          payload: { cutLogId: row.id, reason: blocker ?? "ineligible" },
-        })
-      }
-      touchedWorkOrderItemIds.add(row.workOrderItemId)
+      throw new WorkOrderCutLogExecutionError({
+        code: "WORK_ORDER_CUT_LOG_FINALIZE_BLOCKED",
+        message: "Cut log can no longer be finalized",
+        status: 409,
+        payload: { cutLogId: row.id, reason: blocker ?? "ineligible" },
+      })
     }
 
-    const { stampedRows } = await applyFinalizeWorkOrderCutLogBatch(c, {
-      cutLogIds: payload.cutLogIds,
+    const { stampedRow } = await applyFinalizeWorkOrderCutLog(c, {
+      cutLogId: payload.cutLogId,
     })
-
-    // Defensively re-assert the arithmetic invariant on each row the
-    // data layer just stamped. Pure check (no I/O). Catches drift
-    // between the running-balance walk and the persisted values.
-    for (const row of stampedRows) {
-      assertBeforeCutAfterInvariant({
-        before: row.before,
-        cut: row.cut,
-        after: row.after,
-      })
+    if (stampedRow === null) {
+      // Row vanished between the lock and the apply — same no-op path.
+      return {
+        cutLogId: payload.cutLogId,
+        touchedInventoryId: initial.inventoryId,
+        alreadyResolved: true,
+      }
     }
 
-    const touchedWomiArray = Array.from(touchedWorkOrderItemIds)
-    for (const womiId of touchedWomiArray) {
-      await markWorkOrderItemStatus(womiId, "IDLE", c)
-    }
+    assertBeforeCutAfterInvariant({
+      before: stampedRow.before,
+      cut: stampedRow.cut,
+      after: stampedRow.after,
+    })
 
     return {
-      touchedInventoryIds: inventoryIds,
-      touchedWorkOrderItemIds: touchedWomiArray,
-    }
-  })
-}
-
-/**
- * Worker processor's catch path — resolves the WOMIs touched by the
- * finalize batch (from the cut-log IDs in the payload) and flips every
- * one to FAILED in a fresh TX after the apply use case rolled back.
- *
- * Takes cut-log IDs (not WOMI IDs) because that's what the worker has
- * available from the payload at catch time. Internally derives the
- * unique non-null `workOrderItemId` set, then writes each.
- *
- * If a per-WOMI FAILED-marker write itself throws, the error is logged
- * at `error` level (so stuck-state WOMIs are observable) and swallowed
- * — the worker processor's caller already has the original error to
- * surface for BullMQ classification, and re-throwing here would mask it
- * and short-circuit the loop over remaining WOMIs.
- */
-export async function markWorkOrderItemsFailedFromFinalizeBatch(
-  cutLogIds: string[],
-  client?: Prisma.TransactionClient,
-): Promise<void> {
-  return withDatabaseTransaction(async (tx) => {
-    const c = client ?? tx
-    const rows = await c.flooringCutLog.findMany({
-      where: { id: { in: cutLogIds } },
-      select: { workOrderItemId: true },
-    })
-    const womiIds = Array.from(
-      new Set(
-        rows
-          .map((r) => r.workOrderItemId)
-          .filter((v): v is string => v !== null),
-      ),
-    )
-    for (const id of womiIds) {
-      try {
-        await markWorkOrderItemStatus(id, "FAILED", c)
-      } catch (err) {
-        logStructuredEvent({
-          level: "error",
-          service: "builders-application",
-          environment: process.env.NODE_ENV ?? "unknown",
-          message:
-            "Failed to mark WOMI FAILED after finalize-batch worker error — WOMI may be stuck in FINALIZING",
-          action: "work_orders.cut_logs.finalize.mark_failed_failed",
-          details: { workOrderItemId: id },
-          error: err,
-        })
-      }
+      cutLogId: payload.cutLogId,
+      touchedInventoryId: initial.inventoryId,
+      alreadyResolved: false,
     }
   })
 }

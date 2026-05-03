@@ -1,7 +1,7 @@
 import {
   Prisma,
   getPendingCutLogWithInventoryForMutation,
-  lockInventoriesForCutLogBatch,
+  lockInventoryForCutLog,
   recomputeAndPersistTotalCutSums,
   updatePendingCutLogRow,
   withDatabaseTransaction,
@@ -13,9 +13,7 @@ import {
   assertCutLogLinkageSymmetry,
   assertCutLogPendingMutationAllowed,
   assertCutSumWithinStartingStock,
-  assertWorkOrderItemReadyForCutLogMutation,
   CutLogDomainError,
-  WorkOrderDomainError,
   deriveCutLogCoverageCutString,
   describeCutLogPendingFormIssues,
   validateCutLogPendingForm,
@@ -25,7 +23,7 @@ import { WorkOrderCutLogExecutionError } from "./errors.js"
 
 /**
  * Synchronous update for a single pending cut log. Single TX:
- *   1. WOMI ownership + status check (status === IDLE).
+ *   1. WOMI ownership check (cut log links to the right WO).
  *   2. Read cut log + parent inventory in one round trip.
  *   3. Assert linkage (cut log belongs to this WOMI),
  *      pending-status (delegates to assertCutLogDeleteAllowed —
@@ -36,6 +34,9 @@ import { WorkOrderCutLogExecutionError } from "./errors.js"
  *   7. Re-derive `coverageCut` only when `cut` changed.
  *   8. Apply the patch (never writes immutable fields).
  *   9. Recompute `totalCutSum` + invariant.
+ *
+ * WOMI status is not consulted — inventory row lock is the sole
+ * concurrency mechanism.
  */
 export async function updatePendingCutLogUseCase(
   input: UpdatePendingCutLogInput,
@@ -44,10 +45,10 @@ export async function updatePendingCutLogUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    // 1. Read WOMI; assert ownership + IDLE.
+    // 1. Read WOMI; assert ownership.
     const womi = await c.flooringWorkOrderItem.findUnique({
       where: { id: input.workOrderItemId },
-      select: { id: true, workOrderId: true, status: true },
+      select: { id: true, workOrderId: true },
     })
     if (!womi) {
       throw new WorkOrderCutLogExecutionError({
@@ -66,20 +67,6 @@ export async function updatePendingCutLogUseCase(
           actualWorkOrderId: womi.workOrderId,
         },
       })
-    }
-    try {
-      assertWorkOrderItemReadyForCutLogMutation({ status: womi.status })
-    } catch (error) {
-      if (error instanceof WorkOrderDomainError) {
-        throw new WorkOrderCutLogExecutionError({
-          code: "WORK_ORDER_ITEM_NOT_IDLE",
-          message:
-            "Material item is currently busy with another cut-log operation",
-          status: 409,
-          payload: { status: womi.status, cause: String(error) },
-        })
-      }
-      throw error
     }
 
     // 2. Read cut log + parent inventory in one round trip.
@@ -183,7 +170,7 @@ export async function updatePendingCutLogUseCase(
     }
 
     // 6. Lock the parent inventory.
-    await lockInventoriesForCutLogBatch(c, [existing.inventoryId])
+    await lockInventoryForCutLog(c, existing.inventoryId)
 
     // 7. Re-derive coverageCut only if cut changed.
     const patch: UpdatePendingCutLogRowPatch = {}

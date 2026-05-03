@@ -1,55 +1,44 @@
 import {
   Prisma,
   createQueueOutboxEvent,
-  markWorkOrderItemStatus,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
-  FINALIZE_WORK_ORDER_CUT_LOG_BATCH_TOPIC,
-  FinalizeWorkOrderCutLogBatchPayloadSchema,
-  assertWorkOrderItemStatusTransition,
+  FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
+  FinalizeWorkOrderCutLogPayloadSchema,
   canFinalizeCutLog,
   getCutLogFinalizabilityBlocker,
 } from "@builders/domain"
 import { WorkOrderCutLogExecutionError } from "./errors.js"
 import type {
-  FinalizeWorkOrderCutLogBatchInput,
-  FinalizeWorkOrderCutLogBatchResult,
+  FinalizeWorkOrderCutLogInput,
+  FinalizeWorkOrderCutLogResult,
 } from "./types.js"
 
 /**
- * Producer for the finalize-batch flow.
+ * Producer for the single-row finalize flow.
  *
- * The selection may span multiple WOMIs and multiple inventories under
- * one work order. In a single TX:
- *   1. Read every cut log in the selection. Reject if any row does not
- *      link to the input `workOrderId`, is not currently PENDING, or
- *      fails the domain `canFinalizeCutLog` predicate.
- *   2. Derive the touched WOMI set. Transition each `current → FINALIZING`
- *      via the status rule.
- *   3. Mark every touched WOMI `FINALIZING`.
- *   4. Write the outbox event with idempotency key folding `requestKey`.
+ * Finalization is one-cut-log-at-a-time, triggered from the cut-log side
+ * panel's Finalize button. In a single TX:
+ *   1. Read the cut log. Reject if it doesn't link to the input
+ *      `workOrderId`, isn't currently PENDING, or fails the domain
+ *      `canFinalizeCutLog` predicate.
+ *   2. Write the outbox event with idempotency key folding `requestKey`.
  *
- * The worker then locks all touched inventories deterministically and
- * applies the finalize batch.
+ * The worker takes the parent inventory's row lock and stamps
+ * `before` / `after` / `finalCutSequence` based on the inventory's
+ * current state. WOMI status is not consulted or mutated by this flow —
+ * the inventory lock is the sole correctness mechanism.
  */
-export async function finalizeWorkOrderCutLogBatchUseCase(
-  input: FinalizeWorkOrderCutLogBatchInput,
+export async function finalizeWorkOrderCutLogUseCase(
+  input: FinalizeWorkOrderCutLogInput,
   client?: Prisma.TransactionClient,
-): Promise<FinalizeWorkOrderCutLogBatchResult> {
+): Promise<FinalizeWorkOrderCutLogResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (input.cutLogIds.length === 0) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_VALIDATION_FAILED",
-        message: "Select at least one cut log to finalize",
-        status: 400,
-      })
-    }
-
-    const rows = await c.flooringCutLog.findMany({
-      where: { id: { in: input.cutLogIds } },
+    const row = await c.flooringCutLog.findUnique({
+      where: { id: input.cutLogId },
       select: {
         id: true,
         cutLogNumber: true,
@@ -59,98 +48,49 @@ export async function finalizeWorkOrderCutLogBatchUseCase(
         isFinal: true,
         void: true,
         cut: true,
-        before: true,
-        after: true,
       },
     })
 
-    if (rows.length !== input.cutLogIds.length) {
+    if (row === null) {
       throw new WorkOrderCutLogExecutionError({
         code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
-        message: "One or more selected cut logs were not found",
+        message: "Cut log not found",
         status: 404,
+        payload: { cutLogId: input.cutLogId },
+      })
+    }
+
+    if (row.workOrderId !== input.workOrderId || row.workOrderItemId === null) {
+      throw new WorkOrderCutLogExecutionError({
+        code: "WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH",
+        message: "Cut log does not belong to this work order",
+        status: 400,
         payload: {
-          requestedCount: input.cutLogIds.length,
-          foundCount: rows.length,
+          cutLogId: row.id,
+          providedWorkOrderId: input.workOrderId,
+          actualWorkOrderId: row.workOrderId,
         },
       })
     }
 
-    const blockers: Array<{ cutLogId: string; cutLogNumber: string; reason: string }> = []
-    const touchedWorkOrderItemIds = new Set<string>()
-
-    for (const row of rows) {
-      if (row.workOrderId !== input.workOrderId || row.workOrderItemId === null) {
-        blockers.push({
-          cutLogId: row.id,
-          cutLogNumber: row.cutLogNumber,
-          reason: "Cut log does not belong to this work order",
-        })
-        continue
-      }
-      const predicateRow = {
-        status: row.status,
-        cut: row.cut.toString(),
-        isFinal: row.isFinal,
-        void: row.void,
-      }
-      const blocker = getCutLogFinalizabilityBlocker(predicateRow)
-      if (blocker !== null) {
-        blockers.push({
-          cutLogId: row.id,
-          cutLogNumber: row.cutLogNumber,
-          reason: blocker,
-        })
-        continue
-      }
-      if (!canFinalizeCutLog(predicateRow)) {
-        blockers.push({
-          cutLogId: row.id,
-          cutLogNumber: row.cutLogNumber,
-          reason: "Cut log is not in a finalizable state",
-        })
-        continue
-      }
-      touchedWorkOrderItemIds.add(row.workOrderItemId)
+    const predicateRow = {
+      status: row.status,
+      cut: row.cut.toString(),
+      isFinal: row.isFinal,
+      void: row.void,
     }
-
-    if (blockers.length > 0) {
+    const blocker = getCutLogFinalizabilityBlocker(predicateRow)
+    if (blocker !== null || !canFinalizeCutLog(predicateRow)) {
       throw new WorkOrderCutLogExecutionError({
         code: "WORK_ORDER_CUT_LOG_FINALIZE_BLOCKED",
-        message: "One or more selected cut logs cannot be finalized",
+        message: "Cut log cannot be finalized",
         status: 409,
-        payload: { blockers },
+        payload: {
+          cutLogId: row.id,
+          cutLogNumber: row.cutLogNumber,
+          reason: blocker ?? "ineligible",
+        },
       })
-    }
-
-    // Verify status transitions for each touched WOMI before any writes.
-    const womiList = await c.flooringWorkOrderItem.findMany({
-      where: { id: { in: Array.from(touchedWorkOrderItemIds) } },
-      select: { id: true, status: true },
-    })
-    for (const womi of womiList) {
-      try {
-        assertWorkOrderItemStatusTransition({
-          current: womi.status,
-          next: "FINALIZING",
-        })
-      } catch (error) {
-        throw new WorkOrderCutLogExecutionError({
-          code: "WORK_ORDER_ITEM_INVALID_STATUS_TRANSITION",
-          message: "One or more material items are busy with another cut-log operation",
-          status: 409,
-          payload: {
-            workOrderItemId: womi.id,
-            current: womi.status,
-            next: "FINALIZING",
-            cause: String(error),
-          },
-        })
-      }
-    }
-
-    for (const womi of womiList) {
-      await markWorkOrderItemStatus(womi.id, "FINALIZING", c)
     }
 
     const requestedAt = new Date().toISOString()
@@ -160,19 +100,19 @@ export async function finalizeWorkOrderCutLogBatchUseCase(
       input.requestKey,
     ].join(":")
 
-    const payload = FinalizeWorkOrderCutLogBatchPayloadSchema.parse({
+    const payload = FinalizeWorkOrderCutLogPayloadSchema.parse({
       version: "v1",
-      topic: FINALIZE_WORK_ORDER_CUT_LOG_BATCH_TOPIC,
+      topic: FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
       workOrderId: input.workOrderId,
       requestKey: input.requestKey,
-      cutLogIds: input.cutLogIds,
+      cutLogId: input.cutLogId,
       requestedBy: input.requestedBy,
       requestedAt,
     })
 
     const { event, wasDuplicate } = await createQueueOutboxEvent(
       {
-        topic: FINALIZE_WORK_ORDER_CUT_LOG_BATCH_TOPIC,
+        topic: FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
         aggregateType: "FlooringWorkOrder",
         aggregateId: input.workOrderId,
         idempotencyKey,
@@ -184,7 +124,7 @@ export async function finalizeWorkOrderCutLogBatchUseCase(
     return {
       outboxEventId: event.id,
       wasDuplicate,
-      touchedWorkOrderItemIds: Array.from(touchedWorkOrderItemIds),
+      touchedWorkOrderItemId: row.workOrderItemId,
     }
   })
 }

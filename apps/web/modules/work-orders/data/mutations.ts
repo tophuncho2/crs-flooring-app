@@ -162,24 +162,24 @@ export async function deletePendingCutLogRequest(args: {
   )
 }
 
-export type FinalizeCutLogBatchResponse = {
-  batch: {
+export type FinalizeCutLogResponse = {
+  finalize: {
     outboxEventId: string
     wasDuplicate: boolean
-    touchedWorkOrderItemIds: string[]
+    touchedWorkOrderItemId: string
   }
 }
 
-export async function finalizeWorkOrderCutLogBatchRequest(args: {
+export async function finalizeWorkOrderCutLogRequest(args: {
   workOrderId: string
   requestKey: string
-  cutLogIds: string[]
+  cutLogId: string
 }) {
   const body = withMutationMeta({
     requestKey: args.requestKey,
-    cutLogIds: args.cutLogIds,
+    cutLogId: args.cutLogId,
   } as Record<string, unknown>)
-  return requestJson<FinalizeCutLogBatchResponse>(
+  return requestJson<FinalizeCutLogResponse>(
     `/api/work-orders/${args.workOrderId}/cut-logs/finalize`,
     {
       method: "POST",
