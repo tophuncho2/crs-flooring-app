@@ -69,8 +69,8 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 2 — cut + waste + coverage (read-only) */}
-      <CellAt col={1} colSpan={3}>
+      {/* Row 2 — cut + coverage */}
+      <CellAt col={1} colSpan={4}>
         <FormField label={stockUnit ? `Cut (${stockUnit})` : "Cut"} required>
           <NumberCell
             editable={!isSaving}
@@ -81,7 +81,26 @@ export function CutLogEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={4} colSpan={2}>
+      <CellAt col={5} colSpan={4}>
+        <FormField label={coverageUnit ? `Coverage (${coverageUnit})` : "Coverage"}>
+          <TextCell editable={false} value={cutLog?.coverageCut ?? "—"} ariaLabel="Coverage" />
+        </FormField>
+      </CellAt>
+
+      {/* Row 3 — before / after (read-only, worker-stamped) */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Before">
+          <TextCell editable={false} value={cutLog?.before ?? "—"} ariaLabel="Before" />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="After">
+          <TextCell editable={false} value={cutLog?.after ?? "—"} ariaLabel="After" />
+        </FormField>
+      </CellAt>
+
+      {/* Row 4 — waste + final sequence (below before/after) */}
+      <CellAt col={1} colSpan={4}>
         <FormField label="Waste">
           <CheckboxCell
             editable={!isSaving}
@@ -91,24 +110,7 @@ export function CutLogEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={6} colSpan={3}>
-        <FormField label={coverageUnit ? `Coverage (${coverageUnit})` : "Coverage"}>
-          <TextCell editable={false} value={cutLog?.coverageCut ?? "—"} ariaLabel="Coverage" />
-        </FormField>
-      </CellAt>
-
-      {/* Row 4 — before / after / sequence (read-only, worker-stamped) */}
-      <CellAt col={1} colSpan={3}>
-        <FormField label="Before">
-          <TextCell editable={false} value={cutLog?.before ?? "—"} ariaLabel="Before" />
-        </FormField>
-      </CellAt>
-      <CellAt col={4} colSpan={2}>
-        <FormField label="After">
-          <TextCell editable={false} value={cutLog?.after ?? "—"} ariaLabel="After" />
-        </FormField>
-      </CellAt>
-      <CellAt col={6} colSpan={3}>
+      <CellAt col={5} colSpan={4}>
         <FormField label="Final sequence">
           <TextCell
             editable={false}
