@@ -51,7 +51,7 @@ export function InventoryCutLogViewPanel({
               </FormField>
             </CellAt>
 
-            <CellAt col={1} colSpan={4}>
+            <CellAt col={1} colSpan={8}>
               <FormField label="Work order">
                 <TextCell
                   editable={false}
@@ -60,7 +60,7 @@ export function InventoryCutLogViewPanel({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={5} colSpan={4}>
+            <CellAt col={1} colSpan={8}>
               <FormField label="Material item">
                 <TextCell
                   editable={false}
