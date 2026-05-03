@@ -46,7 +46,16 @@ export function CutLogEditFormFields({
     return cutLog.inventoryId
   })()
 
-  const stockUnit = cutLog?.stockUnitAbbrev ?? ""
+  // Stock unit source:
+  //   - edit mode: the cut log's frozen `stockUnitAbbrev` snapshot (stamped
+  //     from the inventory at create time, never mutated afterward)
+  //   - create mode: derived from the currently-selected inventory's
+  //     `stockUnitAbbrev` — what the cut log will inherit on save
+  const stockUnit =
+    cutLog?.stockUnitAbbrev ??
+    (form.inventoryId
+      ? eligibleInventory.find((i) => i.id === form.inventoryId)?.stockUnitAbbrev ?? ""
+      : "")
   const coverageUnit = cutLog?.itemCoverageUnitAbbrev ?? ""
 
   return (
