@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       scope: "work-orders.cut-logs.void",
-      limit: 60,
+      limit: 300,
       windowMs: 10 * 60 * 1000,
       route: "/api/work-orders/[id]/cut-logs/[cutLogId]/void",
     },

@@ -39,7 +39,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       scope: "work-orders.cut-logs.pending.update",
-      limit: 240,
+      limit: 1200,
       windowMs: 10 * 60 * 1000,
       route: "/api/work-orders/[id]/cut-logs/[cutLogId]",
     },
@@ -116,7 +116,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       scope: "work-orders.cut-logs.pending.delete",
-      limit: 120,
+      limit: 600,
       windowMs: 10 * 60 * 1000,
       route: "/api/work-orders/[id]/cut-logs/[cutLogId]",
     },

@@ -81,18 +81,29 @@ Plan: [2026-05-03-cut-logs-finalize-sync-migration-plan.md](2026-05-03-cut-logs-
 
 ## Concerns / out-of-scope flags carried forward from the plan
 
-1. **Rate limit** still `30 / 10min`. Sync execution is one short TX — may want to raise this in a follow-up.
+1. **Rate limit raise** — applied in the same sweep at user request. All five cut-log routes were sized for the old async world; now that they're all sync, bumped to comfortable per-user/10-min ceilings:
+
+   | Route | Scope | Old | New |
+   | --- | --- | --- | --- |
+   | Create | `work-orders.cut-logs.pending.create` | 120 | 600 |
+   | Update | `work-orders.cut-logs.pending.update` | 240 | 1200 |
+   | Delete | `work-orders.cut-logs.pending.delete` | 120 | 600 |
+   | Finalize | `work-orders.cut-logs.finalize` | 30 | 600 |
+   | Void | `work-orders.cut-logs.void` | 60 | 300 |
+
+   Bucketing is per-authenticated-user, per-scope, per-10-min window ([apps/web/server/http/route-helpers.ts:46](apps/web/server/http/route-helpers.ts:46) — falls back to client IP if unauthenticated).
+
 2. **Doc nit (out of scope):** [packages/domain/src/flooring/work-orders/cut-logs/types.ts:24](packages/domain/src/flooring/work-orders/cut-logs/types.ts:24) has a doc comment that names `requestKey` and `requestedBy` as illustrative examples of API-boundary concerns. The principle still holds (those concerns *are* handled by `enforceMutationReceipt` + `applyRoutePolicy`), but the named examples no longer exist in this codebase. Left untouched to keep this sweep hardscoped — flagging for a future cleanup.
-3. **Deploy-time backlog cleanup:** any `flooring_outbox_event` rows still PENDING/PROCESSING for `topic = 'flooring.work-order.cut-log.finalize'` will be orphaned after deploy (no relay polls, no worker drains). Run once against the live DB before/after deploy:
+3. **Deploy-time backlog cleanup — DEFERRED (per user, 2026-05-03).** Any `queue_outbox_event` rows still PENDING/PROCESSING for `topic = 'flooring.work-order.cut-log.finalize'` after deploy are orphaned (no relay polls, no worker drains). Not harmful — no errors, no retries — just stale rows in the outbox table. When ready to tidy up, run once against the live DB:
 
    ```sql
-   UPDATE flooring_outbox_event
-   SET status = 'EXHAUSTED', exhausted_at = now()
+   UPDATE queue_outbox_event
+   SET status = 'EXHAUSTED'
    WHERE topic = 'flooring.work-order.cut-log.finalize'
      AND status IN ('PENDING', 'PROCESSING');
    ```
 
-   (Confirm column names against the actual outbox schema before running.) The Redis BullMQ queue `flooring-work-order-cut-log-finalize` can be deleted post-deploy — BullMQ tolerates orphan queues.
+   (No `exhausted_at` column exists — `updatedAt` updates automatically.) The Redis BullMQ queue `flooring-work-order-cut-log-finalize` can also be deleted post-deploy — BullMQ tolerates orphan queues.
 
 ## Manual smoke test checklist (run before/after deploy)
 
