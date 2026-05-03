@@ -386,6 +386,10 @@ model FlooringCutLog {
   cutLogNumber     String                 @unique @default(dbgenerated("('CUT-'::text || lpad((nextval('flooring_cut_log_number_seq'::regclass))::text, 7, '0'::text))"))
   inventoryId      String
   inventory        FlooringInventory      @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  inventoryNumber  String
+  itemNumber       String?
+  dyeLot           String?
+  categorySlug     String
   workOrderId      String?
   workOrder        FlooringWorkOrder?     @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   workOrderItemId  String?
