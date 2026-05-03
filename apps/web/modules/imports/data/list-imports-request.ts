@@ -22,6 +22,19 @@ function readSearchParam(
   return Array.isArray(raw) ? raw[0] : raw
 }
 
+function readSearchParamArray(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+  key: string,
+): string[] {
+  const raw = searchParams?.[key]
+  if (raw === undefined) return []
+  const list = Array.isArray(raw) ? raw : [raw]
+  return list
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+}
+
 function defaultsFromTablePreferences(
   preferences?: TablePreferencePayload | null,
 ): ImportsListInitialDefaults {
@@ -69,8 +82,13 @@ export function parseImportsListInputFromSearchParams(
 
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
+  const warehouseId = Array.from(
+    new Set(readSearchParamArray(searchParams, "warehouseId")),
+  )
+
   return {
     search: searchRaw || undefined,
+    filters: warehouseId.length > 0 ? { warehouseId } : undefined,
     group: validGroupField ? { field: validGroupField } : undefined,
     page,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
@@ -80,6 +98,9 @@ export function parseImportsListInputFromSearchParams(
 export function buildImportsListSearchString(input: ListInput<ImportsListFilters>): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  for (const id of input.filters?.warehouseId ?? []) {
+    params.append("warehouseId", id)
+  }
   if (input.group) {
     params.set("grouped", "1")
     params.set("groups", input.group.field)

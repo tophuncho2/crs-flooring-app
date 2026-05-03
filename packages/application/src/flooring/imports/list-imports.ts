@@ -8,10 +8,22 @@ import {
 import { listImportsForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
-export type ImportsListFilters = Record<string, never>
+export type ImportsListFilters = {
+  warehouseId?: ReadonlyArray<string>
+}
 
 function isAllowedGroupField(value: string): value is ListImportsAllowedGroupField {
   return (LIST_IMPORTS_ALLOWED_GROUP_FIELDS as readonly string[]).includes(value)
+}
+
+function normalizeWarehouseIds(
+  raw: ReadonlyArray<string> | undefined,
+): ReadonlyArray<string> | undefined {
+  if (!raw || raw.length === 0) return undefined
+  const cleaned = Array.from(
+    new Set(raw.map((entry) => entry.trim()).filter((entry) => entry.length > 0)),
+  )
+  return cleaned.length > 0 ? cleaned : undefined
 }
 
 export async function listImportsUseCase(
@@ -26,9 +38,11 @@ export async function listImportsUseCase(
     : null
 
   const search = input.search?.trim() || undefined
+  const warehouseId = normalizeWarehouseIds(input.filters?.warehouseId)
 
   const { rows, total } = await listImportsForListView({
     search,
+    filters: warehouseId ? { warehouseId } : undefined,
     group,
     skip: (page - 1) * pageSize,
     take: pageSize,

@@ -119,13 +119,36 @@ export async function listWarehouses(client: WarehousesDbClient = db): Promise<W
   return rows.map(normalizeWarehouseRow)
 }
 
-export type WarehouseOption = { id: string; name: string }
+export type { WarehouseOption } from "@builders/domain"
 
 export async function listWarehouseOptions(
   client: WarehousesDbClient = db,
-): Promise<WarehouseOption[]> {
+): Promise<{ id: string; name: string }[]> {
   return client.flooringWarehouse.findMany({
     orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  })
+}
+
+// --- Picker / options search ---
+
+export type WarehouseOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+export async function searchWarehouseOptions(
+  args: WarehouseOptionsSearchArgs,
+  client: WarehousesDbClient = db,
+): Promise<{ id: string; name: string }[]> {
+  const where = args.search
+    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  return client.flooringWarehouse.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
     select: { id: true, name: true },
   })
 }

@@ -11,6 +11,14 @@ export type WarehouseRow = {
   updatedAt: string
 }
 
+// Slim option shape consumed by the canonical WarehousePicker (server-side
+// search). Mirrors the existing `ManagementCompanyOption` / `CategoryOption`
+// pattern.
+export type WarehouseOption = {
+  id: string
+  name: string
+}
+
 export type SectionRow = {
   id: string
   warehouseId: string

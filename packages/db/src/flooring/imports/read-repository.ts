@@ -116,6 +116,7 @@ export type ImportListGroupField = "warehouse" | "manufacturer"
 
 export type ImportListViewOptions = {
   search?: string
+  filters?: { warehouseId?: ReadonlyArray<string> }
   group: { field: ImportListGroupField } | null
   skip: number
   take: number
@@ -126,25 +127,31 @@ export type ImportListViewResult = {
   total: number
 }
 
-function buildListViewWhere(search: string | undefined): Prisma.FlooringImportEntryWhereInput | undefined {
-  if (!search) return undefined
+function buildListViewWhere(
+  options: Pick<ImportListViewOptions, "search" | "filters">,
+): Prisma.FlooringImportEntryWhereInput | undefined {
+  const clauses: Prisma.FlooringImportEntryWhereInput[] = []
 
-  const numericImportNumber = Number(search)
-  const numericClauses: Prisma.FlooringImportEntryWhereInput[] =
-    Number.isFinite(numericImportNumber) && search.trim() !== ""
-      ? [{ importNumber: Math.floor(numericImportNumber) }]
-      : []
-
-  return {
-    OR: [
-      ...numericClauses,
-      { orderNumber: { contains: search, mode: "insensitive" } },
-      { tag: { contains: search, mode: "insensitive" } },
-      { notes: { contains: search, mode: "insensitive" } },
-      { warehouse: { name: { contains: search, mode: "insensitive" } } },
-      { manufacturer: { companyName: { contains: search, mode: "insensitive" } } },
-    ],
+  // Search targets the import number only — exact integer match. Non-numeric
+  // input matches nothing (an unreachable `importNumber` value).
+  if (options.search && options.search.trim() !== "") {
+    const trimmed = options.search.trim()
+    const numericImportNumber = Number(trimmed)
+    if (Number.isFinite(numericImportNumber)) {
+      clauses.push({ importNumber: Math.floor(numericImportNumber) })
+    } else {
+      clauses.push({ importNumber: -1 })
+    }
   }
+
+  const warehouseIds = options.filters?.warehouseId
+  if (warehouseIds && warehouseIds.length > 0) {
+    clauses.push({ warehouseId: { in: [...warehouseIds] } })
+  }
+
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
 }
 
 function buildListViewOrderBy(
@@ -168,7 +175,7 @@ export async function listImportsForListView(
   options: ImportListViewOptions,
   client: ImportsDbClient = db,
 ): Promise<ImportListViewResult> {
-  const where = buildListViewWhere(options.search)
+  const where = buildListViewWhere(options)
   const orderBy = buildListViewOrderBy(options.group)
 
   const [total, rows] = await Promise.all([

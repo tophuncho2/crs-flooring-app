@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
 import { useServerListController } from "@/controllers/list-view"
@@ -9,6 +10,7 @@ import {
   LIST_IMPORTS_PAGE_SIZE,
   type ImportRow,
   type TablePreferencePayload,
+  type WarehouseOption,
 } from "@builders/domain"
 import {
   IMPORTS_LIST_QUERY_KEY,
@@ -16,19 +18,27 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 import { useImportsListController } from "@/modules/imports/controllers/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
+import { WarehouseFilterChip } from "./warehouse-filter-chip"
 
 const IMPORTS_ALLOWED_GROUP_FIELDS = ["warehouse", "manufacturer"] as const
+const IMPORTS_FILTERABLE_FIELDS = ["warehouseId"] as const
 
 export default function ImportsClient({
   initialTablePreferences,
   initialSearchQuery,
   initialGroupField,
   initialPage,
+  initialFilters,
+  initialWarehouseOptions,
+  initialSelectedWarehouse = null,
 }: {
   initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialGroupField: string | null
   initialPage: number
+  initialFilters: ImportsListFilters
+  initialWarehouseOptions: WarehouseOption[]
+  initialSelectedWarehouse?: WarehouseOption | null
 }) {
   const { message, pageError, openCreate, openImport } = useImportsListController()
 
@@ -36,6 +46,7 @@ export default function ImportsClient({
     rows,
     total,
     searchQuery,
+    filters,
     page,
     pageSize,
     totalPages,
@@ -44,6 +55,7 @@ export default function ImportsClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    onFilterChange,
   } = useServerListController<ImportRow, ImportsListFilters>({
     mode: "fetch",
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
@@ -51,12 +63,33 @@ export default function ImportsClient({
     initialSearchQuery,
     initialGroupField,
     initialPage,
+    initialFilters,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
     tableKey: "imports-main",
     initialTablePreferences,
     allowedGroupFields: IMPORTS_ALLOWED_GROUP_FIELDS,
+    filterableFields: IMPORTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
+
+  const selectedWarehouseId = useMemo(() => {
+    const ids = (filters as ImportsListFilters).warehouseId
+    return ids && ids.length > 0 ? ids[0] : null
+  }, [filters])
+
+  const selectedWarehouseLabel = useMemo(() => {
+    if (!selectedWarehouseId) return null
+    if (
+      initialSelectedWarehouse &&
+      initialSelectedWarehouse.id === selectedWarehouseId
+    ) {
+      return initialSelectedWarehouse.name
+    }
+    const seeded = initialWarehouseOptions.find(
+      (option) => option.id === selectedWarehouseId,
+    )
+    return seeded ? seeded.name : null
+  }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -86,9 +119,17 @@ export default function ImportsClient({
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search import # or tag"
+              placeholder="Search import #"
             />
           </div>
+          <WarehouseFilterChip
+            value={selectedWarehouseId}
+            selectedLabel={selectedWarehouseLabel}
+            onChange={(id) =>
+              onFilterChange("warehouseId", id ? [id] : [])
+            }
+            initialOptions={initialWarehouseOptions}
+          />
           <span className="text-xs text-[var(--foreground)]/55">
             {rows.length} of {total} imports
           </span>

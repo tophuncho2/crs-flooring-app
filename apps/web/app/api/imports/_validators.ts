@@ -193,6 +193,7 @@ const ALLOWED_GROUP_SET = new Set<string>(LIST_IMPORTS_ALLOWED_GROUP_FIELDS)
 export function validateListImportsQuery(searchParams: URLSearchParams): ListInput<ImportsListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
+    if (key === "warehouseId") return
     raw[key] = value
   })
 
@@ -220,8 +221,18 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
       : undefined
   const groupField = firstGroupKey && ALLOWED_GROUP_SET.has(firstGroupKey) ? firstGroupKey : undefined
 
+  const warehouseIdRaw = searchParams.getAll("warehouseId")
+  const warehouseId = Array.from(
+    new Set(
+      warehouseIdRaw
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+
   return {
     search,
+    filters: warehouseId.length > 0 ? { warehouseId } : undefined,
     group: groupField ? { field: groupField } : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,
