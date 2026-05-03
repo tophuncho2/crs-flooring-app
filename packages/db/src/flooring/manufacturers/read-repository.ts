@@ -111,3 +111,46 @@ export async function getManufacturerDeleteState(
     },
   })
 }
+
+// --- List-view read ---
+
+export type ManufacturerListViewOptions = {
+  search?: string
+  skip: number
+  take: number
+}
+
+export type ManufacturerListViewResult = {
+  rows: ManufacturerRecord[]
+  total: number
+}
+
+function buildListViewWhere(
+  search: string | undefined,
+): Prisma.FlooringManufacturerWhereInput | undefined {
+  if (!search) return undefined
+  return { companyName: { contains: search, mode: "insensitive" } }
+}
+
+export async function listManufacturersForListView(
+  options: ManufacturerListViewOptions,
+  client: ManufacturerDbClient = db,
+): Promise<ManufacturerListViewResult> {
+  const where = buildListViewWhere(options.search)
+
+  const [total, rows] = await Promise.all([
+    client.flooringManufacturer.count({ where }),
+    client.flooringManufacturer.findMany({
+      where,
+      orderBy: { companyName: "asc" },
+      skip: options.skip,
+      take: options.take,
+      include: manufacturerInclude,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeManufacturer),
+  }
+}

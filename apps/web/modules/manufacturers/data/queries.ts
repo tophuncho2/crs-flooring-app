@@ -1,10 +1,6 @@
-import { createPrismaPageLoadIssue, getManufacturerById, isPrismaNotFoundError, listManufacturers, withPrismaConnectivityHandling, type ManufacturerRecord, type PrismaDetailPageResult } from "@builders/db"
+import { createPrismaPageLoadIssue, getManufacturerById, isPrismaNotFoundError, type ManufacturerRecord, type PrismaDetailPageResult } from "@builders/db"
 
-export { listManufacturers, getManufacturerById }
-
-export async function getManufacturersPageData() {
-  return withPrismaConnectivityHandling(() => listManufacturers())
-}
+export { getManufacturerById }
 
 export async function getManufacturerDetailPageData(id: string): Promise<PrismaDetailPageResult<ManufacturerRecord>> {
   try {

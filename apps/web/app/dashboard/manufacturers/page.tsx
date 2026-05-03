@@ -1,9 +1,24 @@
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
+import {
+  getResolvedUserTablePreference,
+  listManufacturersUseCase,
+} from "@builders/application"
+import type { TablePreferencePayload } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireManufacturersAccess } from "@/modules/shared/access/lookup-domains"
 import ManufacturersClient from "@/modules/manufacturers/components/list/manufacturers-client"
-import { getManufacturersPageData } from "@/modules/manufacturers/data/queries"
-import { getResolvedUserTablePreference } from "@builders/application"
-import { parseServerTableQueryState } from "@/server/pagination"
+import {
+  MANUFACTURERS_LIST_QUERY_KEY,
+  parseManufacturersListInputFromSearchParams,
+} from "@/modules/manufacturers/data/list-manufacturers-request"
+
+const MANUFACTURERS_FALLBACK_PREFERENCES: TablePreferencePayload = {
+  sort: { key: "companyName", direction: "asc" },
+  filters: {},
+  columnVisibility: {},
+  columnOrder: [],
+  grouping: { enabled: false, keys: [] },
+}
 
 export default async function ManufacturersPage({
   searchParams,
@@ -11,33 +26,40 @@ export default async function ManufacturersPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireManufacturersAccess()
+  const userPreferences = await getResolvedUserTablePreference(user.id, "manufacturers-main")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "manufacturers-main")
-  const tableState = parseServerTableQueryState({
-    searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["companyName"],
-    allowedGroupKeys: ["companyName"],
-  })
-  const result = await getManufacturersPageData()
 
-  if (!result.ok) {
+  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
+    ? userPreferences
+    : MANUFACTURERS_FALLBACK_PREFERENCES
+
+  const initialInput = parseManufacturersListInputFromSearchParams(resolvedSearchParams)
+
+  const queryClient = new QueryClient()
+
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: [...MANUFACTURERS_LIST_QUERY_KEY, initialInput],
+      queryFn: () => listManufacturersUseCase(initialInput),
+    })
+  } catch (error) {
     return (
       <DashboardErrorState
-        title={result.error.title}
-        message={result.error.message}
-        detail={result.error.detail}
-        errorCode={result.error.code}
+        title="Manufacturers Unavailable"
+        message="The app could not load the manufacturers list."
+        detail={error instanceof Error ? error.message : "Unknown error"}
+        errorCode="MANUFACTURER_LIST_LOAD_FAILED"
       />
     )
   }
 
   return (
-    <ManufacturersClient
-      initialManufacturers={result.data}
-      initialTablePreferences={initialTablePreferences}
-      tableState={tableState}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ManufacturersClient
+        initialTablePreferences={effectivePreferences}
+        initialSearchQuery={initialInput.search ?? ""}
+        initialPage={initialInput.page}
+      />
+    </HydrationBoundary>
   )
 }

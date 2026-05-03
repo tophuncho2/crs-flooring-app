@@ -1,15 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
-import type { ManufacturerRow } from "@builders/domain"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 
-export function useManufacturersListController(initialRows: ManufacturerRow[]) {
-  const [rows, setRows] = useState(initialRows)
-  const notices = useRecordNotices()
+export function useManufacturersListController() {
+  const navigation = useRecordEntryNavigation("/dashboard/manufacturers")
+  const [message, setMessage] = useState("")
+  const [pageError, setPageError] = useState("")
 
   return {
-    rows,
-    notices,
+    message,
+    setMessage,
+    pageError,
+    setPageError,
+    openCreate: navigation.openCreate,
+    openManufacturer: navigation.openRecord,
   }
 }

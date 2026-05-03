@@ -1,16 +1,29 @@
+import { z } from "zod"
 import { ManufacturerExecutionError } from "@builders/application"
-import type { ManufacturerInput } from "@builders/application"
+import type {
+  ListInput,
+  ManufacturerInput,
+  ManufacturersListFilters,
+} from "@builders/application"
+import {
+  LIST_MANUFACTURERS_MAX_PAGE_SIZE,
+  LIST_MANUFACTURERS_PAGE_SIZE,
+} from "@builders/domain"
+
+function fail(message: string, field?: string): never {
+  throw new ManufacturerExecutionError({
+    code: "MANUFACTURER_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
 
 export function validateManufacturerInput(body: Record<string, unknown>): ManufacturerInput {
   const companyName = typeof body.companyName === "string" ? body.companyName.trim() : ""
 
   if (!companyName) {
-    throw new ManufacturerExecutionError({
-      code: "MANUFACTURER_VALIDATION_FAILED",
-      message: "companyName is required",
-      status: 400,
-      field: "companyName",
-    })
+    fail("companyName is required", "companyName")
   }
 
   return {
@@ -19,5 +32,46 @@ export function validateManufacturerInput(body: Record<string, unknown>): Manufa
     website: typeof body.website === "string" ? body.website : "",
     phone: typeof body.phone === "string" ? body.phone : "",
     email: typeof body.email === "string" ? body.email : "",
+  }
+}
+
+// --- List query validator ---
+
+const listManufacturersQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_MANUFACTURERS_MAX_PAGE_SIZE)
+    .default(LIST_MANUFACTURERS_PAGE_SIZE),
+})
+
+export function validateListManufacturersQuery(
+  searchParams: URLSearchParams,
+): ListInput<ManufacturersListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = listManufacturersQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid manufacturers list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  return {
+    search,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
   }
 }

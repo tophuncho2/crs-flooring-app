@@ -1,10 +1,9 @@
-import { createManufacturerUseCase } from "@builders/application"
-import { listManufacturers } from "@builders/db"
+import { createManufacturerUseCase, listManufacturersUseCase } from "@builders/application"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateManufacturerInput } from "./_validators"
+import { validateListManufacturersQuery, validateManufacturerInput } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -16,9 +15,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const manufacturers = await listManufacturers()
-
-    return routeJson(access, { manufacturers })
+    const url = new URL(request.url)
+    const input = validateListManufacturersQuery(url.searchParams)
+    const result = await listManufacturersUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }
