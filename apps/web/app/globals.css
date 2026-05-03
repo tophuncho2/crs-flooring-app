@@ -24,3 +24,34 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+  Always-visible horizontal scrollbar for grids + section scroll containers.
+  macOS overlay scrollbars auto-hide until interaction, which makes wide grids
+  feel un-scrollable at first sight. Forcing a classic-style track keeps the
+  affordance always visible. Applied via the `.h-scroll-always` class on the
+  canonical Grid scroll container so every section grid inherits it.
+*/
+.h-scroll-always {
+  scrollbar-gutter: stable;
+}
+.h-scroll-always::-webkit-scrollbar {
+  -webkit-appearance: none;
+  height: 10px;
+}
+.h-scroll-always::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 5px;
+}
+.h-scroll-always::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.28);
+  border-radius: 5px;
+}
+.h-scroll-always::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.42);
+}
+/* Firefox */
+.h-scroll-always {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.28) rgba(15, 23, 42, 0.04);
+}

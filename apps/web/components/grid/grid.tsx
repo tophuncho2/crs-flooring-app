@@ -86,7 +86,7 @@ export function Grid<TRow extends GridRow>({
       {rows.length === 0 ? (
         empty ?? <GridEmpty />
       ) : (
-        <div className="overflow-x-auto overscroll-x-contain">
+        <div className="h-scroll-always overflow-x-scroll overscroll-x-contain">
           <div className="w-max min-w-full">
             <GridHeader layout={layout} scroll={resolvedScroll} templateColumns={templateColumns} />
             <div>
