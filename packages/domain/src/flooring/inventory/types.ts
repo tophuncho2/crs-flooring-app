@@ -1,6 +1,10 @@
-export { type CutLogRow, type CutLogStatus } from "./cut-logs/types.js"
+export {
+  type CutLogRow,
+  type CutLogStatus,
+  type InventoryCutLogRow,
+} from "./cut-logs/types.js"
 
-import type { CutLogRow } from "./cut-logs/types.js"
+import type { InventoryCutLogRow } from "./cut-logs/types.js"
 
 /**
  * Read shape for a real-inventory row (post-alteration). `isImported` is gone
@@ -56,7 +60,7 @@ export type InventoryRow = {
 }
 
 export type InventoryDetail = InventoryRow & {
-  cutLogs: CutLogRow[]
+  cutLogs: InventoryCutLogRow[]
 }
 
 /**

@@ -12,7 +12,7 @@ import type {
   InventoryRow,
 } from "@builders/domain"
 import { db } from "../../client.js"
-import { normalizeCutLogRow } from "./cut-logs/read-repository.js"
+import { normalizeInventoryCutLogRow } from "./cut-logs/read-repository.js"
 import {
   inventoryDetailSelect,
   inventoryRowSelect,
@@ -138,7 +138,7 @@ export function normalizeInventoryDetail(
 ): InventoryDetailRecord {
   return {
     ...normalizeInventoryRow(payload),
-    cutLogs: payload.cutLogs.map(normalizeCutLogRow),
+    cutLogs: payload.cutLogs.map(normalizeInventoryCutLogRow),
   }
 }
 

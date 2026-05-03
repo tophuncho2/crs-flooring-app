@@ -96,3 +96,13 @@ export type CutLogLinkUpdate = {
   workOrderId: string | null
   workOrderItemId: string | null
 }
+
+// Read shape returned to the inventory record view: a `CutLogRow` plus
+// server-resolved labels for its work-order / material-item links. The
+// work-orders side reads plain `CutLogRow` (the WO + WOMI context is
+// already in scope on that surface). Both fields are nullable to mirror
+// the underlying link columns.
+export type InventoryCutLogRow = CutLogRow & {
+  workOrderNumber: string | null
+  workOrderItemProductLabel: string | null
+}

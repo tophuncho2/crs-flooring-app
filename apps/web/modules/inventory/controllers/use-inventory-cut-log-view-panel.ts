@@ -1,15 +1,15 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryCutLogRow } from "@builders/domain"
 
 export type InventoryCutLogViewPanelOpenSpec = {
-  cutLog: CutLogRow
+  cutLog: InventoryCutLogRow
 }
 
 export type InventoryCutLogViewPanelController = {
   open: InventoryCutLogViewPanelOpenSpec | null
-  openPanel: (cutLog: CutLogRow) => void
+  openPanel: (cutLog: InventoryCutLogRow) => void
   close: () => void
 }
 
@@ -17,13 +17,14 @@ export type InventoryCutLogViewPanelController = {
  * Right-anchored side panel state for inventory cut logs. View-only — cut-log
  * mutations live exclusively under the work-orders module (per sweep 4a/4b),
  * so this hook owns just open/close. The panel projects the selected
- * `CutLogRow` straight from the SSR-loaded inventory snapshot; no fetching,
- * form state, or dirty tracking.
+ * `InventoryCutLogRow` straight from the SSR-loaded inventory snapshot
+ * (which carries server-resolved `workOrderNumber` + product label); no
+ * fetching, form state, or dirty tracking.
  */
 export function useInventoryCutLogViewPanel(): InventoryCutLogViewPanelController {
   const [open, setOpen] = useState<InventoryCutLogViewPanelOpenSpec | null>(null)
 
-  const openPanel = useCallback((cutLog: CutLogRow) => {
+  const openPanel = useCallback((cutLog: InventoryCutLogRow) => {
     setOpen({ cutLog })
   }, [])
 

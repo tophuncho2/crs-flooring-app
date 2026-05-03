@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client"
-import { cutLogRowSelect } from "./cut-logs/shared.js"
+import { inventoryCutLogRowSelect } from "./cut-logs/shared.js"
 
 export type InventoryDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -67,7 +67,7 @@ export const inventoryRowSelect = {
 export const inventoryDetailSelect = {
   ...inventoryRowSelect,
   cutLogs: {
-    select: cutLogRowSelect,
+    select: inventoryCutLogRowSelect,
     orderBy: [{ createdAt: "asc" }],
   },
 } as const satisfies Prisma.FlooringInventorySelect

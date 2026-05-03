@@ -108,5 +108,56 @@ ui(inventory): merge cut-log grids and add view-only row-click side panel
 
 ## Cleanup follow-ups (future passes)
 
-- Resolve WO / MI ids in the panel to display numbers (open question #2).
 - Pre-existing `react/display-name` warning on `renderCutLogReadOnlyCell` (the inner returned arrow). Not introduced here; leave for a dedicated lint sweep.
+
+---
+
+## Second pass — resolve WO# + product label, slim panel to identity context
+
+Open question #2 ("WO/MI display") promoted to a real change after user feedback that UUIDs were unhelpful. Panel scope tightened: only **Status · Cut # · Work order · Material item · Created · Updated**. All quantity/notes fields dropped — the row grid already shows them, the panel is now identity context only.
+
+### Layered changes
+
+| Layer | File | Change |
+|---|---|---|
+| Domain | `packages/domain/src/flooring/inventory/cut-logs/types.ts` | New sibling type `InventoryCutLogRow = CutLogRow & { workOrderNumber: string \| null; workOrderItemProductLabel: string \| null }`. WO side keeps using plain `CutLogRow`. |
+| Domain | `packages/domain/src/flooring/inventory/types.ts` | Re-export `InventoryCutLogRow`; `InventoryDetail.cutLogs` widened to `InventoryCutLogRow[]`. |
+| Data | `packages/db/src/flooring/inventory/cut-logs/shared.ts` | New `inventoryCutLogRowSelect` (extends `cutLogRowSelect` with `workOrder.workOrderNumber` + `workOrderItem.product.{name,style,color}` joins) + `InventoryCutLogRowPayload` type. |
+| Data | `packages/db/src/flooring/inventory/cut-logs/read-repository.ts` | New `normalizeInventoryCutLogRow` — calls `normalizeCutLogRow` then stamps the two labels via `buildFlooringProductDisplayName` (per `packages/db/CLAUDE.md` carve-out). |
+| Data | `packages/db/src/flooring/inventory/shared.ts` | `inventoryDetailSelect.cutLogs.select` switched to `inventoryCutLogRowSelect`. |
+| Data | `packages/db/src/flooring/inventory/read-repository.ts` | `normalizeInventoryDetail` switched to `normalizeInventoryCutLogRow`. |
+| UI | `apps/web/modules/inventory/controllers/use-inventory-cut-log-view-panel.ts` | Hook typed at `InventoryCutLogRow`. |
+| UI | `apps/web/modules/inventory/components/record/cut-logs/inventory-cut-log-view-panel.tsx` | Stripped to 6 fields (Status, Cut #, Work order, Material item, Created, Updated). Drops unit-fallback props (no quantity cells). |
+| UI | `apps/web/modules/inventory/components/record/cut-logs/inventory-cut-logs-section.tsx` | Row type tightened to `InventoryCutLogRow`. |
+| UI | `apps/web/modules/inventory/components/record/inventory-record-panel.tsx` | Drops unit-fallback props passed to view panel. |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `tsc` build of `@builders/domain` | clean |
+| `tsc` build of `@builders/db` | clean |
+| `tsc -p apps/web/tsconfig.json --noEmit` | clean |
+| `eslint` on the four touched apps/web files | clean |
+| Browser smoke | pending |
+
+### Scope decisions
+
+- **Sibling type, not extend `CutLogRow`.** Keeps WO-side surface area unchanged; extra fields are explicit on the inventory wire shape only.
+- **Server-side resolve, not lazy fetch.** Inventory's record-detail SSR payload now joins WO + product per cut log. Two extra joins per row at read time — fine for typical record sizes (<50 cut logs).
+- **WO panel untouched** per user direction.
+
+### Suggested commit message
+
+```
+data+ui(inventory): resolve cut-log WO# and material item product server-side
+
+- Domain: add InventoryCutLogRow sibling type carrying server-resolved
+  workOrderNumber + workOrderItemProductLabel; widen InventoryDetail.cutLogs.
+- Data: inventoryCutLogRowSelect joins workOrder.workOrderNumber and
+  workOrderItem.product.{name,style,color}; normalizeInventoryCutLogRow
+  uses buildFlooringProductDisplayName per the data-layer carve-out.
+- UI: strip the inventory cut-log view panel to identity context only —
+  Status, Cut #, Work order, Material item, Created, Updated. WO panel
+  unchanged.
+```

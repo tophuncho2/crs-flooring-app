@@ -31,3 +31,34 @@ export const cutLogRowSelect = {
 export type CutLogRowPayload = Prisma.FlooringCutLogGetPayload<{
   select: typeof cutLogRowSelect
 }>
+
+/**
+ * Inventory-side cut-log read shape: `cutLogRowSelect` plus the linked
+ * work-order's `workOrderNumber` and the linked work-order item's product
+ * name parts. Used only by `inventoryDetailSelect` so the inventory side
+ * can render labels in the cut-log row + side panel without a follow-up
+ * fetch. The work-orders side still uses plain `cutLogRowSelect`.
+ */
+export const inventoryCutLogRowSelect = {
+  ...cutLogRowSelect,
+  workOrder: {
+    select: {
+      workOrderNumber: true,
+    },
+  },
+  workOrderItem: {
+    select: {
+      product: {
+        select: {
+          name: true,
+          style: true,
+          color: true,
+        },
+      },
+    },
+  },
+} as const satisfies Prisma.FlooringCutLogSelect
+
+export type InventoryCutLogRowPayload = Prisma.FlooringCutLogGetPayload<{
+  select: typeof inventoryCutLogRowSelect
+}>

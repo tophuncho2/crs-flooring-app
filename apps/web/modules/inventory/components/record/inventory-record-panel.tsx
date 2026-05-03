@@ -130,11 +130,7 @@ export function InventoryRecordPanel({
           onDelete: () => void controller.deleteRecord(),
         }}
       />
-      <InventoryCutLogViewPanel
-        controller={cutLogViewPanel}
-        stockUnitFallback={stockUnitAbbrev}
-        coverageUnitFallback={coverageUnitAbbrev}
-      />
+      <InventoryCutLogViewPanel controller={cutLogViewPanel} />
     </>
   )
 }

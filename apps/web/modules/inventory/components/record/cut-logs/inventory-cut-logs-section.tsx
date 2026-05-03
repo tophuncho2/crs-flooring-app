@@ -7,14 +7,14 @@ import {
   renderCutLogReadOnlyCell,
 } from "@/components/features/cut-log-row"
 import { Grid, GridEmpty } from "@/components/grid"
-import { formatInventoryQuantity, type CutLogRow } from "@builders/domain"
+import { formatInventoryQuantity, type InventoryCutLogRow } from "@builders/domain"
 
 export type InventoryCutLogsSectionProps = {
-  rows: CutLogRow[]
+  rows: InventoryCutLogRow[]
   stockUnitAbbrev: string
   coverageUnitAbbrev: string
   totalCutSum: string
-  onRowClick: (cutLog: CutLogRow) => void
+  onRowClick: (cutLog: InventoryCutLogRow) => void
 }
 
 /**
@@ -64,7 +64,7 @@ export function InventoryCutLogsSection({
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
       <ActionHeader title="Cut Logs" summary={<span>{summaryParts.join(" · ")}</span>} />
 
-      <Grid<CutLogRow>
+      <Grid<InventoryCutLogRow>
         rows={rows}
         layout={INVENTORY_CUT_LOG_LAYOUT}
         empty={<GridEmpty>No cut logs on this inventory.</GridEmpty>}

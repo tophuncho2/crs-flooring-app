@@ -1,15 +1,18 @@
 import type { Prisma } from "@prisma/client"
-import type {
-  CutLogParentContext,
-  CutLogRow,
-  CutLogStatus,
-  DiffExistingCutLogRow,
+import {
+  buildFlooringProductDisplayName,
+  type CutLogParentContext,
+  type CutLogRow,
+  type CutLogStatus,
+  type DiffExistingCutLogRow,
+  type InventoryCutLogRow,
 } from "@builders/domain"
 import { db } from "../../../client.js"
 import {
   cutLogRowSelect,
   type CutLogDbClient,
   type CutLogRowPayload,
+  type InventoryCutLogRowPayload,
 } from "./shared.js"
 
 export type CutLogRecord = CutLogRow
@@ -58,6 +61,31 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  }
+}
+
+/**
+ * Inventory-side cut-log normalizer. Calls `normalizeCutLogRow` for the
+ * canonical fields and stamps the two server-resolved labels needed by
+ * the inventory record-view side panel: `workOrderNumber` from the linked
+ * work order, `workOrderItemProductLabel` from the linked work-order
+ * item's product (via the pure `buildFlooringProductDisplayName` helper,
+ * per the data-layer carve-out in `packages/db/CLAUDE.md`).
+ */
+export function normalizeInventoryCutLogRow(
+  row: InventoryCutLogRowPayload,
+): InventoryCutLogRow {
+  const product = row.workOrderItem?.product ?? null
+  return {
+    ...normalizeCutLogRow(row),
+    workOrderNumber: row.workOrder?.workOrderNumber ?? null,
+    workOrderItemProductLabel: product
+      ? buildFlooringProductDisplayName({
+          name: product.name,
+          style: product.style,
+          color: product.color,
+        })
+      : null,
   }
 }
 
