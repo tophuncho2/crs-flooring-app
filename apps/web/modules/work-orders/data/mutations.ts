@@ -249,6 +249,7 @@ export async function listEligibleInventoryRequest(args: {
       remainingStock: string
       stockUnitAbbrev: string
       locationCode: string
+      sectionCode: string
     }>
   }>(
     `/api/work-orders/${args.workOrderId}/material-items/${args.workOrderItemId}/eligible-inventory`,

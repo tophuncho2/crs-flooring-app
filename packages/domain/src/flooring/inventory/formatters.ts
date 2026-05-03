@@ -35,6 +35,19 @@ export function formatLocationRafterLevel(input: { rafter: number; level: number
   return `R${input.rafter}-L${input.level}`
 }
 
+export type SectionCodeInput = {
+  warehouseNumber: number
+  sectionNumber: number
+}
+
+/**
+ * Section-only prefix of `formatFullLocationCode`. Used by UIs that filter
+ * inventory by section rather than full location.
+ */
+export function formatSectionCode(input: SectionCodeInput): string {
+  return `W${input.warehouseNumber}-S${input.sectionNumber}`
+}
+
 /**
  * Builds the canonical inventory-row label used in cut-log inventory dropdowns
  * and similar pickers.

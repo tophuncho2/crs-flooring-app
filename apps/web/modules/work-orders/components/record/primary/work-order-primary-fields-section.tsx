@@ -18,7 +18,7 @@ import type {
   PropertyOption,
   TemplateOption,
   WarehouseOption,
-} from "@/modules/work-orders/controllers/drafts"
+} from "@/modules/work-orders/controllers/record/drafts"
 
 const VACANCY_OPTIONS = [
   { value: "VACANT", label: "Vacant" },

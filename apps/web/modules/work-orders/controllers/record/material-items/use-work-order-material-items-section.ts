@@ -188,9 +188,14 @@ export function useWorkOrderMaterialItemsSection({
 
   function changeCategoryFilter(itemId: string, categoryId: string | null) {
     section.setLocalValue((previous) => ({
-      items: previous.items.map((row) =>
-        row.id === itemId ? { ...row, categoryFilterId: categoryId } : row,
-      ),
+      items: previous.items.map((row) => {
+        if (row.id !== itemId) return row
+        if (row.categoryFilterId === categoryId) return row
+        // Category change clears the product picker — products are filtered
+        // by category and the previously-picked one may not be in the new
+        // category's set. Forces the user to re-pick.
+        return { ...row, categoryFilterId: categoryId, productId: "" }
+      }),
     }))
   }
 

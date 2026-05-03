@@ -1,12 +1,10 @@
 "use client"
 
 import { Fragment, useMemo, useState } from "react"
-import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandToggle, ExpandableRow } from "@/components/grid/expandable-rows"
-import { SelectAllButton } from "@/components/features/select-batch"
 import type {
   CutLogRow,
   WorkOrderDetail,
@@ -15,13 +13,14 @@ import type {
 import type {
   CategoryOption,
   ProductOption,
-} from "@/modules/work-orders/controllers/drafts"
-import { useFinalizeCutLogBatchSection } from "@/modules/work-orders/controllers/use-finalize-cut-log-batch-section"
+} from "@/modules/work-orders/controllers/record/drafts"
+import { useFinalizeCutLogBatchSection } from "@/modules/work-orders/controllers/record/material-items/use-finalize-cut-log-batch-section"
 import {
   useWorkOrderMaterialItemsSection,
   type WorkOrderMaterialItemLocal,
-} from "@/modules/work-orders/controllers/use-work-order-material-items-section"
+} from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
+import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
@@ -154,18 +153,19 @@ export function WorkOrderMaterialItemsSection({
           />
         )
       case "product": {
-        const visibleProducts = item.categoryFilterId
+        const hasCategory = !!item.categoryFilterId
+        const visibleProducts = hasCategory
           ? productOptions.filter(
               (p) => p.categoryId === item.categoryFilterId || p.id === item.productId,
             )
-          : productOptions
+          : []
         return (
           <DropdownCell
-            editable={editable}
+            editable={editable && hasCategory}
             value={item.productId || null}
             onChange={(next) => section.changeField(item.id, "productId", next ?? "")}
             options={visibleProducts.map((p) => ({ id: p.id, label: p.label }))}
-            placeholder="Select product"
+            placeholder={hasCategory ? "Select product" : "Pick a category first"}
             ariaLabel="Material item product"
           />
         )
@@ -238,81 +238,26 @@ export function WorkOrderMaterialItemsSection({
 
   const sectionError = section.error ? section.error.message : section.noticeError || null
 
-  const finalizeButtonLabel = isFinalizingInFlight
-    ? "Finalizing…"
-    : `Finalize Selected (${finalize.eligibleSelectedIds.length})`
-  const canFinalize =
-    !isFinalizingInFlight &&
-    !section.isSaving &&
-    finalize.eligibleSelectedIds.length > 0
-
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <ActionHeader
-        title="Material Items"
-        summary={
-          <span>
-            {section.items.length} item{section.items.length === 1 ? "" : "s"}
-            {finalize.selectedIds.size > 0
-              ? ` · ${finalize.selectedIds.size} selected (${finalize.eligibleSelectedIds.length} eligible)`
-              : ""}
-          </span>
-        }
-        status={
-          isSelectionActive && finalize.eligibleSelectedIds.length > 0
-            ? {
-                tone: "processing",
-                label: "Ready to finalize",
-                detail: "Worker will stamp before / after / finalCutSequence",
-              }
-            : undefined
-        }
-        extraActions={
-          <SelectAllButton
-            isSelectionActive={isSelectionActive}
-            selectedCount={finalize.selectedIds.size}
-            eligibleCount={finalize.eligibleCount}
-            canSelect={finalize.canToggleSelection}
-            onToggle={finalize.toggleAllEligible}
-          />
-        }
-        actions={[
-          {
-            key: "add-mi",
-            label: "+ Add Material Item",
-            onClick: section.addItem,
-            kind: "secondary",
-            disabled: section.isSaving || isSelectionActive,
-          },
-          {
-            key: "discard-mi",
-            label: "Discard",
-            onClick: () => section.discard(),
-            kind: "secondary",
-            disabled: !section.isDirty || section.isSaving || isSelectionActive,
-          },
-          {
-            key: "save-mi",
-            label: section.isSaving ? "Saving…" : "Save Material Items",
-            onClick: () => void section.save(),
-            kind: "primary",
-            disabled:
-              !section.isDirty || section.isSaving || section.hasConflict || isSelectionActive,
-          },
-          // Section-wide "Save Pending Cuts" / "Discard Pending Cuts"
-          // buttons are removed in this sweep — pending cut log
-          // mutations are now per-row inline triggers (one circular
-          // commit button per row).
-          {
-            key: "finalize",
-            label: finalizeButtonLabel,
-            onClick: () => void finalize.fire(),
-            kind: "primary",
-            disabled: !canFinalize,
-          },
-        ]}
-        message={section.noticeMessage}
+      <MaterialItemsSectionHeader
+        itemsCount={section.items.length}
+        selectedCount={finalize.selectedIds.size}
+        eligibleSelectedCount={finalize.eligibleSelectedIds.length}
+        eligibleCount={finalize.eligibleCount}
+        canToggleSelection={finalize.canToggleSelection}
+        isSelectionActive={isSelectionActive}
+        isFinalizingInFlight={isFinalizingInFlight}
+        isSaving={section.isSaving}
+        isDirty={section.isDirty}
+        hasConflict={section.hasConflict}
+        noticeMessage={section.noticeMessage}
         error={sectionError || finalize.error || null}
+        onToggleSelectAll={finalize.toggleAllEligible}
+        onFinalize={() => void finalize.fire()}
+        onDiscard={() => section.discard()}
+        onSave={() => void section.save()}
+        onAddItem={section.addItem}
       />
 
       <Grid<WorkOrderMaterialItemLocal>

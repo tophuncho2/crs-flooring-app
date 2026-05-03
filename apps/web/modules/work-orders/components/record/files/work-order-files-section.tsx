@@ -1,7 +1,7 @@
 "use client"
 
 import { StatusBadge } from "@/components/badges"
-import { useWorkOrderFilesSection } from "@/modules/work-orders/controllers/use-work-order-files-section"
+import { useWorkOrderFilesSection } from "@/modules/work-orders/controllers/record/files/use-work-order-files-section"
 import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 
 function statusTone(status: WorkOrderFileRow["status"]) {

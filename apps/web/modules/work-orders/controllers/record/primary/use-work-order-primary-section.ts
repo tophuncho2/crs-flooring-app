@@ -8,8 +8,8 @@ import {
   type WorkOrderDetail,
   type WorkOrderForm,
 } from "@builders/domain"
-import { toUpdateWorkOrderInput, validateWorkOrderPrimaryForm } from "./drafts"
-import { useWorkOrdersListMutations } from "./use-work-orders-list-mutations"
+import { toUpdateWorkOrderInput, validateWorkOrderPrimaryForm } from "@/modules/work-orders/controllers/record/drafts"
+import { useWorkOrdersListMutations } from "@/modules/work-orders/controllers/list/use-work-orders-list-mutations"
 
 export function useWorkOrderPrimarySection({
   page,

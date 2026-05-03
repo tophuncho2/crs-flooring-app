@@ -3,7 +3,7 @@
 import { useCallback } from "react"
 import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
 import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
-import { finalizeWorkOrderCutLogBatchRequest } from "../data/mutations"
+import { finalizeWorkOrderCutLogBatchRequest } from "@/modules/work-orders/data/mutations"
 
 const isPendingRow = (row: CutLogRow) =>
   (row.status as FlooringCutLogStatus) === "PENDING"

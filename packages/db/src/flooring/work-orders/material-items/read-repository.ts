@@ -2,6 +2,7 @@ import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
 import {
   formatFullLocationCode,
+  formatSectionCode,
   normalizeWorkOrderMaterialItem,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -74,6 +75,7 @@ export type EligibleInventoryRow = {
   remainingStock: string
   stockUnitAbbrev: string
   locationCode: string
+  sectionCode: string
 }
 
 /**
@@ -145,6 +147,12 @@ export async function listEligibleInventoryForWorkOrderItem(
               sectionNumber: inv.location.section.number,
               rafter: inv.location.rafter,
               level: inv.location.level,
+            })
+          : "",
+        sectionCode: inv.location
+          ? formatSectionCode({
+              warehouseNumber: inv.location.warehouse.number,
+              sectionNumber: inv.location.section.number,
             })
           : "",
         _remaining: remaining,

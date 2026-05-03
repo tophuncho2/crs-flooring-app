@@ -11,7 +11,7 @@ import {
   WORK_ORDERS_LIST_QUERY_KEY,
   listWorkOrdersRequest,
 } from "@/modules/work-orders/data/list-work-orders-request"
-import { useWorkOrdersListController } from "@/modules/work-orders/controllers/use-work-orders-list-controller"
+import { useWorkOrdersListController } from "@/modules/work-orders/controllers/list/use-work-orders-list-controller"
 import { WorkOrdersTable } from "./work-orders-table"
 
 const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["workOrderNumber"] as const

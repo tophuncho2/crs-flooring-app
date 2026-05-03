@@ -9,7 +9,7 @@ import { useSingleSectionCreateController } from "@/controllers/record/use-singl
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { EMPTY_WORK_ORDER_FORM, type WorkOrderForm } from "@builders/domain"
 import type { WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
-import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/drafts"
+import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/record/drafts"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 
 function WorkOrderCreatePanel({
