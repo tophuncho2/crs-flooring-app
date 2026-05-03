@@ -33,6 +33,10 @@ export type CutLogRow = {
   id: string
   cutLogNumber: string
   inventoryId: string
+  inventoryNumber: string
+  itemNumber: string | null
+  dyeLot: string | null
+  categorySlug: string
   workOrderId: string | null
   workOrderItemId: string | null
   before: string | null

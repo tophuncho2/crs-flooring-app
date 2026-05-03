@@ -8,32 +8,8 @@ import {
   getCutLogById,
   getCutLogsForFinalize,
   getMaxFinalCutSequenceForInventory,
-  listCutLogsByInventoryId,
   type CutLogRecord,
 } from "./read-repository.js"
-
-/**
- * Create input for a cut log. Status always starts as `PENDING`. The
- * worker-only fields (`before` / `after` / `cost` / `freight` /
- * `finalCutSequence` / `isFinal`) and the `void` flag are not accepted on
- * create — they're stamped later by the finalize / void workers.
- *
- * `coverageCut` is the per-row coverage snapshot. Caller (use case)
- * computes it via the domain helper `computeCutCoverage({ cut,
- * coveragePerUnit, category })` BEFORE invoking this primitive — keeps
- * the math in one place. Caller is responsible for `assertCutLogLinkageSymmetry`
- * (the data layer no longer imports throwing rules per
- * `packages/db/CLAUDE.md` rule 1).
- */
-export type CreateCutLogRecordInput = {
-  inventoryId: string
-  cut: Prisma.Decimal | string | number
-  coverageCut: Prisma.Decimal | string | number | null
-  workOrderId: string | null
-  workOrderItemId: string | null
-  notes: string | null
-  isWaste: boolean
-}
 
 /**
  * Pending-save patch — only the user-editable PENDING fields (per
@@ -71,40 +47,6 @@ export type FinalizeCutLogRecordInput = {
 // here per `packages/db/CLAUDE.md` rule 1), applies the cut-log mutation
 // via these primitives, and adjusts `inventory.totalCutSum` in the same
 // transaction via `updateInventoryTotalCutSum`.
-
-export async function createCutLogRecord(
-  tx: Prisma.TransactionClient,
-  input: CreateCutLogRecordInput,
-): Promise<CutLogRecord> {
-  const row = await tx.flooringCutLog.create({
-    data: {
-      inventory: { connect: { id: input.inventoryId } },
-      cut: input.cut,
-      coverageCut: input.coverageCut,
-      before: 0,
-      after: 0,
-      status: "PENDING",
-      isFinal: false,
-      cost: null,
-      freight: null,
-      isWaste: input.isWaste,
-      void: false,
-      notes: input.notes,
-      ...(input.workOrderId
-        ? { workOrder: { connect: { id: input.workOrderId } } }
-        : {}),
-      ...(input.workOrderItemId
-        ? { workOrderItem: { connect: { id: input.workOrderItemId } } }
-        : {}),
-    },
-    select: { id: true },
-  })
-  const record = await getCutLogById(row.id, tx)
-  if (!record) {
-    throw new Error("createCutLogRecord: record disappeared mid-transaction")
-  }
-  return record
-}
 
 function buildPendingUpdateData(
   input: UpdateCutLogPendingInput,
@@ -375,118 +317,6 @@ export async function markCutLogForVoid(
 // ---------------------------------------------------------------------------
 // Worker-side apply primitives
 // ---------------------------------------------------------------------------
-
-/**
- * Diff-save primitive for the cut-logs section's pending-save flow.
- *
- * Caller contract (sweep-4 worker-side use case):
- *  - Opens the transaction via `withDatabaseTransaction` and locks the
- *    parent inventory row FOR UPDATE before invoking.
- *  - Validated the diff via `validateCutLogsDiff` (domain) — form rules,
- *    optimistic-lock matches, totalCutSum invariant, etc.
- *  - Pre-assigned UUIDs to added drafts via the domain helper
- *    `assignCutLogDiffIds` and passes them as `id` on each added entry.
- *  - Pre-computed `coverageCut` for each added/modified row via the
- *    domain helper `computeCutCoverage`.
- *  - Will recompute `inventory.totalCutSum` after this primitive returns
- *    via `computeTotalCutSum` + `updateInventoryTotalCutSum`.
- *
- * Execution order:
- *  1. deleteMany(deleted.ids)
- *  2. Build tempIdMap from added (pure, no round-trips)
- *  3. createMany(added) using pre-assigned ids; status defaults to PENDING;
- *     cutLogNumber is DB-generated via the sequence default
- *  4. Per-row update for each modified entry (heterogeneous patches)
- *  5. Reload post-state via listCutLogsByInventoryId(inventoryId, tx)
- *  6. Return { rows, tempIdMap }
- *
- * Status of touched rows stays PENDING throughout — pending-save does not
- * move rows out of PENDING; it just edits data. The outbox event is the
- * in-flight marker.
- */
-export type ApplyCutLogPendingSaveDiffInput = {
-  inventoryId: string
-  added: Array<{
-    id: string
-    tempId: string
-    cut: Prisma.Decimal | string | number
-    coverageCut: Prisma.Decimal | string | number | null
-    cost: Prisma.Decimal | string | number | null
-    freight: Prisma.Decimal | string | number | null
-    isWaste: boolean
-    notes: string | null
-  }>
-  modified: Array<{
-    id: string
-    patch: UpdateCutLogPendingInput
-  }>
-  deleted: Array<{ id: string }>
-}
-
-export type ApplyCutLogPendingSaveDiffResult = {
-  rows: CutLogRecord[]
-  tempIdMap: Record<string, string>
-}
-
-export async function applyCutLogPendingSaveDiff(
-  tx: Prisma.TransactionClient,
-  input: ApplyCutLogPendingSaveDiffInput,
-): Promise<ApplyCutLogPendingSaveDiffResult> {
-  // Step 1 — batch delete
-  if (input.deleted.length > 0) {
-    await tx.flooringCutLog.deleteMany({
-      where: {
-        id: { in: input.deleted.map((d) => d.id) },
-        inventoryId: input.inventoryId,
-      },
-    })
-  }
-
-  // Step 2 — tempIdMap from added (pure)
-  const tempIdMap: Record<string, string> = {}
-  for (const draft of input.added) {
-    tempIdMap[draft.tempId] = draft.id
-  }
-
-  // Step 3 — batch create with pre-assigned ids. status defaults to PENDING
-  // per schema; cutLogNumber is DB-generated via the sequence default;
-  // before/after default to 0 (worker-stamped at finalize time).
-  if (input.added.length > 0) {
-    await tx.flooringCutLog.createMany({
-      data: input.added.map((draft) => ({
-        id: draft.id,
-        inventoryId: input.inventoryId,
-        cut: draft.cut,
-        coverageCut: draft.coverageCut,
-        before: 0,
-        after: 0,
-        status: "PENDING",
-        isFinal: false,
-        cost: draft.cost,
-        freight: draft.freight,
-        isWaste: draft.isWaste,
-        void: false,
-        notes: draft.notes,
-      })),
-    })
-  }
-
-  // Step 4 — per-row updates (patches are heterogeneous)
-  for (const modification of input.modified) {
-    const data = buildPendingUpdateData(modification.patch)
-    if (Object.keys(data).length === 0) continue
-    await tx.flooringCutLog.update({
-      where: { id: modification.id },
-      data,
-    })
-  }
-
-  // Step 5 — reload post-state via the listing read primitive (single
-  // query). Mirrors `applyStagedInventoryRowsDiff` exactly.
-  const rows = await listCutLogsByInventoryId(input.inventoryId, tx)
-
-  return { rows, tempIdMap }
-}
 
 /**
  * Cross-entity batch finalize primitive. Lives in the cut-logs write-repo

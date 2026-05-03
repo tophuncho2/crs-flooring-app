@@ -10,6 +10,7 @@ import {
 import {
   assertCutLogLinkageSymmetry,
   assertCutSumWithinStartingStock,
+  buildPendingCutLogInventorySnapshot,
   CutLogDomainError,
   deriveCutLogCoverageCutString,
   describeCutLogPendingFormIssues,
@@ -116,7 +117,9 @@ export async function createPendingCutLogUseCase(
       categorySlug: inventory.categorySlug,
     })
 
-    // 7. Insert the row, stamping the unit snapshot from the inventory.
+    // 7. Insert the row, stamping the unit + identity snapshots from the
+    // inventory. Both snapshots are frozen at create — finalize and void
+    // do not re-stamp them.
     const cutLog = await insertPendingCutLogRow(c, {
       workOrderId: input.workOrderId,
       workOrderItemId: input.workOrderItemId,
@@ -131,6 +134,12 @@ export async function createPendingCutLogUseCase(
         itemCoverageUnitName: inventory.itemCoverageUnitName,
         itemCoverageUnitAbbrev: inventory.itemCoverageUnitAbbrev,
       },
+      inventorySnapshot: buildPendingCutLogInventorySnapshot({
+        inventoryNumber: inventory.inventoryNumber,
+        itemNumber: inventory.itemNumber,
+        dyeLot: inventory.dyeLot,
+        categorySlug: inventory.categorySlug,
+      }),
     })
 
     // 8. Recompute totalCutSum.

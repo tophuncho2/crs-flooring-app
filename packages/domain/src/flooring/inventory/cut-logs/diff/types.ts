@@ -67,6 +67,9 @@ export type CutLogsDiff = {
  */
 export type CutLogParentContext = {
   inventoryId: string
+  inventoryNumber: string
+  itemNumber: string | null
+  dyeLot: string | null
   startingStock: string
   currentTotalCutSum: string
   coveragePerUnit: string | null

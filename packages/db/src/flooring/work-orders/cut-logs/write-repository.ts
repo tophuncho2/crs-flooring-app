@@ -1,5 +1,8 @@
 import { Prisma } from "@prisma/client"
-import { computeTotalCutSum } from "@builders/domain"
+import {
+  computeTotalCutSum,
+  type PendingCutLogInventorySnapshot,
+} from "@builders/domain"
 import {
   normalizeCutLogRow,
   type CutLogRecord,
@@ -158,19 +161,28 @@ export type InsertPendingCutLogRowInput = {
   /** Empty string accepted; persisted as null when blank. */
   notes: string
   unitSnapshot: PendingCutLogUnitSnapshot
+  /**
+   * Identity snapshot from the parent inventory (`inventoryNumber`,
+   * optional `itemNumber`, optional `dyeLot`, `categorySlug`). Stamped
+   * at insert and frozen — finalize and void do not re-stamp. Lets the
+   * cut-log subgrid render its Inventory column (`inventoryNumber -
+   * itemNumber - dyeLot` package) directly off the cut log row instead
+   * of resolving via a per-WOMI eligible-inventory fetch.
+   */
+  inventorySnapshot: PendingCutLogInventorySnapshot
 }
 
 /**
  * Single-row insert for the synchronous WO-side create flow. Caller has
  * locked the parent inventory FOR UPDATE and read the inventory's unit
- * fields + computed `coverageCut`. This primitive is a pure persistence
- * call — no business rules, no invariant checks (those run in the use
- * case before/after via the domain).
+ * fields + identity fields + computed `coverageCut`. This primitive is a
+ * pure persistence call — no business rules, no invariant checks (those
+ * run in the use case before/after via the domain).
  *
- * Stamps the four unit-snapshot fields from the input (which the use
- * case sourced from the parent inventory). After this insert returns,
- * the unit-snapshot fields are immutable on the cut log — no
- * primitive in this file writes them again.
+ * Stamps the four unit-snapshot fields and the four identity-snapshot
+ * fields from the input (which the use case sourced from the parent
+ * inventory). After this insert returns, the snapshot fields are
+ * immutable on the cut log — no primitive in this file writes them again.
  *
  * Worker-only fields stay at their schema defaults / null:
  *   - `before` / `after` / `finalCutSequence`: null (finalize worker
@@ -197,6 +209,10 @@ export async function insertPendingCutLogRow(
       stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
       itemCoverageUnitName: input.unitSnapshot.itemCoverageUnitName,
       itemCoverageUnitAbbrev: input.unitSnapshot.itemCoverageUnitAbbrev,
+      inventoryNumber: input.inventorySnapshot.inventoryNumber,
+      itemNumber: input.inventorySnapshot.itemNumber,
+      dyeLot: input.inventorySnapshot.dyeLot,
+      categorySlug: input.inventorySnapshot.categorySlug,
     },
     select: cutLogRowSelect,
   })

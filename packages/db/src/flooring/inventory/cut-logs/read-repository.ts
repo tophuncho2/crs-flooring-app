@@ -41,6 +41,10 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     id: row.id,
     cutLogNumber: row.cutLogNumber,
     inventoryId: row.inventoryId,
+    inventoryNumber: row.inventoryNumber,
+    itemNumber: row.itemNumber ?? null,
+    dyeLot: row.dyeLot ?? null,
+    categorySlug: row.categorySlug,
     workOrderId: row.workOrderId ?? null,
     workOrderItemId: row.workOrderItemId ?? null,
     before: toDecimalStringOrNull(row.before),
@@ -277,6 +281,9 @@ export async function getInventoryParentContextForCutLogs(
     where: { id: inventoryId },
     select: {
       id: true,
+      inventoryNumber: true,
+      itemNumber: true,
+      dyeLot: true,
       startingStock: true,
       totalCutSum: true,
       coveragePerUnit: true,
@@ -290,6 +297,9 @@ export async function getInventoryParentContextForCutLogs(
   if (!row) return null
   return {
     inventoryId: row.id,
+    inventoryNumber: row.inventoryNumber,
+    itemNumber: row.itemNumber ?? null,
+    dyeLot: row.dyeLot ?? null,
     startingStock: row.startingStock.toString(),
     currentTotalCutSum: row.totalCutSum.toString(),
     coveragePerUnit:
