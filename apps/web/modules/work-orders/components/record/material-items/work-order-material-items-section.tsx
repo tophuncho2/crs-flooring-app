@@ -154,18 +154,29 @@ export function WorkOrderMaterialItemsSection({
         )
       case "product": {
         const hasCategory = !!item.categoryFilterId
-        const visibleProducts = hasCategory
-          ? productOptions.filter(
-              (p) => p.categoryId === item.categoryFilterId || p.id === item.productId,
-            )
-          : []
+        if (!hasCategory) {
+          // Disabled DropdownCell would render a dash via its static-mode
+          // fallback (matched?.label || "-"), hiding the prompt. Render the
+          // hint inline instead so the cell is visible and self-explanatory.
+          return (
+            <span
+              aria-label="Material item product"
+              className="block truncate text-sm italic text-[var(--foreground)]/55"
+            >
+              Pick a category first
+            </span>
+          )
+        }
+        const visibleProducts = productOptions.filter(
+          (p) => p.categoryId === item.categoryFilterId || p.id === item.productId,
+        )
         return (
           <DropdownCell
-            editable={editable && hasCategory}
+            editable={editable}
             value={item.productId || null}
             onChange={(next) => section.changeField(item.id, "productId", next ?? "")}
             options={visibleProducts.map((p) => ({ id: p.id, label: p.label }))}
-            placeholder={hasCategory ? "Select product" : "Pick a category first"}
+            placeholder="Select product"
             ariaLabel="Material item product"
           />
         )
