@@ -25,7 +25,5 @@ export const WO_CUT_LOG_LAYOUT: GridLayout<CutLogGridRow> = {
     { key: "finalSeq", label: "Seq", minWidth: 64, grow: 0, align: "center" },
     { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
     { key: "isWaste", label: "Waste", minWidth: 70, grow: 0, align: "center" },
-    { key: "createdAt", label: "Created", minWidth: 140, grow: 0 },
-    { key: "updatedAt", label: "Updated", minWidth: 140, grow: 0 },
   ],
 }
