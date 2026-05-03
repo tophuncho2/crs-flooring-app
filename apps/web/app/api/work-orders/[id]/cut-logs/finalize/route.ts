@@ -18,16 +18,12 @@ type RouteContext = {
 /**
  * POST /api/work-orders/[id]/cut-logs/finalize
  *
- * Producer route for the WO-scoped single-row finalize flow. Each
- * request finalizes exactly one cut log under one inventory; multiple
- * back-to-back finalizes on the same WOMI queue cleanly because the
- * WOMI status is no longer consulted.
- *
- * Calls `finalizeWorkOrderCutLogUseCase`, which validates the row's
- * finalizability and writes a `flooring.work-order.cut-log.finalize`
- * outbox event. Returns 202 Accepted; the worker then takes the parent
- * inventory's row lock and stamps `before` / `after` /
- * `finalCutSequence`.
+ * Synchronous single-row finalize. Calls `finalizeWorkOrderCutLogUseCase`,
+ * which locks the parent inventory FOR UPDATE, validates finalizability,
+ * stamps `before` / `after` / `finalCutSequence` and flips status to FINAL
+ * in one TX. Returns 200 with the stamped cut log row. Idempotency is
+ * provided by the `canFinalizeCutLog` predicate (already-FINAL rows return
+ * 409) plus the standard mutation-receipt window.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
@@ -61,35 +57,31 @@ export async function POST(request: Request, { params }: RouteContext) {
     })
     if (receipt.replay) return receipt.replay
 
-    const requestedBy = { userId: access.user.id, userEmail: access.user.email }
-
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Work-order cut-log finalize queued",
+        message: "Work-order cut-log finalized",
         action: "work-orders.cut-logs.finalize",
         route: "/api/work-orders/[id]/cut-logs/finalize",
-        entityType: "flooringWorkOrder",
-        entityId: workOrderId,
+        entityType: "flooringCutLog",
+        entityId: input.cutLogId,
       },
       () =>
         finalizeWorkOrderCutLogUseCase({
           workOrderId,
-          requestKey: input.requestKey,
           cutLogId: input.cutLogId,
-          requestedBy,
         }),
     )
 
-    const responseBody = { finalize: result }
+    const responseBody = result
     await finalizeMutationReceipt({
       scope: "work-orders.cut-logs.finalize",
       access,
       mutation,
-      responseStatus: 202,
-      responseBody,
+      responseStatus: 200,
+      responseBody: responseBody as unknown as Record<string, unknown>,
     })
-    return routeJson(access, responseBody, { status: 202 })
+    return routeJson(access, responseBody)
   } catch (error) {
     return routeError(access, error)
   }

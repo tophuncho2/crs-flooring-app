@@ -163,20 +163,14 @@ export async function deletePendingCutLogRequest(args: {
 }
 
 export type FinalizeCutLogResponse = {
-  finalize: {
-    outboxEventId: string
-    wasDuplicate: boolean
-    touchedWorkOrderItemId: string
-  }
+  cutLog: CutLogRow
 }
 
 export async function finalizeWorkOrderCutLogRequest(args: {
   workOrderId: string
-  requestKey: string
   cutLogId: string
 }) {
   const body = withMutationMeta({
-    requestKey: args.requestKey,
     cutLogId: args.cutLogId,
   } as Record<string, unknown>)
   return requestJson<FinalizeCutLogResponse>(

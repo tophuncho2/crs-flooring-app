@@ -6,8 +6,6 @@ const workerEnvironmentSchema = z.object({
   REDIS_URL: z.string().url("REDIS_URL must be a valid URL").optional(),
   MATERIALIZE_WORKER_CONCURRENCY: z.coerce.number().int().positive().default(1),
   MATERIALIZE_WORKER_LOCK_DURATION_MS: z.coerce.number().int().positive().default(60_000),
-  WORK_ORDER_FINALIZE_CUT_LOG_WORKER_CONCURRENCY: z.coerce.number().int().positive().default(1),
-  WORK_ORDER_FINALIZE_CUT_LOG_WORKER_LOCK_DURATION_MS: z.coerce.number().int().positive().default(60_000),
   WORK_ORDER_FILE_GENERATION_WORKER_CONCURRENCY: z.coerce.number().int().positive().default(1),
   // PDF render + bucket upload can take ~30s; lock duration is generous so
   // a slow render does not let the lock expire mid-flight.
@@ -37,8 +35,6 @@ export type WorkerEnvironment = {
   queueRedisUrl: string
   materializeWorkerConcurrency: number
   materializeWorkerLockDurationMs: number
-  workOrderFinalizeCutLogWorkerConcurrency: number
-  workOrderFinalizeCutLogWorkerLockDurationMs: number
   workOrderFileGenerationWorkerConcurrency: number
   workOrderFileGenerationWorkerLockDurationMs: number
   awsAccessKeyId: string | undefined
@@ -56,10 +52,6 @@ export function getWorkerEnvironment(source: NodeJS.ProcessEnv = process.env): W
     REDIS_URL: source.REDIS_URL,
     MATERIALIZE_WORKER_CONCURRENCY: source.MATERIALIZE_WORKER_CONCURRENCY,
     MATERIALIZE_WORKER_LOCK_DURATION_MS: source.MATERIALIZE_WORKER_LOCK_DURATION_MS,
-    WORK_ORDER_FINALIZE_CUT_LOG_WORKER_CONCURRENCY:
-      source.WORK_ORDER_FINALIZE_CUT_LOG_WORKER_CONCURRENCY,
-    WORK_ORDER_FINALIZE_CUT_LOG_WORKER_LOCK_DURATION_MS:
-      source.WORK_ORDER_FINALIZE_CUT_LOG_WORKER_LOCK_DURATION_MS,
     WORK_ORDER_FILE_GENERATION_WORKER_CONCURRENCY:
       source.WORK_ORDER_FILE_GENERATION_WORKER_CONCURRENCY,
     WORK_ORDER_FILE_GENERATION_WORKER_LOCK_DURATION_MS:
@@ -77,10 +69,6 @@ export function getWorkerEnvironment(source: NodeJS.ProcessEnv = process.env): W
     queueRedisUrl: parsed.QUEUE_REDIS_URL ?? parsed.REDIS_URL!,
     materializeWorkerConcurrency: parsed.MATERIALIZE_WORKER_CONCURRENCY,
     materializeWorkerLockDurationMs: parsed.MATERIALIZE_WORKER_LOCK_DURATION_MS,
-    workOrderFinalizeCutLogWorkerConcurrency:
-      parsed.WORK_ORDER_FINALIZE_CUT_LOG_WORKER_CONCURRENCY,
-    workOrderFinalizeCutLogWorkerLockDurationMs:
-      parsed.WORK_ORDER_FINALIZE_CUT_LOG_WORKER_LOCK_DURATION_MS,
     workOrderFileGenerationWorkerConcurrency:
       parsed.WORK_ORDER_FILE_GENERATION_WORKER_CONCURRENCY,
     workOrderFileGenerationWorkerLockDurationMs:

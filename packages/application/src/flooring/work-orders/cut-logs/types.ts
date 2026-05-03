@@ -1,7 +1,4 @@
-export type RequestedBy = {
-  userId: string
-  userEmail: string
-}
+import type { CutLogRecord } from "@builders/db"
 
 // Per-row sync pending-cut-log mutation inputs are owned by the domain
 // layer (single source of truth). Re-exported here so consumers that
@@ -14,22 +11,13 @@ export type {
   DeletePendingCutLogInput,
 } from "@builders/domain"
 
-// Diff types from the prior async pending-save flow have been removed
-// (sweep replacing batch save with per-row sync mutations). Per-row
-// inputs (`CreatePendingCutLogInput` / `UpdatePendingCutLogInput` /
-// `DeletePendingCutLogInput`) are re-exported above from the domain.
-
 export type FinalizeWorkOrderCutLogInput = {
   workOrderId: string
-  requestKey: string
   cutLogId: string
-  requestedBy: RequestedBy
 }
 
 export type FinalizeWorkOrderCutLogResult = {
-  outboxEventId: string
-  wasDuplicate: boolean
-  touchedWorkOrderItemId: string
+  cutLog: CutLogRecord
 }
 
 export type VoidWorkOrderCutLogInput = {

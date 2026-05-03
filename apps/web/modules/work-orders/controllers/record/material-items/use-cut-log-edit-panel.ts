@@ -267,19 +267,10 @@ export function useCutLogEditPanel({
     mutationFn: (input: { workOrderItemId: string; cutLog: CutLogRow }) =>
       finalizeWorkOrderCutLogRequest({
         workOrderId,
-        requestKey: `${input.cutLog.id}:${Date.now()}`,
         cutLogId: input.cutLog.id,
       }),
-    onSuccess: (_response, variables) => {
-      // Optimistic: mark FINAL. Worker stamps before/after/seq async; the
-      // section will reflect those once the parent re-renders with fresh
-      // server data on next page refresh.
-      const finalizing: CutLogRow = {
-        ...variables.cutLog,
-        status: "FINAL" as FlooringCutLogStatus,
-        isFinal: true,
-      }
-      publish({ kind: "upsert", workOrderItemId: variables.workOrderItemId, cutLog: finalizing })
+    onSuccess: (response, variables) => {
+      publish({ kind: "upsert", workOrderItemId: variables.workOrderItemId, cutLog: response.cutLog })
       setOpen(null)
     },
     onError: (err: unknown) => {

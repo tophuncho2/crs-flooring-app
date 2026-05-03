@@ -270,7 +270,6 @@ export function validateDeletePendingCutLogInput(
 // ---------------------------------------------------------------------------
 
 export type ValidatedFinalizeWorkOrderCutLogInput = {
-  requestKey: string
   cutLogId: string
 }
 
@@ -278,7 +277,6 @@ export function validateFinalizeWorkOrderCutLogInput(
   body: Record<string, unknown>,
 ): ValidatedFinalizeWorkOrderCutLogInput {
   return {
-    requestKey: requireString(body.requestKey, "requestKey", failCutLog),
     cutLogId: requireString(body.cutLogId, "cutLogId", failCutLog),
   }
 }

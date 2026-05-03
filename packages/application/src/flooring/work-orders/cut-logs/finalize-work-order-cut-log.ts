@@ -1,11 +1,12 @@
 import {
   Prisma,
-  createQueueOutboxEvent,
+  applyFinalizeWorkOrderCutLog,
+  getCutLogById,
+  lockInventoryForCutLog,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
-  FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
-  FinalizeWorkOrderCutLogPayloadSchema,
+  assertBeforeCutAfterInvariant,
   canFinalizeCutLog,
   getCutLogFinalizabilityBlocker,
 } from "@builders/domain"
@@ -16,19 +17,20 @@ import type {
 } from "./types.js"
 
 /**
- * Producer for the single-row finalize flow.
+ * Synchronous single-row finalize. In one TX:
+ *   1. Read the row's `inventoryId`.
+ *   2. Lock the parent inventory FOR UPDATE.
+ *   3. Re-read the row under the lock and run the finalizability predicate.
+ *   4. Stamp `before` / `after` / `finalCutSequence` and flip status to FINAL
+ *      via the data-layer `applyFinalizeWorkOrderCutLog`.
+ *   5. Defensively re-assert the `before − cut === after` invariant.
+ *   6. Re-read the normalized row so the response carries the canonical
+ *      `CutLogRow` shape (matching create/update return).
  *
- * Finalization is one-cut-log-at-a-time, triggered from the cut-log side
- * panel's Finalize button. In a single TX:
- *   1. Read the cut log. Reject if it doesn't link to the input
- *      `workOrderId`, isn't currently PENDING, or fails the domain
- *      `canFinalizeCutLog` predicate.
- *   2. Write the outbox event with idempotency key folding `requestKey`.
- *
- * The worker takes the parent inventory's row lock and stamps
- * `before` / `after` / `finalCutSequence` based on the inventory's
- * current state. WOMI status is not consulted or mutated by this flow —
- * the inventory lock is the sole correctness mechanism.
+ * No outbox, no worker, no replay tolerance. Errors are terminal HTTP
+ * responses; a double-click after the row is FINAL gets a deterministic
+ * 409 from `canFinalizeCutLog`. WOMI status is not consulted or mutated —
+ * the inventory row lock is the sole correctness mechanism.
  */
 export async function finalizeWorkOrderCutLogUseCase(
   input: FinalizeWorkOrderCutLogInput,
@@ -36,6 +38,21 @@ export async function finalizeWorkOrderCutLogUseCase(
 ): Promise<FinalizeWorkOrderCutLogResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
+
+    const initial = await c.flooringCutLog.findUnique({
+      where: { id: input.cutLogId },
+      select: { inventoryId: true },
+    })
+    if (initial === null) {
+      throw new WorkOrderCutLogExecutionError({
+        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
+        message: "Cut log not found",
+        status: 404,
+        payload: { cutLogId: input.cutLogId },
+      })
+    }
+
+    await lockInventoryForCutLog(c, initial.inventoryId)
 
     const row = await c.flooringCutLog.findUnique({
       where: { id: input.cutLogId },
@@ -50,7 +67,6 @@ export async function finalizeWorkOrderCutLogUseCase(
         cut: true,
       },
     })
-
     if (row === null) {
       throw new WorkOrderCutLogExecutionError({
         code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
@@ -93,38 +109,34 @@ export async function finalizeWorkOrderCutLogUseCase(
       })
     }
 
-    const requestedAt = new Date().toISOString()
-    const idempotencyKey = [
-      "wo-cl-finalize",
-      input.workOrderId,
-      input.requestKey,
-    ].join(":")
-
-    const payload = FinalizeWorkOrderCutLogPayloadSchema.parse({
-      version: "v1",
-      topic: FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
-      workOrderId: input.workOrderId,
-      requestKey: input.requestKey,
+    const { stampedRow } = await applyFinalizeWorkOrderCutLog(c, {
       cutLogId: input.cutLogId,
-      requestedBy: input.requestedBy,
-      requestedAt,
+    })
+    if (stampedRow === null) {
+      throw new WorkOrderCutLogExecutionError({
+        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
+        message: "Cut log vanished mid-finalize",
+        status: 404,
+        payload: { cutLogId: input.cutLogId },
+      })
+    }
+
+    assertBeforeCutAfterInvariant({
+      before: stampedRow.before,
+      cut: stampedRow.cut,
+      after: stampedRow.after,
     })
 
-    const { event, wasDuplicate } = await createQueueOutboxEvent(
-      {
-        topic: FINALIZE_WORK_ORDER_CUT_LOG_TOPIC,
-        aggregateType: "FlooringWorkOrder",
-        aggregateId: input.workOrderId,
-        idempotencyKey,
-        payloadJson: payload as Prisma.InputJsonValue,
-      },
-      c,
-    )
-
-    return {
-      outboxEventId: event.id,
-      wasDuplicate,
-      touchedWorkOrderItemId: row.workOrderItemId,
+    const cutLog = await getCutLogById(input.cutLogId, c)
+    if (cutLog === null) {
+      throw new WorkOrderCutLogExecutionError({
+        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
+        message: "Cut log not found after stamping",
+        status: 404,
+        payload: { cutLogId: input.cutLogId },
+      })
     }
+
+    return { cutLog }
   })
 }

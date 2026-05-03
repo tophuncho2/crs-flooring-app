@@ -1,16 +1,13 @@
 import { getDatabaseEnvironment } from "@builders/db"
 import {
-  FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
   GENERATE_WORK_ORDER_FILE_QUEUE,
   IMPORT_MATERIALIZE_QUEUE,
-  type FinalizeWorkOrderCutLogPayload,
   type GenerateWorkOrderFilePayload,
   type ImportMaterializeBatchPayload,
 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
 import { QueueEvents, Worker } from "bullmq"
 import { getWorkerEnvironment, getWorkerStorageEnvironment } from "./env.js"
-import { createFinalizeWorkOrderCutLogHandler } from "./processors/finalize-work-order-cut-log.js"
 import { createMaterializeImportBatchHandler } from "./processors/materialize-import-batch.js"
 import { createWorkOrderFileGenerationHandler } from "./processors/work-order-file-generation.js"
 import { createQueueConnection } from "./queues/connection.js"
@@ -90,85 +87,6 @@ async function main() {
         ? {
             importEntryId: job.data.importEntryId,
             stagedRowCount: job.data.stagedRowIds.length,
-          }
-        : undefined,
-      error,
-    })
-  })
-
-  // ---------------------------------------------------------------------------
-  // Work order finalize cut-log (single-row)
-  // ---------------------------------------------------------------------------
-  const woFinalizeCutLogHandler = createFinalizeWorkOrderCutLogHandler()
-  const woFinalizeCutLogWorker = new Worker<FinalizeWorkOrderCutLogPayload>(
-    FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
-    async (job) => woFinalizeCutLogHandler(job),
-    {
-      connection,
-      concurrency: env.workOrderFinalizeCutLogWorkerConcurrency,
-      lockDuration: env.workOrderFinalizeCutLogWorkerLockDurationMs,
-      autorun: false,
-    },
-  )
-  const woFinalizeCutLogEvents = new QueueEvents(
-    FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
-    { connection },
-  )
-
-  woFinalizeCutLogWorker.on("active", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order finalize cut-log job active",
-      action: "worker.work_orders.finalize_cut_log.active",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "PROCESSING",
-      details: {
-        workOrderId: job.data.workOrderId,
-        cutLogId: job.data.cutLogId,
-      },
-    })
-  })
-
-  woFinalizeCutLogWorker.on("completed", (job, result) => {
-    const r =
-      result && typeof result === "object" ? (result as Record<string, unknown>) : undefined
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order finalize cut-log job completed",
-      action: "worker.work_orders.finalize_cut_log.completed",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "COMPLETED",
-      details: {
-        workOrderId: job.data.workOrderId,
-        cutLogId: job.data.cutLogId,
-        touchedInventoryId:
-          r && typeof r.touchedInventoryId === "string" ? r.touchedInventoryId : null,
-        alreadyResolved: r && typeof r.alreadyResolved === "boolean" ? r.alreadyResolved : undefined,
-      },
-    })
-  })
-
-  woFinalizeCutLogWorker.on("failed", (job, error) => {
-    logStructuredEvent({
-      level: "error",
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order finalize cut-log job failed",
-      action: "worker.work_orders.finalize_cut_log.failed",
-      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
-      queueJobId: typeof job?.id === "string" ? job.id : undefined,
-      attempt: job?.attemptsStarted,
-      status: "FAILED",
-      details: job
-        ? {
-            workOrderId: job.data.workOrderId,
-            cutLogId: job.data.cutLogId,
           }
         : undefined,
       error,
@@ -262,8 +180,6 @@ async function main() {
   await Promise.all([
     materializeWorker.waitUntilReady(),
     materializeEvents.waitUntilReady(),
-    woFinalizeCutLogWorker.waitUntilReady(),
-    woFinalizeCutLogEvents.waitUntilReady(),
     woFileGenWorker.waitUntilReady(),
     woFileGenEvents.waitUntilReady(),
   ])
@@ -279,7 +195,6 @@ async function main() {
   // resolve when each worker is closed (during shutdown); we deliberately
   // don't await them at the call site.
   void materializeWorker.run()
-  void woFinalizeCutLogWorker.run()
   void woFileGenWorker.run()
 
   logStructuredEvent({
@@ -289,19 +204,13 @@ async function main() {
     action: "worker.ready",
     status: "ready",
     details: {
-      queues: [
-        IMPORT_MATERIALIZE_QUEUE,
-        FINALIZE_WORK_ORDER_CUT_LOG_QUEUE,
-        GENERATE_WORK_ORDER_FILE_QUEUE,
-      ],
+      queues: [IMPORT_MATERIALIZE_QUEUE, GENERATE_WORK_ORDER_FILE_QUEUE],
       concurrency: {
         materialize: env.materializeWorkerConcurrency,
-        workOrderFinalizeCutLog: env.workOrderFinalizeCutLogWorkerConcurrency,
         workOrderFileGeneration: env.workOrderFileGenerationWorkerConcurrency,
       },
       lockDurationMs: {
         materialize: env.materializeWorkerLockDurationMs,
-        workOrderFinalizeCutLog: env.workOrderFinalizeCutLogWorkerLockDurationMs,
         workOrderFileGeneration: env.workOrderFileGenerationWorkerLockDurationMs,
       },
     },
@@ -314,8 +223,6 @@ async function main() {
       await Promise.all([
         materializeEvents.close(),
         materializeWorker.close(),
-        woFinalizeCutLogEvents.close(),
-        woFinalizeCutLogWorker.close(),
         woFileGenEvents.close(),
         woFileGenWorker.close(),
       ])
