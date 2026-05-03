@@ -1,6 +1,6 @@
 "use client"
 
-import type { CutLogRow } from "@builders/domain"
+import { isCutLogPendingEditable, type CutLogRow } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
@@ -58,6 +58,12 @@ export function CutLogEditFormFields({
       : "")
   const coverageUnit = cutLog?.itemCoverageUnitAbbrev ?? ""
 
+  // Locked once the row leaves the PENDING-editable state. Mirrors the server
+  // guard (assertCutLogPendingMutationAllowed) so finalized/voided rows can't
+  // accept input — the PATCH route would 409 anyway.
+  const isReadOnly = mode === "edit" && cutLog != null && !isCutLogPendingEditable(cutLog)
+  const fieldsEditable = !isSaving && !isReadOnly
+
   return (
     <FieldSection gap="0.75rem">
       {/* Row 1 — status + cut number (edit mode only) */}
@@ -82,7 +88,7 @@ export function CutLogEditFormFields({
       <CellAt col={1} colSpan={4}>
         <FormField label="Cut" required>
           <UnitCell
-            editable={!isSaving}
+            editable={fieldsEditable}
             value={form.cut}
             onChange={(next) => onFieldChange("cut", next)}
             unit={stockUnit}
@@ -118,7 +124,7 @@ export function CutLogEditFormFields({
       <CellAt col={1} colSpan={4}>
         <FormField label="Waste">
           <CheckboxCell
-            editable={!isSaving}
+            editable={fieldsEditable}
             value={form.isWaste}
             onChange={(next) => onFieldChange("isWaste", next)}
             ariaLabel="Waste flag"
@@ -139,7 +145,7 @@ export function CutLogEditFormFields({
       <CellAt col={1} colSpan={8}>
         <FormField label="Notes">
           <TextCell
-            editable={!isSaving}
+            editable={fieldsEditable}
             value={form.notes}
             onChange={(next) => onFieldChange("notes", next)}
             placeholder="Notes"

@@ -1,6 +1,6 @@
 "use client"
 
-import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
+import { isCutLogPendingEditable, type CutLogRow, type FlooringCutLogStatus } from "@builders/domain"
 
 export type CutLogEditActionButtonsProps = {
   mode: "create" | "edit"
@@ -26,7 +26,7 @@ const DESTRUCTIVE =
  * Footer action strip for the cut-log edit panel.
  *
  * Disabled rules:
- *   - Save: disabled when !canSave (validation) OR (edit mode && !isDirty)
+ *   - Save: !canSave OR (edit mode && !isDirty) OR row not pending-editable
  *   - Finalize: edit mode + status PENDING + !isDirty + !isSaving
  *   - Void: edit mode + status PENDING|FINAL + !isSaving (matches data layer)
  *   - Delete: edit mode + status PENDING + !isSaving
@@ -50,7 +50,16 @@ export function CutLogEditActionButtons({
   const isFinal = status === "FINAL"
   const isVoid = status === "VOID"
 
-  const saveDisabled = isSaving || !canSave || (mode === "edit" && !isDirty)
+  // Mirrors the server guard: PATCH/DELETE refuse anything that isn't
+  // PENDING-editable. Disabling Save here keeps the UI honest.
+  const isLocked = mode === "edit" && cutLog != null && !isCutLogPendingEditable(cutLog)
+  const saveDisabledTitle = isLocked
+    ? isVoid
+      ? "This cut log is voided. No further changes are permitted."
+      : "This cut log is finalized. Use Void to reverse it."
+    : undefined
+
+  const saveDisabled = isSaving || !canSave || (mode === "edit" && !isDirty) || isLocked
   const finalizeDisabled = isSaving || !isPending || isDirty
   const voidDisabled = isSaving || !(isPending || (isFinal && !cutLog?.void))
   const deleteDisabled = isSaving || !isPending
@@ -115,6 +124,7 @@ export function CutLogEditActionButtons({
           type="button"
           onClick={onSave}
           disabled={saveDisabled}
+          title={saveDisabledTitle}
           className={PRIMARY}
         >
           {isSaving ? "Saving…" : "Save"}
