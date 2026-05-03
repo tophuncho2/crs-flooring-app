@@ -25,6 +25,12 @@ export type ActionHeaderProps = {
   status?: HeaderStatus
   actions?: ReadonlyArray<HeaderAction>
   /**
+   * Optional control rendered flush-left on the title row, before the
+   * title text. Use for a single icon-button affordance tied to the
+   * section as a whole (e.g. an expand-all toggle).
+   */
+  leadingControl?: ReactNode
+  /**
    * Optional JSX rendered alongside the descriptor-driven `actions`, in the
    * same flex row. Use for action affordances whose state shape doesn't fit
    * the simple `HeaderAction` descriptor (e.g. a toggle whose label flips
@@ -51,7 +57,7 @@ export type ActionHeaderProps = {
  * decoupled from the engine's section tokens and without a baked-in surface
  * wrapper (consumer composes the surrounding panel).
  */
-export function ActionHeader({ title, summary, status, actions, extraActions, message, error, className }: ActionHeaderProps) {
+export function ActionHeader({ title, summary, status, actions, leadingControl, extraActions, message, error, className }: ActionHeaderProps) {
   return (
     <div
       className={joinClassNames(
@@ -60,8 +66,13 @@ export function ActionHeader({ title, summary, status, actions, extraActions, me
       )}
     >
       <div className="min-w-0 space-y-2">
-        {title ? (
-          <div className="truncate text-base font-semibold text-[var(--foreground)]">{title}</div>
+        {title || leadingControl ? (
+          <div className="flex min-w-0 items-center gap-2">
+            {leadingControl}
+            {title ? (
+              <span className="truncate text-base font-semibold text-[var(--foreground)]">{title}</span>
+            ) : null}
+          </div>
         ) : null}
         {status ? (
           <div className="flex flex-wrap items-center gap-2">

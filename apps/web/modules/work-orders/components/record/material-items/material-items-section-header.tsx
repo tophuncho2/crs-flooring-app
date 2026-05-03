@@ -2,12 +2,17 @@
 
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
+import { ExpandToggle } from "@/components/grid/expandable-rows"
 
 export type MaterialItemsSectionHeaderProps = {
   itemsCount: number
   isSaving: boolean
   isDirty: boolean
   hasConflict: boolean
+  /** True when every material item's cut-log sub-grid is expanded. */
+  allExpanded: boolean
+  /** Toggle all rows together: collapse-all when allExpanded, else expand-all. */
+  onToggleAll: () => void
   noticeMessage?: ReactNode
   error?: ReactNode
   onDiscard: () => void
@@ -20,6 +25,8 @@ export function MaterialItemsSectionHeader({
   isSaving,
   isDirty,
   hasConflict,
+  allExpanded,
+  onToggleAll,
   noticeMessage,
   error,
   onDiscard,
@@ -29,6 +36,15 @@ export function MaterialItemsSectionHeader({
   return (
     <ActionHeader
       title="Material Items"
+      leadingControl={
+        itemsCount > 0 ? (
+          <ExpandToggle
+            expanded={allExpanded}
+            onToggle={onToggleAll}
+            ariaLabel={allExpanded ? "Collapse all material items" : "Expand all material items"}
+          />
+        ) : null
+      }
       summary={
         <span>
           {itemsCount} item{itemsCount === 1 ? "" : "s"}

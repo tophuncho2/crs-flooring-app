@@ -3,8 +3,9 @@
 import { Fragment, useCallback, useMemo, useState } from "react"
 import { StatusBadge } from "@/components/badges"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
+import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
-import { ExpandToggle, ExpandableRow } from "@/components/grid/expandable-rows"
+import { ExpandableRow } from "@/components/grid/expandable-rows"
 import type {
   CutLogRow,
   WorkOrderDetail,
@@ -28,7 +29,6 @@ import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
-  leadingControls: [{ key: "expand", kind: "expand", width: 40 }],
   dataColumns: [
     { key: "categoryFilter", label: "Category", minWidth: 140, grow: 0 },
     { key: "product", label: "Product", minWidth: 220, grow: 2 },
@@ -36,7 +36,7 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
     { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
     { key: "status", label: "Status", kind: "status", minWidth: 110, grow: 0, align: "center" },
   ],
-  trailingControls: [{ key: "remove", kind: "actions", width: 64 }],
+  trailingControls: [{ key: "remove", kind: "actions", width: 116 }],
 }
 
 function statusTone(status: WorkOrderMaterialItemRow["status"]): BadgeTone {
@@ -85,14 +85,13 @@ export function WorkOrderMaterialItemsSection({
   const sectionBusy = section.isSaving
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
-  function toggleExpanded(rowId: string) {
-    setExpandedRowIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(rowId)) next.delete(rowId)
-      else next.add(rowId)
-      return next
-    })
-  }
+  const allExpanded =
+    section.items.length > 0 && expandedRowIds.size === section.items.length
+  const toggleAll = useCallback(() => {
+    setExpandedRowIds(
+      allExpanded ? new Set() : new Set(section.items.map((item) => item.id)),
+    )
+  }, [allExpanded, section.items])
 
   const editable = !sectionBusy
   const categoryCellOptions = useMemo(
@@ -215,25 +214,24 @@ export function WorkOrderMaterialItemsSection({
     control: { key: string; kind: string },
     item: WorkOrderMaterialItemLocal,
   ) {
-    if (control.kind === "expand") {
-      return (
-        <ExpandToggle
-          expanded={expandedRowIds.has(item.id)}
-          onToggle={() => toggleExpanded(item.id)}
-          ariaLabel={expandedRowIds.has(item.id) ? "Collapse cut logs" : "Expand cut logs"}
-        />
-      )
-    }
     if (control.kind === "actions") {
       return (
-        <RowActionButton
-          label="✕"
-          ariaLabel="Remove material item"
-          tone="destructive"
-          title={editable ? "Remove this material item" : "Locked while section is busy"}
-          editable={editable}
-          onClick={() => section.removeItem(item.id)}
-        />
+        <div className="flex items-center gap-1">
+          <DuplicateRowButton
+            ariaLabel="Duplicate material item"
+            title={editable ? "Duplicate this material item" : "Locked while section is busy"}
+            editable={editable}
+            onClick={() => section.duplicateItem(item.id)}
+          />
+          <RowActionButton
+            label="✕"
+            ariaLabel="Remove material item"
+            tone="destructive"
+            title={editable ? "Remove this material item" : "Locked while section is busy"}
+            editable={editable}
+            onClick={() => section.removeItem(item.id)}
+          />
+        </div>
       )
     }
     return null
@@ -250,6 +248,8 @@ export function WorkOrderMaterialItemsSection({
         hasConflict={section.hasConflict}
         noticeMessage={section.noticeMessage}
         error={sectionError || null}
+        allExpanded={allExpanded}
+        onToggleAll={toggleAll}
         onDiscard={() => section.discard()}
         onSave={() => void section.save()}
         onAddItem={section.addItem}
