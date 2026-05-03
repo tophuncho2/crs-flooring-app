@@ -2,7 +2,7 @@
 
 import type { CutLogRow } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
-import { CheckboxCell, NumberCell, TextCell } from "@/components/cells"
+import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatCutLogTimestamp } from "@/components/features/cut-log-row/format-cut-log-timestamp"
@@ -69,33 +69,39 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 2 — cut + coverage */}
+      {/* Row 2 — cut + coverage (unit-aware to match row display) */}
       <CellAt col={1} colSpan={4}>
-        <FormField label={stockUnit ? `Cut (${stockUnit})` : "Cut"} required>
-          <NumberCell
+        <FormField label="Cut" required>
+          <UnitCell
             editable={!isSaving}
             value={form.cut}
             onChange={(next) => onFieldChange("cut", next)}
+            unit={stockUnit}
             placeholder="0"
             ariaLabel="Cut amount"
           />
         </FormField>
       </CellAt>
       <CellAt col={5} colSpan={4}>
-        <FormField label={coverageUnit ? `Coverage (${coverageUnit})` : "Coverage"}>
-          <TextCell editable={false} value={cutLog?.coverageCut ?? "—"} ariaLabel="Coverage" />
+        <FormField label="Coverage">
+          <UnitCell
+            editable={false}
+            value={cutLog?.coverageCut ?? ""}
+            unit={coverageUnit}
+            ariaLabel="Coverage"
+          />
         </FormField>
       </CellAt>
 
-      {/* Row 3 — before / after (read-only, worker-stamped) */}
+      {/* Row 3 — before / after (read-only, worker-stamped, unit-aware) */}
       <CellAt col={1} colSpan={4}>
         <FormField label="Before">
-          <TextCell editable={false} value={cutLog?.before ?? "—"} ariaLabel="Before" />
+          <UnitCell editable={false} value={cutLog?.before ?? ""} unit={stockUnit} ariaLabel="Before" />
         </FormField>
       </CellAt>
       <CellAt col={5} colSpan={4}>
         <FormField label="After">
-          <TextCell editable={false} value={cutLog?.after ?? "—"} ariaLabel="After" />
+          <UnitCell editable={false} value={cutLog?.after ?? ""} unit={stockUnit} ariaLabel="After" />
         </FormField>
       </CellAt>
 
