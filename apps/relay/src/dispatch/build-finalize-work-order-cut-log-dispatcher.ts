@@ -22,7 +22,13 @@ export function buildFinalizeWorkOrderCutLogDispatcher(
     jobName: FINALIZE_WORK_ORDER_CUT_LOG_JOB_NAME,
     queue,
     parsePayload: parseFinalizeWorkOrderCutLogPayload,
-    buildJobId: (_payload, event) => event.idempotencyKey,
+    // BullMQ rejects job ids containing `:` ("Custom Id cannot contain :").
+    // The outbox row's UUID is deterministic per idempotencyKey (duplicate
+    // writes return the existing row), so using `event.id` preserves
+    // BullMQ-level deduplication of replayed enqueues without needing
+    // colon sanitization. The human-readable key still lives on the outbox
+    // row for dashboard / log correlation.
+    buildJobId: (_payload, event) => event.id,
     close: () => queue.close(),
   }
 }
