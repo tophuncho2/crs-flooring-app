@@ -1,6 +1,7 @@
 "use client"
 
-import { useSingleSectionRecordController, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
+import { useSingleSectionRecordController } from "@/controllers/record/use-single-section-record-controller"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { updateManufacturerRequest, deleteManufacturerRequest } from "@/modules/manufacturers/data/mutations"
 import { toManufacturerForm, type ManufacturerForm, type ManufacturerRow } from "@builders/domain"
 

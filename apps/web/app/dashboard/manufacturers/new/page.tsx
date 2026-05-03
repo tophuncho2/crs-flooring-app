@@ -1,5 +1,5 @@
 import { requireManufacturersAccess } from "@/modules/shared/access/lookup-domains"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation/routes"
 import { ManufacturerCreateClient } from "@/modules/manufacturers/components/record/manufacturer-create-client"
 
 export default async function ManufacturerCreatePage({

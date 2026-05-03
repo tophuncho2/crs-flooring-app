@@ -209,7 +209,7 @@ export function resetSimpleTableClientMocks() {
 
 vi.mock("lucide-react", () => lucideReactModule)
 vi.mock("@/modules/shared/engines/common/transport/http", () => httpModule)
-vi.mock("@/modules/shared/engines/common/transport/http", () => httpModule)
+vi.mock("@/transport/http", () => httpModule)
 vi.mock("@/modules/shared/engines/list-view/controllers/use-configured-table-state", () => useConfiguredTableStateModule)
 vi.mock("@/modules/shared/engines/common/navigation/use-url-record-editor", () => useUrlRecordEditorModule)
 vi.mock("@/modules/shared/engines/common/navigation/use-guarded-url-record-editor", () => useGuardedUrlRecordEditorModule)

@@ -13,6 +13,7 @@ const {
   getManufacturerByIdMock,
   createManufacturerUseCaseMock,
   deleteManufacturerUseCaseMock,
+  listManufacturersUseCaseMock,
   withMutationTelemetryMock,
 } = vi.hoisted(() => ({
   applyRoutePolicyMock: vi.fn(),
@@ -24,6 +25,7 @@ const {
   getManufacturerByIdMock: vi.fn(),
   createManufacturerUseCaseMock: vi.fn(),
   deleteManufacturerUseCaseMock: vi.fn(),
+  listManufacturersUseCaseMock: vi.fn(),
   withMutationTelemetryMock: vi.fn(),
 }))
 
@@ -42,6 +44,7 @@ vi.mock("@builders/application", async () => {
     ...actual,
     createManufacturerUseCase: createManufacturerUseCaseMock,
     deleteManufacturerUseCase: deleteManufacturerUseCaseMock,
+    listManufacturersUseCase: listManufacturersUseCaseMock,
   }
 })
 
@@ -53,9 +56,10 @@ vi.mock("@/app/api/manufacturers/_validators", () => ({
     }
     return body
   }),
+  validateListManufacturersQuery: vi.fn(() => ({ filters: {}, page: 1, pageSize: 20 })),
 }))
 
-vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
+vi.mock("@/server/telemetry/mutation-telemetry", () => ({
   withMutationTelemetry: withMutationTelemetryMock,
 }))
 
@@ -168,12 +172,14 @@ describe("manufacturers", () => {
       normalizedManufacturerRow({ id: "mfg-2", companyName: "Zen Floors", productsCount: 3 }),
     ]
     listManufacturersMock.mockResolvedValue(rows)
+    listManufacturersUseCaseMock.mockResolvedValue({ rows, total: rows.length })
 
     const response = await GET(new Request("http://localhost/api/manufacturers"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload.manufacturers).toEqual(rows)
+    expect(payload.rows).toEqual(rows)
+    expect(payload.total).toBe(rows.length)
     expect(applyRoutePolicyMock).toHaveBeenCalled()
   })
 

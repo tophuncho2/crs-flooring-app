@@ -1,7 +1,7 @@
 import { deleteManufacturerUseCase } from "@builders/application"
 import { getManufacturerById } from "@builders/db"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {

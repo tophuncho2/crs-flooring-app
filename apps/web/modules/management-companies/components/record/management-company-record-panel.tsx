@@ -1,11 +1,9 @@
 "use client"
 
-import {
-  RecordMultiSectionPanel,
-  RecordPrimarySectionInstance,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
-import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
+import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
+import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import { normalizeAddressState } from "@builders/domain"
 import { useManagementCompanyPrimarySection } from "@/modules/management-companies/controllers/use-management-company-primary-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./management-company-primary-fields-section"

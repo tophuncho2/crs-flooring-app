@@ -49,7 +49,7 @@ vi.mock("@/app/api/manufacturers/_validators", () => ({
   }),
 }))
 
-vi.mock("@/modules/shared/engines/common/application/mutation-telemetry", () => ({
+vi.mock("@/server/telemetry/mutation-telemetry", () => ({
   withMutationTelemetry: withMutationTelemetryMock,
 }))
 

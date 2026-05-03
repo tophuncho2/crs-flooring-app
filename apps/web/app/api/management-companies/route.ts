@@ -3,7 +3,7 @@ import {
   listManagementCompaniesUseCase,
 } from "@builders/application"
 import { MANAGEMENT_COMPANIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,

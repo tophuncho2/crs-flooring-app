@@ -1,5 +1,5 @@
 import { requireToolAccess } from "@/server/auth/session"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation/routes"
 import { ManagementCompanyCreateClient } from "@/modules/management-companies/components/record/management-company-create-client"
 
 export default async function ManagementCompanyCreatePage({

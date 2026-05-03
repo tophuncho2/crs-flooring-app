@@ -1,6 +1,9 @@
 "use client"
 
-import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
+import {
+  RecordDetailClientScaffold,
+  type RecordDetailClientScaffoldContext,
+} from "@/scaffolds/record-detail-client-scaffold"
 import { ManufacturerRecordPanel } from "./manufacturer-record-panel"
 import type { ManufacturerRow } from "@builders/domain"
 

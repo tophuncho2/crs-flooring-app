@@ -1,10 +1,8 @@
 "use client"
 
-import {
-  createRecordSectionError,
-  useSingleSectionRecordController,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+import { useSingleSectionRecordController } from "@/controllers/record/use-single-section-record-controller"
+import { createRecordSectionError } from "@/types/record/section-error"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import {
   deleteManagementCompanyRequest,
   updateManagementCompanyRequest,

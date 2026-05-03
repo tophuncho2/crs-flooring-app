@@ -1,6 +1,6 @@
 import { createManufacturerUseCase, listManufacturersUseCase } from "@builders/application"
 import { MANUFACTURERS_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { applyRoutePolicy, enforceMutationReceipt, enforceQueryRateLimit, finalizeMutationReceipt, parseMutationEnvelope } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { validateListManufacturersQuery, validateManufacturerInput } from "./_validators"

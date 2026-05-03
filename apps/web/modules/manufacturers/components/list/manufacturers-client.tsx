@@ -14,7 +14,7 @@ import {
   MANUFACTURERS_LIST_QUERY_KEY,
   listManufacturersRequest,
 } from "@/modules/manufacturers/data/list-manufacturers-request"
-import { useManufacturersListController } from "@/modules/manufacturers/controller/use-manufacturers-list-controller"
+import { useManufacturersListController } from "@/modules/manufacturers/controllers/use-manufacturers-list-controller"
 import { ManufacturersTable } from "./manufacturers-table"
 
 export type ManufacturersClientProps = {

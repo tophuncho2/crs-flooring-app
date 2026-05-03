@@ -1,4 +1,4 @@
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { updateManufacturerUseCase } from "@builders/application"
 import { getManufacturerById } from "@builders/db"
 import { validateManufacturerInput } from "../../../_validators"

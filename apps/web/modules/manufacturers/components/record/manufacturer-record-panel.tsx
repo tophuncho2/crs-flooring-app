@@ -1,11 +1,11 @@
 "use client"
 
 import {
-  buildSingleSectionDeleteConfirmationMessage,
   RecordSingleSectionPanel,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
-import { useManufacturerPrimarySection } from "../../controller/use-manufacturer-primary-section"
+  buildSingleSectionDeleteConfirmationMessage,
+} from "@/components/sections/panels/record-single-section-panel"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import { useManufacturerPrimarySection } from "../../controllers/use-manufacturer-primary-section"
 import { ManufacturerPrimaryFieldsSection } from "./manufacturer-primary-fields-section"
 import type { ManufacturerForm, ManufacturerRow } from "@builders/domain"
 

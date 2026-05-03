@@ -1,12 +1,10 @@
 "use client"
 
-import {
-  RecordCreateClientScaffold,
-  RecordSingleSectionPanel,
-  useSingleSectionCreateController,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
-import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { RecordCreateClientScaffold } from "@/scaffolds/record-create-client-scaffold"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import { RecordSingleSectionPanel } from "@/components/sections/panels/record-single-section-panel"
+import { useSingleSectionCreateController } from "@/controllers/record/use-single-section-create-controller"
+import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { createManufacturerRequest } from "@/modules/manufacturers/data/mutations"
 import { EMPTY_MANUFACTURER_FORM, type ManufacturerForm, type ManufacturerRow } from "@builders/domain"
 import { ManufacturerPrimaryFieldsSection } from "./manufacturer-primary-fields-section"

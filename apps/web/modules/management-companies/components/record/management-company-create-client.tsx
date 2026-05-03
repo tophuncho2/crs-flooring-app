@@ -1,14 +1,12 @@
 "use client"
 
 import { normalizeAddressState } from "@builders/domain"
-import {
-  RecordCreateClientScaffold,
-  RecordPanelFooter,
-  RecordSingleSectionPanel,
-  useSingleSectionCreateController,
-  type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
-import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { RecordCreateClientScaffold } from "@/scaffolds/record-create-client-scaffold"
+import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import { RecordPanelFooter } from "@/components/panels/record-panel-footer"
+import { RecordSingleSectionPanel } from "@/components/sections/panels/record-single-section-panel"
+import { useSingleSectionCreateController } from "@/controllers/record/use-single-section-create-controller"
+import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { createManagementCompanyRequest } from "@/modules/management-companies/data/mutations"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 import { ManagementCompanyPrimaryFieldsSection } from "./management-company-primary-fields-section"
