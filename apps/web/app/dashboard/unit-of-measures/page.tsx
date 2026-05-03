@@ -2,21 +2,9 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireUnitOfMeasuresAccess } from "@/modules/shared/access/lookup-domains"
 import UnitOfMeasuresClient from "@/modules/unit-of-measures/components/list/unit-of-measures-client"
 import { getUnitOfMeasuresPageData } from "@/modules/unit-of-measures/data/queries"
-import { getResolvedUserTablePreference } from "@builders/application"
-import { parseServerTableQueryState } from "@/server/pagination"
 
-export default async function UnitOfMeasuresPage({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>
-}) {
-  const user = await requireUnitOfMeasuresAccess()
-  const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "unit-of-measures-main")
-  const tableState = parseServerTableQueryState({
-    searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-  })
+export default async function UnitOfMeasuresPage() {
+  await requireUnitOfMeasuresAccess()
   const pageData = await getUnitOfMeasuresPageData()
 
   if (!pageData.ok) {
@@ -30,11 +18,5 @@ export default async function UnitOfMeasuresPage({
     )
   }
 
-  return (
-    <UnitOfMeasuresClient
-      initialUnitOfMeasures={pageData.data}
-      initialTablePreferences={initialTablePreferences}
-      tableState={tableState}
-    />
-  )
+  return <UnitOfMeasuresClient initialRows={pageData.data} />
 }

@@ -1,30 +1,28 @@
 // @vitest-environment jsdom
 
-import React from "react"
+import { afterEach } from "vitest"
 import { describe, expect, it } from "vitest"
-import { render, screen } from "@testing-library/react"
-import {
-  resetSimpleTableClientMocks,
-} from "../../helpers/simple-table-client-mocks"
+import { cleanup, render, screen } from "@testing-library/react"
 import UnitOfMeasuresClient from "@/modules/unit-of-measures/components/list/unit-of-measures-client"
+
+afterEach(() => {
+  cleanup()
+})
 
 describe("UnitOfMeasuresClient", () => {
   it("renders a read-only list of unit of measures", () => {
-    resetSimpleTableClientMocks()
-
     render(
       <UnitOfMeasuresClient
-        initialUnitOfMeasures={[
-          { id: "u-1", name: "Square Feet", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
-          { id: "u-2", name: "Linear Feet", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
+        initialRows={[
+          { id: "u-1", slug: "sf", name: "Square Feet", abbreviation: "sf", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
+          { id: "u-2", slug: "lf", name: "Linear Feet", abbreviation: "lf", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
         ]}
-        tableState={{ searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] }}
       />,
     )
 
     expect(screen.getByText("Square Feet")).toBeTruthy()
     expect(screen.getByText("Linear Feet")).toBeTruthy()
-    expect(screen.queryByRole("button", { name: /unit of measure/i })).toBeNull()
+    expect(screen.queryByRole("searchbox")).toBeNull()
     expect(screen.queryByRole("button", { name: /delete/i })).toBeNull()
   })
 })

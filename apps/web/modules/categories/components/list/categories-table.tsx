@@ -1,38 +1,41 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
-import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
-import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import { TableEmptyRow } from "@/modules/shared/engines/list-view/table/table-shell"
+import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import type { CategoryRow } from "../../types"
 
-export function CategoriesTable({
-  rows,
-  visibleColumns,
-}: {
+const CATEGORIES_LIST_LAYOUT: GridLayout<CategoryRow> = {
+  dataColumns: [
+    { key: "name", label: "Category", minWidth: 240, grow: 1 },
+    { key: "sendUnit", label: "Send Unit", minWidth: 160, grow: 0 },
+    { key: "stockUnit", label: "Stock Unit", minWidth: 160, grow: 0 },
+    { key: "itemCoverageUnit", label: "Item Coverage Unit", minWidth: 200, grow: 0 },
+  ],
+}
+
+export type CategoriesTableProps = {
   rows: CategoryRow[]
-  visibleColumns: Array<{ key: string; label: string }>
-}) {
-  function renderRow(row: CategoryRow) {
-    const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
-      sendUnit: (columnIndex) => <DashboardListRowCell key="sendUnit" columnIndex={columnIndex}>{row.sendUnit || "-"}</DashboardListRowCell>,
-      stockUnit: (columnIndex) => <DashboardListRowCell key="stockUnit" columnIndex={columnIndex}>{row.stockUnit || "-"}</DashboardListRowCell>,
-      itemCoverageUnit: (columnIndex) => <DashboardListRowCell key="itemCoverageUnit" columnIndex={columnIndex}>{row.itemCoverageUnit || "-"}</DashboardListRowCell>,
-    }
+}
 
-    return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)]">
-        {renderDashboardRowCells(visibleColumns, cells)}
-      </tr>
-    )
-  }
-
+export function CategoriesTable({ rows }: CategoriesTableProps) {
   return (
-    <DashboardListPageTable minWidthClass="min-w-[1280px]" columns={visibleColumns}>
-      {rows.map((row) => renderRow(row))}
-      {rows.length === 0 ? <TableEmptyRow message="No categories found." colSpan={visibleColumns.length} /> : null}
-    </DashboardListPageTable>
+    <Grid<CategoryRow>
+      rows={rows}
+      layout={CATEGORIES_LIST_LAYOUT}
+      empty={<GridEmpty>No categories found.</GridEmpty>}
+      renderCell={(column, row) => {
+        switch (column.key) {
+          case "name":
+            return <span className="font-medium">{row.name}</span>
+          case "sendUnit":
+            return row.sendUnit || "-"
+          case "stockUnit":
+            return row.stockUnit || "-"
+          case "itemCoverageUnit":
+            return row.itemCoverageUnit || "-"
+          default:
+            return "-"
+        }
+      }}
+    />
   )
 }

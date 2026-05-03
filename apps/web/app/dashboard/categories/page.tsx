@@ -2,21 +2,9 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
 import CategoriesClient from "@/modules/categories/components/list/categories-client"
 import { getCategoriesPageData } from "@/modules/categories/data/queries"
-import { getResolvedUserTablePreference } from "@builders/application"
-import { parseServerTableQueryState } from "@/server/pagination"
 
-export default async function FlooringCategoriesPage({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>
-}) {
-  const user = await requireCategoriesAccess()
-  const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "categories-main")
-  const tableState = parseServerTableQueryState({
-    searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-  })
+export default async function FlooringCategoriesPage() {
+  await requireCategoriesAccess()
   const pageData = await getCategoriesPageData()
 
   if (!pageData.ok) {
@@ -30,11 +18,5 @@ export default async function FlooringCategoriesPage({
     )
   }
 
-  return (
-    <CategoriesClient
-      initialCategories={pageData.data}
-      initialTablePreferences={initialTablePreferences}
-      tableState={tableState}
-    />
-  )
+  return <CategoriesClient initialRows={pageData.data} />
 }

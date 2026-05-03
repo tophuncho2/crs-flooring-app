@@ -1,39 +1,36 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
-import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
-import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import {
-  TableEmptyRow,
-} from "@/modules/shared/engines/list-view/table/table-shell"
+import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { formatStableDateTime } from "@builders/domain"
 import type { UnitOfMeasureRow } from "../../types"
 
-export function UnitOfMeasuresTable({
-  rows,
-  visibleColumns,
-}: {
+const UNIT_OF_MEASURES_LIST_LAYOUT: GridLayout<UnitOfMeasureRow> = {
+  dataColumns: [
+    { key: "name", label: "Unit Of Measure", minWidth: 240, grow: 1 },
+    { key: "createdAt", label: "Created", minWidth: 200, grow: 0 },
+  ],
+}
+
+export type UnitOfMeasuresTableProps = {
   rows: UnitOfMeasureRow[]
-  visibleColumns: Array<{ key: string; label: string }>
-}) {
-  function renderRow(row: UnitOfMeasureRow) {
-    const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      name: (columnIndex) => <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium">{row.name}</DashboardListRowCell>,
-      createdAt: (columnIndex) => <DashboardListRowCell key="createdAt" columnIndex={columnIndex}>{formatStableDateTime(row.createdAt)}</DashboardListRowCell>,
-    }
+}
 
-    return (
-      <tr key={row.id} className="border-t border-[var(--panel-border)]">
-        {renderDashboardRowCells(visibleColumns, cells)}
-      </tr>
-    )
-  }
-
+export function UnitOfMeasuresTable({ rows }: UnitOfMeasuresTableProps) {
   return (
-    <DashboardListPageTable minWidthClass="min-w-[780px]" columns={visibleColumns}>
-      {rows.map((row) => renderRow(row))}
-      {rows.length === 0 ? <TableEmptyRow message="No units of measure found." colSpan={visibleColumns.length} /> : null}
-    </DashboardListPageTable>
+    <Grid<UnitOfMeasureRow>
+      rows={rows}
+      layout={UNIT_OF_MEASURES_LIST_LAYOUT}
+      empty={<GridEmpty>No units of measure found.</GridEmpty>}
+      renderCell={(column, row) => {
+        switch (column.key) {
+          case "name":
+            return <span className="font-medium">{row.name}</span>
+          case "createdAt":
+            return formatStableDateTime(row.createdAt)
+          default:
+            return "-"
+        }
+      }}
+    />
   )
 }
