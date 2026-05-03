@@ -284,6 +284,7 @@ export function usePendingCutLogSection({
     rows,
     rowIds,
     editingRowId,
+    errorByRowId,
     addDraft,
     enterEditMode,
     discardDraft,

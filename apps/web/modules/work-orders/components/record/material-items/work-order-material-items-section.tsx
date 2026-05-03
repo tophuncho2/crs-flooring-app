@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useMemo, useState } from "react"
+import { Fragment, useCallback, useMemo, useRef, useState } from "react"
 import { StatusBadge } from "@/components/badges"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
@@ -114,6 +114,36 @@ export function WorkOrderMaterialItemsSection({
     })
   }
 
+  // Aggregate cut-log mutation errors from each per-WOMI row hook so they
+  // surface at the section header (canonical — see imports module). Each
+  // WorkOrderCutLogRow reports its latest error via a per-WOMI onError
+  // callback; we keep one message per WOMI keyed by item id and display
+  // the most recent. Callbacks are cached so the row-side useEffect only
+  // refires when its actual error changes.
+  const [cutLogErrorByItemId, setCutLogErrorByItemId] = useState<Record<string, string>>({})
+  const errorCallbacksRef = useRef(new Map<string, (message: string | null) => void>())
+  const getCutLogErrorHandler = useCallback((itemId: string) => {
+    const cached = errorCallbacksRef.current.get(itemId)
+    if (cached) return cached
+    const handler = (message: string | null) => {
+      setCutLogErrorByItemId((current) => {
+        if (message === null) {
+          if (!(itemId in current)) return current
+          const { [itemId]: _drop, ...rest } = current
+          return rest
+        }
+        if (current[itemId] === message) return current
+        return { ...current, [itemId]: message }
+      })
+    }
+    errorCallbacksRef.current.set(itemId, handler)
+    return handler
+  }, [])
+  const cutLogError = useMemo(() => {
+    const messages = Object.values(cutLogErrorByItemId).filter((m): m is string => Boolean(m))
+    return messages[messages.length - 1] ?? null
+  }, [cutLogErrorByItemId])
+
   const editable = !sectionBusy
   const categoryCellOptions = useMemo(
     () => categoryOptions.map((option) => ({ id: option.id, label: option.label })),
@@ -140,11 +170,17 @@ export function WorkOrderMaterialItemsSection({
     item: WorkOrderMaterialItemLocal,
   ) {
     switch (column.key) {
-      case "categoryFilter":
+      case "categoryFilter": {
+        // For saved rows the explicit categoryFilterId is null (UI-only,
+        // not persisted), so derive from the picked product's category.
+        const productCategoryId = item.productId
+          ? productById.get(item.productId)?.categoryId ?? null
+          : null
+        const effectiveCategoryId = item.categoryFilterId ?? productCategoryId
         return (
           <DropdownCell
             editable={editable}
-            value={item.categoryFilterId}
+            value={effectiveCategoryId}
             onChange={(next) => section.changeCategoryFilter(item.id, next)}
             options={categoryCellOptions}
             allowClear
@@ -152,27 +188,21 @@ export function WorkOrderMaterialItemsSection({
             ariaLabel="Material item category filter"
           />
         )
+      }
       case "product": {
-        const hasCategory = !!item.categoryFilterId
-        if (!hasCategory) {
-          // Disabled DropdownCell would render a dash via its static-mode
-          // fallback (matched?.label || "-"), hiding the prompt. Render the
-          // hint inline instead so the cell is visible and self-explanatory.
-          return (
-            <span
-              aria-label="Material item product"
-              className="block truncate text-sm italic text-[var(--foreground)]/55"
-            >
-              Pick a category first
-            </span>
-          )
-        }
-        const visibleProducts = productOptions.filter(
-          (p) => p.categoryId === item.categoryFilterId || p.id === item.productId,
-        )
+        const productCategoryId = item.productId
+          ? productById.get(item.productId)?.categoryId ?? null
+          : null
+        const effectiveCategoryId = item.categoryFilterId ?? productCategoryId
+        const hasCategory = !!effectiveCategoryId
+        const visibleProducts = hasCategory
+          ? productOptions.filter(
+              (p) => p.categoryId === effectiveCategoryId || p.id === item.productId,
+            )
+          : []
         return (
           <DropdownCell
-            editable={editable}
+            editable={editable && hasCategory}
             value={item.productId || null}
             onChange={(next) => section.changeField(item.id, "productId", next ?? "")}
             options={visibleProducts.map((p) => ({ id: p.id, label: p.label }))}
@@ -263,7 +293,7 @@ export function WorkOrderMaterialItemsSection({
         isDirty={section.isDirty}
         hasConflict={section.hasConflict}
         noticeMessage={section.noticeMessage}
-        error={sectionError || finalize.error || null}
+        error={sectionError || finalize.error || cutLogError || null}
         onToggleSelectAll={finalize.toggleAllEligible}
         onFinalize={() => void finalize.fire()}
         onDiscard={() => section.discard()}
@@ -300,6 +330,7 @@ export function WorkOrderMaterialItemsSection({
                       onToggleSelected={finalize.toggleSelected}
                       canToggleSelection={finalize.canToggleSelection}
                       isSectionBusy={sectionBusy}
+                      onError={getCutLogErrorHandler(row.id)}
                     />
                   </div>
                 ) : null}

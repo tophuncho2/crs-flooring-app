@@ -39,6 +39,7 @@ export function WorkOrderCutLogRow({
   onToggleSelected,
   canToggleSelection,
   isSectionBusy,
+  onError,
 }: {
   workOrderId: string
   workOrderItemId: string
@@ -52,12 +53,26 @@ export function WorkOrderCutLogRow({
    * during finalize / material-item save.
    */
   isSectionBusy: boolean
+  /**
+   * Bubble per-row mutation errors up so they can render at the section
+   * header (canonical placement). Receives the latest error message, or
+   * null when all errors have cleared.
+   */
+  onError?: (message: string | null) => void
 }) {
   const section = usePendingCutLogSection({
     workOrderId,
     workOrderItemId,
     initialRows: serverRows,
   })
+
+  // Bubble row-level errors to the parent section so they render at the
+  // ActionHeader's error slot (canonical for sections — see imports module).
+  useEffect(() => {
+    if (!onError) return
+    const messages = Object.values(section.errorByRowId).filter((m): m is string => Boolean(m))
+    onError(messages[messages.length - 1] ?? null)
+  }, [section.errorByRowId, onError])
 
   // Eligible inventory for the inventory dropdown on draft rows. Loaded
   // lazily; once loaded, used both for the dropdown options and for the
@@ -216,10 +231,6 @@ export function WorkOrderCutLogRow({
       return renderInventoryCell(rc)
     }
 
-    if (column.key === "destructive") {
-      return renderCutLogDestructiveCell(rc, isSectionBusy)
-    }
-
     if (rc.kind === "draft") {
       // Drafts have no server snapshot — render placeholders + editable cells.
       switch (column.key) {
@@ -317,6 +328,7 @@ export function WorkOrderCutLogRow({
     }
     if (control.kind === "status-indicator") return renderCutLogStatusBadge(control, rc)
     if (control.kind === "commit") return renderCutLogCommitControl(rc, isSectionBusy)
+    if (control.kind === "actions") return renderCutLogDestructiveCell(rc, isSectionBusy)
     return null
   }
 
