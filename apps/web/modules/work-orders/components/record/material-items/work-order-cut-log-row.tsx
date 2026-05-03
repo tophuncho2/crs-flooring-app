@@ -1,14 +1,21 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import type { CutLogRow } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { renderCutLogReadOnlyCell } from "@/components/features/cut-log-row"
 import { Grid, GridEmpty } from "@/components/grid"
+import { listEligibleInventoryRequest } from "@/modules/work-orders/data/mutations"
 import { WO_CUT_LOG_LAYOUT, type CutLogGridRow } from "./cut-log-row-layout"
 
+type InventoryLabelData = {
+  inventoryNumber: string
+  locationCode: string
+}
+
 export type WorkOrderCutLogRowProps = {
+  workOrderId: string
   workOrderItemId: string
   serverRows: ReadonlyArray<CutLogRow>
   /** Open the edit panel for a saved cut log. */
@@ -30,6 +37,7 @@ export type WorkOrderCutLogRowProps = {
  * is just the list view.
  */
 export function WorkOrderCutLogRow({
+  workOrderId,
   workOrderItemId,
   serverRows,
   onOpenEdit,
@@ -41,16 +49,43 @@ export function WorkOrderCutLogRow({
     [serverRows],
   )
 
+  // Cut logs only store `inventoryId`; build a label map from the eligible
+  // inventory endpoint so the Inventory column shows "INV-00019 · W1-S1-R1-L1"
+  // instead of a raw UUID. Inventory rows depleted since this cut log was
+  // recorded won't appear in the eligible list — those fall back to the raw id.
+  const [inventoryLabels, setInventoryLabels] = useState<Map<string, InventoryLabelData>>(
+    () => new Map(),
+  )
+  useEffect(() => {
+    let cancelled = false
+    listEligibleInventoryRequest({ workOrderId, workOrderItemId })
+      .then(({ inventories }) => {
+        if (cancelled) return
+        const map = new Map<string, InventoryLabelData>()
+        for (const inv of inventories) {
+          map.set(inv.id, { inventoryNumber: inv.inventoryNumber, locationCode: inv.locationCode })
+        }
+        setInventoryLabels(map)
+      })
+      .catch(() => {
+        // Silent — cells fall back to raw inventoryId.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [workOrderId, workOrderItemId])
+
   const renderReadOnlyCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
 
   function renderCell(column: { key: string }, gridRow: CutLogGridRow): ReactNode {
     const { cutLog } = gridRow
     if (column.key === "status") return <CutLogStatusBadge status={cutLog.status} />
     if (column.key === "inventoryRef") {
-      // Inventory column shows the stored inventoryId — the panel can show
-      // the enriched label using its eligible-inventory load. Section-level
-      // display keeps it simple to avoid an extra fetch per row.
-      return <span className="truncate text-sm">{cutLog.inventoryId}</span>
+      const label = inventoryLabels.get(cutLog.inventoryId)
+      const display = label
+        ? `${label.inventoryNumber}${label.locationCode ? ` · ${label.locationCode}` : ""}`
+        : cutLog.inventoryId
+      return <span className="truncate text-sm">{display}</span>
     }
     return renderReadOnlyCell(column, cutLog)
   }
