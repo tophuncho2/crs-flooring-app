@@ -69,27 +69,7 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 2 — inventory selector (create) or read-only display (edit) */}
-      <CellAt col={1} colSpan={8}>
-        {mode === "create" ? (
-          <FormField label="Inventory" required>
-            <InventoryRichDropdown
-              value={form.inventoryId || null}
-              onChange={(next) => onFieldChange("inventoryId", next ?? "")}
-              inventories={eligibleInventory}
-              disabled={isSaving}
-              isLoading={isLoadingInventory}
-              ariaLabel="Cut log inventory"
-            />
-          </FormField>
-        ) : (
-          <FormField label="Inventory">
-            <TextCell editable={false} value={inventoryDisplay} ariaLabel="Inventory" />
-          </FormField>
-        )}
-      </CellAt>
-
-      {/* Row 3 — cut + waste + coverage (read-only) */}
+      {/* Row 2 — cut + waste + coverage (read-only) */}
       <CellAt col={1} colSpan={3}>
         <FormField label={stockUnit ? `Cut (${stockUnit})` : "Cut"} required>
           <NumberCell
@@ -151,7 +131,7 @@ export function CutLogEditFormFields({
         </FormField>
       </CellAt>
 
-      {/* Row 6 — created / updated (read-only) */}
+      {/* Row 5 — created / updated (read-only, edit mode only) */}
       {cutLog ? (
         <>
           <CellAt col={1} colSpan={4}>
@@ -174,6 +154,26 @@ export function CutLogEditFormFields({
           </CellAt>
         </>
       ) : null}
+
+      {/* Row 6 — inventory pinned to the bottom (selector in create, read-only in edit) */}
+      <CellAt col={1} colSpan={8}>
+        {mode === "create" ? (
+          <FormField label="Inventory" required>
+            <InventoryRichDropdown
+              value={form.inventoryId || null}
+              onChange={(next) => onFieldChange("inventoryId", next ?? "")}
+              inventories={eligibleInventory}
+              disabled={isSaving}
+              isLoading={isLoadingInventory}
+              ariaLabel="Cut log inventory"
+            />
+          </FormField>
+        ) : (
+          <FormField label="Inventory">
+            <TextCell editable={false} value={inventoryDisplay} ariaLabel="Inventory" />
+          </FormField>
+        )}
+      </CellAt>
     </FieldSection>
   )
 }
