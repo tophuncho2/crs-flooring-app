@@ -31,27 +31,40 @@ body {
   feel un-scrollable at first sight. Forcing a classic-style track keeps the
   affordance always visible. Applied via the `.h-scroll-always` class on the
   canonical Grid scroll container so every section grid inherits it.
+
+  `-webkit-appearance: none` switches WebKit from overlay-mode to classic
+  always-on mode, overriding the macOS "Show scroll bars: Automatically"
+  system setting. `!important` is needed because Tailwind preflight + some
+  parent clipping rules (overflow-hidden on the outer Grid wrapper) can
+  otherwise hide the bar.
 */
 .h-scroll-always {
-  scrollbar-gutter: stable;
+  overflow-x: scroll !important;
+  scrollbar-width: auto;
+  scrollbar-color: rgba(15, 23, 42, 0.45) rgba(15, 23, 42, 0.08);
 }
-.h-scroll-always::-webkit-scrollbar {
-  -webkit-appearance: none;
-  height: 10px;
+.h-scroll-always::-webkit-scrollbar,
+.h-scroll-always::-webkit-scrollbar:horizontal {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: block !important;
+  height: 12px !important;
+  background: rgba(15, 23, 42, 0.06);
 }
-.h-scroll-always::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.04);
-  border-radius: 5px;
+.h-scroll-always::-webkit-scrollbar-track,
+.h-scroll-always::-webkit-scrollbar-track:horizontal {
+  background: rgba(15, 23, 42, 0.06) !important;
+  border-radius: 6px;
 }
-.h-scroll-always::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.28);
-  border-radius: 5px;
+.h-scroll-always::-webkit-scrollbar-thumb,
+.h-scroll-always::-webkit-scrollbar-thumb:horizontal {
+  background: rgba(15, 23, 42, 0.45) !important;
+  border-radius: 6px;
+  min-width: 40px;
+  border: 2px solid transparent;
+  background-clip: padding-box !important;
 }
 .h-scroll-always::-webkit-scrollbar-thumb:hover {
-  background: rgba(15, 23, 42, 0.42);
-}
-/* Firefox */
-.h-scroll-always {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(15, 23, 42, 0.28) rgba(15, 23, 42, 0.04);
+  background: rgba(15, 23, 42, 0.65) !important;
+  background-clip: padding-box !important;
 }
