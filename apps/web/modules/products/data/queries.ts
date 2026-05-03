@@ -3,24 +3,12 @@ import {
   getProductDetailById,
   getProductFormOptions,
   isPrismaNotFoundError,
-  listProducts,
-  withPrismaConnectivityHandling,
   type CategoryRecord,
   type ManufacturerRecord,
   type PrismaDetailPageResult,
-  type PrismaPageDataResult,
   type ProductDetailRecord,
-  type ProductRecord,
 } from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-
-// ---- List page loader ----
-
-export async function getProductsPageData(): Promise<PrismaPageDataResult<ProductRecord[]>> {
-  return withPrismaConnectivityHandling(() =>
-    withLoaderTiming({ loader: "flooring.products.list" }, () => listProducts()),
-  )
-}
 
 // ---- Create page loader ----
 

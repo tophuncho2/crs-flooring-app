@@ -13,3 +13,12 @@ export type CategoryMeta = {
   itemCoverageUnitName: string | null
   itemCoverageUnitAbbrev: string | null
 }
+
+// Slim option shape consumed by the canonical CategoryPicker (server-side
+// search). `slug` is included so the picker can show it as a subtitle line
+// without an extra fetch.
+export type CategoryOption = {
+  id: string
+  name: string
+  slug: string
+}

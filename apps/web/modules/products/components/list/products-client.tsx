@@ -1,65 +1,51 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
-import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { FormStatusNotices } from "@/modules/shared/engines/common/feedback/notices"
-import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
-import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
-import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import { type GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
+import { useMemo } from "react"
+import { SectionHeader } from "@/components/headers"
+import { SearchControl } from "@/components/features/search"
+import { useServerListController } from "@/controllers/list-view"
+import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
+import type { ProductsListFilters } from "@builders/application"
 import {
-  type ProductRecord,
-  useProductsListController,
-} from "@/modules/products/controllers/use-products-list-controller"
+  LIST_PRODUCTS_PAGE_SIZE,
+  type CategoryOption,
+  type ProductListRow,
+  type TablePreferencePayload,
+} from "@builders/domain"
+import {
+  PRODUCTS_LIST_QUERY_KEY,
+  listProductsRequest,
+} from "@/modules/products/data/list-products-request"
+import { useProductsListController } from "@/modules/products/controllers/use-products-list-controller"
+import { CategoryFilterChip } from "./category-filter-chip"
 import { ProductsTable } from "./products-table"
 
-type ServerPaginationState = {
-  page: number
-  pageSize: number
-  totalItems: number
-  totalPages: number
-  previousPageHref: string
-  nextPageHref: string
-}
+const PRODUCTS_FILTERABLE_FIELDS = ["categoryId"] as const
 
-type ServerTableState = {
-  searchQuery: string
-  isAscendingSort: boolean
-  isGroupingEnabled: boolean
-  groupByKeys: string[]
-}
-
-export default function FlooringProductsClient({
-  initialProducts,
-  tableState,
-  pagination,
-  initialTablePreferences,
-}: {
-  initialProducts: ProductRecord[]
-  tableState: ServerTableState
-  pagination?: ServerPaginationState
+export type ProductsClientProps = {
   initialTablePreferences?: TablePreferencePayload | null
-}) {
-  const {
-    products,
-    message,
-    error,
-    openCreateProduct,
-    openProductRecord,
-  } = useProductsListController({
-    initialProducts,
-  })
+  initialSearchQuery: string
+  initialPage: number
+  initialFilters: ProductsListFilters
+  initialCategoryOptions: CategoryOption[]
+  initialSelectedCategory?: CategoryOption | null
+}
+
+export default function ProductsClient({
+  initialTablePreferences,
+  initialSearchQuery,
+  initialPage,
+  initialFilters,
+  initialCategoryOptions,
+  initialSelectedCategory = null,
+}: ProductsClientProps) {
+  const { message, pageError, openCreate, openProduct } = useProductsListController()
 
   const {
+    rows,
+    total,
     searchQuery,
-    isAscendingSort,
-    isGroupingEnabled,
-    filteredRows: filteredProducts,
-    sortedRows: sortedProducts,
-    groupedRowTree,
+    filters,
     page,
     pageSize,
     totalPages,
@@ -67,95 +53,102 @@ export default function FlooringProductsClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    visibleColumns: visibleProductColumns,
     onSearchQueryChange,
-    onToggleSort,
-  } = useConfiguredTableState({
-    rows: products,
+    onFilterChange,
+  } = useServerListController<ProductListRow, ProductsListFilters>({
+    mode: "fetch",
+    queryKey: [...PRODUCTS_LIST_QUERY_KEY],
+    listFn: listProductsRequest,
+    initialSearchQuery,
+    initialPage,
+    initialFilters,
+    pageSize: LIST_PRODUCTS_PAGE_SIZE,
     tableKey: "products-main",
-    fields: [
-      { key: "product", label: "Product", getValue: (row) => row.name || "Pending name", groupable: false },
-      { key: "category", label: "Category", getValue: (row) => row.category.name, groupable: true },
-      { key: "manufacturer", label: "Manufacturer", getValue: (row) => row.manufacturerName, groupable: true },
-      { key: "style", label: "Style", getValue: (row) => row.style, groupable: true },
-      { key: "color", label: "Color", getValue: (row) => row.color, groupable: true },
-      {
-        key: "coverage",
-        label: "Coverage",
-        getValue: (row) => (row.coveragePerUnit ? `${row.coveragePerUnit} / ${row.coverageUnit || "unit"}` : ""),
-        groupable: false,
-      },
-      { key: "width", label: "Width", getValue: (row) => row.width, groupable: false },
-      { key: "sheetSize", label: "Sheet Size", getValue: (row) => row.sheetSize, groupable: false },
-      { key: "thickness", label: "Thickness", getValue: (row) => row.thickness, groupable: false },
-      { key: "unitWeight", label: "Unit Weight", getValue: (row) => row.unitWeight, groupable: false },
-    ],
-    sortField: (row) => row.name,
-    sortFieldKey: "product",
-    initialSearchQuery: tableState.searchQuery,
-    defaultGrouped: tableState.isGroupingEnabled,
-    defaultGroupKeys: tableState.groupByKeys,
-    defaultAscending: tableState.isAscendingSort,
-    urlSyncMode: "router",
-    initialPreferences: initialTablePreferences,
-    disableClientFiltering: true,
-    disableClientSorting: true,
-    disableClientPagination: true,
+    initialTablePreferences,
+    filterableFields: PRODUCTS_FILTERABLE_FIELDS,
+    freshness: LIST_FRESHNESS_STANDARD,
   })
 
+  const selectedCategoryId = useMemo(() => {
+    const ids = (filters as ProductsListFilters).categoryId
+    return ids && ids.length > 0 ? ids[0] : null
+  }, [filters])
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (!selectedCategoryId) return null
+    if (
+      initialSelectedCategory &&
+      initialSelectedCategory.id === selectedCategoryId
+    ) {
+      return initialSelectedCategory.name
+    }
+    const seeded = initialCategoryOptions.find(
+      (option) => option.id === selectedCategoryId,
+    )
+    return seeded ? seeded.name : null
+  }, [
+    selectedCategoryId,
+    initialSelectedCategory,
+    initialCategoryOptions,
+  ])
+
   return (
-    <DashboardListPageScaffold
-      title={<DashboardCardTitle>Flooring Products</DashboardCardTitle>}
-      controls={
-        <DashboardListPageControls
-          count={filteredProducts.length}
-          searchQuery={searchQuery}
-          onSearchQueryChange={onSearchQueryChange}
-          searchPlaceholder="Search product name"
-          isAscendingSort={isAscendingSort}
-          onToggleSort={onToggleSort}
-          primaryAction={
-            <button type="button" onClick={openCreateProduct} className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}>
-              <Plus size={16} />
-              Product
-            </button>
-          }
+    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <SectionHeader
+          title="Flooring Products"
+          actions={[{ key: "new", label: "+ Product", onClick: () => openCreate(), kind: "primary" }]}
         />
-      }
-      notices={<FormStatusNotices message={message} error={error} />}
-      table={
+
+        {message || pageError ? (
+          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+            {message ? (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
+                {message}
+              </div>
+            ) : null}
+            {pageError ? (
+              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                {pageError}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="min-w-[16rem] flex-1">
+            <SearchControl
+              query={searchQuery}
+              onQueryChange={onSearchQueryChange}
+              placeholder="Search style"
+            />
+          </div>
+          <CategoryFilterChip
+            value={selectedCategoryId}
+            selectedLabel={selectedCategoryLabel}
+            onChange={(id) =>
+              onFilterChange("categoryId", id ? [id] : [])
+            }
+            initialOptions={initialCategoryOptions}
+          />
+          <span className="text-xs text-[var(--foreground)]/55">
+            {rows.length} of {total} products
+          </span>
+        </div>
+
         <ProductsTable
-          rows={sortedProducts}
-          groupedRows={groupedRowTree as GroupedRowTree<ProductRecord>[]}
-          isGroupingEnabled={isGroupingEnabled}
-          visibleColumnKeys={visibleProductColumns.map((column) => column.key)}
-          visibleColumns={visibleProductColumns.map((column) => ({ key: column.key, label: column.label }))}
-          pagination={pagination}
+          rows={rows}
           page={page}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalItems={filteredProducts.length}
+          totalItems={total}
           hasPreviousPage={hasPreviousPage}
           hasNextPage={hasNextPage}
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
-          onOpenProduct={openProductRecord}
+          onOpenProduct={openProduct}
         />
-      }
-      pagination={
-        <TablePaginationControls
-          page={pagination?.page ?? page}
-          totalPages={pagination?.totalPages ?? totalPages}
-          pageSize={pagination?.pageSize ?? pageSize}
-          totalItems={pagination?.totalItems ?? filteredProducts.length}
-          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-          onPreviousPage={pagination ? undefined : goToPreviousPage}
-          onNextPage={pagination ? undefined : goToNextPage}
-          previousPageHref={pagination?.previousPageHref}
-          nextPageHref={pagination?.nextPageHref}
-        />
-      }
-    />
+      </div>
+    </div>
   )
 }

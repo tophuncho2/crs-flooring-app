@@ -1,6 +1,24 @@
+import { z } from "zod"
 import { ProductExecutionError } from "@builders/application"
-import type { CreateProductInput } from "@builders/application"
+import type {
+  CreateProductInput,
+  ListInput,
+  ProductsListFilters,
+} from "@builders/application"
+import {
+  LIST_PRODUCTS_MAX_PAGE_SIZE,
+  LIST_PRODUCTS_PAGE_SIZE,
+} from "@builders/domain"
 import { parseDecimal, parseOptionalString } from "@/server/http/api-helpers"
+
+function fail(message: string, field?: string): never {
+  throw new ProductExecutionError({
+    code: "PRODUCT_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
 
 function parseCoveragePerUnit(value: unknown) {
   if (value === "" || value === null || value === undefined) return null
@@ -70,4 +88,59 @@ export function validateUpdateProductInput(
   }
 
   return parseSharedFields(body)
+}
+
+// --- List query validator ---
+
+const listProductsQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_PRODUCTS_MAX_PAGE_SIZE)
+    .default(LIST_PRODUCTS_PAGE_SIZE),
+})
+
+export function validateListProductsQuery(
+  searchParams: URLSearchParams,
+): ListInput<ProductsListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    if (key === "categoryId") return
+    raw[key] = value
+  })
+
+  const parseResult = listProductsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid products list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const categoryIdRaw = searchParams.getAll("categoryId")
+  const categoryId = Array.from(
+    new Set(
+      categoryIdRaw
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+
+  return {
+    search,
+    filters:
+      categoryId.length > 0
+        ? { categoryId }
+        : undefined,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
 }

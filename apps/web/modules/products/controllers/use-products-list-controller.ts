@@ -1,37 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { ProductRecord } from "@builders/db"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 
-export type { ProductRecord } from "@builders/db"
-
-export function useProductsListController({
-  initialProducts,
-}: {
-  initialProducts: ProductRecord[]
-}) {
-  const productNavigation = useRecordEntryNavigation("/dashboard/products")
-  const [products, setProducts] = useState(initialProducts)
+export function useProductsListController() {
+  const navigation = useRecordEntryNavigation("/dashboard/products")
   const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
-
-  function clearNotices() {
-    setMessage("")
-    setError("")
-  }
-
-  function openCreateProduct() {
-    clearNotices()
-    productNavigation.openCreate()
-  }
+  const [pageError, setPageError] = useState("")
 
   return {
-    products,
     message,
-    error,
-    clearNotices,
-    openCreateProduct,
-    openProductRecord: productNavigation.openRecord,
+    setMessage,
+    pageError,
+    setPageError,
+    openCreate: navigation.openCreate,
+    openProduct: navigation.openRecord,
   }
 }

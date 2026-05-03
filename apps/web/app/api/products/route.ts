@@ -1,5 +1,4 @@
-import { createProductUseCase } from "@builders/application"
-import { listProducts, listProductOptions } from "@builders/db"
+import { createProductUseCase, listProductsUseCase } from "@builders/application"
 import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -10,14 +9,12 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateCreateProductInput } from "./_validators"
+import { validateCreateProductInput, validateListProductsQuery } from "./_validators"
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const catalogMode = searchParams.get("catalog") === "1"
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
-    toolSlug: catalogMode ? PRODUCTS_TOOL_SLUG : "warehouse",
+    toolSlug: PRODUCTS_TOOL_SLUG,
   })
   if (access instanceof Response) return access
 
@@ -25,9 +22,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, {
-      products: catalogMode ? await listProducts() : await listProductOptions(),
-    })
+    const url = new URL(request.url)
+    const input = validateListProductsQuery(url.searchParams)
+    const result = await listProductsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

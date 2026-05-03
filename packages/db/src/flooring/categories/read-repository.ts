@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
+import type { CategoryOption } from "@builders/domain"
 
 type CategoryDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -90,4 +91,29 @@ export async function getCategoryById(
     include: categoryInclude,
   })
   return category ? normalizeCategoryRow(category) : null
+}
+
+// --- Picker / options search ---
+
+export type CategoryOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+export async function searchCategoryOptions(
+  args: CategoryOptionsSearchArgs,
+  client: CategoryDbClient = db,
+): Promise<CategoryOption[]> {
+  const where = args.search
+    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  const rows = await client.flooringCategory.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
+    select: { id: true, name: true, slug: true },
+  })
+
+  return rows.map((row) => ({ id: row.id, name: row.name, slug: row.slug }))
 }

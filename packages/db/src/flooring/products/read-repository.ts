@@ -1,4 +1,5 @@
 import { db } from "../../client.js"
+import type { Prisma } from "@prisma/client"
 import {
   listCategories,
   type CategoryRecord,
@@ -218,4 +219,60 @@ export async function getProductFormOptions(
     listManufacturers(client),
   ])
   return { categoryOptions, manufacturerOptions }
+}
+
+// --- List-view read ---
+
+export type ProductListViewOptions = {
+  search?: string
+  filters?: { categoryId?: ReadonlyArray<string> }
+  skip: number
+  take: number
+}
+
+export type ProductListViewResult = {
+  rows: ProductRecord[]
+  total: number
+}
+
+function buildListViewWhere(
+  options: Pick<ProductListViewOptions, "search" | "filters">,
+): Prisma.FlooringProductWhereInput | undefined {
+  const clauses: Prisma.FlooringProductWhereInput[] = []
+
+  if (options.search) {
+    clauses.push({ style: { contains: options.search, mode: "insensitive" } })
+  }
+
+  const categoryIds = options.filters?.categoryId
+  if (categoryIds && categoryIds.length > 0) {
+    clauses.push({ categoryId: { in: [...categoryIds] } })
+  }
+
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
+}
+
+export async function listProductsForListView(
+  options: ProductListViewOptions,
+  client: ProductsDbClient = db,
+): Promise<ProductListViewResult> {
+  const where = buildListViewWhere(options)
+
+  const [total, rows] = await Promise.all([
+    client.flooringProduct.count({ where }),
+    client.flooringProduct.findMany({
+      where,
+      orderBy: [{ category: { slug: "asc" } }, { name: "asc" }],
+      skip: options.skip,
+      take: options.take,
+      select: productRowSelect,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeProductRow),
+  }
 }
