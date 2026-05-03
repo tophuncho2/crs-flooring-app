@@ -2,7 +2,6 @@
 
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
-import { SortToggle } from "@/components/features/sort"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ImportsListFilters } from "@builders/application"
@@ -19,18 +18,15 @@ import { useImportsListController } from "@/modules/imports/controllers/use-impo
 import { ImportsTable } from "./imports-table"
 
 const IMPORTS_ALLOWED_GROUP_FIELDS = ["warehouse", "manufacturer"] as const
-const IMPORTS_ALLOWED_SORT_FIELDS = ["importNumber"] as const
 
 export default function ImportsClient({
   initialTablePreferences,
   initialSearchQuery,
-  initialIsAscendingSort,
   initialGroupField,
   initialPage,
 }: {
   initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
-  initialIsAscendingSort: boolean
   initialGroupField: string | null
   initialPage: number
 }) {
@@ -40,7 +36,6 @@ export default function ImportsClient({
     rows,
     total,
     searchQuery,
-    sort,
     page,
     pageSize,
     totalPages,
@@ -49,24 +44,19 @@ export default function ImportsClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
-    onToggleSortDirection,
   } = useServerListController<ImportRow, ImportsListFilters>({
     mode: "fetch",
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
     listFn: listImportsRequest,
     initialSearchQuery,
-    initialSort: { field: "importNumber", direction: initialIsAscendingSort ? "asc" : "desc" },
     initialGroupField,
     initialPage,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
     tableKey: "imports-main",
     initialTablePreferences,
-    allowedSortFields: IMPORTS_ALLOWED_SORT_FIELDS,
     allowedGroupFields: IMPORTS_ALLOWED_GROUP_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
-
-  const isAscendingSort = sort?.direction !== "desc"
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -99,13 +89,6 @@ export default function ImportsClient({
               placeholder="Search import # or tag"
             />
           </div>
-          <SortToggle
-            sortKey="importNumber"
-            direction={isAscendingSort ? "asc" : "desc"}
-            onChange={() => onToggleSortDirection()}
-            ascendingLabel="1-9"
-            descendingLabel="9-1"
-          />
           <span className="text-xs text-[var(--foreground)]/55">
             {rows.length} of {total} imports
           </span>

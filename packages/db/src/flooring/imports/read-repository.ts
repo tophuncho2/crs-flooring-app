@@ -112,12 +112,10 @@ export async function countImports(
   return client.flooringImportEntry.count({ where: buildListWhere(filter) })
 }
 
-export type ImportListSortField = "importNumber"
 export type ImportListGroupField = "warehouse" | "manufacturer"
 
 export type ImportListViewOptions = {
   search?: string
-  sort: { field: ImportListSortField; direction: "asc" | "desc" }
   group: { field: ImportListGroupField } | null
   skip: number
   take: number
@@ -150,21 +148,19 @@ function buildListViewWhere(search: string | undefined): Prisma.FlooringImportEn
 }
 
 function buildListViewOrderBy(
-  sort: ImportListViewOptions["sort"],
   group: ImportListViewOptions["group"],
 ): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
-  const direction: Prisma.SortOrder = sort.direction
   const orderBy: Prisma.FlooringImportEntryOrderByWithRelationInput[] = []
 
   if (group) {
     if (group.field === "warehouse") {
-      orderBy.push({ warehouse: { name: direction } })
+      orderBy.push({ warehouse: { name: "asc" } })
     } else if (group.field === "manufacturer") {
-      orderBy.push({ manufacturer: { companyName: direction } })
+      orderBy.push({ manufacturer: { companyName: "asc" } })
     }
   }
 
-  orderBy.push({ importNumber: direction })
+  orderBy.push({ importNumber: "desc" })
   return orderBy
 }
 
@@ -173,7 +169,7 @@ export async function listImportsForListView(
   client: ImportsDbClient = db,
 ): Promise<ImportListViewResult> {
   const where = buildListViewWhere(options.search)
-  const orderBy = buildListViewOrderBy(options.sort, options.group)
+  const orderBy = buildListViewOrderBy(options.group)
 
   const [total, rows] = await Promise.all([
     client.flooringImportEntry.count({ where }),

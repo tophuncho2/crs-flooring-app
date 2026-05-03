@@ -1,5 +1,4 @@
-import { createPropertyUseCase } from "@builders/application"
-import { listProperties } from "@builders/db"
+import { createPropertyUseCase, listPropertiesUseCase } from "@builders/application"
 import { PROPERTIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -10,7 +9,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreatePropertyInput } from "./_validators"
+import { validateCreatePropertyInput, validateListPropertiesQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -22,8 +21,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const properties = await listProperties({})
-    return routeJson(access, { properties })
+    const url = new URL(request.url)
+    const input = validateListPropertiesQuery(url.searchParams)
+    const result = await listPropertiesUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

@@ -1,8 +1,15 @@
+import { z } from "zod"
 import { ManagementCompanyExecutionError } from "@builders/application"
 import type {
   CreateManagementCompanyUseCaseInput,
+  ListInput,
+  ManagementCompaniesListFilters,
   UpdateManagementCompanyUseCaseInput,
 } from "@builders/application"
+import {
+  LIST_MANAGEMENT_COMPANIES_MAX_PAGE_SIZE,
+  LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+} from "@builders/domain"
 
 function fail(message: string, field?: string): never {
   throw new ManagementCompanyExecutionError({
@@ -70,4 +77,82 @@ export function validateUpdateManagementCompanyInput(
   if ("email" in body) input.email = optionalString(body.email)
 
   return input
+}
+
+// --- List query validator ---
+
+const listManagementCompaniesQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_MANAGEMENT_COMPANIES_MAX_PAGE_SIZE)
+    .default(LIST_MANAGEMENT_COMPANIES_PAGE_SIZE),
+})
+
+export function validateListManagementCompaniesQuery(
+  searchParams: URLSearchParams,
+): ListInput<ManagementCompaniesListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = listManagementCompaniesQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid management companies list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  return {
+    search,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
+}
+
+// --- Options query validator ---
+
+const managementCompanyOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).default(20),
+})
+
+export type ValidatedManagementCompanyOptionsQuery = {
+  search?: string
+  take: number
+}
+
+export function validateManagementCompanyOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedManagementCompanyOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = managementCompanyOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmed = parsed.search?.trim()
+  return {
+    search: trimmed ? trimmed : undefined,
+    take: parsed.take,
+  }
 }

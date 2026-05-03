@@ -167,3 +167,67 @@ export async function countPropertiesByManagementCompanyId(
 ): Promise<number> {
   return client.property.count({ where: { managementCompanyId } })
 }
+
+export type ManagementCompanyListViewOptions = {
+  search?: string
+  skip: number
+  take: number
+}
+
+export type ManagementCompanyListViewResult = {
+  rows: ManagementCompanyListRow[]
+  total: number
+}
+
+function buildListViewWhere(
+  search: string | undefined,
+): Prisma.FlooringManagementCompanyWhereInput | undefined {
+  if (!search) return undefined
+  return { name: { contains: search, mode: "insensitive" } }
+}
+
+export async function listManagementCompaniesForListView(
+  options: ManagementCompanyListViewOptions,
+  client: ManagementCompaniesDbClient = db,
+): Promise<ManagementCompanyListViewResult> {
+  const where = buildListViewWhere(options.search)
+
+  const [total, rows] = await Promise.all([
+    client.flooringManagementCompany.count({ where }),
+    client.flooringManagementCompany.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip: options.skip,
+      take: options.take,
+      select: managementCompanyListSelect,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeManagementCompanyListRow),
+  }
+}
+
+export type ManagementCompanyOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+export async function searchManagementCompanyOptions(
+  args: ManagementCompanyOptionsSearchArgs,
+  client: ManagementCompaniesDbClient = db,
+): Promise<ManagementCompanyOption[]> {
+  const where = args.search
+    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  const companies = await client.flooringManagementCompany.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
+    select: { id: true, name: true },
+  })
+
+  return companies.map(normalizeManagementCompanyOption)
+}

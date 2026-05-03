@@ -10,7 +10,7 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 
 const IMPORTS_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "importNumber", direction: "asc" },
+  sort: { key: "importNumber", direction: "desc" },
   filters: {},
   columnVisibility: {},
   columnOrder: [],
@@ -58,7 +58,6 @@ export default async function FlooringImportsPage({
       <ImportsClient
         initialTablePreferences={userPreferences}
         initialSearchQuery={initialInput.search ?? ""}
-        initialIsAscendingSort={(initialInput.sort?.direction ?? "asc") === "asc"}
         initialGroupField={initialInput.group?.field ?? null}
         initialPage={initialInput.page}
       />

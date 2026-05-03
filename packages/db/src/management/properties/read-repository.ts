@@ -174,3 +174,57 @@ export async function countTemplatesByPropertyId(
 ): Promise<number> {
   return client.flooringTemplate.count({ where: { propertyId } })
 }
+
+export type PropertyListViewOptions = {
+  search?: string
+  filters?: { managementCompanyId?: ReadonlyArray<string> }
+  skip: number
+  take: number
+}
+
+export type PropertyListViewResult = {
+  rows: PropertyListRow[]
+  total: number
+}
+
+function buildListViewWhere(
+  options: Pick<PropertyListViewOptions, "search" | "filters">,
+): Prisma.PropertyWhereInput | undefined {
+  const clauses: Prisma.PropertyWhereInput[] = []
+
+  if (options.search) {
+    clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+  }
+
+  const managementCompanyIds = options.filters?.managementCompanyId
+  if (managementCompanyIds && managementCompanyIds.length > 0) {
+    clauses.push({ managementCompanyId: { in: [...managementCompanyIds] } })
+  }
+
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
+}
+
+export async function listPropertiesForListView(
+  options: PropertyListViewOptions,
+  client: PropertiesDbClient = db,
+): Promise<PropertyListViewResult> {
+  const where = buildListViewWhere(options)
+
+  const [total, rows] = await Promise.all([
+    client.property.count({ where }),
+    client.property.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip: options.skip,
+      take: options.take,
+      select: propertyListSelect,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizePropertyListRow),
+  }
+}

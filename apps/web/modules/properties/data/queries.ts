@@ -1,27 +1,15 @@
 import {
-  countProperties,
   createPrismaPageLoadIssue,
   getPropertyById,
   isPrismaNotFoundError,
   listManagementCompanyOptions,
-  listProperties,
   listPropertyOptions,
   listWarehouseOptions,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 
-function toListSort(tableState: ServerTableQueryState) {
-  return {
-    direction: tableState.isAscendingSort ? ("asc" as const) : ("desc" as const),
-    groupByKeys: tableState.groupByKeys,
-    isGroupingEnabled: tableState.isGroupingEnabled,
-  }
-}
-
-export { listProperties, listPropertyOptions, getPropertyById }
+export { listPropertyOptions, getPropertyById }
 
 async function loadPropertyDetailOptions() {
   const [managementOptions, warehouseOptions] = await Promise.all([
@@ -72,43 +60,3 @@ export async function getPropertyDetailPageData(id: string): Promise<PrismaDetai
   }
 }
 
-async function loadPropertiesPageData(page: number, tableState: ServerTableQueryState) {
-  const totalItems = await countProperties({ searchQuery: tableState.searchQuery })
-  const pagination = createServerPagination({ page, totalItems })
-  const [initialProperties, managementOptions] = await Promise.all([
-    listProperties({
-      searchQuery: tableState.searchQuery,
-      sort: toListSort(tableState),
-      pagination: { skip: pagination.skip, take: pagination.take },
-    }),
-    listManagementCompanyOptions(),
-  ])
-
-  return {
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      totalItems: pagination.totalItems,
-      totalPages: pagination.totalPages,
-    },
-    tableState,
-    initialProperties,
-    managementOptions,
-  }
-}
-
-export async function getPropertiesPageData(page: number, tableState: ServerTableQueryState) {
-  return withPrismaConnectivityHandling(() =>
-    withLoaderTiming(
-      {
-        loader: "flooring.properties.list",
-        details: {
-          page,
-          searchQuery: tableState.searchQuery,
-          groupCount: tableState.groupByKeys.length,
-        },
-      },
-      () => loadPropertiesPageData(page, tableState),
-    ),
-  )
-}

@@ -9,7 +9,6 @@ import {
 import { requestJson } from "@/transport/http"
 
 export type ImportsListInitialDefaults = {
-  isAscendingSort?: boolean
   groupField?: ListImportsAllowedGroupField | null
 }
 
@@ -31,7 +30,6 @@ function defaultsFromTablePreferences(
     ? preferences.grouping.keys[0]
     : undefined
   return {
-    isAscendingSort: preferences.sort.direction === "asc",
     groupField:
       groupKey && (ALLOWED_GROUP_FIELDS as readonly string[]).includes(groupKey)
         ? (groupKey as ListImportsAllowedGroupField)
@@ -46,17 +44,9 @@ export function parseImportsListInputFromSearchParams(
   const defaults = defaultsFromTablePreferences(preferences)
 
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
-  const sortRaw = (readSearchParam(searchParams, "sort") ?? "").trim().toLowerCase()
   const groupedRaw = (readSearchParam(searchParams, "grouped") ?? "").trim()
   const groupsRaw = (readSearchParam(searchParams, "groups") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
-
-  const direction: "asc" | "desc" =
-    sortRaw === "desc" || sortRaw === "asc"
-      ? sortRaw
-      : defaults.isAscendingSort === false
-        ? "desc"
-        : "asc"
 
   const isGroupedExplicit = groupedRaw === "1" || groupedRaw === "0"
   const isGrouped = isGroupedExplicit
@@ -81,7 +71,6 @@ export function parseImportsListInputFromSearchParams(
 
   return {
     search: searchRaw || undefined,
-    sort: { field: "importNumber", direction },
     group: validGroupField ? { field: validGroupField } : undefined,
     page,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
@@ -91,7 +80,6 @@ export function parseImportsListInputFromSearchParams(
 export function buildImportsListSearchString(input: ListInput<ImportsListFilters>): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
-  if (input.sort) params.set("sort", input.sort.direction)
   if (input.group) {
     params.set("grouped", "1")
     params.set("groups", input.group.field)

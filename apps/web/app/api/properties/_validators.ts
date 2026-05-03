@@ -1,8 +1,15 @@
+import { z } from "zod"
 import { PropertyExecutionError } from "@builders/application"
 import type {
   CreatePropertyUseCaseInput,
+  ListInput,
+  PropertiesListFilters,
   UpdatePropertyUseCaseInput,
 } from "@builders/application"
+import {
+  LIST_PROPERTIES_MAX_PAGE_SIZE,
+  LIST_PROPERTIES_PAGE_SIZE,
+} from "@builders/domain"
 
 function fail(message: string, field?: string): never {
   throw new PropertyExecutionError({
@@ -74,4 +81,56 @@ export function validateUpdatePropertyInput(
   if ("instructions" in body) input.instructions = optionalString(body.instructions)
 
   return input
+}
+
+// --- List query validator ---
+
+const listPropertiesQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_PROPERTIES_MAX_PAGE_SIZE)
+    .default(LIST_PROPERTIES_PAGE_SIZE),
+})
+
+export function validateListPropertiesQuery(
+  searchParams: URLSearchParams,
+): ListInput<PropertiesListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    if (key === "managementCompanyId") return
+    raw[key] = value
+  })
+
+  const parseResult = listPropertiesQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(issue?.message ?? "Invalid properties list query", issue?.path[0] ? String(issue.path[0]) : undefined)
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const managementCompanyIdRaw = searchParams.getAll("managementCompanyId")
+  const managementCompanyId = Array.from(
+    new Set(
+      managementCompanyIdRaw
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+
+  return {
+    search,
+    filters:
+      managementCompanyId.length > 0
+        ? { managementCompanyId }
+        : undefined,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
 }

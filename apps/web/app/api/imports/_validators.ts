@@ -11,6 +11,7 @@ import {
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
 } from "@builders/domain"
+// no sort param — imports default to importNumber desc, hardcoded server-side
 import type {
   StagedInventoryRowDelete,
   StagedInventoryRowDraft,
@@ -176,7 +177,6 @@ function failMarkForImport(message: string, field?: string): never {
 
 const listImportsQuerySchema = z.object({
   q: z.string().optional(),
-  sort: z.enum(["asc", "desc"]).default("asc"),
   grouped: z.enum(["0", "1"]).optional(),
   groups: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -222,7 +222,6 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
 
   return {
     search,
-    sort: { field: "importNumber", direction: parsed.sort },
     group: groupField ? { field: groupField } : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

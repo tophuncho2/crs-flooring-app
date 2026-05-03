@@ -1,16 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
-import type { PropertyListRow } from "@builders/domain"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 
-export function usePropertiesListController(initialRows: PropertyListRow[]) {
-  const [rows, setRows] = useState(initialRows)
-  const notices = useRecordNotices()
+export function usePropertiesListController() {
+  const navigation = useRecordEntryNavigation("/dashboard/properties")
+  const [message, setMessage] = useState("")
+  const [pageError, setPageError] = useState("")
 
   return {
-    rows,
-    setRows,
-    notices,
+    message,
+    setMessage,
+    pageError,
+    setPageError,
+    openCreate: navigation.openCreate,
+    openProperty: navigation.openRecord,
   }
 }

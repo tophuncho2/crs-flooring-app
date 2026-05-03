@@ -1,5 +1,7 @@
-import { createManagementCompanyUseCase } from "@builders/application"
-import { listManagementCompanies } from "@builders/db"
+import {
+  createManagementCompanyUseCase,
+  listManagementCompaniesUseCase,
+} from "@builders/application"
 import { MANAGEMENT_COMPANIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -10,7 +12,10 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreateManagementCompanyInput } from "./_validators"
+import {
+  validateCreateManagementCompanyInput,
+  validateListManagementCompaniesQuery,
+} from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -22,8 +27,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const managementCompanies = await listManagementCompanies({})
-    return routeJson(access, { managementCompanies })
+    const url = new URL(request.url)
+    const input = validateListManagementCompaniesQuery(url.searchParams)
+    const result = await listManagementCompaniesUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

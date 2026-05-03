@@ -1,9 +1,27 @@
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
+import {
+  getResolvedUserTablePreference,
+  listPropertiesUseCase,
+  searchManagementCompanyOptionsUseCase,
+} from "@builders/application"
+import type { ManagementCompanyOption, TablePreferencePayload } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
-import { getResolvedUserTablePreference } from "@builders/application"
-import { buildPageHrefWithSearchParams, parsePageParam, parseServerTableQueryState } from "@/server/pagination"
-import { getPropertiesPageData } from "@/modules/properties/data/queries"
 import PropertiesClient from "@/modules/properties/components/list/properties-client"
+import {
+  PROPERTIES_LIST_QUERY_KEY,
+  parsePropertiesListInputFromSearchParams,
+} from "@/modules/properties/data/list-properties-request"
+
+const PROPERTIES_FALLBACK_PREFERENCES: TablePreferencePayload = {
+  sort: { key: "name", direction: "asc" },
+  filters: {},
+  columnVisibility: {},
+  columnOrder: [],
+  grouping: { enabled: false, keys: [] },
+}
+
+const INITIAL_OPTIONS_TAKE = 20
 
 export default async function FlooringPropertiesPage({
   searchParams,
@@ -11,42 +29,69 @@ export default async function FlooringPropertiesPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await requireToolAccess("warehouse")
+  const userPreferences = await getResolvedUserTablePreference(user.id, "properties-main")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const page = parsePageParam(resolvedSearchParams?.page)
-  const initialTablePreferences = await getResolvedUserTablePreference(user.id, "properties-main")
-  const tableState = parseServerTableQueryState({
-    searchParams: resolvedSearchParams,
-    defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
-    defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
-    allowedGroupKeys: ["city", "state", "managementCompany"],
-    defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : ["managementCompany"],
-  })
-  const result = await getPropertiesPageData(page, tableState)
 
-  if (!result.ok) {
+  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
+    ? userPreferences
+    : PROPERTIES_FALLBACK_PREFERENCES
+
+  const initialInput = parsePropertiesListInputFromSearchParams(resolvedSearchParams)
+
+  const queryClient = new QueryClient()
+
+  let initialManagementCompanyOptions: ManagementCompanyOption[] = []
+  let initialSelectedManagementCompany: ManagementCompanyOption | null = null
+
+  try {
+    const selectedManagementCompanyId =
+      initialInput.filters?.managementCompanyId?.[0] ?? null
+
+    const [, options] = await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: [...PROPERTIES_LIST_QUERY_KEY, initialInput],
+        queryFn: () => listPropertiesUseCase(initialInput),
+      }),
+      searchManagementCompanyOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+    ])
+
+    initialManagementCompanyOptions = options
+
+    if (selectedManagementCompanyId) {
+      const seeded = options.find((option) => option.id === selectedManagementCompanyId)
+      if (seeded) {
+        initialSelectedManagementCompany = seeded
+      } else {
+        const [match] = await searchManagementCompanyOptionsUseCase({
+          search: selectedManagementCompanyId,
+          take: 1,
+        })
+        if (match && match.id === selectedManagementCompanyId) {
+          initialSelectedManagementCompany = match
+        }
+      }
+    }
+  } catch (error) {
     return (
       <DashboardErrorState
-        title={result.error.title}
-        message={result.error.message}
-        detail={result.error.detail}
-        errorCode={result.error.code}
+        title="Properties Unavailable"
+        message="The app could not load the properties list."
+        detail={error instanceof Error ? error.message : "Unknown error"}
+        errorCode="PROPERTY_LIST_LOAD_FAILED"
       />
     )
   }
 
-  const pageData = result.data
-
   return (
-    <PropertiesClient
-      key={`properties-${pageData.pagination.page}-${pageData.tableState.searchQuery}-${pageData.tableState.isAscendingSort}-${pageData.tableState.isGroupingEnabled}-${pageData.tableState.groupByKeys.join(",")}`}
-      initialProperties={pageData.initialProperties}
-      tableState={pageData.tableState}
-      initialTablePreferences={initialTablePreferences}
-      pagination={{
-        ...pageData.pagination,
-        previousPageHref: buildPageHrefWithSearchParams("/dashboard/properties", pageData.pagination.page - 1, resolvedSearchParams),
-        nextPageHref: buildPageHrefWithSearchParams("/dashboard/properties", pageData.pagination.page + 1, resolvedSearchParams),
-      }}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <PropertiesClient
+        initialTablePreferences={effectivePreferences}
+        initialSearchQuery={initialInput.search ?? ""}
+        initialPage={initialInput.page}
+        initialFilters={initialInput.filters ?? {}}
+        initialManagementCompanyOptions={initialManagementCompanyOptions}
+        initialSelectedManagementCompany={initialSelectedManagementCompany}
+      />
+    </HydrationBoundary>
   )
 }

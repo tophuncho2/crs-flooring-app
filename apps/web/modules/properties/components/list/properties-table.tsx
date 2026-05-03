@@ -1,86 +1,91 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
-import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
-import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import {
-  ClickableTableRow,
-  TableEmptyRow,
-} from "@/modules/shared/engines/list-view/table/table-shell"
-import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
+import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { PaginateControls } from "@/components/features/paginate"
 import type { PropertyListRow } from "@builders/domain"
+
+const PROPERTIES_LIST_LAYOUT: GridLayout<PropertyListRow> = {
+  dataColumns: [
+    { key: "name", label: "Property", minWidth: 180, grow: 1 },
+    { key: "managementCompany", label: "Management Company", minWidth: 180, grow: 1 },
+    { key: "streetAddress", label: "Street", minWidth: 160, grow: 1 },
+    { key: "city", label: "City", minWidth: 120, grow: 0 },
+    { key: "state", label: "State", minWidth: 70, grow: 0 },
+    { key: "zip", label: "Zip", minWidth: 80, grow: 0 },
+    { key: "phone", label: "Phone", minWidth: 130, grow: 0 },
+    { key: "email", label: "Email", minWidth: 180, grow: 1 },
+    { key: "templateCount", label: "Templates", kind: "number", minWidth: 90, grow: 0, align: "end" },
+  ],
+}
+
+export type PropertiesTableProps = {
+  rows: PropertyListRow[]
+  page: number
+  totalPages: number
+  pageSize: number
+  totalItems: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  onPreviousPage: () => void
+  onNextPage: () => void
+  onOpenProperty: (id: string) => void
+}
 
 export function PropertiesTable({
   rows,
-  visibleColumns,
-  groupedRows,
-  isGroupingEnabled,
-  onOpen,
-}: {
-  rows: PropertyListRow[]
-  visibleColumns: Array<{ key: string; label: string }>
-  groupedRows: GroupedRowTree<PropertyListRow>[]
-  isGroupingEnabled: boolean
-  onOpen: (row: PropertyListRow) => void
-}) {
-  function renderRow(row: PropertyListRow) {
-    const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      managementCompany: (columnIndex) => (
-        <DashboardListRowCell key="managementCompany" columnIndex={columnIndex}>
-          {row.managementCompany?.name || "-"}
-        </DashboardListRowCell>
-      ),
-      name: (columnIndex) => (
-        <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium text-blue-500">
-          {row.name}
-        </DashboardListRowCell>
-      ),
-      street: (columnIndex) => (
-        <DashboardListRowCell key="street" columnIndex={columnIndex}>{row.streetAddress || "-"}</DashboardListRowCell>
-      ),
-      city: (columnIndex) => (
-        <DashboardListRowCell key="city" columnIndex={columnIndex}>{row.city || "-"}</DashboardListRowCell>
-      ),
-      state: (columnIndex) => (
-        <DashboardListRowCell key="state" columnIndex={columnIndex}>{row.state || "-"}</DashboardListRowCell>
-      ),
-      zip: (columnIndex) => (
-        <DashboardListRowCell key="zip" columnIndex={columnIndex}>{row.zip || "-"}</DashboardListRowCell>
-      ),
-      phone: (columnIndex) => (
-        <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>
-      ),
-      email: (columnIndex) => (
-        <DashboardListRowCell key="email" columnIndex={columnIndex}>{row.email || "-"}</DashboardListRowCell>
-      ),
-      templates: (columnIndex) => (
-        <DashboardListRowCell key="templates" columnIndex={columnIndex}>{row.templateCount}</DashboardListRowCell>
-      ),
-    }
-
-    return (
-      <ClickableTableRow
-        key={row.id}
-        ariaLabel={`Open property ${row.name}`}
-        onClick={() => onOpen(row)}
-      >
-        {renderDashboardRowCells(visibleColumns, cells)}
-      </ClickableTableRow>
-    )
-  }
-
+  page,
+  totalPages,
+  pageSize,
+  totalItems,
+  hasPreviousPage,
+  hasNextPage,
+  onPreviousPage,
+  onNextPage,
+  onOpenProperty,
+}: PropertiesTableProps) {
   return (
-    <DashboardListPageTable minWidthClass="min-w-[1320px]" columns={visibleColumns}>
-      {isGroupingEnabled
-        ? renderGroupedTableRows({
-            groups: groupedRows,
-            colSpan: visibleColumns.length,
-            renderRow,
-          })
-        : rows.map((row) => renderRow(row))}
-      {rows.length === 0 ? <TableEmptyRow message="No properties found." colSpan={visibleColumns.length} /> : null}
-    </DashboardListPageTable>
+    <Grid<PropertyListRow>
+      rows={rows}
+      layout={PROPERTIES_LIST_LAYOUT}
+      empty={<GridEmpty>No properties found.</GridEmpty>}
+      onRowClick={(row) => onOpenProperty(row.id)}
+      getRowAriaLabel={(row) => `Open property ${row.name}`}
+      renderCell={(column, row) => {
+        switch (column.key) {
+          case "name":
+            return <span className="font-medium text-blue-500">{row.name}</span>
+          case "managementCompany":
+            return row.managementCompany?.name ?? "-"
+          case "streetAddress":
+            return row.streetAddress || "-"
+          case "city":
+            return row.city || "-"
+          case "state":
+            return row.state || "-"
+          case "zip":
+            return row.zip || "-"
+          case "phone":
+            return row.phone || "-"
+          case "email":
+            return row.email || "-"
+          case "templateCount":
+            return <span className="tabular-nums">{row.templateCount}</span>
+          default:
+            return "-"
+        }
+      }}
+      footerSlot={
+        <PaginateControls
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={onPreviousPage}
+          onNextPage={onNextPage}
+        />
+      }
+    />
   )
 }
