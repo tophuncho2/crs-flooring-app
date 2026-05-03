@@ -316,8 +316,6 @@ export function WorkOrderMaterialItemsSection({
                 expanded={isExpanded}
                 renderParentCell={renderParentCell}
                 renderParentControl={renderParentControl}
-                childGroupLabel="Cut Logs"
-                childCount={cutLogs.length}
                 accentTone="sky"
               >
                 {isExpanded ? (
