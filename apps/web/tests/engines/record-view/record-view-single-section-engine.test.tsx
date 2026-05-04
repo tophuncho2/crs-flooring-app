@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import React from "react"
-import { describe, expect, it, vi } from "vitest"
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
   RecordCalculationSection,
@@ -158,6 +158,10 @@ function renderScopedSectionHarness() {
 }
 
 describe("record view single-section engine", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it("single-section controller owns dirty, discard, and authoritative reseed", async () => {
     const user = userEvent.setup()
     const { saveSection } = renderSingleSectionHarness()
