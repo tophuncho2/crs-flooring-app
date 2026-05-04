@@ -12,6 +12,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { categoryRequiresCoveragePerUnit, type ProductCreateForm } from "@builders/domain"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 
 function formatUnit(name: string | null | undefined, abbrev: string | null | undefined) {
@@ -84,26 +85,22 @@ export function ProductPrimaryFieldsSection({
                   {product.category.name || "—"}
                 </div>
               ) : (
-                <select
-                  value={draft.categoryId}
-                  onChange={(event) => {
-                    const nextCategoryId = event.target.value
-                    onFieldChange("categoryId", nextCategoryId)
-                    const nextCategory = categoryOptions.find((category) => category.id === nextCategoryId)
+                <CategoryPicker
+                  value={draft.categoryId || null}
+                  onChange={(nextCategoryId) => {
+                    onFieldChange("categoryId", nextCategoryId ?? "")
+                    const nextCategory = nextCategoryId
+                      ? categoryOptions.find((category) => category.id === nextCategoryId)
+                      : null
                     if (nextCategory && !categoryRequiresCoveragePerUnit(nextCategory.slug)) {
                       onFieldChange("coveragePerUnit", "")
                     }
                   }}
-                  className={RECORD_FIELD_CONTROL_CLASS_NAME}
+                  selectedLabel={selectedCategory?.name ?? null}
                   disabled={disabled}
-                >
-                  <option value="">Select a category</option>
-                  {categoryOptions.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select a category"
+                  ariaLabel="Category"
+                />
               )}
             </RecordFormField>
           </RecordPrimaryFieldCell>
