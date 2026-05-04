@@ -3,47 +3,10 @@ import {
   getInventoryById as dbGetInventoryById,
   getInventoryDetailById,
   isPrismaNotFoundError,
-  listInventory,
-  listInventoryOptions,
-  withPrismaConnectivityHandling,
   type InventoryDetailRecord,
   type InventoryRecord,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import type {
-  InventoryCategoryOption,
-  InventoryProductOption,
-  InventoryWarehouseOption,
-} from "@builders/domain"
-
-export type InventoryListPageData = {
-  initialInventory: InventoryRecord[]
-}
-
-export type InventoryFilterOptions = {
-  warehouseOptions: InventoryWarehouseOption[]
-  categoryOptions: InventoryCategoryOption[]
-  productOptions: InventoryProductOption[]
-}
-
-async function loadInventoryPageData(): Promise<InventoryListPageData> {
-  return {
-    initialInventory: await listInventory(),
-  }
-}
-
-export async function getInventoryPageData() {
-  return withPrismaConnectivityHandling(() => loadInventoryPageData())
-}
-
-export async function listInventoryPageFilterOptions(): Promise<InventoryFilterOptions> {
-  const options = await listInventoryOptions()
-  return {
-    warehouseOptions: options.warehouses,
-    categoryOptions: options.categories,
-    productOptions: options.products,
-  }
-}
 
 export async function getInventoryById(id: string): Promise<InventoryRecord | null> {
   return dbGetInventoryById(id)

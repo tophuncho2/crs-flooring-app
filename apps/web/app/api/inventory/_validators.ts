@@ -1,6 +1,11 @@
 import { z } from "zod"
 import { InventoryExecutionError } from "@builders/application"
-import type { UpdateInventoryInput } from "@builders/application"
+import type { InventoryListFilters, UpdateInventoryInput } from "@builders/application"
+import type { ListInput } from "@builders/application"
+import {
+  LIST_INVENTORY_MAX_PAGE_SIZE,
+  LIST_INVENTORY_PAGE_SIZE,
+} from "@builders/domain"
 
 function optionalString(value: unknown, field: string): string {
   if (value === undefined || value === null) return ""
@@ -86,6 +91,76 @@ export function validateInventorySearchQuery(
     ...(trimLocation ? { locationId: trimLocation } : {}),
     ...(trimSearch ? { search: trimSearch } : {}),
     take: parsed.take,
+  }
+}
+
+// --- List view query validator (search + filters + pagination) ---
+
+const FILTER_KEYS = ["warehouseId", "sectionId", "locationId", "categoryId", "productId"] as const
+type FilterKey = (typeof FILTER_KEYS)[number]
+
+const listInventoryQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_INVENTORY_MAX_PAGE_SIZE)
+    .default(LIST_INVENTORY_PAGE_SIZE),
+})
+
+function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
+  return Array.from(
+    new Set(
+      searchParams
+        .getAll(key)
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+}
+
+export function validateListInventoryQuery(
+  searchParams: URLSearchParams,
+): ListInput<InventoryListFilters> {
+  // Strip filter keys before zod validation — zod sees only scalar params.
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    if ((FILTER_KEYS as readonly string[]).includes(key)) return
+    raw[key] = value
+  })
+
+  const parseResult = listInventoryQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid inventory list query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const filterEntries: Array<[FilterKey, string[]]> = FILTER_KEYS.map((key) => [
+    key,
+    readMultiValue(searchParams, key),
+  ])
+  const filterRecord: Partial<InventoryListFilters> = {}
+  for (const [key, values] of filterEntries) {
+    if (values.length > 0) filterRecord[key] = values
+  }
+  const hasAnyFilter = Object.keys(filterRecord).length > 0
+
+  return {
+    search,
+    filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
   }
 }
 

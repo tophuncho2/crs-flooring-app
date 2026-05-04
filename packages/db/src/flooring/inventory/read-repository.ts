@@ -216,6 +216,111 @@ export async function countInventoriesByProductId(
   return client.flooringInventory.count({ where: { productId } })
 }
 
+// --- List view read (paginated, server-side filtered) ---
+
+export type InventoryListViewOptions = {
+  search?: string
+  filters?: {
+    warehouseId?: ReadonlyArray<string>
+    sectionId?: ReadonlyArray<string>
+    locationId?: ReadonlyArray<string>
+    categoryId?: ReadonlyArray<string>
+    productId?: ReadonlyArray<string>
+  }
+  skip: number
+  take: number
+}
+
+export type InventoryListViewResult = {
+  rows: InventoryRecord[]
+  total: number
+}
+
+function buildListViewWhere(
+  options: Pick<InventoryListViewOptions, "search" | "filters">,
+): Prisma.FlooringInventoryWhereInput | undefined {
+  const clauses: Prisma.FlooringInventoryWhereInput[] = [{ isArchived: false }]
+
+  // Search semantics mirror searchInventoryOptions: OR-ILIKE across the three
+  // human-meaningful identifier columns (inventoryNumber, itemNumber, dyeLot).
+  const trimmed = options.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    clauses.push({
+      OR: [
+        { inventoryNumber: { contains: trimmed, mode: "insensitive" } },
+        { itemNumber: { contains: trimmed, mode: "insensitive" } },
+        { dyeLot: { contains: trimmed, mode: "insensitive" } },
+      ],
+    })
+  }
+
+  const warehouseIds = options.filters?.warehouseId
+  if (warehouseIds && warehouseIds.length > 0) {
+    clauses.push({ warehouseId: { in: [...warehouseIds] } })
+  }
+
+  // sectionId narrows via the joined location row — inventory has no direct
+  // sectionId FK; the section is reachable via location.sectionId.
+  const sectionIds = options.filters?.sectionId
+  if (sectionIds && sectionIds.length > 0) {
+    clauses.push({ location: { is: { sectionId: { in: [...sectionIds] } } } })
+  }
+
+  const locationIds = options.filters?.locationId
+  if (locationIds && locationIds.length > 0) {
+    clauses.push({ locationId: { in: [...locationIds] } })
+  }
+
+  // categoryId narrows via product.categoryId — same path as the existing
+  // single-value category filter on `listInventory`.
+  const categoryIds = options.filters?.categoryId
+  if (categoryIds && categoryIds.length > 0) {
+    clauses.push({ product: { is: { categoryId: { in: [...categoryIds] } } } })
+  }
+
+  const productIds = options.filters?.productId
+  if (productIds && productIds.length > 0) {
+    clauses.push({ productId: { in: [...productIds] } })
+  }
+
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
+}
+
+/**
+ * Server-side paginated read for the inventory list view. Default sort is
+ * `inventoryNumber DESC` (newest INV-NNNNN first), with `id DESC` as a stable
+ * tiebreak. Filters AND together; search OR-ILIKEs across inventoryNumber,
+ * itemNumber, and dyeLot. Archived rows excluded.
+ *
+ * Lives alongside `listInventory(filter?)` which is still used by the imports
+ * record view's "live rows" section to fetch all rows for a given import.
+ */
+export async function listInventoryForListView(
+  options: InventoryListViewOptions,
+  client: InventoryDbClient = db,
+): Promise<InventoryListViewResult> {
+  const where = buildListViewWhere(options)
+  const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = [
+    { inventoryNumber: "desc" },
+    { id: "desc" },
+  ]
+
+  const [total, rows] = await Promise.all([
+    client.flooringInventory.count({ where }),
+    client.flooringInventory.findMany({
+      where,
+      orderBy,
+      skip: options.skip,
+      take: options.take,
+      select: inventoryRowSelect,
+    }),
+  ])
+
+  return { total, rows: rows.map(normalizeInventoryRow) }
+}
+
 export type InventoryOptionsSearchArgs = {
   warehouseId: string
   /**

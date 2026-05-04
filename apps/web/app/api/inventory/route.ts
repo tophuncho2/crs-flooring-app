@@ -1,7 +1,8 @@
-import { listInventory } from "@builders/db"
+import { listInventoryUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { enforceQueryRateLimit } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateListInventoryQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await authorizeWarehouseRoute(request)
@@ -11,7 +12,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, { inventory: await listInventory() })
+    const url = new URL(request.url)
+    const input = validateListInventoryQuery(url.searchParams)
+    const result = await listInventoryUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }
