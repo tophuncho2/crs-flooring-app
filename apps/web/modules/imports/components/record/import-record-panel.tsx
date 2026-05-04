@@ -13,20 +13,18 @@ import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-sec
 import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
 import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
-import type { LocationOption, ManufacturerOption } from "@/modules/imports/controllers/drafts"
+import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,
   entry,
   initialStagedRows,
   manufacturerOptions,
-  locationOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ImportDetail
   initialStagedRows: StagedInventoryRow[]
   manufacturerOptions: ManufacturerOption[]
-  locationOptions: LocationOption[]
 }) {
   const controller = useImportPrimarySection({
     page,
@@ -58,7 +56,6 @@ export function ImportRecordPanel({
   const stagedRowsSection = useImportStagedInventoryRowsSection({
     record: controller.record,
     stagedRows: pendingRows,
-    locationOptions,
     publishRecord: controller.publishRecord,
     publishStagedRows: setStagedRows,
     publishMarkedForImport: handleMarkedForImport,
@@ -119,7 +116,6 @@ export function ImportRecordPanel({
               drafts={stagedRowsSection.localValue}
               serverRows={pendingRows}
               warehouseId={controller.record.warehouseId}
-              locationOptions={locationOptions}
               isDirty={stagedRowsSection.isDirty}
               isSaving={stagedRowsSection.isSaving}
               hasConflict={stagedRowsSection.hasConflict}
@@ -140,6 +136,7 @@ export function ImportRecordPanel({
               onRowFieldChange={stagedRowsSection.setRowField}
               onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
               onSetRowProductSnapshot={stagedRowsSection.setRowProductSnapshot}
+              onSetRowLocationSnapshot={stagedRowsSection.setRowLocationSnapshot}
               onRemoveRow={stagedRowsSection.removeRow}
               onToggleSelection={stagedRowsSection.toggleSelection}
               onToggleAllEligible={stagedRowsSection.toggleAllEligible}

@@ -14,20 +14,14 @@ import {
 import type { ImportFormOptions } from "@builders/domain"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 
-// Warehouse / product / category options are NOT pre-fetched here.
-// Those fields are powered by async pickers (WarehousePicker /
-// ProductPicker / CategoryPicker) which call /api/{warehouses,products,categories}/options
-// on demand; read-only labels come from joined fields on
-// StagedInventoryRow (productName + stockUnit) and ImportDetail
+// Warehouse / location / product / category options are NOT pre-fetched
+// here. Those fields are powered by async pickers (WarehousePicker /
+// LocationPicker / ProductPicker / CategoryPicker) which call
+// /api/{warehouses,locations,products,categories}/options on demand;
+// read-only labels come from joined fields on StagedInventoryRow
+// (productName + stockUnit + locationShortCode) and ImportDetail
 // (warehouseName).
 export type ImportFormOptionSet = {
-  locationOptions: Array<{
-    id: string
-    warehouseId: string
-    locationCode: string
-    shortCode: string
-    label: string
-  }>
   manufacturerOptions: Array<{ id: string; label: string }>
 }
 
@@ -35,13 +29,6 @@ export async function getImportFormOptions(): Promise<ImportFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
     const options: ImportFormOptions = await listImportOptions()
     return {
-      locationOptions: options.locations.map((location) => ({
-        id: location.id,
-        warehouseId: location.warehouseId,
-        locationCode: location.locationCode,
-        shortCode: location.shortCode,
-        label: location.shortCode,
-      })),
       manufacturerOptions: options.manufacturers.map((manufacturer) => ({
         id: manufacturer.id,
         label: manufacturer.companyName,
@@ -54,7 +41,6 @@ export type ImportDetailPageData = {
   entry: ImportDetailRecord
   stagedRows: StagedInventoryRecord[]
   liveRows: InventoryRecord[]
-  locationOptions: ImportFormOptionSet["locationOptions"]
   manufacturerOptions: ImportFormOptionSet["manufacturerOptions"]
 }
 
@@ -79,7 +65,6 @@ export async function getImportDetailPageData(
         entry,
         stagedRows,
         liveRows,
-        locationOptions: options.locationOptions,
         manufacturerOptions: options.manufacturerOptions,
       },
     }

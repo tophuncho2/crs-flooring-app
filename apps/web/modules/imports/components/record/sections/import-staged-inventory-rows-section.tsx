@@ -6,7 +6,6 @@ import { StatusBadge } from "@/components/badges"
 import {
   CheckboxCell,
   RowActionButton,
-  SelectCell,
   TextCell,
   UnitCell,
 } from "@/components/cells"
@@ -14,16 +13,15 @@ import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { SelectAllButton } from "@/components/features/select-batch"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { LocationPicker } from "@/modules/locations/components/picker/location-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type {
   FlooringStagedRowStatus,
+  LocationOption,
   ProductOption,
   StagedInventoryRow,
 } from "@builders/domain"
-import type {
-  ImportStagedRowDraft,
-  LocationOption,
-} from "@/modules/imports/controllers/drafts"
+import type { ImportStagedRowDraft } from "@/modules/imports/controllers/drafts"
 
 type GridDraftRow = ImportStagedRowDraft & { id: string }
 
@@ -56,7 +54,6 @@ export function ImportStagedInventoryRowsSection({
   drafts,
   serverRows,
   warehouseId,
-  locationOptions,
   isDirty,
   isSaving,
   hasConflict,
@@ -77,6 +74,7 @@ export function ImportStagedInventoryRowsSection({
   onRowFieldChange,
   onRowCategoryFilterChange,
   onSetRowProductSnapshot,
+  onSetRowLocationSnapshot,
   onRemoveRow,
   onToggleSelection,
   onToggleAllEligible,
@@ -85,7 +83,6 @@ export function ImportStagedInventoryRowsSection({
   drafts: ImportStagedRowDraft[]
   serverRows: StagedInventoryRow[]
   warehouseId: string
-  locationOptions: LocationOption[]
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -107,25 +104,19 @@ export function ImportStagedInventoryRowsSection({
     index: number,
     field: Exclude<
       keyof Omit<ImportStagedRowDraft, "clientId">,
-      "categoryFilterId" | "productName" | "stockUnit"
+      "categoryFilterId" | "productName" | "stockUnit" | "locationShortCode"
     >,
     value: string,
   ) => void
   onRowCategoryFilterChange: (index: number, categoryId: string | null) => void
   onSetRowProductSnapshot: (index: number, option: ProductOption | null) => void
+  onSetRowLocationSnapshot: (index: number, option: LocationOption | null) => void
   onRemoveRow: (index: number) => void
   onToggleSelection: (id: string) => void
   onToggleAllEligible: () => void
   onMarkForImport: () => void
 }) {
   const serverRowsById = new Map(serverRows.map((row) => [row.id, row]))
-  const filteredLocations = warehouseId
-    ? locationOptions.filter((location) => location.warehouseId === warehouseId)
-    : locationOptions
-  const locationCellOptions = filteredLocations.map((location) => ({
-    value: location.id,
-    label: location.label,
-  }))
 
   const gridRows: GridDraftRow[] = drafts.map((row) => ({ ...row, id: row.clientId }))
 
@@ -257,11 +248,13 @@ export function ImportStagedInventoryRowsSection({
               )
             case "location":
               return (
-                <SelectCell
-                  editable={editable}
-                  value={row.locationId}
-                  onChange={(value) => onRowFieldChange(index, "locationId", value)}
-                  options={locationCellOptions}
+                <LocationPicker
+                  value={row.locationId || null}
+                  onChange={(next) => onRowFieldChange(index, "locationId", next ?? "")}
+                  onOptionSelected={(option) => onSetRowLocationSnapshot(index, option)}
+                  warehouseId={warehouseId || null}
+                  selectedLabel={row.locationShortCode || null}
+                  disabled={!editable}
                   placeholder="Select location"
                   ariaLabel={`Row ${index + 1} location`}
                 />

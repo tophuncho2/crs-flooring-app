@@ -11,6 +11,7 @@ import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select
 import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ImportDetail,
+  LocationOption,
   ProductOption,
   StagedInventoryRow,
   StagedInventoryRowDraft,
@@ -20,24 +21,18 @@ import type {
   StagedInventoryRowsDiff,
 } from "@builders/domain"
 import {
-  applyDefaultLocationToImportRow,
   createImportStagedRowDraft,
   toImportStagedRowDrafts,
   validateImportStagedRowDrafts,
   type ImportStagedRowDraft,
-  type LocationOption,
 } from "./drafts"
 import { useImportsListMutations } from "./use-imports-list-mutations"
 
-function createDraftRow(locationOptions: LocationOption[], warehouseId: string) {
-  return applyDefaultLocationToImportRow(
-    {
-      ...createImportStagedRowDraft(),
-      clientId: createLocalRecordRowId("import-staged-row"),
-    },
-    warehouseId,
-    locationOptions,
-  )
+function createDraftRow(): ImportStagedRowDraft {
+  return {
+    ...createImportStagedRowDraft(),
+    clientId: createLocalRecordRowId("import-staged-row"),
+  }
 }
 
 function createRowsRevisionKey(record: ImportDetail, rows: StagedInventoryRow[]) {
@@ -129,14 +124,12 @@ function buildStagedInventoryRowsDiff(
 export function useImportStagedInventoryRowsSection({
   record,
   stagedRows,
-  locationOptions,
   publishRecord,
   publishStagedRows,
   publishMarkedForImport,
 }: {
   record: ImportDetail
   stagedRows: StagedInventoryRow[]
-  locationOptions: LocationOption[]
   publishRecord: (record: ImportDetail) => void
   publishStagedRows: (rows: StagedInventoryRow[]) => void
   /**
@@ -200,10 +193,7 @@ export function useImportStagedInventoryRowsSection({
   })
 
   function addRow() {
-    section.setLocalValue((previous) => [
-      createDraftRow(locationOptions, record.warehouseId),
-      ...previous,
-    ])
+    section.setLocalValue((previous) => [createDraftRow(), ...previous])
     if (section.error) {
       section.setError(null)
     }
@@ -235,6 +225,7 @@ export function useImportStagedInventoryRowsSection({
             itemNumber: source.itemNumber,
             startingStock: source.startingStock,
             locationId: source.locationId,
+            locationShortCode: source.locationShortCode,
             dyeLot: source.dyeLot,
             notes: source.notes,
             categoryFilterId: source.categoryFilterId,
@@ -248,6 +239,7 @@ export function useImportStagedInventoryRowsSection({
               itemNumber: "",
               startingStock: "",
               locationId: "",
+              locationShortCode: "",
               dyeLot: "",
               notes: "",
               categoryFilterId: null,
@@ -266,7 +258,7 @@ export function useImportStagedInventoryRowsSection({
     index: number,
     field: Exclude<
       keyof Omit<ImportStagedRowDraft, "clientId">,
-      "categoryFilterId" | "productName" | "stockUnit"
+      "categoryFilterId" | "productName" | "stockUnit" | "locationShortCode"
     >,
     value: string,
   ) {
@@ -315,9 +307,28 @@ export function useImportStagedInventoryRowsSection({
     }
   }
 
-  function handleWarehouseChange(nextWarehouseId: string) {
+  // Atomic snapshot update for the row's locationShortCode when the
+  // LocationPicker emits onOptionSelected. Display-only field — never
+  // enters the diff sent on save. Picker's onChange separately commits
+  // locationId via setRowField.
+  function setRowLocationSnapshot(index: number, option: LocationOption | null) {
     section.setLocalValue((previous) =>
-      previous.map((row) => applyDefaultLocationToImportRow(row, nextWarehouseId, locationOptions)),
+      previous.map((row, rowIndex) => {
+        if (rowIndex !== index) return row
+        if (option === null) return { ...row, locationShortCode: "" }
+        return { ...row, locationShortCode: option.shortCode }
+      }),
+    )
+  }
+
+  // Parent warehouse change: picker is scoped per-row by warehouseId, so
+  // every row's stale locationId / locationShortCode become invalid in
+  // one shot. Clear them — user re-picks per row. Replaces the prior
+  // mismatch-detection logic that depended on an in-memory
+  // locationOptions array.
+  function handleWarehouseChange(_nextWarehouseId: string) {
+    section.setLocalValue((previous) =>
+      previous.map((row) => ({ ...row, locationId: "", locationShortCode: "" })),
     )
   }
 
@@ -360,6 +371,7 @@ export function useImportStagedInventoryRowsSection({
     setRowField,
     setRowCategoryFilter,
     setRowProductSnapshot,
+    setRowLocationSnapshot,
     handleWarehouseChange,
     selectedIds: markForImport.selectedIds,
     toggleSelection: markForImport.toggleSelected,

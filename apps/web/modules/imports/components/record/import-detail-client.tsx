@@ -4,7 +4,7 @@ import { useState } from "react"
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { ImportRecordPanel } from "./import-record-panel"
 import type { ImportDetail, InventoryRow, StagedInventoryRow } from "@builders/domain"
-import type { LocationOption, ManufacturerOption } from "@/modules/imports/controllers/drafts"
+import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 function formatImportNumber(value: number) {
   return `IMP-${String(value).padStart(4, "0")}`
@@ -15,14 +15,12 @@ export function ImportDetailClient({
   initialStagedRows,
   initialLiveRows,
   manufacturerOptions,
-  locationOptions,
   backHref,
 }: {
   initialImport: ImportDetail
   initialStagedRows: StagedInventoryRow[]
   initialLiveRows: InventoryRow[]
   manufacturerOptions: ManufacturerOption[]
-  locationOptions: LocationOption[]
   backHref: string
 }) {
   // Live rows fetched server-side; the read-only "Live inventory" section UI
@@ -44,7 +42,6 @@ export function ImportDetailClient({
           entry={initialImport}
           initialStagedRows={initialStagedRows}
           manufacturerOptions={manufacturerOptions}
-          locationOptions={locationOptions}
         />
       )}
     </RecordDetailClientScaffold>

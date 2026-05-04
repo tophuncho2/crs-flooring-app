@@ -13,26 +13,20 @@ export type ManufacturerOption = {
   label: string
 }
 
-export type LocationOption = {
-  id: string
-  warehouseId: string
-  locationCode: string
-  shortCode: string
-  label: string
-}
-
 export type ImportStagedRowDraft = {
   clientId: string
   productId: string
   // Display-only snapshots seeded from the saved row's joined fields and
-  // refreshed when the user picks a new product (via ProductPicker's
-  // onOptionSelected). Never sent in the mutation payload — server
-  // re-normalizes from the live product table on save.
+  // refreshed when the user picks via the matching picker
+  // (ProductPicker → product fields; LocationPicker → locationShortCode).
+  // Never sent in the mutation payload — server re-normalizes from the
+  // live product / location tables on save.
   productName: string
   stockUnit: string
   itemNumber: string
   startingStock: string
   locationId: string
+  locationShortCode: string
   dyeLot: string
   notes: string
   /**
@@ -53,6 +47,7 @@ export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportSta
     itemNumber: item?.itemNumber ?? "",
     startingStock: item?.startingStock ?? "",
     locationId: item?.locationId ?? "",
+    locationShortCode: item?.locationShortCode ?? "",
     dyeLot: item?.dyeLot ?? "",
     notes: item?.notes ?? "",
     categoryFilterId: null,
@@ -61,26 +56,6 @@ export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportSta
 
 export function toImportStagedRowDrafts(rows: StagedInventoryRow[]): ImportStagedRowDraft[] {
   return rows.map((row) => createImportStagedRowDraft(row))
-}
-
-export function applyDefaultLocationToImportRow(
-  item: ImportStagedRowDraft,
-  warehouseId: string,
-  locationOptions: LocationOption[],
-): ImportStagedRowDraft {
-  const warehouseLocations = warehouseId
-    ? locationOptions.filter((location) => location.warehouseId === warehouseId)
-    : []
-  const currentLocation = warehouseLocations.find((location) => location.id === item.locationId)
-
-  if (currentLocation) {
-    return item
-  }
-
-  return {
-    ...item,
-    locationId: "",
-  }
 }
 
 export function validateImportPrimaryForm(input: ImportPrimaryForm): string {
