@@ -9,12 +9,6 @@ import {
 import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
 import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
 
-/**
- * Wire input for create. `status` and the template-sync snapshot fields
- * (templateSyncedAt / templateSyncMode / templateSnapshotHash) are
- * intentionally omitted — they are worker-controlled and never set from
- * the API surface.
- */
 export type CreateWorkOrderRecordInput = {
   propertyId: string
   templateId: string | null
