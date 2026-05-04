@@ -87,26 +87,26 @@ export function AsyncRichDropdown({
   onOpenChange,
 }: AsyncRichDropdownProps) {
   const listboxId = useId()
-  const [open, setOpenState] = useState(false)
+  const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState<number>(-1)
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Fire `onOpenChange` after commit — never from inside a setState updater,
+  // which would violate React's "no side effects during render" rule and
+  // trigger "Cannot update a component while rendering a different
+  // component" warnings when consumers gate their own state on this prop.
+  // Ref lets a fresh callback identity from the parent NOT re-run the effect
+  // on every render; the effect only fires when `open` actually flips.
   const onOpenChangeRef = useRef(onOpenChange)
   useEffect(() => {
     onOpenChangeRef.current = onOpenChange
-  }, [onOpenChange])
-
-  const setOpen = useCallback<typeof setOpenState>((next) => {
-    setOpenState((previous) => {
-      const resolved = typeof next === "function" ? next(previous) : next
-      if (resolved !== previous) {
-        onOpenChangeRef.current?.(resolved)
-      }
-      return resolved
-    })
-  }, [])
+  })
+  useEffect(() => {
+    onOpenChangeRef.current?.(open)
+  }, [open])
 
   const visibleSelected = useMemo(() => {
     if (!value) return null
