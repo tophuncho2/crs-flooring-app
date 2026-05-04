@@ -9,8 +9,10 @@ import {
 import type {
   InventoryDetail,
   InventoryFormOptions,
+  InventoryOption,
   InventoryRow,
 } from "@builders/domain"
+import type { Prisma } from "@prisma/client"
 import { db } from "../../client.js"
 import { normalizeInventoryCutLogRow } from "./cut-logs/read-repository.js"
 import {
@@ -212,6 +214,100 @@ export async function countInventoriesByProductId(
   client: InventoryDbClient = db,
 ): Promise<number> {
   return client.flooringInventory.count({ where: { productId } })
+}
+
+export type InventoryOptionsSearchArgs = {
+  warehouseId: string
+  /**
+   * Optional product narrowing — when set, only inventory rows whose product
+   * matches. Cut-log pickers always pass this so users can't reference an
+   * inventory row of a different product than the material item's.
+   */
+  productId?: string
+  /** Optional section narrowing — joined via `location.sectionId`. */
+  sectionId?: string
+  /** Optional location narrowing — exact match on the inventory row. */
+  locationId?: string
+  /** OR-ILIKE across `inventoryNumber`, `itemNumber`, `dyeLot`. */
+  search?: string
+  take: number
+}
+
+/**
+ * Picker / options search for inventory rows. Filters are AND'd: warehouse +
+ * (optional) section + (optional) location, then OR'd ILIKE across the three
+ * search columns. Archived rows excluded. Balance + coverage are stamped via
+ * the same pure helpers used by the row normalizer (single source of truth
+ * for the math) — coverage is null for non-coverage categories.
+ */
+export async function searchInventoryOptions(
+  args: InventoryOptionsSearchArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryOption[]> {
+  const where: Prisma.FlooringInventoryWhereInput = {
+    warehouseId: args.warehouseId,
+    isArchived: false,
+  }
+  if (args.productId !== undefined) where.productId = args.productId
+  if (args.locationId !== undefined) where.locationId = args.locationId
+  if (args.sectionId !== undefined) {
+    where.location = { is: { sectionId: args.sectionId } }
+  }
+
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    where.OR = [
+      { inventoryNumber: { contains: trimmed, mode: "insensitive" } },
+      { itemNumber: { contains: trimmed, mode: "insensitive" } },
+      { dyeLot: { contains: trimmed, mode: "insensitive" } },
+    ]
+  }
+
+  const rows = await client.flooringInventory.findMany({
+    where,
+    select: {
+      id: true,
+      inventoryNumber: true,
+      itemNumber: true,
+      dyeLot: true,
+      warehouseId: true,
+      locationId: true,
+      categorySlug: true,
+      stockUnitAbbrev: true,
+      itemCoverageUnitAbbrev: true,
+      startingStock: true,
+      totalCutSum: true,
+      coveragePerUnit: true,
+      location: { select: { sectionId: true } },
+    },
+    orderBy: [{ inventoryNumber: "asc" }],
+    take: args.take,
+  })
+
+  return rows.map((row) => {
+    const balanceNum = computeInventoryBalance({
+      startingStock: row.startingStock.toString(),
+      totalCutSum: row.totalCutSum.toString(),
+    })
+    const coverageNum = computeInventoryCoverage({
+      balance: balanceNum,
+      coveragePerUnit: row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
+      categorySlug: row.categorySlug,
+    })
+    return {
+      id: row.id,
+      inventoryNumber: row.inventoryNumber,
+      itemNumber: row.itemNumber ?? "",
+      dyeLot: row.dyeLot ?? "",
+      warehouseId: row.warehouseId,
+      locationId: row.locationId ?? "",
+      sectionId: row.location?.sectionId ?? "",
+      stockBalance: toInventoryFixedString(balanceNum),
+      stockUnitAbbrev: row.stockUnitAbbrev ?? "",
+      coverageBalance: coverageNum === null ? null : toInventoryFixedString(coverageNum),
+      itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? "",
+    }
+  })
 }
 
 export async function listInventoryOptions(

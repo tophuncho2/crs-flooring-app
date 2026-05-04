@@ -1,13 +1,17 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
-import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
+import {
+  formatInventoryRefPackage,
+  type CutLogRow,
+  type FlooringCutLogStatus,
+  type InventoryOption,
+} from "@builders/domain"
 import {
   createPendingCutLogRequest,
   deletePendingCutLogRequest,
   finalizeWorkOrderCutLogRequest,
-  listEligibleInventoryRequest,
   updatePendingCutLogRequest,
   voidWorkOrderCutLogRequest,
 } from "@/modules/work-orders/data/mutations"
@@ -30,14 +34,28 @@ const EMPTY_FORM: CutLogEditForm = {
   notes: "",
 }
 
-export type EligibleInventoryRow = {
-  id: string
-  inventoryNumber: string
-  itemNumber: string
-  dyeLot: string
-  notes: string
-  remainingStock: string
-  stockUnitAbbrev: string
+/**
+ * UI-only narrowing filters (Section → Location) plus snapshot labels for the
+ * picker triggers. None of these ship to the cut-log API — the persisted row
+ * still carries only `inventoryId`. Local state lives outside `CutLogEditForm`
+ * so the dirty check + mutation payload stay clean.
+ */
+type CutLogPanelLocal = {
+  sectionId: string
+  locationId: string
+  pickedSectionLabel: string
+  pickedLocationLabel: string
+  pickedInventoryLabel: string
+  pickedInventoryStockUnitAbbrev: string
+}
+
+const EMPTY_LOCAL: CutLogPanelLocal = {
+  sectionId: "",
+  locationId: "",
+  pickedSectionLabel: "",
+  pickedLocationLabel: "",
+  pickedInventoryLabel: "",
+  pickedInventoryStockUnitAbbrev: "",
 }
 
 /**
@@ -52,7 +70,7 @@ export type CutLogPanelPatch =
 export type CutLogEditPanelMode = "create" | "edit"
 
 export type CutLogEditPanelOpenSpec =
-  | { mode: "create"; workOrderItemId: string }
+  | { mode: "create"; workOrderItemId: string; productId: string }
   | { mode: "edit"; workOrderItemId: string; cutLog: CutLogRow }
 
 function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
@@ -83,8 +101,9 @@ function isEditValid(form: CutLogEditForm): boolean {
 
 /**
  * Owns the side-panel lifecycle for cut-log editing: open/close, current
- * row, editable form, dirty tracking, eligible inventory load, and all four
- * mutations (create / update / delete / void) plus single-row finalize.
+ * row, editable form, dirty tracking, picker filter chain (section → location
+ * → inventory) for create mode, and all four mutations (create / update /
+ * delete / void) plus single-row finalize.
  *
  * Mutation success → `publish(patch)` so the parent updates its snapshot.
  * Behavior contract (locked in the plan):
@@ -97,25 +116,25 @@ function isEditValid(form: CutLogEditForm): boolean {
  */
 export function useCutLogEditPanel({
   workOrderId,
+  warehouseId,
   publish,
 }: {
   workOrderId: string
+  warehouseId: string | null
   publish: (patch: CutLogPanelPatch) => void
 }) {
   const [open, setOpen] = useState<CutLogEditPanelOpenSpec | null>(null)
   const [form, setForm] = useState<CutLogEditForm>(EMPTY_FORM)
   const [baseline, setBaseline] = useState<CutLogEditForm>(EMPTY_FORM)
+  const [local, setLocal] = useState<CutLogPanelLocal>(EMPTY_LOCAL)
   const [error, setError] = useState<string | null>(null)
-  const [eligibleInventory, setEligibleInventory] = useState<EligibleInventoryRow[]>([])
-  const [isLoadingInventory, setIsLoadingInventory] = useState(false)
 
-  // When the open spec changes, reset form + clear error + load inventory.
-  // Inventory is loaded per (workOrderItemId) — cached for the panel's lifetime.
-  const loadedItemIdRef = useRef<string | null>(null)
+  // When the open spec changes, reset form + filters + clear error.
   useEffect(() => {
     if (!open) {
       setForm(EMPTY_FORM)
       setBaseline(EMPTY_FORM)
+      setLocal(EMPTY_LOCAL)
       setError(null)
       return
     }
@@ -127,41 +146,14 @@ export function useCutLogEditPanel({
       setForm(EMPTY_FORM)
       setBaseline(EMPTY_FORM)
     }
+    setLocal(EMPTY_LOCAL)
     setError(null)
-
-    if (loadedItemIdRef.current === open.workOrderItemId) return
-    let cancelled = false
-    setIsLoadingInventory(true)
-    listEligibleInventoryRequest({
-      workOrderId,
-      workOrderItemId: open.workOrderItemId,
-    })
-      .then(({ inventories }) => {
-        if (cancelled) return
-        setEligibleInventory(inventories)
-        loadedItemIdRef.current = open.workOrderItemId
-      })
-      .catch(() => {
-        if (cancelled) return
-        setEligibleInventory([])
-      })
-      .finally(() => {
-        if (cancelled) return
-        setIsLoadingInventory(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open, workOrderId])
+  }, [open])
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 
   const openPanel = useCallback((spec: CutLogEditPanelOpenSpec) => {
     setOpen(spec)
-  }, [])
-
-  const closePanel = useCallback(() => {
-    setOpen(null)
   }, [])
 
   const setField = useCallback(
@@ -171,6 +163,79 @@ export function useCutLogEditPanel({
     },
     [],
   )
+
+  // --- picker handlers (create mode only) ----------------------------------
+  //
+  // Pickers call `onChange(id)` first then `onOptionSelected(option)`. The id
+  // setter handles cascade-clearing (downstream filters + the cut log's
+  // inventoryId); the snapshot setter captures the picked option's display
+  // label so the trigger renders the right text without a refetch.
+
+  const setSectionId = useCallback((id: string | null) => {
+    setLocal((prev) => ({
+      ...prev,
+      sectionId: id ?? "",
+      ...(id === null ? { pickedSectionLabel: "" } : {}),
+      // Cascade: section change invalidates location + inventory selections.
+      locationId: "",
+      pickedLocationLabel: "",
+      pickedInventoryLabel: "",
+      pickedInventoryStockUnitAbbrev: "",
+    }))
+    setForm((prev) => ({ ...prev, inventoryId: "" }))
+    setError(null)
+  }, [])
+
+  const snapshotSectionLabel = useCallback((label: string | null) => {
+    setLocal((prev) => ({ ...prev, pickedSectionLabel: label ?? "" }))
+  }, [])
+
+  const setLocationId = useCallback((id: string | null) => {
+    setLocal((prev) => ({
+      ...prev,
+      locationId: id ?? "",
+      ...(id === null ? { pickedLocationLabel: "" } : {}),
+      // Cascade: location change invalidates the inventory selection.
+      pickedInventoryLabel: "",
+      pickedInventoryStockUnitAbbrev: "",
+    }))
+    setForm((prev) => ({ ...prev, inventoryId: "" }))
+    setError(null)
+  }, [])
+
+  const snapshotLocationLabel = useCallback((label: string | null) => {
+    setLocal((prev) => ({ ...prev, pickedLocationLabel: label ?? "" }))
+  }, [])
+
+  const setInventoryId = useCallback((id: string | null) => {
+    setForm((prev) => ({ ...prev, inventoryId: id ?? "" }))
+    if (id === null) {
+      setLocal((prev) => ({
+        ...prev,
+        pickedInventoryLabel: "",
+        pickedInventoryStockUnitAbbrev: "",
+      }))
+    }
+    setError(null)
+  }, [])
+
+  // Inventory option snapshot carries both the trigger label AND the stock
+  // unit abbreviation — the cut cell's unit suffix reads from this snapshot
+  // until the row is saved (after which the cut log's frozen
+  // `stockUnitAbbrev` snapshot takes over).
+  const snapshotInventoryOption = useCallback((option: InventoryOption | null) => {
+    setLocal((prev) => ({
+      ...prev,
+      pickedInventoryLabel: option
+        ? formatInventoryRefPackage({
+            inventoryNumber: option.inventoryNumber,
+            itemNumber: option.itemNumber,
+            dyeLot: option.dyeLot,
+          })
+        : "",
+      pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
+    }))
+  }, [])
 
   // --- mutations -----------------------------------------------------------
 
@@ -320,14 +385,20 @@ export function useCutLogEditPanel({
   return {
     open,
     form,
+    local,
+    warehouseId,
     isDirty,
     isSaving,
     error,
-    eligibleInventory,
-    isLoadingInventory,
     openPanel,
     close,
     setField,
+    setSectionId,
+    snapshotSectionLabel,
+    setLocationId,
+    snapshotLocationLabel,
+    setInventoryId,
+    snapshotInventoryOption,
     save,
     finalize,
     voidCutLog,

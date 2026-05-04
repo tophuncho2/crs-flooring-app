@@ -3,6 +3,7 @@ import { searchLocationOptions } from "@builders/db"
 
 export type SearchLocationOptionsInput = {
   warehouseId: string
+  sectionId?: string
   search?: string
   take?: number
 }
@@ -14,7 +15,13 @@ export async function searchLocationOptionsUseCase(
   input: SearchLocationOptionsInput,
 ): Promise<LocationOption[]> {
   const search = input.search?.trim() || undefined
+  const sectionId = input.sectionId?.trim() || undefined
   const requested = Math.floor(input.take ?? DEFAULT_TAKE)
   const take = Math.max(1, Math.min(MAX_TAKE, requested))
-  return searchLocationOptions({ warehouseId: input.warehouseId, search, take })
+  return searchLocationOptions({
+    warehouseId: input.warehouseId,
+    sectionId,
+    search,
+    take,
+  })
 }

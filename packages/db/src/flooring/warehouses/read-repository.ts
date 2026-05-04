@@ -4,6 +4,7 @@ import {
   formatFullLocationCode,
   formatLocationRafterLevel,
   type LocationOption,
+  type SectionOption,
 } from "@builders/domain"
 import {
   type LocationRowPayload,
@@ -265,6 +266,42 @@ export async function getExistingSectionNumbers(
   return rows.map((r) => r.number)
 }
 
+export type SectionOptionsSearchArgs = {
+  warehouseId: string
+  search?: string
+  take: number
+}
+
+/**
+ * Picker / options search for sections. Numeric search is matched as exact
+ * `number` when the query is a clean integer; otherwise no number filter is
+ * applied (the picker title is "Section {n}" — no other text columns to ILIKE
+ * against). Mirrors the LocationPicker rafter/level parse pattern.
+ */
+export async function searchSectionOptions(
+  args: SectionOptionsSearchArgs,
+  client: WarehousesDbClient = db,
+): Promise<SectionOption[]> {
+  const where: Prisma.FlooringSectionWhereInput = { warehouseId: args.warehouseId }
+  const trimmed = args.search?.trim() ?? ""
+  const numeric = trimmed.length > 0 && /^\d+$/.test(trimmed) ? Number(trimmed) : null
+  if (numeric !== null) where.number = numeric
+
+  const rows = await client.flooringSection.findMany({
+    where,
+    select: { id: true, warehouseId: true, number: true },
+    orderBy: { number: "asc" },
+    take: args.take,
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    warehouseId: row.warehouseId,
+    number: row.number,
+    label: `Section ${row.number}`,
+  }))
+}
+
 export async function getSectionDeleteState(
   id: string,
   client: WarehousesDbClient = db,
@@ -376,6 +413,8 @@ function parseRafterLevelQuery(query: string): {
 
 export type LocationOptionsSearchArgs = {
   warehouseId: string
+  /** Optional section narrowing — when set, only locations under that section. */
+  sectionId?: string
   search?: string
   take: number
 }
@@ -386,6 +425,7 @@ export async function searchLocationOptions(
 ): Promise<LocationOption[]> {
   const parsed = args.search ? parseRafterLevelQuery(args.search) : {}
   const where: Prisma.FlooringLocationWhereInput = { warehouseId: args.warehouseId }
+  if (args.sectionId !== undefined) where.sectionId = args.sectionId
   if (parsed.rafter !== undefined) where.rafter = parsed.rafter
   if (parsed.level !== undefined) where.level = parsed.level
   if (parsed.eitherSide !== undefined) {

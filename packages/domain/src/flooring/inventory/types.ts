@@ -137,3 +137,25 @@ export type InventoryFormOptions = {
   locations: InventoryLocationOption[]
   categories: InventoryCategoryOption[]
 }
+
+/**
+ * Slim option shape consumed by the canonical InventoryPicker (server-side
+ * search). Inventory rows always belong to a warehouse — picker requires
+ * `warehouseId` scope. `sectionId` and `locationId` are optional narrowing
+ * filters. `stockBalance` and `coverageBalance` are stamped by the data-layer
+ * normalizer (same source-of-truth math as `InventoryRow.stockBalance` /
+ * `coverageBalance`); coverage is null for non-coverage categories.
+ */
+export type InventoryOption = {
+  id: string
+  inventoryNumber: string
+  itemNumber: string
+  dyeLot: string
+  warehouseId: string
+  locationId: string
+  sectionId: string
+  stockBalance: string
+  stockUnitAbbrev: string
+  coverageBalance: string | null
+  itemCoverageUnitAbbrev: string
+}

@@ -73,6 +73,7 @@ export function WorkOrderMaterialItemsSection({
 
   const cutLogPanel = useCutLogEditPanel({
     workOrderId: workOrder.id,
+    warehouseId: workOrder.warehouseId,
     publish: publishCutLogPatch,
   })
 
@@ -108,9 +109,13 @@ export function WorkOrderMaterialItemsSection({
 
   const handleCreateNew = useCallback(
     (workOrderItemId: string) => {
-      cutLogPanel.openPanel({ mode: "create", workOrderItemId })
+      // Cut logs scope inventory search to the parent material item's product —
+      // a cut log can only reference inventory of the same product.
+      const productId =
+        section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
+      cutLogPanel.openPanel({ mode: "create", workOrderItemId, productId })
     },
-    [cutLogPanel],
+    [cutLogPanel, section.items],
   )
 
   function renderParentCell(

@@ -9,6 +9,7 @@ export type LocationOptionsResponse = {
 
 export type LocationOptionsRequestArgs = {
   warehouseId: string
+  sectionId?: string
   take?: number
 }
 
@@ -19,6 +20,7 @@ export async function searchLocationOptionsRequest(
 ): Promise<LocationOption[]> {
   const params = new URLSearchParams()
   params.set("warehouseId", args.warehouseId)
+  if (args.sectionId) params.set("sectionId", args.sectionId)
   if (search) params.set("search", search)
   params.set("take", String(args.take ?? 20))
   const url = `/api/locations/options?${params.toString()}`

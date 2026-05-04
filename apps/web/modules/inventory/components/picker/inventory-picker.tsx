@@ -1,40 +1,43 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { LocationOption } from "@builders/domain"
+import { formatInventoryQuantity, type InventoryOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
 import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
 import {
-  LOCATION_OPTIONS_QUERY_KEY,
-  searchLocationOptionsRequest,
-} from "@/modules/locations/data/location-options-request"
+  INVENTORY_OPTIONS_SEARCH_QUERY_KEY,
+  searchInventoryOptionsRequest,
+} from "@/modules/inventory/data/inventory-options-request"
 
-export type LocationPickerProps = {
+export type InventoryPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
    * Optional notification fired alongside `onChange` carrying the full
-   * picked option. Lets callers reflect joined fields (locationCode) in
-   * adjacent UI before save.
+   * picked option. Lets callers reflect the picked inventory in adjacent UI
+   * (e.g. the cut log's stock unit cell) before save.
    */
-  onOptionSelected?: (option: LocationOption | null) => void
+  onOptionSelected?: (option: InventoryOption | null) => void
   /**
-   * Required scope — locations always belong to a warehouse. Picker
-   * renders disabled when null. Search calls always include this in the
-   * request and bucket key.
+   * Required scope — inventory rows always belong to a warehouse. Picker
+   * renders disabled when null.
    */
   warehouseId: string | null
   /**
-   * Optional section narrowing — when set, only locations under that
-   * section are returned. Spread into the bucket key so the cache splits
-   * per section.
+   * Optional product narrowing — when set, only inventory rows for that
+   * product are returned. Cut-log usages always pass this (a cut log can
+   * only reference inventory of the parent material item's product).
    */
+  productId?: string | null
+  /** Optional section narrowing — picker re-fetches when this changes. */
   sectionId?: string | null
+  /** Optional location narrowing — picker re-fetches when this changes. */
+  locationId?: string | null
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render
-   * the selected location's shortCode (Rx-Lx) even when it isn't in the
-   * latest server result.
+   * the selected inventory's label even when it isn't in the latest server
+   * result (e.g. on initial render before the user types).
    */
   selectedLabel?: string | null
   placeholder?: string
@@ -47,27 +50,43 @@ export type LocationPickerProps = {
   invalid?: boolean
   ariaLabel?: string
   className?: string
-  initialOptions?: LocationOption[]
+  initialOptions?: InventoryOption[]
 }
 
-function toDropdownOption(option: LocationOption): AsyncRichDropdownOption {
+function buildTitle(option: InventoryOption): string {
+  return [option.inventoryNumber, option.itemNumber, option.dyeLot]
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join(" · ")
+}
+
+function toDropdownOption(option: InventoryOption): AsyncRichDropdownOption {
+  const subtitles: string[] = []
+  subtitles.push(formatInventoryQuantity(option.stockBalance, option.stockUnitAbbrev))
+  if (option.coverageBalance !== null) {
+    subtitles.push(
+      formatInventoryQuantity(option.coverageBalance, option.itemCoverageUnitAbbrev),
+    )
+  }
   return {
     id: option.id,
-    title: option.shortCode,
-    subtitles: option.locationCode ? [option.locationCode] : [],
+    title: buildTitle(option),
+    subtitles,
   }
 }
 
-export function LocationPicker({
+export function InventoryPicker({
   value,
   onChange,
   onOptionSelected,
   warehouseId,
+  productId = null,
   sectionId = null,
+  locationId = null,
   selectedLabel = null,
-  placeholder = "Select Location",
+  placeholder = "Select Inventory",
   disabledPlaceholder = "Select warehouse first",
-  searchPlaceholder = "Search Rx-Lx",
+  searchPlaceholder = "Search inv #, item #, dye lot",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
@@ -76,24 +95,33 @@ export function LocationPicker({
   ariaLabel,
   className,
   initialOptions,
-}: LocationPickerProps) {
+}: InventoryPickerProps) {
   const enabled = warehouseId !== null && !disabled
 
   const bucketKey = useMemo(
-    () => [...LOCATION_OPTIONS_QUERY_KEY, warehouseId ?? null, sectionId ?? null] as const,
-    [warehouseId, sectionId],
+    () =>
+      [
+        ...INVENTORY_OPTIONS_SEARCH_QUERY_KEY,
+        warehouseId ?? null,
+        productId ?? null,
+        sectionId ?? null,
+        locationId ?? null,
+      ] as const,
+    [warehouseId, productId, sectionId, locationId],
   )
 
   const searchFn = useCallback(
     (search: string, signal: AbortSignal | undefined) =>
-      searchLocationOptionsRequest(search, signal, {
+      searchInventoryOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
+        ...(productId ? { productId } : {}),
         ...(sectionId ? { sectionId } : {}),
+        ...(locationId ? { locationId } : {}),
       }),
-    [warehouseId, sectionId],
+    [warehouseId, productId, sectionId, locationId],
   )
 
-  const controller = useAsyncRichDropdownController<LocationOption>({
+  const controller = useAsyncRichDropdownController<InventoryOption>({
     bucketKey,
     searchFn,
     initialOptions,

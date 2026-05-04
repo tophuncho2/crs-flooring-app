@@ -47,11 +47,7 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
             <CutLogEditFormFields
               mode={mode}
               cutLog={cutLog}
-              form={controller.form}
-              eligibleInventory={controller.eligibleInventory}
-              isLoadingInventory={controller.isLoadingInventory}
-              isSaving={controller.isSaving}
-              onFieldChange={controller.setField}
+              controller={controller}
             />
           ) : null}
           {controller.error ? (

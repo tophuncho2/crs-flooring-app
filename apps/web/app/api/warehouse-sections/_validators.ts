@@ -3,9 +3,8 @@ import { z } from "zod"
 const OPTIONS_DEFAULT_TAKE = 20
 const OPTIONS_MAX_TAKE = 50
 
-const locationOptionsQuerySchema = z.object({
+const sectionOptionsQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
-  sectionId: z.string().optional(),
   search: z.string().optional(),
   take: z.coerce
     .number()
@@ -15,47 +14,44 @@ const locationOptionsQuerySchema = z.object({
     .default(OPTIONS_DEFAULT_TAKE),
 })
 
-export type ValidatedLocationOptionsQuery = {
+export type ValidatedSectionOptionsQuery = {
   warehouseId: string
-  sectionId?: string
   search?: string
   take: number
 }
 
-export class LocationOptionsValidationError extends Error {
+export class SectionOptionsValidationError extends Error {
   readonly status = 400
   readonly field: string | undefined
 
   constructor(message: string, field?: string) {
     super(message)
-    this.name = "LocationOptionsValidationError"
+    this.name = "SectionOptionsValidationError"
     this.field = field
   }
 }
 
-export function validateLocationOptionsQuery(
+export function validateSectionOptionsQuery(
   searchParams: URLSearchParams,
-): ValidatedLocationOptionsQuery {
+): ValidatedSectionOptionsQuery {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
     raw[key] = value
   })
 
-  const parseResult = locationOptionsQuerySchema.safeParse(raw)
+  const parseResult = sectionOptionsQuerySchema.safeParse(raw)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
-    throw new LocationOptionsValidationError(
-      issue?.message ?? "Invalid location options query",
+    throw new SectionOptionsValidationError(
+      issue?.message ?? "Invalid section options query",
       issue?.path[0] ? String(issue.path[0]) : undefined,
     )
   }
 
   const parsed = parseResult.data
   const trimmedSearch = parsed.search?.trim()
-  const trimmedSectionId = parsed.sectionId?.trim()
   return {
     warehouseId: parsed.warehouseId.trim(),
-    ...(trimmedSectionId ? { sectionId: trimmedSectionId } : {}),
     search: trimmedSearch ? trimmedSearch : undefined,
     take: parsed.take,
   }

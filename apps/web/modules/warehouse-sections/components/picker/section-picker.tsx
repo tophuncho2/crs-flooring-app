@@ -1,40 +1,34 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { LocationOption } from "@builders/domain"
+import type { SectionOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
 import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
 import {
-  LOCATION_OPTIONS_QUERY_KEY,
-  searchLocationOptionsRequest,
-} from "@/modules/locations/data/location-options-request"
+  SECTION_OPTIONS_QUERY_KEY,
+  searchSectionOptionsRequest,
+} from "@/modules/warehouse-sections/data/section-options-request"
 
-export type LocationPickerProps = {
+export type SectionPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
    * Optional notification fired alongside `onChange` carrying the full
-   * picked option. Lets callers reflect joined fields (locationCode) in
-   * adjacent UI before save.
+   * picked option. Lets callers reflect joined fields in adjacent UI
+   * before save.
    */
-  onOptionSelected?: (option: LocationOption | null) => void
+  onOptionSelected?: (option: SectionOption | null) => void
   /**
-   * Required scope — locations always belong to a warehouse. Picker
+   * Required scope — sections always belong to a warehouse. Picker
    * renders disabled when null. Search calls always include this in the
    * request and bucket key.
    */
   warehouseId: string | null
   /**
-   * Optional section narrowing — when set, only locations under that
-   * section are returned. Spread into the bucket key so the cache splits
-   * per section.
-   */
-  sectionId?: string | null
-  /**
    * Pre-resolved label for the current `value`. Lets the trigger render
-   * the selected location's shortCode (Rx-Lx) even when it isn't in the
-   * latest server result.
+   * the selected section's label even when it isn't in the latest server
+   * result.
    */
   selectedLabel?: string | null
   placeholder?: string
@@ -47,27 +41,22 @@ export type LocationPickerProps = {
   invalid?: boolean
   ariaLabel?: string
   className?: string
-  initialOptions?: LocationOption[]
+  initialOptions?: SectionOption[]
 }
 
-function toDropdownOption(option: LocationOption): AsyncRichDropdownOption {
-  return {
-    id: option.id,
-    title: option.shortCode,
-    subtitles: option.locationCode ? [option.locationCode] : [],
-  }
+function toDropdownOption(option: SectionOption): AsyncRichDropdownOption {
+  return { id: option.id, title: option.label }
 }
 
-export function LocationPicker({
+export function SectionPicker({
   value,
   onChange,
   onOptionSelected,
   warehouseId,
-  sectionId = null,
   selectedLabel = null,
-  placeholder = "Select Location",
+  placeholder = "Select Section",
   disabledPlaceholder = "Select warehouse first",
-  searchPlaceholder = "Search Rx-Lx",
+  searchPlaceholder = "Search section #",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
@@ -76,24 +65,23 @@ export function LocationPicker({
   ariaLabel,
   className,
   initialOptions,
-}: LocationPickerProps) {
+}: SectionPickerProps) {
   const enabled = warehouseId !== null && !disabled
 
   const bucketKey = useMemo(
-    () => [...LOCATION_OPTIONS_QUERY_KEY, warehouseId ?? null, sectionId ?? null] as const,
-    [warehouseId, sectionId],
+    () => [...SECTION_OPTIONS_QUERY_KEY, warehouseId ?? null] as const,
+    [warehouseId],
   )
 
   const searchFn = useCallback(
     (search: string, signal: AbortSignal | undefined) =>
-      searchLocationOptionsRequest(search, signal, {
+      searchSectionOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
-        ...(sectionId ? { sectionId } : {}),
       }),
-    [warehouseId, sectionId],
+    [warehouseId],
   )
 
-  const controller = useAsyncRichDropdownController<LocationOption>({
+  const controller = useAsyncRichDropdownController<SectionOption>({
     bucketKey,
     searchFn,
     initialOptions,

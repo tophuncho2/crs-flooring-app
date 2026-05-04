@@ -32,6 +32,16 @@ export type LocationOption = {
   locationCode: string
 }
 
+// Slim option shape consumed by the canonical SectionPicker (server-side
+// search). Sections always belong to a warehouse — picker requires
+// `warehouseId` scope. `label` is the trigger display ("Section {n}").
+export type SectionOption = {
+  id: string
+  warehouseId: string
+  number: number
+  label: string
+}
+
 export type SectionRow = {
   id: string
   warehouseId: string

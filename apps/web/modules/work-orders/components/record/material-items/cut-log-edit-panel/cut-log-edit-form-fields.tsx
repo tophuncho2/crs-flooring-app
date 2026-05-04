@@ -1,59 +1,59 @@
 "use client"
 
-import { formatInventoryRefPackage, isCutLogPendingEditable, type CutLogRow } from "@builders/domain"
+import {
+  formatInventoryRefPackage,
+  isCutLogPendingEditable,
+  type CutLogRow,
+  type InventoryOption,
+  type LocationOption,
+  type SectionOption,
+} from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatCutLogTimestamp } from "@/components/features/cut-log-row/format-cut-log-timestamp"
-import type {
-  CutLogEditForm,
-  EligibleInventoryRow,
-} from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
-import { InventoryRichDropdown } from "./inventory-rich-dropdown"
+import { InventoryPicker } from "@/modules/inventory/components/picker/inventory-picker"
+import { LocationPicker } from "@/modules/locations/components/picker/location-picker"
+import { SectionPicker } from "@/modules/warehouse-sections/components/picker/section-picker"
+import type { CutLogEditPanelController } from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
 
 export type CutLogEditFormFieldsProps = {
   mode: "create" | "edit"
   cutLog: CutLogRow | null
-  form: CutLogEditForm
-  eligibleInventory: ReadonlyArray<EligibleInventoryRow>
-  isLoadingInventory: boolean
-  isSaving: boolean
-  onFieldChange: <K extends keyof CutLogEditForm>(field: K, value: CutLogEditForm[K]) => void
+  controller: CutLogEditPanelController
 }
 
 /**
  * The form body of the cut-log edit panel. Uses `FieldSection` (8-col
  * invisible grid) for layout. In edit mode the inventory selector becomes a
  * static display (saved cuts have immutable inventory). In create mode the
- * inventory selector is a `RichDropdown` with section + location filters.
+ * filter chain (Section → Location → Inventory) lets the user narrow down
+ * to the right inventory row before stamping it on the cut log.
  */
 export function CutLogEditFormFields({
   mode,
   cutLog,
-  form,
-  eligibleInventory,
-  isLoadingInventory,
-  isSaving,
-  onFieldChange,
+  controller,
 }: CutLogEditFormFieldsProps) {
+  const { form, local, warehouseId, isSaving } = controller
+
   const inventoryDisplay = (() => {
     if (!cutLog) return "—"
-    const inv = eligibleInventory.find((i) => i.id === cutLog.inventoryId)
-    if (inv) return formatInventoryRefPackage(inv)
-    return cutLog.inventoryId
+    return formatInventoryRefPackage({
+      inventoryNumber: cutLog.inventoryNumber,
+      itemNumber: cutLog.itemNumber,
+      dyeLot: cutLog.dyeLot,
+    })
   })()
 
   // Stock unit source:
   //   - edit mode: the cut log's frozen `stockUnitAbbrev` snapshot (stamped
   //     from the inventory at create time, never mutated afterward)
-  //   - create mode: derived from the currently-selected inventory's
-  //     `stockUnitAbbrev` — what the cut log will inherit on save
-  const stockUnit =
-    cutLog?.stockUnitAbbrev ??
-    (form.inventoryId
-      ? eligibleInventory.find((i) => i.id === form.inventoryId)?.stockUnitAbbrev ?? ""
-      : "")
+  //   - create mode: derived from the currently-picked inventory option's
+  //     `stockUnitAbbrev` snapshot kept in `local` — what the cut log will
+  //     inherit on save
+  const stockUnit = cutLog?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
   const coverageUnit = cutLog?.itemCoverageUnitAbbrev ?? ""
 
   // Locked once the row leaves the PENDING-editable state. Mirrors the server
@@ -88,7 +88,7 @@ export function CutLogEditFormFields({
           <UnitCell
             editable={fieldsEditable}
             value={form.cut}
-            onChange={(next) => onFieldChange("cut", next)}
+            onChange={(next) => controller.setField("cut", next)}
             unit={stockUnit}
             placeholder="0"
             ariaLabel="Cut amount"
@@ -124,7 +124,7 @@ export function CutLogEditFormFields({
           <CheckboxCell
             editable={fieldsEditable}
             value={form.isWaste}
-            onChange={(next) => onFieldChange("isWaste", next)}
+            onChange={(next) => controller.setField("isWaste", next)}
             ariaLabel="Waste flag"
           />
         </FormField>
@@ -145,7 +145,7 @@ export function CutLogEditFormFields({
           <TextCell
             editable={fieldsEditable}
             value={form.notes}
-            onChange={(next) => onFieldChange("notes", next)}
+            onChange={(next) => controller.setField("notes", next)}
             placeholder="Notes"
             ariaLabel="Cut log notes"
           />
@@ -176,25 +176,70 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 6 — inventory pinned to the bottom (selector in create, read-only in edit) */}
-      <CellAt col={1} colSpan={8}>
-        {mode === "create" ? (
-          <FormField label="Inventory" required>
-            <InventoryRichDropdown
-              value={form.inventoryId || null}
-              onChange={(next) => onFieldChange("inventoryId", next ?? "")}
-              inventories={eligibleInventory}
-              disabled={isSaving}
-              isLoading={isLoadingInventory}
-              ariaLabel="Cut log inventory"
-            />
-          </FormField>
-        ) : (
+      {/* Row 6 — picker filter chain (create) or read-only inventory (edit) */}
+      {mode === "create" ? (
+        <>
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Section">
+              <SectionPicker
+                value={local.sectionId || null}
+                onChange={controller.setSectionId}
+                onOptionSelected={(option: SectionOption | null) =>
+                  controller.snapshotSectionLabel(option?.label ?? null)
+                }
+                warehouseId={warehouseId}
+                selectedLabel={local.pickedSectionLabel || null}
+                disabled={isSaving}
+                ariaLabel="Cut log section filter"
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Location">
+              <LocationPicker
+                value={local.locationId || null}
+                onChange={controller.setLocationId}
+                onOptionSelected={(option: LocationOption | null) =>
+                  controller.snapshotLocationLabel(option?.shortCode ?? null)
+                }
+                warehouseId={warehouseId}
+                sectionId={local.sectionId || null}
+                selectedLabel={local.pickedLocationLabel || null}
+                disabled={isSaving}
+                ariaLabel="Cut log location filter"
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Inventory" required>
+              <InventoryPicker
+                value={form.inventoryId || null}
+                onChange={controller.setInventoryId}
+                onOptionSelected={(option: InventoryOption | null) =>
+                  controller.snapshotInventoryOption(option)
+                }
+                warehouseId={warehouseId}
+                productId={
+                  controller.open?.mode === "create"
+                    ? controller.open.productId || null
+                    : null
+                }
+                sectionId={local.sectionId || null}
+                locationId={local.locationId || null}
+                selectedLabel={local.pickedInventoryLabel || null}
+                disabled={isSaving}
+                ariaLabel="Cut log inventory"
+              />
+            </FormField>
+          </CellAt>
+        </>
+      ) : (
+        <CellAt col={1} colSpan={8}>
           <FormField label="Inventory">
             <TextCell editable={false} value={inventoryDisplay} ariaLabel="Inventory" />
           </FormField>
-        )}
-      </CellAt>
+        </CellAt>
+      )}
     </FieldSection>
   )
 }
