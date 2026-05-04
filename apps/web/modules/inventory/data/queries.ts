@@ -49,13 +49,16 @@ export async function getInventoryById(id: string): Promise<InventoryRecord | nu
   return dbGetInventoryById(id)
 }
 
+// Warehouse options are NOT pre-fetched here. The record view drives the
+// warehouse field via WarehousePicker (server-side search) which calls
+// /api/warehouses/options on demand; the read-only label comes from the
+// joined `warehouseName` on InventoryDetail.
 export async function getInventoryDetailPageData(
   id: string,
 ): Promise<
   PrismaDetailPageResult<{
     inventory: InventoryDetailRecord
     locationOptions: Awaited<ReturnType<typeof listInventoryOptions>>["locations"]
-    warehouseOptions: Awaited<ReturnType<typeof listInventoryOptions>>["warehouses"]
   }>
 > {
   try {
@@ -73,7 +76,6 @@ export async function getInventoryDetailPageData(
       data: {
         inventory,
         locationOptions: options.locations,
-        warehouseOptions: options.warehouses,
       },
     }
   } catch (error) {

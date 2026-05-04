@@ -3,20 +3,20 @@
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatInventoryImportNumber,
   formatInventoryQuantity,
   type InventoryForm,
   type InventoryLocationOption,
   type InventoryRow,
-  type InventoryWarehouseOption,
 } from "@builders/domain"
 
 export function InventoryPrimaryFieldsSection({
   inventory,
   draft,
   locationOptions,
-  warehouseOptions,
+  warehouseName,
   selectedLocation,
   disabled,
   onFieldChange,
@@ -24,7 +24,7 @@ export function InventoryPrimaryFieldsSection({
   inventory: InventoryRow
   draft: InventoryForm
   locationOptions: InventoryLocationOption[]
-  warehouseOptions: InventoryWarehouseOption[]
+  warehouseName: string | null
   selectedLocation: InventoryLocationOption | null
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
@@ -54,13 +54,17 @@ export function InventoryPrimaryFieldsSection({
       {/* Row 2: Warehouse · Location · Starting Balance · Cut Balance */}
       <CellAt col={1} row={2} colSpan={2}>
         <FormField label="Warehouse" required>
-          <SelectCell
-            editable={editable}
-            value={draft.warehouseId}
-            onChange={(value) => onFieldChange("warehouseId", value)}
-            options={warehouseOptions.map((warehouse) => ({ value: warehouse.id, label: warehouse.name }))}
-            placeholder="Select Warehouse"
-          />
+          {editable ? (
+            <WarehousePicker
+              value={draft.warehouseId || null}
+              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+              selectedLabel={warehouseName || null}
+              placeholder="Select Warehouse"
+              ariaLabel="Warehouse"
+            />
+          ) : (
+            <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={3} row={2} colSpan={2}>

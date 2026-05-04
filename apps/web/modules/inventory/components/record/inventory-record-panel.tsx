@@ -11,7 +11,6 @@ import type {
   InventoryDetail,
   InventoryForm,
   InventoryLocationOption,
-  InventoryWarehouseOption,
 } from "@builders/domain"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
 import { useInventoryCutLogViewPanel } from "../../controllers/use-inventory-cut-log-view-panel"
@@ -23,12 +22,10 @@ export function InventoryRecordPanel({
   page,
   inventory,
   locationOptions,
-  warehouseOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   inventory: InventoryDetail
   locationOptions: InventoryLocationOption[]
-  warehouseOptions: InventoryWarehouseOption[]
 }) {
   const controller = useInventoryPrimarySection({
     page,
@@ -96,7 +93,7 @@ export function InventoryRecordPanel({
                   inventory={controller.record}
                   draft={controller.primarySection.localValue}
                   locationOptions={controller.availableLocationOptions}
-                  warehouseOptions={warehouseOptions}
+                  warehouseName={controller.record.warehouseName}
                   selectedLocation={controller.selectedLocation}
                   disabled={controller.primarySection.isSaving}
                   onFieldChange={(field, value) => {

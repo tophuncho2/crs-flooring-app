@@ -7,19 +7,16 @@ import {
 import type {
   InventoryDetail,
   InventoryLocationOption,
-  InventoryWarehouseOption,
 } from "@builders/domain"
 import { InventoryRecordPanel } from "./inventory-record-panel"
 
 export function InventoryDetailClient({
   initialRecord,
   locationOptions,
-  warehouseOptions,
   backHref,
 }: {
   initialRecord: InventoryDetail
   locationOptions: InventoryLocationOption[]
-  warehouseOptions: InventoryWarehouseOption[]
   backHref: string
 }) {
   return (
@@ -34,7 +31,6 @@ export function InventoryDetailClient({
           page={page}
           inventory={initialRecord}
           locationOptions={locationOptions}
-          warehouseOptions={warehouseOptions}
         />
       )}
     </RecordDetailClientScaffold>

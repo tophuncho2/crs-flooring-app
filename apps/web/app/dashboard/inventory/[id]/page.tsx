@@ -40,7 +40,6 @@ export default async function InventoryDetailPage({
     <InventoryDetailClient
       initialRecord={result.data.inventory}
       locationOptions={result.data.locationOptions}
-      warehouseOptions={result.data.warehouseOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/inventory")}
     />
   )
