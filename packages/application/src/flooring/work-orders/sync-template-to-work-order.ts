@@ -12,7 +12,7 @@ import {
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import { sha256Hex } from "@builders/lib"
+import { sha256Hex } from "@builders/lib/hashing"
 import { WorkOrderExecutionError } from "./errors.js"
 
 export const TEMPLATE_SYNC_MODE_COPY = "copy"
