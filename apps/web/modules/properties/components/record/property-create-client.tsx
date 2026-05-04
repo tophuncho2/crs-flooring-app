@@ -28,34 +28,28 @@ const EMPTY_PROPERTY: PropertyDetailRecord = {
   managementCompany: null,
 }
 
-function createDefaultPropertyForm(managementCompanyId: string): PropertyPrimaryForm {
-  return {
-    name: "",
-    streetAddress: "",
-    city: "",
-    state: "",
-    zip: "",
-    phone: "",
-    email: "",
-    instructions: "",
-    managementCompanyId,
-  }
+const EMPTY_PROPERTY_FORM: PropertyPrimaryForm = {
+  name: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  zip: "",
+  phone: "",
+  email: "",
+  instructions: "",
+  managementCompanyId: "",
 }
 
 function PropertyCreatePanel({
   page,
   backHref,
-  managementOptions,
-  initialManagementCompanyId,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  managementOptions: Array<{ id: string; name: string }>
-  initialManagementCompanyId: string
 }) {
   const controller = useSingleSectionCreateController<PropertyPrimaryForm>({
     page,
-    createInitialValue: () => createDefaultPropertyForm(initialManagementCompanyId),
+    createInitialValue: () => ({ ...EMPTY_PROPERTY_FORM }),
     createRecord: async (localValue) => {
       const payload = await createPropertyRequest(localValue)
 
@@ -77,8 +71,6 @@ function PropertyCreatePanel({
         <PropertyPrimaryFieldsSection
           property={EMPTY_PROPERTY}
           draft={controller.primarySection.localValue}
-          managementOptions={managementOptions}
-          managementCompanyLocked={Boolean(initialManagementCompanyId)}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -93,29 +85,14 @@ function PropertyCreatePanel({
   )
 }
 
-export function PropertyCreateClient({
-  backHref,
-  managementOptions,
-  initialManagementCompanyId,
-}: {
-  backHref: string
-  managementOptions: Array<{ id: string; name: string }>
-  initialManagementCompanyId: string
-}) {
+export function PropertyCreateClient({ backHref }: { backHref: string }) {
   return (
     <RecordCreateClientScaffold
       title="New Property"
       backHref={backHref}
       dirtyMessage="You have unsaved property changes. Leave this form without saving?"
     >
-      {(page) => (
-        <PropertyCreatePanel
-          page={page}
-          backHref={backHref}
-          managementOptions={managementOptions}
-          initialManagementCompanyId={initialManagementCompanyId}
-        />
-      )}
+      {(page) => <PropertyCreatePanel page={page} backHref={backHref} />}
     </RecordCreateClientScaffold>
   )
 }

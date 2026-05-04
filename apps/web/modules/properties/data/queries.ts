@@ -2,46 +2,31 @@ import {
   createPrismaPageLoadIssue,
   getPropertyById,
   isPrismaNotFoundError,
-  listManagementCompanyOptions,
   listPropertyOptions,
-  listWarehouseOptions,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
 
 export { listPropertyOptions, getPropertyById }
 
-async function loadPropertyDetailOptions() {
-  const [managementOptions, warehouseOptions] = await Promise.all([
-    listManagementCompanyOptions(),
-    listWarehouseOptions(),
-  ])
-
-  return { managementOptions, warehouseOptions }
-}
-
+// Management-company options are NOT pre-fetched here. The properties
+// record view drives that field via ManagementCompanyPicker which calls
+// /api/management-companies/options on demand; the saved label comes
+// from the joined `managementCompany` field on PropertyDetailRecord.
 export async function getPropertyCreatePageOptions() {
-  return withPrismaConnectivityHandling(() => loadPropertyDetailOptions())
+  return withPrismaConnectivityHandling(async () => ({}))
 }
 
-export async function getPropertyDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+export async function getPropertyDetailPageData(
+  id: string,
+): Promise<PrismaDetailPageResult<{
   property: Awaited<ReturnType<typeof getPropertyById>>
-  managementOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["managementOptions"]
-  warehouseOptions: Awaited<ReturnType<typeof loadPropertyDetailOptions>>["warehouseOptions"]
 }>> {
   try {
-    const [property, options] = await Promise.all([
-      getPropertyById(id),
-      loadPropertyDetailOptions(),
-    ])
-
+    const property = await getPropertyById(id)
     return {
       ok: true,
-      data: {
-        property,
-        managementOptions: options.managementOptions,
-        warehouseOptions: options.warehouseOptions,
-      },
+      data: { property },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
@@ -59,4 +44,3 @@ export async function getPropertyDetailPageData(id: string): Promise<PrismaDetai
     }
   }
 }
-

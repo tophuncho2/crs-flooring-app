@@ -9,20 +9,17 @@ import {
   RecordPrimarySection,
   RecordStaticFieldValue,
 } from "@/modules/shared/engines/record-view"
+import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import type { PropertyDetailRecord, PropertyPrimaryForm } from "@builders/domain"
 
 export function PropertyPrimaryFieldsSection({
   property,
   draft,
-  managementOptions,
-  managementCompanyLocked = false,
   disabled,
   onFieldChange,
 }: {
   property: PropertyDetailRecord
   draft: PropertyPrimaryForm
-  managementOptions: Array<{ id: string; name: string }>
-  managementCompanyLocked?: boolean
   disabled: boolean
   onFieldChange: (field: keyof PropertyPrimaryForm, value: string) => void
 }) {
@@ -34,19 +31,14 @@ export function PropertyPrimaryFieldsSection({
         <RecordPrimaryFieldsGrid variant="side">
           <RecordPrimaryFieldCell>
             <RecordFormField label="Management Company">
-              <select
-                value={draft.managementCompanyId}
-                onChange={(event) => onFieldChange("managementCompanyId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled || managementCompanyLocked}
-              >
-                <option value="">No management company</option>
-                {managementOptions.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
+              <ManagementCompanyPicker
+                value={draft.managementCompanyId || null}
+                onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
+                selectedLabel={property.managementCompany?.name ?? null}
+                disabled={disabled}
+                placeholder="No management company"
+                ariaLabel="Management company"
+              />
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>

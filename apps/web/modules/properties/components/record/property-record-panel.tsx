@@ -14,11 +14,9 @@ import type { PropertyDetailRecord, PropertyPrimaryForm } from "@builders/domain
 export function PropertyRecordPanel({
   page,
   property,
-  managementOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   property: PropertyDetailRecord
-  managementOptions: Array<{ id: string; name: string }>
 }) {
   const controller = usePropertyPrimarySection({
     page,
@@ -54,7 +52,6 @@ export function PropertyRecordPanel({
               <PropertyPrimaryFieldsSection
                 property={controller.record}
                 draft={controller.primarySection.localValue}
-                managementOptions={managementOptions}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous: PropertyPrimaryForm) => ({

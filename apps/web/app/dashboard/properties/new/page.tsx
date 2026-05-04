@@ -12,9 +12,6 @@ export default async function PropertyCreatePage({
   await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const result = await getPropertyCreatePageOptions()
-  const managementCompanyId = typeof resolvedSearchParams?.managementCompanyId === "string"
-    ? resolvedSearchParams.managementCompanyId
-    : ""
 
   if (!result.ok) {
     return (
@@ -29,8 +26,6 @@ export default async function PropertyCreatePage({
 
   return (
     <PropertyCreateClient
-      managementOptions={result.data.managementOptions}
-      initialManagementCompanyId={managementCompanyId}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/properties")}
     />
   )

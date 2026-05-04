@@ -6,11 +6,9 @@ import type { PropertyDetailRecord } from "@builders/domain"
 
 export function PropertyDetailClient({
   property,
-  managementOptions,
   backHref,
 }: {
   property: PropertyDetailRecord
-  managementOptions: Array<{ id: string; name: string }>
   backHref: string
 }) {
   return (
@@ -21,11 +19,7 @@ export function PropertyDetailClient({
       headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <PropertyRecordPanel
-          page={page}
-          property={property}
-          managementOptions={managementOptions}
-        />
+        <PropertyRecordPanel page={page} property={property} />
       )}
     </RecordDetailClientScaffold>
   )

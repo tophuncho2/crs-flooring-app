@@ -39,7 +39,6 @@ export default async function PropertyDetailPage({
   return (
     <PropertyDetailClient
       property={result.data.property}
-      managementOptions={result.data.managementOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/properties")}
     />
   )
