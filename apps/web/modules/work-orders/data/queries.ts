@@ -5,10 +5,7 @@ import {
   listCategories,
   listCutLogsForWorkOrderItemIds,
   listJobTypeOptions,
-  listManagementCompanyOptions,
   listProductOptions,
-  listPropertyOptions,
-  listTemplateOptions,
   listWarehouseOptions,
   listWorkOrderFiles,
   listWorkOrderMaterialItems,
@@ -28,19 +25,8 @@ import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 export type { WorkOrderFileRow }
 
 export type WorkOrderFormOptionSet = {
-  propertyOptions: Array<{
-    id: string
-    label: string
-    streetAddress: string
-    city: string
-    state: string
-    postalCode: string
-    instructions: string
-  }>
   warehouseOptions: Array<{ id: string; name: string }>
   jobTypeOptions: Array<{ id: string; name: string }>
-  managementCompanyOptions: Array<{ id: string; name: string }>
-  templateOptions: Array<{ id: string; templateNumber: string; unitType: string }>
   productOptions: Array<{
     id: string
     label: string
@@ -51,43 +37,21 @@ export type WorkOrderFormOptionSet = {
   categoryOptions: Array<{ id: string; label: string }>
 }
 
+// Property / management-company / template options are NOT pre-fetched
+// here. Those three fields are powered by async pickers in the primary
+// section which call /api/{properties,management-companies,templates}/options
+// on demand; read-only labels come from joined fields on `WorkOrderDetail`.
 export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.work-orders.options" }, async () => {
-    const [
-      properties,
-      warehouses,
-      jobTypes,
-      managementCompanies,
-      templates,
-      products,
-      categories,
-    ] = await Promise.all([
-      listPropertyOptions(),
+    const [warehouses, jobTypes, products, categories] = await Promise.all([
       listWarehouseOptions(),
       listJobTypeOptions(),
-      listManagementCompanyOptions(),
-      listTemplateOptions(),
       listProductOptions(),
       listCategories(),
     ])
     return {
-      propertyOptions: properties.map((p) => ({
-        id: p.id,
-        label: p.name,
-        streetAddress: p.streetAddress,
-        city: p.city,
-        state: p.state,
-        postalCode: p.postalCode,
-        instructions: p.instructions,
-      })),
       warehouseOptions: warehouses.map((w) => ({ id: w.id, name: w.name })),
       jobTypeOptions: jobTypes.map((j) => ({ id: j.id, name: j.name })),
-      managementCompanyOptions: managementCompanies.map((m) => ({ id: m.id, name: m.name })),
-      templateOptions: templates.map((t) => ({
-        id: t.id,
-        templateNumber: t.templateNumber,
-        unitType: t.unitType,
-      })),
       productOptions: products.map((p) => ({
         id: p.id,
         label: p.name,

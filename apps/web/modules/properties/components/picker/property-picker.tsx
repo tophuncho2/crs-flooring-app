@@ -14,6 +14,16 @@ export type PropertyPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
+   * Optional notification fired alongside `onChange` carrying the full
+   * picked option (or null on clear). Lets callers reflect the picked
+   * property's joined fields in adjacent UI before save — e.g. the WO
+   * record's address preview cells.
+   *
+   * Only fires when the option is present in the picker's current
+   * search results; the picker does not refetch by id.
+   */
+  onOptionSelected?: (option: PropertyOption | null) => void
+  /**
    * Optional management-company filter. When set, only properties belonging
    * to that company are returned. Also folded into the controller's bucket
    * key so React Query buckets results per filter.
@@ -44,6 +54,7 @@ function toDropdownOption(option: PropertyOption): AsyncRichDropdownOption {
 export function PropertyPicker({
   value,
   onChange,
+  onOptionSelected,
   managementCompanyId = null,
   selectedLabel = null,
   placeholder = "Select a property",
@@ -76,6 +87,17 @@ export function PropertyPicker({
     initialOptions,
   })
 
+  const handleChange = useCallback(
+    (id: string | null) => {
+      onChange(id)
+      if (onOptionSelected) {
+        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        onOptionSelected(option)
+      }
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   const options = useMemo<AsyncRichDropdownOption[]>(
     () => controller.options.map(toDropdownOption),
     [controller.options],
@@ -90,7 +112,7 @@ export function PropertyPicker({
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}

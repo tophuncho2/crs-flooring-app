@@ -1,7 +1,8 @@
 "use client"
 
+import { useCallback, useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField } from "@/components/fields"
+import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import {
   CheckboxCell,
   DateCell,
@@ -10,13 +11,16 @@ import {
   TextCell,
   TextareaCell,
 } from "@/components/cells"
-import { PropertyJoinedReadOnlyCells } from "@/modules/shared/property-fields"
-import type { WorkOrderForm } from "@builders/domain"
+import {
+  PropertyJoinedReadOnlyCells,
+  type PropertyJoinedFields,
+} from "@/modules/shared/property-fields"
+import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
+import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
+import type { PropertyOption, WorkOrderForm } from "@builders/domain"
 import type {
   JobTypeOption,
-  ManagementCompanyOption,
-  PropertyOption,
-  TemplateOption,
   WarehouseOption,
 } from "@/modules/work-orders/controllers/record/drafts"
 
@@ -25,44 +29,99 @@ const VACANCY_OPTIONS = [
   { value: "OCCUPIED", label: "Occupied" },
 ]
 
+/**
+ * Slim joined-name + joined-property snapshot the section needs from the
+ * saved WO. Drives read-only label rendering and seeds the pickers'
+ * `selectedLabel` so the trigger shows the saved selection without a
+ * server round-trip. Pass `null` from create flows.
+ */
+export type WorkOrderPrimaryDetail = {
+  propertyId: string
+  propertyName: string
+  propertyStreetAddress: string
+  propertyCity: string
+  propertyState: string
+  propertyPostalCode: string
+  propertyInstructions: string
+  managementCompanyId: string | null
+  managementCompanyName: string | null
+  templateId: string | null
+  templateNumber: string
+}
+
+function detailToPropertyJoined(
+  detail: WorkOrderPrimaryDetail | null,
+): PropertyJoinedFields | null {
+  if (!detail) return null
+  return {
+    streetAddress: detail.propertyStreetAddress,
+    city: detail.propertyCity,
+    state: detail.propertyState,
+    postalCode: detail.propertyPostalCode,
+    instructions: detail.propertyInstructions,
+  }
+}
+
 export function WorkOrderPrimaryFieldsSection({
   draft,
   workOrderNumber,
   status,
-  propertyOptions,
+  detail,
   warehouseOptions,
   jobTypeOptions,
-  managementCompanyOptions,
-  templateOptions,
   disabled,
   onFieldChange,
 }: {
   draft: WorkOrderForm
   workOrderNumber: string
   status: string
-  propertyOptions: PropertyOption[]
+  detail: WorkOrderPrimaryDetail | null
   warehouseOptions: WarehouseOption[]
   jobTypeOptions: JobTypeOption[]
-  managementCompanyOptions: ManagementCompanyOption[]
-  templateOptions: TemplateOption[]
   disabled: boolean
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
 }) {
   const editable = !disabled
 
-  const propertySelectOptions = propertyOptions.map((o) => ({ value: o.id, label: o.label }))
   const warehouseSelectOptions = warehouseOptions.map((o) => ({ value: o.id, label: o.name }))
   const jobTypeSelectOptions = jobTypeOptions.map((o) => ({ value: o.id, label: o.name }))
-  const managementCompanySelectOptions = managementCompanyOptions.map((o) => ({
-    value: o.id,
-    label: o.name,
-  }))
-  const templateSelectOptions = templateOptions.map((o) => ({
-    value: o.id,
-    label: `${o.templateNumber} (${o.unitType})`,
-  }))
 
-  const selectedProperty = propertyOptions.find((o) => o.id === draft.propertyId) ?? null
+  // Live preview override for the joined readonly cells. Initializes
+  // from the saved detail; updates when PropertyPicker emits a new
+  // option so the address/instructions cells track the dropdown
+  // selection rather than waiting for save. Cleared whenever the saved
+  // propertyId changes (after save / record swap) so the override does
+  // not stomp the next record's joined fields.
+  const [pickedPropertyJoined, setPickedPropertyJoined] = useState<PropertyJoinedFields | null>(
+    null,
+  )
+  useEffect(() => {
+    setPickedPropertyJoined(null)
+  }, [detail?.propertyId])
+
+  const propertyJoined = pickedPropertyJoined ?? detailToPropertyJoined(detail)
+
+  const handlePropertyOption = useCallback((option: PropertyOption | null) => {
+    if (option === null) {
+      setPickedPropertyJoined(null)
+      return
+    }
+    setPickedPropertyJoined({
+      streetAddress: option.streetAddress,
+      city: option.city,
+      state: option.state,
+      postalCode: option.postalCode,
+      instructions: option.instructions,
+    })
+  }, [])
+
+  const managementCompanyValue = draft.managementCompanyId || null
+  const propertyValue = draft.propertyId || null
+  const templateValue = draft.templateId || null
+
+  const managementCompanyLabel = detail?.managementCompanyName ?? null
+  const propertyLabel = detail?.propertyName ?? null
+  const templateLabel = detail?.templateNumber ? `#${detail.templateNumber}` : null
 
   return (
     <FieldSection>
@@ -119,35 +178,50 @@ export function WorkOrderPrimaryFieldsSection({
 
       <CellAt col={1} row={2} colSpan={3}>
         <FormField label="Management Company">
-          <SelectCell
-            editable={editable}
-            value={draft.managementCompanyId}
-            options={managementCompanySelectOptions}
-            placeholder="—"
-            onChange={(value) => onFieldChange("managementCompanyId", value)}
-          />
+          {editable ? (
+            <ManagementCompanyPicker
+              value={managementCompanyValue}
+              onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
+              selectedLabel={managementCompanyLabel}
+              placeholder="—"
+              ariaLabel="Management company"
+            />
+          ) : (
+            <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={4} row={2} colSpan={2}>
         <FormField label="Property">
-          <SelectCell
-            editable={editable}
-            value={draft.propertyId}
-            options={propertySelectOptions}
-            placeholder="Select property"
-            onChange={(value) => onFieldChange("propertyId", value)}
-          />
+          {editable ? (
+            <PropertyPicker
+              value={propertyValue}
+              onChange={(id) => onFieldChange("propertyId", id ?? "")}
+              onOptionSelected={handlePropertyOption}
+              managementCompanyId={managementCompanyValue}
+              selectedLabel={propertyLabel}
+              placeholder="Select property"
+              ariaLabel="Property"
+            />
+          ) : (
+            <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={6} row={2} colSpan={3}>
         <FormField label="Template">
-          <SelectCell
-            editable={editable}
-            value={draft.templateId}
-            options={templateSelectOptions}
-            placeholder="—"
-            onChange={(value) => onFieldChange("templateId", value)}
-          />
+          {editable ? (
+            <TemplatePicker
+              value={templateValue}
+              onChange={(id) => onFieldChange("templateId", id ?? "")}
+              propertyId={propertyValue}
+              selectedLabel={templateLabel}
+              placeholder="—"
+              ariaLabel="Template"
+            />
+          ) : (
+            <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
 
@@ -192,7 +266,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <PropertyJoinedReadOnlyCells property={selectedProperty} startRow={5} />
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={5} />
 
       <CellAt col={1} row={7} colSpan={8}>
         <FormField label="Description">

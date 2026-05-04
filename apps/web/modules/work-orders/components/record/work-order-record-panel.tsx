@@ -83,11 +83,21 @@ export function WorkOrderRecordPanel({
                 draft={controller.primarySection.localValue}
                 workOrderNumber={controller.record.workOrderNumber}
                 status={controller.record.status}
-                propertyOptions={options.propertyOptions}
+                detail={{
+                  propertyId: controller.record.propertyId,
+                  propertyName: controller.record.propertyName,
+                  propertyStreetAddress: controller.record.propertyStreetAddress,
+                  propertyCity: controller.record.propertyCity,
+                  propertyState: controller.record.propertyState,
+                  propertyPostalCode: controller.record.propertyPostalCode,
+                  propertyInstructions: controller.record.propertyInstructions,
+                  managementCompanyId: controller.record.managementCompanyId,
+                  managementCompanyName: controller.record.managementCompanyName,
+                  templateId: controller.record.templateId,
+                  templateNumber: controller.record.templateNumber,
+                }}
                 warehouseOptions={options.warehouseOptions}
                 jobTypeOptions={options.jobTypeOptions}
-                managementCompanyOptions={options.managementCompanyOptions}
-                templateOptions={options.templateOptions}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({
