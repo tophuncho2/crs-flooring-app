@@ -18,12 +18,10 @@ import {
 function TemplateCreatePanel({
   page,
   backHref,
-  jobTypeOptions,
   warehouseOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
 }) {
   const controller = useSingleSectionCreateController<TemplateForm>({
@@ -50,7 +48,6 @@ function TemplateCreatePanel({
         <TemplatePrimaryFieldsSection
           draft={controller.primarySection.localValue}
           detail={null}
-          jobTypeOptions={jobTypeOptions}
           warehouseOptions={warehouseOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
@@ -68,11 +65,9 @@ function TemplateCreatePanel({
 
 export function TemplateCreateClient({
   backHref,
-  jobTypeOptions,
   warehouseOptions,
 }: {
   backHref: string
-  jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
 }) {
   return (
@@ -85,7 +80,6 @@ export function TemplateCreateClient({
         <TemplateCreatePanel
           page={page}
           backHref={backHref}
-          jobTypeOptions={jobTypeOptions}
           warehouseOptions={warehouseOptions}
         />
       )}

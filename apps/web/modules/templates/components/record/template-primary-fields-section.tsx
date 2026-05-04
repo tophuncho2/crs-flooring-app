@@ -8,6 +8,7 @@ import {
   PropertyJoinedReadOnlyCells,
   type PropertyJoinedFields,
 } from "@/modules/shared/property-fields"
+import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyOption, TemplateForm } from "@builders/domain"
@@ -30,6 +31,8 @@ export type TemplatePrimaryDetail = {
   propertyInstructions: string
   managementCompanyId: string | null
   managementCompanyName: string | null
+  jobTypeId: string | null
+  jobTypeName: string | null
 }
 
 function detailToPropertyJoined(
@@ -48,14 +51,12 @@ function detailToPropertyJoined(
 export function TemplatePrimaryFieldsSection({
   draft,
   detail,
-  jobTypeOptions,
   warehouseOptions,
   disabled,
   onFieldChange,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
-  jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   disabled: boolean
   onFieldChange: (field: keyof TemplateForm, value: string) => void
@@ -133,13 +134,17 @@ export function TemplatePrimaryFieldsSection({
       </CellAt>
       <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Job Type">
-          <SelectCell
-            editable={editable}
-            value={draft.jobTypeId}
-            onChange={(value) => onFieldChange("jobTypeId", value)}
-            options={jobTypeOptions.map((option) => ({ value: option.id, label: option.name }))}
-            placeholder="No job type"
-          />
+          {editable ? (
+            <JobTypePicker
+              value={draft.jobTypeId || null}
+              onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
+              selectedLabel={detail?.jobTypeName ?? null}
+              placeholder="No job type"
+              ariaLabel="Job type"
+            />
+          ) : (
+            <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={7} row={1} colSpan={2}>

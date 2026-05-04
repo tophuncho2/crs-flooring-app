@@ -7,12 +7,10 @@ import type { TemplateDropdownOption } from "./template-primary-fields-section"
 
 export function TemplateDetailClient({
   template,
-  jobTypeOptions,
   warehouseOptions,
   backHref,
 }: {
   template: TemplateDetail
-  jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   backHref: string
 }) {
@@ -27,7 +25,6 @@ export function TemplateDetailClient({
         <TemplateRecordPanel
           page={page}
           template={template}
-          jobTypeOptions={jobTypeOptions}
           warehouseOptions={warehouseOptions}
         />
       )}

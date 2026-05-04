@@ -39,7 +39,6 @@ export default async function TemplateDetailPage({
   return (
     <TemplateDetailClient
       template={result.data.template}
-      jobTypeOptions={result.data.jobTypeOptions}
       warehouseOptions={result.data.warehouseOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/templates")}
     />

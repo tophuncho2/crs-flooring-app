@@ -18,12 +18,10 @@ import { TemplateMaterialItemsSection } from "./template-material-items-section"
 export function TemplateRecordPanel({
   page,
   template,
-  jobTypeOptions,
   warehouseOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
-  jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
 }) {
   const primary = useTemplatePrimarySection({ page, template })
@@ -70,8 +68,9 @@ export function TemplateRecordPanel({
                   propertyInstructions: primary.record.propertyInstructions,
                   managementCompanyId: primary.record.managementCompanyId,
                   managementCompanyName: primary.record.managementCompanyName,
+                  jobTypeId: primary.record.jobTypeId,
+                  jobTypeName: primary.record.jobTypeName,
                 }}
-                jobTypeOptions={jobTypeOptions}
                 warehouseOptions={warehouseOptions}
                 disabled={primary.primarySection.isSaving}
                 onFieldChange={(field, value) => {

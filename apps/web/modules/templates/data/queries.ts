@@ -3,7 +3,6 @@ import {
   createPrismaPageLoadIssue,
   getTemplateById,
   isPrismaNotFoundError,
-  listJobTypeOptions,
   listTemplates,
   listTemplateOptions,
   listWarehouseOptions,
@@ -23,18 +22,14 @@ function toListSort(tableState: ServerTableQueryState) {
 
 export { listTemplates, listTemplateOptions, getTemplateById }
 
-// Property + management-company options are NOT pre-fetched here. The
-// templates record view drives those two fields via async pickers
-// (PropertyPicker / ManagementCompanyPicker) which call
-// /api/{properties,management-companies}/options on demand; read-only
-// labels come from joined fields on TemplateDetail.
+// Property / management-company / job-type options are NOT pre-fetched
+// here. Those fields are powered by async pickers (PropertyPicker /
+// ManagementCompanyPicker / JobTypePicker) which call
+// /api/{properties,management-companies,job-types}/options on demand;
+// read-only labels come from joined fields on TemplateDetail.
 async function loadTemplateDropdownOptions() {
-  const [jobTypeOptions, warehouseOptions] = await Promise.all([
-    listJobTypeOptions(),
-    listWarehouseOptions(),
-  ])
-
-  return { jobTypeOptions, warehouseOptions }
+  const warehouseOptions = await listWarehouseOptions()
+  return { warehouseOptions }
 }
 
 // Product + category options are NOT pre-fetched here. The templates
@@ -52,7 +47,6 @@ export async function getTemplateCreatePageOptions() {
 
 export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   template: Awaited<ReturnType<typeof getTemplateById>>
-  jobTypeOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["jobTypeOptions"]
   warehouseOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["warehouseOptions"]
 }>> {
   try {
@@ -65,7 +59,6 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
       ok: true,
       data: {
         template,
-        jobTypeOptions: options.jobTypeOptions,
         warehouseOptions: options.warehouseOptions,
       },
     }

@@ -26,7 +26,6 @@ export default async function TemplateCreatePage({
 
   return (
     <TemplateCreateClient
-      jobTypeOptions={result.data.jobTypeOptions}
       warehouseOptions={result.data.warehouseOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/templates")}
     />
