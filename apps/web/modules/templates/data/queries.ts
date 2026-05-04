@@ -5,9 +5,7 @@ import {
   isPrismaNotFoundError,
   listCategories,
   listJobTypeOptions,
-  listManagementCompanyOptions,
   listProductOptions,
-  listPropertyOptions,
   listTemplates,
   listTemplateOptions,
   listWarehouseOptions,
@@ -27,15 +25,18 @@ function toListSort(tableState: ServerTableQueryState) {
 
 export { listTemplates, listTemplateOptions, getTemplateById }
 
+// Property + management-company options are NOT pre-fetched here. The
+// templates record view drives those two fields via async pickers
+// (PropertyPicker / ManagementCompanyPicker) which call
+// /api/{properties,management-companies}/options on demand; read-only
+// labels come from joined fields on TemplateDetail.
 async function loadTemplateDropdownOptions() {
-  const [managementOptions, propertyOptions, jobTypeOptions, warehouseOptions] = await Promise.all([
-    listManagementCompanyOptions(),
-    listPropertyOptions(),
+  const [jobTypeOptions, warehouseOptions] = await Promise.all([
     listJobTypeOptions(),
     listWarehouseOptions(),
   ])
 
-  return { managementOptions, propertyOptions, jobTypeOptions, warehouseOptions }
+  return { jobTypeOptions, warehouseOptions }
 }
 
 async function loadTemplateDetailOptions() {
@@ -54,8 +55,6 @@ export async function getTemplateCreatePageOptions() {
 
 export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   template: Awaited<ReturnType<typeof getTemplateById>>
-  managementOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["managementOptions"]
-  propertyOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["propertyOptions"]
   jobTypeOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["jobTypeOptions"]
   warehouseOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["warehouseOptions"]
   productOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["productOptions"]
@@ -71,8 +70,6 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
       ok: true,
       data: {
         template,
-        managementOptions: options.managementOptions,
-        propertyOptions: options.propertyOptions,
         jobTypeOptions: options.jobTypeOptions,
         warehouseOptions: options.warehouseOptions,
         productOptions: options.productOptions,

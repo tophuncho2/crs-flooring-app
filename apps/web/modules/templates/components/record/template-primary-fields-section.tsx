@@ -1,62 +1,134 @@
 "use client"
 
+import { useCallback, useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField } from "@/components/fields"
+import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
-import { PropertyJoinedReadOnlyCells } from "@/modules/shared/property-fields"
+import {
+  PropertyJoinedReadOnlyCells,
+  type PropertyJoinedFields,
+} from "@/modules/shared/property-fields"
+import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyOption, TemplateForm } from "@builders/domain"
 
 export type TemplateDropdownOption = { id: string; name: string }
-export type TemplatePropertyOption = PropertyOption
+
+/**
+ * Slim joined-name + joined-property snapshot the section needs from
+ * the saved template. Drives read-only label rendering and seeds the
+ * pickers' `selectedLabel` so the trigger shows the saved selection
+ * without a server round-trip. Pass `null` from create flows.
+ */
+export type TemplatePrimaryDetail = {
+  propertyId: string
+  propertyName: string
+  propertyStreetAddress: string
+  propertyCity: string
+  propertyState: string
+  propertyPostalCode: string
+  propertyInstructions: string
+  managementCompanyId: string | null
+  managementCompanyName: string | null
+}
+
+function detailToPropertyJoined(
+  detail: TemplatePrimaryDetail | null,
+): PropertyJoinedFields | null {
+  if (!detail) return null
+  return {
+    streetAddress: detail.propertyStreetAddress,
+    city: detail.propertyCity,
+    state: detail.propertyState,
+    postalCode: detail.propertyPostalCode,
+    instructions: detail.propertyInstructions,
+  }
+}
 
 export function TemplatePrimaryFieldsSection({
   draft,
-  managementOptions,
-  propertyOptions,
+  detail,
   jobTypeOptions,
   warehouseOptions,
-  propertyLocked = false,
-  managementCompanyLocked = false,
   disabled,
   onFieldChange,
 }: {
   draft: TemplateForm
-  managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplatePropertyOption[]
+  detail: TemplatePrimaryDetail | null
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
-  propertyLocked?: boolean
-  managementCompanyLocked?: boolean
   disabled: boolean
   onFieldChange: (field: keyof TemplateForm, value: string) => void
 }) {
   const editable = !disabled
 
-  const selectedProperty = propertyOptions.find((option) => option.id === draft.propertyId) ?? null
+  // Live preview override for the joined readonly cells (mirrors WO).
+  // Initializes from the saved detail; updates when PropertyPicker
+  // emits a new option so the address/instructions cells track the
+  // dropdown selection rather than waiting for save. Cleared whenever
+  // the saved propertyId changes (after save / record swap).
+  const [pickedPropertyJoined, setPickedPropertyJoined] = useState<PropertyJoinedFields | null>(
+    null,
+  )
+  useEffect(() => {
+    setPickedPropertyJoined(null)
+  }, [detail?.propertyId])
+
+  const propertyJoined = pickedPropertyJoined ?? detailToPropertyJoined(detail)
+
+  const handlePropertyOption = useCallback((option: PropertyOption | null) => {
+    if (option === null) {
+      setPickedPropertyJoined(null)
+      return
+    }
+    setPickedPropertyJoined({
+      streetAddress: option.streetAddress,
+      city: option.city,
+      state: option.state,
+      postalCode: option.postalCode,
+      instructions: option.instructions,
+    })
+  }, [])
+
+  const managementCompanyValue = draft.managementCompanyId || null
+  const propertyValue = draft.propertyId || null
+
+  const managementCompanyLabel = detail?.managementCompanyName ?? null
+  const propertyLabel = detail?.propertyName ?? null
 
   return (
     <FieldSection>
       {/* Row 1: Management Company · Property · Job Type · Unit Type */}
       <CellAt col={1} row={1} colSpan={2}>
         <FormField label="Management Company">
-          <SelectCell
-            editable={editable && !managementCompanyLocked}
-            value={draft.managementCompanyId}
-            onChange={(value) => onFieldChange("managementCompanyId", value)}
-            options={managementOptions.map((option) => ({ value: option.id, label: option.name }))}
-            placeholder="No management company"
-          />
+          {editable ? (
+            <ManagementCompanyPicker
+              value={managementCompanyValue}
+              onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
+              selectedLabel={managementCompanyLabel}
+              placeholder="No management company"
+              ariaLabel="Management company"
+            />
+          ) : (
+            <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={3} row={1} colSpan={2}>
         <FormField label="Property" required>
-          <SelectCell
-            editable={editable && !propertyLocked}
-            value={draft.propertyId}
-            onChange={(value) => onFieldChange("propertyId", value)}
-            options={propertyOptions.map((option) => ({ value: option.id, label: option.name }))}
-            placeholder="Select property"
-          />
+          {editable ? (
+            <PropertyPicker
+              value={propertyValue}
+              onChange={(id) => onFieldChange("propertyId", id ?? "")}
+              onOptionSelected={handlePropertyOption}
+              managementCompanyId={managementCompanyValue}
+              selectedLabel={propertyLabel}
+              placeholder="Select property"
+              ariaLabel="Property"
+            />
+          ) : (
+            <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={5} row={1} colSpan={2}>
@@ -127,7 +199,7 @@ export function TemplatePrimaryFieldsSection({
       </CellAt>
 
       {/* Rows 5-6: Property address + instructions (read-only, live from selection) */}
-      <PropertyJoinedReadOnlyCells property={selectedProperty} startRow={5} />
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={5} />
     </FieldSection>
   )
 }

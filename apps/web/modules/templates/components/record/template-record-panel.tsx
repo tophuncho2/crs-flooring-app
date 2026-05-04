@@ -12,7 +12,6 @@ import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import {
   TemplatePrimaryFieldsSection,
   type TemplateDropdownOption,
-  type TemplatePropertyOption,
 } from "./template-primary-fields-section"
 import {
   TemplateMaterialItemsSection,
@@ -23,8 +22,6 @@ import {
 export function TemplateRecordPanel({
   page,
   template,
-  managementOptions,
-  propertyOptions,
   jobTypeOptions,
   warehouseOptions,
   productOptions,
@@ -32,8 +29,6 @@ export function TemplateRecordPanel({
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
-  managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
   productOptions: MaterialItemProductOption[]
@@ -73,8 +68,17 @@ export function TemplateRecordPanel({
             >
               <TemplatePrimaryFieldsSection
                 draft={primary.primarySection.localValue}
-                managementOptions={managementOptions}
-                propertyOptions={propertyOptions}
+                detail={{
+                  propertyId: primary.record.propertyId,
+                  propertyName: primary.record.propertyName,
+                  propertyStreetAddress: primary.record.propertyStreetAddress,
+                  propertyCity: primary.record.propertyCity,
+                  propertyState: primary.record.propertyState,
+                  propertyPostalCode: primary.record.propertyPostalCode,
+                  propertyInstructions: primary.record.propertyInstructions,
+                  managementCompanyId: primary.record.managementCompanyId,
+                  managementCompanyName: primary.record.managementCompanyName,
+                }}
                 jobTypeOptions={jobTypeOptions}
                 warehouseOptions={warehouseOptions}
                 disabled={primary.primarySection.isSaving}

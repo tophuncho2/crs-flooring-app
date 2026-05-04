@@ -13,39 +13,22 @@ import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
 import {
   TemplatePrimaryFieldsSection,
   type TemplateDropdownOption,
-  type TemplatePropertyOption,
 } from "./template-primary-fields-section"
-
-function createInitialTemplateForm(defaults: Partial<TemplateForm>): TemplateForm {
-  return { ...EMPTY_TEMPLATE_FORM, ...defaults }
-}
 
 function TemplateCreatePanel({
   page,
   backHref,
-  managementOptions,
-  propertyOptions,
   jobTypeOptions,
   warehouseOptions,
-  initialPropertyId,
-  initialManagementCompanyId,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
-  initialPropertyId: string
-  initialManagementCompanyId: string
 }) {
   const controller = useSingleSectionCreateController<TemplateForm>({
     page,
-    createInitialValue: () =>
-      createInitialTemplateForm({
-        propertyId: initialPropertyId,
-        managementCompanyId: initialManagementCompanyId,
-      }),
+    createInitialValue: () => ({ ...EMPTY_TEMPLATE_FORM }),
     createRecord: async (localValue) => {
       const payload = await createTemplateRequest(localValue)
 
@@ -66,12 +49,9 @@ function TemplateCreatePanel({
       >
         <TemplatePrimaryFieldsSection
           draft={controller.primarySection.localValue}
-          managementOptions={managementOptions}
-          propertyOptions={propertyOptions}
+          detail={null}
           jobTypeOptions={jobTypeOptions}
           warehouseOptions={warehouseOptions}
-          propertyLocked={Boolean(initialPropertyId)}
-          managementCompanyLocked={Boolean(initialManagementCompanyId)}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -88,20 +68,12 @@ function TemplateCreatePanel({
 
 export function TemplateCreateClient({
   backHref,
-  managementOptions,
-  propertyOptions,
   jobTypeOptions,
   warehouseOptions,
-  initialPropertyId,
-  initialManagementCompanyId,
 }: {
   backHref: string
-  managementOptions: TemplateDropdownOption[]
-  propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
-  initialPropertyId: string
-  initialManagementCompanyId: string
 }) {
   return (
     <RecordCreateClientScaffold
@@ -113,12 +85,8 @@ export function TemplateCreateClient({
         <TemplateCreatePanel
           page={page}
           backHref={backHref}
-          managementOptions={managementOptions}
-          propertyOptions={propertyOptions}
           jobTypeOptions={jobTypeOptions}
           warehouseOptions={warehouseOptions}
-          initialPropertyId={initialPropertyId}
-          initialManagementCompanyId={initialManagementCompanyId}
         />
       )}
     </RecordCreateClientScaffold>

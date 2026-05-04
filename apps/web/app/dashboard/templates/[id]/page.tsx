@@ -39,8 +39,6 @@ export default async function TemplateDetailPage({
   return (
     <TemplateDetailClient
       template={result.data.template}
-      managementOptions={result.data.managementOptions}
-      propertyOptions={result.data.propertyOptions}
       jobTypeOptions={result.data.jobTypeOptions}
       warehouseOptions={result.data.warehouseOptions}
       productOptions={result.data.productOptions}

@@ -13,13 +13,6 @@ export default async function TemplateCreatePage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const result = await getTemplateCreatePageOptions()
 
-  const initialPropertyId = typeof resolvedSearchParams?.propertyId === "string"
-    ? resolvedSearchParams.propertyId
-    : ""
-  const initialManagementCompanyId = typeof resolvedSearchParams?.managementCompanyId === "string"
-    ? resolvedSearchParams.managementCompanyId
-    : ""
-
   if (!result.ok) {
     return (
       <DashboardErrorState
@@ -33,12 +26,8 @@ export default async function TemplateCreatePage({
 
   return (
     <TemplateCreateClient
-      managementOptions={result.data.managementOptions}
-      propertyOptions={result.data.propertyOptions}
       jobTypeOptions={result.data.jobTypeOptions}
       warehouseOptions={result.data.warehouseOptions}
-      initialPropertyId={initialPropertyId}
-      initialManagementCompanyId={initialManagementCompanyId}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/templates")}
     />
   )
