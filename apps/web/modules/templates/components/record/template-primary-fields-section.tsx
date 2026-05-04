@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
+import { TextCell, TextareaCell } from "@/components/cells"
 import {
   PropertyJoinedReadOnlyCells,
   type PropertyJoinedFields,
@@ -11,9 +11,8 @@ import {
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import type { PropertyOption, TemplateForm } from "@builders/domain"
-
-export type TemplateDropdownOption = { id: string; name: string }
 
 /**
  * Slim joined-name + joined-property snapshot the section needs from
@@ -33,6 +32,8 @@ export type TemplatePrimaryDetail = {
   managementCompanyName: string | null
   jobTypeId: string | null
   jobTypeName: string | null
+  warehouseId: string | null
+  warehouseName: string
 }
 
 function detailToPropertyJoined(
@@ -51,13 +52,11 @@ function detailToPropertyJoined(
 export function TemplatePrimaryFieldsSection({
   draft,
   detail,
-  warehouseOptions,
   disabled,
   onFieldChange,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
-  warehouseOptions: TemplateDropdownOption[]
   disabled: boolean
   onFieldChange: (field: keyof TemplateForm, value: string) => void
 }) {
@@ -160,13 +159,17 @@ export function TemplatePrimaryFieldsSection({
       {/* Row 2: Warehouse · Description */}
       <CellAt col={1} row={2} colSpan={2}>
         <FormField label="Warehouse">
-          <SelectCell
-            editable={editable}
-            value={draft.warehouseId}
-            onChange={(value) => onFieldChange("warehouseId", value)}
-            options={warehouseOptions.map((option) => ({ value: option.id, label: option.name }))}
-            placeholder="No warehouse"
-          />
+          {editable ? (
+            <WarehousePicker
+              value={draft.warehouseId || null}
+              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+              selectedLabel={detail?.warehouseName || null}
+              placeholder="No warehouse"
+              ariaLabel="Warehouse"
+            />
+          ) : (
+            <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={3} row={2} colSpan={6}>

@@ -3,15 +3,12 @@
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { TemplateRecordPanel } from "./template-record-panel"
 import type { TemplateDetail } from "@builders/domain"
-import type { TemplateDropdownOption } from "./template-primary-fields-section"
 
 export function TemplateDetailClient({
   template,
-  warehouseOptions,
   backHref,
 }: {
   template: TemplateDetail
-  warehouseOptions: TemplateDropdownOption[]
   backHref: string
 }) {
   return (
@@ -22,11 +19,7 @@ export function TemplateDetailClient({
       headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <TemplateRecordPanel
-          page={page}
-          template={template}
-          warehouseOptions={warehouseOptions}
-        />
+        <TemplateRecordPanel page={page} template={template} />
       )}
     </RecordDetailClientScaffold>
   )

@@ -10,19 +10,14 @@ import {
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
 import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
-import {
-  TemplatePrimaryFieldsSection,
-  type TemplateDropdownOption,
-} from "./template-primary-fields-section"
+import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 
 function TemplateCreatePanel({
   page,
   backHref,
-  warehouseOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  warehouseOptions: TemplateDropdownOption[]
 }) {
   const controller = useSingleSectionCreateController<TemplateForm>({
     page,
@@ -48,7 +43,6 @@ function TemplateCreatePanel({
         <TemplatePrimaryFieldsSection
           draft={controller.primarySection.localValue}
           detail={null}
-          warehouseOptions={warehouseOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -63,26 +57,14 @@ function TemplateCreatePanel({
   )
 }
 
-export function TemplateCreateClient({
-  backHref,
-  warehouseOptions,
-}: {
-  backHref: string
-  warehouseOptions: TemplateDropdownOption[]
-}) {
+export function TemplateCreateClient({ backHref }: { backHref: string }) {
   return (
     <RecordCreateClientScaffold
       title="New Template"
       backHref={backHref}
       dirtyMessage="You have unsaved template changes. Leave this form without saving?"
     >
-      {(page) => (
-        <TemplateCreatePanel
-          page={page}
-          backHref={backHref}
-          warehouseOptions={warehouseOptions}
-        />
-      )}
+      {(page) => <TemplateCreatePanel page={page} backHref={backHref} />}
     </RecordCreateClientScaffold>
   )
 }

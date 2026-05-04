@@ -9,20 +9,15 @@ import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/use-template-material-items-section"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
-import {
-  TemplatePrimaryFieldsSection,
-  type TemplateDropdownOption,
-} from "./template-primary-fields-section"
+import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 import { TemplateMaterialItemsSection } from "./template-material-items-section"
 
 export function TemplateRecordPanel({
   page,
   template,
-  warehouseOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
-  warehouseOptions: TemplateDropdownOption[]
 }) {
   const primary = useTemplatePrimarySection({ page, template })
   const materialItems = useTemplateMaterialItemsSection({
@@ -70,8 +65,9 @@ export function TemplateRecordPanel({
                   managementCompanyName: primary.record.managementCompanyName,
                   jobTypeId: primary.record.jobTypeId,
                   jobTypeName: primary.record.jobTypeName,
+                  warehouseId: primary.record.warehouseId,
+                  warehouseName: primary.record.warehouseName,
                 }}
-                warehouseOptions={warehouseOptions}
                 disabled={primary.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   primary.primarySection.setLocalValue((previous: TemplateForm) => ({

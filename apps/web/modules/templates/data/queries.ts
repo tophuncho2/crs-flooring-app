@@ -5,7 +5,6 @@ import {
   isPrismaNotFoundError,
   listTemplates,
   listTemplateOptions,
-  listWarehouseOptions,
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
@@ -22,45 +21,22 @@ function toListSort(tableState: ServerTableQueryState) {
 
 export { listTemplates, listTemplateOptions, getTemplateById }
 
-// Property / management-company / job-type options are NOT pre-fetched
-// here. Those fields are powered by async pickers (PropertyPicker /
-// ManagementCompanyPicker / JobTypePicker) which call
-// /api/{properties,management-companies,job-types}/options on demand;
-// read-only labels come from joined fields on TemplateDetail.
-async function loadTemplateDropdownOptions() {
-  const warehouseOptions = await listWarehouseOptions()
-  return { warehouseOptions }
-}
-
-// Product + category options are NOT pre-fetched here. The templates
-// material-items section drives those fields via async pickers
-// (CategoryPicker / ProductPicker) which call /api/{categories,products}/options
-// on demand; read-only labels come from joined fields on
-// TemplateMaterialItemRow (productName + sendUnitAbbrev).
-async function loadTemplateDetailOptions() {
-  return loadTemplateDropdownOptions()
-}
-
-export async function getTemplateCreatePageOptions() {
-  return withPrismaConnectivityHandling(() => loadTemplateDropdownOptions())
-}
+// All form-option fields are powered by async pickers
+// (PropertyPicker / ManagementCompanyPicker / JobTypePicker /
+// WarehousePicker / CategoryPicker / ProductPicker) which call
+// /api/{...}/options on demand; read-only labels come from joined fields
+// on TemplateDetail and TemplateMaterialItemRow. No SSR pre-fetch of
+// options is required.
 
 export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   template: Awaited<ReturnType<typeof getTemplateById>>
-  warehouseOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["warehouseOptions"]
 }>> {
   try {
-    const [template, options] = await Promise.all([
-      getTemplateById(id),
-      loadTemplateDetailOptions(),
-    ])
+    const template = await getTemplateById(id)
 
     return {
       ok: true,
-      data: {
-        template,
-        warehouseOptions: options.warehouseOptions,
-      },
+      data: { template },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
@@ -73,7 +49,7 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
         code: "TEMPLATE_DETAIL_LOAD_FAILED",
         title: "Template Unavailable",
         message: "The app could not load this template.",
-        detail: "The template record or its supporting options could not be loaded.",
+        detail: "The template record could not be loaded.",
       }),
     }
   }
