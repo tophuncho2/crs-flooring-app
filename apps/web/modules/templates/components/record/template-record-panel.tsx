@@ -13,26 +13,18 @@ import {
   TemplatePrimaryFieldsSection,
   type TemplateDropdownOption,
 } from "./template-primary-fields-section"
-import {
-  TemplateMaterialItemsSection,
-  type MaterialItemProductOption,
-  type TemplateMaterialItemCategoryOption,
-} from "./template-material-items-section"
+import { TemplateMaterialItemsSection } from "./template-material-items-section"
 
 export function TemplateRecordPanel({
   page,
   template,
   jobTypeOptions,
   warehouseOptions,
-  productOptions,
-  categoryOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
-  productOptions: MaterialItemProductOption[]
-  categoryOptions: TemplateMaterialItemCategoryOption[]
 }) {
   const primary = useTemplatePrimarySection({ page, template })
   const materialItems = useTemplateMaterialItemsSection({
@@ -101,8 +93,6 @@ export function TemplateRecordPanel({
           render: () => (
             <TemplateMaterialItemsSection
               items={materialItems.items}
-              productOptions={productOptions}
-              categoryOptions={categoryOptions}
               isDirty={materialItems.isDirty}
               isSaving={materialItems.isSaving}
               hasConflict={materialItems.hasConflict}
@@ -115,6 +105,7 @@ export function TemplateRecordPanel({
               onDuplicateItem={materialItems.duplicateItem}
               onChangeField={materialItems.changeField}
               onChangeCategoryFilter={materialItems.changeCategoryFilter}
+              onSetProductSnapshot={materialItems.setProductSnapshot}
               onRemoveItem={materialItems.removeItem}
             />
           ),

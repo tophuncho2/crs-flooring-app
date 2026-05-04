@@ -8,6 +8,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
+  ProductOption,
   TemplateDetail,
   TemplateMaterialItemForm,
   TemplateMaterialItemRow,
@@ -19,6 +20,12 @@ import { saveTemplateMaterialItemsSectionRequest } from "@/modules/templates/dat
 export type TemplateMaterialItemLocal = {
   id: string
   productId: string
+  // Display-only snapshots seeded from the saved row's joined fields and
+  // refreshed when the user picks a new product (via ProductPicker's
+  // onOptionSelected). Never sent in the diff — server re-normalizes
+  // from the live product table on save.
+  productName: string
+  sendUnitAbbrev: string
   quantity: string
   notes: string
   // Client-only ergonomic for narrowing the row's product picker. NOT
@@ -34,6 +41,8 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
   return {
     id: row.id,
     productId: row.productId,
+    productName: row.productName,
+    sendUnitAbbrev: row.sendUnitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
     categoryFilterId: null,
@@ -156,6 +165,8 @@ export function useTemplateMaterialItemsSection({
         {
           id: createLocalRecordRowId("template-material-item"),
           productId: "",
+          productName: "",
+          sendUnitAbbrev: "",
           quantity: "",
           notes: "",
           categoryFilterId: null,
@@ -176,22 +187,27 @@ export function useTemplateMaterialItemsSection({
     section.setLocalValue((previous) => {
       const source = previous.items.find((row) => row.id === sourceItemId)
       if (!source) return previous
-      // Copy productId + categoryFilterId so the new row's product picker is
-      // pre-filtered to the same category. Quantity + notes start blank so
-      // the user has to confirm the per-row values for the new line.
+      // Copy productId + productName + sendUnitAbbrev + categoryFilterId so
+      // the new row's picker shows the same product (with label) and the
+      // unit-abbrev display is preserved. Quantity + notes start blank so
+      // the user confirms per-row values for the new line.
       const duplicated: TemplateMaterialItemLocal = {
         id: createLocalRecordRowId("template-material-item"),
         ...buildDuplicatedRow(
           {
             productId: source.productId,
+            productName: source.productName,
+            sendUnitAbbrev: source.sendUnitAbbrev,
             quantity: source.quantity,
             notes: source.notes,
             categoryFilterId: source.categoryFilterId,
           },
           {
-            copy: ["productId", "categoryFilterId"],
+            copy: ["productId", "productName", "sendUnitAbbrev", "categoryFilterId"],
             defaults: {
               productId: "",
+              productName: "",
+              sendUnitAbbrev: "",
               quantity: "",
               notes: "",
               categoryFilterId: null,
@@ -218,15 +234,30 @@ export function useTemplateMaterialItemsSection({
   }
 
   // Client-only ergonomic — does NOT mark the section dirty (excluded from
-  // the diff in `toDiffForm` / `itemsDiffer`). Mirrors imports staged-rows
-  // `setRowCategoryFilter`. Intentionally does not clear `productId`; the
-  // section's product picker preserves the current selection across filter
-  // changes so the user's pick survives.
+  // the diff in `toDiffForm` / `itemsDiffer`). Filter-only cascade — narrowing
+  // the product picker's results never clears the saved product. User picks
+  // a different product explicitly if they want to change it.
   function changeCategoryFilter(itemId: string, categoryId: string | null) {
     section.setLocalValue((previous) => ({
       items: previous.items.map((row) =>
         row.id === itemId ? { ...row, categoryFilterId: categoryId } : row,
       ),
+    }))
+  }
+
+  function setProductSnapshot(itemId: string, option: ProductOption | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) => {
+        if (row.id !== itemId) return row
+        if (option === null) {
+          return { ...row, productName: "", sendUnitAbbrev: "" }
+        }
+        return {
+          ...row,
+          productName: option.name,
+          sendUnitAbbrev: option.sendUnitAbbrev,
+        }
+      }),
     }))
   }
 
@@ -238,5 +269,6 @@ export function useTemplateMaterialItemsSection({
     duplicateItem,
     changeField,
     changeCategoryFilter,
+    setProductSnapshot,
   }
 }

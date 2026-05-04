@@ -3,9 +3,7 @@ import {
   createPrismaPageLoadIssue,
   getTemplateById,
   isPrismaNotFoundError,
-  listCategories,
   listJobTypeOptions,
-  listProductOptions,
   listTemplates,
   listTemplateOptions,
   listWarehouseOptions,
@@ -39,14 +37,13 @@ async function loadTemplateDropdownOptions() {
   return { jobTypeOptions, warehouseOptions }
 }
 
+// Product + category options are NOT pre-fetched here. The templates
+// material-items section drives those fields via async pickers
+// (CategoryPicker / ProductPicker) which call /api/{categories,products}/options
+// on demand; read-only labels come from joined fields on
+// TemplateMaterialItemRow (productName + sendUnitAbbrev).
 async function loadTemplateDetailOptions() {
-  const [dropdowns, productOptions, categoryOptions] = await Promise.all([
-    loadTemplateDropdownOptions(),
-    listProductOptions(),
-    listCategories(),
-  ])
-
-  return { ...dropdowns, productOptions, categoryOptions }
+  return loadTemplateDropdownOptions()
 }
 
 export async function getTemplateCreatePageOptions() {
@@ -57,8 +54,6 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
   template: Awaited<ReturnType<typeof getTemplateById>>
   jobTypeOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["jobTypeOptions"]
   warehouseOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["warehouseOptions"]
-  productOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["productOptions"]
-  categoryOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["categoryOptions"]
 }>> {
   try {
     const [template, options] = await Promise.all([
@@ -72,8 +67,6 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
         template,
         jobTypeOptions: options.jobTypeOptions,
         warehouseOptions: options.warehouseOptions,
-        productOptions: options.productOptions,
-        categoryOptions: options.categoryOptions,
       },
     }
   } catch (error) {

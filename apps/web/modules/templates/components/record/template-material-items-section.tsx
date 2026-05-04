@@ -1,10 +1,13 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
-import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
+import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
+import type { ProductOption } from "@builders/domain"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/use-template-material-items-section"
 
 const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
@@ -17,21 +20,8 @@ const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
   trailingControls: [{ key: "remove", kind: "actions", width: 116 }],
 }
 
-export type MaterialItemProductOption = {
-  id: string
-  name: string
-  categoryId: string
-  // Send-unit snapshot from the product. Surfaced beside the quantity input so
-  // the user sees the unit (e.g., "sf") inline as soon as a product is picked.
-  sendUnitName: string
-  sendUnitAbbrev: string
-}
-export type TemplateMaterialItemCategoryOption = { id: string; name: string }
-
 export function TemplateMaterialItemsSection({
   items,
-  productOptions,
-  categoryOptions,
   isDirty,
   isSaving,
   hasConflict,
@@ -44,11 +34,10 @@ export function TemplateMaterialItemsSection({
   onDuplicateItem,
   onChangeField,
   onChangeCategoryFilter,
+  onSetProductSnapshot,
   onRemoveItem,
 }: {
   items: TemplateMaterialItemLocal[]
-  productOptions: MaterialItemProductOption[]
-  categoryOptions: TemplateMaterialItemCategoryOption[]
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -61,18 +50,10 @@ export function TemplateMaterialItemsSection({
   onDuplicateItem: (itemId: string) => void
   onChangeField: (itemId: string, field: keyof TemplateMaterialItemLocal, value: string) => void
   onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
+  onSetProductSnapshot: (itemId: string, option: ProductOption | null) => void
   onRemoveItem: (itemId: string) => void
 }) {
   const editable = !isSaving
-  const categoryCellOptions = categoryOptions.map((option) => ({ id: option.id, label: option.name }))
-  // Lookup map for the quantity-cell unit suffix. Built once per render —
-  // cheap; productOptions is the warehouse-scoped picker list (~hundreds at
-  // most). Avoids an O(n*m) scan across the grid rows.
-  const productById = useMemo(() => {
-    const map = new Map<string, MaterialItemProductOption>()
-    for (const product of productOptions) map.set(product.id, product)
-    return map
-  }, [productOptions])
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -118,38 +99,30 @@ export function TemplateMaterialItemsSection({
           switch (column.key) {
             case "categoryFilter":
               return (
-                <DropdownCell
-                  editable={editable}
+                <CategoryPicker
                   value={item.categoryFilterId}
                   onChange={(next) => onChangeCategoryFilter(item.id, next)}
-                  options={categoryCellOptions}
-                  allowClear
+                  selectedLabel={null}
+                  disabled={!editable}
                   placeholder="All categories"
                   ariaLabel="Material item category filter"
                 />
               )
-            case "product": {
-              // Filter by category. Always include the currently-selected
-              // product so the user's pick survives a filter change. Mirrors
-              // imports staged-rows category→product cascade.
-              const visibleProducts = item.categoryFilterId
-                ? productOptions.filter(
-                    (p) => p.categoryId === item.categoryFilterId || p.id === item.productId,
-                  )
-                : productOptions
+            case "product":
               return (
-                <DropdownCell
-                  editable={editable}
+                <ProductPicker
                   value={item.productId || null}
                   onChange={(next) => onChangeField(item.id, "productId", next ?? "")}
-                  options={visibleProducts.map((option) => ({ id: option.id, label: option.name }))}
+                  onOptionSelected={(option) => onSetProductSnapshot(item.id, option)}
+                  categoryId={item.categoryFilterId}
+                  selectedLabel={item.productName || null}
+                  disabled={!editable}
                   placeholder="Select product"
                   ariaLabel="Material item product"
                 />
               )
-            }
             case "quantity": {
-              const unitAbbrev = productById.get(item.productId)?.sendUnitAbbrev ?? ""
+              const unitAbbrev = item.sendUnitAbbrev
               return (
                 <div className="flex w-full items-center gap-2">
                   <div className="min-w-0 flex-1">
