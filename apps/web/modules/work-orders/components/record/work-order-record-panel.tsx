@@ -95,9 +95,10 @@ export function WorkOrderRecordPanel({
                   managementCompanyName: controller.record.managementCompanyName,
                   templateId: controller.record.templateId,
                   templateNumber: controller.record.templateNumber,
+                  jobTypeId: controller.record.jobTypeId,
+                  jobTypeName: controller.record.jobTypeName,
                 }}
                 warehouseOptions={options.warehouseOptions}
-                jobTypeOptions={options.jobTypeOptions}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({

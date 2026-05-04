@@ -3,7 +3,6 @@ import {
   getWorkOrderDetailById,
   isPrismaNotFoundError,
   listCutLogsForWorkOrderItemIds,
-  listJobTypeOptions,
   listWarehouseOptions,
   listWorkOrderFiles,
   listWorkOrderMaterialItems,
@@ -24,23 +23,19 @@ export type { WorkOrderFileRow }
 
 export type WorkOrderFormOptionSet = {
   warehouseOptions: Array<{ id: string; name: string }>
-  jobTypeOptions: Array<{ id: string; name: string }>
 }
 
-// Property / management-company / template / product / category options
-// are NOT pre-fetched here. Those fields are powered by async pickers
+// Property / management-company / template / product / category / job-type
+// options are NOT pre-fetched here. Those fields are powered by async pickers
 // (PropertyPicker / ManagementCompanyPicker / TemplatePicker / ProductPicker /
-// CategoryPicker) which call /api/{...}/options on demand; read-only labels
-// come from joined fields on `WorkOrderDetail` and `WorkOrderMaterialItemRow`.
+// CategoryPicker / JobTypePicker) which call /api/{...}/options on demand;
+// read-only labels come from joined fields on `WorkOrderDetail` and
+// `WorkOrderMaterialItemRow`.
 export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.work-orders.options" }, async () => {
-    const [warehouses, jobTypes] = await Promise.all([
-      listWarehouseOptions(),
-      listJobTypeOptions(),
-    ])
+    const warehouses = await listWarehouseOptions()
     return {
       warehouseOptions: warehouses.map((w) => ({ id: w.id, name: w.name })),
-      jobTypeOptions: jobTypes.map((j) => ({ id: j.id, name: j.name })),
     }
   })
 }

@@ -24,6 +24,28 @@ export async function listJobTypeOptions(client: JobTypesDbClient = db): Promise
   return jobTypes.map(normalizeJobTypeOption)
 }
 
+export type JobTypeOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+export async function searchJobTypeOptions(
+  args: JobTypeOptionsSearchArgs,
+  client: JobTypesDbClient = db,
+): Promise<JobTypeOption[]> {
+  const where = args.search
+    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  const jobTypes = await client.flooringJobType.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
+    select: { id: true, name: true },
+  })
+  return jobTypes.map(normalizeJobTypeOption)
+}
+
 export async function getJobTypeById(
   id: string,
   client: JobTypesDbClient = db,

@@ -71,7 +71,6 @@ function WorkOrderCreatePanel({
           status="IDLE"
           detail={null}
           warehouseOptions={options.warehouseOptions}
-          jobTypeOptions={options.jobTypeOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
