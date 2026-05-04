@@ -10,7 +10,7 @@ import type {
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
+import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
 import type { CutLogPanelPatch } from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
@@ -23,14 +23,12 @@ export function WorkOrderRecordPanel({
   initialMaterialItems,
   initialCutLogsByWorkOrderItemId,
   initialFiles,
-  options,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   initialFiles: WorkOrderFileRow[]
-  options: WorkOrderFormOptionSet
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
@@ -97,8 +95,9 @@ export function WorkOrderRecordPanel({
                   templateNumber: controller.record.templateNumber,
                   jobTypeId: controller.record.jobTypeId,
                   jobTypeName: controller.record.jobTypeName,
+                  warehouseId: controller.record.warehouseId,
+                  warehouseName: controller.record.warehouseName,
                 }}
-                warehouseOptions={options.warehouseOptions}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({

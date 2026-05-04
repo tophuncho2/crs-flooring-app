@@ -19,8 +19,8 @@ import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-pi
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import type { PropertyOption, WorkOrderForm } from "@builders/domain"
-import type { WarehouseOption } from "@/modules/work-orders/controllers/record/drafts"
 
 const VACANCY_OPTIONS = [
   { value: "VACANT", label: "Vacant" },
@@ -47,6 +47,8 @@ export type WorkOrderPrimaryDetail = {
   templateNumber: string
   jobTypeId: string | null
   jobTypeName: string | null
+  warehouseId: string | null
+  warehouseName: string
 }
 
 function detailToPropertyJoined(
@@ -67,7 +69,6 @@ export function WorkOrderPrimaryFieldsSection({
   workOrderNumber,
   status,
   detail,
-  warehouseOptions,
   disabled,
   onFieldChange,
 }: {
@@ -75,13 +76,10 @@ export function WorkOrderPrimaryFieldsSection({
   workOrderNumber: string
   status: string
   detail: WorkOrderPrimaryDetail | null
-  warehouseOptions: WarehouseOption[]
   disabled: boolean
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
 }) {
   const editable = !disabled
-
-  const warehouseSelectOptions = warehouseOptions.map((o) => ({ value: o.id, label: o.name }))
 
   // Live preview override for the joined readonly cells. Initializes
   // from the saved detail; updates when PropertyPicker emits a new
@@ -129,13 +127,17 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
       <CellAt col={3} row={1} colSpan={2}>
         <FormField label="Warehouse">
-          <SelectCell
-            editable={editable}
-            value={draft.warehouseId}
-            options={warehouseSelectOptions}
-            placeholder="Select warehouse"
-            onChange={(value) => onFieldChange("warehouseId", value)}
-          />
+          {editable ? (
+            <WarehousePicker
+              value={draft.warehouseId || null}
+              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+              selectedLabel={detail?.warehouseName || null}
+              placeholder="Select warehouse"
+              ariaLabel="Warehouse"
+            />
+          ) : (
+            <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={5} row={1} colSpan={1}>

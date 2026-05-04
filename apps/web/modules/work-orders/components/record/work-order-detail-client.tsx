@@ -9,7 +9,7 @@ import type {
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import type { WorkOrderFileRow, WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
+import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"
 
 export function WorkOrderDetailClient({
@@ -17,14 +17,12 @@ export function WorkOrderDetailClient({
   initialMaterialItems,
   initialCutLogsByWorkOrderItemId,
   initialFiles,
-  options,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   initialFiles: WorkOrderFileRow[]
-  options: WorkOrderFormOptionSet
   backHref: string
 }) {
   return (
@@ -41,7 +39,6 @@ export function WorkOrderDetailClient({
           initialMaterialItems={initialMaterialItems}
           initialCutLogsByWorkOrderItemId={initialCutLogsByWorkOrderItemId}
           initialFiles={initialFiles}
-          options={options}
         />
       )}
     </RecordDetailClientScaffold>

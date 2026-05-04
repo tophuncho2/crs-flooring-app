@@ -8,18 +8,15 @@ import { RecordSingleSectionPanel } from "@/components/sections/panels/record-si
 import { useSingleSectionCreateController } from "@/controllers/record/use-single-section-create-controller"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { EMPTY_WORK_ORDER_FORM, type WorkOrderForm } from "@builders/domain"
-import type { WorkOrderFormOptionSet } from "@/modules/work-orders/data/queries"
 import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/record/drafts"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 
 function WorkOrderCreatePanel({
   page,
   backHref,
-  options,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  options: WorkOrderFormOptionSet
 }) {
   const controller = useSingleSectionCreateController<WorkOrderForm>({
     page,
@@ -70,7 +67,6 @@ function WorkOrderCreatePanel({
           workOrderNumber=""
           status="IDLE"
           detail={null}
-          warehouseOptions={options.warehouseOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -85,20 +81,14 @@ function WorkOrderCreatePanel({
   )
 }
 
-export function WorkOrderCreateClient({
-  backHref,
-  options,
-}: {
-  backHref: string
-  options: WorkOrderFormOptionSet
-}) {
+export function WorkOrderCreateClient({ backHref }: { backHref: string }) {
   return (
     <RecordCreateClientScaffold
       title="New Work Order"
       backHref={backHref}
       dirtyMessage="You have unsaved work-order changes. Leave this form without saving?"
     >
-      {(page) => <WorkOrderCreatePanel page={page} backHref={backHref} options={options} />}
+      {(page) => <WorkOrderCreatePanel page={page} backHref={backHref} />}
     </RecordCreateClientScaffold>
   )
 }
