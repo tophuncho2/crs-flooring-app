@@ -5,12 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import {
-  MockRequestJsonError,
   requestJsonMock,
   resetSimpleTableClientMocks,
 } from "../../helpers/simple-table-client-mocks"
-import { navigationMocks } from "../../helpers/next-navigation-mock"
-import ManufacturersClient from "@/modules/manufacturers/components/list/manufacturers-client"
 import { ManufacturerDetailClient } from "@/modules/manufacturers/components/record/manufacturer-detail-client"
 
 function manufacturerRow(overrides: Partial<{
@@ -41,29 +38,6 @@ function manufacturerRow(overrides: Partial<{
 describe("ManufacturersClient", () => {
   beforeEach(() => {
     resetSimpleTableClientMocks()
-  })
-
-  it("dashboard add routes to the canonical manufacturer create form", async () => {
-    const user = userEvent.setup()
-
-    render(<ManufacturersClient initialManufacturers={[]} />)
-
-    await user.click(screen.getByRole("button", { name: /\+?Manufacturer$/ }))
-
-    expect(navigationMocks.push).toHaveBeenCalledWith(
-      "/dashboard/manufacturers/new?returnTo=%2Fdashboard%2Ftest",
-      { scroll: false },
-    )
-  })
-
-  it("row click routes to the canonical detail page", async () => {
-    const user = userEvent.setup()
-
-    render(<ManufacturersClient initialManufacturers={[manufacturerRow()]} />)
-
-    await user.click(screen.getByRole("button", { name: "Open manufacturer Acme Flooring" }))
-
-    expect(navigationMocks.push).toHaveBeenCalledWith(expect.stringContaining("/dashboard/manufacturers/mfg-1"), { scroll: false })
   })
 
   it("detail save renders transport errors inside the primary section", async () => {

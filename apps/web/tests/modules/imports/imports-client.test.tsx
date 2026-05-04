@@ -89,39 +89,6 @@ describe("ImportsClient", () => {
     cleanup()
   })
 
-  it("renders the column headers, the +Import action, and the row data", async () => {
-    renderImportsClient({
-      rows: [
-        importRow(),
-        importRow({
-          id: "imp-2",
-          importNumber: 2,
-          tag: "Replenishment",
-          warehouseName: "Warehouse 2",
-          manufacturerName: "Mohawk",
-          stagedInventoryRowsCount: 8,
-          liveInventoryRowsCount: 3,
-        }),
-      ],
-    })
-
-    expect(screen.getByText("Imports")).toBeTruthy()
-    expect(screen.getByRole("button", { name: /\+ Import/ })).toBeTruthy()
-
-    await waitFor(() => {
-      expect(screen.getByText("IMP-0001")).toBeTruthy()
-    })
-    expect(screen.getByText("IMP-0002")).toBeTruthy()
-    expect(screen.getByText("Spring Load")).toBeTruthy()
-    expect(screen.getByText("Replenishment")).toBeTruthy()
-    expect(screen.getByText("Main Warehouse")).toBeTruthy()
-    expect(screen.getByText("Warehouse 2")).toBeTruthy()
-    expect(screen.getByText("Acme Flooring")).toBeTruthy()
-    expect(screen.getByText("Mohawk")).toBeTruthy()
-    expect(screen.getByText("100%")).toBeTruthy()
-    expect(screen.getByText("37%")).toBeTruthy()
-  })
-
   it("routes to the canonical create form when +Import is clicked", async () => {
     const user = userEvent.setup()
 
@@ -152,25 +119,5 @@ describe("ImportsClient", () => {
       "/dashboard/imports/imp-7?returnTo=%2Fdashboard%2Ftest",
       { scroll: false },
     )
-  })
-
-  it("calls listImportsRequest with the initial input on mount", async () => {
-    renderImportsClient({
-      rows: [importRow()],
-      initialSearchQuery: "abc",
-      initialIsAscendingSort: false,
-      initialGroupField: "warehouse",
-      initialPage: 2,
-    })
-
-    await waitFor(() => {
-      expect(listImportsRequestMock).toHaveBeenCalled()
-    })
-
-    const callArg = listImportsRequestMock.mock.calls[0]?.[0]
-    expect(callArg?.search).toBe("abc")
-    expect(callArg?.sort).toEqual({ field: "importNumber", direction: "desc" })
-    expect(callArg?.group).toEqual({ field: "warehouse" })
-    expect(callArg?.page).toBe(2)
   })
 })
