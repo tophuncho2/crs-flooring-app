@@ -39,7 +39,8 @@
     "db:seed:categories": "npm run db:seed:categories --workspace @builders/db"
   },
   "overrides": {
-    "flatted": "^3.4.2"
+    "flatted": "^3.4.2",
+    "next": "16.2.4"
   },
   "dependencies": {
     "dotenv": "^16.4.7"
