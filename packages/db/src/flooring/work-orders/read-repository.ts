@@ -1,7 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma } from "@prisma/client"
 import {
-  formatFullLocationCode,
   normalizeWorkOrder,
   normalizeWorkOrderListRow,
   normalizeWorkOrderOption,
@@ -179,22 +178,19 @@ export async function countWorkOrderCutLogs(
  * data already projected to `WorkOrderFileGenerationInput` so the worker
  * can hand it straight to `buildWorkOrderPdfHtml` from the domain layer.
  *
- * Per CLAUDE.md data-layer carve-out: this function imports
- * `formatFullLocationCode` from the domain layer for the inventory
- * location-code derivation. The PDF artifact in the bucket IS the
- * snapshot per locked decision; this read runs at worker time.
+ * Inventory identity + unit fields on each cut log are read from the
+ * cut log row's snapshot columns rather than the joined inventory or
+ * product row. The PDF artifact in the bucket IS the snapshot per
+ * locked decision; this read runs at worker time.
  */
 export async function getWorkOrderForFileGeneration(
   workOrderId: string,
-  options: { generatedAt: string },
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderFileGenerationInput> {
   const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
     where: { id: workOrderId },
     select: {
       workOrderNumber: true,
-      isComplete: true,
-      status: true,
       vacancy: true,
       scheduledFor: true,
       unitNumber: true,
@@ -228,10 +224,6 @@ export async function getWorkOrderForFileGeneration(
           product: {
             select: {
               name: true,
-              stockUnitName: true,
-              stockUnitAbbrev: true,
-              itemCoverageUnitName: true,
-              itemCoverageUnitAbbrev: true,
             },
           },
           cutLogs: {
@@ -252,21 +244,11 @@ export async function getWorkOrderForFileGeneration(
               isWaste: true,
               notes: true,
               finalCutSequence: true,
-              inventory: {
-                select: {
-                  inventoryNumber: true,
-                  itemNumber: true,
-                  dyeLot: true,
-                  location: {
-                    select: {
-                      rafter: true,
-                      level: true,
-                      section: { select: { number: true } },
-                      warehouse: { select: { number: true } },
-                    },
-                  },
-                },
-              },
+              inventoryNumber: true,
+              itemNumber: true,
+              dyeLot: true,
+              stockUnitAbbrev: true,
+              itemCoverageUnitAbbrev: true,
             },
           },
         },
@@ -280,10 +262,6 @@ export async function getWorkOrderForFileGeneration(
     quantity: item.quantity.toString(),
     sendUnitName: item.sendUnitName ?? "",
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
-    stockUnitName: item.product.stockUnitName ?? "",
-    stockUnitAbbrev: item.product.stockUnitAbbrev ?? "",
-    itemCoverageUnitName: item.product.itemCoverageUnitName ?? "",
-    itemCoverageUnitAbbrev: item.product.itemCoverageUnitAbbrev ?? "",
     notes: item.notes ?? "",
     cutLogs: item.cutLogs.map((cl) => ({
       id: cl.id,
@@ -296,25 +274,17 @@ export async function getWorkOrderForFileGeneration(
       coverageCut: cl.coverageCut === null ? "" : cl.coverageCut.toString(),
       isWaste: cl.isWaste,
       notes: cl.notes ?? "",
-      inventoryNumber: cl.inventory.inventoryNumber,
-      inventoryItemNumber: cl.inventory.itemNumber ?? "",
-      inventoryDyeLot: cl.inventory.dyeLot ?? "",
-      inventoryLocationCode: cl.inventory.location
-        ? formatFullLocationCode({
-            warehouseNumber: cl.inventory.location.warehouse.number,
-            sectionNumber: cl.inventory.location.section.number,
-            rafter: cl.inventory.location.rafter,
-            level: cl.inventory.location.level,
-          })
-        : "",
+      inventoryNumber: cl.inventoryNumber,
+      inventoryItemNumber: cl.itemNumber ?? "",
+      inventoryDyeLot: cl.dyeLot ?? "",
+      stockUnitAbbrev: cl.stockUnitAbbrev ?? "",
+      itemCoverageUnitAbbrev: cl.itemCoverageUnitAbbrev ?? "",
       finalCutSequence: cl.finalCutSequence,
     })),
   }))
 
   return {
     workOrderNumber: workOrder.workOrderNumber,
-    isComplete: workOrder.isComplete,
-    status: workOrder.status,
     scheduledFor: workOrder.scheduledFor === null ? "" : workOrder.scheduledFor.toISOString().slice(0, 10),
     vacancy: workOrder.vacancy,
     unitNumber: workOrder.unitNumber ?? "",
@@ -323,7 +293,6 @@ export async function getWorkOrderForFileGeneration(
     description: workOrder.description ?? "",
     instructions: workOrder.instructions ?? "",
     notes: workOrder.notes ?? "",
-    generatedAt: options.generatedAt,
     property: {
       name: workOrder.property.name,
       streetAddress: workOrder.property.streetAddress ?? "",

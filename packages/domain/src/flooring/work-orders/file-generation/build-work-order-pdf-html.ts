@@ -10,12 +10,11 @@ import type {
  * `@builders/pdf`. No I/O, no async.
  *
  * Layout, top to bottom:
- *  - Header: WO number + status badges + generated-at timestamp
+ *  - Header: WO number + vacancy badge
  *  - Property + warehouse + management info table
  *  - Address block (custom address override falls back to joined property
- *    address)
- *  - Property instructions + work-order instructions + notes (omitted
- *    when blank to keep the PDF tight)
+ *    address); property instructions render directly under the address
+ *  - WO instructions / description / notes (omitted when blank)
  *  - Material items table; each row followed by a nested cut-logs sub-table
  *    (only when cut logs exist for the row)
  *
@@ -32,11 +31,7 @@ const STYLE_BLOCK = `
   table { width: 100%; border-collapse: collapse; margin: 8px 0; }
   th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
   th { background: #f4f4f4; font-weight: 600; }
-  .meta-row { display: flex; justify-content: space-between; align-items: baseline; }
   .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-left: 4px; }
-  .badge-complete { background: #d4edda; color: #155724; }
-  .badge-incomplete { background: #fff3cd; color: #856404; }
-  .badge-status { background: #e2e3e5; color: #383d41; }
   .badge-vacant { background: #cce5ff; color: #004085; }
   .badge-occupied { background: #f8d7da; color: #721c24; }
   .cut-log-pending { background: #fff8db; }
@@ -71,18 +66,8 @@ ${sections}
 }
 
 function renderHeader(input: WorkOrderFileGenerationInput): string {
-  const completeBadge = input.isComplete
-    ? `<span class="badge badge-complete">Complete</span>`
-    : `<span class="badge badge-incomplete">In progress</span>`
-  const statusBadge = `<span class="badge badge-status">${escapeHtml(input.status)}</span>`
   const vacancyBadge = renderVacancyBadge(input.vacancy)
-
-  return `
-<div class="meta-row">
-  <h1>Work Order ${escapeHtml(input.workOrderNumber)}${completeBadge}${statusBadge}${vacancyBadge}</h1>
-  <div>Generated ${escapeHtml(input.generatedAt)}</div>
-</div>
-`.trim()
+  return `<h1>Work Order ${escapeHtml(input.workOrderNumber)}${vacancyBadge}</h1>`
 }
 
 function renderVacancyBadge(vacancy: "VACANT" | "OCCUPIED" | null): string {
@@ -107,11 +92,16 @@ function renderMetaTable(input: WorkOrderFileGenerationInput): string {
 
 function renderAddressBlock(input: WorkOrderFileGenerationInput): string {
   const address = input.customAddress || formatPropertyAddress(input.property)
-  if (!address) return ""
+  if (!address && !input.property.instructions) return ""
   const label = input.customAddress ? "Custom Address" : "Property Address"
+  const addressMarkup = address ? `<div class="multiline">${escapeHtml(address)}</div>` : ""
+  const instructionsMarkup = input.property.instructions
+    ? `<h3>Property Instructions</h3><div class="multiline">${escapeHtml(input.property.instructions)}</div>`
+    : ""
   return `
 <h2>${label}</h2>
-<div class="multiline">${escapeHtml(address)}</div>
+${addressMarkup}
+${instructionsMarkup}
 `.trim()
 }
 
@@ -125,9 +115,6 @@ function formatPropertyAddress(property: WorkOrderFileGenerationInput["property"
 
 function renderInstructionsBlock(input: WorkOrderFileGenerationInput): string {
   const blocks: string[] = []
-  if (input.property.instructions) {
-    blocks.push(`<h3>Property Instructions</h3><div class="multiline">${escapeHtml(input.property.instructions)}</div>`)
-  }
   if (input.instructions) {
     blocks.push(`<h3>Work Order Instructions</h3><div class="multiline">${escapeHtml(input.instructions)}</div>`)
   }
@@ -180,32 +167,26 @@ ${cutLogTable === "" ? "" : `<tr><td colspan="3">${cutLogTable}</td></tr>`}
 
 function renderCutLogTable(item: WorkOrderFileMaterialItemProjection): string {
   if (item.cutLogs.length === 0) return ""
-  // Coverage column visibility is a per-WOMI choice driven by the product's
-  // item-coverage-unit snapshot. If the product/category has no coverage
-  // unit configured, the column is suppressed entirely (empty header + cells
-  // would just be visual noise).
-  const showCoverage = item.itemCoverageUnitAbbrev !== ""
-  const stockSuffix = item.stockUnitAbbrev
-  const coverageSuffix = item.itemCoverageUnitAbbrev
-  const rows = item.cutLogs
-    .map((cl) => renderCutLogRow(cl, { showCoverage, stockSuffix, coverageSuffix }))
-    .join("\n")
-  const coverageHeaderCell = showCoverage
-    ? `<th style="width: 12%;">Coverage Cut${coverageSuffix ? ` (${escapeHtml(coverageSuffix)})` : ""}</th>`
-    : ""
+  // Coverage column is shown when at least one cut log under this WOMI carries
+  // a coverage unit snapshot or a coverage value. Otherwise the column would
+  // be empty visual noise.
+  const showCoverage = item.cutLogs.some(
+    (cl) => cl.itemCoverageUnitAbbrev !== "" || cl.coverageCut !== "",
+  )
+  const rows = item.cutLogs.map((cl) => renderCutLogRow(cl, { showCoverage })).join("\n")
+  const coverageHeaderCell = showCoverage ? `<th style="width: 14%;">Coverage Cut</th>` : ""
   return `
 <h3 style="margin: 0 0 4px 16px;">Cut Logs</h3>
 <table class="cut-log-table">
   <thead>
     <tr>
       <th style="width: 14%;">Cut #</th>
-      <th style="width: 16%;">Inventory</th>
-      <th style="width: 9%;">Before${stockSuffix ? ` (${escapeHtml(stockSuffix)})` : ""}</th>
-      <th style="width: 9%;">Cut${stockSuffix ? ` (${escapeHtml(stockSuffix)})` : ""}</th>
-      <th style="width: 9%;">After${stockSuffix ? ` (${escapeHtml(stockSuffix)})` : ""}</th>
+      <th style="width: 18%;">Inventory</th>
+      <th style="width: 11%;">Before</th>
+      <th style="width: 11%;">Cut</th>
+      <th style="width: 11%;">After</th>
       ${coverageHeaderCell}
       <th style="width: 7%;">Waste</th>
-      <th style="width: 10%;">Status</th>
       <th>Notes</th>
     </tr>
   </thead>
@@ -218,7 +199,7 @@ function renderCutLogTable(item: WorkOrderFileMaterialItemProjection): string {
 
 function renderCutLogRow(
   cl: WorkOrderFileCutLogProjection,
-  options: { showCoverage: boolean; stockSuffix: string; coverageSuffix: string },
+  options: { showCoverage: boolean },
 ): string {
   const rowClass = statusToClass(cl.status)
   // Unicode checkbox glyphs print cleanly in Puppeteer-rendered PDFs and
@@ -226,46 +207,36 @@ function renderCutLogRow(
   const wasteCell = cl.isWaste ? "&#9745;" : "&#9744;"
   const inventoryCell = renderInventoryCell(cl)
   const coverageCell = options.showCoverage
-    ? `<td>${cl.coverageCut === "" ? `<span class="empty-cell">—</span>` : escapeHtml(cl.coverageCut)}</td>`
+    ? `<td>${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>`
     : ""
   return `
 <tr class="${rowClass}">
   <td>${escapeOrEmpty(cl.cutLogNumber)}</td>
   <td>${escapeOrEmpty(inventoryCell)}</td>
-  <td>${escapeHtml(cl.before)}</td>
-  <td>${escapeHtml(cl.cut)}</td>
-  <td>${escapeHtml(cl.after)}</td>
+  <td>${renderUnitValue(cl.before, cl.stockUnitAbbrev)}</td>
+  <td>${renderUnitValue(cl.cut, cl.stockUnitAbbrev)}</td>
+  <td>${renderUnitValue(cl.after, cl.stockUnitAbbrev)}</td>
   ${coverageCell}
   <td style="text-align: center; font-size: 14px;">${wasteCell}</td>
-  <td>${escapeHtml(cl.status)}</td>
   <td class="multiline">${escapeOrEmpty(cl.notes)}</td>
 </tr>
 `.trim()
 }
 
 function renderInventoryCell(cl: WorkOrderFileCutLogProjection): string {
-  // Inventory identity stack: inventory number first (always present),
-  // then item number / dye lot / location code on subsequent lines when
-  // available. Each line is suppressed individually when its source field
-  // is empty. Inline <div> blocks keep the column width-stable inside the
-  // 16% column.
-  const lines: string[] = []
-  if (cl.inventoryNumber) {
-    lines.push(`<div><strong>${escapeHtml(cl.inventoryNumber)}</strong></div>`)
-  }
-  if (cl.inventoryItemNumber) {
-    lines.push(`<div>Item: ${escapeHtml(cl.inventoryItemNumber)}</div>`)
-  }
-  if (cl.inventoryDyeLot) {
-    lines.push(`<div>Lot: ${escapeHtml(cl.inventoryDyeLot)}</div>`)
-  }
-  if (cl.inventoryLocationCode) {
-    lines.push(`<div>Loc: ${escapeHtml(cl.inventoryLocationCode)}</div>`)
-  }
-  if (lines.length === 0) {
-    return `<span class="empty-cell">—</span>`
-  }
-  return lines.join("")
+  // Single-line identity string sourced from the cut log row's snapshot
+  // columns. Parts are joined with " - " and missing parts are skipped so
+  // empty Item / DyeLot do not produce stray hyphens.
+  const parts = [cl.inventoryNumber, cl.inventoryItemNumber, cl.inventoryDyeLot].filter(
+    (part) => part !== "",
+  )
+  return parts.join(" - ")
+}
+
+function renderUnitValue(value: string, unitAbbrev: string): string {
+  if (value === "") return `<span class="empty-cell">—</span>`
+  if (unitAbbrev === "") return escapeHtml(value)
+  return `${escapeHtml(value)} ${escapeHtml(unitAbbrev)}`
 }
 
 function statusToClass(status: WorkOrderFileCutLogProjection["status"]): string {

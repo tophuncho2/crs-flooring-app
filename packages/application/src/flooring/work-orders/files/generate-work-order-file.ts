@@ -81,13 +81,10 @@ export async function generateWorkOrderFileUseCase(
   })
 
   // -------- IO: render + upload --------
-  const generatedAt = new Date().toISOString()
   const fileKey = buildFileKey(input.workOrderId, input.fileId)
 
   try {
-    const projection = await getWorkOrderForFileGeneration(input.workOrderId, {
-      generatedAt,
-    })
+    const projection = await getWorkOrderForFileGeneration(input.workOrderId)
     const html = buildWorkOrderPdfHtml(projection)
     const pdfBytes = await renderHtmlToPdf(html)
     await uploadBucketObject(input.storageEnv, {
