@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma } from "@prisma/client"
+import type { ProductOption } from "@builders/domain"
 import {
   listCategories,
   type CategoryRecord,
@@ -275,4 +276,39 @@ export async function listProductsForListView(
     total,
     rows: rows.map(normalizeProductRow),
   }
+}
+
+export type ProductOptionsSearchArgs = {
+  search?: string
+  categoryId?: string
+  take: number
+}
+
+export async function searchProductOptions(
+  args: ProductOptionsSearchArgs,
+  client: ProductsDbClient = db,
+): Promise<ProductOption[]> {
+  const clauses: Prisma.FlooringProductWhereInput[] = []
+  if (args.search) {
+    clauses.push({
+      OR: [
+        { name: { contains: args.search, mode: "insensitive" } },
+        { style: { contains: args.search, mode: "insensitive" } },
+        { color: { contains: args.search, mode: "insensitive" } },
+      ],
+    })
+  }
+  if (args.categoryId) {
+    clauses.push({ categoryId: args.categoryId })
+  }
+  const where: Prisma.FlooringProductWhereInput | undefined =
+    clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }
+
+  const rows = await client.flooringProduct.findMany({
+    where,
+    orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
+    take: args.take,
+    select: productOptionSelect,
+  })
+  return rows.map(normalizeProductOption)
 }

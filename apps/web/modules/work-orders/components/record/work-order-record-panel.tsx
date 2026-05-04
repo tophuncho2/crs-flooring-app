@@ -118,8 +118,6 @@ export function WorkOrderRecordPanel({
               workOrder={controller.record}
               materialItems={materialItems}
               cutLogsByWorkOrderItemId={cutLogsByWorkOrderItemId}
-              productOptions={options.productOptions}
-              categoryOptions={options.categoryOptions}
               publishMaterialItems={setMaterialItems}
               publishWorkOrder={controller.publishRecord}
               publishCutLogPatch={publishCutLogPatch}

@@ -8,6 +8,7 @@ import { useRecordScopedSectionController } from "@/controllers/record/use-recor
 import { createRecordSectionError } from "@/types/record/section-error"
 import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
+  ProductOption,
   WorkOrderDetail,
   WorkOrderMaterialItemForm,
   WorkOrderMaterialItemRow,
@@ -19,6 +20,12 @@ import { saveWorkOrderMaterialItemsSectionRequest } from "@/modules/work-orders/
 export type WorkOrderMaterialItemLocal = {
   id: string
   productId: string
+  // Display-only snapshots seeded from the saved row's joined fields and
+  // refreshed when the user picks a new product (via ProductPicker's
+  // onOptionSelected). Never sent in the diff — server re-normalizes
+  // from the live product table on save.
+  productName: string
+  sendUnitAbbrev: string
   quantity: string
   notes: string
   // Client-only — narrows the row's product picker to a chosen category.
@@ -32,6 +39,8 @@ function toLocalItem(row: WorkOrderMaterialItemRow): WorkOrderMaterialItemLocal 
   return {
     id: row.id,
     productId: row.productId,
+    productName: row.productName,
+    sendUnitAbbrev: row.sendUnitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
     categoryFilterId: null,
@@ -158,6 +167,8 @@ export function useWorkOrderMaterialItemsSection({
         {
           id: createLocalRecordRowId("work-order-material-item"),
           productId: "",
+          productName: "",
+          sendUnitAbbrev: "",
           quantity: "",
           notes: "",
           categoryFilterId: null,
@@ -178,22 +189,27 @@ export function useWorkOrderMaterialItemsSection({
     section.setLocalValue((previous) => {
       const source = previous.items.find((row) => row.id === sourceItemId)
       if (!source) return previous
-      // Copy productId + categoryFilterId so the new row's product picker is
-      // pre-filtered to the same category. Quantity + notes start blank so
-      // the user has to confirm the per-row values for the new line.
+      // Copy productId + productName + sendUnitAbbrev + categoryFilterId so
+      // the new row's picker shows the same product (with label) and the
+      // unit-abbrev display is preserved. Quantity + notes start blank so
+      // the user confirms per-row values for the new line.
       const duplicated: WorkOrderMaterialItemLocal = {
         id: createLocalRecordRowId("work-order-material-item"),
         ...buildDuplicatedRow(
           {
             productId: source.productId,
+            productName: source.productName,
+            sendUnitAbbrev: source.sendUnitAbbrev,
             quantity: source.quantity,
             notes: source.notes,
             categoryFilterId: source.categoryFilterId,
           },
           {
-            copy: ["productId", "categoryFilterId"],
+            copy: ["productId", "productName", "sendUnitAbbrev", "categoryFilterId"],
             defaults: {
               productId: "",
+              productName: "",
+              sendUnitAbbrev: "",
               quantity: "",
               notes: "",
               categoryFilterId: null,
@@ -224,10 +240,26 @@ export function useWorkOrderMaterialItemsSection({
       items: previous.items.map((row) => {
         if (row.id !== itemId) return row
         if (row.categoryFilterId === categoryId) return row
-        // Category change clears the product picker — products are filtered
-        // by category and the previously-picked one may not be in the new
-        // category's set. Forces the user to re-pick.
-        return { ...row, categoryFilterId: categoryId, productId: "" }
+        // Filter-only cascade — narrowing the product picker's results
+        // never clears the saved product. User picks a different product
+        // explicitly if they want to change it.
+        return { ...row, categoryFilterId: categoryId }
+      }),
+    }))
+  }
+
+  function setProductSnapshot(itemId: string, option: ProductOption | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) => {
+        if (row.id !== itemId) return row
+        if (option === null) {
+          return { ...row, productName: "", sendUnitAbbrev: "" }
+        }
+        return {
+          ...row,
+          productName: option.name,
+          sendUnitAbbrev: option.sendUnitAbbrev,
+        }
       }),
     }))
   }
@@ -240,5 +272,6 @@ export function useWorkOrderMaterialItemsSection({
     duplicateItem,
     changeField,
     changeCategoryFilter,
+    setProductSnapshot,
   }
 }

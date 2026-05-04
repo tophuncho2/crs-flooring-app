@@ -62,6 +62,17 @@ export type ProductCreateForm = {
 // (enforced by type, validator, and `isProductCategoryChangeBlocked`).
 export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId">
 
+// Slim option shape for product pickers / dropdowns. Matches the DB-layer
+// `ProductOptionRecord` shape — kept in domain so picker requests + search
+// use cases consume the canonical contract.
+export type ProductOption = {
+  id: string
+  name: string
+  categoryId: string
+  sendUnitName: string
+  sendUnitAbbrev: string
+}
+
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   categoryId: "",
   manufacturerId: "",
