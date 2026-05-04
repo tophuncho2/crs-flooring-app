@@ -108,6 +108,7 @@ export function TemplateRecordPanel({
               onSave={() => void materialItems.save()}
               onDiscard={() => materialItems.discard()}
               onAddItem={materialItems.addItem}
+              onDuplicateItem={materialItems.duplicateItem}
               onChangeField={materialItems.changeField}
               onChangeCategoryFilter={materialItems.changeCategoryFilter}
               onRemoveItem={materialItems.removeItem}

@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
+import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/use-template-material-items-section"
 
@@ -13,7 +14,7 @@ const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
-  trailingControls: [{ key: "remove", kind: "actions", width: 72 }],
+  trailingControls: [{ key: "remove", kind: "actions", width: 116 }],
 }
 
 export type MaterialItemProductOption = {
@@ -40,6 +41,7 @@ export function TemplateMaterialItemsSection({
   onSave,
   onDiscard,
   onAddItem,
+  onDuplicateItem,
   onChangeField,
   onChangeCategoryFilter,
   onRemoveItem,
@@ -56,6 +58,7 @@ export function TemplateMaterialItemsSection({
   onSave: () => void
   onDiscard: () => void
   onAddItem: () => void
+  onDuplicateItem: (itemId: string) => void
   onChangeField: (itemId: string, field: keyof TemplateMaterialItemLocal, value: string) => void
   onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
   onRemoveItem: (itemId: string) => void
@@ -181,14 +184,22 @@ export function TemplateMaterialItemsSection({
         renderControl={(control, item) => {
           if (control.kind === "actions") {
             return (
-              <RowActionButton
-                label="✕"
-                ariaLabel="Remove material item"
-                tone="destructive"
-                title={editable ? "Remove this material item" : "Saving..."}
-                editable={editable}
-                onClick={() => onRemoveItem(item.id)}
-              />
+              <div className="flex items-center gap-1">
+                <DuplicateRowButton
+                  ariaLabel="Duplicate material item"
+                  title={editable ? "Duplicate this material item" : "Saving..."}
+                  editable={editable}
+                  onClick={() => onDuplicateItem(item.id)}
+                />
+                <RowActionButton
+                  label="✕"
+                  ariaLabel="Remove material item"
+                  tone="destructive"
+                  title={editable ? "Remove this material item" : "Saving..."}
+                  editable={editable}
+                  onClick={() => onRemoveItem(item.id)}
+                />
+              </div>
             )
           }
           return null

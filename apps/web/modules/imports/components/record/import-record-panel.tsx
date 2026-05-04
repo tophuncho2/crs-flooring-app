@@ -145,6 +145,7 @@ export function ImportRecordPanel({
               onSave={() => void stagedRowsSection.save()}
               onDiscard={() => stagedRowsSection.discard()}
               onAddRow={stagedRowsSection.addRow}
+              onDuplicateRow={stagedRowsSection.duplicateRow}
               onRowFieldChange={stagedRowsSection.setRowField}
               onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
               onRemoveRow={stagedRowsSection.removeRow}

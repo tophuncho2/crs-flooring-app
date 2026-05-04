@@ -7,10 +7,12 @@ import {
   CheckboxCell,
   CurrencyCell,
   DropdownCell,
+  RowActionButton,
   SelectCell,
   TextCell,
   UnitCell,
 } from "@/components/cells"
+import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { SelectAllButton } from "@/components/features/select-batch"
 import type { FlooringStagedRowStatus, StagedInventoryRow } from "@builders/domain"
@@ -37,7 +39,7 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
   ],
   trailingControls: [
     { key: "status", kind: "status-indicator", width: 132 },
-    { key: "remove", kind: "actions", width: 100 },
+    { key: "remove", kind: "actions", width: 116 },
   ],
 }
 
@@ -73,6 +75,7 @@ export function ImportStagedInventoryRowsSection({
   onSave,
   onDiscard,
   onAddRow,
+  onDuplicateRow,
   onRowFieldChange,
   onRowCategoryFilterChange,
   onRemoveRow,
@@ -103,6 +106,7 @@ export function ImportStagedInventoryRowsSection({
   onSave: () => void
   onDiscard: () => void
   onAddRow: () => void
+  onDuplicateRow: (index: number) => void
   onRowFieldChange: (
     index: number,
     field: Exclude<keyof Omit<ImportStagedRowDraft, "clientId">, "categoryFilterId">,
@@ -320,16 +324,24 @@ export function ImportStagedInventoryRowsSection({
             )
           }
           if (control.kind === "actions") {
+            const editable = !locked && !isSelectionActive
             return (
-              <button
-                type="button"
-                onClick={() => onRemoveRow(index)}
-                disabled={locked}
-                aria-label={`Remove row ${index + 1}`}
-                className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-1">
+                <DuplicateRowButton
+                  ariaLabel={`Duplicate row ${index + 1}`}
+                  title={editable ? "Duplicate this row" : "Locked while section is busy"}
+                  editable={editable}
+                  onClick={() => onDuplicateRow(index)}
+                />
+                <RowActionButton
+                  label="✕"
+                  ariaLabel={`Remove row ${index + 1}`}
+                  tone="destructive"
+                  title={!locked ? "Remove this row" : "Locked"}
+                  editable={!locked}
+                  onClick={() => onRemoveRow(index)}
+                />
+              </div>
             )
           }
           return null

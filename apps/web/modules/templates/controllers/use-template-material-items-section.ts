@@ -6,6 +6,7 @@ import {
   isLocalOnlyRecordRow,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
+import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   TemplateDetail,
   TemplateMaterialItemForm,
@@ -171,6 +172,38 @@ export function useTemplateMaterialItemsSection({
     section.setError(null)
   }
 
+  function duplicateItem(sourceItemId: string) {
+    section.setLocalValue((previous) => {
+      const source = previous.items.find((row) => row.id === sourceItemId)
+      if (!source) return previous
+      // Copy productId + categoryFilterId so the new row's product picker is
+      // pre-filtered to the same category. Quantity + notes start blank so
+      // the user has to confirm the per-row values for the new line.
+      const duplicated: TemplateMaterialItemLocal = {
+        id: createLocalRecordRowId("template-material-item"),
+        ...buildDuplicatedRow(
+          {
+            productId: source.productId,
+            quantity: source.quantity,
+            notes: source.notes,
+            categoryFilterId: source.categoryFilterId,
+          },
+          {
+            copy: ["productId", "categoryFilterId"],
+            defaults: {
+              productId: "",
+              quantity: "",
+              notes: "",
+              categoryFilterId: null,
+            },
+          },
+        ),
+      }
+      return { items: [...previous.items, duplicated] }
+    })
+    section.setError(null)
+  }
+
   function changeField(
     itemId: string,
     field: keyof TemplateMaterialItemLocal,
@@ -202,6 +235,7 @@ export function useTemplateMaterialItemsSection({
     items: section.localValue.items,
     addItem,
     removeItem,
+    duplicateItem,
     changeField,
     changeCategoryFilter,
   }

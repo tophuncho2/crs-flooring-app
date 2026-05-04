@@ -8,6 +8,7 @@ import {
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
 import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
+import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ImportDetail,
   StagedInventoryRow,
@@ -214,6 +215,47 @@ export function useImportStagedInventoryRowsSection({
     }
   }
 
+  function duplicateRow(sourceIndex: number) {
+    section.setLocalValue((previous) => {
+      const source = previous[sourceIndex]
+      if (!source) return previous
+      // Copy productId + categoryFilterId so the new row's product picker is
+      // pre-filtered to the same category. itemNumber, startingStock,
+      // location, dyeLot, and notes start blank — the user has to confirm
+      // those per-row inventory specifics on the new line.
+      const duplicated: ImportStagedRowDraft = {
+        clientId: createLocalRecordRowId("import-staged-row"),
+        ...buildDuplicatedRow(
+          {
+            productId: source.productId,
+            itemNumber: source.itemNumber,
+            startingStock: source.startingStock,
+            locationId: source.locationId,
+            dyeLot: source.dyeLot,
+            notes: source.notes,
+            categoryFilterId: source.categoryFilterId,
+          },
+          {
+            copy: ["productId", "categoryFilterId"],
+            defaults: {
+              productId: "",
+              itemNumber: "",
+              startingStock: "",
+              locationId: "",
+              dyeLot: "",
+              notes: "",
+              categoryFilterId: null,
+            },
+          },
+        ),
+      }
+      return [...previous, duplicated]
+    })
+    if (section.error) {
+      section.setError(null)
+    }
+  }
+
   function setRowField(
     index: number,
     field: Exclude<keyof Omit<ImportStagedRowDraft, "clientId">, "categoryFilterId">,
@@ -289,6 +331,7 @@ export function useImportStagedInventoryRowsSection({
     ...section,
     addRow,
     removeRow,
+    duplicateRow,
     setRowField,
     setRowCategoryFilter,
     handleWarehouseChange,
