@@ -13,18 +13,16 @@ import {
   EMPTY_IMPORT_PRIMARY_FORM,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import type { ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
 
 function ImportCreatePanel({
   page,
   backHref,
-  warehouseOptions,
   manufacturerOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  warehouseOptions: WarehouseOption[]
   manufacturerOptions: ManufacturerOption[]
 }) {
   const controller = useSingleSectionCreateController<ImportPrimaryForm>({
@@ -49,7 +47,7 @@ function ImportCreatePanel({
       >
         <ImportPrimaryFieldsSection
           draft={controller.primarySection.localValue}
-          warehouseOptions={warehouseOptions}
+          warehouseName={null}
           manufacturerOptions={manufacturerOptions}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
@@ -67,11 +65,9 @@ function ImportCreatePanel({
 
 export function ImportCreateClient({
   backHref,
-  warehouseOptions,
   manufacturerOptions,
 }: {
   backHref: string
-  warehouseOptions: WarehouseOption[]
   manufacturerOptions: ManufacturerOption[]
 }) {
   return (
@@ -84,7 +80,6 @@ export function ImportCreateClient({
         <ImportCreatePanel
           page={page}
           backHref={backHref}
-          warehouseOptions={warehouseOptions}
           manufacturerOptions={manufacturerOptions}
         />
       )}

@@ -1,20 +1,21 @@
 "use client"
 
 import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField } from "@/components/fields"
-import { TextCell, TextareaCell, SelectCell, DropdownCell } from "@/components/cells"
+import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
+import { TextCell, TextareaCell, DropdownCell } from "@/components/cells"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import type { ImportPrimaryForm } from "@builders/domain"
-import type { ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportPrimaryFieldsSection({
   draft,
-  warehouseOptions,
+  warehouseName,
   manufacturerOptions,
   disabled,
   onFieldChange,
 }: {
   draft: ImportPrimaryForm
-  warehouseOptions: WarehouseOption[]
+  warehouseName: string | null
   manufacturerOptions: ManufacturerOption[]
   disabled: boolean
   onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
@@ -43,13 +44,17 @@ export function ImportPrimaryFieldsSection({
       </CellAt>
       <CellAt col={5} colSpan={2}>
         <FormField label="Warehouse" required>
-          <SelectCell
-            editable={editable}
-            value={draft.warehouseId}
-            onChange={(value) => onFieldChange("warehouseId", value)}
-            options={warehouseOptions.map((warehouse) => ({ value: warehouse.id, label: warehouse.name }))}
-            placeholder="Select Warehouse"
-          />
+          {editable ? (
+            <WarehousePicker
+              value={draft.warehouseId || null}
+              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+              selectedLabel={warehouseName || null}
+              placeholder="Select Warehouse"
+              ariaLabel="Warehouse"
+            />
+          ) : (
+            <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={7} colSpan={2}>

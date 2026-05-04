@@ -13,20 +13,18 @@ import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-sec
 import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
 import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
-import type { LocationOption, ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { LocationOption, ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,
   entry,
   initialStagedRows,
-  warehouseOptions,
   manufacturerOptions,
   locationOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ImportDetail
   initialStagedRows: StagedInventoryRow[]
-  warehouseOptions: WarehouseOption[]
   manufacturerOptions: ManufacturerOption[]
   locationOptions: LocationOption[]
 }) {
@@ -94,7 +92,7 @@ export function ImportRecordPanel({
             >
               <ImportPrimaryFieldsSection
                 draft={controller.primarySection.localValue}
-                warehouseOptions={warehouseOptions}
+                warehouseName={controller.record.warehouseName}
                 manufacturerOptions={manufacturerOptions}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
@@ -121,7 +119,6 @@ export function ImportRecordPanel({
               drafts={stagedRowsSection.localValue}
               serverRows={pendingRows}
               warehouseId={controller.record.warehouseId}
-              warehouseOptions={warehouseOptions}
               locationOptions={locationOptions}
               isDirty={stagedRowsSection.isDirty}
               isSaving={stagedRowsSection.isSaving}

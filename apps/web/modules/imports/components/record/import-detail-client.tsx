@@ -4,7 +4,7 @@ import { useState } from "react"
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { ImportRecordPanel } from "./import-record-panel"
 import type { ImportDetail, InventoryRow, StagedInventoryRow } from "@builders/domain"
-import type { LocationOption, ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { LocationOption, ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 function formatImportNumber(value: number) {
   return `IMP-${String(value).padStart(4, "0")}`
@@ -14,7 +14,6 @@ export function ImportDetailClient({
   initialImport,
   initialStagedRows,
   initialLiveRows,
-  warehouseOptions,
   manufacturerOptions,
   locationOptions,
   backHref,
@@ -22,7 +21,6 @@ export function ImportDetailClient({
   initialImport: ImportDetail
   initialStagedRows: StagedInventoryRow[]
   initialLiveRows: InventoryRow[]
-  warehouseOptions: WarehouseOption[]
   manufacturerOptions: ManufacturerOption[]
   locationOptions: LocationOption[]
   backHref: string
@@ -45,7 +43,6 @@ export function ImportDetailClient({
           page={page}
           entry={initialImport}
           initialStagedRows={initialStagedRows}
-          warehouseOptions={warehouseOptions}
           manufacturerOptions={manufacturerOptions}
           locationOptions={locationOptions}
         />

@@ -14,13 +14,13 @@ import {
 import type { ImportFormOptions } from "@builders/domain"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 
-// Product + category options are NOT pre-fetched here. The staged-inventory
-// rows section drives those fields via async pickers (CategoryPicker /
-// ProductPicker) which call /api/{categories,products}/options on demand;
-// read-only labels come from joined fields on StagedInventoryRow
-// (productName + stockUnit).
+// Warehouse / product / category options are NOT pre-fetched here.
+// Those fields are powered by async pickers (WarehousePicker /
+// ProductPicker / CategoryPicker) which call /api/{warehouses,products,categories}/options
+// on demand; read-only labels come from joined fields on
+// StagedInventoryRow (productName + stockUnit) and ImportDetail
+// (warehouseName).
 export type ImportFormOptionSet = {
-  warehouseOptions: Array<{ id: string; name: string }>
   locationOptions: Array<{
     id: string
     warehouseId: string
@@ -35,7 +35,6 @@ export async function getImportFormOptions(): Promise<ImportFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
     const options: ImportFormOptions = await listImportOptions()
     return {
-      warehouseOptions: options.warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
       locationOptions: options.locations.map((location) => ({
         id: location.id,
         warehouseId: location.warehouseId,
@@ -55,7 +54,6 @@ export type ImportDetailPageData = {
   entry: ImportDetailRecord
   stagedRows: StagedInventoryRecord[]
   liveRows: InventoryRecord[]
-  warehouseOptions: ImportFormOptionSet["warehouseOptions"]
   locationOptions: ImportFormOptionSet["locationOptions"]
   manufacturerOptions: ImportFormOptionSet["manufacturerOptions"]
 }
@@ -81,7 +79,6 @@ export async function getImportDetailPageData(
         entry,
         stagedRows,
         liveRows,
-        warehouseOptions: options.warehouseOptions,
         locationOptions: options.locationOptions,
         manufacturerOptions: options.manufacturerOptions,
       },

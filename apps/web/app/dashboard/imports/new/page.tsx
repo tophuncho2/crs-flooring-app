@@ -19,7 +19,6 @@ export default async function ImportCreatePage({
     return (
       <ImportCreateClient
         backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/imports")}
-        warehouseOptions={options.warehouseOptions}
         manufacturerOptions={options.manufacturerOptions}
       />
     )

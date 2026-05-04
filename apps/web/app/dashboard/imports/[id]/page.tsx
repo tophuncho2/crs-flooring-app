@@ -41,7 +41,6 @@ export default async function ImportDetailPage({
       initialImport={result.data.entry}
       initialStagedRows={result.data.stagedRows}
       initialLiveRows={result.data.liveRows}
-      warehouseOptions={result.data.warehouseOptions}
       manufacturerOptions={result.data.manufacturerOptions}
       locationOptions={result.data.locationOptions}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/imports")}

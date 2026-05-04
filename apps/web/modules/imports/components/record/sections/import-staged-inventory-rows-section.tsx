@@ -23,7 +23,6 @@ import type {
 import type {
   ImportStagedRowDraft,
   LocationOption,
-  WarehouseOption,
 } from "@/modules/imports/controllers/drafts"
 
 type GridDraftRow = ImportStagedRowDraft & { id: string }
@@ -57,7 +56,6 @@ export function ImportStagedInventoryRowsSection({
   drafts,
   serverRows,
   warehouseId,
-  warehouseOptions: _warehouseOptions,
   locationOptions,
   isDirty,
   isSaving,
@@ -87,7 +85,6 @@ export function ImportStagedInventoryRowsSection({
   drafts: ImportStagedRowDraft[]
   serverRows: StagedInventoryRow[]
   warehouseId: string
-  warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
   isDirty: boolean
   isSaving: boolean
