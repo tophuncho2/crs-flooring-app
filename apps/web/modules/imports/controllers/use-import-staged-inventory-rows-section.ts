@@ -11,6 +11,7 @@ import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select
 import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ImportDetail,
+  ProductOption,
   StagedInventoryRow,
   StagedInventoryRowDraft,
   StagedInventoryRowDelete,
@@ -219,8 +220,9 @@ export function useImportStagedInventoryRowsSection({
     section.setLocalValue((previous) => {
       const source = previous[sourceIndex]
       if (!source) return previous
-      // Copy productId + categoryFilterId so the new row's product picker is
-      // pre-filtered to the same category. itemNumber, startingStock,
+      // Copy productId + productName + stockUnit + categoryFilterId so the
+      // new row's picker shows the same product (with label) and the
+      // starting-stock unit suffix is preserved. itemNumber, startingStock,
       // location, dyeLot, and notes start blank — the user has to confirm
       // those per-row inventory specifics on the new line.
       const duplicated: ImportStagedRowDraft = {
@@ -228,6 +230,8 @@ export function useImportStagedInventoryRowsSection({
         ...buildDuplicatedRow(
           {
             productId: source.productId,
+            productName: source.productName,
+            stockUnit: source.stockUnit,
             itemNumber: source.itemNumber,
             startingStock: source.startingStock,
             locationId: source.locationId,
@@ -236,9 +240,11 @@ export function useImportStagedInventoryRowsSection({
             categoryFilterId: source.categoryFilterId,
           },
           {
-            copy: ["productId", "categoryFilterId"],
+            copy: ["productId", "productName", "stockUnit", "categoryFilterId"],
             defaults: {
               productId: "",
+              productName: "",
+              stockUnit: "",
               itemNumber: "",
               startingStock: "",
               locationId: "",
@@ -258,7 +264,10 @@ export function useImportStagedInventoryRowsSection({
 
   function setRowField(
     index: number,
-    field: Exclude<keyof Omit<ImportStagedRowDraft, "clientId">, "categoryFilterId">,
+    field: Exclude<
+      keyof Omit<ImportStagedRowDraft, "clientId">,
+      "categoryFilterId" | "productName" | "stockUnit"
+    >,
     value: string,
   ) {
     section.setLocalValue((previous) =>
@@ -270,6 +279,22 @@ export function useImportStagedInventoryRowsSection({
     if (section.error) {
       section.setError(null)
     }
+  }
+
+  // Atomic snapshot update for the row's productName + stockUnit when the
+  // ProductPicker emits onOptionSelected. Display-only fields — never enter
+  // the diff sent on save. Picker's onChange separately commits productId
+  // via setRowField (the two callbacks fire synchronously alongside).
+  function setRowProductSnapshot(index: number, option: ProductOption | null) {
+    section.setLocalValue((previous) =>
+      previous.map((row, rowIndex) => {
+        if (rowIndex !== index) return row
+        if (option === null) {
+          return { ...row, productName: "", stockUnit: "" }
+        }
+        return { ...row, productName: option.name, stockUnit: option.stockUnitAbbrev }
+      }),
+    )
   }
 
   /**
@@ -334,6 +359,7 @@ export function useImportStagedInventoryRowsSection({
     duplicateRow,
     setRowField,
     setRowCategoryFilter,
+    setRowProductSnapshot,
     handleWarehouseChange,
     selectedIds: markForImport.selectedIds,
     toggleSelection: markForImport.toggleSelected,

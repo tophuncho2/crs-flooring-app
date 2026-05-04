@@ -8,18 +8,6 @@ import {
 // Record-view files pass `entry` with id pointers — use ImportDetail shape.
 export type ImportRecordEntry = ImportDetail
 
-export type ProductOption = {
-  id: string
-  label: string
-  stockUnit: string
-  categoryId: string
-}
-
-export type CategoryOption = {
-  id: string
-  label: string
-}
-
 export type WarehouseOption = {
   id: string
   name: string
@@ -41,6 +29,12 @@ export type LocationOption = {
 export type ImportStagedRowDraft = {
   clientId: string
   productId: string
+  // Display-only snapshots seeded from the saved row's joined fields and
+  // refreshed when the user picks a new product (via ProductPicker's
+  // onOptionSelected). Never sent in the mutation payload — server
+  // re-normalizes from the live product table on save.
+  productName: string
+  stockUnit: string
   itemNumber: string
   startingStock: string
   locationId: string
@@ -59,6 +53,8 @@ export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportSta
   return {
     clientId: item?.id ?? crypto.randomUUID(),
     productId: item?.productId ?? "",
+    productName: item?.productName ?? "",
+    stockUnit: item?.stockUnit ?? "",
     itemNumber: item?.itemNumber ?? "",
     startingStock: item?.startingStock ?? "",
     locationId: item?.locationId ?? "",

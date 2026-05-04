@@ -5,8 +5,6 @@ import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import {
   CheckboxCell,
-  CurrencyCell,
-  DropdownCell,
   RowActionButton,
   SelectCell,
   TextCell,
@@ -15,12 +13,16 @@ import {
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { SelectAllButton } from "@/components/features/select-batch"
-import type { FlooringStagedRowStatus, StagedInventoryRow } from "@builders/domain"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type {
-  CategoryOption,
+  FlooringStagedRowStatus,
+  ProductOption,
+  StagedInventoryRow,
+} from "@builders/domain"
+import type {
   ImportStagedRowDraft,
   LocationOption,
-  ProductOption,
   WarehouseOption,
 } from "@/modules/imports/controllers/drafts"
 
@@ -55,10 +57,8 @@ export function ImportStagedInventoryRowsSection({
   drafts,
   serverRows,
   warehouseId,
-  productOptions,
   warehouseOptions: _warehouseOptions,
   locationOptions,
-  categoryOptions,
   isDirty,
   isSaving,
   hasConflict,
@@ -78,6 +78,7 @@ export function ImportStagedInventoryRowsSection({
   onDuplicateRow,
   onRowFieldChange,
   onRowCategoryFilterChange,
+  onSetRowProductSnapshot,
   onRemoveRow,
   onToggleSelection,
   onToggleAllEligible,
@@ -86,10 +87,8 @@ export function ImportStagedInventoryRowsSection({
   drafts: ImportStagedRowDraft[]
   serverRows: StagedInventoryRow[]
   warehouseId: string
-  productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
-  categoryOptions: CategoryOption[]
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -109,10 +108,14 @@ export function ImportStagedInventoryRowsSection({
   onDuplicateRow: (index: number) => void
   onRowFieldChange: (
     index: number,
-    field: Exclude<keyof Omit<ImportStagedRowDraft, "clientId">, "categoryFilterId">,
+    field: Exclude<
+      keyof Omit<ImportStagedRowDraft, "clientId">,
+      "categoryFilterId" | "productName" | "stockUnit"
+    >,
     value: string,
   ) => void
   onRowCategoryFilterChange: (index: number, categoryId: string | null) => void
+  onSetRowProductSnapshot: (index: number, option: ProductOption | null) => void
   onRemoveRow: (index: number) => void
   onToggleSelection: (id: string) => void
   onToggleAllEligible: () => void
@@ -125,10 +128,6 @@ export function ImportStagedInventoryRowsSection({
   const locationCellOptions = filteredLocations.map((location) => ({
     value: location.id,
     label: location.label,
-  }))
-  const categoryCellOptions = categoryOptions.map((category) => ({
-    id: category.id,
-    label: category.label,
   }))
 
   const gridRows: GridDraftRow[] = drafts.map((row) => ({ ...row, id: row.clientId }))
@@ -214,34 +213,28 @@ export function ImportStagedInventoryRowsSection({
           // edited mid-prep.
           const editable = !locked && !isSelectionActive
           const index = findIndex(row.clientId)
-          const selectedProduct = productOptions.find((product) => product.id === row.productId)
-          const visibleProducts = row.categoryFilterId
-            ? productOptions.filter(
-                (product) =>
-                  product.categoryId === row.categoryFilterId || product.id === row.productId,
-              )
-            : productOptions
 
           switch (column.key) {
             case "categoryFilter":
               return (
-                <DropdownCell
-                  editable={editable}
+                <CategoryPicker
                   value={row.categoryFilterId}
                   onChange={(next) => onRowCategoryFilterChange(index, next)}
-                  options={categoryCellOptions}
-                  allowClear
+                  selectedLabel={null}
+                  disabled={!editable}
                   placeholder="All categories"
                   ariaLabel={`Row ${index + 1} category filter`}
                 />
               )
             case "product":
               return (
-                <DropdownCell
-                  editable={editable}
+                <ProductPicker
                   value={row.productId || null}
                   onChange={(next) => onRowFieldChange(index, "productId", next ?? "")}
-                  options={visibleProducts.map((product) => ({ id: product.id, label: product.label }))}
+                  onOptionSelected={(option) => onSetRowProductSnapshot(index, option)}
+                  categoryId={row.categoryFilterId}
+                  selectedLabel={row.productName || null}
+                  disabled={!editable}
                   placeholder="Select product"
                   ariaLabel={`Row ${index + 1} product`}
                 />
@@ -261,7 +254,7 @@ export function ImportStagedInventoryRowsSection({
                   editable={editable}
                   value={row.startingStock}
                   onChange={(value) => onRowFieldChange(index, "startingStock", value)}
-                  unit={selectedProduct?.stockUnit ?? "unit"}
+                  unit={row.stockUnit || "unit"}
                   ariaLabel={`Row ${index + 1} starting stock`}
                 />
               )

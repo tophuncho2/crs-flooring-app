@@ -65,12 +65,19 @@ export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId">
 // Slim option shape for product pickers / dropdowns. Matches the DB-layer
 // `ProductOptionRecord` shape — kept in domain so picker requests + search
 // use cases consume the canonical contract.
+//
+// Carries BOTH unit snapshots (send + stock). Send-unit drives material-item
+// quantity-cell suffixes (work orders + templates); stock-unit drives the
+// staged-inventory-rows starting-stock cell suffix (imports). Picker
+// consumers ignore the fields they don't use.
 export type ProductOption = {
   id: string
   name: string
   categoryId: string
   sendUnitName: string
   sendUnitAbbrev: string
+  stockUnitName: string
+  stockUnitAbbrev: string
 }
 
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
