@@ -41,7 +41,7 @@ describe("authorizeRouteAccess", () => {
       role: "BUILDER",
       isVerified: true,
     })
-    isToolUnlockedMock.mockResolvedValue(false)
+    isToolUnlockedMock.mockReturnValue(false)
 
     const response = await authorizeRouteAccess(new Request("http://localhost/test"), {
       capability: "system.access",
@@ -62,7 +62,7 @@ describe("authorizeRouteAccess", () => {
       role: "ADMIN",
       isVerified: true,
     })
-    isToolUnlockedMock.mockResolvedValue(true)
+    isToolUnlockedMock.mockReturnValue(true)
 
     const result = await authorizeRouteAccess(new Request("http://localhost/test"), {
       capability: "system.access",
