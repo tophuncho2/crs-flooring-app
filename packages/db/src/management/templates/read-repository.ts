@@ -157,6 +157,39 @@ export async function listTemplateOptions(
   return templates.map(normalizeTemplateOption)
 }
 
+export type TemplateOptionsSearchArgs = {
+  search?: string
+  propertyId: string
+  take: number
+}
+
+export async function searchTemplateOptions(
+  args: TemplateOptionsSearchArgs,
+  client: TemplatesDbClient = db,
+): Promise<TemplateOption[]> {
+  const clauses: Prisma.FlooringTemplateWhereInput[] = [{ propertyId: args.propertyId }]
+  if (args.search) {
+    clauses.push({
+      OR: [
+        { templateNumber: { contains: args.search, mode: "insensitive" } },
+        { unitType: { contains: args.search, mode: "insensitive" } },
+        { description: { contains: args.search, mode: "insensitive" } },
+      ],
+    })
+  }
+  const where: Prisma.FlooringTemplateWhereInput =
+    clauses.length === 1 ? clauses[0] : { AND: clauses }
+
+  const templates = await client.flooringTemplate.findMany({
+    where,
+    orderBy: { templateNumber: "asc" },
+    take: args.take,
+    select: { id: true, templateNumber: true, unitType: true },
+  })
+
+  return templates.map(normalizeTemplateOption)
+}
+
 export async function getTemplateById(
   id: string,
   client: TemplatesDbClient = db,

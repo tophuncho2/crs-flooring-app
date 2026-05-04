@@ -4,6 +4,8 @@ export type WorkOrderErrorCode =
   | "WORK_ORDER_WAREHOUSE_LOCKED"
   | "WORK_ORDER_CUT_LOG_WRITE_FAILED"
   | "WORK_ORDER_FILE_GENERATION_FAILED"
+  | "TEMPLATE_SYNC_TEMPLATE_NOT_FOUND"
+  | "TEMPLATE_SYNC_TEMPLATE_INVALID"
 
 export class WorkOrderExecutionError extends Error {
   readonly code: WorkOrderErrorCode

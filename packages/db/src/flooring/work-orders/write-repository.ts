@@ -1,10 +1,13 @@
 import { db } from "../../client.js"
+import type { Prisma } from "@prisma/client"
 import {
   normalizeWorkOrder,
   type WorkOrderDetail,
+  type WorkOrderMaterialItemRow,
   type WorkOrderStatus,
 } from "@builders/domain"
 import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
+import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
 
 /**
  * Wire input for create. `status` and the template-sync snapshot fields
@@ -81,4 +84,65 @@ export async function markWorkOrderStatus(
     data: { status },
     select: { id: true },
   })
+}
+
+/**
+ * Wire-input shape for creating a work order from a template snapshot.
+ * Carries the same fields as `CreateWorkOrderRecordInput` plus the three
+ * worker-controlled sync columns the application layer fills in for
+ * sync flows (templateSyncedAt / templateSyncMode / templateSnapshotHash)
+ * and the per-item snapshot rows. Items use Prisma `createMany` and each
+ * carries `sourceTemplateItemId` so the new work order's items remember
+ * their template origin.
+ */
+export type CreateWorkOrderFromTemplateRecordInput = {
+  workOrder: CreateWorkOrderRecordInput & {
+    templateSyncedAt: Date
+    templateSyncMode: string
+    templateSnapshotHash: string
+  }
+  items: Array<{
+    productId: string
+    quantity: string
+    sendUnitName: string
+    sendUnitAbbrev: string
+    notes: string | null
+    sourceTemplateItemId: string
+  }>
+}
+
+export type CreateWorkOrderFromTemplateRecordResult = {
+  workOrder: WorkOrderDetail
+  items: WorkOrderMaterialItemRow[]
+}
+
+function toItemDecimal(value: string): Prisma.Decimal | string {
+  return value
+}
+
+export async function createWorkOrderFromTemplateRecord(
+  input: CreateWorkOrderFromTemplateRecordInput,
+  client: WorkOrdersDbClient = db,
+): Promise<CreateWorkOrderFromTemplateRecordResult> {
+  const created = await client.flooringWorkOrder.create({
+    data: input.workOrder,
+    select: workOrderDetailSelect,
+  })
+
+  if (input.items.length > 0) {
+    await client.flooringWorkOrderItem.createMany({
+      data: input.items.map((item) => ({
+        workOrderId: created.id,
+        productId: item.productId,
+        quantity: toItemDecimal(item.quantity),
+        sendUnitName: item.sendUnitName,
+        sendUnitAbbrev: item.sendUnitAbbrev,
+        notes: item.notes,
+        sourceTemplateItemId: item.sourceTemplateItemId,
+      })),
+    })
+  }
+
+  const items = await listWorkOrderMaterialItems(created.id, client)
+  return { workOrder: normalizeWorkOrder(created), items }
 }

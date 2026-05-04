@@ -134,3 +134,44 @@ export function validateListPropertiesQuery(
     pageSize: parsed.pageSize,
   }
 }
+
+// --- Options query validator ---
+
+const propertyOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  managementCompanyId: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).default(20),
+})
+
+export type ValidatedPropertyOptionsQuery = {
+  search?: string
+  managementCompanyId?: string
+  take: number
+}
+
+export function validatePropertyOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedPropertyOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = propertyOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid property options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.search?.trim()
+  const trimmedManagementCompanyId = parsed.managementCompanyId?.trim()
+  return {
+    search: trimmedSearch ? trimmedSearch : undefined,
+    managementCompanyId: trimmedManagementCompanyId ? trimmedManagementCompanyId : undefined,
+    take: parsed.take,
+  }
+}

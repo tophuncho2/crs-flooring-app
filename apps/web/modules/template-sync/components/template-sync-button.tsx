@@ -1,47 +1,71 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useState } from "react"
+import { useRouter } from "next/navigation"
 import { RefreshCw } from "lucide-react"
 import { SidePanel } from "@/components/nav"
-import { SelectDropdown, type DropdownOption } from "@/components/dropdowns"
+import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
+import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
+import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
 import { FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 
-// Shell-only: real options will be wired in a follow-up.
 // Cascade: Management Company (optional) → Property → Template.
 // Property has a direct managementCompanyId FK; Template has a propertyId FK.
-const MANAGEMENT_COMPANY_OPTIONS: ReadonlyArray<DropdownOption> = []
-const PROPERTY_OPTIONS: ReadonlyArray<DropdownOption> = []
-const TEMPLATE_OPTIONS: ReadonlyArray<DropdownOption> = []
+// Each picker fetches its own server-side options via React Query;
+// the bucket key folds in the parent filter so caches reset on parent change.
 
 export function TemplateSyncButton() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [managementCompanyId, setManagementCompanyId] = useState<string | null>(null)
   const [propertyId, setPropertyId] = useState<string | null>(null)
   const [templateId, setTemplateId] = useState<string | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const filteredPropertyOptions = useMemo<ReadonlyArray<DropdownOption>>(() => {
-    if (!managementCompanyId) return PROPERTY_OPTIONS
-    // Real filter wires in once option arrays carry managementCompanyId.
-    return PROPERTY_OPTIONS
-  }, [managementCompanyId])
-
-  const filteredTemplateOptions = useMemo<ReadonlyArray<DropdownOption>>(() => {
-    if (!propertyId) return []
-    return TEMPLATE_OPTIONS
-  }, [propertyId])
-
-  function handleManagementCompanyChange(value: string | null) {
+  const handleManagementCompanyChange = useCallback((value: string | null) => {
     setManagementCompanyId(value)
     setPropertyId(null)
     setTemplateId(null)
-  }
+  }, [])
 
-  function handlePropertyChange(value: string | null) {
+  const handlePropertyChange = useCallback((value: string | null) => {
     setPropertyId(value)
     setTemplateId(null)
-  }
+  }, [])
+
+  const resetSelections = useCallback(() => {
+    setManagementCompanyId(null)
+    setPropertyId(null)
+    setTemplateId(null)
+    setErrorMessage(null)
+  }, [])
+
+  const handleClose = useCallback(() => {
+    if (isSyncing) return
+    setOpen(false)
+  }, [isSyncing])
 
   const canActOnTemplate = templateId !== null
+
+  const handleSync = useCallback(async () => {
+    if (!templateId || isSyncing) return
+    setIsSyncing(true)
+    setErrorMessage(null)
+    try {
+      const result = await syncTemplateRequest({ templateId })
+      const newId = result.workOrder.id
+      setOpen(false)
+      resetSelections()
+      router.push(`/dashboard/work-orders/${newId}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Sync failed. Try again."
+      setErrorMessage(message)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [templateId, isSyncing, resetSelections, router])
 
   return (
     <>
@@ -65,7 +89,7 @@ export function TemplateSyncButton() {
       <SidePanel
         open={open}
         side="right"
-        onClose={() => setOpen(false)}
+        onClose={handleClose}
         title="Template sync"
         widthClassName="w-80"
       >
@@ -74,12 +98,10 @@ export function TemplateSyncButton() {
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
               Management company
             </span>
-            <SelectDropdown
+            <ManagementCompanyPicker
               value={managementCompanyId}
               onChange={handleManagementCompanyChange}
-              options={MANAGEMENT_COMPANY_OPTIONS}
               placeholder="Any management company (optional)"
-              allowClear
               ariaLabel="Management company"
             />
           </label>
@@ -88,12 +110,10 @@ export function TemplateSyncButton() {
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
               Property
             </span>
-            <SelectDropdown
+            <PropertyPicker
               value={propertyId}
               onChange={handlePropertyChange}
-              options={filteredPropertyOptions}
-              placeholder="Select a property"
-              allowClear
+              managementCompanyId={managementCompanyId}
               ariaLabel="Property"
             />
           </label>
@@ -102,16 +122,19 @@ export function TemplateSyncButton() {
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
               Template
             </span>
-            <SelectDropdown
+            <TemplatePicker
               value={templateId}
               onChange={setTemplateId}
-              options={filteredTemplateOptions}
-              placeholder={propertyId ? "Select a template" : "Select a property first"}
-              allowClear
-              disabled={!propertyId}
+              propertyId={propertyId}
               ariaLabel="Template"
             />
           </label>
+
+          {errorMessage ? (
+            <p className="text-xs text-rose-400" role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
 
           <div className="mt-auto flex flex-col gap-2 pt-4">
             <button
@@ -123,10 +146,11 @@ export function TemplateSyncButton() {
             </button>
             <button
               type="button"
-              disabled={!canActOnTemplate}
+              onClick={handleSync}
+              disabled={!canActOnTemplate || isSyncing}
               className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
             >
-              Sync
+              {isSyncing ? "Syncing…" : "Sync"}
             </button>
           </div>
         </div>

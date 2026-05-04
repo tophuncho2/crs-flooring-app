@@ -5,6 +5,7 @@ import {
 } from "@builders/application"
 import type {
   CreateWorkOrderUseCaseInput,
+  SyncTemplateToWorkOrderInput,
   UpdateWorkOrderUseCaseInput,
 } from "@builders/application"
 import type {
@@ -278,5 +279,17 @@ export function validateFinalizeWorkOrderCutLogInput(
 ): ValidatedFinalizeWorkOrderCutLogInput {
   return {
     cutLogId: requireString(body.cutLogId, "cutLogId", failCutLog),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sync template → new work order
+// ---------------------------------------------------------------------------
+
+export function validateSyncTemplateToWorkOrderInput(
+  body: Record<string, unknown>,
+): SyncTemplateToWorkOrderInput {
+  return {
+    templateId: requireString(body.templateId, "templateId", failWorkOrder),
   }
 }

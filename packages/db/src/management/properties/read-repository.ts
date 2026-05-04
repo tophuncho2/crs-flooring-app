@@ -139,3 +139,33 @@ export async function listPropertiesForListView(
     rows: rows.map(normalizePropertyListRow),
   }
 }
+
+export type PropertyOptionsSearchArgs = {
+  search?: string
+  managementCompanyId?: string
+  take: number
+}
+
+export async function searchPropertyOptions(
+  args: PropertyOptionsSearchArgs,
+  client: PropertiesDbClient = db,
+): Promise<PropertyOption[]> {
+  const clauses: Prisma.PropertyWhereInput[] = []
+  if (args.search) {
+    clauses.push({ name: { contains: args.search, mode: "insensitive" } })
+  }
+  if (args.managementCompanyId) {
+    clauses.push({ managementCompanyId: args.managementCompanyId })
+  }
+  const where: Prisma.PropertyWhereInput | undefined =
+    clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }
+
+  const properties = await client.property.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
+    select: propertyOptionSelect,
+  })
+
+  return properties.map(normalizePropertyOption)
+}

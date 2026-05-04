@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { TemplateExecutionError, TemplateMaterialItemExecutionError } from "@builders/application"
 import type {
   CreateTemplateUseCaseInput,
@@ -121,4 +122,44 @@ export function validateTemplateMaterialItemsDiffInput(
   })
 
   return { added, modified, deleted }
+}
+
+// --- Options query validator ---
+
+const templateOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  propertyId: z.string().min(1, "propertyId is required"),
+  take: z.coerce.number().int().min(1).max(50).default(20),
+})
+
+export type ValidatedTemplateOptionsQuery = {
+  search?: string
+  propertyId: string
+  take: number
+}
+
+export function validateTemplateOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedTemplateOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = templateOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failTemplate(
+      issue?.message ?? "Invalid template options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.search?.trim()
+  return {
+    search: trimmedSearch ? trimmedSearch : undefined,
+    propertyId: parsed.propertyId.trim(),
+    take: parsed.take,
+  }
 }
