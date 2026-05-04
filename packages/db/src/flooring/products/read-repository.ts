@@ -6,10 +6,6 @@ import {
   type CategoryRecord,
 } from "../categories/read-repository.js"
 import {
-  listManufacturers,
-  type ManufacturerRecord,
-} from "../manufacturers/read-repository.js"
-import {
   productOptionSelect,
   productRowSelect,
   type ProductOptionPayload,
@@ -69,7 +65,6 @@ export type ProductOptionRecord = {
 
 export type ProductFormOptions = {
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
 }
 
 export type ProductDeleteStateResult = {
@@ -217,13 +212,12 @@ export async function getProductDeleteState(
 export async function getProductFormOptions(
   client: ProductsDbClient = db,
 ): Promise<ProductFormOptions> {
-  // Pass-through of the canonical category and manufacturer records.
-  // UI consumers / application use cases reshape for specific dropdowns.
-  const [categoryOptions, manufacturerOptions] = await Promise.all([
-    listCategories(client),
-    listManufacturers(client),
-  ])
-  return { categoryOptions, manufacturerOptions }
+  // Pass-through of the canonical category records. Manufacturer selection has
+  // moved to the async `ManufacturerPicker` (server-side search via
+  // `/api/manufacturers/options`); category is still a flat <select> on the
+  // products record view, so it stays here.
+  const categoryOptions = await listCategories(client)
+  return { categoryOptions }
 }
 
 // --- List-view read ---

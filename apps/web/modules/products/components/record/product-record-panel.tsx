@@ -6,7 +6,7 @@ import {
   RecordPrimarySectionInstance,
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
+import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
 import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
 
@@ -14,12 +14,10 @@ export function ProductRecordPanel({
   page,
   product,
   categoryOptions,
-  manufacturerOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   product: ProductRecord
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
 }) {
   const controller = useProductPrimarySection({
     page,
@@ -56,7 +54,7 @@ export function ProductRecordPanel({
                 product={controller.record}
                 draft={controller.primarySection.localValue}
                 categoryOptions={categoryOptions}
-                manufacturerOptions={manufacturerOptions}
+                manufacturerName={controller.record.manufacturerName || null}
                 disabled={controller.primarySection.isSaving}
                 categoryReadOnly
                 onFieldChange={(field, value) => {

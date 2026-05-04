@@ -4,7 +4,6 @@ import {
   getProductFormOptions,
   isPrismaNotFoundError,
   type CategoryRecord,
-  type ManufacturerRecord,
   type PrismaDetailPageResult,
   type ProductDetailRecord,
 } from "@builders/db"
@@ -14,7 +13,6 @@ import { withLoaderTiming } from "@/modules/shared/engines/common/application/lo
 
 export type ProductCreatePageData = {
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
 }
 
 export async function getProductCreatePageData(): Promise<ProductCreatePageData> {
@@ -26,7 +24,6 @@ export async function getProductCreatePageData(): Promise<ProductCreatePageData>
 export type ProductDetailPageData = {
   product: ProductDetailRecord
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
 }
 
 export async function getProductDetailPageData(
@@ -46,7 +43,6 @@ export async function getProductDetailPageData(
       data: {
         product,
         categoryOptions: options.categoryOptions,
-        manufacturerOptions: options.manufacturerOptions,
       },
     }
   } catch (error) {

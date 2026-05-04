@@ -20,7 +20,6 @@ export default async function ProductCreatePage({
       <ProductCreateClient
         backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/products")}
         categoryOptions={options.categoryOptions}
-        manufacturerOptions={options.manufacturerOptions}
       />
     )
   } catch (error) {

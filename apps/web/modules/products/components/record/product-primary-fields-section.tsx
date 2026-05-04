@@ -11,7 +11,8 @@ import {
   RecordPrimarySection,
 } from "@/modules/shared/engines/record-view"
 import { categoryRequiresCoveragePerUnit, type ProductCreateForm } from "@builders/domain"
-import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
+import type { CategoryRecord, ProductRecord } from "@builders/db"
+import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 
 function formatUnit(name: string | null | undefined, abbrev: string | null | undefined) {
   if (!name) return "—"
@@ -22,7 +23,7 @@ export function ProductPrimaryFieldsSection({
   product,
   draft,
   categoryOptions,
-  manufacturerOptions,
+  manufacturerName,
   disabled,
   categoryReadOnly = false,
   onFieldChange,
@@ -30,7 +31,13 @@ export function ProductPrimaryFieldsSection({
   product: ProductRecord
   draft: ProductCreateForm
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
+  /**
+   * Pre-resolved label for the saved `manufacturerId`, sourced from
+   * `product.manufacturerName` (joined snapshot). Empty string on create
+   * mode — the picker still works, just renders no trigger label until
+   * the user picks one.
+   */
+  manufacturerName: string | null
   disabled: boolean
   // When true, render the category cell as a static text display sourced from
   // `product.category`. Use on the record view — category is immutable
@@ -132,19 +139,14 @@ export function ProductPrimaryFieldsSection({
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
             <RecordFormField label="Manufacturer">
-              <select
-                value={draft.manufacturerId}
-                onChange={(event) => onFieldChange("manufacturerId", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
+              <ManufacturerPicker
+                value={draft.manufacturerId || null}
+                onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+                selectedLabel={manufacturerName || null}
                 disabled={disabled}
-              >
-                <option value="">Select a manufacturer</option>
-                {manufacturerOptions.map((manufacturer) => (
-                  <option key={manufacturer.id} value={manufacturer.id}>
-                    {manufacturer.companyName}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Manufacturer"
+                ariaLabel="Manufacturer"
+              />
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>

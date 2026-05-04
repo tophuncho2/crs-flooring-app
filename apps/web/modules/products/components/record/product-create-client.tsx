@@ -14,7 +14,7 @@ import {
   validateProductPrimaryForm,
   type ProductCreateForm,
 } from "@builders/domain"
-import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
+import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { createProductRequest } from "@/modules/products/data/mutations"
 import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
 
@@ -55,12 +55,10 @@ function ProductCreatePanel({
   page,
   backHref,
   categoryOptions,
-  manufacturerOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
 }) {
   const controller = useSingleSectionCreateController<ProductCreateForm>({
     page,
@@ -101,7 +99,7 @@ function ProductCreatePanel({
           product={EMPTY_PRODUCT}
           draft={controller.primarySection.localValue}
           categoryOptions={categoryOptions}
-          manufacturerOptions={manufacturerOptions}
+          manufacturerName={null}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -119,11 +117,9 @@ function ProductCreatePanel({
 export function ProductCreateClient({
   backHref,
   categoryOptions,
-  manufacturerOptions,
 }: {
   backHref: string
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
 }) {
   return (
     <RecordCreateClientScaffold
@@ -136,7 +132,6 @@ export function ProductCreateClient({
           page={page}
           backHref={backHref}
           categoryOptions={categoryOptions}
-          manufacturerOptions={manufacturerOptions}
         />
       )}
     </RecordCreateClientScaffold>

@@ -4,18 +4,16 @@ import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import type { CategoryRecord, ManufacturerRecord, ProductRecord } from "@builders/db"
+import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { ProductRecordPanel } from "./product-record-panel"
 
 export function ProductDetailClient({
   initialProduct,
   categoryOptions,
-  manufacturerOptions,
   backHref,
 }: {
   initialProduct: ProductRecord
   categoryOptions: CategoryRecord[]
-  manufacturerOptions: ManufacturerRecord[]
   backHref: string
 }) {
   return (
@@ -30,7 +28,6 @@ export function ProductDetailClient({
           page={page}
           product={initialProduct}
           categoryOptions={categoryOptions}
-          manufacturerOptions={manufacturerOptions}
         />
       )}
     </RecordDetailClientScaffold>
