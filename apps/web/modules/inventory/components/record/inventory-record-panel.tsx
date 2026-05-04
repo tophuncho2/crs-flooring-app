@@ -10,7 +10,6 @@ import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/
 import type {
   InventoryDetail,
   InventoryForm,
-  InventoryLocationOption,
 } from "@builders/domain"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
 import { useInventoryCutLogViewPanel } from "../../controllers/use-inventory-cut-log-view-panel"
@@ -21,16 +20,13 @@ import { InventoryCutLogViewPanel } from "./cut-logs/inventory-cut-log-view-pane
 export function InventoryRecordPanel({
   page,
   inventory,
-  locationOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   inventory: InventoryDetail
-  locationOptions: InventoryLocationOption[]
 }) {
   const controller = useInventoryPrimarySection({
     page,
     inventory,
-    locationOptions,
   })
   const cutLogViewPanel = useInventoryCutLogViewPanel()
 
@@ -92,9 +88,9 @@ export function InventoryRecordPanel({
                 <InventoryPrimaryFieldsSection
                   inventory={controller.record}
                   draft={controller.primarySection.localValue}
-                  locationOptions={controller.availableLocationOptions}
                   warehouseName={controller.record.warehouseName}
-                  selectedLocation={controller.selectedLocation}
+                  locationCode={controller.record.locationCode || null}
+                  locationShortCode={controller.record.locationShortCode || null}
                   disabled={controller.primarySection.isSaving}
                   onFieldChange={(field, value) => {
                     controller.primarySection.setLocalValue((previous: InventoryForm) => ({

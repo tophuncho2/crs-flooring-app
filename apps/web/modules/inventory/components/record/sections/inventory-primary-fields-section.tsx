@@ -1,36 +1,50 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
+import { TextCell, TextareaCell } from "@/components/cells"
+import { LocationPicker } from "@/modules/locations/components/picker/location-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatInventoryImportNumber,
   formatInventoryQuantity,
   type InventoryForm,
-  type InventoryLocationOption,
   type InventoryRow,
+  type LocationOption,
 } from "@builders/domain"
 
 export function InventoryPrimaryFieldsSection({
   inventory,
   draft,
-  locationOptions,
   warehouseName,
-  selectedLocation,
+  locationCode,
+  locationShortCode,
   disabled,
   onFieldChange,
 }: {
   inventory: InventoryRow
   draft: InventoryForm
-  locationOptions: InventoryLocationOption[]
   warehouseName: string | null
-  selectedLocation: InventoryLocationOption | null
+  locationCode: string | null
+  locationShortCode: string | null
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
   const editable = !disabled
-  const locationPlaceholder = draft.warehouseId ? "Select Location" : "Select warehouse first"
+
+  // Live preview override for the "Full Location" cell + picker label.
+  // Initializes from the saved record's joined codes; updates when
+  // LocationPicker emits a new option so the cell tracks the dropdown
+  // selection rather than waiting for save. Cleared whenever the saved
+  // locationId changes (after save / record swap).
+  const [pickedLocation, setPickedLocation] = useState<LocationOption | null>(null)
+  useEffect(() => {
+    setPickedLocation(null)
+  }, [inventory.locationId])
+
+  const displayLocationCode = pickedLocation?.locationCode ?? locationCode
+  const displayLocationShortCode = pickedLocation?.shortCode ?? locationShortCode
 
   return (
     <FieldSection>
@@ -47,7 +61,7 @@ export function InventoryPrimaryFieldsSection({
       </CellAt>
       <CellAt col={7} row={1} colSpan={2}>
         <FormField label="Full Location">
-          <StaticFieldValue>{selectedLocation?.locationCode || "-"}</StaticFieldValue>
+          <StaticFieldValue>{displayLocationCode || "-"}</StaticFieldValue>
         </FormField>
       </CellAt>
 
@@ -69,13 +83,19 @@ export function InventoryPrimaryFieldsSection({
       </CellAt>
       <CellAt col={3} row={2} colSpan={2}>
         <FormField label="Location">
-          <SelectCell
-            editable={editable && Boolean(draft.warehouseId)}
-            value={draft.locationId}
-            onChange={(value) => onFieldChange("locationId", value)}
-            options={locationOptions.map((location) => ({ value: location.id, label: location.shortCode }))}
-            placeholder={locationPlaceholder}
-          />
+          {editable ? (
+            <LocationPicker
+              value={draft.locationId || null}
+              onChange={(id) => onFieldChange("locationId", id ?? "")}
+              onOptionSelected={setPickedLocation}
+              warehouseId={draft.warehouseId || null}
+              selectedLabel={displayLocationShortCode || null}
+              placeholder="Select Location"
+              ariaLabel="Location"
+            />
+          ) : (
+            <StaticFieldValue>{displayLocationShortCode || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={5} row={2} colSpan={2}>

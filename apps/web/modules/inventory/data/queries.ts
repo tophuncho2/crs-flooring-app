@@ -49,23 +49,20 @@ export async function getInventoryById(id: string): Promise<InventoryRecord | nu
   return dbGetInventoryById(id)
 }
 
-// Warehouse options are NOT pre-fetched here. The record view drives the
-// warehouse field via WarehousePicker (server-side search) which calls
-// /api/warehouses/options on demand; the read-only label comes from the
-// joined `warehouseName` on InventoryDetail.
+// Warehouse + location options are NOT pre-fetched here. The record view
+// drives both fields via async pickers (WarehousePicker / LocationPicker)
+// which call /api/{warehouses,locations}/options on demand; read-only
+// labels come from joined fields on InventoryDetail (warehouseName,
+// locationCode, locationShortCode).
 export async function getInventoryDetailPageData(
   id: string,
 ): Promise<
   PrismaDetailPageResult<{
     inventory: InventoryDetailRecord
-    locationOptions: Awaited<ReturnType<typeof listInventoryOptions>>["locations"]
   }>
 > {
   try {
-    const [inventory, options] = await Promise.all([
-      getInventoryDetailById(id),
-      listInventoryOptions(),
-    ])
+    const inventory = await getInventoryDetailById(id)
 
     if (!inventory) {
       return { ok: false, notFound: true }
@@ -73,10 +70,7 @@ export async function getInventoryDetailPageData(
 
     return {
       ok: true,
-      data: {
-        inventory,
-        locationOptions: options.locations,
-      },
+      data: { inventory },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import {
@@ -14,17 +13,14 @@ import {
   validateInventoryForm,
   type InventoryDetail,
   type InventoryForm,
-  type InventoryLocationOption,
 } from "@builders/domain"
 
 export function useInventoryPrimarySection({
   page,
   inventory,
-  locationOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   inventory: InventoryDetail
-  locationOptions: InventoryLocationOption[]
 }) {
   const controller = useSingleSectionRecordController<InventoryDetail, InventoryForm>({
     page,
@@ -36,17 +32,17 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      const selectedLocationLookup = localValue.locationId
-        ? locationOptions.find((location) => location.id === localValue.locationId) ?? null
-        : null
+      // Picker enforces the location-warehouse match by construction
+      // (LocationPicker only shows locations for the picked warehouseId).
+      // Server-side `validateInventoryForm` re-checks on save for the
+      // edge case where the user changed warehouse without re-picking
+      // the location.
       const issues = validateInventoryForm(
         {
           warehouseId: localValue.warehouseId,
           locationId: localValue.locationId || null,
         },
-        selectedLocationLookup
-          ? { id: selectedLocationLookup.id, warehouseId: selectedLocationLookup.warehouseId }
-          : null,
+        null,
       )
       if (issues.length > 0) {
         throw createRecordSectionError({
@@ -80,37 +76,5 @@ export function useInventoryPrimarySection({
     deleteErrorMessage: "Failed to delete inventory",
   })
 
-  const selectedLocation = useMemo(
-    () =>
-      locationOptions.find(
-        (location) => location.id === controller.primarySection.localValue.locationId,
-      ) ?? null,
-    [controller.primarySection.localValue.locationId, locationOptions],
-  )
-
-  const locationScopeId =
-    controller.primarySection.localValue.warehouseId ||
-    controller.record.importWarehouseId ||
-    controller.record.warehouseId ||
-    ""
-  const availableLocationOptions = useMemo(() => {
-    if (!locationScopeId) {
-      return []
-    }
-    return locationOptions.filter((location) => location.warehouseId === locationScopeId)
-  }, [locationOptions, locationScopeId])
-
-  const activeWarehouseName =
-    selectedLocation?.warehouseName ||
-    controller.record.importWarehouseName ||
-    controller.record.warehouseName ||
-    ""
-
-  return {
-    ...controller,
-    availableLocationOptions,
-    activeWarehouseName,
-    selectedLocation,
-    locationScopeId,
-  }
+  return controller
 }

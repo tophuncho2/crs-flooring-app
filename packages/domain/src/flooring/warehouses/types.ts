@@ -19,6 +19,19 @@ export type WarehouseOption = {
   name: string
 }
 
+// Slim option shape consumed by the canonical LocationPicker (server-side
+// search). Locations always belong to a warehouse — picker requires
+// `warehouseId` scope. `shortCode` is the "R{rafter}-L{level}" trigger
+// label / search target; `locationCode` is the full
+// "W{n}-S{n}-R{rafter}-L{level}" displayed in adjacent UI (e.g., the
+// inventory section's "Full Location" cell).
+export type LocationOption = {
+  id: string
+  warehouseId: string
+  shortCode: string
+  locationCode: string
+}
+
 export type SectionRow = {
   id: string
   warehouseId: string

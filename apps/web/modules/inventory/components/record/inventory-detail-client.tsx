@@ -4,19 +4,14 @@ import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import type {
-  InventoryDetail,
-  InventoryLocationOption,
-} from "@builders/domain"
+import type { InventoryDetail } from "@builders/domain"
 import { InventoryRecordPanel } from "./inventory-record-panel"
 
 export function InventoryDetailClient({
   initialRecord,
-  locationOptions,
   backHref,
 }: {
   initialRecord: InventoryDetail
-  locationOptions: InventoryLocationOption[]
   backHref: string
 }) {
   return (
@@ -27,11 +22,7 @@ export function InventoryDetailClient({
       headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <InventoryRecordPanel
-          page={page}
-          inventory={initialRecord}
-          locationOptions={locationOptions}
-        />
+        <InventoryRecordPanel page={page} inventory={initialRecord} />
       )}
     </RecordDetailClientScaffold>
   )

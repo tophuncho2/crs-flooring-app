@@ -1,4 +1,10 @@
 import { db } from "../../client.js"
+import type { Prisma } from "@prisma/client"
+import {
+  formatFullLocationCode,
+  formatLocationRafterLevel,
+  type LocationOption,
+} from "@builders/domain"
 import {
   type LocationRowPayload,
   type SectionRowPayload,
@@ -337,4 +343,78 @@ export async function getLocationDeleteState(
   })
   if (!row) return null
   return { inventoriesCount: row._count.inventories }
+}
+
+// --- Picker / options search ---
+
+/**
+ * Parses a "Rx-Lx"-flavored search query into Prisma rafter/level
+ * filters. Accepted forms:
+ *   "R3-L2" / "3-2" → { rafter: 3, level: 2 }
+ *   "R3"            → { rafter: 3 }
+ *   "L2"            → { level: 2 }
+ *   "3"             → { eitherSide: 3 } (matches rafter OR level)
+ *   ""              → {} (no filter)
+ */
+function parseRafterLevelQuery(query: string): {
+  rafter?: number
+  level?: number
+  eitherSide?: number
+} {
+  const trimmed = query.trim()
+  if (!trimmed) return {}
+  const both = trimmed.match(/^R?(\d+)\s*-\s*L?(\d+)$/i)
+  if (both) return { rafter: Number(both[1]), level: Number(both[2]) }
+  const rafterOnly = trimmed.match(/^R(\d+)$/i)
+  if (rafterOnly) return { rafter: Number(rafterOnly[1]) }
+  const levelOnly = trimmed.match(/^L(\d+)$/i)
+  if (levelOnly) return { level: Number(levelOnly[1]) }
+  const single = trimmed.match(/^(\d+)$/)
+  if (single) return { eitherSide: Number(single[1]) }
+  return {}
+}
+
+export type LocationOptionsSearchArgs = {
+  warehouseId: string
+  search?: string
+  take: number
+}
+
+export async function searchLocationOptions(
+  args: LocationOptionsSearchArgs,
+  client: WarehousesDbClient = db,
+): Promise<LocationOption[]> {
+  const parsed = args.search ? parseRafterLevelQuery(args.search) : {}
+  const where: Prisma.FlooringLocationWhereInput = { warehouseId: args.warehouseId }
+  if (parsed.rafter !== undefined) where.rafter = parsed.rafter
+  if (parsed.level !== undefined) where.level = parsed.level
+  if (parsed.eitherSide !== undefined) {
+    where.OR = [{ rafter: parsed.eitherSide }, { level: parsed.eitherSide }]
+  }
+
+  const rows = await client.flooringLocation.findMany({
+    where,
+    select: {
+      id: true,
+      warehouseId: true,
+      rafter: true,
+      level: true,
+      section: { select: { number: true } },
+      warehouse: { select: { number: true } },
+    },
+    orderBy: [{ rafter: "asc" }, { level: "asc" }],
+    take: args.take,
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    warehouseId: row.warehouseId,
+    shortCode: formatLocationRafterLevel({ rafter: row.rafter, level: row.level }),
+    locationCode: formatFullLocationCode({
+      warehouseNumber: row.warehouse.number,
+      sectionNumber: row.section.number,
+      rafter: row.rafter,
+      level: row.level,
+    }),
+  }))
 }
