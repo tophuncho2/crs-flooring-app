@@ -67,6 +67,19 @@ export const productOptionSelect = {
   sendUnitAbbrev: true,
 } as const
 
+// Select shape for the canonical product picker (server-side search). Joins
+// the category name so the picker can render a category subtitle without an
+// extra fetch, and so consumers hydrating an existing selection can derive
+// the category-filter trigger label from the same record.
+export const productPickerSelect = {
+  id: true,
+  name: true,
+  categoryId: true,
+  sendUnitAbbrev: true,
+  category: { select: { name: true } },
+} as const
+
 export type ProductRowPayload = Prisma.FlooringProductGetPayload<{ select: typeof productRowSelect }>
 export type ProductDetailPayload = ProductRowPayload
 export type ProductOptionPayload = Prisma.FlooringProductGetPayload<{ select: typeof productOptionSelect }>
+export type ProductPickerPayload = Prisma.FlooringProductGetPayload<{ select: typeof productPickerSelect }>

@@ -6,6 +6,7 @@ import {
 } from "@/scaffolds/record-detail-client-scaffold"
 import type {
   CutLogRow,
+  ProductPickerOption,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -17,6 +18,7 @@ export function WorkOrderDetailClient({
   initialMaterialItems,
   initialCutLogsByWorkOrderItemId,
   initialFiles,
+  initialProductPickerOptionsByItemId,
   options,
   backHref,
 }: {
@@ -24,6 +26,7 @@ export function WorkOrderDetailClient({
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   initialFiles: WorkOrderFileRow[]
+  initialProductPickerOptionsByItemId: Record<string, ProductPickerOption>
   options: WorkOrderFormOptionSet
   backHref: string
 }) {
@@ -41,6 +44,7 @@ export function WorkOrderDetailClient({
           initialMaterialItems={initialMaterialItems}
           initialCutLogsByWorkOrderItemId={initialCutLogsByWorkOrderItemId}
           initialFiles={initialFiles}
+          initialProductPickerOptionsByItemId={initialProductPickerOptionsByItemId}
           options={options}
         />
       )}

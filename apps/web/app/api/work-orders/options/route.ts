@@ -1,8 +1,6 @@
 import {
-  listCategories,
   listJobTypeOptions,
   listManagementCompanyOptions,
-  listProductOptions,
   listPropertyOptions,
   listTemplateOptions,
   listWarehouseOptions,
@@ -20,10 +18,10 @@ import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-pol
  *  - jobTypes (optional; surfaces as a select)
  *  - managementCompanies (optional; surfaces as a select)
  *  - templates (optional; populates the "sync from template" picker)
- *  - products (powers the material-items product picker, filtered
- *    client-side by the chosen category)
- *  - categories (populates the category-filter dropdown that narrows
- *    the product picker)
+ *
+ * Material-item product + category pickers fetch from `/api/products/options`
+ * and `/api/categories/options` directly via the canonical async-rich-dropdown
+ * controller. Those are not aggregated here.
  */
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -36,22 +34,12 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const [
-      properties,
-      warehouses,
-      jobTypes,
-      managementCompanies,
-      templates,
-      products,
-      categories,
-    ] = await Promise.all([
+    const [properties, warehouses, jobTypes, managementCompanies, templates] = await Promise.all([
       listPropertyOptions(),
       listWarehouseOptions(),
       listJobTypeOptions(),
       listManagementCompanyOptions(),
       listTemplateOptions(),
-      listProductOptions(),
-      listCategories(),
     ])
     return routeJson(access, {
       properties,
@@ -59,8 +47,6 @@ export async function GET(request: Request) {
       jobTypes,
       managementCompanies,
       templates,
-      products,
-      categories,
     })
   } catch (error) {
     return routeError(access, error)

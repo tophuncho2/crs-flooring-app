@@ -12,27 +12,25 @@ import { ImportImportedRowsSection } from "./imported-rows/import-imported-rows-
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
 import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
-import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
-import type { CategoryOption, LocationOption, ManufacturerOption, ProductOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
+import type { ImportDetail, ProductPickerOption, StagedInventoryRow } from "@builders/domain"
+import type { LocationOption, ManufacturerOption, WarehouseOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,
   entry,
   initialStagedRows,
-  productOptions,
+  initialProductPickerOptionsByItemId,
   warehouseOptions,
   manufacturerOptions,
   locationOptions,
-  categoryOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ImportDetail
   initialStagedRows: StagedInventoryRow[]
-  productOptions: ProductOption[]
+  initialProductPickerOptionsByItemId: Record<string, ProductPickerOption>
   warehouseOptions: WarehouseOption[]
   manufacturerOptions: ManufacturerOption[]
   locationOptions: LocationOption[]
-  categoryOptions: CategoryOption[]
 }) {
   const controller = useImportPrimarySection({
     page,
@@ -65,6 +63,7 @@ export function ImportRecordPanel({
     record: controller.record,
     stagedRows: pendingRows,
     locationOptions,
+    productPickerOptionsByItemId: initialProductPickerOptionsByItemId,
     publishRecord: controller.publishRecord,
     publishStagedRows: setStagedRows,
     publishMarkedForImport: handleMarkedForImport,
@@ -125,10 +124,9 @@ export function ImportRecordPanel({
               drafts={stagedRowsSection.localValue}
               serverRows={pendingRows}
               warehouseId={controller.record.warehouseId}
-              productOptions={productOptions}
               warehouseOptions={warehouseOptions}
               locationOptions={locationOptions}
-              categoryOptions={categoryOptions}
+              selectedProductOptionByRowId={stagedRowsSection.selectedProductOptionByRowId}
               isDirty={stagedRowsSection.isDirty}
               isSaving={stagedRowsSection.isSaving}
               hasConflict={stagedRowsSection.hasConflict}
@@ -145,8 +143,10 @@ export function ImportRecordPanel({
               onSave={() => void stagedRowsSection.save()}
               onDiscard={() => stagedRowsSection.discard()}
               onAddRow={stagedRowsSection.addRow}
+              onDuplicateRow={stagedRowsSection.duplicateRow}
               onRowFieldChange={stagedRowsSection.setRowField}
               onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
+              onRowProductSelect={stagedRowsSection.setSelectedProductOption}
               onRemoveRow={stagedRowsSection.removeRow}
               onToggleSelection={stagedRowsSection.toggleSelection}
               onToggleAllEligible={stagedRowsSection.toggleAllEligible}

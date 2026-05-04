@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
@@ -8,8 +8,10 @@ import {
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
 import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
+import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ImportDetail,
+  ProductPickerOption,
   StagedInventoryRow,
   StagedInventoryRowDraft,
   StagedInventoryRowDelete,
@@ -128,6 +130,7 @@ export function useImportStagedInventoryRowsSection({
   record,
   stagedRows,
   locationOptions,
+  productPickerOptionsByItemId,
   publishRecord,
   publishStagedRows,
   publishMarkedForImport,
@@ -135,6 +138,7 @@ export function useImportStagedInventoryRowsSection({
   record: ImportDetail
   stagedRows: StagedInventoryRow[]
   locationOptions: LocationOption[]
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
   publishRecord: (record: ImportDetail) => void
   publishStagedRows: (rows: StagedInventoryRow[]) => void
   /**
@@ -146,6 +150,31 @@ export function useImportStagedInventoryRowsSection({
   publishMarkedForImport: (markedIds: string[]) => void
 }) {
   const { updateStagedInventoryRows, markStagedRowsForImport } = useImportsListMutations()
+
+  // Session-scoped record of the picker option currently shown for each row,
+  // seeded from the SSR-hydrated map and keyed by clientId. Updated whenever
+  // ProductPicker fires onSelectOption. Used for: parent-category trigger
+  // label, starting-stock unit suffix, and category derivation when
+  // categoryFilterId is null.
+  const [selectedProductOptionByRowId, setSelectedProductOptionByRowId] = useState<
+    Record<string, ProductPickerOption>
+  >(() => ({ ...productPickerOptionsByItemId }))
+
+  const setSelectedProductOption = useCallback(
+    (rowId: string, option: ProductPickerOption | null) => {
+      setSelectedProductOptionByRowId((previous) => {
+        if (option === null) {
+          if (!(rowId in previous)) return previous
+          const next = { ...previous }
+          delete next[rowId]
+          return next
+        }
+        if (previous[rowId]?.id === option.id) return previous
+        return { ...previous, [rowId]: option }
+      })
+    },
+    [],
+  )
 
   const section = useRecordScopedSectionController<StagedInventoryRow[], ImportStagedRowDraft[]>({
     recordId: record.id,
@@ -208,7 +237,73 @@ export function useImportStagedInventoryRowsSection({
   }
 
   function removeRow(index: number) {
-    section.setLocalValue((previous) => previous.filter((_, rowIndex) => rowIndex !== index))
+    let removedClientId: string | null = null
+    section.setLocalValue((previous) => {
+      removedClientId = previous[index]?.clientId ?? null
+      return previous.filter((_, rowIndex) => rowIndex !== index)
+    })
+    if (removedClientId) {
+      const id = removedClientId
+      setSelectedProductOptionByRowId((previous) => {
+        if (!(id in previous)) return previous
+        const next = { ...previous }
+        delete next[id]
+        return next
+      })
+    }
+    if (section.error) {
+      section.setError(null)
+    }
+  }
+
+  function duplicateRow(index: number) {
+    const newClientId = createLocalRecordRowId("import-staged-row")
+    let copiedFromId: string | null = null
+    section.setLocalValue((previous) => {
+      const source = previous[index]
+      if (!source) return previous
+      copiedFromId = source.clientId
+      // Copy productId + categoryFilterId so the new row's product picker is
+      // pre-filtered to the same category. itemNumber, startingStock,
+      // location, dyeLot, and notes start blank — the user must confirm the
+      // per-row values for the new line.
+      const duplicated: ImportStagedRowDraft = {
+        clientId: newClientId,
+        ...buildDuplicatedRow(
+          {
+            productId: source.productId,
+            itemNumber: source.itemNumber,
+            startingStock: source.startingStock,
+            locationId: source.locationId,
+            dyeLot: source.dyeLot,
+            notes: source.notes,
+            categoryFilterId: source.categoryFilterId,
+          },
+          {
+            copy: ["productId", "categoryFilterId"],
+            defaults: {
+              productId: "",
+              itemNumber: "",
+              startingStock: "",
+              locationId: "",
+              dyeLot: "",
+              notes: "",
+              categoryFilterId: null,
+            },
+          },
+        ),
+      }
+      const next = [...previous]
+      next.splice(index + 1, 0, duplicated)
+      return next
+    })
+    if (copiedFromId) {
+      setSelectedProductOptionByRowId((previous) => {
+        const sourceOption = previous[copiedFromId as string]
+        if (!sourceOption) return previous
+        return { ...previous, [newClientId]: sourceOption }
+      })
+    }
     if (section.error) {
       section.setError(null)
     }
@@ -232,17 +327,31 @@ export function useImportStagedInventoryRowsSection({
 
   /**
    * Set the row's category filter. Client-only state; does NOT flow into the
-   * save payload. Used to narrow the product dropdown. Passing `null` clears
-   * the filter. Does NOT auto-clear the row's productId — the saved product
-   * is preserved across filter changes (section UI re-includes it in the
-   * product option list even when it doesn't match the filter).
+   * save payload. Used to narrow the product picker's server-side query.
+   * Changing the category clears the picked product — the previously-picked
+   * product may not exist in the new category's option set, and the async
+   * picker won't surface it for re-selection until the user broadens the
+   * filter again.
    */
   function setRowCategoryFilter(index: number, categoryId: string | null) {
+    let clearedClientId: string | null = null
     section.setLocalValue((previous) =>
-      previous.map((row, rowIndex) =>
-        rowIndex === index ? { ...row, categoryFilterId: categoryId } : row,
-      ),
+      previous.map((row, rowIndex) => {
+        if (rowIndex !== index) return row
+        if (row.categoryFilterId === categoryId) return row
+        clearedClientId = row.clientId
+        return { ...row, categoryFilterId: categoryId, productId: "" }
+      }),
     )
+    if (clearedClientId) {
+      const id = clearedClientId
+      setSelectedProductOptionByRowId((previous) => {
+        if (!(id in previous)) return previous
+        const next = { ...previous }
+        delete next[id]
+        return next
+      })
+    }
     if (section.error) {
       section.setError(null)
     }
@@ -289,9 +398,12 @@ export function useImportStagedInventoryRowsSection({
     ...section,
     addRow,
     removeRow,
+    duplicateRow,
     setRowField,
     setRowCategoryFilter,
     handleWarehouseChange,
+    selectedProductOptionByRowId,
+    setSelectedProductOption,
     selectedIds: markForImport.selectedIds,
     toggleSelection: markForImport.toggleSelected,
     clearSelection: markForImport.clearSelection,

@@ -5,20 +5,24 @@ import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import {
   CheckboxCell,
-  CurrencyCell,
-  DropdownCell,
+  RowActionButton,
   SelectCell,
   TextCell,
   UnitCell,
 } from "@/components/cells"
+import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { SelectAllButton } from "@/components/features/select-batch"
-import type { FlooringStagedRowStatus, StagedInventoryRow } from "@builders/domain"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type {
-  CategoryOption,
+  FlooringStagedRowStatus,
+  ProductPickerOption,
+  StagedInventoryRow,
+} from "@builders/domain"
+import type {
   ImportStagedRowDraft,
   LocationOption,
-  ProductOption,
   WarehouseOption,
 } from "@/modules/imports/controllers/drafts"
 
@@ -37,7 +41,7 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
   ],
   trailingControls: [
     { key: "status", kind: "status-indicator", width: 132 },
-    { key: "remove", kind: "actions", width: 100 },
+    { key: "remove", kind: "actions", width: 116 },
   ],
 }
 
@@ -53,10 +57,9 @@ export function ImportStagedInventoryRowsSection({
   drafts,
   serverRows,
   warehouseId,
-  productOptions,
   warehouseOptions: _warehouseOptions,
   locationOptions,
-  categoryOptions,
+  selectedProductOptionByRowId,
   isDirty,
   isSaving,
   hasConflict,
@@ -73,8 +76,10 @@ export function ImportStagedInventoryRowsSection({
   onSave,
   onDiscard,
   onAddRow,
+  onDuplicateRow,
   onRowFieldChange,
   onRowCategoryFilterChange,
+  onRowProductSelect,
   onRemoveRow,
   onToggleSelection,
   onToggleAllEligible,
@@ -83,10 +88,9 @@ export function ImportStagedInventoryRowsSection({
   drafts: ImportStagedRowDraft[]
   serverRows: StagedInventoryRow[]
   warehouseId: string
-  productOptions: ProductOption[]
   warehouseOptions: WarehouseOption[]
   locationOptions: LocationOption[]
-  categoryOptions: CategoryOption[]
+  selectedProductOptionByRowId: Record<string, ProductPickerOption>
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -103,12 +107,14 @@ export function ImportStagedInventoryRowsSection({
   onSave: () => void
   onDiscard: () => void
   onAddRow: () => void
+  onDuplicateRow: (index: number) => void
   onRowFieldChange: (
     index: number,
     field: Exclude<keyof Omit<ImportStagedRowDraft, "clientId">, "categoryFilterId">,
     value: string,
   ) => void
   onRowCategoryFilterChange: (index: number, categoryId: string | null) => void
+  onRowProductSelect: (clientId: string, option: ProductPickerOption | null) => void
   onRemoveRow: (index: number) => void
   onToggleSelection: (id: string) => void
   onToggleAllEligible: () => void
@@ -121,10 +127,6 @@ export function ImportStagedInventoryRowsSection({
   const locationCellOptions = filteredLocations.map((location) => ({
     value: location.id,
     label: location.label,
-  }))
-  const categoryCellOptions = categoryOptions.map((category) => ({
-    id: category.id,
-    label: category.label,
   }))
 
   const gridRows: GridDraftRow[] = drafts.map((row) => ({ ...row, id: row.clientId }))
@@ -210,36 +212,33 @@ export function ImportStagedInventoryRowsSection({
           // edited mid-prep.
           const editable = !locked && !isSelectionActive
           const index = findIndex(row.clientId)
-          const selectedProduct = productOptions.find((product) => product.id === row.productId)
-          const visibleProducts = row.categoryFilterId
-            ? productOptions.filter(
-                (product) =>
-                  product.categoryId === row.categoryFilterId || product.id === row.productId,
-              )
-            : productOptions
+          const selectedProduct = selectedProductOptionByRowId[row.clientId] ?? null
+          const productCategoryId = selectedProduct?.categoryId ?? null
+          const effectiveCategoryId = row.categoryFilterId ?? productCategoryId
 
           switch (column.key) {
             case "categoryFilter":
               return (
-                <DropdownCell
-                  editable={editable}
-                  value={row.categoryFilterId}
+                <CategoryPicker
+                  value={effectiveCategoryId}
                   onChange={(next) => onRowCategoryFilterChange(index, next)}
-                  options={categoryCellOptions}
-                  allowClear
-                  placeholder="All categories"
+                  selectedLabel={selectedProduct?.categoryName ?? null}
+                  placeholder="Filter by category"
                   ariaLabel={`Row ${index + 1} category filter`}
+                  disabled={!editable}
                 />
               )
             case "product":
               return (
-                <DropdownCell
-                  editable={editable}
+                <ProductPicker
                   value={row.productId || null}
                   onChange={(next) => onRowFieldChange(index, "productId", next ?? "")}
-                  options={visibleProducts.map((product) => ({ id: product.id, label: product.label }))}
+                  onSelectOption={(option) => onRowProductSelect(row.clientId, option)}
+                  categoryId={effectiveCategoryId}
+                  selectedOption={selectedProduct}
                   placeholder="Select product"
                   ariaLabel={`Row ${index + 1} product`}
+                  disabled={!editable}
                 />
               )
             case "itemNumber":
@@ -257,7 +256,7 @@ export function ImportStagedInventoryRowsSection({
                   editable={editable}
                   value={row.startingStock}
                   onChange={(value) => onRowFieldChange(index, "startingStock", value)}
-                  unit={selectedProduct?.stockUnit ?? "unit"}
+                  unit={selectedProduct?.sendUnitAbbrev || "unit"}
                   ariaLabel={`Row ${index + 1} starting stock`}
                 />
               )
@@ -300,6 +299,7 @@ export function ImportStagedInventoryRowsSection({
           const serverStatus = serverRow?.status ?? null
           const isServerRow = Boolean(serverRow)
           const index = findIndex(row.clientId)
+          const editable = !locked && !isSelectionActive
 
           if (control.kind === "selection") {
             // Gate per-row checkbox on `canToggleSelection` so users can't
@@ -321,15 +321,22 @@ export function ImportStagedInventoryRowsSection({
           }
           if (control.kind === "actions") {
             return (
-              <button
-                type="button"
-                onClick={() => onRemoveRow(index)}
-                disabled={locked}
-                aria-label={`Remove row ${index + 1}`}
-                className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-700 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-1">
+                <DuplicateRowButton
+                  ariaLabel={`Duplicate row ${index + 1}`}
+                  title={editable ? "Duplicate this row" : "Locked while section is busy"}
+                  editable={editable}
+                  onClick={() => onDuplicateRow(index)}
+                />
+                <RowActionButton
+                  label="✕"
+                  ariaLabel={`Remove row ${index + 1}`}
+                  tone="destructive"
+                  title={editable ? "Remove this row" : "Locked while section is busy"}
+                  editable={editable}
+                  onClick={() => onRemoveRow(index)}
+                />
+              </div>
             )
           }
           return null

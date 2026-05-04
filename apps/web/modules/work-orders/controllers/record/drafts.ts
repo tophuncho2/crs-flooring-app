@@ -21,14 +21,6 @@ export type WarehouseOption = { id: string; name: string }
 export type JobTypeOption = { id: string; name: string }
 export type ManagementCompanyOption = { id: string; name: string }
 export type TemplateOption = { id: string; templateNumber: string; unitType: string }
-export type ProductOption = {
-  id: string
-  label: string
-  categoryId: string
-  sendUnitAbbrev: string
-  stockUnitAbbrev: string
-}
-export type CategoryOption = { id: string; label: string }
 
 /**
  * Local draft for a material-item row in the section's diff state.

@@ -1,5 +1,6 @@
 import {
   createPrismaPageLoadIssue,
+  getProductPickerOptionsByIds,
   isPrismaNotFoundError,
   listImportOptions,
   listInventory,
@@ -11,11 +12,10 @@ import {
   type PrismaDetailPageResult,
   type StagedInventoryRecord,
 } from "@builders/db"
-import { buildFlooringProductDisplayName, type ImportFormOptions } from "@builders/domain"
+import type { ImportFormOptions, ProductPickerOption } from "@builders/domain"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 
 export type ImportFormOptionSet = {
-  productOptions: Array<{ id: string; label: string; stockUnit: string; categoryId: string }>
   warehouseOptions: Array<{ id: string; name: string }>
   locationOptions: Array<{
     id: string
@@ -24,7 +24,6 @@ export type ImportFormOptionSet = {
     shortCode: string
     label: string
   }>
-  categoryOptions: Array<{ id: string; label: string }>
   manufacturerOptions: Array<{ id: string; label: string }>
 }
 
@@ -32,12 +31,6 @@ export async function getImportFormOptions(): Promise<ImportFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.imports.options" }, async () => {
     const options: ImportFormOptions = await listImportOptions()
     return {
-      productOptions: options.products.map((product) => ({
-        id: product.id,
-        label: buildFlooringProductDisplayName(product),
-        stockUnit: product.stockUnit,
-        categoryId: product.categoryId,
-      })),
       warehouseOptions: options.warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
       locationOptions: options.locations.map((location) => ({
         id: location.id,
@@ -46,7 +39,6 @@ export async function getImportFormOptions(): Promise<ImportFormOptionSet> {
         shortCode: location.shortCode,
         label: location.shortCode,
       })),
-      categoryOptions: options.categories.map((category) => ({ id: category.id, label: category.name })),
       manufacturerOptions: options.manufacturers.map((manufacturer) => ({
         id: manufacturer.id,
         label: manufacturer.companyName,
@@ -55,14 +47,30 @@ export async function getImportFormOptions(): Promise<ImportFormOptionSet> {
   })
 }
 
+async function getStagedRowPickerOptions(
+  rows: ReadonlyArray<StagedInventoryRecord>,
+): Promise<Record<string, ProductPickerOption>> {
+  const productIds = rows
+    .map((row) => row.productId)
+    .filter((id): id is string => typeof id === "string" && id.length > 0)
+  if (productIds.length === 0) return {}
+  const options = await getProductPickerOptionsByIds(productIds)
+  const optionById = new Map(options.map((option) => [option.id, option]))
+  const result: Record<string, ProductPickerOption> = {}
+  for (const row of rows) {
+    const option = optionById.get(row.productId)
+    if (option) result[row.id] = option
+  }
+  return result
+}
+
 export type ImportDetailPageData = {
   entry: ImportDetailRecord
   stagedRows: StagedInventoryRecord[]
   liveRows: InventoryRecord[]
-  productOptions: ImportFormOptionSet["productOptions"]
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
   warehouseOptions: ImportFormOptionSet["warehouseOptions"]
   locationOptions: ImportFormOptionSet["locationOptions"]
-  categoryOptions: ImportFormOptionSet["categoryOptions"]
   manufacturerOptions: ImportFormOptionSet["manufacturerOptions"]
 }
 
@@ -81,16 +89,17 @@ export async function getImportDetailPageData(
       return { ok: false, notFound: true }
     }
 
+    const productPickerOptionsByItemId = await getStagedRowPickerOptions(stagedRows)
+
     return {
       ok: true,
       data: {
         entry,
         stagedRows,
         liveRows,
-        productOptions: options.productOptions,
+        productPickerOptionsByItemId,
         warehouseOptions: options.warehouseOptions,
         locationOptions: options.locationOptions,
-        categoryOptions: options.categoryOptions,
         manufacturerOptions: options.manufacturerOptions,
       },
     }

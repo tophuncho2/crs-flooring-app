@@ -1,12 +1,15 @@
 "use client"
 
+import { useCallback, useState } from "react"
 import {
   createLocalRecordRowId,
   createRecordSectionError,
   isLocalOnlyRecordRow,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
+import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
+  ProductPickerOption,
   TemplateDetail,
   TemplateMaterialItemForm,
   TemplateMaterialItemRow,
@@ -103,11 +106,37 @@ function buildDiff(
 
 export function useTemplateMaterialItemsSection({
   template,
+  productPickerOptionsByItemId,
   publishTemplate,
 }: {
   template: TemplateDetail
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
   publishTemplate: (record: TemplateDetail) => void
 }) {
+  // Session-scoped record of the picker option currently shown for each row,
+  // seeded from the SSR-hydrated map. Updated whenever ProductPicker fires
+  // onSelectOption. Used for: parent-category trigger label, quantity unit
+  // suffix, and category derivation when categoryFilterId is null.
+  const [selectedProductOptionByRowId, setSelectedProductOptionByRowId] = useState<
+    Record<string, ProductPickerOption>
+  >(() => ({ ...productPickerOptionsByItemId }))
+
+  const setSelectedProductOption = useCallback(
+    (rowId: string, option: ProductPickerOption | null) => {
+      setSelectedProductOptionByRowId((previous) => {
+        if (option === null) {
+          if (!(rowId in previous)) return previous
+          const next = { ...previous }
+          delete next[rowId]
+          return next
+        }
+        if (previous[rowId]?.id === option.id) return previous
+        return { ...previous, [rowId]: option }
+      })
+    },
+    [],
+  )
+
   const section = useRecordScopedSectionController<TemplateDetail, TemplateMaterialItemsLocalState>({
     recordId: template.id,
     sectionKey: "material-items",
@@ -168,6 +197,47 @@ export function useTemplateMaterialItemsSection({
     section.setLocalValue((previous) => ({
       items: previous.items.filter((row) => row.id !== itemId),
     }))
+    setSelectedProductOptionByRowId((previous) => {
+      if (!(itemId in previous)) return previous
+      const next = { ...previous }
+      delete next[itemId]
+      return next
+    })
+    section.setError(null)
+  }
+
+  function duplicateItem(sourceItemId: string) {
+    const newRowId = createLocalRecordRowId("template-material-item")
+    section.setLocalValue((previous) => {
+      const source = previous.items.find((row) => row.id === sourceItemId)
+      if (!source) return previous
+      const duplicated: TemplateMaterialItemLocal = {
+        id: newRowId,
+        ...buildDuplicatedRow(
+          {
+            productId: source.productId,
+            quantity: source.quantity,
+            notes: source.notes,
+            categoryFilterId: source.categoryFilterId,
+          },
+          {
+            copy: ["productId", "categoryFilterId"],
+            defaults: {
+              productId: "",
+              quantity: "",
+              notes: "",
+              categoryFilterId: null,
+            },
+          },
+        ),
+      }
+      return { items: [...previous.items, duplicated] }
+    })
+    setSelectedProductOptionByRowId((previous) => {
+      const sourceOption = previous[sourceItemId]
+      if (!sourceOption) return previous
+      return { ...previous, [newRowId]: sourceOption }
+    })
     section.setError(null)
   }
 
@@ -185,23 +255,34 @@ export function useTemplateMaterialItemsSection({
   }
 
   // Client-only ergonomic — does NOT mark the section dirty (excluded from
-  // the diff in `toDiffForm` / `itemsDiffer`). Mirrors imports staged-rows
-  // `setRowCategoryFilter`. Intentionally does not clear `productId`; the
-  // section's product picker preserves the current selection across filter
-  // changes so the user's pick survives.
+  // the diff in `toDiffForm` / `itemsDiffer`). Changing category clears the
+  // picked product because the async picker only fetches products in the
+  // chosen category; the previously-picked product would no longer be
+  // selectable from the dropdown.
   function changeCategoryFilter(itemId: string, categoryId: string | null) {
     section.setLocalValue((previous) => ({
-      items: previous.items.map((row) =>
-        row.id === itemId ? { ...row, categoryFilterId: categoryId } : row,
-      ),
+      items: previous.items.map((row) => {
+        if (row.id !== itemId) return row
+        if (row.categoryFilterId === categoryId) return row
+        return { ...row, categoryFilterId: categoryId, productId: "" }
+      }),
     }))
+    setSelectedProductOptionByRowId((previous) => {
+      if (!(itemId in previous)) return previous
+      const next = { ...previous }
+      delete next[itemId]
+      return next
+    })
   }
 
   return {
     ...section,
     items: section.localValue.items,
+    selectedProductOptionByRowId,
+    setSelectedProductOption,
     addItem,
     removeItem,
+    duplicateItem,
     changeField,
     changeCategoryFilter,
   }

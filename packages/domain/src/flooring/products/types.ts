@@ -88,3 +88,16 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     notes: row.notes,
   }
 }
+
+// Slim option shape consumed by the canonical ProductPicker (server-side
+// search). `categoryId` + `categoryName` let material-item rows derive the
+// parent category-filter state when hydrating saved selections; `sendUnitAbbrev`
+// is included so consumers can render the unit suffix beside a quantity input
+// without an additional fetch.
+export type ProductPickerOption = {
+  id: string
+  name: string
+  categoryId: string
+  categoryName: string
+  sendUnitAbbrev: string
+}

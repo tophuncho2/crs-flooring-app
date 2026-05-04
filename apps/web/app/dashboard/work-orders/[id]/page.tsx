@@ -41,6 +41,7 @@ export default async function WorkOrderDetailPage({
       initialMaterialItems={result.data.materialItems}
       initialCutLogsByWorkOrderItemId={result.data.cutLogsByWorkOrderItemId}
       initialFiles={result.data.files}
+      initialProductPickerOptionsByItemId={result.data.productPickerOptionsByItemId}
       options={result.data.options}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/work-orders")}
     />

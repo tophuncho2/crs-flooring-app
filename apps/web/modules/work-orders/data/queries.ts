@@ -1,12 +1,11 @@
 import {
   createPrismaPageLoadIssue,
+  getProductPickerOptionsByIds,
   getWorkOrderDetailById,
   isPrismaNotFoundError,
-  listCategories,
   listCutLogsForWorkOrderItemIds,
   listJobTypeOptions,
   listManagementCompanyOptions,
-  listProductOptions,
   listPropertyOptions,
   listTemplateOptions,
   listWarehouseOptions,
@@ -17,6 +16,7 @@ import {
 } from "@builders/db"
 import type {
   CutLogRow,
+  ProductPickerOption,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -41,34 +41,16 @@ export type WorkOrderFormOptionSet = {
   jobTypeOptions: Array<{ id: string; name: string }>
   managementCompanyOptions: Array<{ id: string; name: string }>
   templateOptions: Array<{ id: string; templateNumber: string; unitType: string }>
-  productOptions: Array<{
-    id: string
-    label: string
-    categoryId: string
-    sendUnitAbbrev: string
-    stockUnitAbbrev: string
-  }>
-  categoryOptions: Array<{ id: string; label: string }>
 }
 
 export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet> {
   return withLoaderTiming({ loader: "flooring.work-orders.options" }, async () => {
-    const [
-      properties,
-      warehouses,
-      jobTypes,
-      managementCompanies,
-      templates,
-      products,
-      categories,
-    ] = await Promise.all([
+    const [properties, warehouses, jobTypes, managementCompanies, templates] = await Promise.all([
       listPropertyOptions(),
       listWarehouseOptions(),
       listJobTypeOptions(),
       listManagementCompanyOptions(),
       listTemplateOptions(),
-      listProductOptions(),
-      listCategories(),
     ])
     return {
       propertyOptions: properties.map((p) => ({
@@ -88,16 +70,25 @@ export async function getWorkOrderFormOptions(): Promise<WorkOrderFormOptionSet>
         templateNumber: t.templateNumber,
         unitType: t.unitType,
       })),
-      productOptions: products.map((p) => ({
-        id: p.id,
-        label: p.name,
-        categoryId: p.categoryId ?? "",
-        sendUnitAbbrev: p.sendUnitAbbrev ?? "",
-        stockUnitAbbrev: "",
-      })),
-      categoryOptions: categories.map((c) => ({ id: c.id, label: c.name })),
     }
   })
+}
+
+async function getMaterialItemPickerOptions(
+  materialItems: ReadonlyArray<WorkOrderMaterialItemRow>,
+): Promise<Record<string, ProductPickerOption>> {
+  const productIds = materialItems
+    .map((row) => row.productId)
+    .filter((id): id is string => typeof id === "string" && id.length > 0)
+  if (productIds.length === 0) return {}
+  const options = await getProductPickerOptionsByIds(productIds)
+  const optionById = new Map(options.map((option) => [option.id, option]))
+  const result: Record<string, ProductPickerOption> = {}
+  for (const row of materialItems) {
+    const option = optionById.get(row.productId)
+    if (option) result[row.id] = option
+  }
+  return result
 }
 
 export type WorkOrderDetailPageData = {
@@ -106,6 +97,7 @@ export type WorkOrderDetailPageData = {
   cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   files: WorkOrderFileRow[]
   options: WorkOrderFormOptionSet
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
 }
 
 export async function getWorkOrderDetailPageData(
@@ -123,7 +115,10 @@ export async function getWorkOrderDetailPageData(
       return { ok: false, notFound: true }
     }
 
-    const cutLogRows = await listCutLogsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
+    const [cutLogRows, productPickerOptionsByItemId] = await Promise.all([
+      listCutLogsForWorkOrderItemIds(materialItems.map((mi) => mi.id)),
+      getMaterialItemPickerOptions(materialItems),
+    ])
     const cutLogsByWorkOrderItemId: Record<string, CutLogRow[]> = {}
     for (const mi of materialItems) cutLogsByWorkOrderItemId[mi.id] = []
     for (const row of cutLogRows) {
@@ -135,7 +130,14 @@ export async function getWorkOrderDetailPageData(
 
     return {
       ok: true,
-      data: { workOrder, materialItems, cutLogsByWorkOrderItemId, files, options },
+      data: {
+        workOrder,
+        materialItems,
+        cutLogsByWorkOrderItemId,
+        files,
+        options,
+        productPickerOptionsByItemId,
+      },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

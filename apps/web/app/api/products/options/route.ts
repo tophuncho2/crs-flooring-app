@@ -1,7 +1,8 @@
-import { getProductFormOptions } from "@builders/db"
+import { searchProductOptionsUseCase } from "@builders/application"
 import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
+import { validateProductOptionsQuery } from "../_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -14,7 +15,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, await getProductFormOptions())
+    const url = new URL(request.url)
+    const input = validateProductOptionsQuery(url.searchParams)
+    const options = await searchProductOptionsUseCase(input)
+    return routeJson(access, { options })
   } catch (error) {
     return routeError(access, error)
   }

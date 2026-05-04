@@ -1,5 +1,6 @@
 "use client"
 
+import { useCallback, useState } from "react"
 import {
   createLocalRecordRowId,
   isLocalOnlyRecordRow,
@@ -8,6 +9,7 @@ import { useRecordScopedSectionController } from "@/controllers/record/use-recor
 import { createRecordSectionError } from "@/types/record/section-error"
 import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
+  ProductPickerOption,
   WorkOrderDetail,
   WorkOrderMaterialItemForm,
   WorkOrderMaterialItemRow,
@@ -101,14 +103,40 @@ function buildDiff(
 export function useWorkOrderMaterialItemsSection({
   workOrder,
   materialItems,
+  productPickerOptionsByItemId,
   publishMaterialItems,
   publishWorkOrder,
 }: {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
 }) {
+  // Session-scoped record of the picker option currently shown for each row,
+  // seeded from the SSR-hydrated map. Updated whenever ProductPicker fires
+  // onSelectOption. Used for: parent-category trigger label, quantity unit
+  // suffix, and category derivation when categoryFilterId is null.
+  const [selectedProductOptionByRowId, setSelectedProductOptionByRowId] = useState<
+    Record<string, ProductPickerOption>
+  >(() => ({ ...productPickerOptionsByItemId }))
+
+  const setSelectedProductOption = useCallback(
+    (rowId: string, option: ProductPickerOption | null) => {
+      setSelectedProductOptionByRowId((previous) => {
+        if (option === null) {
+          if (!(rowId in previous)) return previous
+          const next = { ...previous }
+          delete next[rowId]
+          return next
+        }
+        if (previous[rowId]?.id === option.id) return previous
+        return { ...previous, [rowId]: option }
+      })
+    },
+    [],
+  )
+
   const section = useRecordScopedSectionController<WorkOrderMaterialItemRow[], LocalState>({
     recordId: workOrder.id,
     sectionKey: "material-items",
@@ -171,10 +199,17 @@ export function useWorkOrderMaterialItemsSection({
     section.setLocalValue((previous) => ({
       items: previous.items.filter((row) => row.id !== itemId),
     }))
+    setSelectedProductOptionByRowId((previous) => {
+      if (!(itemId in previous)) return previous
+      const next = { ...previous }
+      delete next[itemId]
+      return next
+    })
     section.setError(null)
   }
 
   function duplicateItem(sourceItemId: string) {
+    const newRowId = createLocalRecordRowId("work-order-material-item")
     section.setLocalValue((previous) => {
       const source = previous.items.find((row) => row.id === sourceItemId)
       if (!source) return previous
@@ -182,7 +217,7 @@ export function useWorkOrderMaterialItemsSection({
       // pre-filtered to the same category. Quantity + notes start blank so
       // the user has to confirm the per-row values for the new line.
       const duplicated: WorkOrderMaterialItemLocal = {
-        id: createLocalRecordRowId("work-order-material-item"),
+        id: newRowId,
         ...buildDuplicatedRow(
           {
             productId: source.productId,
@@ -202,6 +237,11 @@ export function useWorkOrderMaterialItemsSection({
         ),
       }
       return { items: [...previous.items, duplicated] }
+    })
+    setSelectedProductOptionByRowId((previous) => {
+      const sourceOption = previous[sourceItemId]
+      if (!sourceOption) return previous
+      return { ...previous, [newRowId]: sourceOption }
     })
     section.setError(null)
   }
@@ -230,11 +270,19 @@ export function useWorkOrderMaterialItemsSection({
         return { ...row, categoryFilterId: categoryId, productId: "" }
       }),
     }))
+    setSelectedProductOptionByRowId((previous) => {
+      if (!(itemId in previous)) return previous
+      const next = { ...previous }
+      delete next[itemId]
+      return next
+    })
   }
 
   return {
     ...section,
     items: section.localValue.items,
+    selectedProductOptionByRowId,
+    setSelectedProductOption,
     addItem,
     removeItem,
     duplicateItem,

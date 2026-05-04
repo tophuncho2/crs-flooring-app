@@ -8,17 +8,13 @@ import {
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/use-template-material-items-section"
-import type { TemplateDetail, TemplateForm } from "@builders/domain"
+import type { ProductPickerOption, TemplateDetail, TemplateForm } from "@builders/domain"
 import {
   TemplatePrimaryFieldsSection,
   type TemplateDropdownOption,
   type TemplatePropertyOption,
 } from "./template-primary-fields-section"
-import {
-  TemplateMaterialItemsSection,
-  type MaterialItemProductOption,
-  type TemplateMaterialItemCategoryOption,
-} from "./template-material-items-section"
+import { TemplateMaterialItemsSection } from "./template-material-items-section"
 
 export function TemplateRecordPanel({
   page,
@@ -27,8 +23,7 @@ export function TemplateRecordPanel({
   propertyOptions,
   jobTypeOptions,
   warehouseOptions,
-  productOptions,
-  categoryOptions,
+  initialProductPickerOptionsByItemId,
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
@@ -36,12 +31,12 @@ export function TemplateRecordPanel({
   propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
-  productOptions: MaterialItemProductOption[]
-  categoryOptions: TemplateMaterialItemCategoryOption[]
+  initialProductPickerOptionsByItemId: Record<string, ProductPickerOption>
 }) {
   const primary = useTemplatePrimarySection({ page, template })
   const materialItems = useTemplateMaterialItemsSection({
     template: primary.record,
+    productPickerOptionsByItemId: initialProductPickerOptionsByItemId,
     publishTemplate: primary.publishRecord,
   })
 
@@ -97,8 +92,7 @@ export function TemplateRecordPanel({
           render: () => (
             <TemplateMaterialItemsSection
               items={materialItems.items}
-              productOptions={productOptions}
-              categoryOptions={categoryOptions}
+              selectedProductOptionByRowId={materialItems.selectedProductOptionByRowId}
               isDirty={materialItems.isDirty}
               isSaving={materialItems.isSaving}
               hasConflict={materialItems.hasConflict}
@@ -108,8 +102,10 @@ export function TemplateRecordPanel({
               onSave={() => void materialItems.save()}
               onDiscard={() => materialItems.discard()}
               onAddItem={materialItems.addItem}
+              onDuplicateItem={materialItems.duplicateItem}
               onChangeField={materialItems.changeField}
               onChangeCategoryFilter={materialItems.changeCategoryFilter}
+              onSelectProduct={materialItems.setSelectedProductOption}
               onRemoveItem={materialItems.removeItem}
             />
           ),

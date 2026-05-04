@@ -1,20 +1,19 @@
 "use client"
 
-import { Fragment, useCallback, useMemo, useState } from "react"
+import { Fragment, useCallback, useState } from "react"
 import { StatusBadge } from "@/components/badges"
-import { DropdownCell, NumberCell, RowActionButton, TextCell } from "@/components/cells"
+import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandableRow } from "@/components/grid/expandable-rows"
 import type {
   CutLogRow,
+  ProductPickerOption,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import type {
-  CategoryOption,
-  ProductOption,
-} from "@/modules/work-orders/controllers/record/drafts"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import {
   useWorkOrderMaterialItemsSection,
   type WorkOrderMaterialItemLocal,
@@ -54,8 +53,7 @@ export function WorkOrderMaterialItemsSection({
   workOrder,
   materialItems,
   cutLogsByWorkOrderItemId,
-  productOptions,
-  categoryOptions,
+  productPickerOptionsByItemId,
   publishMaterialItems,
   publishWorkOrder,
   publishCutLogPatch,
@@ -63,8 +61,7 @@ export function WorkOrderMaterialItemsSection({
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
   cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
-  productOptions: ProductOption[]
-  categoryOptions: CategoryOption[]
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
   /** Apply a single-row patch to the parent's cut-log snapshot after a panel mutation. */
@@ -73,6 +70,7 @@ export function WorkOrderMaterialItemsSection({
   const section = useWorkOrderMaterialItemsSection({
     workOrder,
     materialItems,
+    productPickerOptionsByItemId,
     publishMaterialItems,
     publishWorkOrder,
   })
@@ -94,25 +92,14 @@ export function WorkOrderMaterialItemsSection({
   }, [allExpanded, section.items])
 
   const editable = !sectionBusy
-  const categoryCellOptions = useMemo(
-    () => categoryOptions.map((option) => ({ id: option.id, label: option.label })),
-    [categoryOptions],
+
+  const findRowStatus = useCallback(
+    (itemId: string): WorkOrderMaterialItemRow["status"] => {
+      const row = materialItems.find((row) => row.id === itemId)
+      return row?.status ?? "IDLE"
+    },
+    [materialItems],
   )
-  const productById = useMemo(() => {
-    const map = new Map<string, ProductOption>()
-    for (const product of productOptions) map.set(product.id, product)
-    return map
-  }, [productOptions])
-
-  const serverStatusById = useMemo(() => {
-    const map = new Map<string, WorkOrderMaterialItemRow["status"]>()
-    for (const row of materialItems) map.set(row.id, row.status)
-    return map
-  }, [materialItems])
-
-  function findRowStatus(itemId: string): WorkOrderMaterialItemRow["status"] {
-    return serverStatusById.get(itemId) ?? "IDLE"
-  }
 
   const handleOpenEdit = useCallback(
     (workOrderItemId: string, cutLog: CutLogRow) => {
@@ -132,48 +119,38 @@ export function WorkOrderMaterialItemsSection({
     column: { key: string },
     item: WorkOrderMaterialItemLocal,
   ) {
+    const selectedProduct = section.selectedProductOptionByRowId[item.id] ?? null
+    const productCategoryId = selectedProduct?.categoryId ?? null
+    const effectiveCategoryId = item.categoryFilterId ?? productCategoryId
     switch (column.key) {
       case "categoryFilter": {
-        const productCategoryId = item.productId
-          ? productById.get(item.productId)?.categoryId ?? null
-          : null
-        const effectiveCategoryId = item.categoryFilterId ?? productCategoryId
         return (
-          <DropdownCell
-            editable={editable}
+          <CategoryPicker
             value={effectiveCategoryId}
             onChange={(next) => section.changeCategoryFilter(item.id, next)}
-            options={categoryCellOptions}
-            allowClear
-            placeholder="All categories"
+            selectedLabel={selectedProduct?.categoryName ?? null}
+            placeholder="Filter by category"
             ariaLabel="Material item category filter"
+            disabled={!editable}
           />
         )
       }
       case "product": {
-        const productCategoryId = item.productId
-          ? productById.get(item.productId)?.categoryId ?? null
-          : null
-        const effectiveCategoryId = item.categoryFilterId ?? productCategoryId
-        const hasCategory = !!effectiveCategoryId
-        const visibleProducts = hasCategory
-          ? productOptions.filter(
-              (p) => p.categoryId === effectiveCategoryId || p.id === item.productId,
-            )
-          : []
         return (
-          <DropdownCell
-            editable={editable && hasCategory}
+          <ProductPicker
             value={item.productId || null}
             onChange={(next) => section.changeField(item.id, "productId", next ?? "")}
-            options={visibleProducts.map((p) => ({ id: p.id, label: p.label }))}
+            onSelectOption={(option) => section.setSelectedProductOption(item.id, option)}
+            categoryId={effectiveCategoryId}
+            selectedOption={selectedProduct}
             placeholder="Select product"
             ariaLabel="Material item product"
+            disabled={!editable}
           />
         )
       }
       case "quantity": {
-        const unitAbbrev = productById.get(item.productId)?.sendUnitAbbrev ?? ""
+        const unitAbbrev = selectedProduct?.sendUnitAbbrev ?? ""
         return (
           <div className="flex w-full items-center gap-2">
             <div className="min-w-0 flex-1">

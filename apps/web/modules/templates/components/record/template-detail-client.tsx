@@ -2,15 +2,11 @@
 
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { TemplateRecordPanel } from "./template-record-panel"
-import type { TemplateDetail } from "@builders/domain"
+import type { ProductPickerOption, TemplateDetail } from "@builders/domain"
 import type {
   TemplateDropdownOption,
   TemplatePropertyOption,
 } from "./template-primary-fields-section"
-import type {
-  MaterialItemProductOption,
-  TemplateMaterialItemCategoryOption,
-} from "./template-material-items-section"
 
 export function TemplateDetailClient({
   template,
@@ -18,8 +14,7 @@ export function TemplateDetailClient({
   propertyOptions,
   jobTypeOptions,
   warehouseOptions,
-  productOptions,
-  categoryOptions,
+  initialProductPickerOptionsByItemId,
   backHref,
 }: {
   template: TemplateDetail
@@ -27,8 +22,7 @@ export function TemplateDetailClient({
   propertyOptions: TemplatePropertyOption[]
   jobTypeOptions: TemplateDropdownOption[]
   warehouseOptions: TemplateDropdownOption[]
-  productOptions: MaterialItemProductOption[]
-  categoryOptions: TemplateMaterialItemCategoryOption[]
+  initialProductPickerOptionsByItemId: Record<string, ProductPickerOption>
   backHref: string
 }) {
   return (
@@ -46,8 +40,7 @@ export function TemplateDetailClient({
           propertyOptions={propertyOptions}
           jobTypeOptions={jobTypeOptions}
           warehouseOptions={warehouseOptions}
-          productOptions={productOptions}
-          categoryOptions={categoryOptions}
+          initialProductPickerOptionsByItemId={initialProductPickerOptionsByItemId}
         />
       )}
     </RecordDetailClientScaffold>

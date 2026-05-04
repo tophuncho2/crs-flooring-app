@@ -1,12 +1,11 @@
 import {
   countTemplates,
   createPrismaPageLoadIssue,
+  getProductPickerOptionsByIds,
   getTemplateById,
   isPrismaNotFoundError,
-  listCategories,
   listJobTypeOptions,
   listManagementCompanyOptions,
-  listProductOptions,
   listPropertyOptions,
   listTemplates,
   listTemplateOptions,
@@ -14,6 +13,7 @@ import {
   withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
+import type { ProductPickerOption, TemplateMaterialItemRow } from "@builders/domain"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 import { createServerPagination, type ServerTableQueryState } from "@/server/pagination"
 
@@ -38,14 +38,21 @@ async function loadTemplateDropdownOptions() {
   return { managementOptions, propertyOptions, jobTypeOptions, warehouseOptions }
 }
 
-async function loadTemplateDetailOptions() {
-  const [dropdowns, productOptions, categoryOptions] = await Promise.all([
-    loadTemplateDropdownOptions(),
-    listProductOptions(),
-    listCategories(),
-  ])
-
-  return { ...dropdowns, productOptions, categoryOptions }
+async function getMaterialItemPickerOptions(
+  items: ReadonlyArray<TemplateMaterialItemRow>,
+): Promise<Record<string, ProductPickerOption>> {
+  const productIds = items
+    .map((row) => row.productId)
+    .filter((id): id is string => typeof id === "string" && id.length > 0)
+  if (productIds.length === 0) return {}
+  const options = await getProductPickerOptionsByIds(productIds)
+  const optionById = new Map(options.map((option) => [option.id, option]))
+  const result: Record<string, ProductPickerOption> = {}
+  for (const row of items) {
+    const option = optionById.get(row.productId)
+    if (option) result[row.id] = option
+  }
+  return result
 }
 
 export async function getTemplateCreatePageOptions() {
@@ -54,18 +61,19 @@ export async function getTemplateCreatePageOptions() {
 
 export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{
   template: Awaited<ReturnType<typeof getTemplateById>>
-  managementOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["managementOptions"]
-  propertyOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["propertyOptions"]
-  jobTypeOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["jobTypeOptions"]
-  warehouseOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["warehouseOptions"]
-  productOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["productOptions"]
-  categoryOptions: Awaited<ReturnType<typeof loadTemplateDetailOptions>>["categoryOptions"]
+  managementOptions: Awaited<ReturnType<typeof loadTemplateDropdownOptions>>["managementOptions"]
+  propertyOptions: Awaited<ReturnType<typeof loadTemplateDropdownOptions>>["propertyOptions"]
+  jobTypeOptions: Awaited<ReturnType<typeof loadTemplateDropdownOptions>>["jobTypeOptions"]
+  warehouseOptions: Awaited<ReturnType<typeof loadTemplateDropdownOptions>>["warehouseOptions"]
+  productPickerOptionsByItemId: Record<string, ProductPickerOption>
 }>> {
   try {
     const [template, options] = await Promise.all([
       getTemplateById(id),
-      loadTemplateDetailOptions(),
+      loadTemplateDropdownOptions(),
     ])
+
+    const productPickerOptionsByItemId = await getMaterialItemPickerOptions(template.items)
 
     return {
       ok: true,
@@ -75,8 +83,7 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
         propertyOptions: options.propertyOptions,
         jobTypeOptions: options.jobTypeOptions,
         warehouseOptions: options.warehouseOptions,
-        productOptions: options.productOptions,
-        categoryOptions: options.categoryOptions,
+        productPickerOptionsByItemId,
       },
     }
   } catch (error) {

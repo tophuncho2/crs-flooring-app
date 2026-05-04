@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma } from "@prisma/client"
+import type { ProductPickerOption } from "@builders/domain"
 import {
   listCategories,
   type CategoryRecord,
@@ -10,8 +11,10 @@ import {
 } from "../manufacturers/read-repository.js"
 import {
   productOptionSelect,
+  productPickerSelect,
   productRowSelect,
   type ProductOptionPayload,
+  type ProductPickerPayload,
   type ProductRowPayload,
   type ProductsDbClient,
 } from "./shared.js"
@@ -173,6 +176,75 @@ export async function listProductOptions(client: ProductsDbClient = db): Promise
     orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
   })
   return rows.map(normalizeProductOption)
+}
+
+// --- Picker / options search ---
+
+export type ProductOptionsSearchArgs = {
+  search?: string
+  categoryId?: string
+  take: number
+}
+
+function normalizeProductPicker(row: ProductPickerPayload): ProductPickerOption {
+  return {
+    id: row.id,
+    name: row.name,
+    categoryId: row.categoryId,
+    categoryName: row.category.name,
+    sendUnitAbbrev: row.sendUnitAbbrev ?? "",
+  }
+}
+
+export async function searchProductOptions(
+  args: ProductOptionsSearchArgs,
+  client: ProductsDbClient = db,
+): Promise<ProductPickerOption[]> {
+  const clauses: Prisma.FlooringProductWhereInput[] = []
+  if (args.search) {
+    clauses.push({ name: { contains: args.search, mode: "insensitive" } })
+  }
+  if (args.categoryId) {
+    clauses.push({ categoryId: args.categoryId })
+  }
+  const where =
+    clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }
+
+  const rows = await client.flooringProduct.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
+    select: productPickerSelect,
+  })
+
+  return rows.map(normalizeProductPicker)
+}
+
+export async function getProductPickerOptionById(
+  id: string,
+  client: ProductsDbClient = db,
+): Promise<ProductPickerOption | null> {
+  const row = await client.flooringProduct.findUnique({
+    where: { id },
+    select: productPickerSelect,
+  })
+  return row ? normalizeProductPicker(row) : null
+}
+
+export async function getProductPickerOptionsByIds(
+  ids: ReadonlyArray<string>,
+  client: ProductsDbClient = db,
+): Promise<ProductPickerOption[]> {
+  if (ids.length === 0) return []
+  const unique = Array.from(
+    new Set(ids.filter((id) => typeof id === "string" && id.length > 0)),
+  )
+  if (unique.length === 0) return []
+  const rows = await client.flooringProduct.findMany({
+    where: { id: { in: unique } },
+    select: productPickerSelect,
+  })
+  return rows.map(normalizeProductPicker)
 }
 
 export async function productNameExists(

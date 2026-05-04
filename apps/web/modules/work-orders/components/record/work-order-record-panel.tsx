@@ -7,6 +7,7 @@ import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detai
 import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import type {
   CutLogRow,
+  ProductPickerOption,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -23,6 +24,7 @@ export function WorkOrderRecordPanel({
   initialMaterialItems,
   initialCutLogsByWorkOrderItemId,
   initialFiles,
+  initialProductPickerOptionsByItemId,
   options,
 }: {
   page: RecordDetailClientScaffoldContext
@@ -30,6 +32,7 @@ export function WorkOrderRecordPanel({
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
   initialFiles: WorkOrderFileRow[]
+  initialProductPickerOptionsByItemId: Record<string, ProductPickerOption>
   options: WorkOrderFormOptionSet
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
@@ -108,8 +111,7 @@ export function WorkOrderRecordPanel({
               workOrder={controller.record}
               materialItems={materialItems}
               cutLogsByWorkOrderItemId={cutLogsByWorkOrderItemId}
-              productOptions={options.productOptions}
-              categoryOptions={options.categoryOptions}
+              productPickerOptionsByItemId={initialProductPickerOptionsByItemId}
               publishMaterialItems={setMaterialItems}
               publishWorkOrder={controller.publishRecord}
               publishCutLogPatch={publishCutLogPatch}

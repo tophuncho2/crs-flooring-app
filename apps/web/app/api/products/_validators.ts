@@ -4,6 +4,7 @@ import type {
   CreateProductInput,
   ListInput,
   ProductsListFilters,
+  SearchProductOptionsInput,
 } from "@builders/application"
 import {
   LIST_PRODUCTS_MAX_PAGE_SIZE,
@@ -142,5 +143,48 @@ export function validateListProductsQuery(
         : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,
+  }
+}
+
+// --- Picker / options query validator ---
+
+const OPTIONS_DEFAULT_TAKE = 20
+const OPTIONS_MAX_TAKE = 50
+
+const productOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  categoryId: z.string().optional(),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPTIONS_MAX_TAKE)
+    .default(OPTIONS_DEFAULT_TAKE),
+})
+
+export function validateProductOptionsQuery(
+  searchParams: URLSearchParams,
+): SearchProductOptionsInput {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = productOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid product options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.search?.trim()
+  const trimmedCategoryId = parsed.categoryId?.trim()
+  return {
+    search: trimmedSearch ? trimmedSearch : undefined,
+    categoryId: trimmedCategoryId ? trimmedCategoryId : undefined,
+    take: parsed.take,
   }
 }
