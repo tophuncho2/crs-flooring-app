@@ -9,10 +9,14 @@ import {
 } from "./utils/record-section-drafts"
 import {
   useRecordSectionController,
+  type RecordSectionReconcileInfo,
   type RecordSectionSaveResult,
 } from "./use-record-section-controller"
 
-export type { RecordSectionSaveResult } from "./use-record-section-controller"
+export type {
+  RecordSectionReconcileInfo,
+  RecordSectionSaveResult,
+} from "./use-record-section-controller"
 
 export type RecordScopedSectionControllerPolicy = {
   addRowPlacement?: "top" | "bottom"
@@ -30,6 +34,7 @@ export function useRecordScopedSectionController<TServer, TLocal>({
   isEqual,
   validateBeforeSave,
   onSave,
+  onReconcile,
   persistDraft = Boolean(currentUserId && cloneLocalValue),
   policy,
 }: {
@@ -47,6 +52,13 @@ export function useRecordScopedSectionController<TServer, TLocal>({
     serverValue: TServer,
     serverRevisionKey: string,
   ) => Promise<RecordSectionSaveResult<TServer>>
+  /**
+   * Fired when the engine rebuilds local state after a successful save.
+   * Receives the `tempIdMap` returned by `onSave`. Use to migrate
+   * session-scoped per-row state (picker option caches, UI flags) from
+   * optimistic clientIds to the new server-stamped ids.
+   */
+  onReconcile?: (info: RecordSectionReconcileInfo) => void
   persistDraft?: boolean
   policy?: RecordScopedSectionControllerPolicy
 }) {
@@ -59,6 +71,7 @@ export function useRecordScopedSectionController<TServer, TLocal>({
       validateBeforeSave?.(localValue, currentServerValue)
       return onSave?.(localValue, currentServerValue, currentServerRevisionKey)
     },
+    onReconcile,
   })
 
   const draftKey = useMemo(() => {

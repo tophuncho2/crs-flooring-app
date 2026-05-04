@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type { ProductPickerOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -22,10 +22,10 @@ export type ProductPickerProps = {
    */
   onSelectOption?: (option: ProductPickerOption | null) => void
   /**
-   * Category-filter scope. When set, the picker only fetches products in this
-   * category. When `null`, the picker is gated closed (consumers should pick a
-   * category first); pass `undefined` to allow unfiltered search across all
-   * products.
+   * Category-filter scope. When set, the picker only fetches products in
+   * this category. When `null` or `undefined`, the picker searches across
+   * all products — the user can pick anything and the parent grid derives
+   * the category from `onSelectOption`.
    */
   categoryId: string | null | undefined
   /**
@@ -70,7 +70,10 @@ export function ProductPicker({
   className,
 }: ProductPickerProps) {
   const filterScope = categoryId ?? null
-  const enabled = categoryId !== null
+  // Lazy-fetch: only fire the server query while the popover is open. A
+  // section grid with N rows mounts 2N picker controllers; without this gate
+  // each one would fan out a request on first render.
+  const [isOpen, setIsOpen] = useState(false)
   const bucketKey = useMemo(() => productOptionsQueryKey(filterScope), [filterScope])
   const searchFn = useCallback(
     (query: string, signal: AbortSignal | undefined) =>
@@ -81,7 +84,7 @@ export function ProductPicker({
   const controller = useAsyncRichDropdownController<ProductPickerOption>({
     bucketKey,
     searchFn,
-    enabled,
+    enabled: isOpen,
   })
 
   const options = useMemo<AsyncRichDropdownOption[]>(
@@ -135,10 +138,11 @@ export function ProductPicker({
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
       clearLabel={clearLabel}
-      disabled={disabled || !enabled}
+      disabled={disabled}
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      onOpenChange={setIsOpen}
     />
   )
 }

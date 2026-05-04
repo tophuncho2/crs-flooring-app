@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import type { CategoryOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -50,10 +50,16 @@ export function CategoryPicker({
   className,
   initialOptions,
 }: CategoryPickerProps) {
+  // Gate the search query on popover open state. Dense grids that mount many
+  // CategoryPicker instances would otherwise fan out N parallel requests on
+  // first render — only the actively-opened picker needs to fetch.
+  const [isOpen, setIsOpen] = useState(false)
+
   const controller = useAsyncRichDropdownController<CategoryOption>({
     bucketKey: CATEGORY_OPTIONS_QUERY_KEY,
     searchFn: searchCategoryOptionsRequest,
     initialOptions,
+    enabled: isOpen,
   })
 
   const options = useMemo<AsyncRichDropdownOption[]>(
@@ -86,6 +92,7 @@ export function CategoryPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      onOpenChange={setIsOpen}
     />
   )
 }

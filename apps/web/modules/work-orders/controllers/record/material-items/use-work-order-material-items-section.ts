@@ -161,12 +161,15 @@ export function useWorkOrderMaterialItemsSection({
       }
 
       const diff = buildDiff(localValue, currentRows)
-      const { workOrder: nextWorkOrder, materialItems: nextItems } =
-        await saveWorkOrderMaterialItemsSectionRequest(
-          workOrder.id,
-          diff,
-          workOrder.updatedAt,
-        )
+      const {
+        workOrder: nextWorkOrder,
+        materialItems: nextItems,
+        tempIdMap,
+      } = await saveWorkOrderMaterialItemsSectionRequest(
+        workOrder.id,
+        diff,
+        workOrder.updatedAt,
+      )
 
       publishWorkOrder(nextWorkOrder)
       publishMaterialItems(nextItems)
@@ -175,7 +178,29 @@ export function useWorkOrderMaterialItemsSection({
         serverValue: nextItems,
         serverRevisionKey: createItemsRevisionKey(nextItems),
         noticeMessage: "Material items saved",
+        tempIdMap,
       }
+    },
+    onReconcile: ({ tempIdMap }) => {
+      // Migrate the session-scoped picker map from optimistic clientIds (the
+      // tempIds we sent up in the diff's `added[]`) to the server-stamped
+      // ids returned in the save response. Without this the just-saved rows
+      // would render as drafts (no selectedOption) until the page is
+      // reloaded — `selectedProductOptionByRowId` is keyed by row id.
+      setSelectedProductOptionByRowId((previous) => {
+        let changed = false
+        const next: Record<string, ProductPickerOption> = {}
+        for (const [rowId, option] of Object.entries(previous)) {
+          const mappedId = tempIdMap[rowId]
+          if (mappedId && mappedId !== rowId) {
+            next[mappedId] = option
+            changed = true
+          } else {
+            next[rowId] = option
+          }
+        }
+        return changed ? next : previous
+      })
     },
   })
 

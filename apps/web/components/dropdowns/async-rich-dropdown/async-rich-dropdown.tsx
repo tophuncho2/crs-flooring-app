@@ -4,8 +4,11 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { AsyncRichDropdownOption } from "./contracts/async-rich-dropdown-option"
 
+// Trigger chrome matches `SelectDropdown` exactly so AsyncRichDropdown drops
+// into the same grid cells without visual drift between rows that use one vs
+// the other.
 const TRIGGER_BASE_CLASS_NAME =
-  "flex w-full items-center justify-between gap-2 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-left text-sm text-[var(--foreground)] outline-none transition focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+  "flex w-full items-center justify-between gap-2 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-left text-sm text-[var(--foreground)] outline-none transition focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-60"
 const TRIGGER_INVALID_CLASS_NAME =
   "border-rose-500/60 focus:border-rose-500/70 focus:ring-rose-500/40"
 
@@ -14,6 +17,11 @@ const POPOVER_CLASS_NAME =
 
 const SEARCH_INPUT_CLASS_NAME =
   "w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
+
+// Maximum popover height matches `max-h-80` in POPOVER_CLASS_NAME (20rem
+// ≈ 320px). Used to compute viewport-aware flip-up placement.
+const POPOVER_MAX_HEIGHT_PX = 320
+const POPOVER_VIEWPORT_GUTTER_PX = 8
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -37,6 +45,13 @@ export type AsyncRichDropdownProps = {
   invalid?: boolean
   ariaLabel?: string
   className?: string
+  /**
+   * Fired with `true` when the popover opens, `false` when it closes. Lets
+   * consumers gate their async controllers (e.g. only fire the search query
+   * once the popover is open) so dense grids don't fan out N parallel
+   * requests at mount time.
+   */
+  onOpenChange?: (open: boolean) => void
 }
 
 /**
@@ -69,14 +84,29 @@ export function AsyncRichDropdown({
   invalid = false,
   ariaLabel,
   className,
+  onOpenChange,
 }: AsyncRichDropdownProps) {
   const listboxId = useId()
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(false)
   const [activeIndex, setActiveIndex] = useState<number>(-1)
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const onOpenChangeRef = useRef(onOpenChange)
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  }, [onOpenChange])
+
+  const setOpen = useCallback<typeof setOpenState>((next) => {
+    setOpenState((previous) => {
+      const resolved = typeof next === "function" ? next(previous) : next
+      if (resolved !== previous) {
+        onOpenChangeRef.current?.(resolved)
+      }
+      return resolved
+    })
+  }, [])
 
   const visibleSelected = useMemo(() => {
     if (!value) return null
@@ -216,6 +246,33 @@ export function AsyncRichDropdown({
   const triggerLabel = visibleSelected ? visibleSelected.title : placeholder
   const showEmptyState = !isLoading && options.length === 0 && !errorMessage
 
+  // Viewport-aware popover placement: prefer below the trigger when there is
+  // room for the full max-height popover; otherwise flip above when the
+  // upward space is bigger. Falls back to "below, clipped" if neither side
+  // fits cleanly so the popover never positions itself off-screen.
+  const popoverPlacement = useMemo(() => {
+    if (!triggerRect || typeof window === "undefined") {
+      return null
+    }
+    const viewportHeight = window.innerHeight
+    const spaceBelow = viewportHeight - triggerRect.bottom - POPOVER_VIEWPORT_GUTTER_PX
+    const spaceAbove = triggerRect.top - POPOVER_VIEWPORT_GUTTER_PX
+    const fitsBelow = spaceBelow >= POPOVER_MAX_HEIGHT_PX
+    const fitsAbove = spaceAbove >= POPOVER_MAX_HEIGHT_PX
+    const placeAbove = !fitsBelow && (fitsAbove || spaceAbove > spaceBelow)
+    const availableHeight = Math.max(0, placeAbove ? spaceAbove : spaceBelow)
+    const maxHeight = Math.min(POPOVER_MAX_HEIGHT_PX, availableHeight)
+    return placeAbove
+      ? {
+          top: triggerRect.top - maxHeight - 6,
+          maxHeight,
+        }
+      : {
+          top: triggerRect.bottom + 6,
+          maxHeight,
+        }
+  }, [triggerRect])
+
   return (
     <div ref={containerRef} className={joinClassNames("relative", className)}>
       <button
@@ -246,16 +303,17 @@ export function AsyncRichDropdown({
         </span>
       </button>
 
-      {open && triggerRect && typeof document !== "undefined"
+      {open && triggerRect && popoverPlacement && typeof document !== "undefined"
         ? createPortal(
             <div
               ref={popoverRef}
               style={{
                 position: "fixed",
-                top: triggerRect.bottom + 6,
+                top: popoverPlacement.top,
                 left: triggerRect.left,
                 minWidth: triggerRect.width,
                 maxWidth: `min(32rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
+                maxHeight: popoverPlacement.maxHeight,
                 zIndex: 1000,
               }}
               className={POPOVER_CLASS_NAME}

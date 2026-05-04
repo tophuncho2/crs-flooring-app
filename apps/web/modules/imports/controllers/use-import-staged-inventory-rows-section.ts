@@ -222,7 +222,28 @@ export function useImportStagedInventoryRowsSection({
         serverValue: response.stagedRows,
         serverRevisionKey: createRowsRevisionKey(response.import, response.stagedRows),
         noticeMessage: "Import inventory rows saved",
+        tempIdMap: response.tempIdMap,
       }
+    },
+    onReconcile: ({ tempIdMap }) => {
+      // Migrate the session-scoped picker map from optimistic clientIds to
+      // the server-stamped ids returned in the save response. Without this
+      // the just-saved rows render as drafts (no selectedOption) until the
+      // page is reloaded.
+      setSelectedProductOptionByRowId((previous) => {
+        let changed = false
+        const next: Record<string, ProductPickerOption> = {}
+        for (const [rowId, option] of Object.entries(previous)) {
+          const mappedId = tempIdMap[rowId]
+          if (mappedId && mappedId !== rowId) {
+            next[mappedId] = option
+            changed = true
+          } else {
+            next[rowId] = option
+          }
+        }
+        return changed ? next : previous
+      })
     },
   })
 

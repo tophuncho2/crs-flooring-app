@@ -161,11 +161,12 @@ export function useTemplateMaterialItemsSection({
       }
 
       const diff = buildDiff(localValue, currentRecord)
-      const { template: nextTemplate } = await saveTemplateMaterialItemsSectionRequest(
-        currentRecord.id,
-        diff,
-        currentRecord.updatedAt,
-      )
+      const { template: nextTemplate, tempIdMap } =
+        await saveTemplateMaterialItemsSectionRequest(
+          currentRecord.id,
+          diff,
+          currentRecord.updatedAt,
+        )
 
       publishTemplate(nextTemplate)
 
@@ -173,7 +174,28 @@ export function useTemplateMaterialItemsSection({
         serverValue: nextTemplate,
         serverRevisionKey: createItemsRevisionKey(nextTemplate),
         noticeMessage: "Material items saved",
+        tempIdMap,
       }
+    },
+    onReconcile: ({ tempIdMap }) => {
+      // Migrate the session-scoped picker map from optimistic clientIds to
+      // the server-stamped ids returned in the save response. Without this
+      // the just-saved rows render as drafts (no selectedOption) until the
+      // page is reloaded.
+      setSelectedProductOptionByRowId((previous) => {
+        let changed = false
+        const next: Record<string, ProductPickerOption> = {}
+        for (const [rowId, option] of Object.entries(previous)) {
+          const mappedId = tempIdMap[rowId]
+          if (mappedId && mappedId !== rowId) {
+            next[mappedId] = option
+            changed = true
+          } else {
+            next[rowId] = option
+          }
+        }
+        return changed ? next : previous
+      })
     },
   })
 
